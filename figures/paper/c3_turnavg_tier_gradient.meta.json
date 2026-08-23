@@ -1,0 +1,365 @@
+{
+  "commit": "064462df+dirty",
+  "render_id": "cb078ccba7724502",
+  "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2476/turnavg/bridge_b.npz",
+    "eval_results/issue_2476/turnavg/gates_p4.json",
+    "eval_results/issue_2476/turnavg/gates_p6.json",
+    "eval_results/issue_2476/turnavg/panel_b.json",
+    "eval_results/issue_2476/turnavg/panel_c.json",
+    "eval_results/issue_2476/turnavg/perfeature_b_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_inlier.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_pile.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_transfer.npz",
+    "eval_results/issue_2476/turnavg/preds_meta.json",
+    "eval_results/issue_2476/turnavg/recon_gate.json",
+    "eval_results/issue_2476/turnavg/regime.json",
+    "eval_results/issue_2476/turnavg/retrieval_b.json",
+    "eval_results/issue_2476/turnavg/retrieval_c.json",
+    "eval_results/issue_2476/turnavg/shuffle_null_b.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_b_pile.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_c.npz",
+    "eval_results/issue_2476/turnavg/tier_tests_b.json",
+    "eval_results/issue_2476/turnavg/tier_tests_c.json",
+    "eval_results/issue_2476/turnavg/train_log.json",
+    "figures/issue_2476/i2476_alive_attrition.meta.json",
+    "figures/issue_2476/i2476_alive_attrition.pdf",
+    "figures/issue_2476/i2476_alive_attrition.png",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.meta.json",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.pdf",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.png",
+    "figures/issue_2476/i2476_corpus_transfer.meta.json",
+    "figures/issue_2476/i2476_corpus_transfer.pdf",
+    "figures/issue_2476/i2476_corpus_transfer.png",
+    "figures/issue_2476/i2476_densein_profile.meta.json",
+    "figures/issue_2476/i2476_densein_profile.pdf",
+    "figures/issue_2476/i2476_densein_profile.png",
+    "figures/issue_2476/i2476_inlier_sensitivity.meta.json",
+    "figures/issue_2476/i2476_inlier_sensitivity.pdf",
+    "figures/issue_2476/i2476_inlier_sensitivity.png",
+    "figures/issue_2476/i2476_pile_twin.meta.json",
+    "figures/issue_2476/i2476_pile_twin.pdf",
+    "figures/issue_2476/i2476_pile_twin.png",
+    "figures/issue_2476/i2476_r2_ecdf.meta.json",
+    "figures/issue_2476/i2476_r2_ecdf.pdf",
+    "figures/issue_2476/i2476_r2_ecdf.png",
+    "figures/issue_2476/i2476_r2_vs_activity.meta.json",
+    "figures/issue_2476/i2476_r2_vs_activity.pdf",
+    "figures/issue_2476/i2476_r2_vs_activity.png",
+    "figures/issue_2476/i2476_retrieval_acc_at_k.meta.json",
+    "... 5 more"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_turnavg_sae.py",
+  "created": "2026-08-23T11:38:49Z",
+  "figsize": [
+    5.5,
+    3.399
+  ],
+  "points": [
+    {
+      "matryoshka tier (feature-id prefix)": -0.3,
+      "median held-out per-feature R\u00b2": 0.6251079008927359,
+      "error": 0.01508363182782152,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.7,
+      "median held-out per-feature R\u00b2": 0.1313060445004719,
+      "error": 0.029687872007489458,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.7,
+      "median held-out per-feature R\u00b2": 0.6695627724230564,
+      "error": 0.11581404270318235,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier (feature-id prefix)": -0.1,
+      "median held-out per-feature R\u00b2": -0.7655555540987627,
+      "error": 0.1103081406120579,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.9,
+      "median held-out per-feature R\u00b2": -5.133340711921773,
+      "error": 1.530695677792733,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.9,
+      "median held-out per-feature R\u00b2": -0.47854755971582175,
+      "error": 2.710496687100739,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.1,
+      "median held-out per-feature R\u00b2": 0.4204855805910164,
+      "error": 0.028796691200820235,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.1,
+      "median held-out per-feature R\u00b2": 0.5531849954652982,
+      "error": 0.13532094850526394,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.1,
+      "median held-out per-feature R\u00b2": 0.6011933639863004,
+      "error": 0.21374272804512223,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.3,
+      "median held-out per-feature R\u00b2": -0.026522337520163974,
+      "error": 0.02396255386000179,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.3,
+      "median held-out per-feature R\u00b2": -0.007836537609448913,
+      "error": 0.06962971920774602,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.3,
+      "median held-out per-feature R\u00b2": 0.0996787520854982,
+      "error": 0.16333510387540123,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.0,
+      "median held-out per-feature R\u00b2": 0.4345762931443276,
+      "series": "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.0,
+      "median held-out per-feature R\u00b2": 0.17386872874476017,
+      "series": "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.0,
+      "median held-out per-feature R\u00b2": 0.0429846164108893,
+      "series": "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "matryoshka tier (feature-id prefix)": -0.30000000000000004,
+      "median held-out per-feature R\u00b2": 0.610793899683515,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.7,
+      "median held-out per-feature R\u00b2": 0.09953109926899195,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.7000000000000002,
+      "median held-out per-feature R\u00b2": 0.6482739984006689,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "matryoshka tier (feature-id prefix)": -0.30000000000000004,
+      "median held-out per-feature R\u00b2": 0.6409611633391581,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.7,
+      "median held-out per-feature R\u00b2": 0.15890684328397087,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.7000000000000002,
+      "median held-out per-feature R\u00b2": 0.8799020838070336,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "matryoshka tier (feature-id prefix)": -0.09999999999999998,
+      "median held-out per-feature R\u00b2": -0.8698135159099286,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.9,
+      "median held-out per-feature R\u00b2": -6.799717874841188,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.9000000000000001,
+      "median held-out per-feature R\u00b2": -5.839148666665425,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "matryoshka tier (feature-id prefix)": -0.09999999999999998,
+      "median held-out per-feature R\u00b2": -0.6491972346858128,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.9,
+      "median held-out per-feature R\u00b2": -3.7383265192557222,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.9000000000000001,
+      "median held-out per-feature R\u00b2": -0.41815529246394667,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.09999999999999998,
+      "median held-out per-feature R\u00b2": 0.39313439679896856,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.1,
+      "median held-out per-feature R\u00b2": 0.47263887177160047,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.1,
+      "median held-out per-feature R\u00b2": 0.317540486130116,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.09999999999999998,
+      "median held-out per-feature R\u00b2": 0.450727779200609,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.1,
+      "median held-out per-feature R\u00b2": 0.7432807687821283,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.1,
+      "median held-out per-feature R\u00b2": 0.7450259422203604,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.30000000000000004,
+      "median held-out per-feature R\u00b2": -0.05994220160120167,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.3000000000000003,
+      "median held-out per-feature R\u00b2": -0.10151276694053513,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.3000000000000003,
+      "median held-out per-feature R\u00b2": -0.016215764426787294,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.30000000000000004,
+      "median held-out per-feature R\u00b2": -0.012017093881198093,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.3000000000000003,
+      "median held-out per-feature R\u00b2": 0.03774667147495692,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.3000000000000003,
+      "median held-out per-feature R\u00b2": 0.3104544433240152,
+      "_kind": "line",
+      "_group": 12
+    }
+  ],
+  "n_series": 13,
+  "total_points": 39,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "matryoshka tier (feature-id prefix)",
+        "ylabel": "median held-out per-feature R\u00b2",
+        "legend_labels": [
+          "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+          "arm c (turn-avg SAE, L19): map",
+          "arm c (turn-avg SAE, L19): identity+bias",
+          "arm b (chanind, L20): map",
+          "arm b (chanind, L20): identity+bias"
+        ],
+        "xticklabels": [
+          "coarsest\n(ids <2,048)",
+          "middle\n(2,048\u201316,383)",
+          "finest\n(16,384\u201365,535)"
+        ],
+        "yticklabels": [
+          "\u22128",
+          "\u22127",
+          "\u22126",
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2"
+        ]
+      }
+    ],
+    "series": [
+      "arm c (turn-avg SAE, L19): map",
+      "arm c (turn-avg SAE, L19): identity+bias",
+      "arm b (chanind, L20): map",
+      "arm b (chanind, L20): identity+bias",
+      "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,2983 @@
+{
+  "commit": "064462df+dirty",
+  "render_id": "d83aa79701444df6",
+  "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2476/turnavg/bridge_b.npz",
+    "eval_results/issue_2476/turnavg/gates_p4.json",
+    "eval_results/issue_2476/turnavg/gates_p6.json",
+    "eval_results/issue_2476/turnavg/panel_b.json",
+    "eval_results/issue_2476/turnavg/panel_c.json",
+    "eval_results/issue_2476/turnavg/perfeature_b_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_inlier.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_pile.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_transfer.npz",
+    "eval_results/issue_2476/turnavg/preds_meta.json",
+    "eval_results/issue_2476/turnavg/recon_gate.json",
+    "eval_results/issue_2476/turnavg/regime.json",
+    "eval_results/issue_2476/turnavg/retrieval_b.json",
+    "eval_results/issue_2476/turnavg/retrieval_c.json",
+    "eval_results/issue_2476/turnavg/shuffle_null_b.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_b_pile.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_c.npz",
+    "eval_results/issue_2476/turnavg/tier_tests_b.json",
+    "eval_results/issue_2476/turnavg/tier_tests_c.json",
+    "eval_results/issue_2476/turnavg/train_log.json",
+    "figures/issue_2476/i2476_alive_attrition.meta.json",
+    "figures/issue_2476/i2476_alive_attrition.pdf",
+    "figures/issue_2476/i2476_alive_attrition.png",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.meta.json",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.pdf",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.png",
+    "figures/issue_2476/i2476_corpus_transfer.meta.json",
+    "figures/issue_2476/i2476_corpus_transfer.pdf",
+    "figures/issue_2476/i2476_corpus_transfer.png",
+    "figures/issue_2476/i2476_densein_profile.meta.json",
+    "figures/issue_2476/i2476_densein_profile.pdf",
+    "figures/issue_2476/i2476_densein_profile.png",
+    "figures/issue_2476/i2476_inlier_sensitivity.meta.json",
+    "figures/issue_2476/i2476_inlier_sensitivity.pdf",
+    "figures/issue_2476/i2476_inlier_sensitivity.png",
+    "figures/issue_2476/i2476_pile_twin.meta.json",
+    "figures/issue_2476/i2476_pile_twin.pdf",
+    "figures/issue_2476/i2476_pile_twin.png",
+    "figures/issue_2476/i2476_r2_ecdf.meta.json",
+    "figures/issue_2476/i2476_r2_ecdf.pdf",
+    "figures/issue_2476/i2476_r2_ecdf.png",
+    "figures/issue_2476/i2476_r2_vs_activity.meta.json",
+    "figures/issue_2476/i2476_r2_vs_activity.pdf",
+    "figures/issue_2476/i2476_r2_vs_activity.png",
+    "figures/issue_2476/i2476_retrieval_acc_at_k.meta.json",
+    "... 5 more"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_turnavg_sae.py",
+  "created": "2026-08-23T11:38:50Z",
+  "figsize": [
+    5.5,
+    3.399
+  ],
+  "points": [
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7278712074400946,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5662787418214715,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7342400747700579,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7840829336102876,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5331698386335013,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.14374472085460033,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5688697090420557,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.50260702676621,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6406642220948032,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5412553446587078,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7546390269572952,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4074960404649295,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8361459713909113,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.778524181195341,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.47270536986443357,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.18420253125489283,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5212084867722697,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.45972899893030617,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7228819964846666,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7730808295451632,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8647759030651321,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.9411128637548045,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4867749819750333,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1586958642530839,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7372786287622835,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6865530731755123,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.52051927260213,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.43084461492237636,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4911885180315597,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.44110885598788674,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.9213157664553565,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.9160762418950213,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8280923033004597,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8452739431307124,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6814384962278046,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5200361350061065,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5309339021188109,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.36890475337968953,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5144993027891461,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.27565450922614043,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6138360527814265,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.27386465074415267,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7038962192378264,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7607887181965777,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7920170943471116,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8108730101104753,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7921632351499385,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2521793529010573,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6757328177109511,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2364574229669414,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5510373161609408,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.393343402390786,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6673207418864728,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5553445648509427,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5825042536276366,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3368741730474131,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8147624600931891,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8078898446217264,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6313653353387223,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.452000411184321,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.676849394302519,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.49621675743389504,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.616980897208308,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.44837026156062376,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.46819465696349205,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.30584450626603354,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.42192479625572343,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.15034872934723476,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.39300596065965476,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3034030550384921,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6393990024308979,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.530025831275286,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5166707386299209,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2273828815696638,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4955398072846401,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.22512518622812694,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8249181639771311,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8640554386598482,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5893140786118913,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.362687249549305,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6515336737317736,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.597706248375964,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4631491933612397,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1779229355299593,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.49529101739551884,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.21813751557615912,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.768101437674657,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.808846312868013,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6883548593373834,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.593823639533434,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6528095704047809,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2285999732478704,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5872143961275782,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3784797546825225,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6641852807131687,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5489361690736078,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5936860076372794,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3274206424656201,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4956395021035146,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2587301703121734,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6541846286860151,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3772689574431455,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6983569564543145,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7272829296052019,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5907360866370936,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.14878273860025026,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8153107540831273,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7967554931198298,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5739515454426309,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4831765397820118,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5831862131190232,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.33608516195955596,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4221614907056501,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.13557932121777405,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4564127525009183,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.22901833711577113,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7034433404520298,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.0328859883123761,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6417893029553895,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6248608615662505,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8131808768440768,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5909601935592748,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.889080747286826,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8980575325062555,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5696570215890215,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3942137568646127,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.41184929310457796,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.04210131897666425,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6934324079376335,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5675787590555121,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7483297851160595,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.10383500803493917,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8579187611639083,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8700657374315028,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.49941470556284673,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.42258076204980244,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4596073733706364,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.0809996986668089,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6989257427886413,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5971979743664879,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8089543904213653,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7525247301755441,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5138698275990289,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.341383683129728,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5438149637388338,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.40107170158830985,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7012293541715202,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6838561851579021,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8182682910889716,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8472366610098061,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5566846840804396,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3147522528699547,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5369015775766699,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.12787934478018625,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5254401014497491,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.29174669841292755,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5945759495191135,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.03966900627215053,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6249291930385485,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5116393004692554,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4859468090119988,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.21818463106186725,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6294294406901296,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6018112900335446,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5443434004036674,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4152521222158855,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7678426300545691,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2068586462222053,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6134620069949774,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.41125536482903446,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5441189648732647,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.08195800591802727,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7332517502156939,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7270604253728654,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4047826527984769,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1882902373259805,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6868377829515138,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5718601014941554,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8211946389082534,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8256465576979767,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5796372779937498,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4477289189494015,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6251004089281217,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.68595116444812,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7003710047546539,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5924343519030717,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7851209392477285,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.28496358651280607,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6353614637386982,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6991495031273031,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5278930559637429,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3020744712824902,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5011748475086846,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.25687991732534854,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.335444777929347,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.11998633079442644,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.609018143841042,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5205649401188205,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5114742270657557,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.24471129737233865,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7467381126232477,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.022674551161778966,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7490120349846289,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7435428199890528,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.587225935481132,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4024577327209975,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5476707940969936,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.28708766150150156,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4915416067824073,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.10188332201687489,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8946978037409847,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.72609780989806,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5363464743982465,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.23549762097731808,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.642582744752908,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5976219855186509,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6912750160391068,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5961839873087511,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6503825561637626,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2351377087257569,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6970491917760379,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6032637405996992,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5759043529852205,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4588150914327166,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.9208962952087731,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.9489715666449408,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7543883401091748,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7755025660614373,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5903676731761094,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5982766241097683,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.59387128247405,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6071632754700856,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5520379779765439,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.33915086929271765,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8363949133114195,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7412282144082809,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5327220890319764,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.31960490952916365,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5580386921401419,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.521599657277429,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.519001035559354,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5580717296309299,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.675219561578311,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5652698036406494,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6037707806987058,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4560553181431558,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6186935271297084,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.505304890959804,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5854781983097492,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5241401142334652,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5647715959918802,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2812000568330172,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.3630905636648539,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1474690074769297,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5745881562780635,
+      "per-feature R\u00b2, turn-averaged (this run)": -0.04860196959166574,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5685589219517968,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.35933386159135916,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.49136802065958063,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.039986722324831026,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.3747650513316396,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.27503294003811274,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6176561664800229,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6184815085052305,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4801554312382571,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.21553114622950653,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5921190585159242,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.291885368658083,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7415005725872746,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6395781150338374,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5524608660530947,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3891472431067433,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7061029942644959,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6962853175397499,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5064104990430172,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.450727779200609,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5969228747812956,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.42956322400730484,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6605988920789371,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6459431058113774,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.40629364047755623,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.12779651020086702,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6368111625876782,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4954933389436449,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4851254392497908,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1643519614861605,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.545844582778636,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3430910101210862,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6447561580433601,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.43424115629989235,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.629472691384175,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3313491624317798,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5664841224759123,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3809860409328151,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6333260330327806,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7024027362662224,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6290509224261167,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.19611791436100545,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6936519340619367,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6380401638614484,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.562120773609239,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5128369714878165,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6351444507685204,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6650482837734846,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5321363741369438,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3220821420178992,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6648279951716303,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6172671511173138,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5390725723009131,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.11994258088391685,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6374380956453614,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4648485203783165,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6144255270333427,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5677523150277151,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.519517405641966,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5639365365893736,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7642714307562737,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.28491851300956494,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6223318909889805,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.40692556596416607,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5552371735763018,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3864187165553795,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.45148599983722926,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.48623577935487783,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.47980746035076605,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.17571131111153881,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6316804399096945,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5968783825588961,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6238672594476569,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4716978530270115,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6339401746188988,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4521442061044586,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.516613252363736,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.36965139705999894,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7288487032128006,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7580708114559112,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.794663951536245,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3546564525018324,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5696119525351291,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.06169384477044282,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.735685519612436,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4962429924444609,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.49859001792863455,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2535994047499843,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.44486446886168196,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1759485768393384,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5185853465356361,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.27923266731056207,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6100976183242961,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.33635007218141155,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6783828281754429,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3227047012436801,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.41270219975653943,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1609354219883674,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.544063014968728,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.49036693319384195,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6837245878471971,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5648824998869613,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6684194412179469,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6614271674657246,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7350982168552245,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.688639907167812,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8026894184536228,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8660733764007309,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5655257233660753,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3929954296917261,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6584902899086285,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.24582767250859539,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5383872510865875,
+      "per-feature R\u00b2, turn-averaged (this run)": -0.01699072703113691,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6651697989756307,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.47338872475600535,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5044006598525325,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.22949940952996584,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5546135496625558,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4922342815131314,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8556430727569869,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.896252946270974,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5055298559535236,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.19203631618086026,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6129443686068867,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3936195086556533,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4945069149011132,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.19989257500951663,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6893809816882841,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7464347234493014,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6418056567314576,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.540614844195779,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.70897153345098,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5792453669158457,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4961942820837142,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.10255697976080469,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4855717382352789,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.14437003979593488,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.771401042270162,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.646698462327391,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6575108043537856,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6078349039231092,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6380112527529977,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5411115681238877,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6637557386965194,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5102852514018037,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6971334413534611,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.44839660243574875,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5208497914672569,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3773128885745748,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.9220156373249857,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8930348068413163,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5599527099753061,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.310732090779018,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7273263494115216,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5790862694317362,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7301679510862562,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6404498026066883,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5663428908205733,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1875076839357105,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.3157854475174363,
+      "per-feature R\u00b2, turn-averaged (this run)": -0.004809689529870598,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8075754612485839,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8351911457615624,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.565443396165628,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5126452322068575,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.806303257182374,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8089967708821285,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5394959325520186,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.21315765861470992,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.3492134442730501,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.0066272693473334865,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7144345696460231,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8272247726124115,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5687429113781592,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.09857515574952569,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6353056961744811,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.33344290923139275,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5323460730071761,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.24903748829818784,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.615432144937746,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5194543847830045,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6506757105072398,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5059990787052063,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8319775631466697,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8800160271775902,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8416090845004327,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.9050693373914145,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7012372373004455,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6431154922342389,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.3824343471314873,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.008452609159839253,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6398634349185692,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5601709885943957,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4327209718135947,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.13151738880190988,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7569717968177039,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7491001844006602,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6083214294375838,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4904006046515811,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8525111351283732,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7077423913155121,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5162389007323385,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.0957334732885291,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6012257996975133,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2349613716172836,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5679672819708745,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1136151809938456,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.49232221484108163,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.33148391188611637,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5328338604896207,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4204855805910164,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5526152981369312,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.41135747898781205,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5844933287290266,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.06463051183112811,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5044584096993595,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.11736803095669202,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5271427542119747,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4705990093895208,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5689023067486426,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.32428922988298736,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6498621570443095,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5649629111899999,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5638669248352439,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.22196743108826644,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5690893192198201,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3805323239586623,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7466303598091648,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7843221700745335,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.36972475138688077,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.29306802432088197,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6103478810470656,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.559416800040256,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7558972073687789,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8141918974123481,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.33702544531164713,
+      "per-feature R\u00b2, turn-averaged (this run)": -0.009896899892506639,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7025320687863699,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.751717602526736,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5974753616624786,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6410892701533968,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.46414693646461846,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3914788966774755,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5760611936968731,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.13036194044386185,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6847864185776118,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5581746399982426,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6532582316623011,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2964984297941011,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6008817952333905,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2794263906033173,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7729875801255754,
+      "per-feature R\u00b2, turn-averaged (this run)": -0.01603617050198336,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7950319267349878,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8284839136510562,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6278015757655415,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3862662288322133,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6838113758063611,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5773901071749188,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5994277459262558,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.38074100932524424,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5847004314486975,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.44471312417735853,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.868098267603605,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7150880231341457,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6473358622642121,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7217016260941489,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.742076675118867,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6526785890393227,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6357584312874063,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.45537969005653156,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5334880161339571,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.14736078594496338,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4670024601632743,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.16026530505551206,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8105738329883314,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8642610449766897,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5964737499383015,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.41193872088295336,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5957633885283706,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.44455560818398443,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5038211851941707,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.04087410695189375,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5844125770495856,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.30826880324233996,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5503697677685164,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.305361545292264,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6772940707109016,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5693586636805996,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5584068330416964,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4094288742428669,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7313437534553722,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7999109779635842,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.47498158736078167,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.17680025434254443,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8381360141115837,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8697282790773245,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5033663076564077,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.288795533674027,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8462652289612844,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.9021039282365317,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5342159294779107,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.13646827371341252,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5051975531295285,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.43854038184317445,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5664142792092527,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.23991163518678427,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5724470373136199,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.22177896554995313,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5073070192686169,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1767197095333447,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7874357307196302,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7901378987741812,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5367760449978074,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3965753182680939,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7098523173071803,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6099519559087576,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6693724096170615,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3429980310205212,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6116415027026956,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.48371181521749473,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.53390765246552,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.34608591808762745,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.43626819435797526,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.09546417782221595,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5806904867530938,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4402315364064894,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4867174957879514,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3819382292446938,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5357834732084924,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2785947957347755,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5849182550013401,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.39971526066481544,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6710594140842917,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.702917215631848,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6339236471963743,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5156484508774208,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5344179411518559,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.254594829292186,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4021799775620758,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.023598549690396542,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5506305487802803,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3459885749601894,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6277301085705818,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6539523903687641,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.9524492874341657,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.9600091645663782,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4626040116892606,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.11709985865534678,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.55361231606292,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.16589277310340445,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5967399807054319,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.36672839528529577,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5667252660339264,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2349320838940121,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6065045238491422,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5335105874252634,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4811525875355952,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.29135093522257705,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7644017640319175,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7741164144852215,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5652978078796012,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4325391121973141,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.723891889200694,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.776066202930541,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6249291067059154,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5094844237439431,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5798456216415137,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2144953048491024,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8082803237334262,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2048968981847673,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.490904412631743,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.10580496176365717,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6238283274256072,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5700456985877788,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6894190740380827,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7475868767038403,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6764945359271497,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6628429597576786,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.670008736131801,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.43709350967233174,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7315185286865991,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.783034185745733,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4188418063437852,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.30504778979285463,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7397214450153325,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6393540379354306,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4854109261873496,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.19404162444626094,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8143106036405587,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.723458852359331,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5346476754256284,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4925975021581426,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.36030574079444555,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.07567542916467829,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5856339912667462,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4160830673297222,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6921270212526752,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7298267758219708,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7222614809188136,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.29466894025997725,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5743080276349362,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6105919923765832,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5184248421399131,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.21639807290199387,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.41151297900744843,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.36916902532816553,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5995347154745718,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.44548920983805806,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.3507428860424493,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.02939385751656509,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8151757618908756,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8578544077825383,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6089689019309277,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5262265703031878,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5859959483285437,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3108211474985195,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5499909033382031,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.26287122803147167,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6267175669625626,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5574619485951543,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.3513275236955583,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.30136799076079934,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7995302317932067,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7225763167417181,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.46253485660531124,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2962526783637781,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.761559983565411,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7092157412280244,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5710051087849994,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3502471512115458,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7139152429999773,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6454266754540584,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8557986918298126,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7883257184455071,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6233275753776455,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4416919223018696,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5062704067966385,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.20392527012239936,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6715848560187516,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7447651507152941,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6133476063339938,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.061168474934817696,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6089565695991035,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4551531956177237,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5526702204495052,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.33418360826311855,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6903785458804612,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5754943287817833,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.39341628101383863,
+      "per-feature R\u00b2, turn-averaged (this run)": -0.028340094306153363,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.47837028767991674,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3357150440683574,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6635021546645863,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6784417297220073,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5758171698921135,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3268266783194588,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4845038648674923,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.10988621356776163,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4848078968071071,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.18951822864330004,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.588894821734893,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.38303030754570255,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5040389615294907,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.26714092206793083,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.40950564095515707,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1782935836257865,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.38704030822000135,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.1589827923702959,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.682916079069313,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7298104017233321,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7272191627835025,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6342899887237667,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.560382973930865,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.18275245553339703,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5373913698004844,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.39335027852550664,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6838817136053459,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7266958055211081,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6935783916307252,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.617240297699086,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5093103278440582,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.11625997371029662,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5081262530396935,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.2954195294364853,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.568294611070524,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4293722006327084,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6942349722044567,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6139479637248155,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5549071023651345,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5222877862293593,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5752639518419969,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.39313439679896856,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5548578079531377,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3934110165396407,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8924456247907585,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.9315227539038495,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7805410661180101,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.20246130323076128,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7446039564713275,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7107430043482069,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.49194023554753685,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.337304520922318,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5453521776705867,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4135617387908006,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6859097259911124,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.29046620456737404,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.594300151198561,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.4253692309638881,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6647416365560476,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6895095305937726,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5863190018272376,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5540159003241354,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.69175965556889,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7742194953394743,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7062426983781326,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7230446970947114,
+      "series": "coarsest (ids <2,048)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8393300815797331,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8888691140619317,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7340075645268183,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6457701394137674,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8261417982579167,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8703884894270703,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7095758793486686,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7961135511276562,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6545901169974111,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5192635606630047,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6294463113338866,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5236240435850279,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8280787917652845,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8497960873886305,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7905601793763497,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.8350856893049771,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5485036687974263,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.00040606005999199724,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.4935787927890164,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.16674050050765055,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6713075720734252,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.3189711743940151,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7119078541328122,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5531849954652982,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5976520271892019,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.47263887177160047,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.8164576209797187,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6507339188318484,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.615512989964494,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6234171689266116,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5188289978592899,
+      "per-feature R\u00b2, turn-averaged (this run)": -0.05622334413069052,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.5855307237504351,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5185183597883298,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7589397997381683,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.816401370820828,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6586262991868703,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7432807687821283,
+      "series": "middle (2,048\u201316,383)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7079664044108158,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.7450259422203604,
+      "series": "finest (16,384\u201365,535)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.6267101136923567,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.5760155046597335,
+      "series": "finest (16,384\u201365,535)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-feature R\u00b2, token grain (committed #1482)": 0.7834380542161001,
+      "per-feature R\u00b2, turn-averaged (this run)": 0.6263712233128673,
+      "series": "finest (16,384\u201365,535)",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 409,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "per-feature R\u00b2, token grain (committed #1482)",
+        "ylabel": "per-feature R\u00b2, turn-averaged (this run)",
+        "legend_labels": [
+          "coarsest (ids <2,048)",
+          "middle (2,048\u201316,383)",
+          "finest (16,384\u201365,535)"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "coarsest (ids <2,048)",
+      "middle (2,048\u201316,383)",
+      "finest (16,384\u201365,535)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

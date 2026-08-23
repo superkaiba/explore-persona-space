@@ -1,0 +1,39 @@
+{
+  "panel": {
+    "floor": 240,
+    "cap": 16384,
+    "seed": 14824,
+    "n_clearing_by_tier": {
+      "0": 387,
+      "1": 21,
+      "2": 4
+    },
+    "alloc_by_tier": {
+      "0": 387,
+      "1": 21,
+      "2": 4
+    },
+    "n_panel": 412,
+    "panel_tier_counts": {
+      "0": 387,
+      "1": 21,
+      "2": 4
+    },
+    "per_tier_floor_warn": [
+      0,
+      1,
+      2
+    ]
+  },
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:27:39.568399Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "maps",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "pools": {
+    "n_pool": 943444,
+    "n_train": 933444,
+    "n_val": 10000,
+    "n_rows_present": 964844,
+    "expected_pool_production": 943444,
+    "carve_seed": 2476
+  },
+  "epochs": [
+    {
+      "epoch": 1,
+      "steps": 3647,
+      "mean_loss": 211.781,
+      "val_var_fve": 0.888416,
+      "val_l0": 91.47,
+      "dead_frac_by_tier": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0
+      },
+      "threshold": 0.8054162263870239,
+      "elapsed_s": 133.7
+    },
+    {
+      "epoch": 2,
+      "steps": 7294,
+      "mean_loss": 141.283,
+      "val_var_fve": 0.90476,
+      "val_l0": 97.79,
+      "dead_frac_by_tier": {
+        "0": 0.0332,
+        "1": 0.0903,
+        "2": 0.1042
+      },
+      "threshold": 0.6446342468261719,
+      "elapsed_s": 273.2
+    },
+    {
+      "epoch": 3,
+      "steps": 10941,
+      "mean_loss": 130.751,
+      "val_var_fve": 0.909269,
+      "val_l0": 98.96,
+      "dead_frac_by_tier": {
+        "0": 0.0952,
+        "1": 0.2912,
+        "2": 0.3558
+      },
+      "threshold": 0.5710575580596924,
+      "elapsed_s": 411.3
+    }
+  ],
+  "steps": 10941,
+  "steps_cap": 0,
+  "cfg": {
+    "architecture": "matryoshka_batchtopk",
+    "act_dim": 3584,
+    "dict_size": 65536,
+    "k": 100,
+    "tier_bounds": [
+      2048,
+      16384,
+      65536
+    ],
+    "seed": 2476,
+    "lr": 0.0002,
+    "adam_betas": [
+      0.9,
+      0.999
+    ],
+    "batch": 256,
+    "epochs": 3,
+    "prefix_loss_reduction": "mean",
+    "threshold_ema": 0.999,
+    "threshold": 0.5710575580596924
+  },
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:23:22.347445Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "sae_train",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}
