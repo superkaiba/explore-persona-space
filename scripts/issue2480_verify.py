@@ -156,20 +156,37 @@ def _claim_full_label_oracle(data):
 
 def _claim_every_budget(data):
     curves = dig(data["label_eff"], "layers", "19", "curves")
-    budgets = {int(k) for k in curves}
-    universe_ok = budgets == set(BUDGET_UNIVERSE)
+    # B2 fix (round 3): compare the RAW STRING key set. The previous
+    # {int(k) for k in curves} normalization collapsed numeric aliases ("010"
+    # alongside OR replacing "10"; int() also collapses " 10", "+10", "1_0")
+    # into a false universe match, and a non-numeric key raised an uncaught
+    # ValueError from int(). Realized semantics: ANY non-canonical key set
+    # (subset / superset / empty / numeric-alias / non-numeric) is a recorded
+    # MISS -- the COLLECT-ALL run continues; hard-stops stay reserved for
+    # missing/corrupt/absent-key inputs. Per-budget rows are evaluated ONLY
+    # when the key set is exactly the six canonical string keys, so the int()
+    # sort below can never see a non-numeric key.
+    canonical_keys = {str(b) for b in BUDGET_UNIVERSE}
+    universe_ok = set(curves) == canonical_keys
     rows, won_all = [], True
-    for bk in sorted(curves, key=lambda k: int(k)):
-        a = dig(curves, bk, "A", "pr_auc_mean")
-        di = dig(curves, bk, "D_indomain", "pr_auc_mean")
-        dm = dig(curves, bk, "D_merged", "pr_auc_mean")
-        won = a > di and a > dm
-        won_all = won_all and won
-        rows.append(f"b{bk}:A={a:.3f}>{'both' if won else 'FAIL'}(Di={di:.3f},Dm={dm:.3f})")
-    stored = f"budgets={sorted(budgets)} (universe ok={universe_ok}); " + "; ".join(rows)
+    if universe_ok:
+        for bk in sorted(curves, key=int):
+            a = dig(curves, bk, "A", "pr_auc_mean")
+            di = dig(curves, bk, "D_indomain", "pr_auc_mean")
+            dm = dig(curves, bk, "D_merged", "pr_auc_mean")
+            won = a > di and a > dm
+            won_all = won_all and won
+            rows.append(f"b{bk}:A={a:.3f}>{'both' if won else 'FAIL'}(Di={di:.3f},Dm={dm:.3f})")
+        detail = "; ".join(rows)
+    else:
+        won_all = False
+        detail = "per-budget rows NOT evaluated (raw-string key set != canonical universe)"
+    shown = sorted(curves, key=int) if universe_ok else sorted(curves)
+    stored = f"budget keys={shown} (raw-string universe ok={universe_ok}); {detail}"
     claimed = (
-        "A > {D_indomain, D_merged} at EXACTLY budgets {10,20,40,80,160,320} "
-        "(subset/superset/empty sweeps REJECTED)"
+        "A > {D_indomain, D_merged} at EXACTLY the raw string budget keys "
+        "{'10','20','40','80','160','320'} (subset/superset/empty/numeric-alias/"
+        "non-numeric key sets -> recorded MISS, not a hard stop)"
     )
     return stored, claimed, universe_ok and won_all
 
@@ -583,11 +600,14 @@ def print_report(verdicts: list[dict], audit: dict) -> int:
 
 
 def _self_test(committed_dir: Path) -> int:
-    """Three legs: (1) two simultaneously-perturbed values -> 2 MISS lines + the
+    """Four legs: (1) two simultaneously-perturbed values -> 2 MISS lines + the
     aggregate line in the REAL rendered report (captured stdout, not a fabricated
     completion flag); (2) a missing key -> hard-stop; (3) flipped audit predicates ->
     DERIVED FAILED/UNVERIFIED/DEMOTED verdicts + flipped aggregate (round-2 fix
-    regression). Returns 0 iff all legs hold."""
+    regression); (4) B2 budget-universe battery (round-3 fix regression): six
+    perturbed key sets each rejected as a recorded MISS -- never a silent PASS,
+    never an uncaught ValueError -- and the canonical six-key set still PASSes.
+    Returns 0 iff all legs hold."""
     import contextlib
     import copy
     import io
@@ -658,6 +678,52 @@ def _self_test(committed_dir: Path) -> int:
     for name, passed in checks3.items():
         print(f"[self-test 3] {name}: {'OK' if passed else 'FAIL'}")
         ok = ok and passed
+
+    # (4) B2 budget-universe battery (round-3 fix regression): the every-budget
+    # gate compares RAW STRING keys, so each perturbed key set below must land
+    # as a recorded MISS on the "ahead at every label budget" claim -- never a
+    # silent PASS, never an uncaught ValueError -- while the full COLLECT-ALL
+    # verification still completes.
+    budget_claim = "ahead at every label budget (MF-E)"
+
+    def _b2_verdict(mutate):
+        d = copy.deepcopy(base)
+        mutate(d["label_eff"]["layers"]["19"]["curves"])
+        (v,) = [x for x in run_verification(d) if x["name"] == budget_claim]
+        return v
+
+    def _dup(curves, src, dst):
+        curves[dst] = copy.deepcopy(curves[src])
+
+    b2_cases = [
+        ("alias-superset ('010' alongside '10') rejected", lambda c: _dup(c, "10", "010")),
+        (
+            "alias-replacement ('010' replacing '10') rejected",
+            lambda c: c.__setitem__("010", c.pop("10")),
+        ),
+        ("ordinary superset ('640' added) rejected", lambda c: _dup(c, "320", "640")),
+        ("subset (drop '40') rejected", lambda c: c.pop("40")),
+        ("empty sweep rejected", lambda c: c.clear()),
+        (
+            "non-numeric extra key ('ten') -> recorded MISS, no ValueError",
+            lambda c: _dup(c, "10", "ten"),
+        ),
+    ]
+    for name, mutate in b2_cases:
+        try:
+            passed = _b2_verdict(mutate)["match"] is False
+            verdict = "OK" if passed else "FAIL (silent PASS)"
+        except Exception as exc:  # an escaping exception IS the failure under test
+            passed = False
+            verdict = f"FAIL (raised {type(exc).__name__}: {exc})"
+        print(f"[self-test 4] {name}: {verdict}")
+        ok = ok and passed
+
+    # Canonical six-key committed universe must still PASS the gate.
+    (v_base,) = [x for x in run_verification(base) if x["name"] == budget_claim]
+    passed = v_base["match"] is True
+    print(f"[self-test 4] canonical six-key universe still PASSes: {'OK' if passed else 'FAIL'}")
+    ok = ok and passed
 
     print("[self-test]", "PASS" if ok else "FAIL")
     return 0 if ok else 1
