@@ -643,13 +643,16 @@ rebase-merged. Five guards:
    (the agent-memory pathspec commit) — a dirty tree aborts an in-worktree
    merge (the exact #906 shape Guard 0 exists to clean), so (ii) first runs
    the idempotent Guard 0 block, then merges. Scan this task's events for
-   `merge-hold-candidate` notes (the Step 2b edit-locus WARN record):
+   `merge-hold-candidate` RECORDS — anchored on the Step 2b record shape
+   (the token immediately followed by its named `sibling=<M>`), never a
+   bare substring: a note that merely MENTIONS the token (e.g. a heartbeat
+   reporting zero candidates) must not fire the guard (#2301):
 
    ```bash
-   grep -F 'merge-hold-candidate' "$(uv run python scripts/task.py find <N>)/events.jsonl"
+   grep -E 'merge-hold-candidate sibling=[0-9]+' "$(uv run python scripts/task.py find <N>)/events.jsonl"
    ```
 
-   No candidate note → Guard 5 is a no-op (one grep). Otherwise, per named
+   No candidate record → Guard 5 is a no-op (one grep). Otherwise, per named
    sibling `<M>` (dedup):
 
    - **(i) Bounded hold.** Read live state via `task.py view <M> --json`.

@@ -28,6 +28,8 @@ legitimate hard-wrap rewording does not false-fail.
 
 from __future__ import annotations
 
+import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -497,6 +499,81 @@ def test_merge_hold_tokens_present():
     assert "merge-file" in guards, (
         "Guard 5 must probe the predicted conflict up front via path-scoped git merge-file"
     )
+
+
+_TRIGGER_GREP_RE = re.compile(r"grep\s+-(?P<flags>[A-Za-z]+)\s+'(?P<pattern>[^']*)'")
+
+
+def _guard5_trigger_command(guards: str) -> tuple[str, str]:
+    """Guard 5's trigger grep as (flags, pattern), anchored on the
+    token-bearing grep line specifically — the merge-guards region carries
+    OTHER grep commands (e.g. the Monitor loop's `grep -qF '"epm:merged"'`),
+    so the extraction filters on the candidate token inside the quoted
+    pattern and asserts exactly one such grep exists."""
+    hits = [
+        m for m in _TRIGGER_GREP_RE.finditer(guards) if "merge-hold-candidate" in m.group("pattern")
+    ]
+    assert len(hits) == 1, (
+        f"expected exactly one merge-hold-candidate trigger grep in the "
+        f"merge-guards region, found {len(hits)}"
+    )
+    return hits[0].group("flags"), hits[0].group("pattern")
+
+
+def test_merge_hold_trigger_anchored_predicate(tmp_path):
+    """#2301 durability pin: Guard 5's trigger fires only on a genuine
+    Step 2b candidate RECORD (the token immediately followed by its named
+    `sibling=<digits>`), never on a marker note that merely mentions the
+    token (#2290: a heartbeat truthfully reporting ZERO candidates quoted
+    the literal token, and every later Guard 5 pass matched that note and
+    fired with no sibling named).
+
+    Textual pin: the trigger is the anchored extended-regex form and the
+    bare fixed-string form must not return. Behavioral pin: the EXTRACTED
+    flags+pattern (so the fixtures bind to whatever the doc prescribes) run
+    via subprocess grep over tmp_path events fixtures."""
+    guards = _merge_guards_region(_skill_text())
+
+    flags, pattern = _guard5_trigger_command(guards)
+    assert "E" in flags, "Guard 5's trigger must be an extended-regex grep (-E)"
+    assert "F" not in flags, "Guard 5's trigger must not be a fixed-string grep"
+    assert "sibling=" in pattern, (
+        "the trigger pattern must anchor the token to its adjacent sibling=<digits>"
+    )
+    assert "grep -F 'merge-hold-candidate'" not in guards, (
+        "the bare fixed-string trigger form must not return to the merge-guards region (#2301)"
+    )
+
+    def matches(note: str) -> bool:
+        events = tmp_path / "events.jsonl"
+        events.write_text(json.dumps({"kind": "epm:progress", "note": note}) + "\n")
+        proc = subprocess.run(
+            ["grep", f"-{flags}", pattern, str(events)], capture_output=True, text=True
+        )
+        assert proc.returncode in (0, 1), f"grep errored: rc={proc.returncode} {proc.stderr}"
+        return proc.returncode == 0
+
+    # (a) The #2290 heartbeat shape: prose mention, zero candidates, no sibling named.
+    assert not matches(
+        "[long-phase-heartbeat] Step 10d Guard 5 scan: no merge-hold-candidate "
+        "notes found (zero candidates; no sibling named)"
+    ), "a prose mention of the token must not satisfy the trigger"
+    # (b) Token + sibling digits present but NON-adjacent in one note.
+    assert not matches(
+        "heartbeat: merge-hold-candidate scan complete for this round; "
+        "sibling=2299 already merged, no hold taken"
+    ), "non-adjacent token + sibling digits must not satisfy the trigger"
+    # (c) Guard 5's own disposition note (guards an over-loose sibling=-only predicate).
+    assert not matches("merge_hold: sibling=2299 waited=0 outcome=no-hold"), (
+        "Guard 5's own merge_hold: disposition note must not satisfy the trigger"
+    )
+    # (d) A genuine Step 2b candidate record (producer shape at
+    # .claude/skills/issue/steps/05-step-2b.md:72).
+    assert matches(
+        "merge-hold-candidate sibling=2299 path=scripts/foo.py source=consistency-warn "
+        "— Step 10d Guard 5 orders this task landing behind sibling #2299 (bounded, "
+        "one 45-min gate cycle) and pre-resolves the predicted conflict in-worktree (#1757)"
+    ), "a genuine Step 2b candidate record must satisfy the trigger"
 
 
 def _run_git(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
