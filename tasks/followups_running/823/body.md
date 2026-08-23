@@ -5,6 +5,7 @@ title: 'The context→answer-profile activation map reads answer-content match, 
 kind: experiment
 tags:
 - followup-manual
+- keep-running
 created_at: '2026-07-01T23:41:29Z'
 has_clean_result: true
 parent_id: 722
