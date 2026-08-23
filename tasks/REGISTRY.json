@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2506,
+  "highest_id": 2507,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11635,6 +11635,13 @@
       "path": "tasks/proposed/2506",
       "status": "proposed",
       "title": "Add 4 verify_plan.py mechanical-backstop checks surfaced during #2502 planning (new-model-env-row, selection-inherited-CI, cross-section verdict-drift, concurrent-launch name-collision)"
+    },
+    "2507": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2507",
+      "status": "proposed",
+      "title": "Fix pre-existing no-flags lint red: bare list_repo_tree + hf_hub_download in scripts/issue2378_segb_think_audit.py"
     },
     "251": {
       "has_clean_result": false,
