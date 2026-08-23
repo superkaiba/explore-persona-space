@@ -190,15 +190,41 @@ def compose_u_pool(
 
 
 def _eigh_robust(mat):
-    """Batched eigh with the cuSOLVER->CPU LAPACK fallback (gotchas.md #1335)."""
+    """Batched eigh: device eigh -> CPU LAPACK -> jittered CPU -> SVD terminal.
+
+    The device->CPU rung is gotchas.md #1335. On a CPU-only box those two
+    rungs are the SAME LAPACK call, so an ill-conditioned / repeated-eigenvalue
+    gram still crashes there (cms sycos02: ``torch._C._LinAlgError`` error code
+    12242623 after ~11 h). The two added rungs keep the contract (ascending
+    eigenvalues, ``mat = v diag(w) v^T`` for symmetric PSD input): escalating
+    relative diagonal jitter, then a gesvd-class SVD — sign/order differences
+    cancel in every caller's ``v f(w) v^T`` reconstruction.
+    """
     import torch
 
     try:
         return torch.linalg.eigh(mat)
     except torch.linalg.LinAlgError:
-        logger.warning("[fits] cuda eigh non-convergence; CPU fallback (n=%s)", tuple(mat.shape))
-        w, v = torch.linalg.eigh(mat.cpu())
+        logger.warning("[fits] eigh non-convergence; CPU fallback (n=%s)", tuple(mat.shape))
+    cpu = ((mat + mat.transpose(-1, -2)) * 0.5).cpu()
+    try:
+        w, v = torch.linalg.eigh(cpu)
         return w.to(mat.device), v.to(mat.device)
+    except torch.linalg.LinAlgError:
+        pass
+    diag_scale = torch.diagonal(cpu, dim1=-2, dim2=-1).abs().mean(dim=-1).clamp(min=1e-12)
+    eye = torch.eye(cpu.shape[-1], dtype=cpu.dtype)
+    for eps in (1e-10, 1e-8, 1e-6):
+        try:
+            w, v = torch.linalg.eigh(cpu + (eps * diag_scale)[..., None, None] * eye)
+        except torch.linalg.LinAlgError:
+            continue
+        logger.warning("[fits] eigh converged under diagonal jitter eps=%s", eps)
+        return w.to(mat.device), v.to(mat.device)
+    u, s, _ = torch.linalg.svd(cpu)
+    logger.warning("[fits] eigh exhausted; SVD terminal fallback (n=%s)", tuple(mat.shape))
+    idx = torch.arange(s.shape[-1] - 1, -1, -1)
+    return s[..., idx].to(mat.device), u[..., idx].to(mat.device)
 
 
 @dataclasses.dataclass

@@ -472,3 +472,34 @@ def test_figures_cli_map_diag_adapter_pools_fits_format():
     ]
     # already-pooled list payloads pass through unchanged
     assert fig_cli.map_diag_rows([{"rung": "x"}]) == [{"rung": "x"}]
+
+
+def test_eigh_robust_svd_terminal_rung():
+    """cms sycos02 crash: eigh non-convergence must fall through to SVD.
+
+    Patches every ``torch.linalg.eigh`` call to raise ``LinAlgError`` (the
+    real failure is a data-dependent LAPACK non-convergence, error code
+    12242623) and pins the terminal rung's contract: ascending eigenvalues
+    and ``v diag(w) v^T == mat`` for batched symmetric PSD input.
+    """
+    import torch
+
+    from explore_persona_space.experiments.issue_1739 import fits as fits_mod
+
+    gen = torch.Generator().manual_seed(0)
+    a = torch.randn(4, 6, 6, generator=gen, dtype=torch.float64)
+    mat = a @ a.transpose(-1, -2)  # batched symmetric PSD
+
+    # sanity: un-patched path matches plain eigh
+    w0, v0 = fits_mod._eigh_robust(mat)
+    w_ref, _ = torch.linalg.eigh(mat)
+    assert torch.allclose(w0, w_ref, atol=1e-8)
+
+    with mock.patch.object(
+        torch.linalg, "eigh", side_effect=torch.linalg.LinAlgError("forced non-convergence")
+    ):
+        w, v = fits_mod._eigh_robust(mat)
+    assert torch.all(w[..., 1:] >= w[..., :-1])  # ascending, eigh contract
+    recon = v @ torch.diag_embed(w) @ v.transpose(-1, -2)
+    assert torch.allclose(recon, mat, atol=1e-8)
+    assert torch.allclose(torch.sort(w, dim=-1).values, w_ref, atol=1e-8)
