@@ -59,6 +59,25 @@ line, not by a row"). Also watch for stale ledger severities: rows
 forwarded at BLOCKER that the reconcile downgraded still read BLOCKER —
 attest the stale fields at compose time or the twin re-escalates them.
 
+**Brief-severity override on a dedicated closure round (#823 ext-ladder r4,
+2026-08-23):** the CONCERN fence above is the DEFAULT, not a ceiling. When
+the orchestrator's brief dispatches a round SPECIFICALLY to close the
+kept-open rows and names `NOT-ADDRESSED on any = substantive FAIL`, follow
+the brief — it is the dispatch contract, and the shape reverts to the
+#1094 upheld-bounce form ("the fix IS the round") even though the rows sit
+at severity CONCERN. Compose the escalation EXPLICITLY ("this round's bar
+DIFFERS from round n−1's fence: the reconciler's non-blocking ruling
+governed THAT round; this round was dispatched to close the rows") — else
+the twin, having seen the prior round's CONCERN-grade fence text, may
+under-grade a NOT-ADDRESSED. Two companions: (a) when the row severities
+MATCH the adjudication (fresh reconciler-raised rows, not stale forwards),
+attest that positively ("no stale-severity caveat this round") so the twin
+doesn't hunt for staleness; (b) a sub-item the twin's own prior Fix line
+asked for but the reconcile's ADOPTED scope omitted (here: per-cell list
+lengths), which the marker DECLINES with an argument, gets a
+within-contract adjudication instruction — adopted scope governs, the
+decline is judged on merits, and it must NOT drive NOT-ADDRESSED.
+
 **Full-reconcile-envelope + refuted-clause premise attestation (#2479 r5,
 2026-08-23):** when the downgrade came from a rich reconcile marker, inline
 its body IN FULL as its own BINDING envelope (the per-locus rationale carries
