@@ -893,6 +893,11 @@ def a2fix_sanity_records(
                 per_seed[s] = val
         vals = committed_band_vals(committed_root, b, ARM_CTXDIR)
         want = {int(s) for s in seeds}
+        if not want:
+            raise SystemExit(
+                "[a2fix] COVERAGE ERROR: empty seed list — the sanity coverage "
+                "universe cannot be empty (a vacuous universe would pass every read)"
+            )
         if not vals:
             raise SystemExit(
                 f"[a2fix] COVERAGE ERROR: committed train-grid band unavailable for {b} "
@@ -990,8 +995,22 @@ def a2fix_join_assert(
     row-restricting repairs, so a restricted behavior missing its parity rows
     is a loud join failure — while unrestricted behaviors are never asked for
     the plan-forbidden refit); ANY gap is a loud SystemExit naming the first
-    offenders — never a shrunken-denominator verdict."""
+    offenders — never a shrunken-denominator verdict. EXACT-SET (codex r4
+    arm2fix-parity-registered-set-nonexact (d)): the realized key universe on
+    the join series must EQUAL the registered grid — extra unregistered rungs
+    or unlisted seeds are a loud EXTRAS exit (they would otherwise flow into
+    a2fix_per_rung, which enumerates realized arm2 rungs, and move the D /
+    parity reductions) — and ``realized_pairs`` is the TRUE counted number of
+    fully-covered grid keys, never a copy of ``expected``."""
     base = ["arm2_new", "arm7_true", "arm7_shufpair"]
+    passing_set = set(passing_behaviors)
+    for b in sorted(passing_set):
+        if not registered.get(b):
+            raise SystemExit(
+                f"[a2fix] REGISTRY ERROR: passing behavior {b} has an empty/missing "
+                "registered rung set — the join universe cannot be empty (a vacuous "
+                "universe would demand nothing)"
+            )
     need_by_b = {
         b: base + (["arm7_parity"] if (resolution or {}).get(b, {}).get("parity_required") else [])
         for b in passing_behaviors
@@ -1011,14 +1030,36 @@ def a2fix_join_assert(
             f"(expected {expected} keys x per-behavior series {need_by_b}); "
             f"first offenders: {gaps[:6]}"
         )
+    seed_set = {int(s) for s in seeds}
+    extras = sorted(
+        k
+        for k in cells
+        if k[0] in passing_set
+        and k[3] in need_by_b[k[0]]
+        and (k[1] not in registered[k[0]] or int(k[2]) not in seed_set)
+    )
+    if extras:
+        raise SystemExit(
+            f"[a2fix] passing-set join EXTRAS: {len(extras)} realized cells on the join "
+            f"series OUTSIDE the registered (rung x seed) grid — first offenders: "
+            f"{extras[:6]} (an unregistered rung / unlisted seed must never enter the "
+            "D or parity reductions)"
+        )
+    realized = sum(
+        1
+        for b in passing_behaviors
+        for rung in registered[b]
+        for s in seeds
+        if all((b, rung, int(s), series) in cells for series in need_by_b[b])
+    )
     return {
         "expected_pairs": expected,
-        "realized_pairs": expected,
+        "realized_pairs": realized,
         "restated_from": full,
         "series_required_by_behavior": {b: need_by_b[b] for b in sorted(need_by_b)},
         "passing_behaviors": sorted(passing_behaviors),
-        "assert": f"{expected}/{expected} join keys present + unique on "
-        "(behavior, fit, eval_rung, seed)",
+        "assert": f"{realized}/{expected} join keys present + unique + exact "
+        "(no extras) on (behavior, fit, eval_rung, seed)",
     }
 
 
@@ -1366,41 +1407,53 @@ def a2fix_lattice(
     out["flagships_in_passing_set"] = flag_ok
     parity_read = None
     if restricted_passing:
+        import math
+
+        # EXACT-SET + FINITE parity coverage (r2 arm2fix-parity-partial-
+        # coverage; r3 arm2fix-parity-universe-undercoverage; r4
+        # arm2fix-parity-registered-set-nonexact closes the class):
+        # (c) a restricted passing behavior with an empty/missing registered
+        #     rung set is a REGISTRY defect — loud, never a vacuous universe;
+        # (a) only math.isfinite D_parity means are admitted (to coverage AND
+        #     to the median — None-filtering admitted inf/NaN);
+        # (b) coverage is exact TWO-WAY key-set equality vs the registered
+        #     universe: missing AND extra keys both break it, and dp is
+        #     computed exclusively over registered keys in registered-key
+        #     order (an extra unregistered rung can never move the median).
+        for b in restricted_passing:
+            if not registered.get(b):
+                raise SystemExit(
+                    f"[a2fix] REGISTRY ERROR: restricted passing behavior {b} has an "
+                    "empty/missing registered rung set — the parity coverage universe "
+                    "cannot be empty (a vacuous universe would pass every read)"
+                )
         restricted_rows = [r for r in rows if r["behavior"] in restricted_passing]
-        dp = [
-            r["D_parity"]["mean"]
-            for r in restricted_rows
-            if r.get("D_parity", {}).get("mean") is not None
-        ]
-        # COVERAGE condition (r2 blocker arm2fix-parity-partial-coverage;
-        # universe fixed per codex r3 blocker
-        # arm2fix-parity-universe-undercoverage): the expected universe is
-        # every rows-restricted passing behavior's REGISTERED rungs — the
-        # SAME source the production join uses — never the realized rows
-        # themselves (a wholly-omitted rung record would otherwise be neither
-        # expected nor uncovered, and positive parity on the remaining strict
-        # subset could mint MAP-BEATS). Every registered key must carry a
-        # finite D_parity for the read to count as covered.
         expected_keys = {(b, rung) for b in restricted_passing for rung in registered[b]}
-        covered_keys = {
-            (r["behavior"], r["eval_rung"])
-            for r in restricted_rows
-            if r.get("D_parity", {}).get("mean") is not None
-        }
-        uncovered = sorted(expected_keys - covered_keys)
+        dp_by_key: dict[tuple, float] = {}
+        for r in restricted_rows:
+            m = r.get("D_parity", {}).get("mean")
+            if m is not None and math.isfinite(float(m)):
+                dp_by_key[(r["behavior"], r["eval_rung"])] = float(m)
+        realized_keys = {(r["behavior"], r["eval_rung"]) for r in restricted_rows}
+        missing = sorted(expected_keys - set(dp_by_key))
+        extra = sorted((realized_keys | set(dp_by_key)) - expected_keys)
+        dp = [dp_by_key[k] for k in sorted(expected_keys) if k in dp_by_key]
+        coverage_complete = not missing and not extra
         parity_read = {
             "behaviors": restricted_passing,
             "n_rungs": len(dp),
             "n_rungs_expected": len(expected_keys),
-            "coverage_complete": not uncovered,
-            "uncovered_rungs": [list(u) for u in uncovered],
+            "coverage_complete": coverage_complete,
+            "uncovered_rungs": [list(u) for u in missing],
+            "extra_unregistered_rungs": [list(u) for u in extra],
             "median_D_parity": float(np.median(dp)) if dp else None,
-            "positive": bool(not uncovered and dp and float(np.median(dp)) > 0),
+            "positive": bool(coverage_complete and dp and float(np.median(dp)) > 0),
             "note": "estimand-parity read: arm7 refit on the IDENTICAL training-row ids "
             "as the repaired arm2, over exactly the rows-restricted passing behaviors' "
             "REGISTERED rungs (plan §4 matched-budget parity duty; per-behavior "
-            "resolution; positive requires COMPLETE parity coverage of the registered "
-            "universe — realized rows never define their own denominator)",
+            "resolution; positive requires EXACT two-way coverage of the registered "
+            "universe with FINITE values — realized rows never define their own "
+            "denominator, and extras never move the median)",
         }
         out["parity_read"] = parity_read
     if med is None:
@@ -1418,8 +1471,10 @@ def a2fix_lattice(
         elif parity_read and not parity_read["coverage_complete"]:
             parity_why = (
                 "the row-matched parity read is INCOMPLETE over the rows-restricted "
-                f"passing behaviors (uncovered rungs: {parity_read['uncovered_rungs']}) "
-                "— required when a repair restricted arm2's fit rows"
+                f"passing behaviors (uncovered rungs: {parity_read['uncovered_rungs']}; "
+                f"extra unregistered rungs: {parity_read['extra_unregistered_rungs']}) "
+                "— exact registered-universe coverage is required when a repair "
+                "restricted arm2's fit rows"
             )
         else:
             parity_why = (

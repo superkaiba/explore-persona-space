@@ -915,6 +915,122 @@ def test_a2fix_parity_registered_universe_covers_omitted_rungs():
     assert ["sycophancy", "sycomwe"] in v2["parity_read"]["uncovered_rungs"]
 
 
+def test_a2fix_parity_exact_set_and_finite_admission():
+    """codex r4 BLOCKER arm2fix-parity-registered-set-nonexact regression —
+    the class-closing exact-set + finite semantics (all fail pre-fix):
+    (a) inf/NaN D_parity is NOT admitted to coverage or the median;
+    (b) an EXTRA unregistered parity rung breaks coverage and never moves
+        the median (dp is computed over registered keys only);
+    (c) an empty registered set for a restricted passing behavior is a loud
+        REGISTRY exit, never a vacuously-complete universe."""
+    sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
+    res = {
+        "evil": _res("arm2q_ctx_native", restricted=True, parity=True),
+        "sycophancy": _res(),
+    }
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
+    base_rows = [
+        _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),
+    ]
+    # (a) inf D_parity on the sole registered restricted rung: NOT covered,
+    # NOT in the median -> coverage incomplete -> refuse MAP-BEATS
+    rows_inf = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=float("inf")),
+        *base_rows,
+    ]
+    v = fold.a2fix_lattice(rows_inf, sanity, resolution=res, registered=reg)
+    assert v["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v["parity_read"]["coverage_complete"] is False
+    assert v["parity_read"]["n_rungs"] == 0 and v["parity_read"]["median_D_parity"] is None
+    assert ["evil", "evil_pair"] in v["parity_read"]["uncovered_rungs"]
+    # (b) an extra UNREGISTERED parity rung with a huge positive D_parity:
+    # named as extra, excluded from the median, coverage broken
+    rows_extra = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.01),
+        _entry("evil", "evil_unregistered", 0.5, [0.4, 0.6], [0.4, 0.6], d_parity=5.0),
+        *base_rows,
+    ]
+    v2 = fold.a2fix_lattice(rows_extra, sanity, resolution=res, registered=reg)
+    assert v2["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v2["parity_read"]["coverage_complete"] is False
+    assert ["evil", "evil_unregistered"] in v2["parity_read"]["extra_unregistered_rungs"]
+    assert v2["parity_read"]["median_D_parity"] == 0.01  # registered key only, never 5.0
+    assert "extra" in v2["reason"]
+    # (c) empty registered set for a restricted passing behavior: loud exit
+    with pytest.raises(SystemExit, match="REGISTRY ERROR"):
+        fold.a2fix_lattice(
+            rows_inf,
+            sanity,
+            resolution=res,
+            registered={"evil": frozenset(), "sycophancy": frozenset({"sycomwe"})},
+        )
+
+
+def test_a2fix_join_rejects_extras_and_counts_realized():
+    """codex r4 (d): the join rejects realized join-series cells OUTSIDE the
+    registered (rung x seed) grid, and realized_pairs is a TRUE count, never
+    a copy of expected (fails pre-fix: extras flowed into a2fix_per_rung's
+    realized-rung enumeration and moved the D/parity reductions)."""
+    seeds = [0, 1]
+    pairs = [("evil", "evil_pair"), ("evil", "toxicchat"), ("sycophancy", "sycomwe")]
+    new, banked = _series_rows(pairs, seeds)
+    res = {"evil": _res(), "sycophancy": _res()}
+    # an extra arm2 primary row at an UNREGISTERED rung for a passing behavior
+    new_extra = [*new, _prow("evil", "evil_unregistered", 0, "arm2_ctx_native", 0.9, adapter="v1")]
+    cells = fold.a2fix_index_cells(new_extra, banked, res)
+    with pytest.raises(SystemExit, match="join EXTRAS"):
+        fold.a2fix_join_assert(cells, ["evil"], seeds, REG2, resolution=res)
+    # an extra seed outside the seed list is equally rejected
+    new_seed = [*new, _prow("evil", "evil_pair", 7, "arm2_ctx_native", 0.9, adapter="v1")]
+    cells2 = fold.a2fix_index_cells(new_seed, banked, res)
+    with pytest.raises(SystemExit, match="join EXTRAS"):
+        fold.a2fix_join_assert(cells2, ["evil"], seeds, REG2, resolution=res)
+    # clean grid: realized is COUNTED (== expected) and the assert says exact
+    cells3 = fold.a2fix_index_cells(new, banked, res)
+    join = fold.a2fix_join_assert(cells3, ["evil"], seeds, REG2, resolution=res)
+    assert join["realized_pairs"] == join["expected_pairs"] == 4
+    assert "no extras" in join["assert"]
+    # class sweep: an empty registered set for a PASSING behavior is a loud
+    # REGISTRY error at the join too (a vacuous universe demands nothing)
+    with pytest.raises(SystemExit, match="REGISTRY ERROR"):
+        fold.a2fix_join_assert(cells3, ["evil"], seeds, {"evil": set()}, resolution=res)
+
+
+def test_a2fix_sanity_empty_seed_universe_is_loud(tmp_path):
+    root = _committed_root(tmp_path, {"evil": (0.40, 0.70)})
+    with pytest.raises(SystemExit, match="empty seed list"):
+        fold.a2fix_sanity_records([], ["evil"], [], {"evil": _res()}, root, n_seeds_required=0)
+
+
+def test_expected_preds_files_and_manifest_completeness():
+    """codex r4 minor arm2fix-preds-manifest-producer-unpinned producer pin:
+    the expected sidecar set derives from the SCORED rows (spec side) and a
+    scored fit with no written sidecar refuses the completion sentinel."""
+    rows = [
+        {"protocol": "P-B", "fit": "P-B-holdout-hhrt"},  # legacy std (no tag)
+        {"protocol": "P-B", "fit": "P-B-holdout-hhrt", "map_variant": "shufpair"},
+        {"protocol": "P-B", "fit": "P-B-holdout-toxicchat", "fit_pass": "a2qr"},
+        {"protocol": "P-B", "fit": "P-B-holdout-toxicchat", "fit_pass": "parity"},
+        {"protocol": "P-B", "fit": "sanity-elic-pool-cv"},  # sanity rows: no sidecar
+        {"protocol": "P-A", "fit": "P-A-train-oof"},
+    ]
+    expected = sc._expected_preds_files(rows)
+    assert expected == {
+        "P-B-holdout-hhrt.jsonl",
+        "P-B-holdout-hhrt.shufpair.jsonl",
+        "P-B-holdout-toxicchat.a2qr.jsonl",
+        "P-B-holdout-toxicchat.parity.jsonl",
+        "P-A-train-oof.jsonl",
+    }
+    # complete writer log passes; a skipped write refuses the sentinel
+    sc._assert_preds_manifest_complete(rows, sorted(expected))
+    with pytest.raises(RuntimeError, match="preds manifest INCOMPLETE"):
+        sc._assert_preds_manifest_complete(rows, sorted(expected - {"P-A-train-oof.jsonl"}))
+    # extra written files (e.g. P-C sidecars) are tolerated — MISSING is the
+    # fail-open direction
+    sc._assert_preds_manifest_complete(rows, [*sorted(expected), "P-C-extra.jsonl"])
+
+
 def test_a2fix_per_rung_d_read_and_parity_hash():
     seeds = [0, 1, 2]
     pairs = [("evil", "evil_pair")]

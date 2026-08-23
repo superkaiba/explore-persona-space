@@ -869,6 +869,46 @@ def _matched_regime_sanity(
 # ---------------------------------------------------------------------------
 
 
+_PREDS_TAG_BY_PASS = {"std": None, "a2r": "a2r", "a2qr": "a2qr", "parity": "parity"}
+
+
+def _expected_preds_files(rows) -> set[str]:
+    """SPEC-side expected preds sidecars, derived from the SCORED transfer
+    rows — independent of the writer log (codex r4 minor
+    arm2fix-preds-manifest-producer-unpinned): one file per realized P-B
+    primary (fit, pass-tag/variant) + the P-A anchor when scored. The
+    filename grammar mirrors ``_fit_and_score``'s ``preds_name`` (pass tag or
+    the shufpair variant tag appended to the fit label)."""
+    out: set[str] = set()
+    for r in rows:
+        fit = str(r.get("fit", ""))
+        if r.get("protocol") == "P-B" and fit.startswith("P-B-holdout-"):
+            if r.get("map_variant") == "shufpair":
+                tag = "shufpair"
+            else:
+                tag = _PREDS_TAG_BY_PASS.get(str(r.get("fit_pass", "std")))
+            out.add(f"{fit}.{tag}.jsonl" if tag else f"{fit}.jsonl")
+        elif fit == "P-A-train-oof":
+            out.add("P-A-train-oof.jsonl")
+    return out
+
+
+def _assert_preds_manifest_complete(rows, written) -> None:
+    """REFUSE the completion sentinel when a SCORED fit's preds sidecar was
+    never written (codex r4 minor): the expected set is derived from the rows
+    (spec side) and every expected file must appear in the writer's own log —
+    a skipped write can never produce a resumable summary. Extra written
+    files (e.g. P-C sidecars outside the derivation's scope) are tolerated;
+    MISSING is the fail-open direction and is refused."""
+    missing = sorted(_expected_preds_files(rows) - set(written))
+    if missing:
+        raise RuntimeError(
+            f"preds manifest INCOMPLETE at summary time: {len(missing)} scored fits "
+            f"have no written preds sidecar — {missing[:4]} (refusing the completion "
+            "sentinel; the seed is not resumable)"
+        )
+
+
 def _seed_output_resume_ok(
     out_dir,
     *,
@@ -2699,6 +2739,11 @@ def main(argv: list[str] | None = None) -> int:
         # completion sentinel (_write_companions_then_summary docstring);
         # deferred behind a def so the summary lands after the companions.
         def write_summary(res=res, out_path=out_path, loaded=loaded):
+            if getattr(args, "transfer_preds", False):
+                # spec-vs-executed manifest equality (codex r4 minor): every
+                # SCORED fit must have a written preds sidecar, or the
+                # completion sentinel is refused (missing = fail-open).
+                _assert_preds_manifest_complete(res["rows"], res.get("preds_files_written", []))
             arms.write_summary(
                 [],
                 out_path,
