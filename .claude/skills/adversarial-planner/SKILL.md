@@ -488,7 +488,18 @@ Run the structural verifier against the plan version just persisted:
   `N/A — harvested max_model_len pin is unrelated to the armed re-gen stage`
   (check 69 — the plan DOES arm a re-gen trigger but every harvested
   max_model_len pin belongs to a different engine/stage; prefer stating
-  the regen stage's own pin so the harvest sees it; #2269).
+  the regen stage's own pin so the harvest sees it; #2269), and
+  `N/A — no judge-pilot gate` (check 70 — the pilot vocabulary is
+  incidental or quotes an incident/sibling without registering a gate; a
+  plan genuinely registering a judge-pilot gate instead sizes per-arm
+  effective draws to ≥ floor(1/parse-fail threshold) + 1 — 51 at 2% — or
+  declares `allow_subresolution_pilot` on the gate line; #2299, incident
+  #2162 v7), and
+  `N/A — harvested pilot sizing is historical or belongs to a different gate`
+  (check 70 — the harvested threshold/draws/arms pairing is a superseded
+  quote the parser guard misses, a cross-item pairing, or an aggregate
+  threshold upgraded by a neighboring per-arm token; prefer stating the
+  gate's own sizing so the harvest sees it; #2299).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
