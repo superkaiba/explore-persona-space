@@ -20,6 +20,13 @@ Driver for the approved plan (tasks/running/2477/plans/plan.md, v4). Phases:
                   paper-plots conventions; ``--smoke`` renders from the synthetic
                   aggregate fixture into /tmp scratch (no canonical writes).
 
+Idempotency (round 2): every phase carries an entry guard keyed on its primary output
+(gen: ``gen_done.json`` sentinel, checked BEFORE the torch import; judge-pilot: a PASSED
+``pilot_report.json`` — a failed pilot re-runs by design; judge-wave: the complete 5-arm
+``judge_raw_*.json`` set covering this manifest's item ids). A completed phase SKIPs loud;
+``--force`` re-runs. Judge phases run on any machine: ``_fresh_rows`` stages the fresh
+completions from the plan-declared HF dest when the pod-local mirror is absent.
+
 Content hygiene: prompts/responses are real LMSYS/WildChat-lineage text — this driver
 never PRINTS text fields (digests, counts and shas only); texts live only in artifacts.
 """
@@ -265,10 +272,16 @@ def _sidecar_payloads_by_dir(
     """
     payloads: dict[str, dict[str, object]] = {}
     unparseable: list[str] = []
-    for path, size in files:
+    sidecars = [
+        (path, size)
+        for path, size in files
+        if _is_meta_sidecar(Path(path).name) and Path(path).name.lower().endswith(".json")
+    ]
+    t0 = time.monotonic()
+    for k, (path, size) in enumerate(sidecars, start=1):
         name = Path(path).name
-        if not _is_meta_sidecar(name) or not name.lower().endswith(".json"):
-            continue
+        # Per-unit progress line (code-style intra-phase contract; round-1 CONCERN).
+        _log(f"[stage] sidecar {k}/{len(sidecars)} {path} elapsed={time.monotonic() - t0:.1f}s")
         if size > _SIDECAR_STAGE_CAP_BYTES:
             unparseable.append(f"{path} (sidecar-too-large-not-staged: {size}B)")
             continue
@@ -283,6 +296,54 @@ def _sidecar_payloads_by_dir(
 
 
 _MODEL_KEYS = ("model", "model_instruct", "model_base", "model_name", "generating_model")
+
+# Root-level model-family constants for the sibling-ladder roots (plan v4 § A0 evidence
+# item "Sibling ladders ... different model families" + each producing issue's body).
+# These trees are DIFFERENT model families, so none of their banks can be the
+# Qwen2.5-7B base chat-template bank the A5 contingency looks for. NEVER derived from
+# a bare `/base/` path token (round-1 blocker: #1336's generation/base/ is the LADDER
+# RUNG named "base" on the Llama/Tulu family, not Qwen). Each constant is additionally
+# verified at inventory time by a one-file row-schema probe per root
+# (_probe_root_row_schema): any model-ish row field mentioning Qwen fails the phase.
+ROOT_FAMILY = {
+    "issue2061_sae_predictability": (
+        "Tulu family (#2061 SAE ladder)",
+        "plan v4 sibling-ladder evidence + #2061 body (Tulu SAE ladder)",
+    ),
+    "issue1902_stage_map": (
+        "OLMo-2 family (#1902 stage ladder)",
+        "plan v4 sibling-ladder evidence + #1902 body (OLMo-2 stage ladder)",
+    ),
+    "issue1336_rlvr_ladder": (
+        "Llama/Tulu family (#1336 RLVR ladder)",
+        "plan v4 sibling-ladder evidence + #1336 body (Llama/Tulu RLVR ladder; "
+        "generation/<rung>/ segments base|sft|dpo|rlvr|rlvr_long are LADDER rungs, "
+        "not Qwen model ids)",
+    ),
+}
+
+# Known NON-completion path families, each excluded with an explicit reason
+# (round-1 blocker: bare-extension classification labeled analysis tensors,
+# allowlists, audits and corpora as completion banks).
+_EXCLUDE_PATH_RULES = (
+    (
+        "/analysis_tensors/",
+        "excluded:analysis-tensors (fit/eval tensors + row indexes, not completion banks)",
+    ),
+    (
+        "/eval_results_mirror/",
+        "excluded:eval-results-mirror (aggregated eval JSONs, not completion banks)",
+    ),
+    (
+        "/corpus/",
+        "excluded:corpus-input (prompt/seed corpus consumed by generation, not completions)",
+    ),
+    (
+        "/steer_probe/",
+        "excluded:steer-probe-artifact (steering-probe inputs/summaries, not generation banks)",
+    ),
+)
+_FILTER_AUDIT_NAME_TOKENS = ("allowlist", "audit")
 
 
 def _determine_from_sidecars(
@@ -311,11 +372,21 @@ def _determine_from_sidecars(
 
 
 def _classify_bank(path: str, dir_payloads: dict[str, object]) -> dict:
-    """Classify one completion-bank candidate: model + render + provenance + evidence."""
+    """Classify one completion-bank file: model + render + provenance + evidence.
+
+    Returns ``absence_decision`` in {"determinate", "family-excluded", "indeterminate"}:
+    determinate = model AND render resolved from sidecars / producing-script evidence;
+    family-excluded = a sibling-ladder root whose ROOT_FAMILY constant excludes Qwen
+    (verified per root by the inventory row-schema probe); indeterminate = a plausible
+    bank whose model or render could not be resolved — phase_inventory FAILS LOUD on
+    any such row (the absence decision never defaults past an unresolved bank).
+    """
     model: str | None = None
     render: str | None = None
     provenance = "on-policy generated"
     evidence: list[str] = []
+    decision = "determinate"
+    root = path.split("/", 1)[0]
     if "/track_s/" in path:
         meta = dir_payloads.get("track_s_meta.json")
         if isinstance(meta, dict):
@@ -340,16 +411,36 @@ def _classify_bank(path: str, dir_payloads: dict[str, object]) -> dict:
         )
         render = "plain User:/Assistant: (raw-text own-turn answers)"
         evidence.append("path token (#825 Result-6 own-answer arm; clarifier: raw-text render)")
+    elif path.startswith("issue825_userbase_map/raw_completions/generation/"):
+        meta = dir_payloads.get("conversations_meta.json")
+        if isinstance(meta, dict) and meta.get("model_instruct"):
+            model = str(meta["model_instruct"])
+            evidence.append(f"conversations_meta.json:model_instruct={model}")
+        render = "chat template"
+        provenance = (
+            "on-policy generated (instruct assistant turns; depth>=2 user turns "
+            "simulated per conversations_meta.json u2_model)"
+        )
+        evidence.append(
+            "producing script issue825_gen_conversations.py:202-203,522 "
+            "(apply_chat_template(add_generation_prompt=True))"
+        )
+    elif root in ROOT_FAMILY:
+        family, family_evidence = ROOT_FAMILY[root]
+        model = f"{family} — NOT Qwen (root-family constant + row-schema probe)"
+        evidence.append(family_evidence)
+        if "__gen_naturalistic/" in path:
+            render = "plain User:/Assistant: re-render (naturalistic twin dirs)"
+        else:
+            render = "family-native prompt render (non-Qwen family; not decision-relevant)"
+        decision = "family-excluded"
     else:
         model, render, evidence = _determine_from_sidecars(dir_payloads)
-        if "/instruct/" in path and model is None:
-            model = MODEL_INSTRUCT
-            evidence.append("path token: /instruct/")
-        if ("/pretrained/" in path or "/base/" in path) and model is None:
-            model = MODEL_BASE
-            evidence.append("path token: /pretrained|base/")
+    if decision == "determinate" and (model is None or render is None):
+        decision = "indeterminate"
     is_base = bool(
-        model
+        decision == "determinate"
+        and model
         and "qwen2.5-7b" in model.lower()
         and "instruct" not in model.lower()
         and render == "chat template"
@@ -359,9 +450,102 @@ def _classify_bank(path: str, dir_payloads: dict[str, object]) -> dict:
         "model": model or "undetermined",
         "render": render or "undetermined",
         "provenance": provenance,
-        "evidence": evidence or ["path-only classification (no sidecar evidence)"],
+        "evidence": evidence or ["no sidecar/path-family evidence"],
+        "absence_decision": decision,
         "is_base_generated_chat_template_bank": is_base,
     }
+
+
+def _classify_file(path: str, size: int, dir_payloads: dict[str, object]) -> dict:
+    """Plan A3(a): classify ONE listed file (pure — no network; unit-tested).
+
+    Pipeline order: non-text formats -> known non-completion path families (each
+    with an explicit exclusion reason) -> filter/audit artifacts -> meta-sidecars
+    -> the completion-bank classifier (_classify_bank).
+    """
+    name = Path(path).name
+    suffix = Path(path).suffix.lower()
+    row: dict = {"path": path, "size": size}
+    if suffix not in (".json", ".jsonl", ".md"):
+        row.update(
+            classification=f"excluded:non-text-format ({suffix or 'no-extension'})",
+            model=None,
+            render=None,
+        )
+        return row
+    slashed = f"/{path}"
+    for token, label in _EXCLUDE_PATH_RULES:
+        if token in slashed:
+            row.update(classification=label, model=None, render=None)
+            return row
+    if any(tok in name.lower() for tok in _FILTER_AUDIT_NAME_TOKENS):
+        row.update(
+            classification=(
+                "excluded:filter-audit-artifact "
+                "(kept/dropped bookkeeping beside a bank, not completions)"
+            ),
+            model=None,
+            render=None,
+        )
+        return row
+    if _is_meta_sidecar(name):
+        row.update(classification="meta-sidecar", model=None, render=None)
+        return row
+    row.update(_classify_bank(path, dir_payloads))
+    return row
+
+
+_ROOT_PROBE_CAP_BYTES = 32 * 1024 * 1024
+_MODELISH_KEY_TOKENS = ("model", "engine", "checkpoint", "generator")
+
+
+def _probe_root_row_schema(root: str, bank_files: list[tuple[str, int]]) -> dict:
+    """Verify a ROOT_FAMILY constant against one real bank row (schema keys only).
+
+    Stages the smallest bank file under the root (<=32MB; up to 3 candidates
+    tried) and reads its first row: FAILS LOUD when any model-ish string field
+    mentions Qwen (the family constant would then be contradicted). Records row-0
+    KEYS + model-ish field values as manifest evidence — never row text (content
+    hygiene: real-corpus completions are digest-only).
+    """
+    eligible = sorted((f for f in bank_files if f[1] <= _ROOT_PROBE_CAP_BYTES), key=lambda t: t[1])
+    if not eligible:
+        raise RuntimeError(
+            f"inventory: root {root}: no bank file under the {_ROOT_PROBE_CAP_BYTES}B probe cap"
+        )
+    notes: list[str] = []
+    for path, _size in eligible[:3]:
+        local = _stage_file(path)
+        try:
+            if path.endswith(".jsonl"):
+                rows = _read_jsonl(local)
+                row0 = rows[0] if rows else None
+            else:
+                row0 = json.loads(local.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            notes.append(f"{path}: unparseable ({exc})")
+            continue
+        if not isinstance(row0, dict):
+            notes.append(f"{path}: empty or non-dict row0")
+            continue
+        modelish = {
+            k: v
+            for k, v in row0.items()
+            if isinstance(v, str) and any(t in k.lower() for t in _MODELISH_KEY_TOKENS)
+        }
+        for k, v in modelish.items():
+            if "qwen" in v.lower():
+                raise RuntimeError(
+                    f"inventory: root {root} family constant CONTRADICTED — "
+                    f"probe row field {k}={v!r} in {path}"
+                )
+        return {
+            "probed_path": path,
+            "row0_keys": sorted(str(k) for k in row0),
+            "modelish_fields": modelish,
+            "notes": notes,
+        }
+    raise RuntimeError(f"inventory: root {root}: no probe candidate yielded a row ({notes})")
 
 
 def _format_table_rows(bank_rows: list[dict]) -> list[dict]:
@@ -428,23 +612,72 @@ def _format_table_rows(bank_rows: list[dict]) -> list[dict]:
             "evidence_quote": "filename token pretrained_own_turn_answers (clarifier: raw render)",
         },
     ]
-    # Dynamic rows: any bank under the non-825 roots (or unexpected 825 subtrees).
+    # #825 seed-conversations bank (raw_completions/generation) — one artifact, one row.
+    conv_path = "issue825_userbase_map/raw_completions/generation/conversations.jsonl"
+    conv = next((r for r in bank_rows if r["path"] == conv_path), None)
+    if conv is not None:
+        rows.append(
+            {
+                "task": "#825 seed conversations (track m)",
+                "artifact": conv["path"],
+                "generated_by_model": conv["model"],
+                "render": conv["render"],
+                "provenance": conv["provenance"],
+                "consuming_fit_result": (
+                    "seed conversations for the #825 turn-dynamics rollouts "
+                    "(inventory evidence only)"
+                ),
+                "evidence_quote": "; ".join(conv["evidence"])[:400],
+            }
+        )
+    # Collapsed rows: ONE row per (root, model-family, render) group — plan A3(b)
+    # "one row per (task, base-row artifact)"; round-1 blocker: 561 per-FILE dynamic
+    # rows violated that grain.
     static_prefixes = ("/track_s/", "/turn_dynamics/", "/onpolicy_turn_depth/")
+    grouped: dict[tuple[str, str, str], list[dict]] = {}
     for row in bank_rows:
-        if any(tok in row["path"] for tok in static_prefixes):
+        if any(tok in row["path"] for tok in static_prefixes) or row["path"] == conv_path:
             continue
         root = next((r for r in ROOTS if row["path"].startswith(r)), row["path"].split("/")[0])
+        grouped.setdefault((root, str(row["model"]), str(row["render"])), []).append(row)
+    for (root, model, render), members in sorted(grouped.items()):
+        prefix = os.path.commonpath([m["path"] for m in members])
+        artifact = (
+            members[0]["path"] if len(members) == 1 else f"{prefix}/** ({len(members)} files)"
+        )
         rows.append(
             {
                 "task": f"root {root}",
-                "artifact": row["path"],
-                "generated_by_model": row["model"],
-                "render": row["render"],
-                "provenance": row["provenance"],
-                "consuming_fit_result": "inventory evidence only (classified from listing)",
-                "evidence_quote": "; ".join(row["evidence"])[:400],
+                "artifact": artifact,
+                "generated_by_model": model,
+                "render": render,
+                "provenance": members[0]["provenance"],
+                "consuming_fit_result": (
+                    "inventory evidence only (collapsed per (task, artifact class); "
+                    "classified from listing + root-family row-schema probe)"
+                ),
+                "evidence_quote": "; ".join(members[0]["evidence"])[:400],
             }
         )
+    # Explicit zero-bank roots (e.g. a root holding only analysis tensors/encodings).
+    for root in ROOTS:
+        if not any(r["path"].startswith(root) for r in bank_rows):
+            rows.append(
+                {
+                    "task": f"root {root}",
+                    "artifact": f"{root}/** (0 completion banks)",
+                    "generated_by_model": "N/A",
+                    "render": "N/A",
+                    "provenance": (
+                        "no completion banks under this root "
+                        "(analysis tensors / encodings / logs only)"
+                    ),
+                    "consuming_fit_result": "inventory evidence only",
+                    "evidence_quote": (
+                        "every file under this root classified excluded:* or meta-sidecar"
+                    ),
+                }
+            )
     return rows
 
 
@@ -472,6 +705,17 @@ def phase_inventory(args: argparse.Namespace) -> None:
         raise SystemExit(
             "inventory has no smoke mode — it is a read-only listing phase; run it real"
         )
+    outputs = [
+        EVAL_DIR / "inventory_manifest.json",
+        EVAL_DIR / "format_inventory.json",
+        EVAL_DIR / "format_inventory.md",
+    ]
+    if not args.force and all(p.exists() for p in outputs):
+        _log(
+            "[phase=inventory] SKIP (idempotent): all three inventory artifacts exist — "
+            "pass --force to re-run"
+        )
+        return
     from huggingface_hub import HfApi
     from huggingface_hub.hf_api import RepoFile
 
@@ -503,28 +747,58 @@ def phase_inventory(args: argparse.Namespace) -> None:
     manifest_rows: list[dict] = []
     bank_rows: list[dict] = []
     for path, size in sorted(all_files):
-        name = Path(path).name
-        suffix = Path(path).suffix.lower()
-        row: dict = {"path": path, "size": size}
-        if suffix not in (".json", ".jsonl", ".md"):
-            row.update(
-                classification=f"excluded:non-completion-format ({suffix or 'no-extension'})",
-                model=None,
-                render=None,
-            )
-        elif _is_meta_sidecar(name):
-            row.update(classification="meta-sidecar", model=None, render=None)
-        else:
-            row.update(_classify_bank(path, payloads.get(str(Path(path).parent), {})))
+        row = _classify_file(path, size, payloads.get(str(Path(path).parent), {}))
+        if row["classification"] == "completion-bank":
             bank_rows.append(row)
         manifest_rows.append(row)
+
+    # FAIL LOUD before any artifact write: a plausible bank with an unresolved
+    # model/render must block the absence decision, never default it (round-1 blocker).
+    indeterminate = [r["path"] for r in bank_rows if r.get("absence_decision") == "indeterminate"]
+    if indeterminate:
+        raise RuntimeError(
+            "inventory: ABSENCE DECISION BLOCKED — "
+            f"{len(indeterminate)} plausible completion bank(s) with unresolved "
+            f"model/render (first 20: {indeterminate[:20]})"
+        )
+
+    # Row-schema probe per family-excluded root: one real row's keys verify the
+    # ROOT_FAMILY constant (raises loud if a model-ish field mentions Qwen).
+    probes: dict[str, dict] = {}
+    for root_dir in ROOT_FAMILY:
+        fam_files = [
+            (r["path"], int(r["size"]))
+            for r in bank_rows
+            if r["path"].startswith(root_dir + "/")
+            and r.get("absence_decision") == "family-excluded"
+        ]
+        if fam_files:
+            probes[root_dir] = _probe_root_row_schema(root_dir, fam_files)
+            _log(
+                f"[inventory] root-family probe {root_dir}: "
+                f"keys={probes[root_dir]['row0_keys'][:12]} "
+                f"modelish={probes[root_dir]['modelish_fields']}"
+            )
+        else:
+            # Explicit vacuous record: every file under this root was excluded BEFORE the
+            # bank classifier, so the family constant classified nothing — no row to probe.
+            probes[root_dir] = {
+                "probed_path": None,
+                "note": "vacuous — zero family-excluded bank rows under this root",
+            }
+            _log(f"[inventory] root-family probe {root_dir}: vacuous (no bank rows)")
 
     candidates = [r["path"] for r in bank_rows if r.get("is_base_generated_chat_template_bank")]
     phase_c_fires_pre_parity = len(candidates) == 0
     n_by_class: dict[str, int] = {}
+    n_by_exclusion_reason: dict[str, int] = {}
     for row in manifest_rows:
-        key = row["classification"].split(" ")[0].split(":")[0]
+        cls = row["classification"]
+        key = cls.split(" ")[0].split(":")[0]
         n_by_class[key] = n_by_class.get(key, 0) + 1
+        if cls.startswith("excluded:"):
+            reason = cls.split(" (")[0]
+            n_by_exclusion_reason[reason] = n_by_exclusion_reason.get(reason, 0) + 1
 
     _write_json(
         EVAL_DIR / "inventory_manifest.json",
@@ -533,14 +807,19 @@ def phase_inventory(args: argparse.Namespace) -> None:
             "roots": ROOTS,
             "n_files": len(manifest_rows),
             "n_by_class": n_by_class,
+            "n_by_exclusion_reason": n_by_exclusion_reason,
             "unparseable_sidecars": unparseable,
+            "root_family_probes": probes,
             "contingency": {
                 "phase_c_fires_pre_parity": phase_c_fires_pre_parity,
                 "candidate_base_chat_banks": candidates,
+                "n_indeterminate_banks": 0,
                 "note": (
                     "Phase C fires iff no file classifies as a Qwen2.5-7B base-GENERATED "
                     "chat-template completion bank; a candidate here still must pass the "
-                    "A5 parity gate at --phase sample before Phase C is skipped."
+                    "A5 parity gate at --phase sample before Phase C is skipped. Any "
+                    "plausible bank with unresolved model/render raises BEFORE this "
+                    "manifest is written (absence never defaults)."
                 ),
             },
             "files": manifest_rows,
@@ -616,7 +895,14 @@ def _load_armg_rows(api, model: str, shards: list[str]) -> dict[tuple[str, int],
     naturally by user=None). Duplicate keys fail loud (plan assumes uniqueness)."""
     out: dict[tuple[str, int], dict] = {}
     for shard in shards:
-        for repo_path in _list_armg_step_files(api, model, shard):
+        step_files = _list_armg_step_files(api, model, shard)
+        t0 = time.monotonic()
+        for k, repo_path in enumerate(step_files, start=1):
+            # Per-unit progress line (code-style intra-phase contract; round-1 CONCERN).
+            _log(
+                f"[sample] armG {model}/{shard} file {k}/{len(step_files)} "
+                f"{Path(repo_path).name} elapsed={time.monotonic() - t0:.1f}s"
+            )
             local = _stage_file(repo_path)
             for row in _read_jsonl(local):
                 user = row.get("user")
@@ -635,6 +921,22 @@ def _load_armg_rows(api, model: str, shards: list[str]) -> dict[tuple[str, int],
                     )
                 out[key] = row
     return out
+
+
+def _merge_shard_rows(
+    dst: dict[tuple[str, int], dict], src: dict[tuple[str, int], dict], model: str, shard: str
+) -> None:
+    """Merge a newly loaded shard's rows into the accumulated dict, failing loud on any
+    cross-shard (conv_id, depth) key overlap (a bare dict.update would silently overwrite
+    the earlier shard's row — plan A4 assumes unique keys across the whole armG store)."""
+    overlap = set(dst) & set(src)
+    if overlap:
+        sample = sorted(overlap)[:5]
+        raise RuntimeError(
+            f"armG {model}: {len(overlap)} cross-shard duplicate (conv_id, depth) keys while "
+            f"merging {shard} (e.g. {sample}) — plan A4 assumes unique keys"
+        )
+    dst.update(src)
 
 
 def _bank_parity_gate(candidates: list[str], chat_items: list[dict]) -> dict:
@@ -724,6 +1026,15 @@ def phase_sample(args: argparse.Namespace) -> None:
     out_dir = Path("/tmp/issue-2477-smoke/samples") if smoke else (EVAL_DIR / "samples")
     _log(f"[phase=sample] start smoke={smoke} seed={args.seed} n_chat={n_chat} n_pairs={n_pairs}")
 
+    # Idempotency guard (cheap phase; seeded => deterministic, but re-runs also re-upload the
+    # manifest to HF — skip loud unless --force).
+    if not smoke and not args.force and (out_dir / "sample_manifest.json").exists():
+        _log(
+            f"[phase=sample] SKIP (idempotent): {out_dir / 'sample_manifest.json'} exists — "
+            "pass --force to re-run"
+        )
+        return
+
     inv_path = EVAL_DIR / "inventory_manifest.json"
     if not inv_path.exists():
         raise RuntimeError("sample: run --phase inventory first (inventory_manifest.json missing)")
@@ -756,8 +1067,8 @@ def phase_sample(args: argparse.Namespace) -> None:
             break
         _log(f"[sample] matched intersection {len(matched)} < {n_pairs}; extending to {extra}")
         shards.append(extra)
-        pre.update(_load_armg_rows(api, "pretrained", [extra]))
-        ins.update(_load_armg_rows(api, "instruct", [extra]))
+        _merge_shard_rows(pre, _load_armg_rows(api, "pretrained", [extra]), "pretrained", extra)
+        _merge_shard_rows(ins, _load_armg_rows(api, "instruct", [extra]), "instruct", extra)
         matched = sorted(set(pre) & set(ins))
     realized_pairs = min(n_pairs, len(matched))
     if realized_pairs < n_pairs:
@@ -857,7 +1168,53 @@ def _vllm_generate_chunked(llm, prompts: list[str], sampling) -> list:
     return outs
 
 
+def _assert_gen_manifest_contract(manifest: dict, chat_items: list[dict], smoke: bool) -> None:
+    """Fail loud BEFORE any tokenizer/LLM construction when the staged sample manifest does
+    not carry the inputs gen is about to spend GPU time on (round-2 fix: the prior code
+    validated nothing between manifest staging and LLM())."""
+    errors: list[str] = []
+    full = manifest.get("chat_items") or []
+    if len(full) != N_CHAT:
+        errors.append(f"manifest chat_items count: {len(full)} != expected {N_CHAT}")
+    expected_n = 5 if smoke else N_CHAT
+    if len(chat_items) != expected_n:
+        errors.append(f"post-slice chat_items count: {len(chat_items)} != expected {expected_n}")
+    non_int = sum(1 for it in chat_items if type(it.get("prompt_idx")) is not int)
+    if non_int:
+        errors.append(f"prompt_idx not a plain int on {non_int} items")
+    idxs = [it.get("prompt_idx") for it in chat_items]
+    if len(set(idxs)) != len(idxs):
+        errors.append(f"prompt_idx not unique: {len(idxs) - len(set(idxs))} duplicates")
+    n_empty = sum(
+        1 for it in chat_items if not isinstance(it.get("prompt"), str) or not it["prompt"].strip()
+    )
+    if n_empty:
+        errors.append(f"empty/non-str prompt on {n_empty} items")
+    recipe = (manifest.get("meta") or {}).get("sampling_recipe") or {}
+    expected_recipe = {"temperature": 1.0, "top_p": 0.95, "max_tokens": 1024, "seed": GEN_SEED}
+    for k, v in expected_recipe.items():
+        if recipe.get(k) != v:
+            errors.append(f"sampling_recipe[{k}]: {recipe.get(k)!r} != expected {v!r}")
+    if errors:
+        raise RuntimeError(
+            "gen manifest contract failed (" + str(len(errors)) + " errors): " + "; ".join(errors)
+        )
+
+
 def phase_gen(args: argparse.Namespace) -> None:
+    smoke = bool(args.smoke)
+    out_root = Path(args.out)
+    # Idempotency guard: gen is the paid GPU phase. Placed BEFORE the torch import so the
+    # skip leg is VM-smokable (refusing a duplicate paid run needs no CUDA); emits the
+    # [phase=done] breadcrumb so a poller treats the skip as a completed phase.
+    if not smoke and not args.force and (out_root / "gen_done.json").exists():
+        _log(
+            f"[phase=gen] SKIP (idempotent): {out_root / 'gen_done.json'} exists — "
+            "pass --force to re-run"
+        )
+        _log("[phase=done]")
+        return
+
     import torch
 
     if not torch.cuda.is_available():
@@ -867,8 +1224,6 @@ def phase_gen(args: argparse.Namespace) -> None:
 
     from explore_persona_space.orchestrate import hub
 
-    smoke = bool(args.smoke)
-    out_root = Path(args.out)
     out_root.mkdir(parents=True, exist_ok=True)
     _log(f"[phase=gen] start smoke={smoke} out={out_root}")
 
@@ -885,6 +1240,8 @@ def phase_gen(args: argparse.Namespace) -> None:
     chat_items = manifest["chat_items"]
     if smoke:
         chat_items = chat_items[:5]
+    # Round-2 fix 4: validate the manifest contract BEFORE tokenizers/LLM spend anything.
+    _assert_gen_manifest_contract(manifest, chat_items, smoke)
 
     tok_i = AutoTokenizer.from_pretrained(MODEL_INSTRUCT)
     tok_b = AutoTokenizer.from_pretrained(MODEL_BASE)
@@ -957,8 +1314,10 @@ def phase_gen(args: argparse.Namespace) -> None:
             "n_empty": n_empty,
             "cap_hit_fraction": cap_hit,
             "finish_reasons": {
-                fr: sum(1 for r in rows if r["finish_reason"] == fr)
-                for fr in sorted({r["finish_reason"] for r in rows})
+                # key=str: finish_reason can be None (vLLM in-flight abort) — a bare sorted()
+                # over a mixed {None, str} set raises TypeError (round-2 opportunistic fix).
+                str(fr): sum(1 for r in rows if r["finish_reason"] == fr)
+                for fr in sorted({r["finish_reason"] for r in rows}, key=str)
             },
         }
         if smoke and n_empty:
@@ -1063,13 +1422,47 @@ def _load_manifest() -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _fresh_rows(name: str) -> list[dict]:
+def _validate_fresh_rows_contract(rows: list[dict], manifest: dict, name: str) -> None:
+    """Verify a fresh-completions file (pod-local mirror OR HF-staged) matches the sample
+    manifest's panel before any judge spend (round-2 fix 1)."""
+    chat_items = manifest["chat_items"]
+    if len(rows) != len(chat_items):
+        raise RuntimeError(
+            f"judge: {name} row count {len(rows)} != manifest chat_items {len(chat_items)}"
+        )
+    want = {it["prompt_idx"] for it in chat_items}
+    got = {r.get("prompt_idx") for r in rows}
+    if got != want:
+        missing = sorted(want - got, key=str)[:5]
+        extra = sorted(got - want, key=str)[:5]
+        raise RuntimeError(
+            f"judge: {name} prompt_idx set mismatch vs manifest "
+            f"(missing e.g. {missing}, extra e.g. {extra})"
+        )
+
+
+def _fresh_rows(name: str, manifest: dict) -> list[dict]:
     path = EVAL_DIR / "fresh_completions" / name
     if not path.exists():
-        raise RuntimeError(
-            f"judge: {path} missing — Phase C (gen) has not produced fresh completions yet"
-        )
-    return _read_jsonl(path)
+        # Round-2 fix 1: judge phases may run on a different machine than gen — the pod-local
+        # mirror is the fast path; the plan-declared HF dest is the permanent source
+        # (plan §off_pod_phases). A file absent on the Hub too means Phase C never ran.
+        from huggingface_hub.utils import EntryNotFoundError
+
+        from explore_persona_space.orchestrate import hub
+
+        repo_path = f"{EXPERIMENT}/raw_completions/generation/{name}"
+        _log(f"[judge] {path} absent locally — staging from {REPO_DATA}/{repo_path}")
+        try:
+            hub.stage_hub_file(REPO_DATA, repo_path, path, repo_type="dataset")
+        except EntryNotFoundError as exc:
+            raise RuntimeError(
+                f"judge: {name} absent locally AND on the Hub at {repo_path} — "
+                "Phase C (gen) has not produced fresh completions yet"
+            ) from exc
+    rows = _read_jsonl(path)
+    _validate_fresh_rows_contract(rows, manifest, name)
+    return rows
 
 
 def build_arms(manifest: dict) -> dict[str, ArmData]:
@@ -1090,7 +1483,7 @@ def build_arms(manifest: dict) -> dict[str, ArmData]:
         ("arm_base_bare", "base_bare_seed42.jsonl"),
     ):
         a = ArmData(name=arm_name)
-        for row in _fresh_rows(fname):
+        for row in _fresh_rows(fname, manifest):
             p_idx = row["prompt_idx"]
             if p_idx not in prompt_by_idx:
                 raise RuntimeError(
@@ -1150,6 +1543,20 @@ def build_arms(manifest: dict) -> dict[str, ArmData]:
 def phase_judge_pilot(args: argparse.Namespace) -> None:
     if args.smoke:
         raise SystemExit("judge-pilot has no smoke mode — the pilot IS the tiny gated pre-wave")
+    # Idempotency guard (paid API phase): skip ONLY on a PASSED pilot — a failed pilot
+    # re-runs by design (that IS the fix path after a rubric/instrument change).
+    pilot_path = EVAL_DIR / "judge" / "pilot_report.json"
+    if not args.force and pilot_path.exists():
+        prior = json.loads(pilot_path.read_text(encoding="utf-8"))
+        if prior.get("passed"):
+            _log(
+                f"[phase=judge-pilot] SKIP (idempotent): {pilot_path} exists with passed=true — "
+                "pass --force to re-run"
+            )
+            return
+        _log(
+            f"[phase=judge-pilot] prior pilot_report has passed={prior.get('passed')} — re-running"
+        )
     from explore_persona_space.eval.judge_pilot import judge_pilot_gate
 
     _log("[phase=judge-pilot] start")
@@ -1183,6 +1590,24 @@ def phase_judge_pilot(args: argparse.Namespace) -> None:
 # ---------------------------------------------------------------------------
 # Phase: judge-wave (plan B3 smoke / B5 production)
 # ---------------------------------------------------------------------------
+
+
+def _judge_wave_complete(judge_dir: Path, expected: dict[str, set[str]]) -> bool:
+    """True only when EVERY arm's judge_raw file exists, parses, and its all_scores keys
+    (``{item_id}__{idx:05d}__{draw:02d}``, batch_judge custom_id grammar) cover exactly the
+    expected item-id set — the round-2 idempotency predicate for the paid wave."""
+    for name, want in expected.items():
+        path = judge_dir / f"judge_raw_{name}.json"
+        if not path.exists():
+            return False
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return False
+        got = {k.rsplit("__", 2)[0] for k in (raw.get("all_scores") or {})}
+        if got != want:
+            return False
+    return True
 
 
 def phase_judge_wave(args: argparse.Namespace) -> None:
@@ -1229,6 +1654,19 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
         )
         return
 
+    arms = build_arms(manifest)
+
+    # Idempotency guard (paid API phase): skip ONLY when the COMPLETE 5-arm output set
+    # exists and each file covers exactly this manifest's item ids — a partial wave
+    # (crash between arms) re-runs (round-2 fix 3).
+    expected_ids = {name: {iid for iid, _q, _a in arm.items} for name, arm in arms.items()}
+    if not args.force and _judge_wave_complete(EVAL_DIR / "judge", expected_ids):
+        _log(
+            f"[phase=judge-wave] SKIP (idempotent): all {len(expected_ids)} arms' judge_raw "
+            "files complete for this manifest — pass --force to re-run"
+        )
+        return
+
     pilot_path = EVAL_DIR / "judge" / "pilot_report.json"
     if not pilot_path.exists():
         raise RuntimeError("judge-wave: run --phase judge-pilot first (pilot_report.json missing)")
@@ -1236,7 +1674,6 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
     if not pilot.get("passed"):
         raise RuntimeError("judge-wave: pilot gate did not PASS — fix + re-pilot before the wave")
 
-    arms = build_arms(manifest)
     for name, arm in arms.items():
         save_raw = EVAL_DIR / "judge" / f"judge_raw_{name}.json"
         _log(
@@ -1535,6 +1972,14 @@ def phase_aggregate(args: argparse.Namespace) -> None:
         )
         return
 
+    # Idempotency guard (cheap phase — guard rides the round-2 concern for consistency).
+    if not args.force and (EVAL_DIR / "coherence_verdict.json").exists():
+        _log(
+            f"[phase=aggregate] SKIP (idempotent): {EVAL_DIR / 'coherence_verdict.json'} "
+            "exists — pass --force to re-run"
+        )
+        return
+
     _log("[phase=aggregate] start")
     manifest = _load_manifest()
     arms = build_arms(manifest)
@@ -1751,6 +2196,11 @@ def phase_figures(args: argparse.Namespace) -> None:
         )
         out_dir = scratch
     else:
+        # Idempotency guard (cheap phase — rides the round-2 concern for consistency).
+        hero = REPO_ROOT / "figures" / "issue_2477" / "coherence_by_arm.png"
+        if not args.force and hero.exists():
+            _log(f"[phase=figures] SKIP (idempotent): {hero} exists — pass --force to re-run")
+            return
         verdict_path = EVAL_DIR / "coherence_verdict.json"
         if not verdict_path.exists():
             raise RuntimeError(
@@ -1786,6 +2236,11 @@ def _parse_args() -> argparse.Namespace:
         help="gen-phase out root (pod-side; plan phase_outputs)",
     )
     ap.add_argument("--import-check", action="store_true", help="static args/bind check, then exit")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="re-run past a phase's idempotency guard (default off: completed phases skip loud)",
+    )
     return ap.parse_args()
 
 

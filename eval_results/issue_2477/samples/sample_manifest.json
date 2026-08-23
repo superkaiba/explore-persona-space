@@ -1,15 +1,17 @@
 {
   "metadata": {
-    "git_commit": "1bb34dd229ef14424327e04d1d495819bffe706a",
+    "git_commit": "48dee7250b4751c6e6711efc79d10a2ba03e5742",
     "git_dirty": true,
     "phase": "sample",
     "git_dirty_paths": [
       "eval_results/issue_2477/format_inventory.json",
-      "eval_results/issue_2477/inventory_manifest.json"
+      "eval_results/issue_2477/format_inventory.md",
+      "eval_results/issue_2477/inventory_manifest.json",
+      "scripts/issue2477_base_coherence.py"
     ],
-    "git_argv0_state": "tracked",
+    "git_argv0_state": "modified",
     "git_argv0_path": "scripts/issue2477_base_coherence.py",
-    "created_utc": "2026-08-22T22:24:03Z"
+    "created_utc": "2026-08-23T00:23:00Z"
   },
   "meta": {
     "seed": 2477,
