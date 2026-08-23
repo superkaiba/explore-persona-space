@@ -11398,8 +11398,8 @@
       "goal": "Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2476",
-      "status": "running",
+      "path": "tasks/verifying/2476",
+      "status": "verifying",
       "title": "Turn-averaged SAE basis: does the map's high-level-over-low-level predictability gradient hold?"
     },
     "2477": {
