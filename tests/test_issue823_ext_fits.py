@@ -856,10 +856,12 @@ def _mutate_json(rd: pathlib.Path, name: str, fn) -> None:
     p.write_text(json.dumps(d))
 
 
-def _rewrite_npz(rd: pathlib.Path, suffix: str, n: int, layers: int) -> None:
+def _rewrite_npz(
+    rd: pathlib.Path, suffix: str, n: int, layers: int, arms: tuple[str, ...] = ("k1", "k16")
+) -> None:
     np.savez(
         rd / f"percontext_{suffix}.npz",
-        arm_names=np.array(["k1", "k16"]),
+        arm_names=np.array(list(arms)),
         context_ids=np.arange(n),
         p1_ss_res=np.zeros((2, layers, n)),
         p1_ss_tot=np.ones((2, layers, n)),
@@ -961,8 +963,38 @@ def test_validate_fits_outputs_rejects_each_subtree_mutation(tmp_path):
                 lambda d: d["arms"]["k16"]["per_layer"].pop("L17"),
             ),
         ),
+        # r3 residual scope (concern fits-resume-schema-undervalidated): every
+        # consumer-required field the r2 validator still accepted absent/wrong.
+        (
+            "cell-missing-n-train-per-fold",
+            "cells missing per-cell fields",
+            _del_r2(lambda d: d["primary"]["48"]["cells"]["k1:L0"].pop("n_train_per_fold")),
+        ),
+        (
+            "knn-malformed-nested",
+            "knn_read_out entries malformed",
+            _del_r2(
+                lambda d: d["primary"]["48"]["knn_read_out"]["k1:L14:fold0"]["euclidean"].pop(
+                    "n_pool"
+                )
+            ),
+        ),
+        (
+            "paired-offset-bias-wrong-type",
+            "offset_bias_control",
+            lambda rd: _mutate_json(
+                rd,
+                "shared_persona_paired_rung48.json",
+                lambda d: d["arms"]["k16"]["per_layer"]["L14"].update(offset_bias_control=0.5),
+            ),
+        ),
         ("npz-bad-shape", "shape", lambda rd: _rewrite_npz(rd, "rung48", 48, 2)),
         ("npz-neval-mismatch", "n_eval", lambda rd: _rewrite_npz(rd, "rung48", 10, 28)),
+        (
+            "npz-wrong-arm-names",
+            "arm_names",
+            lambda rd: _rewrite_npz(rd, "rung48", 48, 28, arms=("armA", "armB")),
+        ),
         (
             "p2-missing-cell",
             "declared grid",

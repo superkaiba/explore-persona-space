@@ -2072,7 +2072,17 @@ def _validate_rung_block(
         )
     else:
         pooled_key = "pooled_r2" if tag == "primary" else "pooled_r2_eval"
-        cell_req = ("fold_lambdas", "fold_dofs", "solver", "identity_bias_pooled_r2", pooled_key)
+        # Every field the figures consumer indexes unconditionally per cell
+        # (figures.cell_lambda_dof reads n_train_per_fold — r3 concern
+        # fits-resume-schema-undervalidated).
+        cell_req = (
+            "fold_lambdas",
+            "fold_dofs",
+            "n_train_per_fold",
+            "solver",
+            "identity_bias_pooled_r2",
+            pooled_key,
+        )
         bad = sorted(k for k, c in cells.items() if any(f not in c for f in cell_req))
         if bad:
             problems.append(f"{where}: cells missing per-cell fields at {bad[:4]}")
@@ -2088,6 +2098,23 @@ def _validate_rung_block(
     knn = blk["knn_read_out"] if isinstance(blk["knn_read_out"], dict) else {}
     if not want_knn <= set(knn):
         problems.append(f"{where}: knn_read_out missing {sorted(want_knn - set(knn))[:4]}")
+    else:
+        # Nested shape the figures consumers index unconditionally: per metric
+        # (fig_ext6 euclidean; knn_echo both), acc_at_k["1"/"5"] + n_pool.
+        bad_knn = sorted(
+            k
+            for k in want_knn
+            if not isinstance(knn[k], dict)
+            or any(
+                not isinstance(knn[k].get(m), dict)
+                or "n_pool" not in knn[k][m]
+                or not isinstance(knn[k][m].get("acc_at_k"), dict)
+                or any(kk not in knn[k][m]["acc_at_k"] for kk in ("1", "5"))
+                for m in ("euclidean", "cosine")
+            )
+        )
+        if bad_knn:
+            problems.append(f"{where}: knn_read_out entries malformed at {bad_knn[:4]}")
     floor = blk["correlated_offset_floor"]
     for layer in READ_OUT_LAYERS:
         lf = floor.get(f"L{layer}") if isinstance(floor, dict) else None
@@ -2220,7 +2247,13 @@ def validate_fits_outputs(
                 miss = [k for k in REQUIRED_OUTPUT_KEYS["shared_persona_paired"] if k not in cell]
                 if miss:
                     problems.append(f"{name}: L{layer} missing {miss}")
-                elif "ratio_measured_over_full_energy" not in cell["offset_bias_control"]:
+                elif (
+                    # Type-guard: a wrong-typed offset_bias_control (float/str/
+                    # list) is a refit problem, never a validator raise (r3
+                    # concern fits-resume-schema-undervalidated).
+                    not isinstance(cell["offset_bias_control"], dict)
+                    or "ratio_measured_over_full_energy" not in cell["offset_bias_control"]
+                ):
                     problems.append(f"{name}: L{layer} offset_bias_control lacks ratio")
 
     for label in rung_labels:
@@ -2247,6 +2280,11 @@ def validate_fits_outputs(
                             )
                     if not np.issubdtype(z["context_ids"].dtype, np.integer):
                         problems.append(f"{name}: context_ids dtype is not integer")
+                    # Values, not just presence: figures indexes
+                    # arm_names.index("k16"/"k1") (r3 concern).
+                    got_arms = [str(a) for a in z["arm_names"]]
+                    if got_arms != list(ARM_NAMES):
+                        problems.append(f"{name}: arm_names {got_arms} != {list(ARM_NAMES)}")
                     if suffix in n_eval_by and n_ctx != n_eval_by[suffix]:
                         problems.append(
                             f"{name}: n_contexts {n_ctx} != rung block n_eval {n_eval_by[suffix]}"
@@ -2394,7 +2432,16 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
         gate_states={"pending": True},
         store_name_set_sha256=store_id["name_set_sha256"],
     )
-    _resume_keys = ("rung_mask_shas", "rand_manifest_sha", "store_name_set_sha256", "estimator")
+    # required_output_keys is part of live resume equality so a SCHEMA
+    # extension invalidates old sentinels even at an unchanged code_sha
+    # (r3 concern fits-resume-schema-undervalidated).
+    _resume_keys = (
+        "rung_mask_shas",
+        "rand_manifest_sha",
+        "store_name_set_sha256",
+        "estimator",
+        "required_output_keys",
+    )
     sentinel_path = eval_dir / FITS_SENTINEL
     if sentinel_path.exists():
         prior = json.loads(sentinel_path.read_text())

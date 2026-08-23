@@ -35,7 +35,9 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import logging
 import pathlib
+import re
 
 import pytest
 
@@ -469,6 +471,40 @@ class TestStreamProgressResume:
         assert [(r["ext_idx"], r["prompt"]) for r in rows] == [(0, "ext P"), (1, "ext Q")]
         meta = json.loads((stage / xg.PROGRESS_META_FILENAME).read_text())
         assert meta["fingerprint_fields"] == live and meta["n_kept"] == 2
+
+    def test_progress_line_canonical_unit_shape(self, tmp_path, monkeypatch, caplog):
+        """r3 concern long-loop-progress-fields-missing: every per-flush
+        progress line carries the canonical long-loop shape
+        `[<phase>] unit k/N <key> elapsed=<s>s` (code-style.md per-unit
+        progress line) — the literal `unit` token, kept-index/total, the
+        stable `stream-pos-<p>` key, and elapsed seconds."""
+        monkeypatch.setattr(xg, "PROGRESS_CHUNK", 1)  # flush (and log) per kept prompt
+        banked = _banked4()
+        with caplog.at_level(logging.INFO):
+            sel = xg.select_extension_contexts(
+                banked,
+                3,
+                max_stream_pos=100,
+                eval_dir=tmp_path,
+                stream_iter=_stream([*banked, "ext a", "ext b", "ext c"]),
+                stage_dir=tmp_path / "stage",
+                fingerprint_fields=self._fields(),
+            )
+        assert sel["ext_prompts"] == ["ext a", "ext b", "ext c"]
+        lines = [
+            r.getMessage() for r in caplog.records if r.getMessage().startswith("[gen_ext] unit ")
+        ]
+        assert len(lines) == 3, f"expected one unit line per kept prompt: {lines}"
+        pat = re.compile(r"^\[gen_ext\] unit (\d+)/3 stream-pos-(\d+) elapsed=\d+\.\ds$")
+        matches = [pat.fullmatch(ln) for ln in lines]
+        assert all(matches), lines
+        # Index/total advance with the kept pool; the stable key is the
+        # absolute stream position of the last kept prompt (banked prefix
+        # occupies positions 0..3, extensions land at 4..6).
+        assert [int(m.group(1)) for m in matches] == [1, 2, 3]
+        assert [int(m.group(2)) for m in matches] == [4, 5, 6]
+        # No line still carries the pre-r4 non-canonical form.
+        assert not any("stream progress" in r.getMessage() for r in caplog.records)
 
 
 # ── Assignment + banked parity ───────────────────────────────────────────────

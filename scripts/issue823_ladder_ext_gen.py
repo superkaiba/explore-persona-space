@@ -507,8 +507,12 @@ def select_extension_contexts(
             },
         )
         n_flushed = len(ext)
+        # Canonical long-loop shape `[<phase>] unit k/N <key> elapsed=<s>s`
+        # (code-style.md per-unit progress line; r3 concern
+        # long-loop-progress-fields-missing) — pinned by
+        # tests/test_issue823_ext_gen.py::test_progress_line_canonical_unit_shape.
         logger.info(
-            "[gen_ext] stream progress %d/%d kept (pos %d) elapsed=%.1fs",
+            "[gen_ext] unit %d/%d stream-pos-%d elapsed=%.1fs",
             len(ext),
             n_ext,
             pos,
