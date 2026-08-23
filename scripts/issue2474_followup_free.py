@@ -171,7 +171,14 @@ def _fetch(rel: str) -> Path:
         raise RuntimeError(f"refusing HF pull of {rel}: only {free} bytes free at {DATA_ROOT}")
     from huggingface_hub import hf_hub_download
 
-    got = hf_hub_download(repo_id=HF_REPO, repo_type="dataset", filename=rel, local_dir=DATA_ROOT)
+    from explore_persona_space.orchestrate import hub
+
+    got = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=HF_REPO, repo_type="dataset", filename=rel, local_dir=DATA_ROOT
+        ),
+        what=f"hf_hub_download({rel})",
+    )
     return Path(got)
 
 
