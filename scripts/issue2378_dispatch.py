@@ -1,4 +1,10 @@
-"""issue #2378 dispatch driver — pod/VM phase machine (plan v6 §7/§9/§10).
+"""issue #2378 dispatch driver — pod/VM phase machine (plan v7 §7/§9/§10).
+
+v7 amendments (epm:progress v70; plan Amendment records A-E): dialogue family
+DESCOPED (active panel = 11 cells; cm.ACTIVE_FAMILIES drives every family
+loop), G1 amended to floor-funding (SEGA_ATTEMPTS_CAP * net >= FLOOR_KEPT;
+recalibration SPENT at r11), pilot capture out-root ROUND-SCOPED (r12 fix),
+and the P1R pilot-completion resume leg (p1_resume) added.
 
 Runbook (venue per phase; provision commands are plan §10 verbatim):
 
@@ -12,6 +18,9 @@ Runbook (venue per phase; provision commands are plan §10 verbatim):
   experimenter.md § During Execution; this driver is the WORKLOAD):
     bash scripts/issue2378_dispatch.sh p1_pilot --attempts-per-cell 300 \\
         --chat-pilot-rows 2500 --user-sim-smoke-rows 50
+    bash scripts/issue2378_dispatch.sh p1_resume --pilot-round 2   # P1R (plan §4.7): complete
+        # the r2 pilot on a FRESH pod — stage persisted r2 raw from HF, skip gen/judge
+        # (asserted), re-run capture+sweep, amended-G1 digest + harvest.
     bash scripts/issue2378_dispatch.sh p2_generate --sega-attempts-per-cell <from-pilot,cap 30000>
   VM (between pods; pod A terminated after its harvest verifies):
     uv run python scripts/issue2378_dispatch.py --phase p3_admission
@@ -28,7 +37,7 @@ Runbook (venue per phase; provision commands are plan §10 verbatim):
     bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-a   # runs G3 first, pushes gate
     bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-b   # waits for G3 on origin
     bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-c
-    bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-d   # + pool/h3/h4b/h5/ratio/merge
+    bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-d   # + pool/h4b/h5/ratio/merge
 
 Contracts implemented here (pod-side-reporting.md):
 - ``[phase=<name>]`` lines on the MAIN log; ONE terminal ``[phase=done]`` on the
@@ -47,6 +56,8 @@ Contracts implemented here (pod-side-reporting.md):
 Designed-halt exit codes:
   3  G3 refusal (mirrors issue2378_fits.G3_RC_REFUSED; gate report persisted)
   4  G1 trip, recalibration round available (ONE round; re-run p1_pilot --pilot-round 2)
+     — SPENT at r11 (v7 Amendment record B): can only fire at pilot_round==1;
+     any future below-line measure at any round is rc=5.
   5  G1 hard fail (round 2 trip, judge-pilot FAIL, or layer-sweep rig floor)
   6  G2b survivor-predicate fail (partial-result stop; report persisted)
   7  judge pilot gate fail (mirrors issue2378_judge.RC_PILOT_GATE_FAIL)
@@ -94,6 +105,7 @@ import os
 import random
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -126,10 +138,18 @@ RC_G1_FAIL = 5
 RC_G2B_PARTIAL = 6
 RC_JUDGE_PILOT_FAIL = 7
 
-G1_NET_RATE_MIN = 0.25  # plan §7 G1(a); grounding in the plan row
 G1_SWEEP_R2_MIN = 0.05  # plan §7 G1(c) rig-defect floor
 WAVE1_SLACK = 1.25  # plan §8 "wave-1 sized with 1.25x slack"
 SEGA_ATTEMPTS_CAP = 30_000  # plan §7 G1(a) cap
+# Amended G1(a) rate line (plan v7 Amendment record B, epm:progress v70
+# clause 2): PASS iff the pilot net rate FUNDS the binding per-cell floor at
+# the attempts cap — SEGA_ATTEMPTS_CAP * net >= FLOOR_KEPT, i.e.
+# net >= 6_500 / 30_000 ~= 0.21667. DERIVED from the two constants (never a
+# hardcoded 0.2167) so a re-sized cap or floor moves the line with it. The
+# pre-v7 line was a bare 0.25 net-rate min; v7 replaces it with floor
+# funding (8_000 STORY_TARGET_KEPT is explicitly NOT the funding target —
+# a floor-funded PASS below target ships the reduced-n caveat, plan §7).
+G1_NET_RATE_MIN = cm.FLOOR_KEPT / SEGA_ATTEMPTS_CAP
 MAX_RETRY_WAVES = 2  # plan §7 G2b: <= 2 additional generation waves
 PILOT_PLAIN_ROWS = 8  # tiny plain-cell slice at P1 (0 would mean ALL rows)
 ADMISSION_SLICE_N = 400  # family-balanced sync slice (<= 500 smoke exemption)
@@ -139,6 +159,7 @@ ADMISSION_SLICE_N = 400  # family-balanced sync slice (<= 500 smoke exemption)
 PHASE_HEADROOM_GB = {
     "p0_banks_pools": 3,
     "p1_pilot": 12,
+    "p1_resume": 12,  # P1R re-runs the pilot capture store (same footprint)
     "p2_generate": 8,
     "p3_admission": 4,
     "p4_topup": 6,
@@ -149,10 +170,13 @@ PHASE_HEADROOM_GB = {
 
 # P6 fan-out shard map (plan §9: 4 suffixed cpu-bigmem pods; shard = unit
 # classes across pods; fits-d additionally owns pool + the summary phases).
+# v7 re-shard (dialogue descope, epm:progress v70 clause 1): the former
+# fits-c dialogue shard now takes the back half of the story-Q panel — plan
+# §9 retains 4 fit pods at v7 ("ladder 8 pairs").
 POD_ROLE_CELLS: dict[str, tuple[str, ...]] = {
     "fits-a": ("chat", "plain_text", "storyq_astra"),
-    "fits-b": ("storyq_helios", "storyq_wren", "storyq_dana", "storyq_vex"),
-    "fits-c": ("dialog_astra", "dialog_helios", "dialog_dana", "dialog_vex"),
+    "fits-b": ("storyq_helios", "storyq_wren"),
+    "fits-c": ("storyq_dana", "storyq_vex"),
     "fits-d": ("chat_user_real", "chat_user_sim"),
 }
 POD_ROLE_JITTER_S = {"fits-a": 0, "fits-b": 180, "fits-c": 360, "fits-d": 540}
@@ -958,12 +982,16 @@ def balanced_mined_slice(mined_dir: Path, out_dir: Path, n_total: int) -> int:
     import issue2378_gen as gen
 
     mined = gen._load_mined_rows(mined_dir)
-    by_family: dict[str, dict[str, list[str]]] = {"question": {}, "dialogue": {}}
+    # v7: only ACTIVE families enter the slice (dialogue descoped — archival
+    # dialog rows in a mixed mined_dir are skipped, never balanced against).
+    by_family: dict[str, dict[str, list[str]]] = {f: {} for f in cm.ACTIVE_FAMILIES}
     for rid, m in mined.items():
+        if m["family"] not in by_family:
+            continue
         by_family[m["family"]].setdefault(m["cell"], []).append(rid)
-    per_family = (n_total + 1) // 2
+    per_family = -(-n_total // len(cm.ACTIVE_FAMILIES))  # ceil-div
     chosen: list[str] = []
-    for family in ("question", "dialogue"):
+    for family in cm.ACTIVE_FAMILIES:
         cells = by_family[family]
         if not cells:
             raise RuntimeError(f"admission slice: no mined rows in family {family}")
@@ -1048,8 +1076,15 @@ def compose_pilot_digest(
     *,
     pilot_round: int,
     attempts_per_cell: int,
+    walls_merge_note: str | None = None,
 ) -> dict:
-    """Aggregate P1 per-stage counters into the G1 artifact (plan §7 G1)."""
+    """Aggregate P1 per-stage counters into the G1 artifact (plan §7 G1, v7).
+
+    ``walls_merge_note`` (P1R resume leg): the caller merged a prior round's
+    committed ``measured_walls_s`` under the fresh runner walls for stages the
+    resume leg did not re-run; the note records that provenance in the digest
+    (the commit-98565a9d7d hand-merge mechanism, now in code).
+    """
     pilot_dir = ledger_root / "pilot"
     mining = _sum_stage_summaries(raw_pilot / "sega", ("attempts", "kept", "cap_hit"))
     segb = _sum_stage_summaries(raw_pilot / "segb", ("rows", "kept", "cap_hit_no_close"))
@@ -1062,8 +1097,11 @@ def compose_pilot_digest(
         "admission": _family_pool(admission, "n_admitted", "n_items"),
         "segb_survival": _family_pool(segb, "kept", "rows"),
     }
+    # v7 (Amendment record B): the GATE iterates ACTIVE families only —
+    # per_stage/per_cell above still pool archival dialogue rows for the
+    # record, but dialogue never enters the PASS predicate or wave sizing.
     families: dict[str, dict] = {}
-    for fam in ("question", "dialogue"):
+    for fam in cm.ACTIVE_FAMILIES:
         net = 1.0
         for st in stages.values():
             net *= st.get(fam, {}).get("rate", 0.0)
@@ -1072,10 +1110,14 @@ def compose_pilot_digest(
             if net > 0
             else SEGA_ATTEMPTS_CAP
         )
+        projected = SEGA_ATTEMPTS_CAP * net  # kept rows funded at the attempts cap
         families[fam] = {
             "net_kept_per_attempt": net,
             "trip_line": G1_NET_RATE_MIN,
-            "pass": net >= G1_NET_RATE_MIN,
+            "attempts_cap": SEGA_ATTEMPTS_CAP,
+            "floor_kept": cm.FLOOR_KEPT,
+            "projected_kept_at_cap": projected,
+            "pass": projected >= cm.FLOOR_KEPT,
             "wave1_attempts_per_cell": sized,
         }
     judge_report_path = ledger_root / "judge" / "pilot_admission_sync.json"
@@ -1104,7 +1146,11 @@ def compose_pilot_digest(
     reasons: list[str] = []
     for fam, f in families.items():
         if not f["pass"]:
-            reasons.append(f"G1(a) {fam}: net {f['net_kept_per_attempt']:.4f} < {G1_NET_RATE_MIN}")
+            reasons.append(
+                f"G1(a) {fam}: projected kept at cap "
+                f"{f['projected_kept_at_cap']:.0f} < floor {cm.FLOOR_KEPT} "
+                f"(net {f['net_kept_per_attempt']:.4f} < {G1_NET_RATE_MIN:.5f})"
+            )
     if judge_report.get("verdict") != "PASS":
         reasons.append(f"G1(b) judge sync pilot verdict {judge_report.get('verdict')!r}")
     if not (best_r2 >= G1_SWEEP_R2_MIN):
@@ -1137,6 +1183,8 @@ def compose_pilot_digest(
         "fences_s_2x": {k: round(2 * v, 1) for k, v in walls.items()},
         "metadata": cm.run_metadata(),
     }
+    if walls_merge_note is not None:
+        digest["walls_merge_note"] = walls_merge_note
     cm.atomic_write_json(pilot_dir / "pilot_digest.json", digest)
     _log(f"[g1] verdict={digest['verdict']} reasons={reasons}")
     return digest
@@ -1229,8 +1277,10 @@ def evaluate_g2b(
     survivors = [c for c, v in cells.items() if v["floor_pass"]]
     drops = [c for c, v in cells.items() if not v["floor_pass"]] + missing
     n_q = len([c for c in survivors if c in cm.STORY_Q_CELLS])
-    n_d = len([c for c in survivors if c in cm.DIALOG_CELLS])
-    predicate = "chat" in survivors and "plain_text" in survivors and n_q >= 3 and n_d >= 2
+    # v7 amended predicate (Amendment record A / epm:progress v70 clause 1):
+    # the dialogue clause (>=2 dialogue survivors) is REMOVED with the family.
+    n_d = len([c for c in survivors if c in cm.DIALOG_CELLS])  # 0 by construction at v7
+    predicate = "chat" in survivors and "plain_text" in survivors and n_q >= 3
     user_drops = [c for c in drops if c in cm.USER_CELLS]
     binding_drops = [c for c in drops if c not in cm.USER_CELLS]
     out = {
@@ -1243,7 +1293,7 @@ def evaluate_g2b(
         "dropped_cells": drops,
         "user_cell_drops_nonbinding": user_drops,
         "binding_drops": binding_drops,
-        "survivor_predicate": "chat + plain + >=3 storyQ + >=2 dialogue (user cells excluded)",
+        "survivor_predicate": "chat + plain + >=3 storyQ (user cells excluded; v7 amended)",
         "story_q_survivors": n_q,
         "dialog_survivors": n_d,
         # retry waves (2/3) only — the close-miss escalation wave is reported
@@ -1538,20 +1588,27 @@ def _pilot_roots(args) -> tuple[Path, Path]:
     return Path(args.raw_pilot_root), Path(args.ledger_root)
 
 
-def _pilot_round_scope(raw_pilot: Path, runner: Runner, rnd: int) -> tuple[Path, Runner, str]:
-    """Round-scope the pilot resume key (logs dir), raw root, and HF prefix
-    (r1 review g5 blocker 2, G1 recalibration resume-skip): a `--pilot-round 2`
-    re-pilot must RE-RUN every generation/judge/capture step instead of
-    skipping onto round-1 OK-flags and reproducing the trip. Round 1 stays
-    byte-identical. Ledger pilot outputs (kept/, judge reports, digest, sweep)
-    keep their STABLE paths — round 2 re-runs + overwrites them (the final
-    pilot verdict), so the P2 gate + harvest paths are unchanged."""
+def _pilot_round_scope(raw_pilot: Path, runner: Runner, rnd: int) -> tuple[Path, Runner, str, Path]:
+    """Round-scope the pilot resume key (logs dir), raw root, HF prefix, AND
+    the capture out-root (r1 review g5 blocker 2, G1 recalibration
+    resume-skip; capture out-root added r12 — plan §4.7 out-root fix): a
+    `--pilot-round 2` re-pilot must RE-RUN every generation/judge/capture
+    step instead of skipping onto round-1 OK-flags and reproducing the trip,
+    and its capture must land in a FRESH store — the r2 crash was capture
+    resuming into round 1's StageLedger and tripping the regime-fingerprint
+    fail-loud. Round 1 stays byte-identical (stable paths throughout).
+    Ledger pilot outputs (kept/, judge reports, digest, sweep) keep their
+    STABLE paths DELIBERATELY — round 2 re-runs + overwrites them (the final
+    pilot verdict), so the P2 gate + harvest paths are unchanged; these are
+    whole-file atomic_write_json overwrites, not ledger-resumed stores, so
+    cross-round overwrite is safe by construction."""
     hf_pilot_prefix = f"{cm.HF_PREFIX}/raw_completions/pilot"
+    pilot_store = cm.pilot_capture_out_root(rnd)
     if rnd > 1:
         raw_pilot = raw_pilot / f"r{rnd}"
         runner = Runner(runner.logs_dir / f"p1_pilot_r{rnd}", resume=runner.resume, dry=runner.dry)
         hf_pilot_prefix = f"{cm.HF_PREFIX}/raw_completions/pilot/r{rnd}"
-    return raw_pilot, runner, hf_pilot_prefix
+    return raw_pilot, runner, hf_pilot_prefix, pilot_store
 
 
 def phase_p1(args, runner: Runner) -> int:
@@ -1560,7 +1617,7 @@ def phase_p1(args, runner: Runner) -> int:
     under raw_completions/pilot/<stage>."""
     _phase_line("p1_pilot")
     raw_pilot, ledger_root = _pilot_roots(args)
-    raw_pilot, runner, hf_pilot_prefix = _pilot_round_scope(
+    raw_pilot, runner, hf_pilot_prefix, pilot_store = _pilot_round_scope(
         raw_pilot, runner, int(args.pilot_round)
     )
     assert_headroom("p1_pilot", raw_pilot)
@@ -1683,6 +1740,12 @@ def phase_p1(args, runner: Runner) -> int:
             str(args.chat_pilot_rows),
             "--raw-root",
             str(raw_pilot),
+            # r12 out-root fix (plan §4.7): the capture store is ROUND-scoped
+            # like the raw root / resume keys / HF prefix above — a rnd>=2
+            # pilot previously fell to the stable default and died on round
+            # 1's StageLedger regime fingerprint.
+            "--pilot-out-root",
+            str(pilot_store),
             "--skip-capture-ready",
             "--layer-sweep-out",
             str(ledger_root / "pilot" / "layer_sweep.json"),
@@ -1693,7 +1756,8 @@ def phase_p1(args, runner: Runner) -> int:
     if runner.dry:
         _log(
             "[dry] p1.digest: compose_pilot_digest + G1 predicates "
-            f"(net>= {G1_NET_RATE_MIN}/family; judge PASS; sweep R2 >= {G1_SWEEP_R2_MIN})"
+            f"(projected kept at cap >= {cm.FLOOR_KEPT}/family, i.e. net >= "
+            f"{G1_NET_RATE_MIN:.5f}; judge PASS; sweep R2 >= {G1_SWEEP_R2_MIN})"
         )
         return 0
     for stage in ("sega", "sega_mined", "chat", "plain", "user_sim", "segb", "judge_admission"):
@@ -1727,6 +1791,10 @@ def phase_p1(args, runner: Runner) -> int:
         f"task #{ISSUE}: P1 pilot artifacts (G1 {digest['verdict']} harvest, pre-P2 — plan §9)",
     )
     if digest["verdict"] != "PASS":
+        # v7 (Amendment record B): the ONE recalibration round is SPENT (r11
+        # miner-window recalibration -> the r2 pilot). The branch stays for
+        # archival correctness — it can only fire at pilot_round==1, and any
+        # future below-line measure at ANY round is RC_G1_FAIL.
         only_rate_trips = all(r.startswith("G1(a)") for r in digest["fail_reasons"])
         if only_rate_trips and args.pilot_round == 1:
             _log(
@@ -1748,17 +1816,241 @@ def phase_p1(args, runner: Runner) -> int:
     return 0
 
 
+# P1R staging contract (plan §4.7): the r2 pilot raw prefixes persisted to HF
+# before pod-2378 was lost — exact per-stage file counts from the
+# upload-verification v1 marker (2026-08-21T09:38:21Z; 331 files total). The
+# staging step asserts this EXACT set; any mismatch aborts to the named
+# full-re-pilot fallback.
+_P1R_R2_STAGE_COUNTS: dict[str, int] = {
+    "sega": 108,
+    "sega_mined": 36,
+    "chat": 20,
+    "plain": 16,
+    "user_sim": 4,
+    "segb": 144,
+    "judge_admission": 1,
+    "judge_admission_pilot": 1,
+    "adm_slice": 1,
+}
+assert sum(_P1R_R2_STAGE_COUNTS.values()) == 331, "P1R expected-set drifted (upload-verif v1)"
+
+
+def _p1r_count_files(d: Path) -> int:
+    return sum(1 for p in d.rglob("*") if p.is_file())
+
+
+def _p1r_verify_counts(raw_pilot: Path) -> dict[str, int]:
+    """Exact-set count assert over the staged r2 stage dirs (fail-loud)."""
+    counts = {st: _p1r_count_files(raw_pilot / st) for st in _P1R_R2_STAGE_COUNTS}
+    bad = {st: n for st, n in counts.items() if n != _P1R_R2_STAGE_COUNTS[st]}
+    if bad:
+        raise RuntimeError(
+            "p1_resume staging count mismatch (staged != expected): "
+            + ", ".join(f"{st}: {bad[st]} != {_P1R_R2_STAGE_COUNTS[st]}" for st in sorted(bad))
+        )
+    return counts
+
+
+def _p1r_stage_r2_raw(raw_pilot: Path, hf_pilot_prefix: str) -> dict[str, int]:
+    """Stage the r2 pilot raw prefixes from HF into the ROUND-SCOPED raw root
+    (plan §4.7 P1R step (a)). Idempotent per stage: a dest dir already holding
+    the exact expected file count is kept; otherwise ONE whole-prefix mirror
+    pull (scoped listing) + per-stage ``os.replace`` moves (same filesystem —
+    the mirror lives inside ``raw_pilot``). Fail-loud on ANY count mismatch
+    (the 331-file exact set, upload-verification v1)."""
+    missing = {
+        st: n
+        for st, n in _P1R_R2_STAGE_COUNTS.items()
+        if not ((raw_pilot / st).is_dir() and _p1r_count_files(raw_pilot / st) == n)
+    }
+    if missing:
+        mirror_root = raw_pilot / "hf_mirror"
+        leaf = cm.stage_hf_prefix(hf_pilot_prefix, mirror_root)
+        for st in sorted(missing):
+            src = leaf / st
+            if not src.is_dir():
+                raise RuntimeError(f"p1_resume staging: HF prefix lacks stage dir {st!r} ({src})")
+            dest = raw_pilot / st
+            if dest.exists():
+                shutil.rmtree(dest)  # partial/stale local copy — replace wholesale
+            os.replace(src, dest)
+        shutil.rmtree(mirror_root)  # reap the mirror residue (raw root stays canonical)
+    counts = _p1r_verify_counts(raw_pilot)
+    _log(f"[p1r] staged r2 raw verified: {sum(counts.values())} files across {len(counts)} stages")
+    return counts
+
+
+def phase_p1_resume(args, runner: Runner) -> int:
+    """P1R — pilot-completion resume leg (plan §4.7, r12; epm:progress v70).
+
+    Completes the r2 pilot on a FRESH pod without re-spending generation /
+    judge GPU: (a) stages the persisted r2 raw prefixes from HF
+    (count-asserted 331-file exact set), (b) asserts the committed ledger
+    outputs are present from git (branch tip, commit f9c5451b62), (c) SKIPS
+    the generation/judge/admission/segb runner stages — skip conditions
+    ASSERTED on durable outputs, never silent — (d) re-runs the pilot capture
+    through the SAME production entrypoint with the r12 ROUND-SCOPED
+    out-root, (e) the layer sweep (inside the capture step), (f) re-composes
+    the G1 digest under the AMENDED (v7) gate with walls merged from the
+    committed digest for stages not re-run, and (g) writes the G1 verdict
+    sentinel + artifact harvest. A FAIL is TERMINAL (RC_G1_FAIL): the one
+    recalibration round is SPENT (r11 — plan v7 Amendment record B)."""
+    _phase_line("p1_resume")
+    rnd = int(args.pilot_round)
+    if rnd != 2:
+        raise RuntimeError(
+            "p1_resume requires --pilot-round 2 (it is the r2 pilot-completion leg; "
+            "for a fresh pilot run --phase p1_pilot instead)"
+        )
+    raw_pilot, ledger_root = _pilot_roots(args)
+    raw_pilot, runner, hf_pilot_prefix, pilot_store = _pilot_round_scope(raw_pilot, runner, rnd)
+    assert_headroom("p1_resume", raw_pilot)
+    ensure_model_venv(args, runner)
+    gpus = visible_gpus()
+
+    # (a) stage the r2 raw prefixes from HF (exact-set count assert).
+    if runner.dry:
+        _log(
+            f"[dry] p1r.stage_raw: stage {hf_pilot_prefix} -> {raw_pilot} "
+            f"({sum(_P1R_R2_STAGE_COUNTS.values())} files, count-asserted)"
+        )
+    else:
+        try:
+            _p1r_stage_r2_raw(raw_pilot, hf_pilot_prefix)
+        except Exception as e:
+            raise RuntimeError(
+                f"P1R ABORT — r2 raw staging failed ({e}). FALLBACK (plan §4.7): run ONE "
+                "full question-only re-pilot on a fresh pod: --phase p1_pilot "
+                "--pilot-round 2."
+            ) from e
+
+    # (b) committed ledger outputs present from git (branch tip f9c5451b62).
+    # kept/ covers the FULL r2 panel (5 storyQ + 4 archival dialogue cells —
+    # the digest pools dialogue for the record; the amended gate ignores it).
+    ledger_expect = [
+        *(
+            ledger_root / "pilot" / "kept" / f"{c}.json"
+            for c in (*cm.STORY_Q_CELLS, *cm.DIALOG_CELLS)
+        ),
+        ledger_root / "judge" / "pilot_admission_sync.json",
+        ledger_root / "pilot" / "judge" / "admission_summary.json",
+    ]
+    missing_ledger = [str(p) for p in ledger_expect if not p.is_file()]
+    if missing_ledger and not runner.dry:
+        raise RuntimeError(
+            "p1_resume: committed r2 ledger outputs missing from the checkout "
+            f"(expected from git at branch tip, commit f9c5451b62): {missing_ledger} — "
+            "sync the pod clone first; if genuinely lost, FALLBACK (plan §4.7): "
+            "full re-pilot via --phase p1_pilot --pilot-round 2."
+        )
+
+    # (c) generation/judge/admission/segb stages SKIPPED — asserted on their
+    # durable outputs (the digest + capture consume exactly these), never a
+    # silent skip.
+    if not runner.dry:
+        for stage, pat in (
+            ("sega", "summary_*.json"),
+            ("segb", "summary_*.json"),
+            ("user_sim", "summary_*.json"),
+            ("chat", "rows_*.jsonl"),
+            ("plain", "rows_*.jsonl"),
+        ):
+            if not sorted((raw_pilot / stage).glob(pat)):
+                raise RuntimeError(
+                    f"p1_resume skip-assert failed: no {pat} under {raw_pilot / stage} "
+                    "(the skipped stage's durable output is absent)"
+                )
+        _log("[p1r] skip-asserts passed: gen/judge/admission/segb outputs already durable")
+
+    # (d)+(e) pilot capture with the FIXED round-scoped out-root; the layer
+    # sweep runs inside the same production entrypoint (--layer-sweep-out).
+    # Step name matches phase_p1's so the fresh wall OVERRIDES the committed
+    # digest's stale r1 value in the walls-merge below.
+    runner.run(
+        "p1.capture_pilot",
+        _model_py(
+            "issue2378_capture.py",
+            "--phase",
+            "pilot",
+            "--pilot-rows",
+            str(args.chat_pilot_rows),
+            "--raw-root",
+            str(raw_pilot),
+            "--pilot-out-root",
+            str(pilot_store),
+            "--skip-capture-ready",
+            "--layer-sweep-out",
+            str(ledger_root / "pilot" / "layer_sweep.json"),
+            "--skip-upload",
+        ),
+        env_extra=_first_gpu_env(runner, gpus, "p1.capture_pilot"),
+    )
+    if runner.dry:
+        _log("[dry] p1r.digest: compose_pilot_digest (amended G1) + walls-merge")
+        return 0
+
+    # (f) digest with walls merged from the committed round-1 digest for the
+    # stages this leg did not re-run (the 98565a9d7d hand-merge, now in code).
+    digest_path = ledger_root / "pilot" / "pilot_digest.json"
+    prior_walls: dict[str, float] = {}
+    if digest_path.is_file():
+        prior = json.loads(digest_path.read_text(encoding="utf-8"))
+        prior_walls = {k: float(v) for k, v in prior.get("measured_walls_s", {}).items()}
+    walls = {**prior_walls, **runner.walls}
+    note = (
+        "P1R (r12): measured_walls_s for stages NOT re-run merged from the committed "
+        "pilot_digest.json at branch tip; fresh keys from this leg override: "
+        + (", ".join(sorted(runner.walls)) or "none")
+    )
+    digest = compose_pilot_digest(
+        raw_pilot,
+        ledger_root,
+        walls,
+        pilot_round=rnd,
+        attempts_per_cell=args.attempts_per_cell,
+        walls_merge_note=note,
+    )
+    blocks = digest["verdict"] != "PASS"
+    write_sentinel(args, "epm:progress", digest, gate="g1", blocks_pipeline=blocks)
+    upload_json_files(
+        [digest_path, ledger_root / "pilot" / "layer_sweep.json"],
+        f"{cm.HF_PREFIX}/pilot",
+    )
+    git_harvest(
+        [
+            "eval_results/issue_2378/pilot/pilot_digest.json",
+            "eval_results/issue_2378/pilot/layer_sweep.json",
+            "eval_results/issue_2378/judge/pilot_admission_sync.json",
+            "eval_results/issue_2378/model_venv_pins.json",
+        ],
+        f"task #{ISSUE}: P1R pilot completion (G1 {digest['verdict']} harvest — plan §4.7)",
+    )
+    if digest["verdict"] != "PASS":
+        # v7: recalibration SPENT — any below-line measure is terminal.
+        return RC_G1_FAIL
+    write_sentinel(
+        args,
+        "epm:progress",
+        {
+            "phase": "p1_resume",
+            "status": "complete",
+            "g1": "PASS",
+            "wave1_sizing": digest["families"],
+        },
+    )
+    return 0
+
+
 def phase_p2(args, runner: Runner) -> int:
     _phase_line("p2_generate")
     assert_headroom("p2_generate", Path(args.raw_root))
     ensure_model_venv(args, runner)
     ledger_root = Path(args.ledger_root)
     gpus = visible_gpus()
+    # v7: active families only (dialogue descoped). The digest filter guards
+    # against a pre-v7 digest carrying a dialogue sizing entry.
     if args.sega_attempts_per_cell > 0:
-        per_family = {
-            "question": args.sega_attempts_per_cell,
-            "dialogue": args.sega_attempts_per_cell,
-        }
+        per_family = {fam: args.sega_attempts_per_cell for fam in cm.ACTIVE_FAMILIES}
     elif not runner.dry:
         digest = json.loads(
             (ledger_root / "pilot" / "pilot_digest.json").read_text(encoding="utf-8")
@@ -1768,13 +2060,14 @@ def phase_p2(args, runner: Runner) -> int:
         per_family = {
             fam: min(SEGA_ATTEMPTS_CAP, int(f["wave1_attempts_per_cell"]))
             for fam, f in digest["families"].items()
+            if fam in cm.ACTIVE_FAMILIES
         }
+        missing = [fam for fam in cm.ACTIVE_FAMILIES if fam not in per_family]
+        if missing:
+            raise RuntimeError(f"p2_generate: pilot_digest lacks sizing for families {missing}")
     else:
-        per_family = {"question": 0, "dialogue": 0}
-    fam_cells = {
-        "question": [c for c in cm.STORY_Q_CELLS],
-        "dialogue": [c for c in cm.DIALOG_CELLS],
-    }
+        per_family = {fam: 0 for fam in cm.ACTIVE_FAMILIES}
+    fam_cells = {fam: list(cm.FAMILY_CELLS[fam]) for fam in cm.ACTIVE_FAMILIES}
     for fam, attempts in per_family.items():
         runner.fanout(
             f"p2.sega.{fam}",
@@ -2103,6 +2396,11 @@ def phase_p4(args, runner: Runner) -> int:
 
     lstar = 32 if runner.dry else resolve_lstar(ledger_root)
     layers = parse_layers_spec(args.layers, lstar)
+    # Production capture store: DELIBERATELY STABLE across relaunches (r12
+    # out-root audit). Unlike the pilot store (round-scoped — a fresh pilot
+    # ROUND is a new regime), a P4 relaunch resumes the SAME regime, and the
+    # StageLedger's fingerprint fail-loud is the designed guard against a
+    # regime-changed rerun landing here (wipe or re-root explicitly then).
     out_root = Path(args.store_root)
     # dry mode runs on the GPU-less VM: log with a placeholder CVD pin; a real
     # pod with zero visible GPUs still fails loud inside Runner.parallel.
@@ -2525,7 +2823,7 @@ def phase_p6(args, runner: Runner) -> int:
     if role == "fits-d":
         if runner.dry:
             _log(
-                "[dry] p6.summaries: wait siblings -> stage sidecars -> pool/h5/h3/h4b/ratio "
+                "[dry] p6.summaries: wait siblings -> stage sidecars -> pool/h5/h4b/ratio "
                 "-> p6_merge_digest.json"
             )
         else:
@@ -2542,10 +2840,9 @@ def phase_p6(args, runner: Runner) -> int:
             "p6.pool", _py("issue2378_pool.py", "--phase", "pool", "--cells", surv_arg, *store)
         )
         runner.run("p6.h5", _py("issue2378_pool.py", "--phase", "h5", "--cells", surv_arg, *store))
-        runner.run(
-            "p6.h3",
-            _py("issue2378_ladder.py", "--phase", "h3", "--survivors", surv_arg, *store),
-        )
+        # p6.h3 (question-vs-dialogue contrast) REMOVED at v7: the dialogue
+        # family is descoped (epm:progress v70 clause 1) — ladder.phase_h3 is
+        # tombstoned and would refuse anyway.
         user_cells = ("chat_user_real", "chat_user_sim")
         if all(c in survivors for c in user_cells):
             runner.run("p6.h4b", _py("issue2378_ladder.py", "--phase", "h4b", *store))
@@ -2572,8 +2869,8 @@ def phase_p6(args, runner: Runner) -> int:
         # phase_ratio checks the drop marker FIRST — a coexisting stale
         # git-re-materialized fit never resurrects a dropped arm — with
         # --survivors keying marker authority to THIS dispatch's survivor set
-        # (a stale prior-run marker on a survivor is ignored; h3 above gets
-        # the same threading). A dropped user arm yields a loud per-arm N/A
+        # (a stale prior-run marker on a survivor is ignored). A dropped
+        # user arm yields a loud per-arm N/A
         # entry (whole-file N/A when both drop), while a missing fit for a
         # SURVIVOR still hard-raises.
         runner.run(
@@ -2590,7 +2887,6 @@ def phase_p6(args, runner: Runner) -> int:
             git_harvest(
                 [
                     "eval_results/issue_2378/pool/*.json",
-                    "eval_results/issue_2378/ladder/h3_question_vs_dialogue.json",
                     "eval_results/issue_2378/ladder/h4b_real_vs_sim.json",
                     "eval_results/issue_2378/fits/ratio/h4a_ceiling_ratio.json",
                     "eval_results/issue_2378/p6_merge_digest.json",
@@ -2727,9 +3023,18 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
             assert set(d["per_stage"]["segb_survival"]) == {"question", "dialogue"}, d["per_stage"]
             assert set(d["per_cell"]["mining"]) == {"storyq_astra", "dialog_astra"}, d["per_cell"]
             assert set(d["per_cell"]["segb"]) == {"storyq_astra", "dialog_astra"}, d["per_cell"]
-            # net = 0.6 * (40/60) * 0.9 = 0.36 >= 0.25; sizing = ceil(8000*1.25/0.36)
+            # v7: the GATE iterates ACTIVE families only — dialogue is pooled
+            # for the record (per_stage above) but absent from the predicate.
+            assert set(d["families"]) == {"question"}, d["families"]
+            # net = 0.6 * (40/60) * 0.9 = 0.36; projected 30000*0.36 >= 6500;
+            # sizing = ceil(8000*1.25/0.36) (formula unchanged at v7)
             fam = d["families"]["question"]
             assert abs(fam["net_kept_per_attempt"] - 0.6 * (40 / 60) * 0.9) < 1e-9
+            assert fam["floor_kept"] == cm.FLOOR_KEPT
+            assert (
+                abs(fam["projected_kept_at_cap"] - SEGA_ATTEMPTS_CAP * fam["net_kept_per_attempt"])
+                < 1e-6
+            )
             assert fam["wave1_attempts_per_cell"] == math.ceil(
                 8000 * 1.25 / fam["net_kept_per_attempt"]
             )
@@ -2737,11 +3042,29 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
 
         check("G1 composer PASS branch + wave sizing", t_g1_pass)
 
+        def t_g1_amended_band():
+            # v7 DISCRIMINATING fixture (Amendment record B): mining 38/100 ->
+            # net = 0.38 * (40/60) * 0.9 = 0.228 — BELOW the pre-v7 0.25 line,
+            # ABOVE the amended floor-funding line 6500/30000 ~= 0.21667.
+            # Amended gate: PASS (projected 6840 >= 6500); the old line FAILs.
+            raw, ledger = _mk_pilot_fixture(tmp / "g1band", mining_kept=38)
+            d = compose_pilot_digest(raw, ledger, {}, pilot_round=2, attempts_per_cell=300)
+            fam = d["families"]["question"]
+            assert G1_NET_RATE_MIN < fam["net_kept_per_attempt"] < 0.25, fam
+            assert fam["projected_kept_at_cap"] >= cm.FLOOR_KEPT
+            assert d["verdict"] == "PASS", d["fail_reasons"]
+            assert abs(G1_NET_RATE_MIN - cm.FLOOR_KEPT / SEGA_ATTEMPTS_CAP) < 1e-12
+
+        check("G1 amended floor-funding band (v7: PASS below the old 0.25 line)", t_g1_amended_band)
+
         def t_g1_trip():
             raw, ledger = _mk_pilot_fixture(tmp / "g1trip", mining_kept=20)
             d = compose_pilot_digest(raw, ledger, {}, pilot_round=1, attempts_per_cell=300)
+            # net = 0.2 * (40/60) * 0.9 = 0.12 -> projected 3600 < 6500: FAIL
+            # under the amended line too.
             assert d["verdict"] == "FAIL"
             assert all(r.startswith("G1(a)") for r in d["fail_reasons"])
+            assert "floor" in d["fail_reasons"][0], d["fail_reasons"]
             # trip-line sizing caps at 30k
             assert d["families"]["question"]["wave1_attempts_per_cell"] <= SEGA_ATTEMPTS_CAP
 
@@ -2788,7 +3111,8 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
                     },
                 )
             out = evaluate_g2b(ledger, waves_used=2, escalated=["storyq_vex"])
-            assert out["verdict"] == "PASS"  # 4 storyQ + 4 dialog survive
+            assert out["verdict"] == "PASS"  # chat + plain + 4 storyQ survive (v7 predicate)
+            assert out["story_q_survivors"] == 4 and out["dialog_survivors"] == 0
             assert out["user_cell_drops_nonbinding"] == ["chat_user_real"]
             assert "storyq_vex" in out["dropped_cells"]
             # binding FAIL branch: kill chat
@@ -2919,26 +3243,66 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
                 if ln.strip()
             ]
             fams = {r["family"] for r in rows}
-            assert n == 40 and fams == {"question", "dialogue"}
+            cells = {r["cell"] for r in rows}
+            # v7: ACTIVE families only — the archival dialog_dana rows in the
+            # mixed mined fixture are SKIPPED, never balanced against.
+            assert n == 40 and fams == {"question"}, (n, fams)
+            assert cells == {"storyq_astra", "storyq_vex"}, cells
 
-        check("balanced admission slice (both families covered)", t_slice)
+        check("balanced admission slice (active families only, v7)", t_slice)
 
         def t_pilot_round_scope():
             base_raw = tmp / "praw"
             r1 = Runner(tmp / "plogs" / "p1_pilot", resume=True, dry=True)
-            raw1, run1, pref1 = _pilot_round_scope(base_raw, r1, 1)
+            raw1, run1, pref1, store1 = _pilot_round_scope(base_raw, r1, 1)
             assert raw1 == base_raw and run1 is r1
             assert pref1 == f"{cm.HF_PREFIX}/raw_completions/pilot"
-            raw2, run2, pref2 = _pilot_round_scope(base_raw, r1, 2)
+            # round 1 keeps the STABLE capture store (pre-fix byte parity)
+            assert store1 == cm.PILOT_STORE_DEFAULT
+            raw2, run2, pref2, store2 = _pilot_round_scope(base_raw, r1, 2)
             assert raw2 == base_raw / "r2"
             assert run2.logs_dir == r1.logs_dir / "p1_pilot_r2"
             assert pref2 == f"{cm.HF_PREFIX}/raw_completions/pilot/r2"
+            # r12 out-root fix: round-2 capture store DISJOINT from round 1's
+            # (the r2 crash: capture resumed into round 1's StageLedger) —
+            # sibling dir, never nested inside the round-1 store.
+            assert store2 != store1, (store1, store2)
+            assert store2 == store1.parent / f"{store1.name}_r2"
+            assert store1 not in store2.parents
             # round-2 resume keys are DISJOINT from round 1's: a round-1
             # ok-flag must be invisible to the round-2 Runner (g5 blocker 2)
             run1._ok_path("p1.sega").write_text("sha")
             assert not run2._ok_path("p1.sega").exists()
 
-        check("pilot round-2 scope (fresh resume key + raw root + HF prefix)", t_pilot_round_scope)
+        check(
+            "pilot round-2 scope (fresh resume key + raw root + HF prefix + capture store)",
+            t_pilot_round_scope,
+        )
+
+        def t_p1r_staging():
+            # P1R staging count-assert (plan §4.7 step (a)): exact-set expected
+            # counts, fail-loud on any mismatch, idempotent accept on an
+            # already-staged root. Fixture builds the dest dirs DIRECTLY (no
+            # network) — the HF pull branch is exercised pod-side.
+            root = tmp / "p1r_raw"
+            for st, n in _P1R_R2_STAGE_COUNTS.items():
+                d = root / st
+                d.mkdir(parents=True, exist_ok=True)
+                for i in range(n):
+                    (d / f"f{i:04d}.json").write_text("{}", encoding="utf-8")
+            counts = _p1r_stage_r2_raw(root, "unused/prefix")  # all present -> no pull
+            assert sum(counts.values()) == 331 and counts == _P1R_R2_STAGE_COUNTS
+            # planted mismatch: one extra file in segb -> loud count failure
+            # (verify helper directly — the stage entrypoint's missing-set
+            # branch would attempt an HF pull, and probes stay offline).
+            (root / "segb" / "extra.json").write_text("{}", encoding="utf-8")
+            try:
+                _p1r_verify_counts(root)
+                raise AssertionError("planted segb count mismatch must raise")
+            except RuntimeError as e:
+                assert "segb: 145 != 144" in str(e), e
+
+        check("P1R staging exact-set count assert (idempotent + fail-loud)", t_p1r_staging)
 
         def t_p6_survivor_threading():
             # g5 blocker 3 + codex g2b-survivors blocker: the fits-d join-wait
@@ -3176,6 +3540,13 @@ def run_import_check() -> int:
 
     sig = inspect.signature(gen._load_kept_ids)
     sig.bind(Path("x"), "cell")  # call-shape bind for the retry-extras seam
+    # r12 P1R staging seam: cm.stage_hf_prefix defers `orchestrate.hub` —
+    # execute the import + bind the exact call shape it forwards.
+    from explore_persona_space.orchestrate import hub as _hub
+
+    inspect.signature(_hub.stage_hub_prefix).bind(
+        cm.HF_DATA_REPO, "prefix", Path("x"), repo_type="dataset", revision=None
+    )
     # r8 engine_smoke seam: create_vllm_engine resolves on the repo venv (its
     # own vllm import is deferred) — bind the gate's exact call shape. The
     # `from vllm import SamplingParams` / EngineArgs deferred imports inside
@@ -3207,6 +3578,7 @@ PHASES = {
     "model_venv": phase_model_venv,
     "p0_banks_pools": phase_p0,
     "p1_pilot": phase_p1,
+    "p1_resume": phase_p1_resume,
     "p2_generate": phase_p2,
     "p3_admission": phase_p3,
     "p4_topup": phase_p4_topup,

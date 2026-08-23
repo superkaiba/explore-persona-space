@@ -52,7 +52,10 @@ N_EQ_FLOOR = cm.FLOOR_KEPT  # 6,500 (plan §7 G2b)
 N_TRAIN_FLOOR = 5120  # per realized fold, n_train must EXCEED this (plan G2b)
 R2_ABS_FLOOR = 0.05  # max(null p95, 0.05) is the ceiling floor (plan §3)
 MIN_STORYQ_SURVIVORS = 3
-MIN_DIALOG_SURVIVORS = 2
+# v7 (plan Amendment record A, epm:progress v70): dialogue family DESCOPED —
+# the amended G2b predicate is "chat + plain + >=3 story-Q"; the dialog floor
+# is 0 (parameter machinery retained; n_dg >= 0 is vacuous by construction).
+MIN_DIALOG_SURVIVORS = 0
 VALID_DRAW_FRAC = 0.8  # ratio-bootstrap suppression threshold (plan §3)
 
 ARMS = ("context", "prefix")

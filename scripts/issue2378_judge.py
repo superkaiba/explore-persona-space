@@ -17,7 +17,8 @@ Pilot gate (plan §4.5; llm-judging rules 23/26): ``--pilot N`` runs an
 N-call wave on the SAME instrument + transport (``--transport sync|batch``)
 and writes a report JSON; gate = ZERO ``stop_reason == "max_tokens"`` AND
 pooled per-FAMILY-arm parse-fail < 2% with >= 100 answered draws per family
-(question-family / dialogue-family; per-cell rates descriptive only). A gate
+(ACTIVE families per cm.ACTIVE_FAMILIES — question-only at v7, dialogue
+descoped; per-cell rates descriptive only). A gate
 FAIL exits rc=7 (designed halt, artifact-routed — never a bare rc=1).
 Production REFUSES to dispatch without a PASS pilot artifact for BOTH
 transports of its wave (sync pilot + forced-batch pre-wave), except a
@@ -340,12 +341,16 @@ def _congruence_items(args, mined: dict[str, dict]):
 
 
 def _pilot_items(args, mined: dict[str, dict], n: int):
-    """Family-stratified pilot sample: ceil(n/2) per family, round-robin
-    across cells within family for coverage (plan §4.5 pooled-family arms)."""
-    by_family: dict[str, dict[str, list[str]]] = {"question": {}, "dialogue": {}}
+    """Family-stratified pilot sample: ceil(n/len(active families)) per
+    family, round-robin across cells within family for coverage (plan §4.5
+    pooled-family arms; v7: ACTIVE families only — archival dialogue rows in
+    a mixed mined dir are skipped, never sampled)."""
+    by_family: dict[str, dict[str, list[str]]] = {f: {} for f in cm.ACTIVE_FAMILIES}
     for rid, m in mined.items():
+        if m["family"] not in by_family:
+            continue
         by_family[m["family"]].setdefault(m["cell"], []).append(rid)
-    per_family = (n + 1) // 2 + PILOT_FAMILY_OVERSAMPLE
+    per_family = -(-n // len(cm.ACTIVE_FAMILIES)) + PILOT_FAMILY_OVERSAMPLE  # ceil-div
     chosen: list[str] = []
     for family, cells in by_family.items():
         if not cells:
@@ -484,14 +489,17 @@ def _run_pilot(args, mined: dict[str, dict]) -> int:
         items = _pilot_items(args, mined, args.pilot)
     else:
         all_items, _rows = _congruence_items(args, mined)
-        by_fam: dict[str, list] = {"question": [], "dialogue": []}
+        # v7: ACTIVE families only (dialogue descoped; archival rows skipped).
+        by_fam: dict[str, list] = {f: [] for f in cm.ACTIVE_FAMILIES}
         for it in all_items:
-            by_fam[it.payload["family"]].append(it)
+            if it.payload["family"] in by_fam:
+                by_fam[it.payload["family"]].append(it)
         # Same oversample margin as the admission pilot (g1 concern 3).
-        target = args.pilot + 2 * PILOT_FAMILY_OVERSAMPLE
+        target = args.pilot + len(cm.ACTIVE_FAMILIES) * PILOT_FAMILY_OVERSAMPLE
         items, i = [], 0
-        while len(items) < target and (by_fam["question"] or by_fam["dialogue"]):
-            fam = ("question", "dialogue")[i % 2]
+        fams = tuple(cm.ACTIVE_FAMILIES)
+        while len(items) < target and any(by_fam[f] for f in fams):
+            fam = fams[i % len(fams)]
             if by_fam[fam]:
                 items.append(by_fam[fam].pop(0))
             i += 1

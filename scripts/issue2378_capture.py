@@ -1182,7 +1182,7 @@ def phase_sweep(args) -> None:
 
 
 def phase_capture(args) -> None:
-    """Production capture: all 13 cells (or --cells) at L* + flanks."""
+    """Production capture: all 11 active cells (v7; or --cells) at L* + flanks."""
     layers = _resolve_layers(args)
     tok = gen._get_tokenizer()
     template_sha = gen._assert_chat_template(tok)
@@ -1496,8 +1496,10 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--out-root", default=str(cm.REPO_ROOT / "data" / "issue_2378" / "activations"))
     ap.add_argument(
         "--pilot-out-root",
-        default=str(cm.REPO_ROOT / "data" / "issue_2378" / "activations_pilot"),
-        help="pilot all-layer store (plan §10 declared discard; never uploaded)",
+        default=str(cm.PILOT_STORE_DEFAULT),
+        help="pilot all-layer store (plan §10 declared discard; never uploaded). "
+        "Dispatch threads a ROUND-SCOPED root here (cm.pilot_capture_out_root) so "
+        "a round>=2 pilot never resumes into round 1's StageLedger (r12 fix).",
     )
     ap.add_argument("--layer-sweep-out", default=str(cm.LEDGER_ROOT / "pilot" / "layer_sweep.json"))
     # sizing

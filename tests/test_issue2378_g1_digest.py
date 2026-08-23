@@ -91,3 +91,117 @@ def test_non_cell_filename_capture_falls_through_to_stage_name(tmp_path: Path) -
     per_cell = d._sum_stage_summaries(stage, ("attempts", "kept"))
     assert set(per_cell) == {"sega"}, per_cell
     assert "not_a_cell" not in cm.CELL_FAMILY  # fixture premise
+
+
+# ---------------------------------------------------------------------------
+# v7 amended-G1 pins (plan Amendment record B, epm:progress v70 clause 2):
+# question-only gate, floor-funding PASS line derived from the constants,
+# wave-1 sizing formula unchanged, dialogue pooled for the record only.
+# ---------------------------------------------------------------------------
+
+
+def _pilot_fixture(root: Path, mining_kept: int) -> tuple[Path, Path]:
+    """Minimal r2-shaped pilot raw+ledger fixture (storyq_astra + archival
+    dialog_astra; mirrors dispatch phase_probe's _mk_pilot_fixture)."""
+    raw, ledger = root / "raw", root / "ledger"
+    for cell in ("storyq_astra", "dialog_astra"):
+        _write(
+            raw / "sega" / f"summary_{cell}_w1_s0.json",
+            {"cell": cell, "counts": {"attempts": 100, "kept": mining_kept, "cap_hit": 0}},
+        )
+        _write(
+            raw / "segb" / f"summary_{cell}_w1_s0.json",
+            {"cell": cell, "counts": {"rows": 50, "kept": 45, "cap_hit_no_close": 2}},
+        )
+        _write(
+            ledger / "pilot" / "kept" / f"{cell}.json",
+            {
+                "cell": cell,
+                "family": cm.CELL_FAMILY[cell],
+                "n_items": 60,
+                "n_admitted": 40,
+                "admitted": [],
+            },
+        )
+    _write(raw / "user_sim" / "summary_w1_s0.json", {"counts": {"rows": 50, "kept": 47}})
+    _write(ledger / "judge" / "pilot_admission_sync.json", {"verdict": "PASS", "tally": {}})
+    _write(
+        ledger / "pilot" / "layer_sweep.json",
+        {"selected_layer": 40, "gate_g1c": {"threshold": 0.05, "max_r2": 0.31, "passes": True}},
+    )
+    return raw, ledger
+
+
+def test_amended_g1_trip_line_derived_from_constants() -> None:
+    """The v7 rate line is FLOOR_KEPT / SEGA_ATTEMPTS_CAP (~0.21667) — derived,
+    never a hardcoded 0.2167, and strictly below the pre-v7 0.25 line."""
+    assert d.G1_NET_RATE_MIN == cm.FLOOR_KEPT / d.SEGA_ATTEMPTS_CAP
+    assert 0.216 < d.G1_NET_RATE_MIN < 0.217
+    assert d.G1_NET_RATE_MIN < 0.25
+
+
+def test_amended_g1_passes_in_floor_funding_band(tmp_path: Path) -> None:
+    """DISCRIMINATING fixture: net = 0.38 * (40/60) * 0.9 = 0.228 sits BELOW
+    the old 0.25 line and ABOVE the amended floor-funding line — the v7 gate
+    PASSes it (projected 6,840 kept at the 30k cap >= 6,500 floor)."""
+    raw, ledger = _pilot_fixture(tmp_path, mining_kept=38)
+    digest = d.compose_pilot_digest(raw, ledger, {}, pilot_round=2, attempts_per_cell=300)
+    fam = digest["families"]["question"]
+    assert d.G1_NET_RATE_MIN < fam["net_kept_per_attempt"] < 0.25
+    assert fam["pass"] is True
+    assert fam["floor_kept"] == cm.FLOOR_KEPT
+    assert fam["attempts_cap"] == d.SEGA_ATTEMPTS_CAP
+    assert fam["projected_kept_at_cap"] == fam["net_kept_per_attempt"] * d.SEGA_ATTEMPTS_CAP
+    assert digest["verdict"] == "PASS", digest["fail_reasons"]
+
+
+def test_amended_g1_gate_is_question_only_dialogue_pooled_for_record(tmp_path: Path) -> None:
+    """The GATE iterates ACTIVE families only (question at v7); dialogue rows
+    still pool into per_stage/per_cell for the archival record."""
+    raw, ledger = _pilot_fixture(tmp_path, mining_kept=38)
+    digest = d.compose_pilot_digest(raw, ledger, {}, pilot_round=2, attempts_per_cell=300)
+    assert set(digest["families"]) == {"question"}
+    assert set(digest["per_stage"]["mining"]) == {"question", "dialogue"}
+    assert set(digest["per_cell"]["mining"]) == {"storyq_astra", "dialog_astra"}
+
+
+def test_amended_g1_below_floor_fails_with_floor_reason(tmp_path: Path) -> None:
+    """net = 0.2 * (40/60) * 0.9 = 0.12 -> projected 3,600 < 6,500: FAIL, and
+    the G1(a) reason names the floor arithmetic."""
+    raw, ledger = _pilot_fixture(tmp_path, mining_kept=20)
+    digest = d.compose_pilot_digest(raw, ledger, {}, pilot_round=2, attempts_per_cell=300)
+    assert digest["verdict"] == "FAIL"
+    assert any(r.startswith("G1(a) question") and "floor" in r for r in digest["fail_reasons"])
+
+
+def test_wave1_sizing_formula_unchanged_at_v7(tmp_path: Path) -> None:
+    """min(cap, ceil(TARGET * SLACK / net)) — the amendment changes ONLY the
+    PASS predicate, never the sizing formula."""
+    import math
+
+    raw, ledger = _pilot_fixture(tmp_path, mining_kept=38)
+    digest = d.compose_pilot_digest(raw, ledger, {}, pilot_round=2, attempts_per_cell=300)
+    fam = digest["families"]["question"]
+    expect = min(
+        d.SEGA_ATTEMPTS_CAP,
+        math.ceil(cm.STORY_TARGET_KEPT * d.WAVE1_SLACK / fam["net_kept_per_attempt"]),
+    )
+    assert fam["wave1_attempts_per_cell"] == expect
+
+
+def test_walls_merge_note_recorded_only_when_passed(tmp_path: Path) -> None:
+    """P1R walls-merge provenance: the note lands in the digest verbatim when
+    supplied; absent otherwise (the 98565a9d7d hand-merge, now in code)."""
+    raw, ledger = _pilot_fixture(tmp_path, mining_kept=38)
+    d0 = d.compose_pilot_digest(raw, ledger, {}, pilot_round=2, attempts_per_cell=300)
+    assert "walls_merge_note" not in d0
+    d1 = d.compose_pilot_digest(
+        raw,
+        ledger,
+        {"p1.capture_pilot": 10.0},
+        pilot_round=2,
+        attempts_per_cell=300,
+        walls_merge_note="merged from committed digest",
+    )
+    assert d1["walls_merge_note"] == "merged from committed digest"
+    assert d1["measured_walls_s"] == {"p1.capture_pilot": 10.0}

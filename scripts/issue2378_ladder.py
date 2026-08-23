@@ -1,7 +1,8 @@
 """Issue #2378 P6 — 9-rung chat→target transfer ladder (unit 3 deliverable 2).
 
-ONE direction only: chat → each of the 12 target cells (plain_text, 5 story-Q,
-4 dialogue, chat_user_real, chat_user_sim), context arm, at the frozen layer
+ONE direction only: chat → each of the 8 target cells (plain_text, 5 story-Q,
+chat_user_real, chat_user_sim; the 4 dialogue targets DESCOPED at plan v7 —
+epm:progress v70 clause 1), context arm, at the frozen layer
 L*, under the SHARED fold map (story targets: family-held-out PRIMARY fold —
 headline recovery labels carry ``family-held-out``).
 
@@ -52,7 +53,8 @@ a point-Unmappable target (U ≤ 0) skips its transfer rungs by the lattice rule
 (a visible ``chat_to_<cell>__unmappable.json`` marker is written instead).
 
 Phases: ``--phase pairs`` (default; ``--pairs`` shard axis), ``--phase h3``
-(question-vs-dialogue paired contrast), ``--phase h4b`` (real-vs-sim paired
+(question-vs-dialogue paired contrast — TOMBSTONED at v7, refuses at entry;
+dialogue descoped per epm:progress v70), ``--phase h4b`` (real-vs-sim paired
 contrast on the intersection cohort, §4.2b asserts re-run), ``--phase probe``
 (synthetic CPU self-verification incl. a full producer→consumer e2e through
 ``issue2378_fits.py`` outputs at tiny n/d).
@@ -619,7 +621,18 @@ def phase_h3(args) -> int:
     blocker g2b-drop-marker-shadowed-by-stale-fit, swept here): a G2b-dropped
     cell routes to the disclosed dropped-pair path even when a stale
     git-re-materialized `__context.json` coexists, with `--survivors` keying
-    marker authority to the CURRENT dispatch via :func:`p6.g2b_dropped_now`."""
+    marker authority to the CURRENT dispatch via :func:`p6.g2b_dropped_now`.
+
+    TOMBSTONED at plan v7 (Amendment record A, epm:progress v70 clause 1): the
+    dialogue family is descoped, so the question-vs-dialogue contrast has no
+    active dialogue arm — this phase REFUSES at entry. The body is retained
+    UNREACHABLE for archival readers of the pre-v7 design; dispatch no longer
+    schedules a p6.h3 step."""
+    raise SystemExit(
+        "phase_h3 is DESCOPED at plan v7 (dialogue family dropped — epm:progress v70 "
+        "clause 1 / plan Amendment record A): the question-vs-dialogue contrast has "
+        "no active dialogue arm. No h3_question_vs_dialogue.json is produced."
+    )
     ledger_root = Path(args.ledger_root)
     surv_set = p6.parse_survivors(args.survivors)
     out: dict = {
@@ -915,7 +928,8 @@ def phase_probe(args) -> int:  # noqa: PLR0915
     sanity on planted geometry; (2) rung-7 batched null vs a serial per-draw
     oracle; (3) full producer→consumer e2e — a tiny synthetic store run through
     ``issue2378_fits.py`` (g3 + all context fits), then this driver's pairs +
-    h3 + h4b phases; (4) recovery skip-and-count via a planted degenerate
+    h4b phases (h3: tombstone-refusal assert — v7 dialogue descope);
+    (4) recovery skip-and-count via a planted degenerate
     ceiling (covered in the fits probe; re-checked here through the ladder's
     tier-suppression path)."""
     import issue2378_fits as fits_mod
@@ -1022,41 +1036,17 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         )[:1]:
             for ri in range(1, 10):
                 assert (ledger / "ladder" / f"chat_to_{target}__rung{ri}.json").exists()
-        rc = phase_h3(ns)
-        assert rc == 0
-        h3 = json.loads((ledger / "ladder" / "h3_question_vs_dialogue.json").read_text("utf-8"))
-        assert h3["rungs"]["1_direct"]["n_surviving_pairs"] == 4
-        assert not h3["rungs"]["1_direct"]["indeterminate"]
-        assert len(h3["rungs"]["1_direct"]["gap_draws"]) == 24
-        # (3b) G2b drop-marker vs COEXISTING stale fit (r3 reconciler blocker
-        # g2b-drop-marker-shadowed-by-stale-fit, swept to h3): the marker wins
-        # over the coexisting fit -> the astra pair drops (disclosed), and
-        # --survivors naming the cell restores it (stale marker ignored).
-        astra_marker = ledger / "fits" / "storyq_astra__g2b_dropped.json"
-        cm.atomic_write_json(
-            astra_marker,
-            {"cell": "storyq_astra", "status": "N/A", "reason": "probe: planted G2b drop"},
-        )
-        assert (ledger / "fits" / "storyq_astra__context.json").exists()  # COEXIST
-        assert phase_h3(ns) == 0
-        h3d = json.loads((ledger / "ladder" / "h3_question_vs_dialogue.json").read_text("utf-8"))
-        blk = h3d["rungs"]["1_direct"]
-        assert blk["n_surviving_pairs"] == 3
-        assert "astra" in blk["dropped_pairs"]
-        assert "G2b-dropped" in blk["dropped_pairs"]["astra"]
-        ns.survivors = ",".join(
-            sorted(json.loads((ledger / p6.FOLD_MAP_NAME).read_text())["cells"])
-        )
-        assert phase_h3(ns) == 0
-        h3d = json.loads((ledger / "ladder" / "h3_question_vs_dialogue.json").read_text("utf-8"))
-        assert h3d["rungs"]["1_direct"]["n_surviving_pairs"] == 4  # stale marker ignored
-        # restore: marker gone, flag off, healthy rewrite for the probes below.
-        astra_marker.unlink()
-        ns.survivors = None
-        assert phase_h3(ns) == 0
-        h3d = json.loads((ledger / "ladder" / "h3_question_vs_dialogue.json").read_text("utf-8"))
-        assert h3d["rungs"]["1_direct"]["n_surviving_pairs"] == 4
-        _log("[probe] h3 G2b drop-marker precedence over coexisting fit + --survivors keying: OK")
+        # v7: phase_h3 is TOMBSTONED (dialogue descoped) — assert the refusal
+        # fires loud and writes NOTHING. The G2b drop-marker-precedence legs
+        # it used to exercise are covered by the fits probe's ratio N/A legs
+        # (issue2378_fits phase_probe step 6b — same p6.g2b_dropped_now seam).
+        try:
+            phase_h3(ns)
+            raise AssertionError("tombstoned phase_h3 must refuse")
+        except SystemExit as e:
+            assert "DESCOPED at plan v7" in str(e), e
+        assert not (ledger / "ladder" / "h3_question_vs_dialogue.json").exists()
+        _log("[probe] h3 tombstone refusal (v7 dialogue descope): OK")
         rc = phase_h4b(ns)
         assert rc == 0
         h4b = json.loads((ledger / "ladder" / "h4b_real_vs_sim.json").read_text("utf-8"))
@@ -1066,7 +1056,7 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         # resume path: re-running a pair with the same regime is a skip.
         memo = _SourceMemo(store, _fold_map(ns), 1)
         run_pair_unit(ns, _fold_map(ns), memo, "plain_text", 1)
-        _log("[probe] e2e fits->ladder->h3->h4b (+resume-skip): OK")
+        _log("[probe] e2e fits->ladder->h4b (+resume-skip; h3 tombstoned at v7): OK")
     _log("[phase=probe] done — all ladder probes passed")
     return 0
 
@@ -1080,7 +1070,7 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--pairs",
         default="all",
-        help="comma list of TARGET cells (shard axis for the P6 fan-out), or 'all' (12 targets)",
+        help="comma list of TARGET cells (shard axis for the P6 fan-out), or 'all' (8 targets at v7)",
     )
     ap.add_argument("--list-pairs", action="store_true")
     ap.add_argument(

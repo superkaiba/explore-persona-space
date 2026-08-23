@@ -1,6 +1,7 @@
 """Issue #2378 P6 — pooled-tier arm (unit 4 deliverable 1; plan §4.4 / H5).
 
-ONE map fit jointly on all 13 cells' equalized train folds (fold ids aligned
+ONE map fit jointly on all 11 active cells' equalized train folds (plan v7
+— dialogue descoped; fold ids aligned
 by INDEX across cells — pooled train for fold f = the union over cells of
 their fold!=f rows under each cell's OWN registered fold structure), then
 per-cell scoring at the registered tiers, each against the cell's OWN ceiling
@@ -774,9 +775,11 @@ def phase_h5(args) -> int:
 
 def _plant_pool_structure(store: Path, *, d: int, seed: int = 29) -> dict:
     """Post-process the fits probe store with pool-discriminating structure:
-    (a) a per-cell constant ANSWER bias on every story-question cell (m1 must
-    recover what m0 cannot); (b) a rank-1 per-cell slope delta on dialog_astra
-    (m2 must beat m1 there); (c) scrambled answers on plain_text (destroys the
+    (a) a per-cell constant ANSWER bias on every story-question cell except
+    storyq_vex (m1 must recover what m0 cannot); (b) a rank-1 per-cell slope
+    delta on storyq_vex (m2 must beat m1 there; v7: was dialog_astra — the
+    dialogue family is descoped so the probe store has no dialog cells);
+    (c) scrambled answers on plain_text (destroys the
     X-Y linkage so its own fit lands at/below the floor -> tier suppression +
     H5 exclusion). Own-map ceilings absorb (a)+(b) by construction."""
     rng = np.random.default_rng(seed)
@@ -786,13 +789,15 @@ def _plant_pool_structure(store: Path, *, d: int, seed: int = 29) -> dict:
     # per-dim var 0.10 vs the 2.25 expectation and washed out the m0 penalty).
     bias_by_cell = {}
     for c in cm.STORY_Q_CELLS:
+        if c == "storyq_vex":
+            continue  # storyq_vex carries the rank-1 plant instead (v7)
         b = rng.standard_normal(d)
         bias_by_cell[c] = b * (1.5 / np.sqrt((b**2).mean()))
     u = rng.standard_normal(d)
     u /= np.linalg.norm(u)
     v = rng.standard_normal(d)
     v /= np.linalg.norm(v)
-    for cell in list(cm.STORY_Q_CELLS) + ["dialog_astra", "plain_text"]:
+    for cell in [*cm.STORY_Q_CELLS, "plain_text"]:
         for ci in p6.production_part_indices(store, cell):
             npz_path = store / f"{cell}__part{ci:04d}__L1.npz"
             with np.load(npz_path) as z:
@@ -801,7 +806,7 @@ def _plant_pool_structure(store: Path, *, d: int, seed: int = 29) -> dict:
             if cell in bias_by_cell:
                 v_a = v_a + bias_by_cell[cell]
                 planted[cell] = "constant answer bias"
-            elif cell == "dialog_astra":
+            elif cell == "storyq_vex":
                 v_c = p6.decode_bf16_np(arrays["v_C"]).astype(np.float64)
                 v_a = v_a + 2.0 * np.outer(v_c @ u, v)
                 planted[cell] = "rank-1 slope delta"
@@ -872,11 +877,12 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         assert biased["headline_fold_label"] == "family-held-out"
         _log(f"[probe] planted bias: m0 recovery {rec_m0:+.3f} -> m1 {rec_m1:+.3f} OK")
 
-        # (b) planted rank-1 slope: m2 beats m1 on dialog_astra. The plant
+        # (b) planted rank-1 slope: m2 beats m1 on storyq_vex (v7: was
+        # dialog_astra — dialogue descoped). The plant
         # direction is random while the m2 basis is PCA of ISOTROPIC probe X,
         # so a k-dim basis captures ~k/d of the plant — assert on the larger
         # rank (k=4 of d=8: expected gain ~0.25, vs ~0.12 at k=2).
-        lowrank = json.loads((ledger / "pool" / "dialog_astra__context.json").read_text())
+        lowrank = json.loads((ledger / "pool" / "storyq_vex__context.json").read_text())
         r2_m1 = lowrank["pooled_r2"]["m1"]
         r2_m2 = lowrank["pooled_r2"][f"m2_k{ranks[1]}"]
         assert r2_m2 > r2_m1 + 0.05, (r2_m1, r2_m2)

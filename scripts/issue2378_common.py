@@ -6,8 +6,11 @@ light-import: no torch/vllm/transformers at module top, so VM phases
 (pool/bank building, judge waves) run on the repo venv while pod phases defer
 their heavy imports into function bodies.
 
-Key contracts (plan v6, tasks/running/2378/plans/plan.md):
-- Cells: chat, plain_text, 5 story-Q cells, 4 dialogue cells, 2 user arms.
+Key contracts (plan v7, tasks/running/2378/plans/plan.md):
+- Cells (ACTIVE panel, plan v7 Amendment record A / epm:progress v70): chat,
+  plain_text, 5 story-Q cells, 2 user arms (11 cells). The 4 dialogue cells
+  are DESCOPED from every active enumeration; their banks/constants stay
+  defined (inert) for tests + archival r1/r2 artifact readers.
 - Sampling pins: temperature 1.0, top_p 0.95, top_k 20, seed 137
   (fresh draws 138-141); ``enable_thinking=False`` everywhere a chat template
   is rendered.
@@ -168,15 +171,27 @@ STORY_Q_CELLS: tuple[str, ...] = (
     "storyq_dana",
     "storyq_vex",
 )
+# DESCOPED (plan v7 Amendment record A, epm:progress v70 clause 1): the
+# dialogue family is dropped from the ACTIVE panel — DIALOG_CELLS stays
+# DEFINED (tests + archival r1/r2 artifact readers) but appears in NO active
+# enumeration (STORY_CELLS / ALL_CELLS / ACTIVE_FAMILIES below exclude it).
 DIALOG_CELLS: tuple[str, ...] = (
     "dialog_astra",
     "dialog_helios",
     "dialog_dana",
     "dialog_vex",
 )  # no Wren dialogue cell (plan §5)
-STORY_CELLS: tuple[str, ...] = STORY_Q_CELLS + DIALOG_CELLS
+# ACTIVE story panel (v7): question-family only. Pre-v7 this was
+# STORY_Q_CELLS + DIALOG_CELLS; every consumer that enumerates "the story
+# cells to generate / judge / capture / fit" reads THIS switch.
+STORY_CELLS: tuple[str, ...] = STORY_Q_CELLS
 USER_CELLS: tuple[str, ...] = ("chat_user_real", "chat_user_sim")
-ALL_CELLS: tuple[str, ...] = ("chat", "plain_text") + STORY_CELLS + USER_CELLS
+ALL_CELLS: tuple[str, ...] = ("chat", "plain_text") + STORY_CELLS + USER_CELLS  # 11 active
+# ACTIVE mining/judging families (v7): question only. The G1 gate, the
+# admission-slice balancer, the judge pilot sampler, and the P2 wave sizing
+# all iterate THIS tuple — dialogue never enters an active family loop.
+ACTIVE_FAMILIES: tuple[str, ...] = ("question",)
+FAMILY_CELLS: dict[str, tuple[str, ...]] = {"question": STORY_Q_CELLS}
 
 _CHAR_BY_SLUG = {
     "astra": "Astra",
@@ -185,7 +200,12 @@ _CHAR_BY_SLUG = {
     "dana": "Dana",
     "vex": "Vex",
 }
-CELL_CHARACTER: dict[str, str] = {c: _CHAR_BY_SLUG[c.split("_", 1)[1]] for c in STORY_CELLS}
+# Interpretation maps deliberately cover the FULL question+dialogue panel:
+# archival readers (the P1R digest re-compose pools the r2 dialogue rows
+# for-the-record; gen's salvage/probe fixtures) still resolve dialog_* cells.
+CELL_CHARACTER: dict[str, str] = {
+    c: _CHAR_BY_SLUG[c.split("_", 1)[1]] for c in STORY_Q_CELLS + DIALOG_CELLS
+}
 CELL_FAMILY: dict[str, str] = {
     **{c: "question" for c in STORY_Q_CELLS},
     **{c: "dialogue" for c in DIALOG_CELLS},
@@ -218,6 +238,26 @@ POOLS_DIR = REPO_ROOT / "data" / "issue_2378" / "pools"
 BANKS_DIR = REPO_ROOT / "data" / "issue_2378" / "banks"
 LEDGER_ROOT = REPO_ROOT / "eval_results" / "issue_2378"
 RAW_ROOT_DEFAULT = REPO_ROOT / "data" / "issue_2378" / "raw_completions"
+# Pilot capture store default (capture.py --pilot-out-root). Plan §10 declared
+# discard: all-layer chat states, regenerable from the persisted chat text.
+PILOT_STORE_DEFAULT = REPO_ROOT / "data" / "issue_2378" / "activations_pilot"
+
+
+def pilot_capture_out_root(rnd: int, stable: Path | None = None) -> Path:
+    """Round-scoped pilot capture out-root (plan §4.7 out-root fix, r12).
+
+    Round 1 keeps the stable default (byte-identical to the pre-fix path);
+    round >= 2 gets the SIBLING dir ``activations_pilot_r{rnd}`` so a fresh
+    round never lands in a prior round's StageLedger (the r2 crash: capture
+    into round 1's store tripped the ledger regime-fingerprint fail-loud).
+    A sibling (not a subdir) keeps the store root self-contained for the
+    ledger's part-file scan.
+    """
+    base = Path(stable) if stable is not None else PILOT_STORE_DEFAULT
+    if rnd <= 1:
+        return base
+    return base.parent / f"{base.name}_r{rnd}"
+
 
 # Raw-completion stage names (plan §10 prefixes + judge_congruence,
 # persist-by-default addition for the congruence wave's raw judge rows;

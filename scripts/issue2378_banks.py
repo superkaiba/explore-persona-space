@@ -102,6 +102,9 @@ PRIME_BANK_QUESTION: tuple[str, ...] = (
     ),
 )
 
+# DESCOPED at plan v7 (epm:progress v70 clause 1): the dialogue family is out
+# of the active panel — this bank (and ADMISSION_RUBRIC_DIALOGUE below) stays
+# defined INERT for tests + archival r1/r2 artifact readers; never deleted.
 PRIME_BANK_DIALOGUE: tuple[str, ...] = (
     (
         "The bakery's ovens had been cooling for an hour, and Tomás was chalking tomorrow's "
