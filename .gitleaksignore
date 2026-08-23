@@ -1433,3 +1433,5 @@ docs/issue2329_result0_gallery.html:generic-api-key:149377
 eval_results/issue_2477/samples/sample_manifest.json:generic-api-key:2240
 tasks/followups_running/1901/events.jsonl:generic-api-key:129
 tasks/followups_running/2477/events.jsonl:generic-api-key:179
+# issue 2479 v11 marker: 40-hex HF tokenizer revision sha (a09a35...) in note text; no credential.
+tasks/running/2479/events.jsonl:generic-api-key:189
