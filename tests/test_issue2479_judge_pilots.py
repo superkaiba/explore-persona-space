@@ -179,14 +179,31 @@ def test_require_pass_smoke_synthesized_allowed_only_explicitly(
 
 
 def test_smoke_driver_is_the_only_allow_synthesized_env_setter() -> None:
-    """Grep-level pin: no production script arms jp.ALLOW_SYNTHESIZED_ENV —
-    only the p3-controls smoke driver injects it into its subprocess env."""
+    """Grep-level pin: no production file arms jp.ALLOW_SYNTHESIZED_ENV —
+    only the p3-controls smoke driver injects it into its subprocess env.
+
+    r6 (codex `synthesized-env-setter-pin-incomplete`): the sweep is RECURSIVE
+    over scripts/ (.py AND .sh — shell launchers can export the env too) plus
+    src/ (.py), and matches BOTH the constant reference and the literal env
+    name, so a nested/shell/library setter cannot slip under the pin. The
+    defining module (issue2479_judge_pilots.py, definition + reader) and the
+    smoke driver (the sole setter) are the only sanctioned mentions."""
+    candidates = sorted(
+        [
+            *(REPO / "scripts").rglob("*.py"),
+            *(REPO / "scripts").rglob("*.sh"),
+            *(REPO / "src").rglob("*.py"),
+        ]
+    )
     hits = []
-    for p in sorted((REPO / "scripts").glob("*.py")):
+    for p in candidates:
         text = p.read_text(errors="replace")
         if "ALLOW_SYNTHESIZED_ENV" in text or jp.ALLOW_SYNTHESIZED_ENV in text:
-            hits.append(p.name)
-    assert hits == ["issue2479_judge_pilots.py", "issue2479_p3_controls_smoke.py"], hits
+            hits.append(str(p.relative_to(REPO)))
+    assert hits == [
+        "scripts/issue2479_judge_pilots.py",
+        "scripts/issue2479_p3_controls_smoke.py",
+    ], hits
 
 
 def test_require_pass_pass_without_data_identity_raises(tmp_path: Path, monkeypatch) -> None:

@@ -94,6 +94,12 @@ def validate_smoke_root(scratch: Path, repo_root: Path = _REPO_ROOT) -> Path:
     COMMITTED registered panel/manifest and park a synthesized pilot PASS at
     the production path. Policy (raise RuntimeError BEFORE any write):
 
+      * BOTH ancestry directions are rejected before any allowlist branch:
+        a candidate equal to / inside the repo, AND a candidate that CONTAINS
+        the repo (r5 reconciler ``smoke-root-ancestor-escape``: repo at
+        /tmp/job/repo -> candidate /tmp/job passed the /tmp branch, so
+        build_fixtures would write into the broad ancestor and publication
+        would upload the entire root, repository included);
       * repo-internal roots are refused, with ONE carve-out: strictly under
         ``<repo>/data/issue_2479`` with a first path component starting
         ``smoke_`` (gitignored per-issue scratch);
@@ -104,6 +110,13 @@ def validate_smoke_root(scratch: Path, repo_root: Path = _REPO_ROOT) -> Path:
     """
     resolved = scratch.expanduser().resolve()
     repo = repo_root.resolve()
+    if resolved != repo and repo.is_relative_to(resolved):
+        raise RuntimeError(
+            f"refusing smoke root {resolved} (from {SMOKE_ROOT_ENV}): it CONTAINS the "
+            f"repository ({repo}) — the driver writes/publishes/quarantines the WHOLE root, "
+            "so an ancestor root would sweep the repository tree into the upload and the "
+            "resume-demo quarantine (r5 reconciler smoke-root-ancestor-escape)"
+        )
     if resolved.is_relative_to(repo):
         approved = repo / "data" / "issue_2479"
         if resolved != approved and resolved.is_relative_to(approved):

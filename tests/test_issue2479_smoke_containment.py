@@ -70,10 +70,15 @@ def test_outside_approved_scratch_refused(tmp_path: Path, monkeypatch) -> None:
         sm.validate_smoke_root(outside, repo_root=repo)
 
 
-def test_bare_tmp_root_itself_refused(tmp_path: Path, monkeypatch) -> None:
-    """SCRATCH is uploaded + quarantined wholesale — /tmp itself never allowed."""
-    repo = _fake_repo(tmp_path)
+def test_bare_tmp_root_itself_refused(monkeypatch) -> None:
+    """SCRATCH is uploaded + quarantined wholesale — /tmp itself never allowed.
+
+    The repo path is placed OUTSIDE /tmp (nonexistent is fine — validation
+    only resolves paths, never stats them) so this keeps pinning the
+    temp-root-itself refusal: a tmp_path fake repo lives UNDER /tmp, and the
+    r6 reverse-ancestry check would correctly fire first on that shape."""
     monkeypatch.delenv("TMPDIR", raising=False)
+    repo = Path("/nonexistent-i2479-repo/repo")
     with pytest.raises(RuntimeError, match="not strictly under an approved scratch area"):
         sm.validate_smoke_root(Path("/tmp"), repo_root=repo)
 
@@ -93,6 +98,28 @@ def test_approved_roots_pass(tmp_path: Path, monkeypatch) -> None:
         sm.validate_smoke_root(tmp_path / "tdir" / "sub", repo_root=repo)
         == (tmp_path / "tdir" / "sub").resolve()
     )
+
+
+def test_candidate_containing_repo_refused(tmp_path: Path, monkeypatch) -> None:
+    """r5 reconciler `smoke-root-ancestor-escape`: a temp-area candidate that
+    CONTAINS the repository (repo at <tmp>/parent/repo, candidate <tmp>/parent)
+    must be refused BEFORE any write — build_fixtures would otherwise write
+    into the broad ancestor and publication would upload the entire root,
+    repository included."""
+    # Pin the approved temp area to tmp_path so the ancestor candidate would
+    # PASS the $TMPDIR allowlist branch absent the reverse-ancestry check.
+    monkeypatch.setenv("TMPDIR", str(tmp_path))
+    parent = tmp_path / "parent"
+    repo = parent / "repo"
+    (repo / "eval_results" / "issue_2479").mkdir(parents=True)
+    with pytest.raises(RuntimeError, match="CONTAINS the"):
+        sm.validate_smoke_root(parent, repo_root=repo)
+    # Pre-write: validation raised without touching the candidate tree.
+    assert sorted(p.name for p in parent.iterdir()) == ["repo"]
+    # Positive case: a fresh SIBLING scratch dir under the same temp area
+    # (no ancestry either way) still validates.
+    sibling = tmp_path / "scratch_sibling"
+    assert sm.validate_smoke_root(sibling, repo_root=repo) == sibling.resolve()
 
 
 # ---------------------------------------------------------------------------
