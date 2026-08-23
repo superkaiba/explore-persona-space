@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2498,
+  "highest_id": 2499,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11570,6 +11570,13 @@
       "path": "tasks/proposed/2498",
       "status": "proposed",
       "title": "workflow-fix: Step 5a FAMILY_lint omits scripts/pre_split_review_guard.py \u2014 half-sync reds the step9c lint pins in pre-#2294 worktrees"
+    },
+    "2499": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2499",
+      "status": "proposed",
+      "title": "Does the inoculation prompt's base-geometry neighborhood placement moderate post-inoculation re-elicitation across trigger banks?"
     },
     "25": {
       "has_clean_result": false,
