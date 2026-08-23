@@ -4,10 +4,10 @@
 
 - [Pre-registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — data-recoverability never rescues a defective registered gate/kill/lattice; barred-amendment tell; 35+ incidents. REVISE/FAIL.
 - [Gate-design flaw (REVISE) vs recoverable robustness read (APPROVE)](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on affirmative misfire / barred amendment / run-time-only capture loss; else APPROVE. 21 datapoints.
-- [Live-replay proposed mechanical checks vs the named offender](feedback_live_replay_proposed_mechanical_checks.md) — run the plan's regex/check/glob against the incident artifact it claims to catch; mutation-walk batteries; PASS-audit leg. #869/#867/#932/#947.
+- [Live-replay proposed mechanical checks vs the named offender](feedback_live_replay_proposed_mechanical_checks.md) — run the plan's regex/check/glob against the incident artifact it claims to catch. #869/#867/#932/#947.
 - [Claude APPROVEs unwired lint-check plans](feedback_claude_approves_unwired_lint_check_plans.md) — direct-call-only tests, no_flags wiring unpinned; negative-assertion spans need count(anchor)==1 + a negative test. #963/#979 REVISE.
 - [Claude APPROVEs on internal-fn read, missing route filter](feedback_claude_approves_daemon_interface_read_missing_route_filter.md) — verify the CONSUMER-VISIBLE route + grep for the capability claimed absent; kill-fires-on-true-state = REVISE. #956.
-- [Plan-verbatim text vs the plan's own binding Must-Fix](feedback_plan_verbatim_text_vs_plan_binding_mustfix.md) — faithful-to-§4 never rescues when MF/canonical text contradicts it; deviation clause bars prose-discretion rescue. #870/#864/#902/#915.
+- [Plan-verbatim text vs the plan's own binding Must-Fix](feedback_plan_verbatim_text_vs_plan_binding_mustfix.md) — faithful-to-§4 never rescues when MF text contradicts it. #870/#864/#902/#915.
 - [Plan "procedure re-writes state Y" safety claims](feedback_claude_accepts_plan_state_rewrite_safety_claim.md) — grep the literal state write + watcher arms (PARK vs pod-safety) + park-then-teardown ORDER. #908/#919.
 - [Sign-blind |ρ| rule classed as analyzer concern](feedback_claude_signblind_decision_rule_as_analyzer_concern.md) — |ρ| PASS + directional Confirmed narration = Must-Fix direction pin. #540.
 - [Cross-lens defect re-filed per lens](feedback_cross_lens_defect_refiled_per_lens.md) — home lens settled REVISE ⇒ judge the disputed lens on its own question; out-of-scope → APPROVE. #546.
@@ -26,9 +26,9 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
-- [Global-resolution fold over a per-behavior ladder](feedback_claude_passes_global_resolution_over_per_behavior_ladder.md) — single slug/flag collapse vs plan's per-unit ladder; committed D0 evidence dictates the mixed topology; coverage-incomplete→unit-FAIL is the silent kill-verdict accomplice. #1739 leg-2 r1 FAIL.
+- [Global-resolution fold over a per-behavior ladder](feedback_claude_passes_global_resolution_over_per_behavior_ladder.md) — single slug/flag collapse vs per-unit ladder; committed D0 evidence dictates the mixed topology; coverage-incomplete→unit-FAIL is the silent accomplice. #1739 FAIL.
 - [Persist-before-reduce: ordering not existence](feedback_persist_before_reduce_ordering_vs_existence.md) — file exists ≠ persisted before the remote judge; derived expected-set ≠ hollow gate; prior-round CONCERN severity binds. #906 r9.
-- [Headline decision statistic not produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — grep the named estimator's call site; PASSing other items never covers it (#841 r1/r2 FAIL). COUNTER #922 r2: a locally-equivalent-by-linearity helper is PASS — verify equivalence first.
+- [Headline decision statistic not produced](feedback_claude_misses_headline_decision_statistic_not_produced.md) — grep the named estimator's call site (#841 FAIL). COUNTER #922: an equivalent-by-linearity local helper is PASS — verify equivalence first.
 - [Under-classed silent failures](feedback_claude_underclasses_silent_failures.md) — real silent-failure bug + CONCERNS/Minor → FAIL; classify by what the bug DOES, not fix size; incl. #1098 guard-waiver fail-open. 13-incident ledger.
 - [Plan-complete diff violating the lane's declare→satisfy artifact contract](feedback_claude_plan_complete_diff_violates_lane_artifact_contract.md) — new execution path: trace WHO WRITES the declared sentinel; finalize exit-3 strands billing pod. #909 FAIL.
 - [Same-file siblings (sibling-scan family)](feedback_claude_misses_same_file_siblings.md) — must-fix walks miss the bug CLASS: sibling paths, render branches, resamplers, figure-vs-analyze layers (now Step 3.7).
@@ -56,7 +56,7 @@
 
 ## Codex code-review overreach (PASS-leaning calibration)
 
-- [Hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the demanded fix; persist residue via raise+defer-concern; grep quoted "acceptance criteria" VERBATIM (#952/#958 invented them). 21 variants.
+- [Hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the demanded fix; persist residue via raise+defer-concern; grep quoted "acceptance criteria" VERBATIM. 21 variants.
 - [Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — PASS when a demonstrated pre-launch gate runs the changed code for real; FAIL when the first real run would be production. #551/#560.
 - [Marker format/existence conflated with code](feedback_codex_conflates_marker_format_with_code.md) — marker-shape nits / stale-file reads with "diff not reviewed" → discard, verify Claude independently, PASS.
 - [Pre-existing / stale state litigated in round N](feedback_codex_litigates_pre_existing_in_round_n.md) — git-provenance family: trunk pre-existence, scope drift, stale-worktree "deletions", stale UNTRACKED copies (#922: `git show <pin>:` is authoritative).
@@ -75,7 +75,7 @@
 
 ## Clean-result-critic + interp-critic calibration
 
-- [Claude clean-result-critic under-applies SPEC text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 25 BLOCKING spec-text rules + 22 Codex over-fire DISCARDs. #923 r1+r2, #833 r3.
+- [Clean-result-critic under-applies SPEC text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — pre-pass PASS ≠ spec compliance; 25 BLOCKING spec-text rules + 22 Codex over-fire DISCARDs. #923, #833 r3.
 - [Bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md) — grounded FAILs Claude PASSes; discard the L4/L6/L12/L15 Codex over-fires as SPEC misreads. #722 r1.
 - [Lens 7 statistical framing missed](feedback_claude_misses_lens7_statistical_framing.md) — re-scan for named tests, ±, derived intervals in prose/captions before trusting a Claude PASS. #378.
 - [Cross-loop CI conflict (interp vs clean-result)](feedback_cross_loop_ci_conflict.md) — interp-required CIs / house-style captions survive Codex's Lens-7 FAIL; add "Do NOT remove" lines. #478/#509/#464.
