@@ -13823,15 +13823,17 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
     check pins the guard across its surfaces, region-anchored, so a future
     refactor cannot silently strip one (the #606 copy-list-omission class):
 
-    (1) ``scripts/pre_split_review_guard.py`` exists and names the library
-        entry ``pre_split_review_gate``;
+    (1) ``scripts/pre_split_review_guard.py`` exists, names the library
+        entry ``pre_split_review_gate``, and names the
+        ``IMPLEMENTER-MARKER-MISSING`` verdict (#2294 — the exit-4
+        missing-implementer-marker arm; incident #2290 r1);
     (2) ``src/explore_persona_space/task_workflow.py`` defines
         ``def pre_split_review_gate`` and the verdict token
         ``PRE-SPLIT-INCOMPLETE``;
     (3) 09-step-5.md — the ``**Pre-split completeness guard`` region (up to
         the next paragraph opening ``**``) names
-        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``, and
-        ``remaining:``;
+        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``,
+        ``remaining:``, and ``IMPLEMENTER-MARKER-MISSING`` (#2294);
     (4) 08-step-4.md — the breadcrumb grammar tokens
         ``pre-split unit k/M complete:`` + ``; remaining:`` (grammar-parity
         pin: an editor changing the grammar trips the check that guards the
@@ -13862,7 +13864,8 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
     verdict = "PRE-SPLIT-INCOMPLETE"
     errors: list[str] = []
 
-    # (1) the thin CLI exists and names the library entry.
+    # (1) the thin CLI exists, names the library entry, and names the #2294
+    # missing-implementer-marker verdict (the exit-4 arm).
     cli = root / "scripts" / "pre_split_review_guard.py"
     if not cli.is_file():
         errors.append(
@@ -13870,12 +13873,21 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
             f"exist (#1336 r4: a review dispatched against a Unit-A-only "
             f"intermediate commit cost 2 subagent deaths + a 2-day park)."
         )
-    elif "pre_split_review_gate" not in cli.read_text(encoding="utf-8"):
-        errors.append(
-            f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
-            f"CLI must call the library predicate, not a private "
-            f"re-implementation."
-        )
+    else:
+        cli_text = cli.read_text(encoding="utf-8")
+        if "pre_split_review_gate" not in cli_text:
+            errors.append(
+                f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
+                f"CLI must call the library predicate, not a private "
+                f"re-implementation."
+            )
+        if "IMPLEMENTER-MARKER-MISSING" not in cli_text:
+            errors.append(
+                f"{cli}: no longer names 'IMPLEMENTER-MARKER-MISSING' (#2294) "
+                f"— the CLI must map the missing-implementer-marker verdict "
+                f"to exit 4 (incident #2290 r1: a review dispatched with zero "
+                f"implementer markers on canonical events)."
+            )
 
     # (2) the library predicate + verdict token.
     tw = root / "src" / "explore_persona_space" / "task_workflow.py"
@@ -13917,7 +13929,12 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
         else:
             nxt = text.find("\n\n**", idx + 1)
             region = text[idx:nxt] if nxt != -1 else text[idx:]
-            for token in ("pre_split_review_guard.py", verdict, "remaining:"):
+            for token in (
+                "pre_split_review_guard.py",
+                verdict,
+                "remaining:",
+                "IMPLEMENTER-MARKER-MISSING",
+            ):
                 if token not in region:
                     errors.append(
                         f"{step5}: the '**Pre-split completeness guard' "
@@ -17175,19 +17192,21 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 117,973 B @ #2472 2026-08-22 (composer-role lean-twin ladder
-    # extension in the respawn-recipe region, +786 B); corridor-max
-    # ((measured+2_800)//100)*100 = 120_700. Re-measure at Step 10d against
-    # the MERGED tree (concurrent sessions edit this file).
-    # Prior: 119_900 (#2241 Step 10d 2026-08-22 merged-tree re-measure,
-    # 117,187 B — both sides' pre-merge caps were BELOW the merged file:
-    # #2241 r4 set 113_100 (110,316 B) and #2260 set 113_400 (110,622 B),
-    # each measuring only its own side) / 113_400 (#2260, 110,622 B) /
-    # 113_100 (#2241 r4, 110,316 B) / 111_900 (#2241 r3, 109,181 B) /
-    # 110_300 (#2241 r2, 107,590 B) / 109_600 (#2241 r1, 106,866 B) /
-    # 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300
-    # (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 120_700,
+    # measured 118,770 B @ #2294 Step 10d 2026-08-22 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100 = 121_500, headroom 2,730 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
+    # caps were 120_700, each measuring only its own side: #2294's
+    # IMPLEMENTER-MARKER-MISSING guard branch (+797 B, 117,984 B) and #2472's
+    # composer-role lean-twin ladder extension (+786 B, 117,973 B) landed on
+    # the same file concurrently.
+    # Prior: 120_700 (#2294, 117,984 B) / 120_700 (#2472, 117,973 B) /
+    # 119_900 (#2241 Step 10d merged-tree re-measure, 117,187 B) / 113_400
+    # (#2260, 110,622 B) / 113_100 (#2241 r4, 110,316 B) / 111_900 (#2241
+    # r3, 109,181 B) / 110_300 (#2241 r2, 107,590 B) / 109_600 (#2241 r1,
+    # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
+    # 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 121_500,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
@@ -20567,7 +20586,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         help="FAIL if the #2158 pre-split review guard is absent from any "
         "of its seven surfaces (eight files): the "
         "scripts/pre_split_review_guard.py CLI naming the "
-        "pre_split_review_gate library entry, the task_workflow.py "
+        "pre_split_review_gate library entry + the #2294 "
+        "IMPLEMENTER-MARKER-MISSING exit-4 verdict, the task_workflow.py "
         "predicate + PRE-SPLIT-INCOMPLETE verdict token, the 09-step-5.md "
         "'**Pre-split completeness guard' block, the 08-step-4.md "
         "breadcrumb-grammar + unit=<k> emitter tokens, the 08-step-4.md "
