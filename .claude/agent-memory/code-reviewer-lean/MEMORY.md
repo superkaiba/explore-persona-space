@@ -64,3 +64,5 @@
 - [New dial missing from resume regime](new_dial_missing_from_resume_regime.md) — trace every NEW scale dial into the regime hash; presence-skip also erases gate halts/uploads; two-stage JSON write defeats finals-skip (#2476 R1 g2)
 - [Position-calibrated gate under subset remap](position_calibrated_gate_under_subset_remap.md) — an index-subset kwarg re-binds "first-k" calibrated bars onto wrong units; check VALUE vs POSITION semantics (#1901 R1 g1)
 - [Figure-series extension neutrality probes](figure_series_extension_neutrality_probes.md) — PNG byte-compare invalid (pnginfo render id): pixel-array + parent-blob module; err-by-x last-wins contaminates the NEW series (#1901 R1 g3)
+- [Producer smoke-tree replay for consumer schema](producer_smoke_tree_replay_for_consumer_schema.md) — replay producer smoke tree through the new consumer + key-literal grep; flag mandatory-leg-behind-unrelated-leg upload mains (#2474 r1 g2)
+- [Lint-fix commit review recipe](lint_fix_commit_review_recipe.md) — importable checker fns + parent-blob mimic tree certify pre-FAIL/post-clean in ~30s; synced-lint vs stale-helper count drift = stale-main-or-worktree (#2474 R1 g3)
