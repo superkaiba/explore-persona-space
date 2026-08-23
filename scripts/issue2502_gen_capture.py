@@ -545,7 +545,7 @@ def gen_regime(args, template_sha: str) -> dict:
         "issue": ISSUE,
         "model": args.model,
         "env": args.env,
-        "seed": SEED,
+        "seed": args.seed,
         "temperature": TEMPERATURE,
         "top_p": TOP_P,
         "max_new_tokens": args.max_new_tokens,
@@ -593,7 +593,7 @@ def build_engine(args):
         args.model,
         max_model_len=args.max_model_len,
         max_num_seqs=64,
-        seed=SEED,
+        seed=args.seed,
         dtype="bfloat16",
         **kwargs,
     )
@@ -731,7 +731,7 @@ def phase_gen(args, spec) -> None:
                 temperature=TEMPERATURE,
                 top_p=TOP_P,
                 max_tokens=args.max_new_tokens,
-                seed=SEED,
+                seed=args.seed,
             )
         outs = llm.generate([{"prompt_token_ids": p} for _, p in rendered], sp, use_tqdm=False)
         if len(outs) != len(rendered):
@@ -1310,6 +1310,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("triton",),
         default=None,
         help="Qwen3.5 only: gdn_prefill_backend engine pin (#2378)",
+    )
+    ap.add_argument(
+        "--seed",
+        type=int,
+        default=SEED,
+        help="sampling seed (default 42 = primary draw; MF-E replicates pass 43/44/45)",
     )
     ap.add_argument("--corpus-prefix", default="issue2502_ctxmap_xgen/context_corpus")
     ap.add_argument(
