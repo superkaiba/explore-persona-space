@@ -675,6 +675,24 @@ def test_assert_launcher_refuses_junitxml_without_xunit1(tmp_path):
     run("uv run python scripts/step9c_baseline.py compare --junitxml /tmp/x.xml")
 
 
+def test_assert_launcher_selftest_gate_refuses_verdict(monkeypatch, capsys):
+    """D1 self-test gate: broken discrimination — a negative fixture (either
+    spelling) that no longer trips the detector — exits 3 and renders NO
+    verdict (#2314: a guard that cannot fail correctly is not a guard)."""
+    sel = _selector_module()
+    for fixture_name in ("_ASSERT_LAUNCHER_SELFTEST_NEG", "_ASSERT_LAUNCHER_SELFTEST_NEG_ALIAS"):
+        with monkeypatch.context() as m:
+            # Sabotage: replace the violating fixture with compliant text, so
+            # the self-test sees the detector "pass" a case it must refuse.
+            m.setattr(sel, fixture_name, "uv run pytest tests/")
+            rc = sel._run_assert_launcher_mode("uv run pytest tests/ --junitxml=/tmp/x.xml")
+        err = capsys.readouterr().err
+        assert rc == 3, fixture_name
+        assert "self-test failed" in err
+        assert "verdict NOT rendered" in err
+        assert "REFUSED" not in err  # no verdict line escaped
+
+
 def test_junit_contract_check_refuses_missing_file_attr(tmp_path):
     """D3 BEHAVIORAL fail-loud: check-junit-contract run check=True REFUSES
     (CalledProcessError) a junit whose failing testcase lacks the per-case
