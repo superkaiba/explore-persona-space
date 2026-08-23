@@ -126,7 +126,9 @@ HOOK_PROBE_LAYERS = (19, 21)  # G2b: lmsys-dict token FVE must be L20-maximal vs
 L_TIER = M.L_TIER  # 20 — the m-round dictionary layer
 PILOT_N_G2B = 24  # G2b pilot slice size (m_pilot recipe class)
 N_DENSE_SHARDS = 64  # dense_l20_g*.npz shard count (plan §2, Hub-probed at plan time)
-STREAM_FLUSH_EVERY = int(os.environ.get("EPM_I2476_STREAM_FLUSH_EVERY", "50"))
+# Per-chunk durable checkpointing (Codex r1 Major: a crash must never discard/repeat
+# more than one downloaded unit; the cursor+flush is cheap — dirty pages only).
+STREAM_FLUSH_EVERY = int(os.environ.get("EPM_I2476_STREAM_FLUSH_EVERY", "1"))
 
 # m-round store @ the pinned revision (plan §10 HF reuse rows; #1345 revision-pin rule)
 M_STORE_PREFIX = "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store"
@@ -239,7 +241,10 @@ def _row_vbars(h19: torch.Tensor, h20: torch.Tensor, context_end: int) -> dict:
 def _regime(args) -> dict:
     """Regime manifest: pinned split shas + code SHA + config hash. Keys are
     GENERATING PARAMETERS only (never recomputed float arrays — gotchas.md
-    float-last-bit rule)."""
+    float-last-bit rule). EVERY output- or destination-affecting dial is hashed
+    (Codex r1 Critical `incomplete-regime-key` + g2 MAJOR-2 + g1 Minor 2):
+    sae_steps / fit_n / n_perm / n_boot change fits+stats, gen_batch changes
+    capture batch geometry (bf16), hf_prefix / skip_upload change destinations."""
     from explore_persona_space.orchestrate.provenance import git_provenance
 
     committed = _committed_split()
@@ -250,6 +255,13 @@ def _regime(args) -> dict:
         "max_chunks": int(args.max_chunks),
         "smoke_rows": int(args.smoke_rows),
         "sae_dict": int(args.sae_dict),  # output-affecting instrument width (0 = production)
+        "sae_steps": int(args.sae_steps),
+        "fit_n": int(args.fit_n),
+        "n_perm": int(args.n_perm),
+        "n_boot": int(args.n_boot),
+        "gen_batch": int(args.gen_batch),
+        "hf_prefix": str(args.hf_prefix),
+        "skip_upload": bool(args.skip_upload),
         "layer_c": LAYER_C,
         "layers_b": list(LAYERS_B),
         "m_store_revision": M_STORE_REVISION,
@@ -270,13 +282,26 @@ def _regime(args) -> dict:
     return {**base, "config_hash": cfg_hash, "code_sha": code_sha}
 
 
-def _enter_phase_regime(out_dir: Path, args, phase: str) -> tuple[dict, bool]:
+def _wipe_stale(phase: str, stale_paths) -> None:
+    """Loud unlink of every existing stale output (recompute hygiene)."""
+    for p in stale_paths:
+        if p.exists():
+            logger.warning("[%s] recompute: removing stale %s", phase, p.name)
+            p.unlink()
+
+
+def _enter_phase_regime(out_dir: Path, args, phase: str, stale_paths=()) -> tuple[dict, bool]:
     """Write/verify the phase regime manifest. Returns (regime, resume_ok).
 
     resume_ok=True  -> a FULL-match manifest exists; output-existence skips are honored.
     resume_ok=False -> fresh root, or code-SHA-only mismatch (recompute LOUDLY —
                        plan §10 "any mismatch => recompute, never skip").
     Config/split-sha mismatch -> RuntimeError (out-root regime collision, #1333).
+
+    ``stale_paths``: the phase's prior outputs — deleted BEFORE the manifest
+    write on every resume_ok=False branch (g1 r1 Minor 1: manifest-then-delete
+    left a crash window where a NEW-code regime.json sat beside OLD-code
+    outputs, converting the next invocation into a silent stale-artifact skip).
     """
     regime = _regime(args)
     path = out_dir / "regime.json"
@@ -300,10 +325,12 @@ def _enter_phase_regime(out_dir: Path, args, phase: str) -> tuple[dict, bool]:
                 regime["code_sha"][:12],
                 out_dir,
             )
+            _wipe_stale(phase, stale_paths)  # delete BEFORE the manifest write
             _write_json(path, regime, phase=phase)
             return regime, False
         return regime, True
     out_dir.mkdir(parents=True, exist_ok=True)
+    _wipe_stale(phase, stale_paths)  # a wiped/absent manifest never vouches for outputs
     _write_json(path, regime, phase=phase)
     return regime, False
 
@@ -336,11 +363,35 @@ def _capture_chunk_names(args) -> list[str]:
     return names
 
 
+def _torch_load_wo(path: Path):
+    """weights_only torch.load for the HF-fetched #779 capture-family .pt bundles
+    (Codex r1 Major: never a pickle-execution surface on fetched artifacts).
+    Probed 2026-08-22 on the REAL artifacts — the pass_b bundle and capture chunk
+    shard00_chunk0000.pt both load under weights_only=True (plain dicts of
+    tensors/lists/ints/strs). mmap-with-fallback mirrors F._mmap_load's RAM
+    shape; a chunk that CANNOT load weights_only fails LOUD here — never a
+    silent weights_only=False fallback."""
+    try:
+        return torch.load(path, mmap=True, weights_only=True, map_location="cpu")
+    except RuntimeError as e:
+        logger.warning("mmap load failed for %s (%s); full weights_only load", path, e)
+        return torch.load(path, weights_only=True, map_location="cpu")
+
+
+def _assert_keys(have, required: tuple[str, ...], what: str) -> None:
+    """Full required-key-set coverage BEFORE the first lookup (Codex r1 Critical
+    `cached-artifact-schema-unverified`): name the offending artifact + the
+    missing keys, never a bare KeyError after staging."""
+    missing = [k for k in required if k not in have]
+    assert not missing, f"{what}: missing keys {missing} (have {sorted(have)})"
+
+
 def _extract_chunk_l19(path: Path) -> tuple[np.ndarray, np.ndarray, list[int]]:
     """Layer-19 columns of one capture chunk. The chunk's ``layers`` field is
     asserted == CAPTURE_LAYERS and indexed by position-of-19 (plan §12 assumption
     1 — never blind positional trust)."""
-    b = F._mmap_load(path)
+    b = _torch_load_wo(path)
+    _assert_keys(b, ("layers", "cx_last", "v_x", "ci"), f"capture chunk {path.name}")
     layers = [int(x) for x in b["layers"]]
     assert layers == list(N1G.CAPTURE_LAYERS), (
         f"chunk {path.name} layers field {layers} != {list(N1G.CAPTURE_LAYERS)}"
@@ -412,23 +463,50 @@ def _assert_pinned_valtest(committed: dict) -> tuple[np.ndarray, np.ndarray, np.
     return np.asarray(r1_train, np.int64), np.asarray(val, np.int64), np.asarray(test, np.int64)
 
 
+def _load_pass_b_wo():
+    """The pass_b bundle through the weights_only load path (fetch-if-absent
+    mirrors N1G._load_pass_b_bundle's staging verbatim; the LOAD swaps
+    F._mmap_load's weights_only=False for _torch_load_wo — Codex r1 Major)."""
+    local_path = Path(N1G.PASS_B_LOCAL)
+    if not local_path.exists():
+        from huggingface_hub import hf_hub_download
+
+        from explore_persona_space.orchestrate import hub
+
+        logger.info("[pass_b] %s absent; fetching %s from HF", local_path, N1G.PASS_B_HF_PATH)
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        got = Path(
+            hub.retry_transient(
+                lambda: hf_hub_download(
+                    C.HF_DATA_REPO,
+                    filename=N1G.PASS_B_HF_PATH,
+                    repo_type="dataset",
+                    local_dir=local_path.parent,
+                ),
+                what=f"pass_b bundle fetch ({N1G.PASS_B_HF_PATH})",
+            )
+        )
+        if got != local_path:
+            os.replace(got, local_path)
+    b = _torch_load_wo(local_path)
+    _assert_keys(b, ("layers", "cx_last", "v_x"), "pass_b bundle")
+    return b
+
+
 def phase_assemble(args) -> None:
     """P1: stream the capture chunks -> X19/Y19 fp16 memmaps (parent row space)
     + rows_present.npy + split_meta.json, with realized-count reconciliation."""
     C.phase("assemble")
     out = _assemble_dir(args)
     out.mkdir(parents=True, exist_ok=True)
-    regime, resume_ok = _enter_phase_regime(out, args, "assemble")
     outputs = [out / "X19.fp16.npy", out / "Y19.fp16.npy", out / "rows_present.npy"]
     meta_path = out / "split_meta.json"
+    regime, resume_ok = _enter_phase_regime(
+        out, args, "assemble", stale_paths=[*outputs, meta_path, out / ".stream_cursor.json"]
+    )
     if resume_ok and meta_path.exists() and all(p.exists() for p in outputs):
         logger.info("[assemble] resume: outputs present under matching regime; skip")
         return
-    if not resume_ok:
-        for p in [*outputs, meta_path, out / ".stream_cursor.json"]:
-            if p.exists():
-                logger.warning("[assemble] recompute: removing stale %s", p.name)
-                p.unlink()
     EA._headroom(args.out_root, 2 if args.smoke else 18, "p1-assemble")
     stage = _stage_dir(args)
 
@@ -438,7 +516,7 @@ def phase_assemble(args) -> None:
     n_pb = int(N1M.N_PASS_B)
     rev = {int(c): j for j, c in enumerate(row_ci[n_pb:], start=n_pb)}
 
-    pb = N1G._load_pass_b_bundle(N1G.PASS_B_LOCAL)
+    pb = _load_pass_b_wo()
     assert LAYER_C in [int(x) for x in pb["layers"]], "pass_b bundle lacks layer 19"
     pb_x19 = N50._slice_layer(pb, "cx_last", LAYER_C)
     pb_y19 = N50._slice_layer(pb, "v_x", LAYER_C)
@@ -581,7 +659,8 @@ def _assemble_stream_production(
         y_mm[cursor : cursor + len(ci)] = vx.astype(np.float16)
         cursor += len(ci)
         print(
-            f"[assemble] chunk {k + 1}/{len(names)} rows={cursor} elapsed={time.time() - t0:.0f}s",
+            f"[assemble] chunk {k + 1}/{len(names)} {names[k]} rows={cursor} "
+            f"elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
         if (k + 1) % STREAM_FLUSH_EVERY == 0:
@@ -616,7 +695,7 @@ def _assemble_stream_smoke(args, out, stage, names, rev, pb_x19, pb_y19) -> np.n
         ys.append(vx)
         rows_new.extend(rev[c] for c in ci)
         print(
-            f"[assemble] chunk {k + 1}/{len(names)} rows={n_pb + len(rows_new)} "
+            f"[assemble] chunk {k + 1}/{len(names)} {name} rows={n_pb + len(rows_new)} "
             f"elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
@@ -727,6 +806,7 @@ def _stage_banked_c20(args, needed_rows: np.ndarray) -> dict[int, np.ndarray]:
                 C.HF_DATA_REPO, p, tgt, repo_type="dataset", revision=M_STORE_REVISION
             )
         with np.load(tgt) as z:
+            _assert_keys(z.files, ("row_idx", "c20"), f"dense_l20 shard {tgt.name}")
             ridx = np.asarray(z["row_idx"], dtype=np.int64)
             mask = np.isin(ridx, needed_sorted)
             if mask.any():
@@ -810,23 +890,75 @@ def _flush_vbar_shard(rec: dict[str, list], path: Path) -> None:
     tmp.replace(path)
 
 
+def _reapply_recorded_gate_verdicts(gates: dict, production: bool, phase: str) -> None:
+    """Resume-skip re-applies the RECORDED production gate verdicts (Codex r1
+    Critical `failed-gate-resume-laundering` + g2 MAJOR-1: artifact existence
+    must never launder a prior gate FAIL into success on a same-regime
+    relaunch — the second run exits with the ORIGINAL rc)."""
+    if not production:
+        return
+    table = {
+        "recapture": (
+            ("g2b", "FAIL", RC_HOOK),
+            ("g2a", "FAIL", RC_G2A),
+            ("d2c", "HALT-INVESTIGATE", RC_D2C),
+        ),
+        "sae_train": (("g4", "FAIL", RC_G4),),
+    }
+    for key, bad, rc in table[phase]:
+        if gates.get(key, {}).get("verdict") == bad:
+            logger.error(
+                "[%s] resume: recorded %s verdict %r — re-applying the production halt (rc=%d)",
+                phase,
+                key,
+                bad,
+                rc,
+            )
+            sys.exit(rc)
+
+
+def _p2_input_contract(args) -> None:
+    """Early P1-producer contract check — BEFORE model construction (Codex r1
+    Critical `consumer-contract-post-init`): D2c consumes the P1 outputs, so a
+    missing/empty assemble store must fail before the GPU loop, not after."""
+    a_dir = _assemble_dir(args)
+    for p in (a_dir / "split_meta.json", a_dir / "rows_present.npy", a_dir / "Y19.fp16.npy"):
+        assert p.exists(), f"[recapture] P1 input missing: {p} — run assemble first"
+    rows_present = np.load(a_dir / "rows_present.npy")
+    y19 = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
+    assert rows_present.ndim == 1 and len(rows_present) > 0, rows_present.shape
+    assert y19.ndim == 2 and y19.shape == (len(rows_present), int(C.EXPECTED_HIDDEN)), (
+        y19.shape,
+        len(rows_present),
+    )
+
+
 def phase_recapture(args) -> None:
     """P2: teacher-forced recapture of the m-round's 30k rows at layers 19+20;
     per-group shards + consolidation + gates (G2b pre-loop, G2a/D2c post)."""
     C.phase("recapture")
     out = _recapture_dir(args)
     out.mkdir(parents=True, exist_ok=True)
-    regime, resume_ok = _enter_phase_regime(out, args, "recapture")
     store_path = out / "vbar_store.npz"
     gates_path = out / "gates_p2.json"
+    regime, resume_ok = _enter_phase_regime(
+        out,
+        args,
+        "recapture",
+        stale_paths=[
+            store_path,
+            gates_path,
+            *out.glob("vbar_g*.npz"),
+            *out.glob(".tmp_*"),  # crash-orphaned tmp shards (g1 r1 Minor 4)
+        ],
+    )
     if resume_ok and store_path.exists() and gates_path.exists():
+        _reapply_recorded_gate_verdicts(
+            json.loads(gates_path.read_text()), _production(args), "recapture"
+        )
         logger.info("[recapture] resume: store + gates present under matching regime; skip")
         return
-    if not resume_ok:
-        for p in [store_path, gates_path, *out.glob("vbar_g*.npz")]:
-            if p.exists():
-                logger.warning("[recapture] recompute: removing stale %s", p.name)
-                p.unlink()
+    _p2_input_contract(args)
     EA._headroom(args.out_root, 1 if args.smoke else 6, "p2-recapture")
     stage = _stage_dir(args)
     ns = SimpleNamespace(scratch=stage)
@@ -956,6 +1088,9 @@ def phase_recapture(args) -> None:
 def _consolidate_and_gate(args, out, rows_all, set_tag, gates, gates_path, store_path) -> None:
     """Consolidate per-group shards -> vbar_store.npz; evaluate G2a + D2c;
     write gates_p2.json FIRST, then halt on a production gate failure."""
+    for p in out.glob(".tmp_*"):  # crash-orphaned partial shards never consolidate/upload
+        logger.warning("[recapture] removing crash-orphaned tmp shard %s", p.name)
+        p.unlink()
     shards = sorted(out.glob("vbar_g*.npz"))
     assert shards, "no recapture shards to consolidate"
     parts: dict[str, list[np.ndarray]] = {}
@@ -1013,6 +1148,11 @@ def _consolidate_and_gate(args, out, rows_all, set_tag, gates, gates_path, store
     ok = (pos < len(rows_present)) & (
         rows_present[np.minimum(pos, len(rows_present) - 1)] == arr["row_idx"]
     )
+    if production:  # g1 r1 Minor 3: partial overlap must never silently shrink D2c
+        assert bool(ok.all()), (
+            f"D2c: {int((~ok).sum())} recaptured rows absent from the assembled outputs "
+            "(production requires FULL overlap — stale/smoke assemble dir?)"
+        )
     if int(ok.sum()) == 0:
         gates["d2c"] = {"verdict": "SKIPPED-no-overlap", "n": 0}
         logger.warning("[recapture] D2c: 0 rows overlap the assembled slice (smoke)")
@@ -1061,14 +1201,16 @@ def phase_upload1(args) -> None:
     C.phase("upload1")
     sent_dir = _sentinels_dir(args)
     sent_dir.mkdir(parents=True, exist_ok=True)
-    regime, resume_ok = _enter_phase_regime(sent_dir, args, "upload1")
     done_path = sent_dir / "upload1.done.json"
+    regime, resume_ok = _enter_phase_regime(sent_dir, args, "upload1", stale_paths=[done_path])
     if resume_ok and done_path.exists():
         logger.info("[upload1] resume: done-file present under matching regime; skip")
         return
-    if args.skip_upload:
-        logger.warning("[upload1] --skip-upload: store upload SKIPPED (local-only run)")
-        _sentinel("upload1", "P3 SKIPPED (--skip-upload)")
+    if args.skip_upload or not _production(args):
+        # g2 r1 MINOR-5 class: a non-production run must never write the
+        # PRODUCTION HF prefix; loud no-op, NO done-file (never launders).
+        logger.warning("[upload1] skip_upload/non-production: store upload SKIPPED (loud)")
+        _sentinel("upload1", "P3 SKIPPED (skip_upload or non-production)")
         return
     recap = _recapture_dir(args)
     a_dir = _assemble_dir(args)
@@ -1094,6 +1236,14 @@ def phase_upload1(args) -> None:
     m_split_local = _stage_dir(args) / "split_indices_matryoshka.npz"
     assert m_split_local.exists(), "staged split_indices_matryoshka.npz missing — run recapture"
     shutil.copy2(m_split_local, meta_dir / "split_indices_matryoshka.npz")
+    # arm-c split index arrays (Codex r1 Major: the uploaded split-meta bundle must
+    # independently reconstruct the arm-c train/holdout/SAE-fit row sets too)
+    ns_meta = SimpleNamespace(scratch=_stage_dir(args))
+    ns_meta.scratch.mkdir(parents=True, exist_ok=True)
+    EL._stage_scratch_meta(ns_meta)  # idempotent; guarantees presence on standalone runs
+    c_split_local = _stage_dir(args) / "split_indices.npz"
+    assert c_split_local.exists(), "staged arm-c split_indices.npz missing"
+    shutil.copy2(c_split_local, meta_dir / "split_indices.npz")
     _write_json(
         meta_dir / "m_split_asserted.json",
         {
@@ -1180,6 +1330,8 @@ def _smoke_leg_expected(name: str, s) -> list[Path]:
             m / "alive_c.npz",
             m / "densein_c.npz",
             m / "ftrue_c_all.fp16.npy",
+            m / "panel_b.json",
+            m / "panel_c.json",
         ],
         "eval": [
             e / n
@@ -1453,6 +1605,18 @@ def _production(args) -> bool:
     return args.max_chunks == 0 and args.smoke_rows == 0 and not args.smoke
 
 
+def _refuse_tiny_model_at_production(args) -> None:
+    """g3 r1 M1: --tiny-model substitutes the from-config model AND random
+    chanind stand-in dictionaries — a production-classified run must refuse it
+    at entry (the --sae-dict sub-production-width guard's sibling). `--phase
+    smoke` stays allowed: phase_smoke self-scopes every leg to a smoke
+    namespace (s.smoke=True under out_root/smoke)."""
+    assert not (args.tiny_model and args.phase != "smoke" and _production(args)), (
+        "--tiny-model is smoke-only (never a production instrument): pass --smoke / "
+        "--smoke-rows / --max-chunks, or run --phase smoke"
+    )
+
+
 def _sae_width(args) -> int:
     """Resolved SAE-c dictionary width (--sae-dict; 0 = production SAE_DICT)."""
     return int(args.sae_dict) if int(args.sae_dict) > 0 else SAE_DICT
@@ -1557,6 +1721,46 @@ def _block_batches(mm, positions: np.ndarray, batch: int, rng):
             yield arr[w[s : s + batch]]
 
 
+def _p4_upload(args, out: Path, *, resume_skip: bool) -> None:
+    """The P4 HF sae_c upload leg (weights+cfg+train_log; fail-loud exact-set
+    verify — the P3 pattern). Extracted so the RESUME path can verify/re-drive
+    a crash-interrupted upload (Codex r1 Critical / g2 MAJOR-1: the resume
+    predicate keys on files written BEFORE the upload). Production-only: a
+    manual smoke must never overwrite the production HF prefix (g2 MINOR-5)."""
+    if args.skip_upload or not _production(args):
+        logger.warning("[sae_train] skip_upload/non-production: sae_c upload SKIPPED (loud)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+    from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
+
+    up = _stage_dir(args) / "sae_c_upload"
+    if up.exists():
+        shutil.rmtree(up)
+    up.mkdir(parents=True, exist_ok=True)
+    for name in ("sae_weights.safetensors", "cfg.json", "train_log.json"):
+        shutil.copy2(out / name, up / name)
+    prefix = f"{args.hf_prefix}/sae_c"
+    res = upload_dir_sharded(
+        up,
+        C.HF_DATA_REPO,
+        prefix,
+        repo_type="dataset",
+        shard_glob="*",
+        verify=True,
+        delete_local=False,
+        resume_skip=resume_skip,
+    )
+    if not res.rerouted:  # fail-loud exact-set verify (the P3 pattern)
+        expected = [f"{prefix}/{p.name}" for p in sorted(up.iterdir()) if p.is_file()]
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(), C.HF_DATA_REPO, expected, path_in_repo=prefix
+        )
+        assert not missing, f"[sae_train] verify FAILED — missing on Hub: {missing}"
+    logger.info("[sae_train] uploaded sae_c -> %s (rerouted=%s)", prefix, res.rerouted)
+
+
 def phase_sae_train(args) -> None:
     """P4: train the arm-c MatryoshkaBatchTopKSAE on the turn-averaged answer
     summaries (Y19 rows); per-epoch checkpoints + regime-keyed resume; gate G4;
@@ -1565,24 +1769,41 @@ def phase_sae_train(args) -> None:
     C.phase("sae_train")
     out = _sae_out_dir(args)
     out.mkdir(parents=True, exist_ok=True)
-    regime, resume_ok = _enter_phase_regime(out, args, "sae_train")
     w_path = out / "sae_weights.safetensors"
     log_path = out / "train_log.json"
     gates_path = out / "gates_p4.json"
+    regime, resume_ok = _enter_phase_regime(
+        out,
+        args,
+        "sae_train",
+        stale_paths=[w_path, log_path, gates_path, out / "cfg.json", out / "ckpt_last.pt"],
+    )
     if resume_ok and w_path.exists() and log_path.exists() and gates_path.exists():
-        logger.info("[sae_train] resume: weights+log+gates present under matching regime; skip")
+        _reapply_recorded_gate_verdicts(
+            json.loads(gates_path.read_text()), _production(args), "sae_train"
+        )
+        # gates PASS re-applied; verify/re-drive the HF upload (a crash between the
+        # gates write and the upload must not strand the §6.5 instrument deliverable)
+        _p4_upload(args, out, resume_skip=True)
+        logger.info("[sae_train] resume: weights+log+gates present; gates re-applied; skip")
         return
-    if not resume_ok:
-        for p in (w_path, log_path, gates_path, out / "cfg.json", out / "ckpt_last.pt"):
-            if p.exists():
-                logger.warning("[sae_train] recompute: removing stale %s", p.name)
-                p.unlink()
     EA._headroom(args.out_root, 1 if args.smoke else 4, "p4-sae-train")
     a_dir = _assemble_dir(args)
     assert (a_dir / "split_meta.json").exists(), "sae_train needs the P1 outputs — run assemble"
     y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
     tr_pos, val_pos, pool_doc = _sae_row_positions(args)
     production = _production(args)
+    # producer-contract checks BEFORE the (up to 65,536-wide) SAE allocation
+    # (Codex r1 Critical `consumer-contract-post-init`)
+    assert y_mm.ndim == 2 and y_mm.shape[1] == int(C.EXPECTED_HIDDEN) and y_mm.shape[0] > 0, (
+        y_mm.shape
+    )
+    assert len(tr_pos) >= 1 and len(val_pos) >= 2, (len(tr_pos), len(val_pos))
+    assert int(max(tr_pos.max(), val_pos.max())) < y_mm.shape[0], (
+        int(tr_pos.max()),
+        int(val_pos.max()),
+        y_mm.shape,
+    )
     print(f"[sae_train] pools re-measured: {json.dumps(pool_doc)}", flush=True)
 
     dev = args.device
@@ -1603,6 +1824,7 @@ def phase_sae_train(args) -> None:
     ckpt_path = out / "ckpt_last.pt"
     start_epoch, step = 0, 0
     epoch_rows: list[dict] = []
+    steps_cap = int(args.sae_steps)
     if resume_ok and ckpt_path.exists():
         # self-produced local checkpoint (regime-matched dir) — weights_only=False
         # is the sanctioned posture for sha-pinned self-produced bundles (gotchas.md)
@@ -1611,8 +1833,13 @@ def phase_sae_train(args) -> None:
         opt.load_state_dict(ck["opt"])
         start_epoch, step = int(ck["epoch_done"]), int(ck["step"])
         epoch_rows = list(ck["log_rows"])
+        if bool(ck.get("steps_capped")) and steps_cap and step >= steps_cap:
+            # g2 MAJOR-2 companion: a steps-capped PARTIAL epoch is not a done
+            # epoch — the ckpt flags it, and a same-regime resume (sae_steps is
+            # regime-hashed) treats the capped budget as training-complete
+            # rather than re-entering the epoch for one stray batch.
+            start_epoch = SAE_EPOCHS
         logger.info("[sae_train] RESUMED at epoch %d (step %d)", start_epoch, step)
-    steps_cap = int(args.sae_steps)
     t0 = time.time()
     stop = False
     for epoch in range(start_epoch, SAE_EPOCHS):
@@ -1657,7 +1884,9 @@ def phase_sae_train(args) -> None:
             {
                 "model": model.state_dict(),
                 "opt": opt.state_dict(),
-                "epoch_done": epoch + 1,
+                # a steps-capped break is a PARTIAL epoch — flagged, never counted done
+                "epoch_done": epoch if stop else epoch + 1,
+                "steps_capped": bool(stop),
                 "step": step,
                 "log_rows": epoch_rows,
             },
@@ -1695,38 +1924,12 @@ def phase_sae_train(args) -> None:
         _sentinel("sae_train", "G4 SAE-val FVE below floor (gates_p4.json written)", {"rc": RC_G4})
         logger.error("[sae_train] G4 FAIL (halt-investigate before any encode): %s", gates["g4"])
         sys.exit(RC_G4)
-    if args.skip_upload:
-        logger.warning("[sae_train] --skip-upload: sae_c upload SKIPPED (local-only run)")
-    else:
-        from huggingface_hub import HfApi
-
-        from explore_persona_space.orchestrate import hub
-        from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
-
-        up = _stage_dir(args) / "sae_c_upload"
-        if up.exists():
-            shutil.rmtree(up)
-        up.mkdir(parents=True, exist_ok=True)
-        for name in ("sae_weights.safetensors", "cfg.json", "train_log.json"):
-            shutil.copy2(out / name, up / name)
-        prefix = f"{args.hf_prefix}/sae_c"
-        res = upload_dir_sharded(
-            up,
-            C.HF_DATA_REPO,
-            prefix,
-            repo_type="dataset",
-            shard_glob="*",
-            verify=True,
-            delete_local=False,
-            resume_skip=False,
-        )
-        if not res.rerouted:  # fail-loud exact-set verify (the P3 pattern)
-            expected = [f"{prefix}/{p.name}" for p in sorted(up.iterdir()) if p.is_file()]
-            missing = hub.verify_repo_paths_uploaded(
-                HfApi(), C.HF_DATA_REPO, expected, path_in_repo=prefix
-            )
-            assert not missing, f"[sae_train] verify FAILED — missing on Hub: {missing}"
-        logger.info("[sae_train] uploaded sae_c -> %s (rerouted=%s)", prefix, res.rerouted)
+    _p4_upload(args, out, resume_skip=False)
+    if ckpt_path.exists():
+        # training complete + gates PASS + upload verified: the optimizer-state
+        # checkpoint is the plan §10 discarded-artifacts row (~1.9 GB at width)
+        ckpt_path.unlink()
+        logger.info("[sae_train] optimizer checkpoint removed (plan §10 discard row)")
     _sentinel(
         "sae_train",
         f"P4 done (fve={fve_val:.4f} l0={epoch_rows[-1]['val_l0']} g4={gates['g4']['verdict']})",
@@ -1801,10 +2004,12 @@ def _ea_scratch(args, production: bool) -> Path:
     return d
 
 
-def _run_ea_refits(args, maps_dir: Path, scratch: Path, resume_ok: bool) -> None:
-    """The three arm-c ridge refits through EA.phase_p1_fit VERBATIM (plan §4 P5)."""
+def _run_ea_refits(args, maps_dir: Path, scratch: Path, resume_ok: bool, fit_ids) -> None:
+    """Arm-c ridge refits through EA.phase_p1_fit VERBATIM (plan §4 P5). Called
+    twice: full+holdout BEFORE gate G1, the transfer fold AFTER it (Codex r1
+    minor: a known-bad assembly must not spend a third fit pre-halt)."""
     pdir = maps_dir / "percontext"
-    for fit_id in EA_FIT_IDS:
+    for fit_id in fit_ids:
         jpath, npath = pdir / f"{fit_id}.json", pdir / f"{fit_id}.npz"
         if resume_ok and jpath.exists() and npath.exists():
             logger.info("[maps] %s present; resume-skip", fit_id)
@@ -1984,6 +2189,20 @@ def _alive_floor(n_fit: int) -> int:
     return max(1, math.ceil(0.01 * n_fit))
 
 
+def _alive_panel(counts: np.ndarray, n_fit: int) -> tuple[np.ndarray, dict]:
+    """The registered tier-stratified feature panel (plan §0/§11: floor = 1% of
+    fit rows, cap 16,384, seed 14824 — Codex r1 Major `panel-cap-omitted`):
+    M._tier_stratified_panel VERBATIM. Returns (sorted alive ids, doc) where doc
+    carries the per-tier clearing/allocated/selected counts the plan §6
+    reporting duty persists."""
+    panel, doc = M._tier_stratified_panel(
+        np.asarray(counts, np.int64), int(n_fit), int(M.PANEL_CAP), int(M.PANEL_SEED)
+    )
+    assert int(doc["floor"]) == _alive_floor(n_fit), (doc["floor"], _alive_floor(n_fit))
+    assert len(panel) <= int(M.PANEL_CAP), (len(panel), M.PANEL_CAP)
+    return np.asarray(panel, np.int64), doc
+
+
 class _TinyJumpReLUStandin(torch.nn.Module):
     """Sub-production stand-in for the chanind SAELensJumpReLU under --tiny-model
     ONLY (the real class hard-asserts d_sae == 65,536 and pulls ~1.9 GB fp32 per
@@ -2054,7 +2273,8 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     out_alive = maps_dir / "alive_b.npz"
     out_ftrue = maps_dir / "ftrue_b.npz"
     out_dense = maps_dir / "densein_b.npz"
-    if all(p.exists() for p in (out_maps, out_alive, out_ftrue, out_dense)):
+    out_panel = maps_dir / "panel_b.json"
+    if all(p.exists() for p in (out_maps, out_alive, out_ftrue, out_dense, out_panel)):
         z = np.load(out_maps)
         return {"resumed": True, "selected_lambda": float(z["selected_lambda"])}
     from explore_persona_space.analysis.mapping_baselines import identity_bias_predict
@@ -2112,12 +2332,14 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     )
     tmp.replace(out_maps)
 
-    # chanind lmsys: alive mask on TRUE fit-side encodes + f_true over all rows
+    # chanind lmsys: alive PANEL on TRUE fit-side encodes + f_true over all rows
+    # (floor-clearing capped at the registered 16,384 tier-stratified panel)
     sae = _load_dict_b(args, "lmsys")
     counts = _encode_counts(sae, vbar20, fit_pos)
-    floor = _alive_floor(len(fit_pos))
-    alive = np.where(counts >= floor)[0].astype(np.int64)
+    alive, panel_doc = _alive_panel(counts, len(fit_pos))
+    floor = int(panel_doc["floor"])
     assert len(alive) >= 1, "no alive features (arm b)"
+    _write_json(out_panel, {"panel": panel_doc}, phase="maps")
     f_true = _encode_restricted(sae, vbar20, np.arange(len(row_idx)), alive)
     f_true_in = _encode_restricted(sae, vbar20_in, te, alive)  # inlier twin, te rows only
     train_mean = np.asarray(f_true[fit_pos], np.float64).mean(0)
@@ -2167,7 +2389,8 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     alive_path = maps_dir / "alive_c.npz"
     ftrue_path = maps_dir / "ftrue_c_all.fp16.npy"
     dense_path = maps_dir / "densein_c.npz"
-    if all(p.exists() for p in (alive_path, ftrue_path, dense_path)):
+    panel_path = maps_dir / "panel_c.json"
+    if all(p.exists() for p in (alive_path, ftrue_path, dense_path, panel_path)):
         z = np.load(alive_path)
         return {"resumed": True, "n_alive": int(len(z["alive_ids"]))}
     sae = MatryoshkaBatchTopKSAE.load_local(_sae_out_dir(args), device=args.device)
@@ -2179,9 +2402,10 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     hold = np.asarray(idx["holdout"], np.int64)  # EA holdout ORDER (pred16 alignment)
     n_fit = int(len(sae_fit))
     counts = _encode_counts(sae, Ymm, sae_fit)
-    floor = _alive_floor(n_fit)
-    alive = np.where(counts >= floor)[0].astype(np.int64)
+    alive, panel_doc = _alive_panel(counts, n_fit)  # registered 16,384 cap, seed 14824
+    floor = int(panel_doc["floor"])
     assert len(alive) >= 1, "no alive features (arm c)"
+    _write_json(panel_path, {"panel": panel_doc}, phase="maps")
     rows_c = np.concatenate([sae_fit, hold])
     yc = np.lib.format.open_memmap(
         ftrue_path, mode="w+", dtype=np.float16, shape=(len(rows_c), len(alive))
@@ -2231,50 +2455,66 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     }
 
 
+def _p5_input_contract(args) -> None:
+    """Early producer-contract checks BEFORE any refit dispatch (Codex r1
+    Critical `consumer-contract-post-init`): P1 memmap shapes, the P2 store's
+    full key set + nonzero rows, and the P4 weights — named misses, never a
+    KeyError three fits in."""
+    a_dir = _assemble_dir(args)
+    assert (a_dir / "split_meta.json").exists(), "maps needs the P1 outputs — run assemble"
+    rows_present = np.load(a_dir / "rows_present.npy")
+    for name in ("X19.fp16.npy", "Y19.fp16.npy"):
+        mm = np.load(a_dir / name, mmap_mode="r")
+        assert mm.shape == (len(rows_present), int(C.EXPECTED_HIDDEN)), (name, mm.shape)
+    store_path = _recapture_dir(args) / "vbar_store.npz"
+    assert store_path.exists(), "maps needs the P2 recapture store — run recapture"
+    with np.load(store_path) as z:
+        _assert_keys(
+            z.files,
+            ("row_idx", "set_tag", "vbar19", "vbar20", "vbar20_inlier", "n_ans"),
+            "P2 vbar_store.npz",
+        )
+        assert len(z["row_idx"]) > 0, "P2 recapture store is EMPTY"
+    assert (_sae_out_dir(args) / "sae_weights.safetensors").exists(), (
+        "maps needs the P4 SAE-c weights — run sae_train"
+    )
+    assert (_sae_out_dir(args) / "cfg.json").exists(), "maps needs the P4 cfg.json"
+
+
 def phase_maps(args) -> None:
     """P5: arm-c EA refits (gate G1) + identity+bias + arm-b shared-Gram map +
     dense-input companions + corpus-transfer fold — predictions persisted for P6."""
     C.phase("maps")
     out = _maps_dir(args)
     out.mkdir(parents=True, exist_ok=True)
-    regime, resume_ok = _enter_phase_regime(out, args, "maps")
     meta_path = out / "preds_meta.json"
+    stale = [
+        meta_path,
+        out / "recon_gate.json",
+        out / "ib_c.npz",
+        out / "armb_maps.npz",
+        out / "alive_b.npz",
+        out / "ftrue_b.npz",
+        out / "densein_b.npz",
+        out / "alive_c.npz",
+        out / "densein_c.npz",
+        out / "ftrue_c_all.fp16.npy",
+        out / "panel_b.json",
+        out / "panel_c.json",
+    ]
+    if (out / "percontext").exists():
+        stale += sorted((out / "percontext").glob("refit_*"))
+    regime, resume_ok = _enter_phase_regime(out, args, "maps", stale_paths=stale)
     if resume_ok and meta_path.exists():
         logger.info("[maps] resume: preds_meta present under matching regime; skip")
         return
-    if not resume_ok:
-        stale = [
-            meta_path,
-            out / "recon_gate.json",
-            out / "ib_c.npz",
-            out / "armb_maps.npz",
-            out / "alive_b.npz",
-            out / "ftrue_b.npz",
-            out / "densein_b.npz",
-            out / "alive_c.npz",
-            out / "densein_c.npz",
-            out / "ftrue_c_all.fp16.npy",
-        ]
-        pdir = out / "percontext"
-        if pdir.exists():
-            stale += sorted(pdir.glob("refit_*"))
-        for p in stale:
-            if p.exists():
-                logger.warning("[maps] recompute: removing stale %s", p.name)
-                p.unlink()
     EA._headroom(args.out_root, 2 if args.smoke else 30, "p5-maps")
     production = _production(args)
-    a_dir = _assemble_dir(args)
-    assert (a_dir / "split_meta.json").exists(), "maps needs the P1 outputs — run assemble"
-    assert (_recapture_dir(args) / "vbar_store.npz").exists(), (
-        "maps needs the P2 recapture store — run recapture"
-    )
-    assert (_sae_out_dir(args) / "sae_weights.safetensors").exists(), (
-        "maps needs the P4 SAE-c weights — run sae_train"
-    )
+    _p5_input_contract(args)
     scratch = _ea_scratch(args, production)
-    _run_ea_refits(args, out, scratch, resume_ok)
+    _run_ea_refits(args, out, scratch, resume_ok, EA_FIT_IDS[:2])  # full + holdout
     g1 = _gate_g1(args, out, production)  # halts fits on production FAIL (plan §7)
+    _run_ea_refits(args, out, scratch, resume_ok, EA_FIT_IDS[2:])  # transfer, post-G1
     if not (out / "ib_c.npz").exists():
         _ib_arm_c(args, out, scratch)
     armb_doc = _armb_all(args, out, production)
@@ -2312,7 +2552,7 @@ def _r2_only(pred: np.ndarray, true: np.ndarray) -> np.ndarray:
     return np.where(ss_tot > 1e-12, 1.0 - ss_res / np.maximum(ss_tot, 1e-12), np.nan)
 
 
-def _shuffle_null_r2(pred: np.ndarray, true: np.ndarray, seeds) -> np.ndarray:
+def _shuffle_null_r2(pred: np.ndarray, true: np.ndarray, seeds, what: str = "") -> np.ndarray:
     """K row-shuffle null draws of the per-feature R2 (advisory floor, plan §6):
     the SAME vectorized R2 kernel as the observed read, prediction rows permuted."""
     t = np.asarray(true, np.float64)
@@ -2325,7 +2565,7 @@ def _shuffle_null_r2(pred: np.ndarray, true: np.ndarray, seeds) -> np.ndarray:
         ss_res = ((t - np.asarray(pred[perm], np.float64)) ** 2).sum(0)
         r2 = np.where(ss_tot > 1e-12, 1.0 - ss_res / np.maximum(ss_tot, 1e-12), np.nan)
         out[i] = r2.astype(np.float16)
-        print(f"[eval] shuffle-null draw {i + 1}/{len(seeds)}", flush=True)
+        print(f"[eval] shuffle-null{what} draw {i + 1}/{len(seeds)}", flush=True)
     return out
 
 
@@ -2444,8 +2684,10 @@ def _median_of(v: np.ndarray) -> float:
 def _g3_verdict(fve_b: float, l0_b: float, diag_b: dict, n_rows: int) -> dict:
     """G3 (plan §7): arm-b encoder fitness — DEMOTION-ONLY labeling. This
     function never raises/exits and phase_eval carries no G3-keyed abort
-    (pinned by tests/test_issue2476_gates.py)."""
-    demoted = bool(fve_b < M.GATE_BM_HALT)
+    (pinned by tests/test_issue2476_gates.py). PASS requires a FINITE FVE at or
+    above the floor — NaN/±inf is an undefined measurement and DEMOTES (g3 r1
+    Minor 4 / Codex Major: `NaN < floor` is False, which silently passed)."""
+    demoted = not (np.isfinite(fve_b) and fve_b >= M.GATE_BM_HALT)
     return {
         "fve": round(float(fve_b), 4),
         "l0": round(float(l0_b), 2),
@@ -2457,23 +2699,119 @@ def _g3_verdict(fve_b: float, l0_b: float, diag_b: dict, n_rows: int) -> dict:
     }
 
 
-def _lattice_verdict(obs: float, lo: float, hi: float, d_map: float) -> str:
-    """Registered verdict lattice (plan §5): STRICT tail inequality AND the
-    matching tier-difference sign; every other cell — inside band, boundary
-    equality, sign mismatch (mixed conjunct), non-finite obs — is 'tier-null'.
-    Truth table pinned by tests/test_issue2476_gates.py."""
-    if np.isfinite(obs) and obs < lo and d_map > 0:
-        return "coarse-better"
-    if np.isfinite(obs) and obs > hi and d_map < 0:
-        return "fine-better"
-    return "tier-null"
+def _perm_pct(obs: float, draws: np.ndarray) -> float:
+    """Percentile rank (midrank ties) of the observed statistic within the
+    FINITE null draws — the registered lattice's perm-pct (plan §3: 'the
+    percentile rank of the observed within-stratum pooled Spearman inside the
+    10,000-draw null distribution'). NaN obs / empty draws -> NaN."""
+    d = np.asarray(draws, np.float64)
+    d = d[np.isfinite(d)]
+    if not np.isfinite(obs) or len(d) == 0:
+        return float("nan")
+    below = float((d < obs).sum())
+    eq = float((d == obs).sum())
+    return 100.0 * (below + 0.5 * eq) / len(d)
+
+
+def _perm_null_draws(tier, r2, strata, n_perm: int, rng, chunk: int = 2000) -> np.ndarray:
+    """The parent permutation kernel's null draws, regenerated with IDENTICAL
+    ops + rng consumption (M._tier_permutation returns the band but NOT its
+    draws; perm-pct needs them). Band parity vs the helper is asserted at every
+    call site (_tier_stats), so a kernel drift fails loud."""
+    rt = EA._midrank(np.asarray(r2, np.float64)[:, None])[:, 0]
+    lt = EA._midrank(np.asarray(tier, np.float64)[:, None])[:, 0]
+    b = rt - rt.mean()
+    b_den = float(np.sqrt((b**2).sum()))
+    parts = []
+    strata_ids = np.unique(strata)
+    for s0 in range(0, n_perm, chunk):
+        k = min(chunk, n_perm - s0)
+        perm = np.tile(lt, (k, 1))
+        for sid in strata_ids:
+            m = np.where(strata == sid)[0]
+            order = np.argsort(rng.random((k, len(m))), axis=1)
+            perm[:, m] = lt[m][order]
+        a = perm - perm.mean(axis=1, keepdims=True)
+        den = np.sqrt((a**2).sum(axis=1)) * b_den
+        with np.errstate(invalid="ignore", divide="ignore"):
+            parts.append((a @ b) / np.maximum(den, 1e-12))
+    return np.concatenate(parts)
+
+
+def _lattice_verdict(perm_pct: float, tier_diff: float) -> str:
+    """The REGISTERED verdict lattice, verbatim from plan §3 (Codex r1 Critical
+    `registered-lattice-mismatch`):
+
+        Gradient-holds    <=> perm_pct <= 2.5  AND tier_diff > 0
+        Gradient-reversed <=> perm_pct >= 97.5 AND tier_diff < 0
+        Indeterminate     <=> otherwise
+
+    INCLUSIVE tail boundaries; tier_diff == 0 exactly, mixed conjuncts, and
+    non-finite inputs all fall to Indeterminate. Truth table pinned by
+    tests/test_issue2476_gates.py."""
+    if np.isfinite(perm_pct) and np.isfinite(tier_diff):
+        if perm_pct <= 2.5 and tier_diff > 0:
+            return "Gradient-holds"
+        if perm_pct >= 97.5 and tier_diff < 0:
+            return "Gradient-reversed"
+    return "Indeterminate"
+
+
+def _knn_retrieval_chunked(
+    pred: np.ndarray,
+    true: np.ndarray,
+    *,
+    ks: tuple[int, ...] = (1, 5, 10),
+    metric: str = "euclidean",
+    block: int = 2048,
+) -> dict:
+    """Query-side-chunked twin of mapping_baselines.knn_retrieval for the
+    pool == true case (Codex r1 Major `retrieval-not-chunked`: the shared
+    helper materializes a full n x n_pool fp64 distance matrix — ~3.2 GB per
+    call at 20k rows, per tier x predictor x metric cell). Semantics are
+    IDENTICAL per query row (same distances, same tolerance-based mid-ranks);
+    peak memory is block x n_pool. The shared helper is untouched; parity is
+    pinned by tests/test_issue2476_gates.py."""
+    pred = np.asarray(pred, dtype=np.float64)
+    pool = np.asarray(true, dtype=np.float64)
+    n, n_pool = pred.shape[0], pool.shape[0]
+    assert n == n_pool and pred.shape[1] == pool.shape[1], (pred.shape, pool.shape)
+    if metric == "euclidean":
+        q2 = (pool * pool).sum(axis=1)[None, :]
+        pool_n = None
+    elif metric == "cosine":
+        q2 = None
+        pool_n = pool / (np.linalg.norm(pool, axis=1, keepdims=True) + 1e-12)
+    else:
+        raise ValueError(f"unknown metric {metric!r}")
+    ranks = np.empty(n, np.float64)
+    for s in range(0, n, block):
+        pb = pred[s : s + block]
+        if metric == "euclidean":
+            d = (pb * pb).sum(axis=1)[:, None] + q2 - 2.0 * (pb @ pool.T)
+        else:
+            pn = pb / (np.linalg.norm(pb, axis=1, keepdims=True) + 1e-12)
+            d = 1.0 - pn @ pool_n.T
+        rows = np.arange(len(pb))
+        d_true = d[rows, np.arange(s, s + len(pb))]
+        tol = 1e-9 * np.maximum(np.abs(d_true)[:, None], 1e-12)
+        closer = (d < d_true[:, None] - tol).sum(axis=1)
+        tied = (np.abs(d - d_true[:, None]) <= tol).sum(axis=1) - 1
+        ranks[s : s + len(pb)] = 1.0 + closer + 0.5 * tied
+    return {
+        "metric": metric,
+        "n": int(n),
+        "n_pool": int(n_pool),
+        "acc_at_k": {int(k): float((ranks <= k).mean()) for k in ks},
+        "chance_at_k": {int(k): float(k / n_pool) for k in ks},
+        "median_rank": float(np.median(ranks)),
+        "mrr": float((1.0 / ranks).mean()),
+    }
 
 
 def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10)) -> dict:
     """Per-tier kNN retrieval (every k x metric x predictor cell reported
     separately, no best-of — plan §6). Pool = the held-out true feature rows."""
-    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
-
     out: dict = {}
     for t in (0, 1, 2):
         m = tier == t
@@ -2486,7 +2824,7 @@ def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10)) -> di
             pa = np.ascontiguousarray(np.asarray(parr[:, m], np.float32))
             pc = {}
             for metric in ("euclidean", "cosine"):
-                r = knn_retrieval(pa, ft, ks=ks, metric=metric)
+                r = _knn_retrieval_chunked(pa, ft, ks=ks, metric=metric)
                 r["wilson_ci_acc"] = {str(k): _wilson(r["acc_at_k"][k], r["n"]) for k in ks}
                 pc[metric] = r
             cell[pname] = pc
@@ -2497,14 +2835,27 @@ def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10)) -> di
 def _tier_stats(r2_map, r2_ib, tier, activity, n_perm, n_boot, rng) -> dict:
     """Per-tier medians + bootstrap CIs, tier-diff (t0 − t2, the registered
     sign-stable difference), within-activity-quintile tier permutation (m-round
-    kernel), lattice verdict, tie profile, |rho| ceiling."""
+    kernel) + perm_pct, the REGISTERED lattice verdict, tie profile, |rho|
+    ceiling. The raw band endpoints stay persisted (parent-parity read)."""
     finite = np.isfinite(r2_map)
     r2f = np.asarray(r2_map, np.float64)[finite]
     tierf = np.asarray(tier, np.int64)[finite]
     actf = np.asarray(activity, np.float64)[finite]
     if len(r2f) >= 10 and len(np.unique(tierf)) >= 2:
         strata = M._strata_of(actf, 5)  # quintiles (plan §6)
-        h1 = M._tier_permutation(tierf, r2f, strata, n_perm, rng)
+        # ONE deterministic child seed drives the parent kernel AND the draw
+        # regeneration (perm_pct needs the draws; g2 MINOR-6: seed recorded).
+        perm_seed = int(rng.integers(np.iinfo(np.int64).max))
+        h1 = M._tier_permutation(tierf, r2f, strata, n_perm, np.random.default_rng(perm_seed))
+        draws = _perm_null_draws(tierf, r2f, strata, n_perm, np.random.default_rng(perm_seed))
+        ok = np.isfinite(draws)
+        lo_re, hi_re = np.percentile(draws[ok], [2.5, 97.5])
+        assert np.allclose([lo_re, hi_re], h1["perm_band_2p5_97p5"], atol=1e-12), (
+            "perm-draw regeneration diverged from the parent kernel "
+            f"({[lo_re, hi_re]} vs {h1['perm_band_2p5_97p5']})"
+        )
+        h1["perm_pct"] = _perm_pct(float(h1["observed_pooled_spearman"]), draws)
+        h1["perm_seed"] = perm_seed
         h1["strata"] = "quintile"
         h1["cell_counts"] = {
             f"{s}_{t}": int(((strata == s) & (tierf == t)).sum())
@@ -2517,6 +2868,7 @@ def _tier_stats(r2_map, r2_ib, tier, activity, n_perm, n_boot, rng) -> dict:
             "n_features": int(len(r2f)),
             "perm_band_2p5_97p5": [float("nan"), float("nan")],
             "observed_pooled_spearman": float("nan"),
+            "perm_pct": float("nan"),
         }
     vals, cnts = np.unique(actf, return_counts=True) if len(actf) else (np.array([]), np.array([]))
     tie_profile = {
@@ -2543,16 +2895,21 @@ def _tier_stats(r2_map, r2_ib, tier, activity, n_perm, n_boot, rng) -> dict:
             "point_t0_minus_t2": d_point,
             "ci95": M._boot_median_diff(arr[tier == 0], arr[tier == 2], n_boot, rng),
         }
-    lo, hi = h1["perm_band_2p5_97p5"]
-    obs = h1["observed_pooled_spearman"]
     d_map = diff["map"]["point_t0_minus_t2"]
-    lattice = _lattice_verdict(obs, lo, hi, d_map)
+    lattice = _lattice_verdict(float(h1["perm_pct"]), d_map)
     return {
         "per_tier": per_tier,
         "tier_diff_t0_minus_t2": diff,
         "permutation": h1,
         "activity_tie_profile": tie_profile,
         "lattice_verdict": lattice,
+        "lattice_inputs": {
+            "perm_pct": float(h1["perm_pct"]),
+            "tier_diff_map_t0_minus_t2": d_map,
+            # raw band endpoints kept beside the registered read (parent parity)
+            "raw_band_2p5_97p5": h1["perm_band_2p5_97p5"],
+            "observed_pooled_spearman": h1["observed_pooled_spearman"],
+        },
         "rho_ceiling_abs": _rho_ceiling(tierf),
     }
 
@@ -2578,6 +2935,8 @@ def _arm_battery(
     n_perm: int,
     n_boot: int,
     rng,
+    panel_doc: dict,
+    battery_seed: int,
 ) -> dict:
     """One arm's full vectorized battery -> perfeature npzs + shuffle-null npz +
     tier_tests_<tag>.json + retrieval_<tag>.json. Returns {'r2_map': ...}."""
@@ -2606,6 +2965,7 @@ def _arm_battery(
         floor=floor,
     )
     extra_medians: dict = {}
+    read_r2: dict[str, np.ndarray] = {}
     for name, pred_x, true_x, prov_x in extra_reads:
         pf_x = _write_perfeature(
             out / f"perfeature_{tag}_{name}.npz",
@@ -2617,34 +2977,53 @@ def _arm_battery(
             n_fit=n_fit_rows,
             floor=floor,
         )
+        read_r2[name] = pf_x["r2"]
         extra_medians[name] = {
             "n_te_rows": int(true_x.shape[0]),
             "per_tier_median_r2": {str(t): _median_of(pf_x["r2"][tier == t]) for t in (0, 1, 2)},
         }
         print(f"[eval] unit perfeature_{tag}_{name} done", flush=True)
 
-    null_r2 = _shuffle_null_r2(pred_map, f_true, SHUFFLE_SEEDS_2476)
+    # K=20 shuffle null for EVERY per-feature R2 read (plan §6 'alongside every
+    # R2 read'; Codex r1 Major `shuffle-null-coverage`) — same batched kernel.
+    # The train-mean predictor is CONSTANT across rows, so a row shuffle is the
+    # identity on it (its null coincides with the observed read — noted, no draw).
+    null_inputs: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]] = {
+        "map": (pred_map, f_true, pf_map["r2"]),
+        "ib": (pred_ib, f_true, pf_ib["r2"]),
+    }
+    for name, pred_x, true_x, _prov_x in extra_reads:
+        null_inputs[name] = (pred_x, true_x, read_r2[name])
+    null_arrays: dict[str, np.ndarray] = {}
+    shuffle_doc: dict = {
+        "n_seeds": len(SHUFFLE_SEEDS_2476),
+        "advisory": True,
+        "train_mean_note": "constant predictor: row-shuffle null == observed (no draws)",
+        "per_read": {},
+    }
+    for rname, (pr, tr_x, obs_r2) in null_inputs.items():
+        null_r2 = _shuffle_null_r2(pr, tr_x, SHUFFLE_SEEDS_2476, what=f" {tag}/{rname}")
+        null_arrays[f"r2_{rname}"] = null_r2
+        hi = float(np.nanpercentile(null_r2.astype(np.float64), 97.5))
+        rr = obs_r2[np.isfinite(obs_r2)]
+        shuffle_doc["per_read"][rname] = {
+            "p97_5": hi,
+            "frac_above": float((rr > hi).mean()) if len(rr) else None,
+        }
     tmp = out / f".tmp_shuffle_null_{tag}.npz"
     np.savez(
         tmp,
         feat_ids=feat_ids,
         tier=tier,
-        r2=null_r2,
         seeds=np.asarray(SHUFFLE_SEEDS_2476, np.int64),
+        **null_arrays,
     )
     tmp.replace(out / f"shuffle_null_{tag}.npz")
-    hi = float(np.nanpercentile(null_r2.astype(np.float64), 97.5))
-    rr = pf_map["r2"][np.isfinite(pf_map["r2"])]
-    shuffle_doc = {
-        "p97_5": hi,
-        "n_seeds": len(SHUFFLE_SEEDS_2476),
-        "frac_above_map": float((rr > hi).mean()) if len(rr) else None,
-        "advisory": True,
-    }
 
     stats = _tier_stats(pf_map["r2"], pf_ib["r2"], tier, counts_sel, n_perm, n_boot, rng)
     bins = (0,) + tuple(S.MATRYOSHKA_TIER_BOUNDS)
     candidates = {str(t): int(bins[t + 1] - bins[t]) for t in (0, 1, 2)}
+    n_t2_sel = int((tier == 2).sum())
     doc = {
         "arm": tag,
         "n_te_rows": int(f_true.shape[0]),
@@ -2653,10 +3032,12 @@ def _arm_battery(
             "criterion": (
                 "active on >= ceil(0.01 * n_fit_rows) TRUE-summary fit-side encodes "
                 "(never predicted codes; true-alive features retained regardless of "
-                "predicted-code degeneracy)"
+                "predicted-code degeneracy), capped at the registered 16,384-feature "
+                "tier-stratified panel (M._tier_stratified_panel, seed 14824)"
             ),
             "floor": int(floor),
             "n_fit_rows": int(n_fit_rows),
+            "panel": panel_doc,  # clearing / allocated / selected per tier + cap + seed
             "per_tier": {
                 str(t): {"selected": int((tier == t).sum()), "candidate": candidates[str(t)]}
                 for t in (0, 1, 2)
@@ -2664,10 +3045,17 @@ def _arm_battery(
         },
         **stats,
         "shuffle_null": shuffle_doc,
+        "battery_seed": int(battery_seed),  # plan §10 Seeds recording duty (g2 MINOR-6)
+        "tier2_attrition_limited": bool(n_t2_sel < 500),
         "extra_reads": extra_medians,
         "ci_note": "bootstrap CIs conditional on the realized score rows",
         **extra_json,
     }
+    if n_t2_sel < 500:  # plan §8 risk row: attrition-limited tier-2 read, said out loud
+        doc["attrition_caveat"] = (
+            f"tier-2 read is ATTRITION-LIMITED (n_alive={n_t2_sel} < 500; medians over "
+            "alive features remain valid)"
+        )
     _write_json(out / f"tier_tests_{tag}.json", doc, phase="eval")
 
     ret_preds = {
@@ -2682,8 +3070,6 @@ def _arm_battery(
         "chance_note": "pool = held-out true feature rows; chance_at_k = k / n_pool",
         "tiers": _retrieval_cells(f_true, ret_preds, tier),
     }
-    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
-
     dense: dict = {}
     for name, dp in dense_preds.items():
         cell: dict = {
@@ -2692,7 +3078,7 @@ def _arm_battery(
             )
         }
         for metric in ("euclidean", "cosine"):
-            cell[metric] = knn_retrieval(
+            cell[metric] = _knn_retrieval_chunked(
                 np.asarray(dp, np.float32), np.asarray(dense_true, np.float32), metric=metric
             )
         dense[name] = cell
@@ -2761,13 +3147,76 @@ def _bridge_b(out: Path, feat_ids_b: np.ndarray, r2_b: np.ndarray) -> dict:
     return {"pooled": pooled, "per_tier": per_tier}
 
 
+def _p6_complete(out: Path, finals: list[Path]) -> bool:
+    """P6 resume-skip predicate: every deliverable present AND tier_tests_b
+    carries its late-written bridge + pile sections (g2 r1 MINOR-3: a crash in
+    the bridge->pile window satisfied the file-presence set while the registered
+    bridge summary was silently absent)."""
+    if not all(p.exists() for p in finals):
+        return False
+    try:
+        tb = json.loads((out / "tier_tests_b.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return False
+    return "bridge" in tb and "pile_exploratory" in tb
+
+
+def _p6_input_contract(args, maps_dir: Path) -> None:
+    """Early P4/P5-producer contract checks BEFORE the ~1.9 GB dictionary loads
+    (Codex r1 Critical `consumer-contract-post-init`): key sets + row-count
+    consistency on every consumed artifact, named misses."""
+    checks = {
+        maps_dir / "alive_c.npz": ("alive_ids", "counts", "floor", "n_fit_rows", "train_mean"),
+        maps_dir / "alive_b.npz": ("alive_ids", "counts", "floor", "n_fit_rows", "train_mean"),
+        maps_dir / "armb_maps.npz": (
+            "row_idx_score",
+            "row_idx_fit",
+            "pred16",
+            "pred16_inlier",
+            "ib_pred16",
+        ),
+        maps_dir / "ftrue_b.npz": ("row_idx", "f_true", "f_true_inlier_te"),
+        maps_dir / "densein_b.npz": ("pred16", "feat_ids", "rows"),
+        maps_dir / "densein_c.npz": ("pred16", "feat_ids", "rows"),
+        maps_dir / "ib_c.npz": ("rows", "pred16"),
+        maps_dir / "percontext" / "refit_holdout__ridge__seed0.npz": (
+            "holdout_pred16",
+            "holdout_rows",
+        ),
+        maps_dir / "percontext" / "refit_lmsys_transfer__ridge__seed0.npz": (
+            "holdout_pred16",
+            "holdout_rows",
+        ),
+    }
+    for path, required in checks.items():
+        assert path.exists(), f"[eval] P5 input missing: {path} — run maps first"
+        with np.load(path) as z:
+            _assert_keys(z.files, required, f"P5 artifact {path.name}")
+    ftrue_all = maps_dir / "ftrue_c_all.fp16.npy"
+    assert ftrue_all.exists(), f"[eval] P5 input missing: {ftrue_all}"
+    with np.load(maps_dir / "alive_c.npz") as az:
+        n_alive_c, n_fit_c = int(len(az["alive_ids"])), int(az["n_fit_rows"])
+    with np.load(maps_dir / "percontext" / "refit_holdout__ridge__seed0.npz") as hz:
+        n_hold = int(len(hz["holdout_rows"]))
+    fmm = np.load(ftrue_all, mmap_mode="r")
+    assert fmm.shape == (n_fit_c + n_hold, n_alive_c), (fmm.shape, n_fit_c, n_hold, n_alive_c)
+    for name in ("panel_b.json", "panel_c.json"):
+        assert (maps_dir / name).exists(), f"[eval] P5 input missing: {maps_dir / name}"
+    store_path = _recapture_dir(args) / "vbar_store.npz"
+    assert store_path.exists(), "[eval] P2 store missing — run recapture first"
+    with np.load(store_path) as z:
+        _assert_keys(z.files, ("row_idx", "set_tag", "vbar20"), "P2 vbar_store.npz")
+        assert len(z["row_idx"]) > 0, "P2 recapture store is EMPTY"
+
+
 def phase_eval(args) -> None:
     """P6: gate G3 FIRST (arm-b fitness; demotion-only) -> encode predictions ->
     the vectorized per-feature / per-tier / retrieval / permutation batteries."""
     C.phase("eval")
     out = _eval_dir(args)
     out.mkdir(parents=True, exist_ok=True)
-    regime, resume_ok = _enter_phase_regime(out, args, "eval")
+    stale = [p for p in (*out.glob("*.npz"), *out.glob("*.json")) if p.name != "regime.json"]
+    regime, resume_ok = _enter_phase_regime(out, args, "eval", stale_paths=stale)
     finals = [
         out / n
         for n in (
@@ -2780,20 +3229,18 @@ def phase_eval(args) -> None:
             "tier_tests_b.json",
         )
     ]
-    if resume_ok and all(p.exists() for p in finals):
+    if resume_ok and _p6_complete(out, finals):
         logger.info("[eval] resume: all P6 deliverables present under matching regime; skip")
         return
-    if not resume_ok:
-        for p in [*out.glob("*.npz"), *out.glob("*.json")]:
-            if p.name != "regime.json":
-                logger.warning("[eval] recompute: removing stale %s", p.name)
-                p.unlink()
     EA._headroom(args.out_root, 2 if args.smoke else 15, "p6-eval")
     production = _production(args)
     n_perm = min(args.n_perm, 200) if args.smoke else args.n_perm
     n_boot = min(args.n_boot, 200) if args.smoke else args.n_boot
     maps_dir = _maps_dir(args)
     a_dir = _assemble_dir(args)
+    _p6_input_contract(args, maps_dir)  # BEFORE the dictionary loads / encodes
+    panel_doc_c = json.loads((maps_dir / "panel_c.json").read_text())["panel"]
+    panel_doc_b = json.loads((maps_dir / "panel_b.json").read_text())["panel"]
     rows_present = np.load(a_dir / "rows_present.npy")
     _row_ci, prov_u8, _pools = _load_scratch_meta(args)  # stages prov.npy if absent
     y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
@@ -2877,6 +3324,8 @@ def phase_eval(args) -> None:
         n_perm=n_perm,
         n_boot=n_boot,
         rng=rng_c,
+        panel_doc=panel_doc_c,
+        battery_seed=BOOT_SEED_2476,
     )
     del f_pred_c, f_ib_c, f_true_c, sae_c
 
@@ -2944,17 +3393,20 @@ def phase_eval(args) -> None:
         n_perm=n_perm,
         n_boot=n_boot,
         rng=rng_b,
+        panel_doc=panel_doc_b,
+        battery_seed=BOOT_SEED_2476 + 1,
     )
     bridge = _bridge_b(out, alive_b, bat_b["r2_map"])
     tests_b = json.loads((out / "tier_tests_b.json").read_text())
     tests_b["bridge"] = bridge
 
-    # pile twin (exploratory, no gate): pile-dict alive mask + encode-pred read
+    # pile twin (exploratory, no gate): pile-dict tier-stratified panel + encode-pred
+    # read + its own K=20 shuffle null (plan §6 'alongside every R2 read').
     fit_ids_b = np.asarray(bz["row_idx_fit"], np.int64)
     fit_store_pos = np.searchsorted(ridx_store, fit_ids_b)
     assert (ridx_store[fit_store_pos] == fit_ids_b).all(), "store fit-row drift"
     counts_pile = _encode_counts(sae_pile, vbar20_all, fit_store_pos)
-    alive_pile = np.where(counts_pile >= floor_b)[0].astype(np.int64)
+    alive_pile, panel_doc_pile = _alive_panel(counts_pile, n_fit_b)
     if len(alive_pile) >= 1:
         ft_pile = _encode_restricted(sae_pile, vbar20_all, te_store_pos, alive_pile)
         fp_pile = _encode_restricted(
@@ -2971,13 +3423,32 @@ def phase_eval(args) -> None:
             counts_sel=counts_pile[alive_pile],
             te_prov=te_prov_b,
             n_fit=n_fit_b,
-            floor=floor_b,
+            floor=int(panel_doc_pile["floor"]),
         )
         tier_pile = S.tier_of(alive_pile)
+        null_pile = _shuffle_null_r2(fp_pile, ft_pile, SHUFFLE_SEEDS_2476, what=" b/pile")
+        tmp = out / ".tmp_shuffle_null_b_pile.npz"
+        np.savez(
+            tmp,
+            feat_ids=alive_pile,
+            tier=tier_pile,
+            seeds=np.asarray(SHUFFLE_SEEDS_2476, np.int64),
+            r2_pile=null_pile,
+        )
+        tmp.replace(out / "shuffle_null_b_pile.npz")
+        hi_pile = float(np.nanpercentile(null_pile.astype(np.float64), 97.5))
+        rr_pile = pf_pile["r2"][np.isfinite(pf_pile["r2"])]
         tests_b["pile_exploratory"] = {
             "n_alive": int(len(alive_pile)),
+            "panel": panel_doc_pile,
             "per_tier_median_r2": {
                 str(t): _median_of(pf_pile["r2"][tier_pile == t]) for t in (0, 1, 2)
+            },
+            "shuffle_null": {
+                "n_seeds": len(SHUFFLE_SEEDS_2476),
+                "advisory": True,
+                "p97_5": hi_pile,
+                "frac_above": float((rr_pile > hi_pile).mean()) if len(rr_pile) else None,
             },
         }
     else:
@@ -3596,9 +4067,16 @@ def phase_figures(args) -> None:
     C.phase("figures")
     state = args.out_root / "figures_state"
     state.mkdir(parents=True, exist_ok=True)
-    regime, resume_ok = _enter_phase_regime(state, args, "figures")
     done_path = state / "p7_done.json"
+    regime, resume_ok = _enter_phase_regime(state, args, "figures", stale_paths=[done_path])
     production = _production(args)
+    if resume_ok and done_path.exists():
+        prev_hf = json.loads(done_path.read_text()).get("hf_eval_upload", {})
+        if production and not args.skip_upload and prev_hf.get("skipped"):
+            # g2/Codex r1 `p7-skip-upload-resume-trap` belt-and-braces: a prior
+            # done-file recorded a skipped HF leg — re-run the phase, never skip.
+            logger.warning("[figures] resume: prior run skipped the HF leg; RE-RUNNING P7")
+            resume_ok = False
     if resume_ok and done_path.exists():
         # re-emit the terminal sentinel (a fresh timestamped file, never an
         # in-place rewrite): pre-launch sentinel hygiene wipes the namespace,
@@ -3629,6 +4107,8 @@ def phase_figures(args) -> None:
         sae_out / "gates_p4.json",
         maps_dir / "recon_gate.json",
         maps_dir / "preds_meta.json",
+        maps_dir / "panel_b.json",
+        maps_dir / "panel_c.json",
     ]
     missing_in = [str(p) for p in required if not p.exists()]
     assert not missing_in, f"[figures] P4/P5/P6 inputs missing — run earlier phases: {missing_in}"
@@ -3638,7 +4118,7 @@ def phase_figures(args) -> None:
     matplotlib.use("Agg")
     from explore_persona_space.analysis.paper_plots import set_paper_style
 
-    set_paper_style()
+    set_paper_style("iclr")  # sibling c-figure convention (issue1345_analyzer_figs.py)
 
     if production:
         fig_paper = PROJECT_ROOT / "figures" / "paper"
@@ -3668,6 +4148,8 @@ def phase_figures(args) -> None:
     for src in (
         maps_dir / "recon_gate.json",
         maps_dir / "preds_meta.json",
+        maps_dir / "panel_b.json",
+        maps_dir / "panel_c.json",
         sae_out / "gates_p4.json",
         sae_out / "train_log.json",
     ):
@@ -3693,7 +4175,16 @@ def phase_figures(args) -> None:
         "hf_eval_upload": hf_doc,
         "production": production,
     }
-    _write_json(done_path, doc, phase="figures")
+    if production and args.skip_upload:
+        # g2/Codex r1 `p7-skip-upload-resume-trap`: a production run that skipped
+        # the HF leg must NOT mint a done-file a later resume would launder into
+        # "P7 complete" — the phase stays incomplete until the HF leg runs.
+        logger.warning(
+            "[figures] production + --skip-upload: NOT writing p7_done.json "
+            "(re-run without --skip-upload to complete P7)"
+        )
+    else:
+        _write_json(done_path, doc, phase="figures")
     try:
         C.write_sentinel(
             "epm:results" if production else "epm:smoke-result",
@@ -3836,6 +4327,7 @@ def main() -> None:
 
         print("[import-check] OK", flush=True)
         raise SystemExit(0)
+    _refuse_tiny_model_at_production(args)  # g3 r1 M1: --tiny-model is smoke-only
     if args.device == "auto":
         args.device = "cuda" if torch.cuda.is_available() else "cpu"
     if args.sae_dir is None:
