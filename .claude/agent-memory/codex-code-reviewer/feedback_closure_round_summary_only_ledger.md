@@ -48,3 +48,18 @@ readable as consumer-input context, flagged in the return; and
 fails-pre-fix pin-test adjudication when the intermediate commits touched no
 scripts. Related: [[revision-round compose recipe]],
 [[concerns-machine-rows-2326]].
+
+**r3 delta (2026-08-23): split-verdict ledger state on a FAIL+FAIL union.**
+When the Claude reviewer flipped the prior slugs to `addressed` during its
+review while the Codex twin's same-round ledger marked several of them
+NOT-ADDRESSED, the canonical ledger and the twin's own verdict DISAGREE.
+Compose an explicit **ledger-mapping rule**: name the disputed slugs, state
+that the union resolution carries the twin's residual disputes forward as
+the round's pseudo-id items (C2/M1-M4 shape), and instruct "do NOT re-open
+the addressed slugs as such — grade the pseudo-ids" (else the twin re-flips
+its own r2 ledger lines and double-counts). Also: when the round tip == HEAD
+and the prompt states "HEAD == <tip>, worktree file state == post-round
+state", that claim is LOAD-BEARING — do not commit an agent-memory edit in
+the reviewed worktree mid-round (it advances HEAD past the tip and falsifies
+the prompt); leave it uncommitted and flag for the orchestrator's post-merge
+sweep (#2332-r2 precedent).
