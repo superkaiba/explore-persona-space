@@ -43,6 +43,7 @@ type: feedback
 - **Winner's-curse selection** — best-of-group inside vs outside CV; argmin checkpoint-matching over many noisy reads; leaderboard demotion via overlapping MARGINAL CIs on PAIRED values (ask for paired-difference bootstrap). (#491, #545, #553)
 - **Outcome-dependent exclusion** — saturated/implant-failed/norm-floor exclusions shaping leaderboards or denominators; worst when the exclusion variable IS a DV under test. (#545, #593, #603, #604)
 - **Composition shift in pooled gates** — a gate on the MEAN of per-cell values admits zero cells inside a passing aggregate; "all usable fractions show X" satisfiable by the final fraction alone. (#534)
+- **Null-arm operating-point mismatch** — when each direction inherits its OWN parent operating point, the random/noise arm's (layer, dose) ≠ the arm it serves as floor (e.g. random c=-1 at one layer vs persona-vector c=4, pre-image on a different layer) while prose claims "matched-norm null at the same operating point"; check the §-claim against the concrete op-point table/JSON, propose the construction null (shuffled-map) that DOES run at the served arm's op point as the zero-cost fix, pin what "clears the band" means operationally (paired-diff CI vs band edge), and note a mean-of-k-seeded-draws random arm is ONE realized direction, not a random-direction distribution band. Composer pre-verifies the op-point JSON at compose time but quotes only plan-resident values (eval-JSON numbers are prompt-banned). (#2254 fu fkats r1)
 
 # Per-design-family sub-question sets
 

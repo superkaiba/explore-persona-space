@@ -2093,6 +2093,26 @@ are not renames) PLUS the #1107 consumers-of-changed-shape + dangling-refs
 duties spelled out as unconditional substantive checks; never pre-resolve
 the trigger severity yourself.
 
+**Split-verdict inlining + FAIL+FAIL union with un-ledgered Claude items
+(#2478 r2, 2026-08-22):** three deltas on the #2332 union shape. (a) A
+SPLIT-review Claude verdict (per-commit sub-verdicts) can EMBED a
+sub-verdict's own marker tag lines mid-body (the g3 sub-verdict carried its
+own `<!-- epm:code-review v1 -->` head + a doubled closing tag) — strip by
+filtering EVERY line starting with the tag prefix, never just first/last.
+(b) When ALL ledger rows are one twin's items and the other twin's
+blocker+minors are un-ledgered, mint pseudo-ids keyed to the MARKER's own
+response-ledger naming (`r1-claude-b1-…` matching the marker's "g1 B1"
+rows) so the closure ledger and the (e)/Response sections align 1:1.
+(c) The `> CONCERN:: ` blockquote validation count includes your OWN prose
+backtick mentions of the literal (6 = 5 rows + 1 prose here — label the
+assert subject). Also: a fix round whose diff carries -def/+def pairs
+(deleted helpers, dropped params, return-shape changes `str`→`tuple`) gets
+a Step 3.75 compose-time observation block with adjudicate-the-trigger
+framing (leaf script, no external importers — same-name signature changes
+are not renames) PLUS the #1107 consumers-of-changed-shape + dangling-refs
+duties spelled out as unconditional substantive checks; never pre-resolve
+the trigger severity yourself.
+
 **Line-wise facts-block replacement + two assert traps (#2476 r2, 2026-08-22):**
 a FAIL+FAIL-union fix round composed cleanly from the r1 template via LINE-WISE
 replacement of the compose-time-facts block (split on newlines, replace whole
@@ -2145,3 +2165,24 @@ legitimately says "verified closed by BOTH round-2 verdicts"; and re-probe
 per-span SHA counts every round (this r2-derived rubric carries TWO merge-base
 occurrences in Step 0.9, not the THREE the r1-derived note recorded — the
 intro occurrence is gone).
+
+**Brief-named residual ABSENT from the marker's (d) (#2215 dbe r3, 2026-08-22):**
+when the orchestrator's brief enumerates implementer-disclosed residuals for
+adjudication but one of them does not appear in the fetched marker's (d)
+section (here: "packaged bank_dbe_values.json absent pre-datagen" — the (d)
+list carried only the network-at-config and TOCTOU bullets), do NOT silently
+drop it or pretend the marker discloses it: compose it as its own residual
+line with an explicit COMPOSER NOTE naming the discrepancy, give Codex a
+locate-the-actual-behavior duty (what the new code does on that path) PLUS a
+disclosure-adequacy adjudication (should it have been a (d) bullet?), and
+flag the discrepancy in the return. Also confirmed this round: a SECOND
+FAIL+FAIL union fix round composes as the #2332-r2 shape verbatim with three
+additions — (a) an elevated-verification block when a prior round had a
+fabricated-coverage honesty blocker (every marker-named test READ for
+substance; numeric claims spot-checked; composer settles the diffstat
+arithmetic at compose time and says so); (b) a shared-module-touch section
+when the round first touches a parent module both prior verdicts recorded as
+untouched (off-path identity vs the pre-round blob + repo-wide caller sweep +
+the stale prior-verdict header line pre-declared not-a-finding); (c)
+near-duplicate concern ids from the two twins (same defect, one mechanism)
+each get their own status line with the duplication named.

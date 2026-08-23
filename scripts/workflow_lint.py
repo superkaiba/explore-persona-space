@@ -990,6 +990,17 @@ Behaviours:
   persist" items, zero were persisted, and the round-2 prior-concerns
   gate walked an empty ledger; token-presence pins strengthened per the
   round-1 ``durability-pin-token-presence-gaps`` concern).
+* ``--check-codex-composer-memory-commit`` (also bundled into the no-flags
+  default run): pin the #2473 codex-composer agent-memory same-turn commit
+  duty in ``.claude/rules/codex-composer-common.md`` — the "Your own
+  agent-memory writes" section (region-anchored, bounded at the NEXT
+  ``## `` heading; must carry the same-turn commit-timing literal, the
+  ``MEMORY.md`` index-row literal, the ``guard_root_code_commit.sh``
+  literal-pathspec rationale, and the do-not-defer-to-a-``post-merge
+  sweep`` literal) plus the Compose-only Bash-allowlist cross-reference
+  that licenses the commit (incident #2473: three #2263 composer spawns
+  each parked an uncommitted memory write for a post-merge sweep — the
+  #2015 stash-race permanent-loss class).
 
 Exit codes:
 
@@ -15003,6 +15014,71 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
     return errors
 
 
+def check_codex_composer_memory_commit_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL surface pin (#2473): the codex-composer shared contract must keep
+    its "Your own agent-memory writes" section (same-turn explicit-path
+    commit duty + the counter-argument to the invented
+    mid-round-contamination heuristic) and the Compose-only Bash-allowlist
+    cross-reference that licenses the commit.
+
+    Incident (#2473, observed on #2263 review rounds 4/5/6): three composer
+    spawns each left a memory lesson uncommitted "to keep it out of the diff
+    under review" — the #2015 dominant standing-armer class — and the
+    orchestrator hand-committed all three. Region-anchored on
+    .claude/rules/codex-composer-common.md; mirrors
+    check_codex_concerns_persistence_lens. ``repo_root`` is a unit-test
+    override hook; behavioral subprocess tests may point the check at a tmp
+    corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``. Bundled into the no-flags
+    default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    rule = root / ".claude" / "rules" / "codex-composer-common.md"
+    heading = "## Your own agent-memory writes"
+    crossref = "§ Your own agent-memory writes"
+    tokens = (
+        ("in the SAME turn", "the same-turn commit-timing literal"),
+        ("MEMORY.md", "the index-row-in-the-same-commit literal"),
+        ("guard_root_code_commit.sh", "the literal-pathspec guard rationale"),
+        ("post-merge sweep", "the do-not-defer-to-a-sweep literal"),
+    )
+    if not rule.is_file():
+        return [f"{rule}: missing — the codex composer shared contract must exist (#2473)."]
+    text = _read_workflow_doc(rule)
+    idx = text.find(heading)
+    if idx == -1:
+        return [
+            f"{rule}: missing the '{heading}' section (#2473) — without it every "
+            f"codex-* composer re-invents the mid-round-contamination heuristic and "
+            f"leaves its agent-memory writes uncommitted (the #2015 stash-race "
+            f"permanent-loss class; #2263 rounds 4/5/6)."
+        ]
+    errors: list[str] = []
+    # Bound the region at the NEXT top-level section, so a pinned literal that
+    # migrates OUT of this section into a later one cannot still satisfy the
+    # scan (critic round 1 concern 3 — deliberately tighter than the #2326
+    # precedent's heading-to-EOF region).
+    nxt = text.find("\n## ", idx + len(heading))
+    region = text[idx:] if nxt == -1 else text[idx:nxt]
+    for token, why in tokens:
+        if token not in region:
+            errors.append(
+                f"{rule}: the agent-memory-writes section no longer carries "
+                f"{token!r} ({why}, #2473)."
+            )
+    if crossref not in text[:idx]:
+        errors.append(
+            f"{rule}: the Compose-only Bash allowlist no longer cross-references "
+            f"{crossref!r} (#2473) — without the allowlist amendment the commit "
+            f"duty contradicts the compose-only Bash bounds and a rule-following "
+            f"composer will skip it."
+        )
+    return errors
+
+
 def check_verdict_round_anchor(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the #2136 verdict-round freshness anchor is absent from the
     /issue SKILL.md durable-verdict-first surface.
@@ -19562,6 +19638,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_codex_composer_memory_commit": lambda wf: check_codex_composer_memory_commit_lens(),
     "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
@@ -19717,6 +19794,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_codex_composer_memory_commit": CheckScope("global", (".claude/",)),
     "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
@@ -20563,6 +20641,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "implementation round). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-codex-composer-memory-commit",
+        action="store_true",
+        help="FAIL if the #2473 codex-composer agent-memory same-turn commit "
+        "duty is absent from .claude/rules/codex-composer-common.md: the "
+        "'Your own agent-memory writes' section (same-turn explicit-path "
+        "commit of the lesson + its MEMORY.md index row, the "
+        "counter-argument to the invented mid-round-contamination "
+        "heuristic, the literal-pathspec guard rationale) plus the "
+        "Compose-only Bash-allowlist cross-reference that licenses the "
+        "commit (incident #2473: three #2263 composer spawns each parked "
+        "an uncommitted memory write for a post-merge sweep — the #2015 "
+        "stash-race permanent-loss class — and the orchestrator "
+        "hand-committed all three). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-codex-concerns-persistence",
         action="store_true",
         help="FAIL if the #2326 Codex concerns-persistence contract is "
@@ -21238,6 +21331,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_codex_composer_memory_commit
         or args.check_codex_concerns_persistence
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
@@ -21415,6 +21509,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_codex_composer_memory_commit or no_flags:
+        errors.extend(check_codex_composer_memory_commit_lens())
     if args.check_codex_concerns_persistence or no_flags:
         errors.extend(check_codex_concerns_persistence_lens())
     if args.check_verdict_round_anchor or no_flags:
