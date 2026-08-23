@@ -107,3 +107,5 @@ extending the acknowledgment ("one Takeaways bullet exceeds the 30-word cap,
 …") rather than compressing the bullet into unreadability. Re-run the
 verifier after — the fired-classes complaint disappears when every class is
 named.
+
+**#2476 additions:** the pre_reg audit family also matches `pre-set` ("not a clean pre-set gate" FAILed — write "chosen after seeing the production distribution rather than in advance"); the arm-count family matches "two arms" in Design prose (write "two instruments"); and the /humanize ABSOLUTE ban list includes `load-bearing` (write "the finding depends on where it sits").
