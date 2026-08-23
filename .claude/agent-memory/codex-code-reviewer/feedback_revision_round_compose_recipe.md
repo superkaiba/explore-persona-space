@@ -2327,3 +2327,25 @@ rows for only a SUBSET of the r1 batch (10 of 12 here), the unrowed items —
 including the round's headline BLOCKER — keep FULL closure duty (the
 ledger-empty lesson applies per-item, not per-round); flag the missing rows
 to the orchestrator as bookkeeping, never as a relaxation.
+
+**Reconciled-FAIL fix round keyed on a numbered marker punch list (#823
+ext-ladder r2, 2026-08-23):** three deltas beyond the upheld-concern
+pattern. (a) Reconciler downgrades do NOT rewrite concerns-ledger severity
+fields — rows still read `severity: BLOCKER` after a binding
+BLOCKER→CONCERN downgrade; attest the staleness explicitly in BOTH the
+ledger-envelope preface and the dispositions summary ("the ledger field is
+STALE; the reconcile text governs"), or the twin re-escalates from the
+stale field. (b) When the impl marker carries its OWN numbered punch list
+(1–15), key the closure ledger on those numbers (#2332 pattern) — items
+with no persisted concern id (opportunistic minors, a resume-predicate fix)
+ride their numbers, no pseudo-IDs needed; and a `deferred`-event ledger row
+counts as OPEN for the Prior-concerns header (raised OR deferred = open).
+(c) A brief ordering prior verdicts BY REFERENCE (/tmp paths, "do not
+inline bodies") still needs the per-item acceptance criteria INLINED in the
+head — state "/tmp unreachability is never data-access-blocked; the
+criteria are self-sufficient (summary-only evidence base)" so a sandbox
+that cannot see /tmp degrades gracefully. Also: the fence protecting the
+twin's own DEFERRED Critical (the adjudicated smoke shape) must spell out
+what NEW evidence means ("THIS commit deleting/breaking the registered
+smoke wiring — nothing less"), else an adversarial re-FAIL of its own r1
+item is predictable.

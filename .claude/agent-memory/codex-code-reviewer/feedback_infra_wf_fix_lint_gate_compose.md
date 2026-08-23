@@ -97,3 +97,20 @@ lint-check diff whose payload is `.claude/skills/**` fence edits under a
    BOTH directions for verifier-gate diffs: a false PASS ships a broken
    fleet gate, and an over-strict new check arm is itself a fleet-blocking
    false-FAIL class — so over-strictness findings weigh equal to bugs.
+
+**#2309 r1 (2026-08-23) sharpening — `task.py post-marker`-path gate variant
+(diff adds validation on the LIVE marker-posting path, not a lint flag):**
+hollow-gate = trace the validator is CALLED from the post-marker handler
+with a trigger predicate that actually fires for real `epm:results` /
+`epm:experiment-implementation` posts; AND compose an explicit error-mode
+duty — a crash on malformed note input inside the validator wedges ALL
+fleet marker posting (worse than over-strictness), so Codex tests scoping /
+grandfathering / waiver / refuse-vs-warn / crash-safety as five named
+hypotheses FROM THE CODE. Also validated: contiguous verbatim rubric
+extraction (code-reviewer.md `## Review Protocol` start through end of
+Step 6, plus the `## Rules` block) with the Claude Step-7 output schema
+EXCLUDED (the Codex marker template supersedes it) — assert
+`'### Step 7: Issue Verdict' not in prompt`; and the plan-envelope residue
+check must tolerate ONE prose mention of `---BEGIN APPROVED PLAN BODY---`
+in the blocked-read paragraph (assert on the END token count + first-BEGIN
+position, not `count == 1`).
