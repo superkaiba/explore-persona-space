@@ -2413,6 +2413,20 @@ def _smoke_gate_slice_extension(
     return spots, missing
 
 
+def _smoke_grid_block_set(
+    pairs: list[BANK.Pair2162],
+    np_ids: frozenset[str] | set[str],
+    donor_maps: dict[str, dict[str, str]],
+) -> tuple[list, list]:
+    """The grid smoke leg's block set — the ONE composition consumed by BOTH
+    phase_bank's smoke-capture closure (``_smoke_grid_slice_extension``) and
+    phase_grid's smoke branch. Shared so a composition change cannot drift
+    between the capture closure and the consumer (crash-fix r2 review, both
+    arms). Donor-map SOURCE parity across the phase boundary stays guarded by
+    the bank↔manifest sha assert in phase_grid."""
+    return apply_pe_exclusions(smoke_blocks(pairs), np_ids, donor_maps, pairs)
+
+
 def _smoke_grid_slice_extension(
     all_contexts: list[str],
     sliced: set[str],
@@ -2436,7 +2450,7 @@ def _smoke_grid_slice_extension(
     contexts the smoke capture must add — dedup'd against ``sliced``, i.e.
     the base chunks + the B4 gate extension)``."""
     pairs_by_id = {p.pair_id: p for p in pairs_full}
-    blocks, _excl = apply_pe_exclusions(smoke_blocks(pairs_full), np_ids, donor_maps, pairs_full)
+    blocks, _excl = _smoke_grid_block_set(pairs_full, np_ids, donor_maps)
     need: set[str] = set()
     for block in blocks:
         donor_map = (
@@ -4302,7 +4316,7 @@ def phase_grid(cfg: RunConfig) -> int:
     _write_pe_exclusions(cfg, pe_exclusions, scope="grid")
     totals_all = grid_totals(all_blocks, cfg.grid_draws)
     if cfg.smoke:
-        blocks, smoke_pe_excl = apply_pe_exclusions(smoke_blocks(pairs), np_ids, donor_maps, pairs)
+        blocks, smoke_pe_excl = _smoke_grid_block_set(pairs, np_ids, donor_maps)
         logger.info("[grid] smoke pe exclusions: %d records", len(smoke_pe_excl))
     else:
         blocks = all_blocks

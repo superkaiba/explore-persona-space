@@ -357,8 +357,9 @@ def test_grid_smoke_slice_extension_covers_block_dereferences():
     # PRE-FIX captured set: base 2 chunks + the B4 gate extension only
     _spots, gate_extra = R._smoke_gate_slice_extension(contexts, sliced, pairs, donor_maps)
     prefix_covered = sliced | set(gate_extra)
-    # the grid smoke leg's block set, composed EXACTLY as phase_grid does
-    blocks, _excl = R.apply_pe_exclusions(R.smoke_blocks(pairs), np_ids, donor_maps, pairs)
+    # the grid smoke leg's block set — the SHARED composer both phase_bank's
+    # closure and phase_grid's smoke branch call (drift-guard, crash-fix r2b)
+    blocks, _excl = R._smoke_grid_block_set(pairs, np_ids, donor_maps)
     assert blocks, "smoke grid block set must be non-empty (--pilot runs blocks[:1])"
     pairs_by_id = {p.pair_id: p for p in pairs}
 
