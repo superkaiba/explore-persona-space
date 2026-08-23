@@ -15,6 +15,11 @@ Pins (issue #2479 U3):
     bad panels (substring-colliding name, FOIL name, non-single-token /
     non-capitalized names), and the shared env loader fails LOUD on a
     set-but-missing/malformed/schema-violating panel file.
+(d) crash-fix round 2 (``unknown regime char_helios``): env SET => the
+    ladder-fill's ``REGIME_SPECS``/``REGIME_LABEL`` carry lookup rows for
+    BOTH namespaces — the legacy parent 16 ``char_*`` cells AND the
+    ``char_2479_*`` panel cells — with the correct spec fields, while
+    ``CHAR_VARIANTS`` (the --cells DEFAULT sweep feed) stays panel-only.
 
 Hermetic: the env-state probes run in subprocesses (the seams read env at
 IMPORT time) against in-repo files only — no network. The env-set fixture is
@@ -91,6 +96,14 @@ import issue1345_common as c
 import issue1345_stage_char_stories as st
 import issue1345_story_char_ladder_fill as lf
 base_specs = {{k: lf.REGIME_SPECS[k] for k in ("r1", "r2", "r4", "r4op")}}
+# Legacy namespace constructed LOCALLY (not lf.LEGACY_CHAR_VARIANTS) so the
+# probe itself also runs against pre-fix module code — the fails-pre-fix
+# property of the (d) pins lives in the assertions, not a probe AttributeError.
+legacy = tuple(
+    "char_" + ch + suf
+    for ch in ("helios", "wren", "dana", "vex")
+    for suf in ("", "_op", "_base", "_op_base")
+)
 print("PANEL_SEAM_JSON::" + json.dumps({{
     "paired": list(c.PAIRED_STORIES_VARIANTS),
     "onpolicy": list(c.ONPOLICY_STORY_VARIANTS),
@@ -99,6 +112,12 @@ print("PANEL_SEAM_JSON::" + json.dumps({{
     "ladder_char_characters": list(lf.CHAR_CHARACTERS),
     "ladder_char_variants": list(lf.CHAR_VARIANTS),
     "ladder_base_regime_specs": base_specs,
+    "ladder_legacy_specs": {{v: lf.REGIME_SPECS.get(v) for v in legacy}},
+    "ladder_panel_ns_specs": {{v: lf.REGIME_SPECS.get(v) for v in lf.CHAR_VARIANTS}},
+    "ladder_legacy_labels": [v for v in legacy if lf.REGIME_LABEL.get(v) == v],
+    "ladder_default_cells_instruct": [
+        v for v in lf.CHAR_VARIANTS if lf.REGIME_SPECS[v].get("model") == "instruct"
+    ],
 }}))
 """
 
@@ -197,6 +216,59 @@ def test_env_set_prefix_and_regime_specs(env_set, env_absent, panel_rows):
         v for r in panel_rows for v in (r["variant_op"], r["variant_inserted"]) if v
     }
     assert not (all_panel_variants & base_keys)
+
+
+# --- (d) BOTH regime-spec namespaces resolve under the panel env --------------
+# Crash-fix round 2: relaunch P0 died at leg toyfit-newcell-store with
+# `AssertionError: unknown regime char_helios` — the panel branch registered
+# ONLY the char_2479_* rows while the wrapper's P0 legs 5-8 pass PARENT names.
+
+
+def _expected_spec(v: str) -> dict:
+    """The _char_specs() row shape for one character cell (mirrors the module)."""
+    return {
+        "format_key": "stories_paired_op" if "_op" in v else "stories_paired",
+        "subdir": f"{v}_turnstore",
+        "turn": 0,
+        "model": "pretrained" if v.endswith("_base") else "instruct",
+        "cache_key": v,
+    }
+
+
+def test_env_set_legacy_regime_rows_present(env_set):
+    # FAILS PRE-FIX: with the panel env set the old code path lacked the
+    # legacy rows entirely (REGIME_SPECS.get("char_helios") was None).
+    for v in HARDCODED_CHAR_VARIANTS:
+        assert env_set["ladder_legacy_specs"][v] == _expected_spec(v), v
+    assert set(env_set["ladder_legacy_labels"]) == set(HARDCODED_CHAR_VARIANTS)
+
+
+def test_env_set_panel_regime_rows_present(env_set, panel_rows):
+    variants = [v for r in panel_rows for v in (r["variant_op"], r["variant_inserted"]) if v]
+    for v in variants:
+        assert env_set["ladder_panel_ns_specs"][v] == _expected_spec(v), v
+
+
+def test_env_set_char_variants_panel_only(env_set):
+    # (b) CHAR_VARIANTS under the panel env contains ONLY panel variants —
+    # the legacy rows are lookup-only, never sweep members.
+    assert not set(env_set["ladder_char_variants"]) & set(HARDCODED_CHAR_VARIANTS)
+    assert all(v.startswith("char_2479_") for v in env_set["ladder_char_variants"])
+
+
+def test_env_set_default_cells_sweep_panel_only(env_set, panel_rows):
+    # (c) the effective --cells DEFAULT sweep (main(): CHAR_VARIANTS filtered
+    # by model) is unchanged panel-only, in registry order.
+    expected = [v for r in panel_rows for v in (r["variant_op"], r["variant_inserted"]) if v]
+    assert env_set["ladder_default_cells_instruct"] == expected
+
+
+def test_env_absent_registration_idempotent(env_absent):
+    # env-unset: CHAR_VARIANTS == LEGACY_CHAR_VARIANTS, so the unconditional
+    # double registration is an idempotent no-op with the same spec rows.
+    for v in HARDCODED_CHAR_VARIANTS:
+        assert env_absent["ladder_legacy_specs"][v] == _expected_spec(v), v
+    assert set(env_absent["ladder_legacy_labels"]) == set(HARDCODED_CHAR_VARIANTS)
 
 
 # --- committed panel <-> module registry drift pin ----------------------------

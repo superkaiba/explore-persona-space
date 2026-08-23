@@ -228,12 +228,20 @@ def _load_char_panel() -> tuple[dict, ...] | None:
     return tuple(rows)
 
 
+# Legacy parent 16-cell namespace (4 characters x {inserted, _op, _base,
+# _op_base}). Lookup rows for these register UNCONDITIONALLY below — the #2479
+# wrapper's P0 pilot legs pass PARENT cell names (char_helios, char_helios_op)
+# while EPM_I2479_CHAR_PANEL_JSON is set, so BOTH namespaces must resolve
+# (#2479 crash-fix round 2: ``unknown regime char_helios`` at the cells stage).
+LEGACY_CHAR_CHARACTERS = ("helios", "wren", "dana", "vex")
+LEGACY_CHAR_VARIANTS = tuple(
+    f"char_{ch}{suf}" for ch in LEGACY_CHAR_CHARACTERS for suf in ("", "_op", "_base", "_op_base")
+)
+
 _CHAR_PANEL = _load_char_panel()
 if _CHAR_PANEL is None:
-    CHAR_CHARACTERS = ("helios", "wren", "dana", "vex")
-    CHAR_VARIANTS = tuple(
-        f"char_{ch}{suf}" for ch in CHAR_CHARACTERS for suf in ("", "_op", "_base", "_op_base")
-    )
+    CHAR_CHARACTERS = LEGACY_CHAR_CHARACTERS
+    CHAR_VARIANTS = LEGACY_CHAR_VARIANTS
 else:
     CHAR_CHARACTERS = tuple(r["name"] for r in _CHAR_PANEL)
     CHAR_VARIANTS = tuple(
@@ -241,8 +249,8 @@ else:
     )
 
 
-def _char_specs() -> dict[str, dict]:
-    """REGIME_SPECS rows for the 16 character cells (char-capture-ladders round).
+def _char_specs(variants: tuple[str, ...]) -> dict[str, dict]:
+    """REGIME_SPECS rows for the given character cells (char-capture-ladders round).
 
     Each cell's turnstore is captured by the SAME extractor under
     ``EPM_I1345_VARIANT=<cell>`` (bundle stem ``{model}_{format_key}_s``), so
@@ -253,7 +261,7 @@ def _char_specs() -> dict[str, dict]:
     plan v13 § Divergences 2); ``load_regime_xy`` asserts it.
     """
     specs: dict[str, dict] = {}
-    for v in CHAR_VARIANTS:
+    for v in variants:
         specs[v] = {
             "format_key": "stories_paired_op" if "_op" in v else "stories_paired",
             "subdir": f"{v}_turnstore",
@@ -264,8 +272,32 @@ def _char_specs() -> dict[str, dict]:
     return specs
 
 
-REGIME_SPECS.update(_char_specs())
-REGIME_LABEL.update({v: v for v in CHAR_VARIANTS})
+def _register_char_variants(variants: tuple[str, ...]) -> None:
+    """Add REGIME_SPECS + REGIME_LABEL lookup rows for ``variants`` (clobber-proof).
+
+    Additive-only: re-registering an existing key with the SAME spec is an
+    idempotent no-op (the env-unset case, where CHAR_VARIANTS ==
+    LEGACY_CHAR_VARIANTS); a key that would CHANGE an existing spec raises.
+    Prefix disjointness (``char_2479_*`` registry ids vs the legacy ``char_*``
+    names, enforced by ``_load_char_panel``) makes a cross-namespace collision
+    impossible by construction — asserted anyway.
+    """
+    for key, spec in _char_specs(variants).items():
+        prev = REGIME_SPECS.get(key)
+        assert prev is None or prev == spec, (
+            f"REGIME_SPECS[{key!r}] would be overwritten with a different spec: {prev} != {spec}"
+        )
+        REGIME_SPECS[key] = spec
+        REGIME_LABEL[key] = key
+
+
+# BOTH namespaces register unconditionally. CHAR_VARIANTS itself stays
+# panel-only under the env — it feeds the --cells DEFAULT sweep in main() and
+# must not silently re-add parent cells; the legacy rows are LOOKUP-ONLY
+# (reached only when a caller names a parent cell explicitly via
+# --cells/--pairs, as the #2479 wrapper's P0 legs 5-8 do).
+_register_char_variants(LEGACY_CHAR_VARIANTS)
+_register_char_variants(CHAR_VARIANTS)
 
 
 def char_pair_specs() -> tuple[dict, ...]:
