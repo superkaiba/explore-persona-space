@@ -1,26 +1,11 @@
 {
-  "commit": "cc145c73+dirty",
-  "render_id": "0968ec2737b64fd8",
-  "git_commit": "cc145c73",
-  "git_dirty": true,
-  "git_dirty_paths": [
-    "figures/issue_2474/prefit_scatter_ctx_caps.meta.json",
-    "figures/issue_2474/prefit_scatter_ctx_caps.pdf",
-    "figures/issue_2474/prefit_scatter_ctx_caps.png",
-    "figures/issue_2474/prefit_scatter_ctx_em.meta.json",
-    "figures/issue_2474/prefit_scatter_ctx_em.pdf",
-    "figures/issue_2474/prefit_scatter_ctx_em.png",
-    "figures/issue_2474/prefit_scatter_trainref_caps.meta.json",
-    "figures/issue_2474/prefit_scatter_trainref_caps.pdf",
-    "figures/issue_2474/prefit_scatter_trainref_caps.png",
-    "figures/issue_2474/prefit_scatter_trainref_em.meta.json",
-    "figures/issue_2474/prefit_scatter_trainref_em.pdf",
-    "figures/issue_2474/prefit_scatter_trainref_em.png",
-    "scripts/issue2474_figs.py"
-  ],
-  "git_argv0_state": "modified",
+  "commit": "6af3c502",
+  "render_id": "4e8cd2bfbd524f33",
+  "git_commit": "6af3c502",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
   "git_argv0_path": "scripts/issue2474_figs.py",
-  "created": "2026-08-23T13:49:03Z",
+  "created": "2026-08-23T17:34:14Z",
   "figsize": [
     10.8,
     6.6
@@ -815,7 +800,7 @@
       "perm_seed": 20260823
     },
     "figure": "scatter_trainref",
-    "arm": "ans_trainref_mapB",
+    "arm": "Predicted answer vs training answers",
     "layer": 16,
     "dv": "level",
     "errorbar_definition": "none (per-trigger scatter; the per-unit companion to the pooled hero bars)",

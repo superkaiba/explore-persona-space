@@ -1,11 +1,22 @@
 {
-  "commit": "7249718b",
-  "render_id": "052e4d9c53714c1e",
-  "git_commit": "7249718b",
-  "git_dirty": false,
+  "commit": "6af3c502+dirty",
+  "render_id": "e941fa265bea4430",
+  "git_commit": "6af3c502",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2474/prefit_layers_em.meta.json",
+    "figures/issue_2474/prefit_layers_em.pdf",
+    "figures/issue_2474/prefit_layers_em.png",
+    "figures/issue_2474/prefit_scatter_trainref_caps.meta.json",
+    "figures/issue_2474/prefit_scatter_trainref_caps.pdf",
+    "figures/issue_2474/prefit_scatter_trainref_caps.png",
+    "figures/issue_2474/prefit_scatter_trainref_em.meta.json",
+    "figures/issue_2474/prefit_scatter_trainref_em.pdf",
+    "figures/issue_2474/prefit_scatter_trainref_em.png"
+  ],
   "git_argv0_state": "tracked",
   "git_argv0_path": "scripts/issue2474_figs.py",
-  "created": "2026-08-23T11:56:41Z",
+  "created": "2026-08-23T17:34:24Z",
   "figsize": [
     7.6,
     4.6
@@ -1642,8 +1653,8 @@
   "figure_notes": {
     "issue": 2474,
     "inputs": {
-      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
-      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "stats": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/eval_results/issue_2474/prefit/prefit_scores.json",
       "rates": "pinned parent rate artifacts"
     },
     "stats_git_commit": "7249718b",
@@ -1657,7 +1668,7 @@
     "figure": "layers",
     "variant": "full",
     "dv": "level",
-    "errorbar_definition": "none rendered; per-layer bootstrap CIs live in prefit_stats.json families.<arm>.pooled.level.ci95_by_layer",
+    "errorbar_definition": "none rendered; a 95% bootstrap confidence interval per layer for every family is stored in the committed stats JSON",
     "selection_caveat": "exploratory sweep; any max-over-layer quote carries the permutation band (prefit_perm_band_*), per plan section 6",
     "pinned_layer_marker": 27
   }
