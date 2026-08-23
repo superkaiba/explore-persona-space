@@ -98,6 +98,19 @@ an earlier compose). Assert-guarded deltas fail loud instead.
 - The prior round's patched rubric span extracts MECHANICALLY from its
   template: `assert tpl.startswith(head) and tpl.endswith(out)`, span =
   the middle — no saved span file needed.
+- Nth-iteration SAME-bug-class round (#1739 a2fix r5, 2026-08-22 — 4th
+  coverage-universe iteration): add an explicit CLASS-RESIDUAL SKEPTICISM
+  head block (each prior fix closed the named probe and left a residual
+  one level down ⇒ working prior: another residual exists — name WHERE to
+  hunt: the set algebra itself, each gate's "the other gate owns it"
+  boundary on BOTH sides, unregistered parents not just children, and
+  consumers absent from the sweep table); when the impl marker carries a
+  class-sweep table with why-safe dispositions, auditing EACH why-safe
+  line in code becomes its own V-duty (a wrong why-safe is a blocker).
+  Duty numbering follows the round's blockers, not the prior template's.
+  Pre-adjudicate per-file diff-stat glosses that conflate
+  insertions+deletions (v34's "+117/−31-ish" vs numstat +86/−31) when the
+  TOTAL matches — presentational, never a discrepancy to manufacture.
 
 Extends [[two-leg-single-label-round-compose]] (leg-suffixed filenames,
 leg-scoped sentinel, round-matching by leg).
