@@ -2145,3 +2145,24 @@ legitimately says "verified closed by BOTH round-2 verdicts"; and re-probe
 per-span SHA counts every round (this r2-derived rubric carries TWO merge-base
 occurrences in Step 0.9, not the THREE the r1-derived note recorded — the
 intro occurrence is gone).
+
+**Brief-named residual ABSENT from the marker's (d) (#2215 dbe r3, 2026-08-22):**
+when the orchestrator's brief enumerates implementer-disclosed residuals for
+adjudication but one of them does not appear in the fetched marker's (d)
+section (here: "packaged bank_dbe_values.json absent pre-datagen" — the (d)
+list carried only the network-at-config and TOCTOU bullets), do NOT silently
+drop it or pretend the marker discloses it: compose it as its own residual
+line with an explicit COMPOSER NOTE naming the discrepancy, give Codex a
+locate-the-actual-behavior duty (what the new code does on that path) PLUS a
+disclosure-adequacy adjudication (should it have been a (d) bullet?), and
+flag the discrepancy in the return. Also confirmed this round: a SECOND
+FAIL+FAIL union fix round composes as the #2332-r2 shape verbatim with three
+additions — (a) an elevated-verification block when a prior round had a
+fabricated-coverage honesty blocker (every marker-named test READ for
+substance; numeric claims spot-checked; composer settles the diffstat
+arithmetic at compose time and says so); (b) a shared-module-touch section
+when the round first touches a parent module both prior verdicts recorded as
+untouched (off-path identity vs the pre-round blob + repo-wide caller sweep +
+the stale prior-verdict header line pre-declared not-a-finding); (c)
+near-duplicate concern ids from the two twins (same defect, one mechanism)
+each get their own status line with the duplication named.
