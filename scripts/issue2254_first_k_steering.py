@@ -1,9 +1,10 @@
 """Issue #2254 follow-up `first-k-answer-token-steering` — position-cells driver.
 
-Plan v10 (tasks/.../2254/plans/v10.md). Units 1+2/3: `stage_inputs` + `steer`
-(unit 1) and `judge` + `reduce` (unit 2 — the off-pod Batch-API judge wave with
+Plan v10 (tasks/.../2254/plans/v10.md). Units: `stage_inputs` + `steer`
+(unit 1); `judge` + `reduce` (unit 2 — the off-pod Batch-API judge wave with
 the rule-26 pilot gate + rule-28 sync re-issue, and the §3 registered-lattice
-reduce); figures + smoke assertions = unit 3.
+reduce); `figures` (plan §6, via ``scripts.issue2254_firstk_figures``) + the
+§4.4 edit-trace read-back asserts + the ``--cpu-smoke`` harness (unit 3).
 
 Design (plan §4): no training, no map fitting, no fresh localize — the parent
 rig's direction bank + operating points + rho are REUSED, and the single
@@ -60,6 +61,7 @@ import itertools
 import json
 import logging
 import re
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -150,6 +152,7 @@ TOTAL_CELLS = CELLS_PER_BEHAVIOR * len(ROUND_BEHAVIORS)  # 160
 
 SENTINEL_STEER = "firstk-steer"
 SENTINEL_STAGE = "firstk-stage-inputs"
+SENTINEL_FIGURES = "firstk-figures"
 
 # Reused parent inputs resolve at CANONICAL, --out-root-INDEPENDENT locations
 # (the smoke-root-rebinding gotcha: inputs are never smoke-diverted).
@@ -463,6 +466,79 @@ def expected_edit_profile(position: str, n_layers: int) -> dict:
     }
 
 
+def assert_cell_edit_traces(rec: dict) -> dict:
+    """Plan §4.4 read-backs on a cell record: per-draw edit-COUNT + exact
+    edit-POSITION-IDENTITY vs ``expected_edit_profile``.
+
+    Runs on the record shape ``_gen_first_k_cell`` persists (called there
+    ALWAYS — production and smoke; the §7 smoke-gate kill's mechanism) and on
+    the unit-3 CPU-smoke's tiny-model records. Identity is asserted as the
+    EXACT expected edit-position SET aligned to the prompt boundary (counts
+    alone cannot certify identity — a count-preserving uniform step shift
+    would pass every count assert, plan §4.4). A generation SHORTER than a
+    decode window truncates the expected set (batched decode length = max
+    over rows), recorded as ``window_truncated`` — count math follows the
+    realized forwards, so a short batch fails loud only on IDENTITY drift.
+    Returns the per-draw summary (persisted with the cell record).
+    """
+    prof = rec["expected_edit_profile"]
+    n_layers = int(rec["hook_impl"]["n_layers"])
+    summary: list[dict] = []
+    for seed, sd in rec["seeds"].items():
+        traces = sd["edit_traces"]
+        assert traces, f"no edit traces for seed {seed}"
+        for di, t in enumerate(traces):
+            T = int(t["prompt_len"])
+            nf = int(t["n_forwards"])
+            nd = nf - 1
+            assert nf >= 1 and t["consecutive_decode_coords"] is True, (seed, di, t)
+            row = {"seed": seed, "draw": di, "prompt_len": T, "n_forwards": nf}
+            if prof["all_decode"]:  # all-answer: base DeltaHook(all_positions=True)
+                assert t["edit_fwd_indices"] is None, (seed, di, t["edit_fwd_indices"])
+                assert t["edit_index_source"] == "all-forwards", t["edit_index_source"]
+                c = t["edit_cache_coords"]
+                assert c["all_forwards"] and c["n"] == nf, (seed, di, c)
+                assert c["first_coord"] == T - 1 and c["last_coord"] == T - 1 + nd, (seed, di, c)
+                assert t["n_edits_draw"] == nf * n_layers, (seed, di, t["n_edits_draw"], nf)
+                row.update({"edit_set": "all-forwards", "n_edits_draw": t["n_edits_draw"]})
+            else:
+                if prof["decode_window"] is None:  # last-ctx: base DeltaHook default
+                    exp_idx = [0]
+                    truncated = False
+                else:
+                    lo, hi = prof["decode_window"]
+                    exp_idx = ([0] if prof["prefill"] else []) + [
+                        s for s in range(lo, hi + 1) if s <= nd
+                    ]
+                    truncated = hi > nd
+                assert t["edit_fwd_indices"] == exp_idx, (seed, di, t["edit_fwd_indices"], exp_idx)
+                exp_coords = [T - 1 + i for i in exp_idx]
+                assert t["edit_cache_coords"] == exp_coords, (
+                    seed,
+                    di,
+                    t["edit_cache_coords"],
+                    exp_coords,
+                )
+                assert t["n_edits_draw"] == n_layers * len(exp_idx), (seed, di, t["n_edits_draw"])
+                if not truncated and prof["n_edits_per_draw"] is not None:
+                    assert t["n_edits_draw"] == prof["n_edits_per_draw"], (
+                        seed,
+                        di,
+                        t["n_edits_draw"],
+                        prof["n_edits_per_draw"],
+                    )
+                row.update(
+                    {
+                        "edit_set": exp_idx,
+                        "edit_cache_coords": exp_coords,
+                        "n_edits_draw": t["n_edits_draw"],
+                        "window_truncated": truncated,
+                    }
+                )
+            summary.append(row)
+    return {"checked_draws": len(summary), "per_draw": summary}
+
+
 # ---------------------------------------------------------------------------
 # operating-point resolution + grid (plan §4.3 / §4.4)
 # ---------------------------------------------------------------------------
@@ -645,17 +721,49 @@ class DirectionBank:
 # ---------------------------------------------------------------------------
 
 
-def _assert_hook_types(cell: dict, steer) -> None:
+def _assert_hook_types(position: str, steer) -> None:
     """Comparator arms byte-reuse the BASE ``DeltaHook``; windowed arms the
     subclass (plan §12.3 / the §7 smoke-gate kill criterion) — asserted in
     production too, per constructed hook."""
     children = steer.hooks if isinstance(steer, MultiLayerDeltaHook) else [steer]
-    if cell["position"] in ("lastctx", "allans"):
+    if position in ("lastctx", "allans"):
         bad = [type(h).__name__ for h in children if type(h) is not DeltaHook]
-        assert not bad, (cell["position"], bad)
+        assert not bad, (position, bad)
     else:
         bad = [type(h).__name__ for h in children if type(h) is not WindowedDeltaHook]
-        assert not bad, (cell["position"], bad)
+        assert not bad, (position, bad)
+
+
+def build_recorded_hook(
+    model, pos: str, layers: list[int], dirs: list, alphas: list
+) -> RecordedHook:
+    """Construct one position arm's steer hook + edit-position recorder.
+
+    The SINGLE hook-construction path: the production ``_first_k_hook_factory``
+    and the unit-3 CPU hook-mechanics smoke both build through here, so the
+    smoke certifies the exact classes + modes production arms (plan §4.2/§4.4).
+    """
+    k = len(layers)
+    assert k == len(dirs) == len(alphas) >= 1, (len(layers), len(dirs), len(alphas))
+    if pos in ("lastctx", "allans"):
+        all_positions = pos == "allans"
+        if k == 1:
+            steer = DeltaHook(model, layers[0], dirs[0], alphas[0], all_positions=all_positions)
+        else:
+            steer = multi_layer_delta_hooks(
+                model, layers, dirs, alphas, all_positions=all_positions
+            )
+    else:
+        window = COMBINED_WINDOW if pos == "combined" else POSITION_WINDOWS[pos]
+        combine = pos == "combined"
+        children = [
+            WindowedDeltaHook(model, ly, d, a, decode_window=window, combine_prefill_ctx=combine)
+            for ly, d, a in zip(layers, dirs, alphas, strict=True)
+        ]
+        steer = children[0] if k == 1 else MultiLayerDeltaHook(children)
+    _assert_hook_types(pos, steer)
+    recorder = EditPositionRecorder(model, layers[0])
+    return RecordedHook(steer, recorder, position=pos)
 
 
 def _hook_impl_record(cell: dict, n_layers: int) -> dict:
@@ -690,27 +798,7 @@ def _first_k_hook_factory(model, cell: dict, rho_pooled: dict, bank: DirectionBa
     pos = cell["position"]
 
     def make() -> RecordedHook:
-        if pos in ("lastctx", "allans"):
-            all_positions = pos == "allans"
-            if k == 1:
-                steer = DeltaHook(model, layers[0], dirs[0], alphas[0], all_positions=all_positions)
-            else:
-                steer = multi_layer_delta_hooks(
-                    model, layers, dirs, alphas, all_positions=all_positions
-                )
-        else:
-            window = COMBINED_WINDOW if pos == "combined" else POSITION_WINDOWS[pos]
-            combine = pos == "combined"
-            children = [
-                WindowedDeltaHook(
-                    model, ly, d, a, decode_window=window, combine_prefill_ctx=combine
-                )
-                for ly, d, a in zip(layers, dirs, alphas, strict=True)
-            ]
-            steer = children[0] if k == 1 else MultiLayerDeltaHook(children)
-        _assert_hook_types(cell, steer)
-        recorder = EditPositionRecorder(model, layers[0])
-        return RecordedHook(steer, recorder, position=pos)
+        return build_recorded_hook(model, pos, layers, dirs, alphas)
 
     return make, {f"L{ly}": a for ly, a in zip(layers, alphas, strict=True)}
 
@@ -746,7 +834,7 @@ def _gen_first_k_cell(
     assert len(traces) == n_draws, (len(traces), n_draws)
     coh = [steering.coherence_check(per_ctx) for per_ctx in res]
     n_layers = len(i2254.LAYER_CONFIGS[cell["layer_config"]])
-    return {
+    rec = {
         "cell_id": _cell_id(cell),
         "cell": cell,
         "alphas": alphas,
@@ -764,6 +852,11 @@ def _gen_first_k_cell(
         "max_new_tokens": max_new_tokens,
         "cap_hit_fraction": float(i2254._cap_hit_fraction(res, tok, max_new_tokens)),
     }
+    # Plan §4.4 read-backs, ALWAYS-ON (production and smoke): edit-count +
+    # edit-position-identity vs the expected profile — the §7 smoke-gate
+    # kill's mechanism, and a production fail-fast against window mis-indexing.
+    rec["edit_trace_check"] = assert_cell_edit_traces(rec)
+    return rec
 
 
 def _upload_cell_json(path: Path) -> None:
@@ -2043,11 +2136,458 @@ def phase_reduce(args) -> None:
     i2254._breadcrumb(SENTINEL_REDUCE, status="done", cells=len(cells))
 
 
+# ---------------------------------------------------------------------------
+# phase: figures (off-pod VM CPU; plan §6 heroes + exploratory dump)
+# ---------------------------------------------------------------------------
+
+
+def phase_figures(args) -> None:
+    """Plan §6 figures (off-pod CPU): hero 1 (position bars + cap-hit/CJK
+    strip), hero 2 (recovery fraction R), and the exploratory dump (accrual
+    curves, H3 forest, H4 pre-vs-shuffled, R/D lattice scatter, per-question
+    clouds), rendered from the reduce's committed JSONs (+ judged
+    per-question arrays) via ``scripts.issue2254_firstk_figures``. PNG +
+    .meta.json land under --fig-dir (production:
+    figures/issue_2254/<label>/; --smoke rebinds to the scratch out-root so
+    smoke renders never touch committed figures)."""
+    import scripts.issue2254_firstk_figures as firstk_figs
+
+    out_root = Path(args.out_root)
+    rroot = round_root(out_root)
+    fig_dir = (
+        Path(args.fig_dir)
+        if args.fig_dir
+        else _REPO_ROOT / "figures" / "issue_2254" / FOLLOWUP_LABEL
+    )
+    require = () if args.smoke else firstk_figs.REQUIRED_FIGURES
+    res = firstk_figs.render_all(rroot, fig_dir, require=require)
+    logger.info(
+        "[%s] rendered=%s skipped=%s -> %s",
+        SENTINEL_FIGURES,
+        res["rendered"],
+        res["skipped"],
+        fig_dir,
+    )
+    i2254._write_json_atomic(
+        fig_dir / "figures_manifest.json",
+        i2254._run_metadata({"followup_label": FOLLOWUP_LABEL, **res}),
+    )
+    i2254._write_sentinel(out_root, SENTINEL_FIGURES, "done", {"rendered": len(res["rendered"])})
+    i2254._breadcrumb(SENTINEL_FIGURES, status="done", rendered=len(res["rendered"]))
+
+
+# ---------------------------------------------------------------------------
+# unit-3 CPU smoke (--cpu-smoke): tiny-model hook mechanics + synthetic-
+# fixture reduce/figures driven through the REAL phase entrypoints (plan §4.4)
+# ---------------------------------------------------------------------------
+
+CPU_SMOKE_SCRATCH = Path("/tmp/issue-2254-firstk-cpusmoke")
+TINY_MODEL_DEFAULT = "Qwen/Qwen2.5-0.5B-Instruct"  # cache-resident Qwen2 arch (CPU-loadable)
+
+# Constructed §3 verdict-lattice cases per (behavior, strong direction,
+# breadth): CONSTANT per-question deltas make every paired bootstrap CI a
+# point, so each registered label fires deterministically (evil's committed
+# alpha0 baseline is all-zero => exact arithmetic; sycophancy's nonzero
+# baseline leaves >=3-point margins to every threshold). `cjk` marks the
+# position arms whose synthetic completions carry CJK text, driving the §3 D
+# index through the REAL committed regex + tokenizer path.
+_CPU_SMOKE_CASES = {
+    ("evil", "rb", "single"): {
+        "A": 60.0,
+        "S": 50.0,
+        "T": 30.0,
+        "expect": "opening-sufficient",
+        "cjk": ("allans",),
+    },
+    ("evil", "rb", "mid"): {
+        "A": 60.0,
+        "S": 30.0,
+        "T": 25.0,
+        "expect": "opening-partial",  # R = 0.5 < 2/3; D < 0 via span13 CJK
+        "cjk": ("span13",),
+    },
+    ("evil", "pre", "single"): {
+        "A": 60.0,
+        "S": 45.0,
+        "T": 30.0,
+        "lastctx": 0.0,  # H4 host: span1-3 clears the shuffled twin, last-ctx does not
+        "expect": "opening-sufficient",
+    },
+    ("evil", "pre", "mid"): {
+        "A": 4.0,  # |A_b| < 5-point floor on every resample => ratio guard fires
+        "S": 3.0,
+        "T": 2.0,
+        "lastctx": 0.0,
+        "expect": "Ambiguous",
+        "guard": True,
+    },
+    ("sycophancy", "rb", "single"): {"A": -10.0, "S": 5.0, "T": 3.0, "expect": "all-answer-inert"},
+    ("sycophancy", "rb", "mid"): {
+        "A": 60.0,
+        "S": 15.0,
+        "T": 10.0,
+        "expect": "Ambiguous",  # residual: S_lo > 0 but R_pt = 0.25 < 1/3
+    },
+    ("sycophancy", "pre", "single"): {
+        "A": 60.0,
+        "S": -5.0,
+        "T": -6.0,
+        "lastctx": 20.0,  # H4 no-dissociation: last-ctx ALSO clears its twin
+        "expect": "opening-inert",
+    },
+    ("sycophancy", "pre", "mid"): {
+        "A": 60.0,
+        "S": 45.0,
+        "T": 50.0,  # tok1 > span1-3 => the span13-minus-tok1 contrast INVERTS
+        "lastctx": 0.0,
+        "expect": "opening-sufficient",
+    },
+}
+_CPU_SMOKE_CTXEXT = {
+    "lastctx": 3.0,
+    "tok1": 10.0,
+    "tok2": 9.0,
+    "tok3": 8.0,
+    "span13": 18.0,
+    "span15": 22.0,
+    "combined": 19.0,
+    "allans": 25.0,
+}
+# random all-answer deltas per the §7 positive-control construction: evil
+# clears (rb 60 vs 5 at both breadths); sycophancy does not (single: rb -10
+# vs 0; mid: rb 60 vs 70) => cleared flags True/False, both_behaviors_failed False.
+_CPU_SMOKE_RANDOM_ALLANS = {
+    ("evil", "single"): 5.0,
+    ("evil", "mid"): 5.0,
+    ("sycophancy", "single"): 0.0,
+    ("sycophancy", "mid"): 70.0,
+}
+_CPU_SMOKE_H4 = {  # expected dissociation-verdict prefix per h4 key
+    "evil__single": "locus-dissociation",
+    "evil__mid": "locus-dissociation",
+    "sycophancy__single": "no-dissociation",
+    "sycophancy__mid": "locus-dissociation",
+}
+_CPU_SMOKE_TEXT = "The capital of France is Paris, a short factual answer for the fixture."
+_CPU_SMOKE_TEXT_CJK = _CPU_SMOKE_TEXT + " 好的谢谢"
+
+
+def _cpu_smoke_delta(cell: dict) -> float:
+    """Constructed per-question Δ (vs the reused alpha0) for one fixture cell."""
+    b, d, br, pos = cell["behavior"], cell["direction"], cell["breadth"], cell["position"]
+    if d in STRONG_DIRECTIONS:
+        c = _CPU_SMOKE_CASES[(b, d, br)]
+        a, s, t = c["A"], c["S"], c["T"]
+        return {
+            "lastctx": c.get("lastctx", 5.0),
+            "tok1": t,
+            "tok2": t - 2.0,
+            "tok3": t - 4.0,
+            "span13": s,
+            "span15": (s + a) / 2.0,
+            "combined": s + 2.0,
+            "allans": a,
+        }[pos]
+    if d == "ctxext":
+        return _CPU_SMOKE_CTXEXT[pos]
+    if d == "random":
+        return _CPU_SMOKE_RANDOM_ALLANS[(b, br)] if pos == "allans" else 2.0
+    assert d == SHUFFLED_DIRECTION, d
+    if b == "sycophancy" and br == "single" and pos == "span13":
+        return -20.0  # syco-single pre (-5) still clears its twin (-20): diff +15
+    return 0.0
+
+
+def _cpu_smoke_hooks(args) -> dict:
+    """Leg (a): ``WindowedDeltaHook`` + ``EditPositionRecorder`` mechanics on
+    a tiny cached HF model (CPU), through the PRODUCTION ``generate_batch`` +
+    ``build_recorded_hook`` path, for all 8 position arms at 1 layer plus a
+    2-layer stack leg — count + position-identity asserted per draw via
+    ``assert_cell_edit_traces`` (plan §4.4 read-backs, trace persisted)."""
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from explore_persona_space.experiments.issue1415 import steering
+
+    name = args.tiny_model
+    logger.info("[cpu-smoke] loading tiny model %s (cpu, fp32)", name)
+    tok = AutoTokenizer.from_pretrained(name)
+    model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.float32)
+    model.eval()
+    blocks, _, _ = _resolve_decoder_blocks(model)
+    assert blocks is not None, f"{name}: no standard decoder blocks"
+    n_blocks = len(blocks)
+    hidden = int(model.config.hidden_size)
+    gen = torch.Generator().manual_seed(2254)
+
+    def unit_dir() -> torch.Tensor:
+        v = torch.randn(hidden, generator=gen)
+        return v / v.norm()
+
+    contexts = [
+        {"system": None, "user": "Count upward from one to forty, separated by commas."},
+        {"system": None, "user": "List the days of the week, then the months of the year."},
+    ]
+    arms = [(pos, 1) for pos in POSITIONS] + [("lastctx", 2), ("span13", 2), ("allans", 2)]
+    n_draws, max_new = 2, 8
+    rows: list[dict] = []
+    for pos, k in arms:
+        layers = [min(2, n_blocks - 1)] if k == 1 else [min(2, n_blocks - 2), min(4, n_blocks - 1)]
+        dirs = [unit_dir() for _ in range(k)]
+        alphas = [4.0] * k
+        hook = build_recorded_hook(model, pos, layers, dirs, alphas)
+        with hook:
+            res = steering.generate_batch(
+                model,
+                tok,
+                contexts,
+                n=n_draws,
+                hook=hook,
+                max_new_tokens=max_new,
+                temperature=1.0,
+                seed_base=SEED_BASE_DEFAULT,
+            )
+        traces = hook.draw_traces
+        assert len(traces) == n_draws and len(res) == len(contexts), (len(traces), len(res))
+        # Windowed identity needs the full window realized (batched decode
+        # length = max over the 2 rows); span1-5 needs >= 5 decode steps.
+        min_nd = min(t["n_forwards"] - 1 for t in traces)
+        assert min_nd >= 5, f"{pos}: batch decode length {min_nd} < 5 — pick a longer prompt"
+        rec = {
+            "expected_edit_profile": expected_edit_profile(pos, k),
+            "hook_impl": {"n_layers": k},
+            "seeds": {str(SEED_BASE_DEFAULT): {"edit_traces": traces}},
+        }
+        check = assert_cell_edit_traces(rec)
+        children = hook._steer_children()
+        if pos in ("lastctx", "allans"):  # comparators byte-reuse the BASE class (§4.2)
+            assert all(type(c) is DeltaHook for c in children), pos
+        else:
+            assert all(type(c) is WindowedDeltaHook for c in children), pos
+        rows.append(
+            {
+                "position": pos,
+                "n_layers": k,
+                "layers": layers,
+                "steer_hook_class": type(hook.steer).__name__,
+                "child_hook_class": type(children[0]).__name__,
+                "coord_source": hook.recorder.coord_source,
+                "edit_trace_check": check,
+                "draw_traces": traces,  # persisted positions trace (plan §4.4)
+            }
+        )
+        logger.info(
+            "[cpu-smoke] arm %s k=%d: %d draws OK (coord_source=%s)",
+            pos,
+            k,
+            n_draws,
+            hook.recorder.coord_source,
+        )
+    return {
+        "tiny_model": name,
+        "hidden_size": hidden,
+        "n_blocks": n_blocks,
+        "n_draws": n_draws,
+        "max_new_tokens": max_new,
+        "n_contexts": len(contexts),
+        "arms": rows,
+    }
+
+
+def _cpu_smoke_write_fixtures(sub, rroot: Path) -> list[dict]:
+    """Synthesize gen + judged fixtures for the FULL 160-cell grid off the
+    committed operating points + alpha0 baseline (deterministic)."""
+    ops = i2254._load_operating_points(INPUTS_ROOT)
+    behaviors = list(ROUND_BEHAVIORS)
+    cells = build_cells(sub, resolve_operating_points(ops, behaviors), behaviors)
+    assert len(cells) == TOTAL_CELLS, len(cells)
+    baseline = json.loads((_REPO_ROOT / BASELINE_PERCELL_REL).read_text())
+    a0: dict[str, list[float]] = {}
+    for b in behaviors:
+        vals = baseline["behaviors"][b]["alpha0"]["per_question_mean_score"]
+        assert all(v is not None for v in vals), f"{b}: alpha0 has null per-question entries"
+        a0[b] = [float(v) for v in vals]
+    n_q = Q_STEER_DEFAULT
+    comp_root = rroot / "steer" / "raw_completions"
+    judged_dir = rroot / "judge" / "judged"
+    for cell in cells:
+        cid = _cell_id(cell)
+        b = cell["behavior"]
+        d = _cpu_smoke_delta(cell)
+        case = _CPU_SMOKE_CASES.get((b, cell["direction"], cell["breadth"]), {})
+        text = _CPU_SMOKE_TEXT_CJK if cell["position"] in case.get("cjk", ()) else _CPU_SMOKE_TEXT
+        per_q = [a0[b][q] + d for q in range(n_q)]
+        i2254._write_json_atomic(
+            comp_root / f"{cid}.json",
+            {
+                "cell_id": cid,
+                "cell": cell,
+                "q_of_context": list(range(n_q)),
+                "seeds": {
+                    str(SEED_BASE_DEFAULT): {
+                        "completions": [[text, text] for _ in range(n_q)],
+                        "coherent_flags": [[True, True] for _ in range(n_q)],
+                        "condition_passes": [True] * n_q,
+                        "edit_traces": [],
+                    }
+                },
+                "max_new_tokens": i2254.GEN_MAX_NEW_TOKENS,
+                "cap_hit_fraction": 0.0,
+                "regen": False,
+                "synthetic_fixture": True,
+            },
+        )
+        i2254._write_json_atomic(
+            judged_dir / f"{cid}.json",
+            {
+                "cell_id": cid,
+                "cell": cell,
+                "n_questions": n_q,
+                "per_question_mean_score": per_q,
+                "per_question_rate": [0.5] * n_q,
+                "mean_score": float(np.mean(per_q)),
+                "rate": 0.5,
+                "coherence_rate": 1.0,
+                "coherence_pass": True,
+                "accounting": {"frac_items_complete": 1.0},
+                "synthetic_fixture": True,
+            },
+        )
+    return cells
+
+
+def _cpu_smoke_reduce_figures(args) -> dict:
+    """Legs (b)+(c): the REAL ``phase_reduce`` (twice — the second run
+    exercises the horizon-ckpt resume) then the REAL ``phase_figures`` on a
+    synthetic full-grid fixture; every constructed §3 label, the denominator
+    guard, the constructed H3 inversions, the H4 verdicts, the §7 positive
+    control, and per-figure pixel ink are ASSERTED."""
+    scratch = CPU_SMOKE_SCRATCH
+    if scratch.exists():
+        shutil.rmtree(scratch)
+    sub = argparse.Namespace(
+        **{
+            **vars(args),
+            "out_root": str(scratch),
+            "behaviors": list(ROUND_BEHAVIORS),
+            "smoke": False,
+            "force": False,
+            "q_steer": Q_STEER_DEFAULT,
+            "draws": DRAWS_DEFAULT,
+            "fig_dir": str(scratch / "figures"),
+        }
+    )
+    rroot = round_root(Path(sub.out_root))
+    _cpu_smoke_write_fixtures(sub, rroot)
+    phase_reduce(sub)
+    lat_path = rroot / "reads" / "verdict_lattice.json"
+    lat1 = json.loads(lat_path.read_text())
+    ckpt = rroot / "steer" / "horizon_stats.jsonl"
+    n_ckpt_rows = len(ckpt.read_text().splitlines())
+    assert n_ckpt_rows == TOTAL_CELLS, n_ckpt_rows
+    phase_reduce(sub)  # resume leg: horizon ckpt cache-hit, no recompute rows
+    assert len(ckpt.read_text().splitlines()) == n_ckpt_rows, "resume appended horizon rows"
+    lat2 = json.loads(lat_path.read_text())
+    for k in ("lattice", "h4", "positive_control"):
+        assert lat1[k] == lat2[k], f"reduce resume changed {k}"
+    out: dict = {
+        "lattice": {},
+        "h4": {},
+        "resume_recheck": "horizon-ckpt cache-hit; verdicts identical",
+    }
+    for (b, d, br), case in sorted(_CPU_SMOKE_CASES.items()):
+        key = f"{b}__{d}__{br}"
+        blk = lat1["lattice"][key]
+        assert blk["verdict"] == case["expect"], (key, blk["verdict"], case["expect"])
+        assert blk["ratio_guard"]["ratio_unstable"] is bool(case.get("guard", False)), key
+        if case.get("cjk") == ("allans",):
+            assert blk["D"]["point"] > 0.5, (key, blk["D"])  # allans degraded => D >> 0
+        if case.get("cjk") == ("span13",):
+            assert blk["D"]["point"] < -0.5, (key, blk["D"])  # span13 degraded => D << 0
+        chain_vals = [
+            _cpu_smoke_delta({"behavior": b, "direction": d, "breadth": br, "position": p})
+            for p in H3_CHAIN
+        ]
+        expected_inv = [
+            bool(late - early < -1e-9) for early, late in itertools.pairwise(chain_vals)
+        ]
+        observed_inv = [c["inverted"] for c in blk["h3_adjacent_contrasts"]]
+        assert observed_inv == expected_inv, (key, observed_inv, expected_inv)
+        out["lattice"][key] = {
+            "verdict": blk["verdict"],
+            "expected": case["expect"],
+            "ratio_unstable": blk["ratio_guard"]["ratio_unstable"],
+            "h3_inverted": observed_inv,
+            "D_point": blk["D"]["point"],
+            "R_point": blk["R"]["point"],
+        }
+    for key, exp_prefix in _CPU_SMOKE_H4.items():
+        verdict = lat1["h4"][key]["dissociation_verdict"]
+        assert verdict is not None and verdict.startswith(exp_prefix), (key, verdict, exp_prefix)
+        out["h4"][key] = {"verdict": verdict, "expected_prefix": exp_prefix}
+    pc = lat1["positive_control"]
+    assert pc["behaviors"]["evil"]["cleared"] is True, pc["behaviors"]["evil"]
+    assert pc["behaviors"]["sycophancy"]["cleared"] is False, pc["behaviors"]["sycophancy"]
+    assert pc["both_behaviors_failed"] is False, pc
+    out["positive_control"] = {
+        "evil_cleared": True,
+        "sycophancy_cleared": False,
+        "both_behaviors_failed": False,
+    }
+    # Leg (c): the REAL figures phase on the synthetic reduce output.
+    import matplotlib.pyplot as plt
+
+    import scripts.issue2254_firstk_figures as firstk_figs
+
+    phase_figures(sub)
+    figs: dict[str, dict] = {}
+    for name in firstk_figs.REQUIRED_FIGURES:
+        p = Path(sub.fig_dir) / f"{name}.png"
+        assert p.is_file(), p
+        img = plt.imread(p)
+        ink = float((img[..., :3].min(axis=-1) < 0.85).mean())
+        std = float(img[..., :3].std())
+        assert std > 0.01 and ink > 0.01, (name, std, ink)
+        figs[name] = {
+            "pixel_std": round(std, 4),
+            "ink_fraction": round(ink, 4),
+            "bytes": p.stat().st_size,
+        }
+    out["figures"] = figs
+    out["scratch_root"] = str(scratch)
+    return out
+
+
+def run_cpu_smoke(args) -> None:
+    """Unit-3 CPU smoke (``--cpu-smoke``; VM, no GPU, no API spend):
+    (a) tiny-model hook mechanics through the production
+    ``generate_batch`` + ``build_recorded_hook`` path; (b) the REAL
+    ``phase_reduce`` on a synthetic full-grid fixture, twice (resume leg);
+    (c) the REAL ``phase_figures`` on that output. Evidence JSONs land under
+    ``--cpu-smoke-out`` (committed smoke artifacts, plan §4.4 trace
+    persistence). The judge ``--dry-run`` bind leg is a separate command;
+    the ≤5-request live Batch probe + the real-7B smoke stay POD-SIDE."""
+    t0 = time.time()
+    hooks_out = _cpu_smoke_hooks(args)
+    reduce_out = _cpu_smoke_reduce_figures(args)
+    out_dir = Path(args.cpu_smoke_out)
+    i2254._write_json_atomic(out_dir / "cpu_hook_mechanics.json", i2254._run_metadata(hooks_out))
+    i2254._write_json_atomic(out_dir / "cpu_reduce_figures.json", i2254._run_metadata(reduce_out))
+    i2254._breadcrumb(
+        "firstk-cpu-smoke",
+        status="done",
+        arms=len(hooks_out["arms"]),
+        lattice=len(reduce_out["lattice"]),
+        figures=len(reduce_out["figures"]),
+        elapsed=f"{time.time() - t0:.0f}s",
+    )
+
+
 PHASES = {
     "stage_inputs": phase_stage_inputs,
     "steer": phase_steer,
     "judge": phase_judge,
     "reduce": phase_reduce,
+    "figures": phase_figures,
 }
 
 
@@ -2065,7 +2605,7 @@ def build_argparser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "comma-separated phases to run in order "
-            "(stage_inputs,steer,judge,reduce — plan §9 workload cmd)"
+            "(stage_inputs,steer,judge,reduce,figures — plan §9 workload cmd)"
         ),
     )
     ap.add_argument("--behaviors", nargs="+", default=list(ROUND_BEHAVIORS))
@@ -2140,6 +2680,32 @@ def build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="AST arg-attribute completeness + helper-call bind check, then exit 0",
     )
+    ap.add_argument(
+        "--fig-dir",
+        default=None,
+        help=(
+            "figures output dir (default figures/issue_2254/"
+            f"{FOLLOWUP_LABEL}/; --smoke rebinds it to the scratch out-root)"
+        ),
+    )
+    ap.add_argument(
+        "--cpu-smoke",
+        action="store_true",
+        help=(
+            "unit-3 VM smoke (no GPU / no API spend): tiny-model hook mechanics + "
+            "synthetic-fixture reduce/figures through the real phase entrypoints"
+        ),
+    )
+    ap.add_argument(
+        "--tiny-model",
+        default=TINY_MODEL_DEFAULT,
+        help="cached tiny CausalLM for the --cpu-smoke hook-mechanics leg (CPU)",
+    )
+    ap.add_argument(
+        "--cpu-smoke-out",
+        default=f"eval_results/issue_2254/{FOLLOWUP_LABEL}/smoke",
+        help="evidence dir for --cpu-smoke summaries (committed; plan §4.4 trace persistence)",
+    )
     return ap
 
 
@@ -2152,6 +2718,8 @@ def _apply_smoke(args) -> None:
     args.draws = 2
     if args.out_root == "eval_results/issue_2254":
         args.out_root = "/tmp/issue-2254-firstk-smoke"
+    if args.fig_dir is None:  # smoke figures never touch committed figures/
+        args.fig_dir = str(Path(args.out_root) / "figures")
     i2254._SMOKE_UPLOAD_SUBPREFIX = True
 
 
@@ -2268,6 +2836,16 @@ def _dry_run_phase(args, phase: str) -> None:
             args, resolve_operating_points(ops, list(args.behaviors)), list(args.behaviors)
         )
         i2254._breadcrumb(SENTINEL_REDUCE, dry_run=1, cells=len(cells))
+    elif phase == "figures":
+        import inspect
+
+        import scripts.issue2254_firstk_figures as firstk_figs
+
+        inspect.signature(firstk_figs.render_all).bind(Path("."), Path("."), require=())
+        assert len(firstk_figs.REQUIRED_FIGURES) == 7, firstk_figs.REQUIRED_FIGURES
+        assert callable(firstk_figs.fig_hero1_position_bars)
+        assert firstk_figs.BASELINE_PERCELL.is_file(), firstk_figs.BASELINE_PERCELL
+        i2254._breadcrumb(SENTINEL_FIGURES, dry_run=1, figures=len(firstk_figs.REQUIRED_FIGURES))
     else:  # unreachable behind the main() phase validation; keep fail-loud
         raise SystemExit(f"dry-run: no wiring branch for phase {phase!r}")
     print(f"[dry-run] {phase} wiring OK", flush=True)
@@ -2280,10 +2858,15 @@ def main() -> None:
 
         assert_args_attributes_defined(__file__)
         raise SystemExit(0)
+    if args.cpu_smoke:
+        run_cpu_smoke(args)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
     if not args.phases:
         raise SystemExit(
-            "--phases is required (comma-separated: stage_inputs,steer,judge,reduce) "
-            "or --import-check"
+            "--phases is required (comma-separated: stage_inputs,steer,judge,reduce,figures) "
+            "or --import-check / --cpu-smoke"
         )
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
     unknown = [p for p in phases if p not in PHASES]

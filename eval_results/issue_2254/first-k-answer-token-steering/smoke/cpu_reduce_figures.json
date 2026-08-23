@@ -1,0 +1,179 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-23T06:25:30Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "52b0e74d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2254_first_k_steering.py"
+  ],
+  "lattice": {
+    "evil__pre__mid": {
+      "verdict": "Ambiguous",
+      "expected": "Ambiguous",
+      "ratio_unstable": true,
+      "h3_inverted": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "D_point": 0.0,
+      "R_point": 0.75
+    },
+    "evil__pre__single": {
+      "verdict": "opening-sufficient",
+      "expected": "opening-sufficient",
+      "ratio_unstable": false,
+      "h3_inverted": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "D_point": 0.0,
+      "R_point": 0.75
+    },
+    "evil__rb__mid": {
+      "verdict": "opening-partial",
+      "expected": "opening-partial",
+      "ratio_unstable": false,
+      "h3_inverted": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "D_point": -2.0,
+      "R_point": 0.5
+    },
+    "evil__rb__single": {
+      "verdict": "opening-sufficient",
+      "expected": "opening-sufficient",
+      "ratio_unstable": false,
+      "h3_inverted": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "D_point": 1.0,
+      "R_point": 0.8333333333333334
+    },
+    "sycophancy__pre__mid": {
+      "verdict": "opening-sufficient",
+      "expected": "opening-sufficient",
+      "ratio_unstable": false,
+      "h3_inverted": [
+        false,
+        true,
+        false,
+        false
+      ],
+      "D_point": 0.0,
+      "R_point": 0.7500000000000001
+    },
+    "sycophancy__pre__single": {
+      "verdict": "opening-inert",
+      "expected": "opening-inert",
+      "ratio_unstable": false,
+      "h3_inverted": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "D_point": 0.0,
+      "R_point": -0.08333333333333333
+    },
+    "sycophancy__rb__mid": {
+      "verdict": "Ambiguous",
+      "expected": "Ambiguous",
+      "ratio_unstable": false,
+      "h3_inverted": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "D_point": 0.0,
+      "R_point": 0.2500000000000001
+    },
+    "sycophancy__rb__single": {
+      "verdict": "all-answer-inert",
+      "expected": "all-answer-inert",
+      "ratio_unstable": false,
+      "h3_inverted": [
+        true,
+        false,
+        true,
+        true
+      ],
+      "D_point": 0.0,
+      "R_point": -0.5000000000000002
+    }
+  },
+  "h4": {
+    "evil__single": {
+      "verdict": "locus-dissociation (span1-3 clears the shuffled twin, last-ctx does not)",
+      "expected_prefix": "locus-dissociation"
+    },
+    "evil__mid": {
+      "verdict": "locus-dissociation (span1-3 clears the shuffled twin, last-ctx does not)",
+      "expected_prefix": "locus-dissociation"
+    },
+    "sycophancy__single": {
+      "verdict": "no-dissociation (last-ctx also clears the shuffled twin)",
+      "expected_prefix": "no-dissociation"
+    },
+    "sycophancy__mid": {
+      "verdict": "locus-dissociation (span1-3 clears the shuffled twin, last-ctx does not)",
+      "expected_prefix": "locus-dissociation"
+    }
+  },
+  "resume_recheck": "horizon-ckpt cache-hit; verdicts identical",
+  "positive_control": {
+    "evil_cleared": true,
+    "sycophancy_cleared": false,
+    "both_behaviors_failed": false
+  },
+  "figures": {
+    "hero1_position_bars": {
+      "pixel_std": 0.188,
+      "ink_fraction": 0.0841,
+      "bytes": 285972
+    },
+    "hero2_recovery_fraction": {
+      "pixel_std": 0.2737,
+      "ink_fraction": 0.2119,
+      "bytes": 53741
+    },
+    "expl_accrual_curves": {
+      "pixel_std": 0.141,
+      "ink_fraction": 0.0485,
+      "bytes": 305920
+    },
+    "expl_h3_adjacent_forest": {
+      "pixel_std": 0.1226,
+      "ink_fraction": 0.0347,
+      "bytes": 342866
+    },
+    "expl_h4_pre_vs_shuffled": {
+      "pixel_std": 0.1433,
+      "ink_fraction": 0.0466,
+      "bytes": 266878
+    },
+    "expl_rd_lattice": {
+      "pixel_std": 0.1236,
+      "ink_fraction": 0.0292,
+      "bytes": 79078
+    },
+    "expl_perq_clouds": {
+      "pixel_std": 0.1521,
+      "ink_fraction": 0.1811,
+      "bytes": 274018
+    }
+  },
+  "scratch_root": "/tmp/issue-2254-firstk-cpusmoke"
+}

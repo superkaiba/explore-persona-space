@@ -1,0 +1,893 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-23T06:25:30Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "52b0e74d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2254_first_k_steering.py"
+  ],
+  "tiny_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "hidden_size": 896,
+  "n_blocks": 24,
+  "n_draws": 2,
+  "max_new_tokens": 8,
+  "n_contexts": 2,
+  "arms": [
+    {
+      "position": "lastctx",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "DeltaHook",
+      "child_hook_class": "DeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              0
+            ],
+            "edit_cache_coords": [
+              42
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              0
+            ],
+            "edit_cache_coords": [
+              42
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            0
+          ],
+          "edit_index_source": "prefill-only",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            42
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            0
+          ],
+          "edit_index_source": "prefill-only",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            42
+          ]
+        }
+      ]
+    },
+    {
+      "position": "tok1",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "WindowedDeltaHook",
+      "child_hook_class": "WindowedDeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1
+            ],
+            "edit_cache_coords": [
+              43
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1
+            ],
+            "edit_cache_coords": [
+              43
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            43
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            43
+          ]
+        }
+      ]
+    },
+    {
+      "position": "tok2",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "WindowedDeltaHook",
+      "child_hook_class": "WindowedDeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              2
+            ],
+            "edit_cache_coords": [
+              44
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              2
+            ],
+            "edit_cache_coords": [
+              44
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            2
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            44
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            2
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            44
+          ]
+        }
+      ]
+    },
+    {
+      "position": "tok3",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "WindowedDeltaHook",
+      "child_hook_class": "WindowedDeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              3
+            ],
+            "edit_cache_coords": [
+              45
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              3
+            ],
+            "edit_cache_coords": [
+              45
+            ],
+            "n_edits_draw": 1,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            45
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 1,
+          "edit_cache_coords": [
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "position": "span13",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "WindowedDeltaHook",
+      "child_hook_class": "WindowedDeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1,
+              2,
+              3
+            ],
+            "edit_cache_coords": [
+              43,
+              44,
+              45
+            ],
+            "n_edits_draw": 3,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1,
+              2,
+              3
+            ],
+            "edit_cache_coords": [
+              43,
+              44,
+              45
+            ],
+            "n_edits_draw": 3,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1,
+            2,
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 3,
+          "edit_cache_coords": [
+            43,
+            44,
+            45
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1,
+            2,
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 3,
+          "edit_cache_coords": [
+            43,
+            44,
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "position": "span15",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "WindowedDeltaHook",
+      "child_hook_class": "WindowedDeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "edit_cache_coords": [
+              43,
+              44,
+              45,
+              46,
+              47
+            ],
+            "n_edits_draw": 5,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "edit_cache_coords": [
+              43,
+              44,
+              45,
+              46,
+              47
+            ],
+            "n_edits_draw": 5,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 5,
+          "edit_cache_coords": [
+            43,
+            44,
+            45,
+            46,
+            47
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 5,
+          "edit_cache_coords": [
+            43,
+            44,
+            45,
+            46,
+            47
+          ]
+        }
+      ]
+    },
+    {
+      "position": "combined",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "WindowedDeltaHook",
+      "child_hook_class": "WindowedDeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "edit_cache_coords": [
+              42,
+              43,
+              44,
+              45
+            ],
+            "n_edits_draw": 4,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "edit_cache_coords": [
+              42,
+              43,
+              44,
+              45
+            ],
+            "n_edits_draw": 4,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 4,
+          "edit_cache_coords": [
+            42,
+            43,
+            44,
+            45
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 4,
+          "edit_cache_coords": [
+            42,
+            43,
+            44,
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "position": "allans",
+      "n_layers": 1,
+      "layers": [
+        2
+      ],
+      "steer_hook_class": "DeltaHook",
+      "child_hook_class": "DeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": "all-forwards",
+            "n_edits_draw": 8
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": "all-forwards",
+            "n_edits_draw": 8
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": null,
+          "edit_index_source": "all-forwards",
+          "n_edits_draw": 8,
+          "edit_cache_coords": {
+            "all_forwards": true,
+            "first_coord": 42,
+            "last_coord": 49,
+            "n": 8
+          }
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": null,
+          "edit_index_source": "all-forwards",
+          "n_edits_draw": 8,
+          "edit_cache_coords": {
+            "all_forwards": true,
+            "first_coord": 42,
+            "last_coord": 49,
+            "n": 8
+          }
+        }
+      ]
+    },
+    {
+      "position": "lastctx",
+      "n_layers": 2,
+      "layers": [
+        2,
+        4
+      ],
+      "steer_hook_class": "MultiLayerDeltaHook",
+      "child_hook_class": "DeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              0
+            ],
+            "edit_cache_coords": [
+              42
+            ],
+            "n_edits_draw": 2,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              0
+            ],
+            "edit_cache_coords": [
+              42
+            ],
+            "n_edits_draw": 2,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            0
+          ],
+          "edit_index_source": "prefill-only",
+          "n_edits_draw": 2,
+          "edit_cache_coords": [
+            42
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            0
+          ],
+          "edit_index_source": "prefill-only",
+          "n_edits_draw": 2,
+          "edit_cache_coords": [
+            42
+          ]
+        }
+      ]
+    },
+    {
+      "position": "span13",
+      "n_layers": 2,
+      "layers": [
+        2,
+        4
+      ],
+      "steer_hook_class": "MultiLayerDeltaHook",
+      "child_hook_class": "WindowedDeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1,
+              2,
+              3
+            ],
+            "edit_cache_coords": [
+              43,
+              44,
+              45
+            ],
+            "n_edits_draw": 6,
+            "window_truncated": false
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": [
+              1,
+              2,
+              3
+            ],
+            "edit_cache_coords": [
+              43,
+              44,
+              45
+            ],
+            "n_edits_draw": 6,
+            "window_truncated": false
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1,
+            2,
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 6,
+          "edit_cache_coords": [
+            43,
+            44,
+            45
+          ]
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": [
+            1,
+            2,
+            3
+          ],
+          "edit_index_source": "recorded",
+          "n_edits_draw": 6,
+          "edit_cache_coords": [
+            43,
+            44,
+            45
+          ]
+        }
+      ]
+    },
+    {
+      "position": "allans",
+      "n_layers": 2,
+      "layers": [
+        2,
+        4
+      ],
+      "steer_hook_class": "MultiLayerDeltaHook",
+      "child_hook_class": "DeltaHook",
+      "coord_source": "cache_position",
+      "edit_trace_check": {
+        "checked_draws": 2,
+        "per_draw": [
+          {
+            "seed": "42",
+            "draw": 0,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": "all-forwards",
+            "n_edits_draw": 16
+          },
+          {
+            "seed": "42",
+            "draw": 1,
+            "prompt_len": 43,
+            "n_forwards": 8,
+            "edit_set": "all-forwards",
+            "n_edits_draw": 16
+          }
+        ]
+      },
+      "draw_traces": [
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": null,
+          "edit_index_source": "all-forwards",
+          "n_edits_draw": 16,
+          "edit_cache_coords": {
+            "all_forwards": true,
+            "first_coord": 42,
+            "last_coord": 49,
+            "n": 8
+          }
+        },
+        {
+          "prompt_len": 43,
+          "n_forwards": 8,
+          "coord_source": "cache_position",
+          "consecutive_decode_coords": true,
+          "edit_fwd_indices": null,
+          "edit_index_source": "all-forwards",
+          "n_edits_draw": 16,
+          "edit_cache_coords": {
+            "all_forwards": true,
+            "first_coord": 42,
+            "last_coord": 49,
+            "n": 8
+          }
+        }
+      ]
+    }
+  ]
+}
