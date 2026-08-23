@@ -72,6 +72,24 @@ FONT_SCALE = 1.9
 FIGSIZE = (7.6, 2.8)
 
 
+def _assert_production_artifact(boundary: dict) -> None:
+    """Reject a smoke-mode boundary JSON on the poster path.
+
+    The #1901 driver stamps `"smoke": true` into every eval JSON its smoke
+    legs write; a smoke artifact accidentally landing at the committed
+    canonical path must never render onto the poster (r2 fix 6 — the fig
+    phase and `fig_paper_c1_scaling` reject the same flag in production).
+    Raises RuntimeError so the render fails loud instead of drawing a
+    tiny-slice curve as the measured control.
+    """
+    if boundary.get("smoke"):
+        raise RuntimeError(
+            f'{BOUNDARY_JSON} is a smoke-mode artifact ("smoke": true) — refusing to '
+            "render it as the measured generic boundary-token control; re-run the #1901 "
+            "production fig phase to land the real JSON"
+        )
+
+
 def main() -> None:
     set_paper_style("iclr", font_scale=FONT_SCALE)
     l19, _p18, _boot = _load()
@@ -79,6 +97,7 @@ def main() -> None:
     boundary = None
     if BOUNDARY_JSON.exists():
         boundary = json.loads(BOUNDARY_JSON.read_text())
+        _assert_production_artifact(boundary)
     else:
         # Deliberately NO fallback reference line: the retired 0.1087 hline was
         # fraction_of_fulln_ceiling, not an R^2 (see module docstring) — until

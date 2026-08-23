@@ -793,8 +793,10 @@ def fig_paper_c1_scaling(
     post-legend artist relabel that does not affect the rendered output.
 
     boundary_hline: opt-in poster variant — draws the #825 generic
-    boundary-token→segment map control (instruct R^2 0.1087, single-n,
-    wikitext) as a dashed reference line on the R^2 panel and saves under
+    boundary-token→segment map control (fraction_of_fulln_ceiling 0.1087 —
+    NOT an R^2; retired from all in-repo callers, #1901; the underlying
+    sep_to_chat_fulln_r2 is 0.07315) as a dashed reference line on the R^2
+    panel and saves under
     `stem` into `out_dir`; `identity_label` / `neural_label` relabel the
     identity+bias and neural-map legend entries (poster uses
     "identity + bias (baseline)" / "nonlinear (MLP)"); the default paper

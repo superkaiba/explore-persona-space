@@ -47,11 +47,27 @@ uploads and git pushes (enumerated blind spots — plan §4; the p1 shard-1
 production pilot + first timed upload batch cover the real-model / upload
 paths).
 
-Checkpointing: b0 at stage grain (the single builder call is monolithic by
-source design; restart cost ≤ its own ~0.7 h booking); p1 per shard with a
-sidecar-validated resume scan; p2 per cell (unit JSONs keyed on generating
-parameters — never recomputed-float-array bytes, #1336). One stdout progress
-line per unit. Fail loud everywhere; NaN never coerced. WikiText is a benign
+Checkpointing (r2): b0 per raw-article CHUNK (``--b0-chunk-articles``; each
+chunk's build output persists atomically under ``out_root/b0_stream_cache/``
+with a fingerprint over the corpus revision + every build knob; resume
+replays completed chunks — no re-stream, no re-tokenize — then continues the
+live stream; the stage-grain manifest meta stays the OUTER resume key); p1
+per shard with a sidecar-validated resume scan + an entry upload-reconcile
+(local shards missing under the Hub prefix re-upload — a crash off a
+10-shard batch boundary can no longer wedge the final exact-set verify) + a
+regime-keyed ``p1_state.json`` fast-skip that verifies the declared shard
+set REMOTELY and returns without staging the manifest or loading the model
+(idempotent re-entry survives the p3 store purge); p2 per cell (unit JSONs
+keyed on generating parameters — never recomputed-float-array bytes, #1336;
+key covers n_article_boot / device / store + manifest + eval-selection
+fingerprints) + a regime-keyed ``p2_state.json`` fast-skip; p3 idempotent by
+re-verification (git add/commit no-op, HF mirror re-upload cheap, purge
+skips an absent store); fig idempotent by nature (cheap re-render). One
+stdout ``unit k/N`` progress line per unit. Prefix rungs within an arm share
+ONE incremental raw-moment Gram accumulation pass over the seed-42 prefix
+ordering (per-rung standardization + eigh + val-λ sweep derived from the
+accumulated moments; |ΔR²| ≤ 1e-6 parity vs ``N1M.fit_ridge`` asserted at
+p2 entry). Fail loud everywhere; NaN never coerced. WikiText is a benign
 corpus (no content-hygiene digest restrictions apply).
 """
 
@@ -59,6 +75,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import itertools
 import json
 import logging
@@ -68,6 +85,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -296,6 +314,190 @@ def _b0_regime_key(args) -> dict:
     }
 
 
+def _b0_stream_fingerprint(args) -> dict:
+    """Chunk-cache identity (r2 fix, codex b0-stream-not-resumable): corpus revision
+    + every build/filter knob that affects chunk OUTPUT or chunk MEMBERSHIP.
+    Generating-parameters only — never recomputed floats (#1336)."""
+    return {
+        "wikitext_revision": common.WIKITEXT_REVISION,
+        "chunk_articles": int(args.b0_chunk_articles),
+        "max_anchors": int(args.max_anchors),
+        "article_cap_tokens": int(args.article_cap_tokens),
+        "record_sep_char": True,
+        "smoke_articles": int(args.smoke_articles) if args.smoke else None,
+        "armc": {
+            "span_min": common.ARMC_SPAN_MIN,
+            "span_max": common.ARMC_SPAN_MAX,
+            "prev_min": common.ARMC_PREV_MIN_TOKENS,
+            "prev_cap": common.ARMC_PREV_CAP_TOKENS,
+            "article_min": common.ARMC_ARTICLE_MIN_TOKENS,
+        },
+        "chunker_version": 1,
+    }
+
+
+def _build_chunk(tokenizer, raw_articles: list, start: int, args) -> dict:
+    """``build_armc_pairs`` on ONE raw-article chunk with the GLOBAL article_idx
+    numbering preserved.
+
+    The keep-all builder numbers articles by enumeration index (article ids +
+    per-article RNG seeds both derive from it), so a ``start``-long prefix of
+    empty dummy articles — filtered by the ARMC_ARTICLE_MIN_TOKENS floor before
+    any pool work (tokenizing "" is ~µs) — shifts the chunk's real articles to
+    their global stream indices. Chunked output is therefore IDENTICAL to the
+    monolithic call: keep-all ``build_armc_pairs`` is article-local (no
+    cross-article state) and chunk concatenation preserves stream order.
+    """
+
+    def _iter(max_articles):  # noqa: ARG001 -- keep-all passes None; cap handled upstream
+        return itertools.chain((("", "") for _ in range(start)), iter(raw_articles))
+
+    orig = BP.iter_wikitext_articles
+    BP.iter_wikitext_articles = _iter
+    try:
+        out = BP.build_armc_pairs(
+            tokenizer,
+            n_articles=None,
+            max_anchors=args.max_anchors,
+            pool_multiplier=3,
+            article_cap_tokens=args.article_cap_tokens,
+            record_sep_char=True,
+        )
+    except AssertionError as e:
+        # Residual-chunk edge: a (small, final) chunk whose every article fails
+        # the min-token filter trips the builder's own "no articles" assert —
+        # an empty chunk output, not a defect. Any other assert propagates.
+        if "no WikiText articles collected" not in str(e):
+            raise
+        out = {"articles": [], "pairs": []}
+    finally:
+        BP.iter_wikitext_articles = orig
+    return out
+
+
+def _build_armc_chunked(args, tokenizer) -> dict:
+    """Chunk-checkpointed b0 build (r2 fix, codex b0-stream-not-resumable).
+
+    Streams the pinned WikiText train split in chunks of ``--b0-chunk-articles``
+    RAW articles; each chunk's build output persists atomically under
+    ``out_root/b0_stream_cache/`` (fingerprint-gated, torch.save of the chunk's
+    articles + PairSpecs). Resume replays completed chunks from disk (no
+    re-stream, no re-tokenize), re-streams only to SKIP past them, then
+    continues chunking. A crash loses at most one in-flight chunk. Smoke runs
+    the SAME path capped at ``--smoke-articles`` (scale-only narrowing).
+    Test hook: ``EPM_I1901_B0_CRASH_AFTER_CHUNK=<k>`` raises after persisting
+    the k-th chunk (the smoke interrupt/re-entry leg).
+    """
+    cache = args.out_root / "b0_stream_cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    meta_p = cache / "cache_meta.json"
+    fp = _b0_stream_fingerprint(args)
+    chunks: list[dict] = []
+    exhausted = False
+    if meta_p.exists():
+        m = json.loads(meta_p.read_text())
+        if m.get("fingerprint") != fp:
+            raise RuntimeError(
+                f"[b0] {cache} holds a DIFFERENT stream-cache fingerprint — move it "
+                f"aside; never silently reuse cross-regime state (#1333). "
+                f"have={m.get('fingerprint')} want={fp}"
+            )
+        chunks = m["chunks"]
+        exhausted = bool(m.get("stream_exhausted"))
+    cap = int(args.smoke_articles) if args.smoke else None
+    articles: list = []
+    pairs: list = []
+    n_raw_done = 0
+    for c in chunks:
+        # weights_only=False: self-produced chunk payloads in OUR out_root carry
+        # PairSpec dataclass pickles (torch>=2.6 default refuses them).
+        payload = torch.load(cache / c["name"], map_location="cpu", weights_only=False)
+        assert payload["fingerprint"] == fp and payload["start"] == n_raw_done, (c, n_raw_done)
+        articles.extend(payload["articles"])
+        pairs.extend(payload["pairs"])
+        n_raw_done += int(payload["n_raw"])
+        logger.info(
+            "[b0] chunk %s resumed: %d raw articles, %d pairs kept (total %d raw)",
+            c["name"],
+            payload["n_raw"],
+            len(payload["pairs"]),
+            n_raw_done,
+        )
+    crash_after = os.environ.get("EPM_I1901_B0_CRASH_AFTER_CHUNK")
+    t0 = time.time()
+    if not exhausted and (cap is None or n_raw_done < cap):
+        live = BP.iter_wikitext_articles(None)
+        try:
+            for _ in range(n_raw_done):  # pinned-revision stream: skip replayed raws
+                next(live)
+            while cap is None or n_raw_done < cap:
+                take = args.b0_chunk_articles
+                if cap is not None:
+                    take = min(take, cap - n_raw_done)
+                raw = list(itertools.islice(live, take))
+                if not raw:
+                    exhausted = True
+                    break
+                out = _build_chunk(tokenizer, raw, n_raw_done, args)
+                name = f"chunk_{len(chunks):05d}.pt"
+                tmp = cache / (name + ".tmp")
+                torch.save(
+                    {
+                        "fingerprint": fp,
+                        "start": n_raw_done,
+                        "n_raw": len(raw),
+                        "articles": out["articles"],
+                        "pairs": out["pairs"],
+                    },
+                    tmp,
+                )
+                tmp.replace(cache / name)
+                chunks.append({"name": name, "start": n_raw_done, "n_raw": len(raw)})
+                n_raw_done += len(raw)
+                if len(raw) < take:
+                    exhausted = True
+                C79.write_json_atomic(
+                    meta_p,
+                    {
+                        "fingerprint": fp,
+                        "chunks": chunks,
+                        "stream_exhausted": exhausted,
+                        "n_raw_articles": n_raw_done,
+                    },
+                )
+                articles.extend(out["articles"])
+                pairs.extend(out["pairs"])
+                logger.info(
+                    "[b0] unit %d/? chunk %s built: %d raw -> %d pairs (total %d raw) "
+                    "elapsed=%.0fs",
+                    len(chunks),
+                    name,
+                    len(raw),
+                    len(out["pairs"]),
+                    n_raw_done,
+                    time.time() - t0,
+                )
+                if crash_after and len(chunks) >= int(crash_after):
+                    raise RuntimeError(
+                        f"test hook: EPM_I1901_B0_CRASH_AFTER_CHUNK={crash_after} "
+                        f"(chunk-resume interrupt leg)"
+                    )
+        finally:
+            live.close()  # release the streaming pipeline deterministically (#952/#1947)
+        if cap is not None and n_raw_done >= cap:
+            exhausted = True  # cap is part of the fingerprint — complete for THIS regime
+        C79.write_json_atomic(
+            meta_p,
+            {
+                "fingerprint": fp,
+                "chunks": chunks,
+                "stream_exhausted": exhausted,
+                "n_raw_articles": n_raw_done,
+            },
+        )
+    return {"articles": articles, "pairs": pairs}
+
+
 def phase_b0_pairs(args) -> int:  # noqa: C901 -- linear build → split → screens → write ladder
     """Build pairs, split at article grain, screen, gate, write + upload the manifest."""
     C79.phase("b0_pairs")
@@ -350,39 +552,11 @@ def phase_b0_pairs(args) -> int:  # noqa: C901 -- linear build → split → scr
 def _b0_build(args, tokenizer, man_dir: Path, regime_key: dict) -> dict:  # noqa: C901
     """The b0 core: stream → pairs → article split → screens → manifest shards."""
     t0 = time.time()
-    orig_iter = BP.iter_wikitext_articles
-    if args.smoke:
-        # Smoke limiter: cap the PRODUCTION keep-all branch (n_articles=None →
-        # iter_wikitext_articles(None)) at N real streamed articles. Same code
-        # branch as production — scale-only narrowing, no path substitution.
-        # The inner generator is CLOSED explicitly: an abandoned suspended HF
-        # streaming iterator survives to interpreter shutdown and hangs/aborts
-        # finalization (gotchas.md HF-datasets shutdown class, #952/#1947 —
-        # reproduced here as a >500 s post-[phase=done] hang, rc=124).
-        def _limited_iter(max_articles):
-            cap = (
-                args.smoke_articles
-                if max_articles is None
-                else min(int(max_articles), args.smoke_articles)
-            )
-            inner = orig_iter(None)
-            try:
-                yield from itertools.islice(inner, cap)
-            finally:
-                inner.close()  # releases the streaming pipeline deterministically
-
-        BP.iter_wikitext_articles = _limited_iter
-    try:
-        armc = BP.build_armc_pairs(
-            tokenizer,
-            n_articles=None,
-            max_anchors=args.max_anchors,
-            pool_multiplier=3,
-            article_cap_tokens=args.article_cap_tokens,
-            record_sep_char=True,
-        )
-    finally:
-        BP.iter_wikitext_articles = orig_iter
+    # r2: the chunk-checkpointed builder replaces the round-1 monolithic call +
+    # its smoke `_limited_iter` monkeypatch — smoke rides the SAME chunked path
+    # capped at --smoke-articles (scale-only narrowing; the live iterator is
+    # still closed explicitly inside `_build_armc_chunked` — #952/#1947).
+    armc = _build_armc_chunked(args, tokenizer)
     gc.collect()  # drop any residual streaming-pipeline refs while healthy (#952/#1947)
     articles, pairs = armc["articles"], armc["pairs"]
     assert pairs, "no eligible pairs built"
@@ -659,6 +833,83 @@ def _load_manifest(man_dir: Path) -> tuple[list[dict], dict, dict]:
     return rows, ids_by_art, meta
 
 
+_MANIFEST_ROW_KEYS = (
+    "row_id",
+    "article_id",
+    "sep_char",
+    "anchor_pos",
+    "c_span",
+    "t_span",
+    "split",
+    "train_order",
+    "pooled_order",
+    "pooled_split",
+)
+
+
+def _validate_manifest(rows: list[dict], ids_by_art: dict, meta: dict, args, *, phase: str) -> None:
+    """Pre-model manifest contract validation (r2 fix, codex
+    manifest-contract-post-init): schema + regime-key match + production yield
+    gate + smoke/production parity + referenced-article coverage — all BEFORE
+    ``ES.load_model``, so a stale / smoke / malformed manifest fails in seconds,
+    never after the 7B load."""
+    rk = meta.get("regime_key")
+    assert isinstance(rk, dict), f"[{phase}] manifest meta lacks a regime_key dict"
+    assert bool(rk.get("smoke")) == bool(args.smoke), (
+        f"[{phase}] manifest regime smoke={rk.get('smoke')} vs run smoke={bool(args.smoke)} — "
+        "a smoke manifest never drives a production run (and vice versa)"
+    )
+    want = _b0_regime_key(args)
+    assert rk == want, f"[{phase}] manifest regime_key mismatch:\n  have {rk}\n  want {want}"
+    if not args.smoke:
+        assert meta["yield_gate"]["pass"], (
+            f"[{phase}] b0 yield gate FAILED ({meta['yield_gate']}) — production run refused"
+        )
+    assert rows, f"[{phase}] empty manifest"
+    n_bad = sum(1 for r in rows if any(k not in r for k in _MANIFEST_ROW_KEYS))
+    assert n_bad == 0, f"[{phase}] {n_bad} manifest rows missing required keys {_MANIFEST_ROW_KEYS}"
+    missing_arts = {r["article_id"] for r in rows} - set(ids_by_art)
+    assert not missing_arts, (
+        f"[{phase}] {len(missing_arts)} referenced article ids missing from article "
+        f"shards (e.g. {sorted(missing_arts)[:3]})"
+    )
+    logger.info(
+        "[%s] manifest validated pre-model: %d rows, %d articles, regime OK",
+        phase,
+        len(rows),
+        len(ids_by_art),
+    )
+
+
+def _p1_regime(args, persist: tuple[int, ...]) -> dict:
+    """p1_state.json resume key (r2 fix, codex p1-phase-idempotency): every knob
+    whose change invalidates the banked capture. ``manifest_regime`` uses
+    ``_b0_regime_key(args)`` directly so the fast-skip needs NO manifest staging
+    (validation asserts meta.regime_key == _b0_regime_key(args) on the non-skip
+    path, so the two are interchangeable at write time)."""
+    return {
+        "manifest_regime": _b0_regime_key(args),
+        "persist_layers": list(persist),
+        "shard_pairs": int(args.shard_pairs),
+        "smoke": bool(args.smoke),
+    }
+
+
+def _p2_regime(args, meta: dict) -> dict:
+    """p2_state.json resume key: every output-affecting p2 knob (#1336-safe —
+    params only, no recomputed floats)."""
+    return {
+        "manifest_regime": meta["regime_key"],
+        "smoke": bool(args.smoke),
+        "seed": int(args.seed),
+        "split_seed": int(args.split_seed),
+        "n_boot": int(args.n_boot),
+        "n_null": int(args.n_null),
+        "n_article_boot": int(args.n_article_boot),
+        "device": str(args.device),
+    }
+
+
 def _items_from_manifest(rows: list[dict], ids_by_art: dict) -> list[dict]:
     """Rebuild ES-shaped items (article + validated PairSpecs) from manifest rows."""
     by_art: dict[str, list[dict]] = defaultdict(list)
@@ -742,21 +993,48 @@ def phase_p1_capture(args) -> int:  # noqa: C901 -- capture stream + pilot gate 
     C79.phase("p1_capture")
     store = args.out_root / "store"
     store.mkdir(parents=True, exist_ok=True)
-    man_dir = _manifest_dir(args)
-    rows, ids_by_art, meta = _load_manifest(man_dir)
 
     tiny_dir = None
     if args.smoke:
         tiny_dir = args.tiny_model_dir or str(args.out_root / "tiny_model")
-        if not (Path(tiny_dir) / "config.json").exists():
-            ES.make_tiny_model(Path(tiny_dir), layers=args.tiny_layers)
     elif args.tiny_model_dir:
         tiny_dir = args.tiny_model_dir
     persist = SMOKE_PERSIST_LAYERS if tiny_dir else PROD_PERSIST_LAYERS
-    model = ES.load_model(tiny_dir)
-    tok = common.get_tokenizer(tiny_dir or common.MODEL_ID)
-    pad_id = tok.pad_token_id
-    assert pad_id is not None, "tokenizer has no pad token id"
+
+    # r2 fix (codex p1-phase-idempotency): regime-keyed fast-skip that verifies
+    # the DECLARED shard set remotely and returns WITHOUT staging the manifest or
+    # loading the model — a pod_all re-entry after p3's store purge must not
+    # recapture (or even load the 7B) when the capture already verified on Hub.
+    state_p = args.out_root / "p1_state.json"
+    if not (args.smoke or args.skip_upload) and state_p.exists():
+        st = json.loads(state_p.read_text())
+        if st.get("regime") == _p1_regime(args, persist) and st.get("shard_files"):
+            from huggingface_hub import HfApi
+
+            expected = [
+                f"{CAPTURE_PREFIX}/{n}"
+                for base in st["shard_files"]
+                for n in (base, base[:-3] + ".json")
+            ]
+            missing = hub.verify_repo_paths_uploaded(
+                HfApi(), HF_DATA_REPO, expected, path_in_repo=CAPTURE_PREFIX
+            )
+            if not missing:
+                logger.info(
+                    "[p1] resume-skip: capture complete per p1_state.json (%d shards "
+                    "verified on Hub) — manifest not staged, model NOT loaded",
+                    len(st["shard_files"]),
+                )
+                return 0
+            logger.info(
+                "[p1] p1_state.json declares completion but %d file(s) missing on Hub "
+                "— re-entering capture",
+                len(missing),
+            )
+
+    man_dir = _manifest_dir(args)
+    rows, ids_by_art, meta = _load_manifest(man_dir)
+    _validate_manifest(rows, ids_by_art, meta, args, phase="p1")
 
     done, next_idx = _scan_store_resume(store, persist)
     rows_used = _smoke_row_subset(rows, args.smoke_pairs) if args.smoke else rows
@@ -770,6 +1048,45 @@ def phase_p1_capture(args) -> int:  # noqa: C901 -- capture stream + pilot gate 
     else:
         assert_out_root_headroom(args.out_root, need_gb, phase="p1")
 
+    scratch = args.out_root / "upload_batch"
+    if not (args.smoke or args.skip_upload):
+        # r2 fix (g2 F3 == codex p1-upload-resume-gap): a crash between a shard
+        # write and its 10-shard batch upload leaves shards local-only while the
+        # resume scan marks their rows done — reconcile at entry: any local shard
+        # missing under the Hub prefix re-uploads NOW. This wall is deliberately
+        # NOT charged to the §7.2 pilot's upload component. A missing prefix
+        # (true first run) returns everything-missing and re-uploads whatever is
+        # local (usually nothing).
+        local_bases = sorted(p.name for p in store.glob("pairs_shard*.pt"))
+        if local_bases:
+            from huggingface_hub import HfApi
+
+            expected = [
+                f"{CAPTURE_PREFIX}/{n}" for base in local_bases for n in (base, base[:-3] + ".json")
+            ]
+            stranded = hub.verify_repo_paths_uploaded(
+                HfApi(), HF_DATA_REPO, expected, path_in_repo=CAPTURE_PREFIX
+            )
+            if stranded:
+                bases = sorted(
+                    {
+                        (n[: -len(".json")] + ".pt" if n.endswith(".json") else n)
+                        for n in (Path(m).name for m in stranded)
+                    }
+                )
+                names = [n for base in bases for n in (base, base[:-3] + ".json")]
+                logger.info(
+                    "[p1] upload-reconcile: %d local shard(s) missing on Hub — "
+                    "re-uploading before capture resumes",
+                    len(bases),
+                )
+                _upload_shard_batch(store, names, scratch)
+            else:
+                logger.info(
+                    "[p1] upload-reconcile: all %d local shard(s) present on Hub",
+                    len(local_bases),
+                )
+
     items = _items_from_manifest(pending_rows, ids_by_art)
     logger.info(
         "[p1] capture: %d pending pairs over %d articles (%d/%d shards done), layers=%s",
@@ -780,11 +1097,48 @@ def phase_p1_capture(args) -> int:  # noqa: C901 -- capture stream + pilot gate 
         list(persist),
     )
 
+    model = None
+    pad_id = None
+    probe_moments = None
+    pilot_checked = next_idx > 0  # a resumed run already passed the pilot gate
+    if items:
+        if args.smoke and tiny_dir and not (Path(tiny_dir) / "config.json").exists():
+            ES.make_tiny_model(Path(tiny_dir), layers=args.tiny_layers)
+        model = ES.load_model(tiny_dir)
+        tok = common.get_tokenizer(tiny_dir or common.MODEL_ID)
+        pad_id = tok.pad_token_id
+        assert pad_id is not None, "tokenizer has no pad token id"
+    else:
+        logger.info("[p1] zero pending pairs — capture loop skipped (model never loaded)")
+
+    if items and not pilot_checked:
+        # r2 fix (codex p1-pilot-shortest-shard): run_extraction sorts items
+        # ASCENDING by input length, so shard 1 is the CHEAPEST — project the
+        # capture wall from a per-article cost model wall(article) = L*(a + b*L),
+        # two-point calibrated on the measured shard-1 wall (shortest articles)
+        # + one timed probe batch of the LONGEST articles. Probe records are
+        # discarded (the batch re-runs in the main loop — one duplicated batch);
+        # a 1-item warmup forward runs first so CUDA context/kernel startup does
+        # not inflate the probe point.
+        order_sorted = sorted(range(len(items)), key=lambda j: len(items[j]["input_ids"]))
+        item_lens = [float(len(items[j]["input_ids"])) for j in order_sorted]
+        item_rows = [float(len(items[j]["pairs"])) for j in order_sorted]
+        _ = ES.process_batch(model, [items[order_sorted[0]]], pad_id, "armC", layers=persist)
+        probe_items = [items[j] for j in order_sorted[-min(args.batch_size, len(items)) :]]
+        t_probe = time.time()
+        _ = ES.process_batch(model, probe_items, pad_id, "armC", layers=persist)
+        probe_moments = {
+            "item_lens": item_lens,
+            "item_rows": item_rows,
+            "probe_wall_s": time.time() - t_probe,
+            "probe_T": float(sum(len(it["input_ids"]) for it in probe_items)),
+            "probe_Q": float(sum(len(it["input_ids"]) ** 2 for it in probe_items)),
+            "n_probe_items": len(probe_items),
+        }
+
     shard_names: list[str] = []
     batch_pending: list[str] = []
-    scratch = args.out_root / "upload_batch"
     capture_wall = upload_wall = None
-    pilot_checked = next_idx > 0  # a resumed run already passed the pilot gate
     buf: list[dict] = []
     shard_idx = next_idx
     t_shard = time.time()
@@ -823,7 +1177,14 @@ def phase_p1_capture(args) -> int:  # noqa: C901 -- capture stream + pilot gate 
             if capture_wall is None:
                 capture_wall = time.time() - t_shard
                 _maybe_upload(force=True)  # shard 1 = its own timed 1-shard batch
-                _pilot_gate(args, capture_wall, upload_wall, n_shards_total)
+                _pilot_gate(
+                    args,
+                    capture_wall,
+                    upload_wall,
+                    n_pending_shards,
+                    probe_moments,
+                    args.shard_pairs,
+                )
                 pilot_checked = True
             else:
                 _maybe_upload()
@@ -836,13 +1197,16 @@ def phase_p1_capture(args) -> int:  # noqa: C901 -- capture stream + pilot gate 
             )
             t_shard = time.time()
     if buf:
+        n_tail_rows = len(buf)
         name = _write_one_shard(buf)
         shard_names.append(name)
         batch_pending.append(name)
         if capture_wall is None:
             capture_wall = time.time() - t_shard
             _maybe_upload(force=True)
-            _pilot_gate(args, capture_wall, upload_wall, n_shards_total)
+            _pilot_gate(
+                args, capture_wall, upload_wall, n_pending_shards, probe_moments, n_tail_rows
+            )
             pilot_checked = True
     _maybe_upload(force=True)
     assert pilot_checked or not shard_names, "pilot gate never evaluated"
@@ -863,6 +1227,7 @@ def phase_p1_capture(args) -> int:  # noqa: C901 -- capture stream + pilot gate 
     C79.write_json_atomic(
         args.out_root / "p1_state.json",
         {
+            "regime": _p1_regime(args, persist),
             "n_shards": len(all_names),
             "shard_files": all_names,
             "persist_layers": list(persist),
@@ -875,20 +1240,83 @@ def phase_p1_capture(args) -> int:  # noqa: C901 -- capture stream + pilot gate 
     return 0
 
 
-def _pilot_gate(args, capture_wall: float, upload_wall: float | None, n_shards: int) -> None:
+def _len_moments_for_rows(item_lens: list, item_rows: list, n_rows: float) -> tuple[float, float]:
+    """(ΣL, ΣL²) over the first ``n_rows`` PAIR rows in extraction
+    (ascending-length) order, fractionally weighting the boundary article."""
+    tot_l = tot_q = used = 0.0
+    for length, r in zip(item_lens, item_rows):
+        if used >= n_rows:
+            break
+        w = min(1.0, (n_rows - used) / r) if r else 0.0
+        tot_l += w * length
+        tot_q += w * length * length
+        used += r
+    return tot_l, tot_q
+
+
+def _pilot_gate(
+    args,
+    capture_wall: float,
+    upload_wall: float | None,
+    n_pending_shards: int,
+    probe: dict | None,
+    first_shard_rows: int,
+) -> None:
     """§7.2 capture pilot abort — components timed SEPARATELY, upload charged per
-    10-shard batch (never per shard, the registered anti-pattern)."""
+    10-shard batch (never per shard, the registered anti-pattern).
+
+    r2 fix (codex p1-pilot-shortest-shard): extraction is ascending-length
+    sorted, so shard 1 is the CHEAPEST — a flat ``capture_wall × n_shards``
+    projection understates the wall. The capture component instead uses a
+    per-article cost model wall(article) = L·(a + b·L): two measured points
+    (shard-1 wall over its ΣL/ΣL²; the longest-batch probe wall over its own)
+    solve (a, b), degrading to the pooled linear rate a = ΣW/ΣL, b = 0 when the
+    2×2 system is near-singular or a coefficient goes negative (measurement
+    noise). Falls back to the flat per-shard projection when no probe ran."""
     up = upload_wall or 0.0
-    projected_s = capture_wall * n_shards + up * math.ceil(n_shards / 10)
+    if probe is not None:
+        t1, q1 = _len_moments_for_rows(probe["item_lens"], probe["item_rows"], first_shard_rows)
+        tp, qp, wp = probe["probe_T"], probe["probe_Q"], probe["probe_wall_s"]
+        t_all = float(sum(probe["item_lens"]))
+        q_all = float(sum(le * le for le in probe["item_lens"]))
+        det = t1 * qp - tp * q1
+        a = b = None
+        if abs(det) > 1e-9 * max(t1 * qp, tp * q1, 1.0):
+            a = (capture_wall * qp - wp * q1) / det
+            b = (wp * t1 - capture_wall * tp) / det
+        if a is None or a < 0.0 or b < 0.0:
+            a = (capture_wall + wp) / max(t1 + tp, 1.0)
+            b = 0.0
+            basis = "pooled-linear (two-point solve degenerate/negative)"
+        else:
+            basis = "two-point L*(a+b*L)"
+        projected_capture_s = a * t_all + b * q_all
+        capture_model = {
+            "basis": basis,
+            "a_s_per_token": a,
+            "b_s_per_token_sq": b,
+            "shard1": {"wall_s": capture_wall, "sum_L": t1, "sum_L2": q1},
+            "probe": {"wall_s": wp, "sum_L": tp, "sum_L2": qp, "n_items": probe["n_probe_items"]},
+            "pending_totals": {"sum_L": t_all, "sum_L2": q_all},
+        }
+    else:
+        projected_capture_s = capture_wall * n_pending_shards
+        capture_model = {"basis": "flat per-shard (no probe — resumed entry)"}
+    projected_s = projected_capture_s + up * math.ceil(n_pending_shards / 10)
     budget_s = args.p1_wall_budget_h * 3600
     report = {
         "capture_wall_s_shard1": capture_wall,
         "upload_wall_s_batch1": upload_wall,
-        "n_shards": n_shards,
+        "n_pending_shards": n_pending_shards,
+        "projected_capture_s": projected_capture_s,
         "projected_p1_wall_s": projected_s,
         "budget_s": budget_s,
         "pass": bool(projected_s <= budget_s),
-        "formula": "capture_wall * n_shards + upload_wall * ceil(n_shards/10)",
+        "capture_model": capture_model,
+        "formula": (
+            "capture: per-article L*(a+b*L) over PENDING items (two-point calibrated: "
+            "shard-1 + longest-batch probe); upload: batch-1 wall * ceil(n_pending/10)"
+        ),
     }
     logger.info("[p1] pilot gate: %s", report)
     if args.smoke:
@@ -1136,13 +1564,19 @@ def fit_one_cell(
     art_ids_te: list[str] | None = None,
     n_article_boot: int = 1000,
     block: int | None = None,
+    fac: dict | None = None,
 ) -> dict:
     """One (rung × draw) cell in the scaling_ladder_L19.json cell schema, extended
-    with const_mean + the advisory null (+ per-draw article CI when art_ids given)."""
+    with const_mean + the advisory null (+ per-draw article CI when art_ids given).
+    ``fac`` (a ``_prefix_facs`` state for THIS rung) routes the ridge through the
+    shared-Gram path; None keeps the two-pass ``N1M.fit_ridge``."""
     n_train = len(tr)
     lambdas = _lambdas_for(n_train)
     block = block or N1M.RIDGE_BLOCK
-    pred, fit_meta = N1M.fit_ridge(X, Y, tr, val, te, lambdas, dev, block)
+    if fac is not None:
+        pred, fit_meta = _fit_ridge_from_fac(X, Y, fac, val, te, lambdas, dev, block, n_train)
+    else:
+        pred, fit_meta = N1M.fit_ridge(X, Y, tr, val, te, lambdas, dev, block)
     y_te = _to_f64_np(Y, te)
     ridge_score = PD.score_cell(pred, y_te, n_boot, seed)
     pred_ib = _identity_bias_chunked(X, Y, tr, te)
@@ -1218,7 +1652,156 @@ def _device_parity_gate(X, Y, tr, val, te, *, smoke: bool) -> dict:
     return row
 
 
-def _cell_unit_key(arm: str, layer: int, n: int, draw, tr: np.ndarray, args) -> dict:
+def _eigh_robust(gram: torch.Tensor):
+    """cuda eigh (cuSOLVER syevd) → CPU LAPACK fallback on non-convergence; never
+    jitter the Gram (code-style relocated trap; pytorch#94772 class, #1335)."""
+    try:
+        return torch.linalg.eigh(gram)
+    except torch.linalg.LinAlgError:
+        if gram.device.type == "cpu":
+            raise
+        logger.info("[p2] cuda eigh non-convergence (n=%d) — CPU LAPACK fallback", gram.shape[0])
+        w, v = torch.linalg.eigh(gram.cpu())
+        return w.to(gram.device), v.to(gram.device)
+
+
+def _prefix_facs(X, Y, pool: np.ndarray, rungs, dev, block) -> dict[int, dict]:
+    """ONE incremental raw-moment Gram accumulation pass over the seed-42 prefix
+    ordering (r2 fix, codex p2-shared-gram-missing; plan §4/§9 'prefix rungs
+    share one incremental Gram accumulation pass').
+
+    Accumulates RAW moments S_xx = Σ x xᵀ, S_xy = Σ x yᵀ, Σx, Σy in fp64 on
+    ``dev`` over ``pool[:max(rungs)]`` — each training row is touched ONCE
+    across all requested rungs. At each rung the standardized factorization
+    state ``N1M._ridge_factorize`` would produce for ``tr = pool[:n]`` is
+    derived algebraically, matching the exact ``_train_standardizer``
+    convention (train-stat standardization of X, train-mean centering of Y,
+    UNBIASED n−1 variance, +1e-9 sd epsilon):
+
+      A_std  = (S_xx − n·xmu xmuᵀ) / (xsd xsdᵀ)
+      XtY_std = (S_xy − n·xmu ymuᵀ) / xsd[:, None]
+
+    then one eigh per rung (``_eigh_robust``). λ selection stays PER RUNG
+    (``_fit_ridge_from_fac`` — the same val-λ sweep as ``fit_ridge``, run off
+    the shared state). Per-rung CHECKPOINTING stays at the cell grain: callers
+    request only rungs whose unit JSON is absent, and an empty request skips
+    the pass entirely. Numerical parity vs the two-pass ``fit_ridge`` is
+    asserted at p2 entry (``_gram_parity_gate``, |ΔR²| ≤ 1e-6)."""
+    rungs = sorted({int(v) for v in rungs})
+    if not rungs:
+        return {}
+    assert rungs[-1] <= len(pool), (rungs[-1], len(pool))
+    hdim = X.shape[1]
+    ddim = Y.shape[1]
+    s_xx = torch.zeros((hdim, hdim), dtype=torch.float64, device=dev)
+    s_xy = torch.zeros((hdim, ddim), dtype=torch.float64, device=dev)
+    s_x = torch.zeros(hdim, dtype=torch.float64, device=dev)
+    s_y = torch.zeros(ddim, dtype=torch.float64, device=dev)
+    facs: dict[int, dict] = {}
+    pos = 0
+    t0 = time.time()
+    for n in rungs:
+        seg = pool[pos:n]
+        for s in range(0, len(seg), block):
+            idx = seg[s : s + block]
+            xb = torch.as_tensor(X[idx], dtype=torch.float64, device=dev)
+            yb = torch.as_tensor(Y[idx], dtype=torch.float64, device=dev)
+            s_xx += xb.T @ xb
+            s_xy += xb.T @ yb
+            s_x += xb.sum(0)
+            s_y += yb.sum(0)
+        pos = n
+        nn = float(n)
+        xmu = s_x / nn
+        var = (torch.diagonal(s_xx) - nn * xmu * xmu) / max(1, n - 1)
+        xsd = torch.clamp(var, min=0.0).sqrt() + 1e-9
+        ymu = s_y / nn
+        a_std = (s_xx - nn * torch.outer(xmu, xmu)) / torch.outer(xsd, xsd)
+        xty_std = (s_xy - nn * torch.outer(xmu, ymu)) / xsd[:, None]
+        s_eig, u = _eigh_robust(a_std)
+        facs[n] = {
+            "U": u,
+            "s_eig": torch.clamp(s_eig, min=0.0),
+            "UtXtY": u.T @ xty_std,
+            "xmu": xmu,
+            "xsd": xsd,
+            "ymu": ymu,
+        }
+        logger.info("[p2] prefix-gram rung n=%d factorized (elapsed=%.0fs)", n, time.time() - t0)
+    return facs
+
+
+def _fit_ridge_from_fac(X, Y, fac: dict, val, te, lambdas, dev, block, n_train: int):
+    """``fit_ridge``'s val-λ selection + test predict off a PRE-BUILT
+    factorization state (the shared-prefix-Gram path) — same selection loop,
+    same predictor (``N1M._ridge_predict_one``), same edge flags."""
+    best_lam, best_vr2 = float(lambdas[0]), -np.inf
+    for lam in lambdas:
+        pv = N1M._ridge_predict_one(X, val, fac, lam, dev, block)
+        vr2 = N1M.PR._pooled_r2(pv, Y[val])
+        if np.isfinite(vr2) and vr2 > best_vr2:
+            best_vr2, best_lam = vr2, float(lam)
+    edge = None
+    if np.isclose(best_lam, float(lambdas[0])):
+        edge = "low"
+    elif np.isclose(best_lam, float(lambdas[-1])):
+        edge = "high"
+    pred_te = N1M._ridge_predict_one(X, te, fac, best_lam, dev, block)
+    return pred_te, {
+        "n_train": int(n_train),
+        "selection": "val-lambda (shared prefix Gram, raw-moment incremental)",
+        "selected_lambda": best_lam,
+        "val_r2_at_selected": float(best_vr2),
+        "lambda_grid_edge": edge,
+        "ridge_block": int(block),
+    }
+
+
+def _gram_parity_gate(X, Y, pool: np.ndarray, val, te, dev, block) -> dict:
+    """r2 fix (codex p2-shared-gram-missing): assert the raw-moment shared-Gram
+    path (``_prefix_facs`` + ``_fit_ridge_from_fac``) matches the two-pass
+    ``N1M.fit_ridge`` at rung min(50, |pool|) — |ΔR²| ≤ 1e-6 on the test pool
+    (the §7.3 tolerance convention). Runs at p2 entry in BOTH modes."""
+    n0 = int(min(50, len(pool)))
+    tr = pool[:n0]
+    lambdas = _lambdas_for(n0)
+    pred_a, meta_a = N1M.fit_ridge(X, Y, tr, val, te, lambdas, dev, block)
+    fac = _prefix_facs(X, Y, pool, [n0], dev, block)[n0]
+    pred_b, meta_b = _fit_ridge_from_fac(X, Y, fac, val, te, lambdas, dev, block, n0)
+    y_te = _to_f64_np(Y, te)
+    r2_a = float(F79._recon_point(pred_a, y_te)[0])
+    r2_b = float(F79._recon_point(pred_b, y_te)[0])
+    row = {
+        "n": n0,
+        "r2_fit_ridge": r2_a,
+        "r2_shared_gram": r2_b,
+        "abs_diff": abs(r2_a - r2_b),
+        "lambda_fit_ridge": meta_a["selected_lambda"],
+        "lambda_shared_gram": meta_b["selected_lambda"],
+        "tol": 1e-6,
+        "pass": bool(abs(r2_a - r2_b) <= 1e-6),
+    }
+    if not row["pass"]:
+        raise RuntimeError(f"[p2] GRAM PARITY GATE FAILED: {row}")
+    logger.info("[p2] gram parity gate PASS: %s", row)
+    return row
+
+
+def _arm_fp(base_fp: dict, pool_entry: dict) -> dict:
+    """Per-arm fingerprint block for the cell unit key: the shared store/manifest
+    hashes + this arm's eval-selection hashes (file-read/derived-int inputs only
+    — machine-stable, #1336)."""
+    return {
+        **base_fp,
+        "test_sel_sha256": F79._sha_ids(np.asarray(pool_entry["test"], dtype=np.int64)),
+        "val_sel_sha256": F79._sha_ids(np.asarray(pool_entry["val"], dtype=np.int64)),
+    }
+
+
+def _cell_unit_key(arm: str, layer: int, n: int, draw, tr: np.ndarray, args, fp: dict) -> dict:
+    """Cell resume key over EVERY output-affecting regime knob (r2 fix, codex
+    p2-checkpoint-regime-key + g2 F7: adds n_article_boot, device, and the
+    store/manifest/test/val fingerprints)."""
     return {
         "arm": arm,
         "layer": int(layer),
@@ -1229,24 +1812,41 @@ def _cell_unit_key(arm: str, layer: int, n: int, draw, tr: np.ndarray, args) -> 
         "lambda_grid": _lambda_grid_params(n),
         "n_boot": int(args.n_boot),
         "n_null": int(args.n_null),
+        "n_article_boot": int(args.n_article_boot),
+        "device": str(args.device),
         "train_sel_sha256": F79._sha_ids(np.asarray(tr, dtype=np.int64)),
+        "fingerprints": fp,
     }
 
 
-def _run_cell_checkpointed(units_dir: Path, key: dict, fit_fn) -> dict:
-    """Per-cell checkpoint: skip when the unit JSON's key matches (params-keyed)."""
+def _cell_ckpt_hit(units_dir: Path, key: dict) -> bool:
+    """True iff the cell's unit JSON exists with a MATCHING key — used to decide
+    which prefix rungs the shared-Gram pass must factorize (a checkpointed rung
+    never re-accumulates)."""
+    name = f"{key['arm']}_L{key['layer']}_n{key['n_train']}_d{key['draw']}.json".replace("/", "_")
+    path = units_dir / name
+    if not path.exists():
+        return False
+    return json.loads(path.read_text()).get("unit_key") == key
+
+
+def _run_cell_checkpointed(units_dir: Path, key: dict, fit_fn, unit_idx: int, n_units: int) -> dict:
+    """Per-cell checkpoint: skip when the unit JSON's key matches (params-keyed).
+    Progress line carries ``unit k/N`` (r2 fix, g2 F7 / codex regime-key)."""
     name = f"{key['arm']}_L{key['layer']}_n{key['n_train']}_d{key['draw']}.json".replace("/", "_")
     path = units_dir / name
     if path.exists():
         prev = json.loads(path.read_text())
         if prev.get("unit_key") == key:
-            logger.info("[p2] resume-skip %s", name)
+            logger.info("[p2] unit %d/%d resume-skip %s", unit_idx, n_units, name)
             return prev["cell"]
     t0 = time.time()
     cell = fit_fn()
     C79.write_json_atomic(path, {"unit_key": key, "cell": cell})
     logger.info(
-        "[p2] unit %s n=%d r2=%.4f elapsed=%.0fs",
+        "[p2] unit %d/%d %s n=%d r2=%.4f elapsed=%.0fs",
+        unit_idx,
+        n_units,
         name,
         key["n_train"],
         cell["ridge"]["test_r2"],
@@ -1291,6 +1891,12 @@ def _pool_indices(rows: list[dict], row_pos: dict) -> dict:
 def _draw_indices(pool: np.ndarray, n: int, draw) -> np.ndarray:
     """Parent draw convention: seeded subset at small rungs, file-order prefix above."""
     if draw == "prefix":
+        # r2 fix (g2 F1): a prefix draw over an undersized pool would silently
+        # truncate the rung — refuse loud (partial store / off-grid rung).
+        assert len(pool) >= n, (
+            f"prefix draw n={n} exceeds pool size {len(pool)} — partial capture "
+            f"store or off-grid rung"
+        )
         return pool[:n]
     rng = np.random.default_rng(19010000 + n * 10 + int(draw))
     return pool[rng.choice(len(pool), size=n, replace=False)]
@@ -1300,19 +1906,44 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
     """Per rung × draw ridge/identity+bias/const fits + null + gap intervals."""
     C79.phase("p2_fits")
     store = args.out_root / "store"
-    assert_out_root_headroom(args.out_root, 4.0, phase="p2")
     man_dir = _manifest_dir(args)
     rows, _ids_by_art, meta = _load_manifest(man_dir)
+    _validate_manifest(rows, _ids_by_art, meta, args, phase="p2")
+    eval_out = Path(args.eval_out)
+
+    # r2 fix (codex p1-phase-idempotency, p2 shape): regime-keyed fast-skip when
+    # both eval JSONs exist for THIS regime — a pod_all re-entry after p3's
+    # store purge must not re-fit (the purged store could not serve it anyway).
+    p2_state_p = args.out_root / "p2_state.json"
+    if (
+        p2_state_p.exists()
+        and (eval_out / SCALING_JSON).exists()
+        and (eval_out / SECONDARY_JSON).exists()
+    ):
+        st = json.loads(p2_state_p.read_text())
+        if st.get("regime") == _p2_regime(args, meta):
+            logger.info("[p2] resume-skip: eval JSONs complete per p2_state.json (%s)", eval_out)
+            return 0
+
+    assert_out_root_headroom(args.out_root, 4.0, phase="p2")
     units_dir = args.out_root / "fits_units"
     units_dir.mkdir(parents=True, exist_ok=True)
-    eval_out = Path(args.eval_out)
     eval_out.mkdir(parents=True, exist_ok=True)
 
     sidecar0 = sorted(store.glob("pairs_shard*.json"))
     assert sidecar0, f"no capture shards under {store} — run p1 first"
     persist = tuple(json.loads(sidecar0[0].read_text())["layers"])
     smoke = bool(args.smoke)
-    headline = HEADLINE_LAYER if HEADLINE_LAYER in persist else persist[2]
+    if smoke:
+        headline = HEADLINE_LAYER if HEADLINE_LAYER in persist else persist[2]
+    else:
+        # r2 fix (codex production-layer-fallback): the persist[2] headline
+        # fallback is a SMOKE (M4 tiny-model remap) accommodation only.
+        assert persist == PROD_PERSIST_LAYERS, (
+            f"[p2] production store persists layers {persist}, expected "
+            f"{PROD_PERSIST_LAYERS} — a smoke/remapped store is refused in production mode"
+        )
+        headline = HEADLINE_LAYER
     companions = tuple(li for li in persist if li != headline)
     dev = torch.device(args.device)
 
@@ -1329,6 +1960,14 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
     X, Y, row_ids, _arts = _load_layer_arrays(store, headline, persist)
     row_pos = {rid: k for k, rid in enumerate(row_ids)}
     manifest_captured = [r for r in rows if r["row_id"] in row_pos]
+    if not smoke:
+        # r2 fix (g2 F1): a PARTIAL capture store silently narrows every fit
+        # pool — every manifest row must be present in the store in production.
+        assert len(manifest_captured) == len(rows), (
+            f"[p2] partial capture store: {len(rows) - len(manifest_captured)} of "
+            f"{len(rows)} manifest rows absent from the store row set — complete "
+            f"p1 before p2 (§7.1)"
+        )
     pools = _pool_indices(manifest_captured, row_pos)
     dot = pools["."]
     logger.info(
@@ -1341,17 +1980,87 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
         common_rungs,
     )
     assert len(dot["test"]) > 1 and len(dot["val"]) > 0, "degenerate eval pools"
+    base_fp = {
+        "store_rows_sha256": hashlib.sha256("\n".join(row_ids).encode()).hexdigest(),
+        "manifest_regime_sha256": hashlib.sha256(
+            json.dumps(meta["regime_key"], sort_keys=True).encode()
+        ).hexdigest(),
+    }
+    fp_dot = _arm_fp(base_fp, dot)
 
     # §7.3 device parity gate at entry (rung-50/draw-0).
     n0 = min(50, len(dot["train"]))
     parity = _device_parity_gate(
         X, Y, _draw_indices(dot["train"], n0, 0), dot["val"], dot["test"], smoke=smoke
     )
+    # r2: shared-Gram-vs-fit_ridge parity gate (|ΔR²| ≤ 1e-6), both modes.
+    gram_parity = _gram_parity_gate(
+        X, Y, dot["train"], dot["val"], dot["test"], dev, N1M.RIDGE_BLOCK
+    )
+
+    # Planned-unit pre-pass (r2: `unit k/N` progress lines need N up front; the
+    # rung lists are hoisted here and CONSUMED verbatim by the arm loops below).
+    comp_rungs = sorted({n for n in (2500, 25000, top_common) if n and n in common_rungs})
+    if smoke:
+        comp_rungs = [top_common]  # one tiny companion cell per layer (arm-class coverage)
+    rungs_by_type: dict[str, list[int]] = {}
+    for t in ("?", "!"):
+        pool_t = pools[t]
+        yield_t = len(pool_t["train"])
+        rungs_t = [g for g in BANKED_CHAT_GRID if g <= yield_t][-3:]
+        if smoke:
+            # Smallest feasible rung; when even the smallest banked size exceeds
+            # the smoke yield, one OFF-grid cell at the realized yield keeps the
+            # arm class exercised (robustness arm only — the §7.1 grid semantics
+            # bind the HEADLINE series, asserted above).
+            rungs_t = rungs_t[:1] if rungs_t else ([yield_t] if yield_t >= 8 else [])
+        if len(pool_t["test"]) < 2 or len(pool_t["val"]) < 1:
+            rungs_t = []
+        rungs_by_type[t] = rungs_t
+    pooled = pools["pooled"]
+    bridge_rungs = [n for n in common_rungs if n <= POOLED_BRIDGE_MAX_RUNG]
+    bridge_ok = bool(
+        bridge_rungs
+        and len(pooled["test"]) >= 2
+        and len(pooled["val"]) >= 1
+        and len(pooled["train"]) >= bridge_rungs[-1]
+    )
+    per_art_count: Counter = Counter()
+    diverse_positions = []
+    for r in dot["train_rows"]:
+        if per_art_count[r["article_id"]] < GROUP_DIVERSITY_MAX_PER_ARTICLE:
+            per_art_count[r["article_id"]] += 1
+            diverse_positions.append(row_pos[r["row_id"]])
+    diverse_pool = np.asarray(diverse_positions, dtype=np.int64)
+    n_gd = min(GROUP_DIVERSITY_N, len(diverse_pool), len(dot["train"]))
+    if smoke:
+        n_gd = min(n_gd, 50)
+    n_units = (
+        sum(len(SMALL_DRAWS) if n in SMALL_RUNGS else 1 for n in common_rungs)
+        + len(companions) * len(comp_rungs)
+        + sum(len(v) for v in rungs_by_type.values())
+        + (1 if bridge_ok else 0)
+        + (2 if n_gd >= 2 else 0)
+    )
+    unit_counter = itertools.count(1)
+    logger.info("[p2] planned units: %d", n_units)
 
     chat_tbl = _chat_ci_table()
     n_boot = args.n_boot
     n_null = args.n_null
     n_aboot = args.n_article_boot
+    # r2 fix (codex p2-shared-gram-missing): headline prefix rungs share ONE
+    # incremental Gram pass — only rungs without a matching checkpoint factorize.
+    hl_prefix_needed = [
+        n
+        for n in common_rungs
+        if n not in SMALL_RUNGS
+        and not _cell_ckpt_hit(
+            units_dir,
+            _cell_unit_key("dot", headline, n, "prefix", dot["train"][:n], args, fp_dot),
+        )
+    ]
+    hl_facs = _prefix_facs(X, Y, dot["train"], hl_prefix_needed, dev, N1M.RIDGE_BLOCK)
     cells: list[dict] = []
     gap_entries: list[dict] = []
     for n in common_rungs:
@@ -1359,11 +2068,12 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
         rung_cells = []
         for d in draws:
             tr = _draw_indices(dot["train"], n, d)
-            key = _cell_unit_key("dot", headline, n, d, tr, args)
+            key = _cell_unit_key("dot", headline, n, d, tr, args, fp_dot)
+            fac = hl_facs.get(n) if d == "prefix" else None
             cell = _run_cell_checkpointed(
                 units_dir,
                 key,
-                lambda tr=tr, d=d: fit_one_cell(
+                lambda tr=tr, d=d, fac=fac: fit_one_cell(
                     X,
                     Y,
                     tr,
@@ -1377,7 +2087,10 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
                     draw=d,
                     art_ids_te=dot["test_articles"],
                     n_article_boot=n_aboot,
+                    fac=fac,
                 ),
+                next(unit_counter),
+                n_units,
             )
             # train-article count for this draw (group-n reporting, §6)
             tr_set = set(tr.tolist())
@@ -1412,10 +2125,16 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
         "lambdas": {
             "n_le_50k": _lambda_grid_params(50),
             "n_gt_50k": _lambda_grid_params(100_000),
-            "selection": "val-lambda (primal streaming, N1M.fit_ridge)",
+            "selection": (
+                "val-lambda; prefix rungs via ONE shared raw-moment Gram accumulation "
+                "(per-rung standardization + eigh + lambda sweep off the accumulated "
+                "moments, gram_parity_gate-asserted vs N1M.fit_ridge); seeded small-rung "
+                "draws via the two-pass N1M.fit_ridge"
+            ),
         },
         "knn_pool": f"held-out test targets (pool == true, n={len(dot['test'])})",
         "device_parity_gate": parity,
+        "gram_parity_gate": gram_parity,
         "smoke": smoke,
         "metadata": _meta("p2-fits", {"seed": args.seed, "device": args.device}),
         "note": (
@@ -1440,23 +2159,32 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
         "yield_gate": meta["yield_gate"],
         "smoke": smoke,
     }
-    comp_rungs = sorted({n for n in (2500, 25000, top_common) if n and n in common_rungs})
-    if smoke:
-        comp_rungs = [top_common]  # one tiny companion cell per layer (arm-class coverage)
+    hl_facs = None  # free the shared-Gram states with the headline arrays
     del X, Y  # free the headline layer before companion passes
     for li in companions:
         Xl, Yl, row_ids_l, _ = _load_layer_arrays(store, li, persist)
         assert row_ids_l == row_ids, "shard row order drifted between layer passes"
+        comp_prefix_needed = [
+            n
+            for n in comp_rungs
+            if n not in SMALL_RUNGS
+            and not _cell_ckpt_hit(
+                units_dir,
+                _cell_unit_key("layer", li, n, "prefix", dot["train"][:n], args, fp_dot),
+            )
+        ]
+        comp_facs = _prefix_facs(Xl, Yl, dot["train"], comp_prefix_needed, dev, N1M.RIDGE_BLOCK)
         comp_cells = []
         for n in comp_rungs:
             d = 0 if n in SMALL_RUNGS else "prefix"
             tr = _draw_indices(dot["train"], n, d)
-            key = _cell_unit_key("layer", li, n, d, tr, args)
+            key = _cell_unit_key("layer", li, n, d, tr, args, fp_dot)
+            fac = comp_facs.get(n) if d == "prefix" else None
             comp_cells.append(
                 _run_cell_checkpointed(
                     units_dir,
                     key,
-                    lambda tr=tr, d=d, li=li, Xl=Xl, Yl=Yl: fit_one_cell(
+                    lambda tr=tr, d=d, li=li, Xl=Xl, Yl=Yl, fac=fac: fit_one_cell(
                         Xl,
                         Yl,
                         tr,
@@ -1468,36 +2196,43 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
                         seed=args.seed,
                         layer=li,
                         draw=d,
+                        fac=fac,
                     ),
+                    next(unit_counter),
+                    n_units,
                 )
             )
         secondary["layer_companions"][str(li)] = comp_cells
-        del Xl, Yl
+        del Xl, Yl, comp_facs
 
     X, Y, row_ids2, _ = _load_layer_arrays(store, headline, persist)
     assert row_ids2 == row_ids, "shard row order drifted on reload"
     for t, slug in (("?", "qm"), ("!", "ex")):
         pool_t = pools[t]
         yield_t = len(pool_t["train"])
-        rungs_t = [g for g in BANKED_CHAT_GRID if g <= yield_t][-3:]
-        if smoke:
-            # Smallest feasible rung; when even the smallest banked size exceeds
-            # the smoke yield, one OFF-grid cell at the realized yield keeps the
-            # arm class exercised (robustness arm only — the §7.1 grid semantics
-            # bind the HEADLINE series, asserted above).
-            rungs_t = rungs_t[:1] if rungs_t else ([yield_t] if yield_t >= 8 else [])
-        if len(pool_t["test"]) < 2 or len(pool_t["val"]) < 1:
-            logger.info("[p2] %s arm skipped: degenerate eval pool", slug)
-            rungs_t = []
+        rungs_t = rungs_by_type[t]  # hoisted to the planned-unit pre-pass (r2)
+        if not rungs_t:
+            logger.info("[p2] %s arm skipped: degenerate eval pool or zero feasible rungs", slug)
+        fp_t = _arm_fp(base_fp, pool_t)
+        t_prefix_needed = [
+            n
+            for n in rungs_t
+            if not _cell_ckpt_hit(
+                units_dir,
+                _cell_unit_key(slug, headline, n, "prefix", pool_t["train"][:n], args, fp_t),
+            )
+        ]
+        t_facs = _prefix_facs(X, Y, pool_t["train"], t_prefix_needed, dev, N1M.RIDGE_BLOCK)
         t_cells = []
         for n in rungs_t:
             tr = pool_t["train"][:n]
-            key = _cell_unit_key(slug, headline, n, "prefix", tr, args)
+            key = _cell_unit_key(slug, headline, n, "prefix", tr, args, fp_t)
+            fac = t_facs.get(n)
             t_cells.append(
                 _run_cell_checkpointed(
                     units_dir,
                     key,
-                    lambda tr=tr, pool_t=pool_t: fit_one_cell(
+                    lambda tr=tr, pool_t=pool_t, fac=fac: fit_one_cell(
                         X,
                         Y,
                         tr,
@@ -1509,7 +2244,10 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
                         seed=args.seed,
                         layer=headline,
                         draw="prefix",
+                        fac=fac,
                     ),
+                    next(unit_counter),
+                    n_units,
                 )
             )
         secondary["second_types"][slug] = {
@@ -1518,17 +2256,10 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
             "eval_pool": {"test": int(len(pool_t["test"])), "val": int(len(pool_t["val"]))},
             "cells": t_cells,
         }
-    pooled = pools["pooled"]
-    bridge_rungs = [n for n in common_rungs if n <= POOLED_BRIDGE_MAX_RUNG]
-    if (
-        bridge_rungs
-        and len(pooled["test"]) >= 2
-        and len(pooled["val"]) >= 1
-        and len(pooled["train"]) >= bridge_rungs[-1]
-    ):
+    if bridge_ok:
         n = bridge_rungs[-1]
         tr = pooled["train"][:n]
-        key = _cell_unit_key("pooled", headline, n, "prefix", tr, args)
+        key = _cell_unit_key("pooled", headline, n, "prefix", tr, args, _arm_fp(base_fp, pooled))
         secondary["pooled_bridge"] = _run_cell_checkpointed(
             units_dir,
             key,
@@ -1545,23 +2276,27 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
                 layer=headline,
                 draw="prefix",
             ),
+            next(unit_counter),
+            n_units,
         )
-    # Group-diversity pair: ≤6 anchors/article vs unrestricted at matched n.
-    per_art_count: Counter = Counter()
-    diverse_positions = []
-    for r in dot["train_rows"]:
-        if per_art_count[r["article_id"]] < GROUP_DIVERSITY_MAX_PER_ARTICLE:
-            per_art_count[r["article_id"]] += 1
-            diverse_positions.append(row_pos[r["row_id"]])
-    diverse_pool = np.asarray(diverse_positions, dtype=np.int64)
-    n_gd = min(GROUP_DIVERSITY_N, len(diverse_pool), len(dot["train"]))
-    if smoke:
-        n_gd = min(n_gd, 50)
+    else:
+        # r2 fix (g2 F8): the pooled-bridge skip is LOUD + recorded, never silent.
+        skip_reason = {
+            "bridge_rungs_in_common": bridge_rungs,
+            "n_test": int(len(pooled["test"])),
+            "n_val": int(len(pooled["val"])),
+            "n_train": int(len(pooled["train"])),
+            "needed_train": int(bridge_rungs[-1]) if bridge_rungs else None,
+        }
+        logger.info("[p2] pooled bridge SKIPPED: %s", skip_reason)
+        secondary["pooled_bridge_skip_reason"] = skip_reason
+    # Group-diversity pair: ≤6 anchors/article vs unrestricted at matched n
+    # (diverse_pool / n_gd hoisted to the planned-unit pre-pass, r2).
     if n_gd >= 2:
         gd = {}
         for name, pool in (("diverse_le6", diverse_pool), ("unrestricted", dot["train"])):
             tr = pool[:n_gd]
-            key = _cell_unit_key(f"gd_{name}", headline, n_gd, "prefix", tr, args)
+            key = _cell_unit_key(f"gd_{name}", headline, n_gd, "prefix", tr, args, fp_dot)
             gd[name] = _run_cell_checkpointed(
                 units_dir,
                 key,
@@ -1578,6 +2313,8 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
                     layer=headline,
                     draw="prefix",
                 ),
+                next(unit_counter),
+                n_units,
             )
         secondary["group_diversity"] = {
             "n_matched": int(n_gd),
@@ -1586,11 +2323,72 @@ def phase_p2_fits(args) -> int:  # noqa: C901 -- rung/arm enumeration + assembly
         }
     secondary["metadata"] = _meta("p2-fits-secondary", {"seed": args.seed})
     C79.write_json_atomic(eval_out / SECONDARY_JSON, secondary)
+    # r2 (codex p1-phase-idempotency, p2 shape): completion state for the fast-skip.
+    C79.write_json_atomic(
+        p2_state_p,
+        {
+            "regime": _p2_regime(args, meta),
+            "scaling_json": str(eval_out / SCALING_JSON),
+            "secondary_json": str(eval_out / SECONDARY_JSON),
+            "store_rows_sha256": base_fp["store_rows_sha256"],
+            "n_units": int(n_units),
+            "metadata": _meta("p2-state"),
+        },
+    )
     logger.info("[p2] wrote %s + %s", eval_out / SCALING_JSON, eval_out / SECONDARY_JSON)
     return 0
 
 
 # ── p3_publish ──────────────────────────────────────────────────────────────────
+
+
+def _git_push_verified(env: dict, branch: str = "issue-1901-btokctl") -> None:
+    """r2 fix (codex pod-finalization-contract): p3's result push can race
+    concurrent pushes to the issue branch — fetch + rebase (autostash) + bounded
+    retry + LANDED verification (``rev-list --count origin/<branch>..HEAD`` == 0
+    after a fresh fetch), per `.claude/rules/pod-side-reporting.md` § Result-push
+    verification contract (#1880)."""
+    for attempt in range(1, 4):
+        subprocess.run(["git", "fetch", "origin", branch], cwd=PROJECT_ROOT, check=True, env=env)
+        subprocess.run(
+            ["git", "rebase", "--autostash", f"origin/{branch}"],
+            cwd=PROJECT_ROOT,
+            check=True,
+            env=env,
+        )
+        push = subprocess.run(
+            ["git", "push", "origin", f"HEAD:{branch}"], cwd=PROJECT_ROOT, env=env
+        )
+        if push.returncode == 0:
+            subprocess.run(
+                ["git", "fetch", "origin", branch], cwd=PROJECT_ROOT, check=True, env=env
+            )
+            behind = subprocess.run(
+                ["git", "rev-list", "--count", f"origin/{branch}..HEAD"],
+                cwd=PROJECT_ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            n_unlanded = int(behind.stdout.strip())
+            if n_unlanded == 0:
+                logger.info(
+                    "[p3] push landed + verified on origin/%s (attempt %d)", branch, attempt
+                )
+                return
+            logger.warning(
+                "[p3] push rc=0 but %d commit(s) not on origin/%s — retrying",
+                n_unlanded,
+                branch,
+            )
+        else:
+            logger.warning(
+                "[p3] push attempt %d rejected (rc=%d) — fetch+rebase retry",
+                attempt,
+                push.returncode,
+            )
+    raise RuntimeError(f"[p3] git push to {branch} failed to LAND after 3 fetch+rebase attempts")
 
 
 def phase_p3_publish(args) -> int:
@@ -1626,13 +2424,8 @@ def phase_p3_publish(args) -> int:
                 check=True,
                 env=env,
             )
-        subprocess.run(
-            ["git", "push", "origin", "HEAD:issue-1901-btokctl"],
-            cwd=PROJECT_ROOT,
-            check=True,
-            env=env,
-        )
-        logger.info("[p3] eval JSONs committed + pushed to issue-1901-btokctl")
+        _git_push_verified(env)
+        logger.info("[p3] eval JSONs committed + push-verified to issue-1901-btokctl")
     elif args.no_git_push:
         logger.warning("[p3] git-less lane: push skipped (--no-git-push); HF mirror is canonical")
     else:
@@ -1703,6 +2496,13 @@ def phase_fig(args) -> int:
     assert sec_p.exists(), f"missing {sec_p}"
     btok = json.loads(btok_p.read_text())
     secondary = json.loads(sec_p.read_text())
+    if not args.smoke:
+        # r2 fix (codex production-layer-fallback, fig leg): a smoke-mode eval
+        # JSON must never feed the production paper figure.
+        assert not btok.get("smoke"), f"[fig] {btok_p} is a SMOKE artifact — refused in production"
+        assert not secondary.get("smoke"), (
+            f"[fig] {sec_p} is a SMOKE artifact — refused in production"
+        )
 
     committed_meta_p = PROJECT_ROOT / "figures/paper/c1_scaling_train_pool.meta.json"
     committed = json.loads(committed_meta_p.read_text())
@@ -1839,6 +2639,12 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--smoke-articles", type=int, default=50)
     ap.add_argument(
+        "--b0-chunk-articles",
+        type=int,
+        default=2000,
+        help="b0: raw articles per persisted build chunk (chunk-grain resume, r2)",
+    )
+    ap.add_argument(
         "--smoke-pairs",
         type=int,
         default=64,
@@ -1911,8 +2717,33 @@ def main() -> int:
         args.n_article_boot = min(args.n_article_boot, 50)
         if args.device == "cuda" and not torch.cuda.is_available():
             args.device = "cpu"
+        # r2 fix (g2 F5): smoke never writes the production eval/figure namespaces.
+        if args.phase in ("p2_fits", "p3_publish", "pod_all", "fig"):
+            assert Path(args.eval_out).resolve() != DEFAULT_EVAL_OUT.resolve(), (
+                "--smoke with the default --eval-out would write into the production "
+                "eval_results namespace — pass a scratch --eval-out"
+            )
+        if args.phase == "fig":
+            assert args.fig_stem != "c1_scaling_train_pool", (
+                "--smoke with the default --fig-stem would re-render the committed "
+                "paper figure — pass a scratch --fig-stem"
+            )
     rc = PHASES[args.phase](args)
     if rc == 0:
+        # r2 fix (codex pod-finalization-contract): versioned terminal result
+        # sentinel BEFORE the reserved [phase=done] line (pod-side-reporting.md
+        # requirement 1; smoke runs write the epm:smoke-result kind, never
+        # epm:results — requirement 2's smoke shape).
+        C79.write_sentinel(
+            "epm:smoke-result" if args.smoke else "epm:results",
+            f"issue1901 boundary-token control: phase {args.phase} complete (rc=0)",
+            task_id=1901,
+            extra={
+                "gate": f"boundary-ctl-{args.phase}",
+                "blocks_pipeline": False,
+                "smoke": bool(args.smoke),
+            },
+        )
         C79.phase("done")
     return rc
 
@@ -1920,8 +2751,23 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         _rc = main()
-    except SystemExit as _e:  # designed halts (RC_PILOT_HALT) keep their rc
-        _rc = int(_e.code or 0)
+    except SystemExit as _e:  # designed halts (RC_PILOT_HALT) + argparse/usage exits
+        _code = _e.code
+        if _code is None:
+            _rc = 0
+        elif isinstance(_code, int):
+            _rc = _code
+        else:
+            # r2 fix (g2 F4): a str SystemExit (the --phase usage message) prints
+            # like the interpreter default and exits 1 — never int(str) ValueError.
+            print(_code, file=sys.stderr)
+            _rc = 1
+    except BaseException:  # noqa: BLE001 -- r2 fix (g2 F2): every crash reaches os._exit
+        # Without this, an uncaught exception unwinds past the flush/os._exit tail
+        # into interpreter finalization — the exact native-teardown hang the
+        # os._exit terminal exists to skip. Traceback first, then rc=1.
+        traceback.print_exc()
+        _rc = 1
     sys.stdout.flush()
     sys.stderr.flush()
     # os._exit, not sys.exit: with the driver's import stack loaded, post-
