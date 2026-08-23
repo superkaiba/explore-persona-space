@@ -32,6 +32,11 @@
 #     NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
 #     bash scripts/issue1345_char_phasef_driver.sh > logs/i1345_phasef.log 2>&1 &
 #
+# #2479 addendum: after the per-cell loop, a PRODUCTION panel run (panel env
+# set, --max-rows 0, no --pilot-outdir) UNCONDITIONALLY runs the equalized-n
+# refit pass (plan §5): n_eq = min n_matched across surviving char_2479_*_op
+# primary ladders, each refit at --max-rows n_eq from the KEPT slice caches.
+#
 # Usage:
 #   bash scripts/issue1345_char_phasef_driver.sh [--plan] [--cells v1 v2 ...]
 #        [--stage-root P] [--cache-dir P] [--out-dir P] [--max-rows N]
@@ -249,6 +254,8 @@ rc=0
 n_ok=0
 n_skip=0
 n_fail=0
+T_START=$(date +%s)
+unit=0
 
 FILL_ARGS=(--stage-root "$STAGE_ROOT" --cache-dir "$CACHE_DIR" --out-dir "$OUT_DIR")
 if [ "$MAX_ROWS" -gt 0 ]; then FILL_ARGS+=(--max-rows "$MAX_ROWS"); fi
@@ -256,6 +263,7 @@ if [ -n "$PILOT_OUTDIR" ]; then FILL_ARGS+=(--pilot-outdir "$PILOT_OUTDIR"); fi
 
 for spec in "${CELLS[@]}"; do
   IFS='|' read -r v src model <<< "$spec"
+  unit=$((unit + 1))
   tsdir="${STAGE_ROOT}/${v}_turnstore"
   if cell_outputs_complete "$v" "$src" "$model"; then
     # r2 review Minor 1: a kill in the fits-done -> delete window leaves the
@@ -274,6 +282,9 @@ for spec in "${CELLS[@]}"; do
     echo "[cell] ${v}: all 3 outputs exist — skipped (resume; nothing staged)"
     CELL_RC[$v]="skipped-complete"
     n_skip=$((n_skip + 1))
+    # r2 item 12: per-unit progress line (code-style intra-phase T2 contract) —
+    # emitted for skipped cells too so k/N always reaches N.
+    echo "[p5] unit ${unit}/${#CELLS[@]} ${v} elapsed=$(( $(date +%s) - T_START ))s (skipped-complete)"
     continue
   fi
   assert_disk_floor "before staging ${v}"
@@ -338,12 +349,86 @@ for spec in "${CELLS[@]}"; do
     if [ "$rc" -eq 0 ]; then rc="$cell_rc"; fi
   fi
   echo "[cell] ${v} done rc=${cell_rc} wall $(( $(date +%s) - t0 ))s ($(free_gb_at "$STAGE_ROOT") GiB free)"
+  echo "[p5] unit ${unit}/${#CELLS[@]} ${v} elapsed=$(( $(date +%s) - T_START ))s rc=${cell_rc}"
 done
+
+# ---------------------------------------------------------------------------
+# #2479 equalized-n refit pass (plan §5 line 145 — UNCONDITIONAL in production
+# panel runs; r2 fix for the codex `registered-analysis-incomplete` blocker's
+# "equalized-n not_produced" leg). n_eq = min n_matched across the SURVIVING
+# panel op-cell primary ladders; each is refit at --max-rows n_eq (seed 0
+# subsample inside the fill; outputs carry _rows<n_eq> so they can never be
+# resumed as production results). Runs entirely from the KEPT L19 slice caches
+# — staged turnstores were already deleted per cell, and load_regime_xy's
+# cache-hit path re-applies the axis-reservation exclusion on every load.
+# Skipped under --pilot-outdir / --max-rows (P0 pilot + smoke legs — those set
+# MAX_ROWS>0; the fill's --max-rows path itself IS smoke-exercised) and when
+# the panel env is absent (parent invocations byte-identical).
+EQN_STATE="skipped (non-production or panel env absent)"
+if [ -n "${EPM_I2479_CHAR_PANEL_JSON:-}" ] && [ "$MAX_ROWS" -eq 0 ] && [ -z "$PILOT_OUTDIR" ]; then
+  eq_specs=()
+  for spec in "${CELLS[@]}"; do
+    IFS='|' read -r v src model <<< "$spec"
+    case "$v" in char_2479_*_op) ;; *) continue ;; esac
+    f="${OUT_DIR}/ladder_${src}__${v}__${model}_context_L${LAYER}_${BASIS}_s${SEED}_nd${ND}.json"
+    [ -f "$f" ] && eq_specs+=("$spec")
+  done
+  if [ "${#eq_specs[@]}" -lt 2 ]; then
+    EQN_STATE="skipped (<2 surviving op ladders: ${#eq_specs[@]})"
+    echo "[eqn] ${EQN_STATE} — equalized-n needs >=2 survivors to equalize across"
+  else
+    n_eq="$(uv run python - "$OUT_DIR" "$LAYER" "$BASIS" "$SEED" "$ND" "${eq_specs[@]}" <<'PY'
+import json
+import sys
+
+out_dir, layer, basis, seed, nd = sys.argv[1:6]
+ns = []
+for spec in sys.argv[6:]:
+    v, src, model = spec.split("|")
+    p = f"{out_dir}/ladder_{src}__{v}__{model}_context_L{layer}_{basis}_s{seed}_nd{nd}.json"
+    ns.append(int(json.load(open(p))["n_matched"]))
+assert ns and min(ns) >= 1, ns
+print(min(ns))
+PY
+)"
+    if ! [[ "$n_eq" =~ ^[0-9]+$ ]]; then
+      echo "[eqn] n_eq computation FAILED (got: ${n_eq:-empty})" >&2
+      EQN_STATE="FAILED (n_eq computation)"
+      if [ "$rc" -eq 0 ]; then rc=20; fi
+    else
+      echo "[eqn] equalized-n refit: n_eq=${n_eq} over ${#eq_specs[@]} surviving op ladders"
+      eq_unit=0
+      eq_fail=0
+      for spec in "${eq_specs[@]}"; do
+        IFS='|' read -r v src model <<< "$spec"
+        eq_unit=$((eq_unit + 1))
+        out_eq="${OUT_DIR}/ladder_${src}__${v}__${model}_context_L${LAYER}_${BASIS}_s${SEED}_nd${ND}_rows${n_eq}.json"
+        if [ -f "$out_eq" ]; then
+          echo "[eqn] unit ${eq_unit}/${#eq_specs[@]} ${v}: exists — resume"
+          continue
+        fi
+        if ! uv run python scripts/issue1345_story_char_ladder_fill.py \
+            --stage ladders --pairs "${src}:${v}" --model "$model" --max-rows "$n_eq" \
+            --stage-root "$STAGE_ROOT" --cache-dir "$CACHE_DIR" --out-dir "$OUT_DIR"; then
+          eq_fail=$((eq_fail + 1))
+          echo "[eqn] unit ${eq_unit}/${#eq_specs[@]} ${v}: EQUALIZED LADDER FAILED" >&2
+        fi
+        echo "[p5] eqn unit ${eq_unit}/${#eq_specs[@]} ${v} elapsed=$(( $(date +%s) - T_START ))s"
+      done
+      if [ "$eq_fail" -gt 0 ]; then
+        EQN_STATE="FAILED (${eq_fail}/${#eq_specs[@]} refits)"
+        if [ "$rc" -eq 0 ]; then rc=21; fi
+      else
+        EQN_STATE="ok (n_eq=${n_eq}, ${#eq_specs[@]} ladders)"
+      fi
+    fi
+  fi
+fi
 
 per_cell=""
 for spec in "${CELLS[@]}"; do
   v="${spec%%|*}"
   per_cell="${per_cell}${v}=${CELL_RC[$v]:-not-run} "
 done
-echo "[phasef] done cells=${#CELLS[@]} ok=${n_ok} skipped=${n_skip} failed=${n_fail} rc=${rc} | ${per_cell% }"
+echo "[phasef] done cells=${#CELLS[@]} ok=${n_ok} skipped=${n_skip} failed=${n_fail} eqn=${EQN_STATE} rc=${rc} | ${per_cell% }"
 exit "$rc"

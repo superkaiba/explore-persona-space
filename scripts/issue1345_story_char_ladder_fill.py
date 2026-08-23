@@ -320,6 +320,69 @@ def store_pins() -> dict:
 I2479_FREEZE_REL = "eval_results/issue_2479/axis_freeze.json"
 I2479_PROD_OUT_REL = "eval_results/issue_2479/story_char_gradient"
 I2479_PANEL_PREFIX = "char_2479_"
+I2479_MANIFEST_ENV = "EPM_I2479_PANEL_MANIFEST_JSON"
+
+_AXIS_RESERVATION_IDS: set[str] | None = None
+
+
+def axis_reservation_ids() -> set[str]:
+    """The committed panel manifest's ``axis_reservation_conv_ids`` (cached; fail-loud)."""
+    global _AXIS_RESERVATION_IDS
+    if _AXIS_RESERVATION_IDS is None:
+        override = os.environ.get(I2479_MANIFEST_ENV, "").strip()
+        mp = (
+            Path(override)
+            if override
+            else _REPO_ROOT / "eval_results/issue_2479/panel_manifest.json"
+        )
+        if not mp.is_file():
+            raise RuntimeError(
+                f"panel-cell fit requires the committed panel manifest at {mp} "
+                f"(override via {I2479_MANIFEST_ENV}) — the axis/DV independence "
+                "exclusion (plan §4 Step 2) cannot run without it"
+            )
+        m = json.loads(mp.read_text())
+        ids = {str(x) for x in m["axis_reservation_conv_ids"]}
+        assert ids and len(ids) == int(m["n_reservation"]), (
+            f"{mp}: n_reservation={m['n_reservation']} != {len(ids)} unique reserved ids"
+        )
+        _AXIS_RESERVATION_IDS = ids
+    return _AXIS_RESERVATION_IDS
+
+
+def exclude_axis_reservation(block: dict, label: str) -> dict:
+    """Drop axis-reservation conv_ids from a panel-cell block (axis/DV independence).
+
+    #2479 r2 fix (codex ``manifest-and-reservation-disconnected``, fill half):
+    the 250 reserved conversations feed the AXIS judging only — no DV fit may
+    consume them. Applied on EVERY load (cache hits included — slice caches
+    stay UNFILTERED on disk, so a manifest change can never be baked stale
+    into a cache file). Fail-loud postcondition: no reserved id survives.
+    Dropping zero rows is legitimate (a cell's judge-kept rows need not
+    include reserved ids).
+    """
+    reserved = axis_reservation_ids()
+    ids = np.asarray(block["conv_ids"])
+    mask = np.array([str(i) not in reserved for i in ids], dtype=bool)
+    n_drop = int((~mask).sum())
+    if n_drop == 0:
+        print(f"[axis-guard] {label}: 0 axis-reservation rows present (n={len(ids)})", flush=True)
+        return block
+    keep_idx = torch.as_tensor(np.nonzero(mask)[0])
+    out = {
+        "X": block["X"].index_select(0, keep_idx),
+        "Y": block["Y"].index_select(0, keep_idx),
+        "conv_ids": ids[mask],
+    }
+    assert not any(str(i) in reserved for i in out["conv_ids"]), label
+    print(
+        f"[axis-guard] {label}: excluded {n_drop} axis-reservation rows "
+        f"(n {len(ids)} -> {len(out['conv_ids'])})",
+        flush=True,
+    )
+    return out
+
+
 _I2479_FREEZE_REMEDY = (
     "remedy: run `uv run python scripts/issue2479_freeze_axis.py --legs-dir <judge-legs dir> "
     "--commit` (writes + commits + pushes eval_results/issue_2479/axis_freeze.json on the "
@@ -511,10 +574,21 @@ def load_regime_xy(
     # key; inherited regimes keep the format_key so pre-existing slice caches
     # stay valid byte-for-byte.
     cache_key = spec.get("cache_key", spec["format_key"])
-    cache = cache_dir / f"{model}_{cache_key}_{c.TRACK}_{arm}_L{layer}.pt"
+    cache_name = f"{model}_{cache_key}_{c.TRACK}_{arm}_L{layer}.pt"
+    if "cache_key" in spec:
+        # g2 r1 Minor: char-cell slice caches ALSO key on the stage root — the
+        # same variant staged from a different root (fresh-revision restage)
+        # must never serve a stale slice. Inherited parent regimes keep the
+        # legacy name so pre-existing caches stay valid byte-for-byte.
+        root_tag = hashlib.sha256(str(stage_root.resolve()).encode()).hexdigest()[:8]
+        cache_name = f"{model}_{cache_key}_{c.TRACK}_{arm}_L{layer}_sr{root_tag}.pt"
+    cache = cache_dir / cache_name
+    is_panel = regime.startswith(I2479_PANEL_PREFIX)
+    label = f"{model}/{regime}/{arm} L{layer}"
     if cache.is_file():
         d = torch.load(cache, map_location="cpu", weights_only=False)
-        return {"X": d["X"], "Y": d["Y"], "conv_ids": np.asarray(d["conv_ids"])}
+        out = {"X": d["X"], "Y": d["Y"], "conv_ids": np.asarray(d["conv_ids"])}
+        return exclude_axis_reservation(out, label) if is_panel else out
 
     stem_dir = stage_root / spec["subdir"]
     assert stem_dir.is_dir(), f"staged store dir missing: {stem_dir}"
@@ -540,7 +614,7 @@ def load_regime_xy(
         f"d={out['X'].shape[1]} in {time.time() - t0:.0f}s -> {cache.name}",
         flush=True,
     )
-    return out
+    return exclude_axis_reservation(out, label) if is_panel else out
 
 
 def matched_pair(a: dict, b: dict) -> tuple[dict, dict, np.ndarray]:
@@ -1309,9 +1383,11 @@ def main() -> None:
         "--max-rows",
         type=int,
         default=0,
-        help="SMOKE ONLY: deterministic row cap (matched rows for pairs; block rows "
-        "for cells); capped outputs carry a _rowsN filename suffix so they can "
-        "never be resumed as production results",
+        help="deterministic row cap (matched rows for pairs; block rows for cells); "
+        "capped outputs carry a _rowsN filename suffix so they can never be resumed "
+        "as production results. Two sanctioned uses: SMOKE legs, and the #2479 "
+        "equalized-n refit pass (plan §5 — unconditional; the phasef driver sets it "
+        "to the min kept-n across surviving op cells, seed 0)",
     )
     ap.add_argument(
         "--pilot-outdir",
@@ -1388,6 +1464,20 @@ def main() -> None:
                 for r in dict.fromkeys((a, b))
             }
             n_src, n_tgt = int(blocks[a]["X"].shape[0]), int(blocks[b]["X"].shape[0])
+            # #2479 r2 (registered-analysis-incomplete): per-regime mean context/
+            # answer vectors at this layer, over each FULL loaded block (post
+            # axis-reservation exclusion for panel cells) — the plan-§ "closeness"
+            # secondary reads cosine these against the r4op assistant cell's
+            # means, "computed free from the turnstores".
+            source_means = {
+                r: {
+                    "context": blocks[r]["X"].to(torch.float64).mean(dim=0).tolist(),
+                    "answer": blocks[r]["Y"].to(torch.float64).mean(dim=0).tolist(),
+                    "n_rows": int(blocks[r]["X"].shape[0]),
+                    "layer": args.layer,
+                }
+                for r in dict.fromkeys((a, b))
+            }
             xa, xb, keep = matched_pair(blocks[a], blocks[b])
             del blocks
             if args.max_rows and len(keep) > args.max_rows:
@@ -1409,6 +1499,7 @@ def main() -> None:
                 "n_source_rows": n_src,
                 "n_target_rows": n_tgt,
                 "pairing": "conv-id intersection of the two full stores",
+                "source_means": source_means,
                 "metadata": _metadata(args.seed, args.layer, args.arm),
             }
             entry["metadata"]["model"] = args.model
@@ -1451,6 +1542,14 @@ def main() -> None:
             entry = {
                 "regime": regime,
                 "arm": args.arm,
+                # #2479 r2 (registered-analysis-incomplete): cell mean context/
+                # answer vectors at this layer over the fitted rows (post
+                # axis-reservation exclusion + any row cap) — the closeness
+                # secondary reads cosine these against the r4op means carried
+                # in the ladder JSONs' source_means.
+                "mean_context_vec": blk["X"].to(torch.float64).mean(dim=0).tolist(),
+                "mean_answer_vec": blk["Y"].to(torch.float64).mean(dim=0).tolist(),
+                "mean_vec_layer": args.layer,
                 "metadata": _metadata(args.seed, args.layer, args.arm),
             }
             entry["metadata"]["model"] = args.model
