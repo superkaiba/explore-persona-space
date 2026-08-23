@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2501,
+  "highest_id": 2502,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11598,6 +11598,13 @@
       "path": "tasks/proposed/2501",
       "status": "proposed",
       "title": "verify_task_body: band-clearance-count caption check (check 45 extension)"
+    },
+    "2502": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2502",
+      "status": "proposed",
+      "title": "Fit context\u2192answer map on a mega-diverse weird-behavior corpus, replicated on Qwen2.5-7B-Instruct + Qwen3.5-9B"
     },
     "251": {
       "has_clean_result": false,
