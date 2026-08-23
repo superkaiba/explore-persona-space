@@ -358,6 +358,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # data change or any workflow_lint.py edit re-runs the live-tree PASS
     # + threshold-branch coverage.
     "tests/test_workflow_lint_agent_spec_size.py",
+    # NEW (#2473) — codex composer agent-memory same-turn commit duty pin
+    # (workflow_lint --check-codex-composer-memory-commit + no-flags
+    # bundling; incident: three #2263 composer spawns parked uncommitted
+    # memory writes for a post-merge sweep).
+    "tests/test_workflow_lint_codex_composer_memory_commit.py",
     # NEW (#2326) — workflow_lint --check-codex-concerns-persistence +
     # no-flags bundling (the Codex "Concerns to persist" -> raise-concern
     # blind-forwarding contract's four prose surfaces; incident #2321).
@@ -375,6 +380,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
     # files) + no-flags bundling.
     "tests/test_workflow_lint_pre_split_guard.py",
+    # NEW (#2253) — workflow_lint --check-prod-import-lockfile: scripts//src/
+    # third-party import roots must resolve from uv.lock/pyproject.toml
+    # (branch-agnostic; try/except-ImportError body + per-site waiver
+    # exemptions; two WARN tiers) + no-flags bundling + live-tree pins.
+    "tests/test_workflow_lint_prod_import_lockfile.py",
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",
@@ -390,6 +400,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # + absolute per-cell trainability floor, four pinned surfaces incl. the
     # two machinery-keyed N/A escapes; incident #2221).
     "tests/test_workflow_lint_two_tier_yield_floor.py",
+    # NEW (#2422) — workflow_lint --check-worktree-task-state-briefs +
+    # no-flags bundling (worktree-safe task-state brief paths, six pinned
+    # surfaces; incidents #2329/#823 — a worktree's tasks/ tree is frozen at
+    # its base commit) + the worktree-freeze reproduction (STALE + ABSENT).
+    "tests/test_workflow_lint_worktree_task_paths.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
@@ -402,6 +417,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_auto_runpod_path_under_any_failure.py",
     "tests/test_no_direct_task_path_construction.py",
     "tests/test_no_dollar_budget_caps.py",
+    # NEW (#2217) — collection-time registry-mutation guard: no collected test
+    # module may add/remove CONTEXTS / NEGATIVE_PANELS keys at import time
+    # (conftest pytest_collectreport deltas + collection-finish key-set
+    # equality vs the fresh-import baseline; incident #2059's residual class).
+    "tests/test_no_import_time_registry_mutation.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
     # NEW (#2058) — no-progress respawn lane: fingerprint helper +
@@ -569,6 +589,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # origin-precondition + rc-gated create, realized-outcome anomaly note,
     # loud novel-payload-but-no-usable-PR failure)
     "tests/test_issue_skill_step10d_no_pr_arm.py",
+    # NEW (#2246) — SKILL.md Step 10d reap-shield pins: both detached gate
+    # launchers carry the trailing "$WT" argv holder (worktree_audit's cwd/argv
+    # liveness harvest keeps the worktree for the gate's whole life), and the
+    # lint-gate empty-overlay fail-closed ordered chain (overlay producer ->
+    # empty-file guard -> crash predicate; single verdict writer preserved)
+    "tests/test_issue_skill_step10d_reap_shield_pin.py",
     # NEW (#2312) — SKILL.md Step 10d rewritten-branch arm pin (mutual-non-ancestry
     # descendancy guards at every push/pull copy site, zero-PR stale-ref arm,
     # PR-head parity gate, force-free landing route + tmp_path git fixtures)
@@ -627,6 +653,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step10d_guards.py",  # NEW (#1978) — step10d_guards.sh extraction pin
+    # NEW (#2201) — deliverable-divergence probe prose pins (Step 5a probe +
+    # reviewer-brief bullet, Step 10d pre-merge delta gate H4, code-reviewer.md
+    # § Main-side divergence list consumption paragraph).
+    "tests/test_issue_skill_divergence_probe_pin.py",
     # NEW (#1723) — SKILL.md Step 10 CRON-TEARDOWN + epm:done reorder around
     # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
     # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)
@@ -788,6 +818,10 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
         "tests/test_inline_lint_gate.py",
         "tests/test_step9c_baseline.py",
     ),
+    # #2412: the Step 5a sibling-probe unit tests load the helper by
+    # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
+    # reaches a constructed-path consumer.
+    "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------

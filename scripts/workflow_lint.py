@@ -252,6 +252,32 @@ Behaviours:
   ``ast.Assign`` and the REAL annotated ``ast.AnnAssign`` forms
   accepted); ARMED-vs-SKIPPED is observable via the returned report
   (``skipped``, ``files_scanned``) + a stderr summary note (#2018).
+* ``--check-lane-order-adjective`` (also bundled into the no-flags default
+  run; FAIL, #2298): sweep the PRESCRIPTIVE workflow surface
+  (``.claude/{agents,rules}`` markdown + ``.claude/skills/**/SKILL.md`` +
+  the /issue step companions + ``CLAUDE.md``; worktrees/caches excluded)
+  for stale auto-lane-order prose — (family 1) a ``<lane>-first`` /
+  ``<lane> first`` ordinal adjective naming a lane that is NOT the live
+  ``DEFAULT_AUTO_LANE_ORDER`` head, in an order context (order vocabulary
+  within +/-1 physical line — the surface is hard-wrapped markdown, so a
+  same-line-only window provably drops real hits), and (family 2) a
+  ``DEFAULT_AUTO_LANE_ORDER = ("<head>", ...)`` prose transcription whose
+  head differs from the live one. The live head is read from
+  ``router.py`` SOURCE via ast (never hardcoded), so the next order
+  inversion (the #2054 class) immediately flags every straggler of both
+  shapes. SKIPs loud (fail-open) when the head cannot be resolved
+  (unparseable router, absent / mixed / disagreeing
+  ``_default_auto_lane_order`` returns). ``docs/`` / ``tests/`` /
+  ``src/`` / ``scripts/`` / ``.claude/agent-memory/`` are deliberately
+  OUT of scope (true historical statements a FAIL check must not
+  redden); waive a dated in-scope statement with
+  ``<!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> -->`` (same line,
+  preceding 40 lines, or the file's first 40 lines). FAIL rather than
+  WARN: lane-order prose has NO runtime backstop — the prose IS the
+  enforcement surface, and the #2298 drift stood ~2 months under the
+  WARN-only sibling's regime — while the binding gates are
+  baseline-subtracted, so a false positive reddens only the introducing
+  round (#1388 contained).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -595,6 +621,24 @@ Behaviours:
   re-introducing the anti-pattern. Waive a genuinely-correct bare-dotenv
   use with ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥ 10 chars) on the
   import line or the immediately preceding non-blank line.
+* ``--check-prod-import-lockfile`` (also bundled into the no-flags
+  default run): AST-scan every ``*.py`` under ``scripts/`` and ``src/``
+  and FAIL any third-party import whose root is not resolvable from
+  ``uv.lock`` / ``pyproject.toml`` (#2253; incident #2223 — an import of
+  a package absent from the lockfile killed a pod run at launch; the
+  #1336 module-local-helper shape is covered for free). Branch-agnostic
+  over runtime-executable code (smoke branches scanned too;
+  ``if TYPE_CHECKING:`` guard BODIES excluded — never executable at
+  runtime). Exempt per site: an import in the BODY of a ``try`` whose
+  handler names ``ImportError`` / ``ModuleNotFoundError`` (the sanctioned
+  deliberately-optional degrade), and a
+  ``# PROD_IMPORT_LINT_EXEMPT: <reason>`` waiver (reason ≥ 10 chars).
+  PASS ≠ installed-by-default — the FAIL boundary is DECLARED
+  resolvability: a dist declared only under a non-default extra/group
+  WARNs (stderr) naming the declaration, and a dangling ``issue*``-stem
+  first-party root WARNs instead of failing. The import-name -> dist-name
+  mapping is the static :data:`IMPORT_TO_DIST` table (unit-tested; drift
+  FAILs loud).
 * ``--check-agent-model-pins`` (also bundled into the no-flags default
   run): parse the YAML frontmatter ``model: "..."`` of every
   ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
@@ -946,6 +990,17 @@ Behaviours:
   persist" items, zero were persisted, and the round-2 prior-concerns
   gate walked an empty ledger; token-presence pins strengthened per the
   round-1 ``durability-pin-token-presence-gaps`` concern).
+* ``--check-codex-composer-memory-commit`` (also bundled into the no-flags
+  default run): pin the #2473 codex-composer agent-memory same-turn commit
+  duty in ``.claude/rules/codex-composer-common.md`` — the "Your own
+  agent-memory writes" section (region-anchored, bounded at the NEXT
+  ``## `` heading; must carry the same-turn commit-timing literal, the
+  ``MEMORY.md`` index-row literal, the ``guard_root_code_commit.sh``
+  literal-pathspec rationale, and the do-not-defer-to-a-``post-merge
+  sweep`` literal) plus the Compose-only Bash-allowlist cross-reference
+  that licenses the commit (incident #2473: three #2263 composer spawns
+  each parked an uncommitted memory write for a post-merge sweep — the
+  #2015 stash-race permanent-loss class).
 
 Exit codes:
 
@@ -965,6 +1020,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import tomllib
 from collections import Counter
 from collections.abc import Callable, Collection, Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -2686,6 +2742,34 @@ HUB_VERIFY_WAIVER_MIN_REASON_CHARS = 10
 # convention as UPLOAD_AS_FILE_EXEMPT / CVD_PIN_EXEMPT.
 DOTENV_LINT_WAIVER_RE = re.compile(r"#\s*DOTENV_LINT_EXEMPT\s*:\s*(.+?)\s*$")
 DOTENV_LINT_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-prod-import-lockfile` (#2253): a scripts/ or src/ module importing a
+# third-party package that is not resolvable from uv.lock / pyproject.toml is a
+# latent ModuleNotFoundError wherever it can execute (#2223: an import of a
+# package absent from the lockfile killed a pod run at launch; #1336: the same
+# class hid inside a module-local helper the smoke never executed). Inline
+# waiver: `# PROD_IMPORT_LINT_EXEMPT: <reason>` (reason ≥ N chars) on the
+# import's first physical line or the immediately preceding non-blank line —
+# PER AST IMPORT SITE, never per (file, root): an old waiver on one optional
+# site must not silently exempt a later load-bearing import of the same root.
+PROD_IMPORT_LINT_WAIVER_RE = re.compile(r"#\s*PROD_IMPORT_LINT_EXEMPT\s*:\s*(.+?)\s*$")
+PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS = 10
+
+# Import-name -> PyPI distribution name, for import roots whose module name
+# does not PEP-503-normalize to their dist name. The static table is the
+# DETERMINISTIC primary (a verdict keyed on the live venv's
+# importlib.metadata would differ between a fresh pod and the VM; the venv
+# read is message-only enrichment); a table entry whose dist is absent from
+# the lockfile universe is itself a FAIL — table drift is loud (#2253 A4).
+IMPORT_TO_DIST: dict[str, str] = {
+    "PIL": "pillow",
+    "dotenv": "python-dotenv",
+    "hydra": "hydra-core",
+    "sklearn": "scikit-learn",
+    "umap": "umap-learn",
+    "yaml": "pyyaml",
+}
 
 
 # `--check-judge-model-pins` (#765): the standing project rule pins ONE judge
@@ -9304,6 +9388,552 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
     return errors
 
 
+def _pep503(name: str) -> str:
+    """PEP-503-normalize a distribution / import name (lowercase; runs of
+    ``-``/``_``/``.`` collapse to a single ``-``)."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+_PEP508_NAME_RE = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?")
+
+
+def _pep508_dist_name(requirement: str) -> str | None:
+    """PEP-503-normalized distribution-name prefix of a PEP-508 requirement
+    string (``"umap-learn>=0.5.6,<0.6"`` -> ``"umap-learn"``); None when the
+    string carries no leading name."""
+    m = _PEP508_NAME_RE.match(requirement.strip())
+    return _pep503(m.group(0)) if m else None
+
+
+def _dep_names(deps: object) -> set[str]:
+    """PEP-503-normalized name prefixes of a PEP-508 requirement list.
+    Non-string entries (PEP-735 ``{include-group = "..."}`` tables) are
+    SKIPPED, never parsed; a non-list input yields the empty set."""
+    if not isinstance(deps, list):
+        return set()
+    return {name for dep in deps if isinstance(dep, str) and (name := _pep508_dist_name(dep))}
+
+
+def _uv_default_groups(py_doc: dict) -> set[str]:
+    """The DEFAULT dependency-group set: ``tool.uv.default-groups`` when
+    present as a list of strings, else uv's documented default ``{"dev"}``."""
+    tool = py_doc.get("tool")
+    uv_tbl = tool.get("uv") if isinstance(tool, dict) else None
+    raw = uv_tbl.get("default-groups") if isinstance(uv_tbl, dict) else None
+    if isinstance(raw, list):
+        return {g for g in raw if isinstance(g, str)}
+    return {"dev"}
+
+
+def _declared_dists_from_pyproject(py_doc: dict) -> tuple[set[str], dict[str, set[str]]]:
+    """Split pyproject-declared dists into ``(default_declared,
+    nondefault)``: ``project.dependencies`` plus the DEFAULT dependency
+    groups vs ``project.optional-dependencies.<extra>`` plus non-default
+    ``dependency-groups.<g>`` (dist -> declaration names)."""
+    default_declared: set[str] = set()
+    nondefault: dict[str, set[str]] = {}
+    project = py_doc.get("project", {})
+    if not isinstance(project, dict):
+        project = {}
+    default_declared |= _dep_names(project.get("dependencies"))
+    default_groups = _uv_default_groups(py_doc)
+    groups = py_doc.get("dependency-groups", {})
+    if isinstance(groups, dict):
+        for gname, deps in groups.items():
+            names = _dep_names(deps)
+            if gname in default_groups:
+                default_declared |= names
+            else:
+                for name in names:
+                    nondefault.setdefault(name, set()).add(gname)
+    extras = project.get("optional-dependencies", {})
+    if isinstance(extras, dict):
+        for extra, deps in extras.items():
+            for name in _dep_names(deps):
+                nondefault.setdefault(name, set()).add(extra)
+    return default_declared, nondefault
+
+
+def _load_import_lockfile_universe(
+    lock_path: Path, pyproject_path: Path
+) -> tuple[set[str], set[str], dict[str, list[str]], list[str]]:
+    """Load the dist universes for :func:`check_prod_import_lockfile`.
+
+    Returns ``(lock_dists, default_declared, nondefault_declared, errors)``:
+    PEP-503-normalized dist names from ``uv.lock`` ``[[package]]`` entries;
+    dists declared installed-by-default (``project.dependencies`` plus the
+    DEFAULT dependency groups — ``tool.uv.default-groups`` when present as a
+    list, else uv's documented default ``{"dev"}``); a dist -> sorted
+    declaration-name map for ``project.optional-dependencies.<extra>`` and
+    non-default ``dependency-groups.<g>``; and fail-loud errors — a missing
+    OR unparseable manifest returns one error naming the file, never a
+    silent skip. Non-string entries in a dependency-group list (PEP-735
+    ``{include-group = "..."}`` tables) are SKIPPED, never parsed.
+    """
+    errors: list[str] = []
+    lock_dists: set[str] = set()
+    default_declared: set[str] = set()
+    nondefault: dict[str, set[str]] = {}
+
+    try:
+        lock_doc = tomllib.loads(lock_path.read_text(encoding="utf-8"))
+        for pkg in lock_doc.get("package", []):
+            name = pkg.get("name") if isinstance(pkg, dict) else None
+            if isinstance(name, str):
+                lock_dists.add(_pep503(name))
+    except FileNotFoundError:
+        errors.append(
+            f"{lock_path}: check-prod-import-lockfile: uv.lock is MISSING — cannot "
+            f"verify third-party import resolvability (#2253); never a silent skip."
+        )
+    except (tomllib.TOMLDecodeError, UnicodeDecodeError, OSError, TypeError, AttributeError) as exc:
+        errors.append(
+            f"{lock_path}: check-prod-import-lockfile: uv.lock is UNPARSEABLE "
+            f"({type(exc).__name__}: {exc}) — cannot verify third-party import "
+            f"resolvability (#2253); never a silent skip."
+        )
+
+    py_doc: dict | None = None
+    try:
+        py_doc = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        errors.append(
+            f"{pyproject_path}: check-prod-import-lockfile: pyproject.toml is MISSING — "
+            f"cannot verify third-party import resolvability (#2253); never a silent skip."
+        )
+    except (tomllib.TOMLDecodeError, UnicodeDecodeError, OSError) as exc:
+        errors.append(
+            f"{pyproject_path}: check-prod-import-lockfile: pyproject.toml is UNPARSEABLE "
+            f"({type(exc).__name__}: {exc}) — cannot verify third-party import "
+            f"resolvability (#2253); never a silent skip."
+        )
+
+    if py_doc is not None:
+        default_declared, nondefault = _declared_dists_from_pyproject(py_doc)
+
+    return lock_dists, default_declared, {k: sorted(v) for k, v in nondefault.items()}, errors
+
+
+_IMPORT_ERROR_NAMES = frozenset({"ImportError", "ModuleNotFoundError"})
+
+
+def _exc_names_import_error(expr: ast.expr) -> bool:
+    """True when an except-handler type expression NAMES ImportError /
+    ModuleNotFoundError (Name / Attribute / tuple forms). A bare ``except:``
+    or ``except Exception:`` does NOT qualify — the sanctioned escape is the
+    explicit ImportError degrade, not a broad swallow."""
+    if isinstance(expr, ast.Name):
+        return expr.id in _IMPORT_ERROR_NAMES
+    if isinstance(expr, ast.Attribute):
+        return expr.attr in _IMPORT_ERROR_NAMES
+    if isinstance(expr, ast.Tuple):
+        return any(_exc_names_import_error(e) for e in expr.elts)
+    return False
+
+
+def _is_type_checking_test(test: ast.expr) -> bool:
+    """True for the canonical ``if TYPE_CHECKING:`` / ``if typing.TYPE_CHECKING:``
+    guard tests. Aliased forms (``from typing import TYPE_CHECKING as TC``) are
+    NOT recognized — a documented false-positive-direction residue with zero
+    tree instances; a future hit remediates via the canonical spelling or a
+    per-site waiver."""
+    if isinstance(test, ast.Name):
+        return test.id == "TYPE_CHECKING"
+    return (
+        isinstance(test, ast.Attribute)
+        and test.attr == "TYPE_CHECKING"
+        and isinstance(test.value, ast.Name)
+        and test.value.id == "typing"
+    )
+
+
+def _try_protects_imports(node: ast.Try) -> bool:
+    """True when *node*'s handlers name ImportError/ModuleNotFoundError
+    (the sanctioned optional-dependency degrade shape)."""
+    return any(h.type is not None and _exc_names_import_error(h.type) for h in node.handlers)
+
+
+def _import_roots(node: ast.AST) -> list[tuple[str, int]] | None:
+    """``(root, lineno)`` rows for an ``ast.Import`` / ``ast.ImportFrom``
+    node; ``None`` for every other node kind. Relative imports
+    (``level > 0``) yield an EMPTY list — an import node, but no
+    recordable root."""
+    if isinstance(node, ast.Import):
+        return [(alias.name.split(".")[0], node.lineno) for alias in node.names]
+    if isinstance(node, ast.ImportFrom):
+        if node.level == 0 and node.module:
+            return [(node.module.split(".")[0], node.lineno)]
+        return []
+    return None
+
+
+def _collect_import_sites(tree: ast.Module) -> list[tuple[str, int, bool]]:
+    """Collect ``(root, lineno, protected)`` for every RUNTIME-EXECUTABLE
+    import site in *tree* (``ast.Import`` aliases + level-0
+    ``ast.ImportFrom``; relative imports skipped).
+
+    ``protected`` is True ONLY for a site in the BODY of an ``ast.Try``
+    whose handler names ImportError/ModuleNotFoundError, with NO
+    FunctionDef/AsyncFunctionDef/Lambda boundary between that Try and the
+    import — a function *defined* in the try body defers its imports to
+    call time, outside the protected region. ``handlers`` / ``orelse`` /
+    ``finalbody`` positions are NOT protected by their own try (an
+    exception raised there is not caught by that same try). Imports under
+    the BODY of a canonical ``if TYPE_CHECKING:`` guard are excluded
+    entirely (never executable at runtime); the guard's ``orelse`` IS
+    scanned.
+    """
+    sites: list[tuple[str, int, bool]] = []
+
+    def _walk(node: ast.AST, protected: bool) -> None:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.Lambda):
+            # A function DEFINED inside a protected try body defers its
+            # imports to call time — outside the protected region.
+            for child in ast.iter_child_nodes(node):
+                _walk(child, False)
+            return
+        if isinstance(node, ast.If) and _is_type_checking_test(node.test):
+            # The guard body never executes at runtime (typing.TYPE_CHECKING
+            # is False outside type checkers); the orelse DOES execute.
+            for stmt in node.orelse:
+                _walk(stmt, protected)
+            return
+        if isinstance(node, ast.Try):
+            body_protected = protected or _try_protects_imports(node)
+            for stmt in node.body:
+                _walk(stmt, body_protected)
+            # handlers / orelse / finalbody: an exception raised there is NOT
+            # caught by this same try — only an OUTER protected region
+            # (already carried in `protected`) covers them.
+            for handler in node.handlers:
+                _walk(handler, protected)
+            for stmt in node.orelse:
+                _walk(stmt, protected)
+            for stmt in node.finalbody:
+                _walk(stmt, protected)
+            return
+        roots = _import_roots(node)
+        if roots is not None:
+            sites.extend((root, lineno, protected) for root, lineno in roots)
+            return
+        for child in ast.iter_child_nodes(node):
+            _walk(child, protected)
+
+    _walk(tree, False)
+    return sites
+
+
+def _prod_import_lint_waiver_present(lines: list[str], lineno: int) -> bool:
+    """True iff a ``# PROD_IMPORT_LINT_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the
+    import's first physical line (``lineno``, 1-based) or the immediately
+    preceding non-blank line. Same convention as
+    :func:`_dotenv_lint_waiver_present`; exempts THAT SITE ONLY."""
+    idx = lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = PROD_IMPORT_LINT_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = PROD_IMPORT_LINT_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _first_party_import_roots(repo_root: Path) -> set[str]:
+    """First-party import-root set: fixed package roots plus every scripts/
+    ``*.py`` stem (RECURSIVE — archived files included), the scripts/ subdir
+    names, and the src/ top-level package dirs.
+
+    Stem-shadowing residue (documented): the recursive stem set makes ANY
+    script basename first-party repo-wide (``run_leakage_experiment`` is
+    stem-shadowed by ``scripts/archive/run_leakage_experiment.py``), so a
+    third-party root colliding with a stem would silently resolve
+    first-party. Zero current collisions between stems and the import-name
+    forms of lock dists / :data:`IMPORT_TO_DIST` keys; the live pin test
+    ``test_no_lock_dist_shadowed_by_script_stem`` keeps that true. The
+    structural fix (an import-path-aware first-party resolver) is
+    deliberately deferred.
+    """
+    roots = {"explore_persona_space", "scripts", "src", "tests", "conftest"}
+    scripts_dir = repo_root / "scripts"
+    src_dir = repo_root / "src"
+    if scripts_dir.is_dir():
+        roots.update(p.stem for p in scripts_dir.rglob("*.py"))
+        roots.update(d.name for d in scripts_dir.iterdir() if d.is_dir())
+    if src_dir.is_dir():
+        roots.update(d.name for d in src_dir.iterdir() if d.is_dir())
+    return roots
+
+
+@functools.lru_cache(maxsize=1)
+def _venv_packages_distributions() -> dict[str, tuple[str, ...]]:
+    """Best-effort LIVE-venv import-root -> distributions mapping, for
+    message-only enrichment of check-prod-import-lockfile FAIL rows. NEVER
+    verdict-bearing (a verdict keyed on the venv would differ between a
+    fresh pod and the VM — :data:`IMPORT_TO_DIST` is the deterministic
+    primary); the broad except is deliberate for a pure message decoration
+    and tests never assert on it."""
+    try:
+        import importlib.metadata as _im
+
+        return {k: tuple(v) for k, v in _im.packages_distributions().items()}
+    except Exception:
+        return {}
+
+
+def _venv_dist_hint(root: str) -> str:
+    """Message-only live-venv hint for a FAIL row ('' when unavailable)."""
+    dists = _venv_packages_distributions().get(root)
+    return f" (live venv maps this to dist '{dists[0]}')" if dists else ""
+
+
+@dataclasses.dataclass
+class _ProdImportScan:
+    """Mutable accumulator for one :func:`check_prod_import_lockfile` run."""
+
+    universe: set[str]
+    default_declared: set[str]
+    nondefault_declared: dict[str, list[str]]
+    first_party: set[str]
+    stdlib: frozenset[str]
+    fail_rows: list[str] = dataclasses.field(default_factory=list)
+    seen_fail: set[tuple[str, str]] = dataclasses.field(default_factory=set)
+    dangling_counts: Counter = dataclasses.field(default_factory=Counter)
+    extras_counts: Counter = dataclasses.field(default_factory=Counter)
+    extras_dist: dict[str, str] = dataclasses.field(default_factory=dict)
+
+
+def _classify_import_root(state: _ProdImportScan, imp_root: str) -> tuple[str, str]:
+    """Classify a non-stdlib, non-first-party import root against the dist
+    universe. Returns ``(verdict, dist)`` with verdict one of ``"resolved"``
+    | ``"extras-warn"`` | ``"table-drift"`` | ``"dangling-warn"`` |
+    ``"fail"``."""
+    norm = _pep503(imp_root)
+    dist: str | None = None
+    if norm in state.universe:
+        dist = norm
+    elif imp_root in IMPORT_TO_DIST:
+        mapped = _pep503(IMPORT_TO_DIST[imp_root])
+        if mapped in state.universe:
+            dist = mapped
+        else:
+            return ("table-drift", mapped)
+    if dist is not None:
+        if dist not in state.default_declared and dist in state.nondefault_declared:
+            return ("extras-warn", dist)
+        return ("resolved", dist)
+    if imp_root.lstrip("_").startswith("issue"):
+        return ("dangling-warn", norm)
+    return ("fail", norm)
+
+
+def _record_import_sites(
+    state: _ProdImportScan, rel: str, lines: list[str], sites: list[tuple[str, int, bool]]
+) -> None:
+    """Apply per-site exemptions, classify, and record FAIL/WARN evidence
+    for one file's import sites. Waivers apply PER SITE (never per
+    ``(file, root)``); the REMAINING errors are then deduped to the first
+    unexempt ``(file, root)`` site."""
+    for imp_root, lineno, protected in sites:
+        if protected or _prod_import_lint_waiver_present(lines, lineno):
+            continue
+        if imp_root in state.stdlib or imp_root in state.first_party:
+            continue
+        verdict, dist = _classify_import_root(state, imp_root)
+        if verdict == "resolved":
+            continue
+        if verdict == "extras-warn":
+            state.extras_counts[imp_root] += 1
+            state.extras_dist[imp_root] = dist
+            continue
+        if verdict == "dangling-warn":
+            state.dangling_counts[imp_root] += 1
+            continue
+        key = (rel, imp_root)
+        if key in state.seen_fail:
+            continue  # dedup REMAINING errors to the first unexempt site
+        state.seen_fail.add(key)
+        if verdict == "table-drift":
+            state.fail_rows.append(
+                f"{rel}:{lineno}: third-party import `{imp_root}`: IMPORT_TO_DIST maps "
+                f"it to dist '{dist}', which is NOT in the uv.lock/pyproject.toml "
+                f"universe (table drift is loud — fix the IMPORT_TO_DIST entry or add "
+                f"the distribution to pyproject.toml + `uv lock`; #2253)."
+            )
+        else:
+            state.fail_rows.append(
+                f"{rel}:{lineno}: third-party import `{imp_root}` is not resolvable "
+                f"from uv.lock/pyproject.toml (#2253/#2223). Tried: "
+                f"pep503('{imp_root}')='{dist}' (not in the lockfile universe); no "
+                f"IMPORT_TO_DIST entry. Fix: add the distribution to pyproject.toml + "
+                f"`uv lock`; or add an IMPORT_TO_DIST entry if import-name != "
+                f"dist-name; or guard a deliberately-optional NON-load-bearing use "
+                f"with try/except ImportError (import in the try BODY); or waive with "
+                f"'# PROD_IMPORT_LINT_EXEMPT: <reason>' (>= 10 chars)."
+                f"{_venv_dist_hint(imp_root)}"
+            )
+
+
+def _scan_prod_import_roots(
+    scan_roots: tuple[Path, ...], repo_root: Path, state: _ProdImportScan
+) -> None:
+    """Walk every ``*.py`` under *scan_roots*, parse via the shared
+    :func:`_cached_parse` memo, and record each file's import-site evidence
+    into *state*. Unparseable files get one ``workflow_lint: note:`` stderr
+    line (the :func:`check_scripts_import_guard` idiom), never a crash."""
+    for scan_root in scan_roots:
+        if not scan_root.exists():
+            continue
+        for py in _files_scope_filter(sorted(scan_root.rglob("*.py"))):
+            if not py.is_file():
+                continue
+            try:
+                rel = py.resolve().relative_to(repo_root.resolve()).as_posix()
+            except ValueError:
+                rel = py.name
+            try:
+                text = py.read_text(encoding="utf-8")
+            except UnicodeDecodeError as exc:
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-prod-import-lockfile skipped "
+                    f"unparseable {rel} ({type(exc).__name__})\n"
+                )
+                continue
+            tree = _cached_parse(py, text)
+            if tree is None:
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-prod-import-lockfile skipped "
+                    f"unparseable {rel} (SyntaxError)\n"
+                )
+                continue
+            _record_import_sites(state, rel, text.splitlines(), _collect_import_sites(tree))
+
+
+def _emit_prod_import_warns(state: _ProdImportScan) -> None:
+    """Emit the two stderr WARN tiers — path-free, LEADING with the literal
+    ``WARN`` token (the ``inline_lint_gate.py`` ``NON_RED_PREFIXES``
+    startswith contract: a line must begin with WARN to read non-red; root
+    names + counts only, never file paths)."""
+    for imp_root in sorted(state.dangling_counts):
+        n = state.dangling_counts[imp_root]
+        sys.stderr.write(
+            f"WARN: check-prod-import-lockfile: dangling first-party import root "
+            f"'{imp_root}' ({n} site(s)) — module absent from main (unmerged branch "
+            f"or deleted); latent breakage, not a third-party verdict\n"
+        )
+    for imp_root in sorted(state.extras_counts):
+        n = state.extras_counts[imp_root]
+        dist = state.extras_dist[imp_root]
+        names = ", ".join(state.nondefault_declared.get(dist, []))
+        sys.stderr.write(
+            f"WARN: check-prod-import-lockfile: import root '{imp_root}' (dist "
+            f"'{dist}', {n} non-exempt site(s)) resolves only via non-default "
+            f"extra/group '{names}' — a bare 'uv sync --locked' (the pod bootstrap, "
+            f"bootstrap_pod.sh:425) does not install it\n"
+        )
+
+
+def check_prod_import_lockfile(
+    *,
+    scan_roots: tuple[Path, ...] | None = None,
+    lock_path: Path | None = None,
+    pyproject_path: Path | None = None,
+    repo_root: Path | None = None,
+) -> list[str]:
+    """AST-scan every ``*.py`` under ``scripts/`` and ``src/`` and FAIL any
+    third-party import whose root is not resolvable from ``uv.lock`` /
+    ``pyproject.toml`` (#2253; incidents #2223 — an import of a package
+    absent from the lockfile killed a pod run at launch — and #1336, the
+    module-local-helper import shape a smoke never executes).
+
+    Scope: BRANCH-AGNOSTIC over runtime-executable code — resolvability does
+    not depend on reachability, so smoke branches and ordinary conditionals
+    are scanned too. Exactly one carve-out narrows the walk: imports under
+    the BODY of a canonical ``if TYPE_CHECKING:`` / ``if
+    typing.TYPE_CHECKING:`` guard are excluded (``typing.TYPE_CHECKING`` is
+    False at runtime, so that code can never raise ModuleNotFoundError);
+    the guard's ``orelse`` IS scanned. Aliased TYPE_CHECKING forms are NOT
+    recognized (documented residue, zero tree instances).
+
+    Per-site exemptions (each applies to the individual AST import site):
+
+    * PROTECTED-TRY-BODY — an import in the ``body`` of an ``ast.Try``
+      whose handler names ``ImportError`` / ``ModuleNotFoundError``
+      (Name / Attribute / tuple forms), with no function boundary between
+      the Try and the import. This is the task-body-sanctioned
+      deliberately-optional degrade — the OPPOSITE polarity of
+      ``check_scripts_import_guard``, whose first-party scope correctly
+      treats try/except ImportError as NOT a guard (a missing first-party
+      module is always a bug; a missing OPTIONAL third-party dep can be a
+      documented degrade). ``handlers`` / ``orelse`` / ``finalbody``
+      positions and imports inside a ``def`` nested in the try body are
+      NOT exempt — an exception raised there is not caught by that try.
+    * WAIVER — ``# PROD_IMPORT_LINT_EXEMPT: <reason>`` (reason ≥
+      :data:`PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS` chars) on the
+      import's first physical line or the immediately preceding non-blank
+      line, exempting THAT SITE ONLY (never the file or the
+      ``(file, root)`` pair).
+
+    Classification of each remaining site's root: stdlib
+    (``sys.stdlib_module_names`` | ``{"__future__"}``) and first-party
+    roots are skipped; a root whose PEP-503 form — or whose
+    :data:`IMPORT_TO_DIST`-mapped dist — is in the FAIL universe
+    (``uv.lock`` dists | ``project.dependencies`` | dependency groups |
+    optional-dependency extras) is resolved; a table entry whose dist is
+    absent from the universe FAILs (table drift is loud); an unresolved
+    ``issue*``-stem root (leading underscore tolerated —
+    ``_issue506_common``) WARNs as a dangling first-party module; every
+    other unresolved root FAILs, deduped to the first unexempt
+    ``(file, root)`` site.
+
+    **PASS ≠ installed-by-default; the FAIL boundary is DECLARED
+    resolvability** (the task body's oracle). A dist declared ONLY under a
+    non-default extra / dependency group resolves but draws a stderr WARN
+    naming the declaration — a bare ``uv sync --locked`` (the pod
+    bootstrap) does not install it. A dist present in ``uv.lock`` only (a
+    transitive dep) resolves silently.
+
+    Known false-negative directions (documented, accepted): an
+    unresolvable import wrapped body-position in try/except ImportError is
+    exempt even when the handler is load-bearing-in-practice (review + the
+    fail-fast rule police misuse); dynamic imports
+    (``importlib.import_module``, ``__import__``) are invisible to the AST
+    predicate, and configuration/environment-driven module names (the
+    ``scripts/issue2225_train.py:316`` shape — environment-selected
+    production loading) are OUTSIDE this check's guarantee; the
+    stem-shadowing residue is documented at
+    :func:`_first_party_import_roots`.
+
+    The kwargs are unit-test override hooks; production callers pass none
+    and the check reads ``<repo_root>/{uv.lock,pyproject.toml}`` and scans
+    ``scripts/`` + ``src/``. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    lock_p = lock_path if lock_path is not None else root / "uv.lock"
+    pyproject_p = pyproject_path if pyproject_path is not None else root / "pyproject.toml"
+    lock_dists, default_declared, nondefault_declared, errors = _load_import_lockfile_universe(
+        lock_p, pyproject_p
+    )
+    if errors:
+        return errors
+    state = _ProdImportScan(
+        universe=lock_dists | default_declared | set(nondefault_declared),
+        default_declared=default_declared,
+        nondefault_declared=nondefault_declared,
+        first_party=_first_party_import_roots(root),
+        stdlib=frozenset(sys.stdlib_module_names) | {"__future__"},
+    )
+    roots_to_scan = scan_roots if scan_roots is not None else (root / "scripts", root / "src")
+    _scan_prod_import_roots(tuple(roots_to_scan), root, state)
+    _emit_prod_import_warns(state)
+    return state.fail_rows
+
+
 def _batch_judge_client_waiver_present(lines: list[str], call_lineno: int) -> bool:
     """Return True iff a ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` waiver
     (reason ≥ :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) is
@@ -13193,15 +13823,17 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
     check pins the guard across its surfaces, region-anchored, so a future
     refactor cannot silently strip one (the #606 copy-list-omission class):
 
-    (1) ``scripts/pre_split_review_guard.py`` exists and names the library
-        entry ``pre_split_review_gate``;
+    (1) ``scripts/pre_split_review_guard.py`` exists, names the library
+        entry ``pre_split_review_gate``, and names the
+        ``IMPLEMENTER-MARKER-MISSING`` verdict (#2294 — the exit-4
+        missing-implementer-marker arm; incident #2290 r1);
     (2) ``src/explore_persona_space/task_workflow.py`` defines
         ``def pre_split_review_gate`` and the verdict token
         ``PRE-SPLIT-INCOMPLETE``;
     (3) 09-step-5.md — the ``**Pre-split completeness guard`` region (up to
         the next paragraph opening ``**``) names
-        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``, and
-        ``remaining:``;
+        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``,
+        ``remaining:``, and ``IMPLEMENTER-MARKER-MISSING`` (#2294);
     (4) 08-step-4.md — the breadcrumb grammar tokens
         ``pre-split unit k/M complete:`` + ``; remaining:`` (grammar-parity
         pin: an editor changing the grammar trips the check that guards the
@@ -13232,7 +13864,8 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
     verdict = "PRE-SPLIT-INCOMPLETE"
     errors: list[str] = []
 
-    # (1) the thin CLI exists and names the library entry.
+    # (1) the thin CLI exists, names the library entry, and names the #2294
+    # missing-implementer-marker verdict (the exit-4 arm).
     cli = root / "scripts" / "pre_split_review_guard.py"
     if not cli.is_file():
         errors.append(
@@ -13240,12 +13873,21 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
             f"exist (#1336 r4: a review dispatched against a Unit-A-only "
             f"intermediate commit cost 2 subagent deaths + a 2-day park)."
         )
-    elif "pre_split_review_gate" not in cli.read_text(encoding="utf-8"):
-        errors.append(
-            f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
-            f"CLI must call the library predicate, not a private "
-            f"re-implementation."
-        )
+    else:
+        cli_text = cli.read_text(encoding="utf-8")
+        if "pre_split_review_gate" not in cli_text:
+            errors.append(
+                f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
+                f"CLI must call the library predicate, not a private "
+                f"re-implementation."
+            )
+        if "IMPLEMENTER-MARKER-MISSING" not in cli_text:
+            errors.append(
+                f"{cli}: no longer names 'IMPLEMENTER-MARKER-MISSING' (#2294) "
+                f"— the CLI must map the missing-implementer-marker verdict "
+                f"to exit 4 (incident #2290 r1: a review dispatched with zero "
+                f"implementer markers on canonical events)."
+            )
 
     # (2) the library predicate + verdict token.
     tw = root / "src" / "explore_persona_space" / "task_workflow.py"
@@ -13287,7 +13929,12 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
         else:
             nxt = text.find("\n\n**", idx + 1)
             region = text[idx:nxt] if nxt != -1 else text[idx:]
-            for token in ("pre_split_review_guard.py", verdict, "remaining:"):
+            for token in (
+                "pre_split_review_guard.py",
+                verdict,
+                "remaining:",
+                "IMPLEMENTER-MARKER-MISSING",
+            ):
                 if token not in region:
                     errors.append(
                         f"{step5}: the '**Pre-split completeness guard' "
@@ -13364,6 +14011,178 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
                 f"{agent}: the 'Read-pinning under external churn' bullet "
                 f"no longer names 'git show' (#2158) — the snapshot-read "
                 f"recipe would be silently stripped from {agent_name}."
+            )
+    return errors
+
+
+def check_worktree_task_state_briefs(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2422 worktree-safe task-state path contract is absent
+    from ANY of its six brief-composition surfaces.
+
+    Tasks #2329 and #823: subagent briefs handed WORKTREE-RELATIVE
+    ``tasks/<status>/<N>/...`` paths, but a worktree's ``tasks/`` tree is
+    frozen at its base commit, so the subagents silently read a STALE plan
+    (#2329: v2 served where v8 was current) or stale plan/manifest state
+    (#823) with NO error. The #2422 fix pins, per surface, the contract that
+    briefs hand the ABSOLUTE canonical main-checkout path
+    (``$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)/plans/plan.md``)
+    plus a compose-time ``plan_version=v<K>`` pin, and that subagents never
+    read ``tasks/`` from inside the worktree. This check pins those tokens
+    region-anchored across the six surfaces so a future refactor cannot
+    silently strip one (the #606 copy-list-omission class):
+
+    (1) issue steps/09-step-5.md — the ``Both reviewers see the same
+        brief:`` region (ends at ``**Neutral gate vocabulary``) names
+        ``task.py find``, ``plan_version=``, ``planned_manifest.json``,
+        ``task.py view`` (the compose-time canonical fetch of the
+        implementer's report — never a worktree-relative
+        ``events.jsonl``; plan v4 Edit 14), and the
+        never-read-``tasks/``-from-the-worktree read bar;
+    (2) code-reviewer.md — the ``## Context budget`` section names
+        ``task.py find``, ``plan_version=``, and the read bar;
+    (3) issue steps/04-step-2.md — the ``Subagent briefs always pass``
+        region (ends at ``Also include estimated cost``) names
+        ``task.py find`` + ``frozen``;
+    (4) issue-v2/SKILL.md — the ``### Step 4: Implement + review`` region
+        names ``task.py find``, ``plan_version=``, ``planned_manifest.json``;
+    (5) CLAUDE.md — the single ``- **Plan handoff convention:**`` line
+        names ``task.py find`` + ``frozen``;
+    (6) issue steps/08-step-4.md — the ``Brief passed to the implementer:``
+        region (FIRST resolving end anchor of the ordered fallback: the
+        gate-scope verification-duty bullet, then ``Move status to ``;
+        when NEITHER resolves the check fails CLOSED with the descriptive
+        missing-end-anchor error — no EOF fallback, plan v4) names
+        ``task.py find`` + ``plan_version=``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+    read_bar = "never read `tasks/` from inside the worktree"
+    surfaces: tuple[tuple[str, str, tuple[str, ...], tuple[str, ...]], ...] = (
+        (
+            ".claude/skills/issue/steps/09-step-5.md",
+            "Both reviewers see the same brief:",
+            ("**Neutral gate vocabulary",),
+            (
+                "task.py find",
+                "plan_version=",
+                "planned_manifest.json",
+                "task.py view",
+                read_bar,
+            ),
+        ),
+        (
+            ".claude/agents/code-reviewer.md",
+            "## Context budget",
+            ("\n## ",),
+            ("task.py find", "plan_version=", read_bar),
+        ),
+        (
+            ".claude/skills/issue/steps/04-step-2.md",
+            "Subagent briefs always pass",
+            ("Also include estimated cost",),
+            ("task.py find", "frozen"),
+        ),
+        (
+            ".claude/skills/issue-v2/SKILL.md",
+            "### Step 4: Implement + review",
+            ("### Step 5: Run",),
+            ("task.py find", "plan_version=", "planned_manifest.json"),
+        ),
+        (
+            ".claude/skills/issue/steps/08-step-4.md",
+            "Brief passed to the implementer:",
+            (
+                "- The brief MUST also carry the gate-scope verification duty",
+                "Move status to ",
+            ),
+            ("task.py find", "plan_version="),
+        ),
+    )
+    for rel, start, ends, tokens in surfaces:
+        path = root / rel
+        if not path.is_file():
+            errors.append(
+                f"{path}: missing — a #2422 worktree-safe task-state brief "
+                f"surface (a worktree's tasks/ tree is frozen at its base "
+                f"commit and serves stale plan/manifest state with no "
+                f"error; #2329/#823)."
+            )
+            continue
+        text = path.read_text(encoding="utf-8")
+        idx = text.find(start)
+        if idx == -1:
+            errors.append(
+                f"{path}: missing the start anchor {start!r} (#2422) — the "
+                f"region pinning the worktree-safe task-state path contract "
+                f"(#2329/#823) can no longer be located."
+            )
+            continue
+        nxt = -1
+        for end in ends:
+            nxt = text.find(end, idx + 1)
+            if nxt != -1:
+                break
+        if nxt == -1:
+            # Fail CLOSED (plan v4, round-1 concern fail-open-surface6-region):
+            # NO surface may silently widen its region to EOF — the error
+            # fires, and the EOF-widened token scan below is a diagnostic
+            # aid only (it can suppress redundant token errors, never the
+            # missing-end-anchor error itself).
+            errors.append(
+                f"{path}: no end anchor for the {start!r} region resolves "
+                f"after the start anchor (tried {ends!r}; #2422) — re-derive "
+                f"the region bound from the landed text."
+            )
+        region = text[idx:nxt] if nxt != -1 else text[idx:]
+        for token in tokens:
+            if token not in region:
+                errors.append(
+                    f"{path}: the {start!r} region no longer names "
+                    f"{token!r} (#2422) — briefs composed from this surface "
+                    f"would hand a worktree-relative tasks/ path again, and "
+                    f"a worktree's tasks/ tree serves stale plan/manifest "
+                    f"state with no error (#2329/#823)."
+                )
+
+    # (5) CLAUDE.md — line-scoped: the single plan-handoff convention line.
+    claude_md = root / "CLAUDE.md"
+    if not claude_md.is_file():
+        errors.append(
+            f"{claude_md}: missing — the always-on plan-handoff convention "
+            f"line is a #2422 pinned surface (#2329/#823)."
+        )
+        return errors
+    handoff = next(
+        (
+            ln
+            for ln in claude_md.read_text(encoding="utf-8").splitlines()
+            if ln.startswith("- **Plan handoff convention:**")
+        ),
+        None,
+    )
+    if handoff is None:
+        errors.append(
+            f"{claude_md}: missing the '- **Plan handoff convention:**' "
+            f"line (#2422) — the always-on canonical-absolute-path "
+            f"convention (#2329/#823) would be silently stripped."
+        )
+        return errors
+    for token in ("task.py find", "frozen"):
+        if token not in handoff:
+            errors.append(
+                f"{claude_md}: the '- **Plan handoff convention:**' line no "
+                f"longer names {token!r} (#2422) — the always-on surface "
+                f"would drop the worktree-frozen-tasks/ contract "
+                f"(#2329/#823)."
             )
     return errors
 
@@ -14209,6 +15028,71 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
                     f"names {ledger_line!r} (#2326) — an empty concerns "
                     f"ledger would pass vacuously with no visible record."
                 )
+    return errors
+
+
+def check_codex_composer_memory_commit_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL surface pin (#2473): the codex-composer shared contract must keep
+    its "Your own agent-memory writes" section (same-turn explicit-path
+    commit duty + the counter-argument to the invented
+    mid-round-contamination heuristic) and the Compose-only Bash-allowlist
+    cross-reference that licenses the commit.
+
+    Incident (#2473, observed on #2263 review rounds 4/5/6): three composer
+    spawns each left a memory lesson uncommitted "to keep it out of the diff
+    under review" — the #2015 dominant standing-armer class — and the
+    orchestrator hand-committed all three. Region-anchored on
+    .claude/rules/codex-composer-common.md; mirrors
+    check_codex_concerns_persistence_lens. ``repo_root`` is a unit-test
+    override hook; behavioral subprocess tests may point the check at a tmp
+    corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``. Bundled into the no-flags
+    default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    rule = root / ".claude" / "rules" / "codex-composer-common.md"
+    heading = "## Your own agent-memory writes"
+    crossref = "§ Your own agent-memory writes"
+    tokens = (
+        ("in the SAME turn", "the same-turn commit-timing literal"),
+        ("MEMORY.md", "the index-row-in-the-same-commit literal"),
+        ("guard_root_code_commit.sh", "the literal-pathspec guard rationale"),
+        ("post-merge sweep", "the do-not-defer-to-a-sweep literal"),
+    )
+    if not rule.is_file():
+        return [f"{rule}: missing — the codex composer shared contract must exist (#2473)."]
+    text = _read_workflow_doc(rule)
+    idx = text.find(heading)
+    if idx == -1:
+        return [
+            f"{rule}: missing the '{heading}' section (#2473) — without it every "
+            f"codex-* composer re-invents the mid-round-contamination heuristic and "
+            f"leaves its agent-memory writes uncommitted (the #2015 stash-race "
+            f"permanent-loss class; #2263 rounds 4/5/6)."
+        ]
+    errors: list[str] = []
+    # Bound the region at the NEXT top-level section, so a pinned literal that
+    # migrates OUT of this section into a later one cannot still satisfy the
+    # scan (critic round 1 concern 3 — deliberately tighter than the #2326
+    # precedent's heading-to-EOF region).
+    nxt = text.find("\n## ", idx + len(heading))
+    region = text[idx:] if nxt == -1 else text[idx:nxt]
+    for token, why in tokens:
+        if token not in region:
+            errors.append(
+                f"{rule}: the agent-memory-writes section no longer carries "
+                f"{token!r} ({why}, #2473)."
+            )
+    if crossref not in text[:idx]:
+        errors.append(
+            f"{rule}: the Compose-only Bash allowlist no longer cross-references "
+            f"{crossref!r} (#2473) — without the allowlist amendment the commit "
+            f"duty contradicts the compose-only Bash bounds and a rule-following "
+            f"composer will skip it."
+        )
     return errors
 
 
@@ -16308,28 +17192,48 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 97,590 B @ #2158 2026-08-17 (pre-split completeness guard
-    # block, +1,085 B); corridor-max ((measured+2_800)//100)*100.
-    # Prior: 99_300 (#2352, 96,505 B).
-    "issue/steps/09-step-5.md": 100_300,
+    # measured 118,770 B @ #2294 Step 10d 2026-08-22 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100 = 121_500, headroom 2,730 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
+    # caps were 120_700, each measuring only its own side: #2294's
+    # IMPLEMENTER-MARKER-MISSING guard branch (+797 B, 117,984 B) and #2472's
+    # composer-role lean-twin ladder extension (+786 B, 117,973 B) landed on
+    # the same file concurrently.
+    # Prior: 120_700 (#2294, 117,984 B) / 120_700 (#2472, 117,973 B) /
+    # 119_900 (#2241 Step 10d merged-tree re-measure, 117,187 B) / 113_400
+    # (#2260, 110,622 B) / 113_100 (#2241 r4, 110,316 B) / 111_900 (#2241
+    # r3, 109,181 B) / 110_300 (#2241 r2, 107,590 B) / 109_600 (#2241 r1,
+    # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
+    # 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 121_500,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 279,937 B @ #2348 (TG merge-base + classify port).
-    "issue/steps/18-step-10d.md": 282_700,
+    # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
+    # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
+    # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =
+    # 297_000, headroom 2,791 — clears guard_skill_doc_headroom.sh's 2,000 B
+    # warn floor. Re-measure + re-set at Step 10d against the MERGED tree
+    # (concurrent sessions edit this file).
+    # Prior: 292_100 (#2246 post-rebase, 289,354 B) / 290_900 (#2428).
+    "issue/steps/18-step-10d.md": 297_000,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
     # measured 88,010 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 90_000; chronicle: git log.
     "daily/SKILL.md": 90_800,
-    # measured 74,222 B @ #2178 2026-08-18 (r2 c65/c66 no-smoke-run
-    # declaration escape entry, +377 B); corridor-max
-    # ((measured+2_800)//100)*100. Prior: 76_000 (#2325, 73,229 B);
-    # chronicle: git log.
-    "adversarial-planner/SKILL.md": 77_000,
+    # measured 78,559 B @ #2299 2026-08-22 (c70 judge-pilot resolution
+    # check: TWO canonical-escape entries, +1,410 B); corridor-max
+    # ((measured+2_800)//100)*100 = 81_300, headroom 2,741 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor (the un-re-derived
+    # 79_900 cap would have left 1,341 B, under the warn floor — the
+    # #2204 re-armed-ratchet shape).
+    # Prior: 79_900 (#2228, 77,149 B) / 79_300 (#2204); chronicle: git log.
+    "adversarial-planner/SKILL.md": 81_300,
 }
 
 
@@ -17916,6 +18820,300 @@ def _gcp_pin_annotated(lines: list[str], idx: int) -> bool:
     return any(tok in blob for tok in GCP_PIN_ANNOTATION_TOKENS)
 
 
+# ── --check-lane-order-adjective (#2298; the stale auto-lane-order prose class)
+# The router's DEFAULT_AUTO_LANE_ORDER head has inverted before (#2054
+# runpod-first; #2028 GCP-disabled before it), and each inversion strands
+# ordinal-adjective prose ("fellows-first `auto` default") plus literal
+# tuple transcriptions across the workflow surface — the #2298 incident:
+# the plan-critic lens surface asserted fellows-first for ~2 months after
+# #2054, steering plan-time compute costings at the wrong machine. The
+# check reads the LIVE head from router.py SOURCE (AST, no import — never
+# a hardcoded expected head) and FAILs (family 1) a "<lane>-first" /
+# "<lane> first" adjective naming a NON-head lane in an order context
+# (order vocabulary within +/-1 physical line — the scan set is
+# hard-wrapped markdown, so a same-line-only window provably drops half
+# the real hits), and (family 2) a prose transcription
+# `DEFAULT_AUTO_LANE_ORDER = ("<head>", ...)` whose head differs from the
+# live one. FAIL posture, unlike the WARN-only gcp-pin sibling above:
+# lane-order prose has NO runtime backstop — the prose IS the enforcement
+# surface — and the binding Step 9c / Step 10d gates are
+# baseline-subtracted, so a future false positive reddens only the
+# introducing round (#1388 contained). SKIPs loud (fail-open) when the
+# head cannot be resolved (unparseable router, absent / mixed /
+# disagreeing `_default_auto_lane_order` returns) — the guard goes quiet
+# rather than firing on a head it cannot resolve.
+# Scan scope is the PRESCRIPTIVE surface ONLY. DELIBERATELY EXCLUDED —
+# each holds TRUE historical statements a FAIL check must not redden:
+#   * docs/ — docs/methodology/issue_{608,601,654,537,613}.md record which
+#     lane those June-2026 runs actually took (true statements about the
+#     past);
+#   * tests/ — test_router.py pins legacy orders as deliberate fixtures;
+#   * src/ + scripts/ — router.py / gcp.py / router_acceptance.py /
+#     dispatch_issue.py comments describe rollback shapes and attempt
+#     ordering;
+#   * .claude/agent-memory/ — e.g. the implementer memory
+#     reference_verify_plan_corpus_calibration_era_skew.md says "GCP-first
+#     auto" and its whole point is the OLD era's skew (INSIDE .claude/,
+#     which is exactly why the scope is glob-enumerated rather than "all
+#     of .claude/").
+LANE_ORDER_ROUTER_REL = "src/explore_persona_space/backends/router.py"
+KNOWN_LANES: tuple[str, ...] = ("runpod", "fellows", "gcp", "nibi", "fir", "mila")
+LANE_ORDER_WAIVER_WINDOW = 40
+LANE_ORDER_WAIVER_MIN_REASON_CHARS = 10
+# Waiver: <!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> --> on the hit
+# line, in the preceding 40 lines, or anywhere in the file's first 40
+# lines (the _gcp_pin_annotated window shape; the repo's >=10-char reason
+# convention — WANDB_INTENTIONALLY_DISABLED / ARGCHECK_BIND_EXEMPT).
+_LANE_ORDER_WAIVER_RE = re.compile(r"<!--\s*LANE-ORDER-HISTORICAL:\s*(?P<reason>.*?)\s*-->")
+# Family-1 order-context vocabulary, matched on the hit line OR either
+# immediately adjacent physical line. Word-bounded so "automatic" never
+# opens the window as "auto". The +/-1-line grain is MEASURED, not
+# assumed: same-line-only drops 2 of the 4 live 2026-08 hits (both
+# hard-wrapped sentences whose vocabulary lands on the neighbor line).
+_LANE_ORDER_CONTEXT_RE = re.compile(
+    # `lane order` carries its own word boundaries: unguarded, it
+    # substring-opens the window on "plane order..." (round-1 code-review
+    # Minor). Window-opening only — a finding still requires a non-head
+    # `<lane>[- ]first` token on the FOCAL line — but on a FAIL-posture
+    # check the false-positive surface is kept as tight as it can freely
+    # be. Verified zero behavior change on the live tree: all four
+    # pre-edit hits open their window via `auto` / `chain` / `default`.
+    # Pinned by T14.
+    r"\b(?:auto|chain|default|precedence)\b|\blane order\b",
+    re.I,
+)
+# Family 2: a prose transcription of the constant asserts the order by
+# construction — compare its head against the resolved head. Applied to
+# the WHOLE text (finditer), so a hard-wrapped transcription still
+# matches; no co-occurrence window needed (the transcription is
+# unambiguous).
+_LANE_ORDER_TRANSCRIPTION_RE = re.compile(
+    r"DEFAULT_AUTO_LANE_ORDER\s*=\s*\(\s*['\"](?P<head>\w+)['\"]"
+)
+_LANE_ORDER_SCAN_GLOBS: tuple[tuple[str, str], ...] = (
+    (".claude/agents", "**/*.md"),
+    (".claude/skills", "**/SKILL.md"),
+    (".claude/rules", "**/*.md"),
+)
+_LANE_ORDER_SCAN_FILES: tuple[str, ...] = ("CLAUDE.md",)
+# Exclusions (worktrees / caches — full repo checkouts are never the live
+# surface) reuse _gcp_pin_excluded verbatim: same segments, and its
+# root-RELATIVE match already handles the repo-root-is-itself-a-worktree
+# self-exclusion trap (#2018).
+
+
+def read_default_auto_lane_head(source: str) -> str | None:
+    """Head lane of ``DEFAULT_AUTO_LANE_ORDER``, from ``router.py`` SOURCE text.
+
+    AST-based (read-only, no import) so the check is testable against a
+    fixture tree via ``repo_root=``. EVERY ``ast.Return`` inside
+    ``_default_auto_lane_order`` must be a tuple whose element 0 is a
+    string Constant; the head is returned only when every such return
+    agrees. ANY other return shape (a bare name, a call, a starred head, a
+    non-str literal) yields ``None`` — a whole-function requirement, NOT a
+    filter over the tuple-shaped returns: filtering would let a
+    mixed-return refactor resolve a head from one branch and silently
+    mis-grade prose written for the other. Returns ``None`` when the
+    module does not parse, the function is absent, no return exists, or
+    branches disagree — callers SKIP loud on ``None``, never crash.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    fn: ast.FunctionDef | None = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == "_default_auto_lane_order":
+            fn = node
+            break
+    if fn is None:
+        return None
+    heads: list[str] = []
+    for node in ast.walk(fn):
+        if not isinstance(node, ast.Return):
+            continue
+        value = node.value
+        if not (isinstance(value, ast.Tuple) and value.elts):
+            return None
+        head = value.elts[0]
+        if not (isinstance(head, ast.Constant) and isinstance(head.value, str)):
+            return None
+        heads.append(head.value)
+    if not heads or len(set(heads)) != 1:
+        return None
+    return heads[0]
+
+
+def _lane_order_scan_files(root: Path) -> list[Path]:
+    """The prescriptive-surface scan set under ``root``, exclusions applied."""
+    out: list[Path] = []
+    for base, pattern in _LANE_ORDER_SCAN_GLOBS:
+        base_dir = root / base
+        if base_dir.is_dir():
+            out.extend(p for p in sorted(base_dir.glob(pattern)) if p.is_file())
+    # The #2155 split relocated the /issue step bodies to
+    # .claude/skills/issue/steps/*.md — outside the **/SKILL.md glob — so
+    # append the companions (returns [] on a pre-split tree); Edit 4's own
+    # stale hit lived in a step companion.
+    out.extend(_issue_step_companions(root / ".claude" / "skills"))
+    for rel in _LANE_ORDER_SCAN_FILES:
+        p = root / rel
+        if p.is_file():
+            out.append(p)
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for p in out:
+        if p in seen or _gcp_pin_excluded(p, root):
+            continue
+        seen.add(p)
+        result.append(p)
+    return result
+
+
+def _lane_order_waived(lines: list[str], idx: int) -> bool:
+    """True when a LANE-ORDER-HISTORICAL waiver with a >=10-char reason
+    appears on the hit line, in the preceding
+    :data:`LANE_ORDER_WAIVER_WINDOW` lines, or anywhere in the file's
+    first :data:`LANE_ORDER_WAIVER_WINDOW` lines (the top-of-file
+    scope-banner form)."""
+    lo = max(0, idx - LANE_ORDER_WAIVER_WINDOW)
+    window = lines[lo : idx + 1] + lines[:LANE_ORDER_WAIVER_WINDOW]
+    for m in _LANE_ORDER_WAIVER_RE.finditer("\n".join(window)):
+        if len(m.group("reason").strip()) >= LANE_ORDER_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _lane_order_file_findings(rel: str, text: str, head: str) -> list[str]:
+    """``--check-lane-order-adjective`` findings for one file's text.
+
+    Family 1: a ``<lane>-first`` / ``<lane> first`` adjective naming a
+    NON-head lane, with order vocabulary on the hit line or either
+    immediately adjacent physical line. Family 2: a
+    ``DEFAULT_AUTO_LANE_ORDER = ("<head>", ...)`` transcription whose head
+    differs from ``head``. Waived hits are dropped.
+    """
+    non_head = [lane for lane in KNOWN_LANES if lane != head]
+    # The trailing (?![\w-]) guard is required, not decorative: \b matches
+    # between "t" and "-", so a bare \b...first\b DOES match inside the
+    # live house idiom "gcp-first-resort"; the guard rejects it (and
+    # "firstly"), while Part 2's audit covers "first-resort" separately.
+    family1 = re.compile(r"\b(" + "|".join(non_head) + r")[- ]first(?![\w-])", re.I)
+    lines = text.split("\n")
+    findings: list[str] = []
+    for idx, line in enumerate(lines):
+        m = family1.search(line)
+        if m is None:
+            continue
+        neighborhood = lines[max(0, idx - 1) : idx + 2]
+        if not any(_LANE_ORDER_CONTEXT_RE.search(nb) for nb in neighborhood):
+            continue
+        if _lane_order_waived(lines, idx):
+            continue
+        findings.append(
+            f"--check-lane-order-adjective: {rel}:{idx + 1}: stale lane-order "
+            f"adjective [family-1] {m.group(0)!r} names a non-head lane — the "
+            f"live DEFAULT_AUTO_LANE_ORDER head is {head!r} "
+            f"({LANE_ORDER_ROUTER_REL}); rewrite the prose to the live order, "
+            f"or waive a dated statement with "
+            f"<!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> --> (same line, "
+            f"preceding {LANE_ORDER_WAIVER_WINDOW} lines, or a "
+            f"first-{LANE_ORDER_WAIVER_WINDOW}-lines banner): {line.strip()[:120]}"
+        )
+    for m in _LANE_ORDER_TRANSCRIPTION_RE.finditer(text):
+        found = m.group("head")
+        if found == head:
+            continue
+        lineno = text.count("\n", 0, m.start()) + 1
+        if _lane_order_waived(lines, lineno - 1):
+            continue
+        findings.append(
+            f"--check-lane-order-adjective: {rel}:{lineno}: stale "
+            f"DEFAULT_AUTO_LANE_ORDER transcription [family-2] head "
+            f"{found!r} != live head {head!r} ({LANE_ORDER_ROUTER_REL}); "
+            f"update the transcription to the live order, or waive a dated "
+            f"statement with <!-- LANE-ORDER-HISTORICAL: <reason >=10 "
+            f"chars> -->"
+        )
+    return findings
+
+
+def lane_order_adjective_report(repo_root: Path | None = None) -> dict[str, object]:
+    """ARMED-state report for ``--check-lane-order-adjective``.
+
+    Returns ``skipped: bool``, ``skip_reason: str | None``,
+    ``head: str | None``, ``files_scanned: int``, ``scanned_files``
+    (repo-root-relative posix), ``findings: list[str]``. The report fields
+    are what make ARMED-vs-SKIPPED testable — a silently-inert check
+    produces the same "0 findings, exit 0" CLI surface as a working one
+    (the #2018 kill-criterion-(d) precedent). Fail-open: an unreadable /
+    unparseable router, an absent ``_default_auto_lane_order``, or
+    disagreeing return heads SKIP loud with 0 findings, never crash.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+
+    def _note(msg: str) -> None:
+        sys.stderr.write(f"workflow_lint: note: --check-lane-order-adjective {msg}\n")
+
+    def _skip(reason: str, detail: str) -> dict[str, object]:
+        _note(f"SKIPPED ({detail})")
+        return {
+            "skipped": True,
+            "skip_reason": reason,
+            "head": None,
+            "files_scanned": 0,
+            "scanned_files": [],
+            "findings": [],
+        }
+
+    router = root / LANE_ORDER_ROUTER_REL
+    try:
+        head = read_default_auto_lane_head(router.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError) as exc:
+        return _skip("router-unreadable", f"router source unreadable: {router} ({exc})")
+    if head is None:
+        return _skip(
+            "head-unresolved",
+            f"DEFAULT_AUTO_LANE_ORDER head not resolvable from {router} "
+            f"(every _default_auto_lane_order return must be a tuple whose "
+            f"element 0 is one agreeing string literal)",
+        )
+    findings: list[str] = []
+    scanned: list[str] = []
+    for path in _lane_order_scan_files(root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            _note(f"skipped unreadable {path} ({type(exc).__name__})")
+            continue
+        try:
+            rel = path.relative_to(root).as_posix()
+        except ValueError:
+            rel = path.as_posix()
+        scanned.append(rel)
+        findings.extend(_lane_order_file_findings(rel, text, head))
+    _note(f"head={head!r}, scanned {len(scanned)} file(s), {len(findings)} finding(s)")
+    return {
+        "skipped": False,
+        "skip_reason": None,
+        "head": head,
+        "files_scanned": len(scanned),
+        "scanned_files": scanned,
+        "findings": findings,
+    }
+
+
+def check_lane_order_adjective(repo_root: Path | None = None) -> list[str]:
+    """FAIL (#2298): stale auto-lane-order prose on the prescriptive surface.
+
+    Thin error-list wrapper over :func:`lane_order_adjective_report` for
+    the dispatch ladder; the K1 WARN-downgrade lever is wrapping this in
+    :func:`_run_warn_only` at the registration sites.
+    """
+    report = lane_order_adjective_report(repo_root)
+    return list(report["findings"])  # type: ignore[arg-type]
+
+
 # `--check-plan-version-immutability` (#2123): a persisted
 # ``tasks/**/plans/v<K>.md`` is immutable — an amendment requires a NEW
 # version file via ``task.py new-plan-version``, never an in-place edit.
@@ -18429,6 +19627,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_upload_file_in_loop": lambda wf: check_upload_file_in_loop(),
     "check_upload_return_discard": lambda wf: check_upload_return_discard(),
     "check_dotenv_before_hf_import": lambda wf: check_dotenv_before_hf_import(),
+    "check_prod_import_lockfile": lambda wf: check_prod_import_lockfile(),
     "check_batch_judge_client": lambda wf: check_batch_judge_client(),
     "check_hub_verify_retry": lambda wf: check_hub_verify_retry(),
     "check_no_workflow_improver_spawn": lambda wf: check_no_workflow_improver_spawn(),
@@ -18454,9 +19653,11 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
     "check_pre_split_review_guard": lambda wf: check_pre_split_review_guard(),
+    "check_worktree_task_state_briefs": lambda wf: check_worktree_task_state_briefs(),
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_codex_composer_memory_commit": lambda wf: check_codex_composer_memory_commit_lens(),
     "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
@@ -18492,6 +19693,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_no_unannotated_gcp_pin_guidance": (
         lambda wf: _run_warn_only(check_no_unannotated_gcp_pin_guidance)
     ),
+    "check_lane_order_adjective": lambda wf: check_lane_order_adjective(),
 }
 
 # Classification of every dispatch-chain check (plan §4 B2). The task-body
@@ -18541,6 +19743,18 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_upload_file_in_loop": CheckScope("path-local", ("scripts/",)),
     "check_upload_return_discard": CheckScope("path-local", ("scripts/",)),
     "check_dotenv_before_hf_import": CheckScope("path-local", ("scripts/",)),
+    # #2253: findings on file F depend only on F's own content plus fixed
+    # small config surfaces (uv.lock / pyproject.toml — named EXPLICITLY per
+    # the config-READING instruction above; the check reads them
+    # unconditionally, never through _files_scope_filter). A config-only
+    # payload scope-filters the .py enumeration to zero files — a
+    # deliberately near-empty scoped run; the dep-REMOVAL direction (a
+    # lockfile edit stranding an importer elsewhere in the tree) is
+    # corpus-global and owned by the bare Step 9c no-flags run (the #2079
+    # allowlist-staleness division of labor).
+    "check_prod_import_lockfile": CheckScope(
+        "path-local", ("scripts/", "src/", "uv.lock", "pyproject.toml")
+    ),
     "check_batch_judge_client": CheckScope("path-local", ("scripts/", "src/")),
     "check_hub_verify_retry": CheckScope("path-local", ("scripts/",)),
     "check_judge_model_pins": CheckScope("path-local", ("scripts/", "src/", "tests/")),
@@ -18595,9 +19809,11 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_pre_split_review_guard": CheckScope(
         "global", (".claude/", "scripts/", "src/explore_persona_space/")
     ),
+    "check_worktree_task_state_briefs": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_codex_composer_memory_commit": CheckScope("global", (".claude/",)),
     "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
@@ -18620,6 +19836,14 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     # Reads git state of tasks/**/plans/ only — a disjoint code payload
     # cannot redden it (#2123).
     "check_plan_version_immutability": CheckScope("global", ("tasks/",)),
+    # The router path is LOAD-BEARING in surfaces (#2298): the check READS
+    # router.py for the live head, so a files-mode gate run whose payload
+    # IS the inversion commit must re-run this check — the one commit the
+    # guard most needs to fire on (mixed dir+file precedent:
+    # check_skill_refs; _surface_hit handles both forms).
+    "check_lane_order_adjective": CheckScope(
+        "global", (".claude/", "CLAUDE.md", LANE_ORDER_ROUTER_REL)
+    ),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
@@ -19140,6 +20364,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "'# DOTENV_LINT_EXEMPT: <reason>'. Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-prod-import-lockfile",
+        action="store_true",
+        help="AST-scan scripts/**/*.py and src/**/*.py and FAIL any third-party "
+        "import root not resolvable from uv.lock/pyproject.toml (#2253; incident "
+        "#2223 — a lockfile-absent import killed a pod run at launch). "
+        "Branch-agnostic over runtime-executable code (TYPE_CHECKING guard "
+        "bodies excluded); an import in the BODY of a try whose handler names "
+        "ImportError/ModuleNotFoundError is exempt, as is a per-site "
+        "'# PROD_IMPORT_LINT_EXEMPT: <reason>' waiver. Dangling issue*-stem "
+        "first-party roots and extras-only dists WARN on stderr instead of "
+        "failing. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-batch-judge-client",
         action="store_true",
         help="AST-walk scripts/**/*.py and src/explore_persona_space/**/*.py "
@@ -19349,7 +20586,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         help="FAIL if the #2158 pre-split review guard is absent from any "
         "of its seven surfaces (eight files): the "
         "scripts/pre_split_review_guard.py CLI naming the "
-        "pre_split_review_gate library entry, the task_workflow.py "
+        "pre_split_review_gate library entry + the #2294 "
+        "IMPLEMENTER-MARKER-MISSING exit-4 verdict, the task_workflow.py "
         "predicate + PRE-SPLIT-INCOMPLETE verdict token, the 09-step-5.md "
         "'**Pre-split completeness guard' block, the 08-step-4.md "
         "breadcrumb-grammar + unit=<k> emitter tokens, the 08-step-4.md "
@@ -19359,6 +20597,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "a review dispatched against a Unit-A-only intermediate commit "
         "cost 2 subagent deaths + a 2-day park). Bundled into the no-flags "
         "default run.",
+    )
+    parser.add_argument(
+        "--check-worktree-task-state-briefs",
+        action="store_true",
+        help="FAIL if the #2422 worktree-safe task-state brief contract is "
+        "absent from any of its six surfaces: the shared review-brief "
+        "region in 09-step-5.md, the code-reviewer.md Context-budget "
+        "section, the 04-step-2.md plan-handoff paragraph, the "
+        "issue-v2/SKILL.md Step 4 region, the CLAUDE.md plan-handoff "
+        "convention line, and the 08-step-4.md implementer-brief "
+        "checklist. Pins the canonical-absolute-path (task.py find) + "
+        "compose-time plan_version= pin + never-read-tasks/-from-the-"
+        "worktree read bar (incidents #2329/#823: a worktree's tasks/ tree "
+        "is frozen at its base commit and serves a stale plan/manifest "
+        "with no error). Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-null-gate-calibration-lens",
@@ -19406,6 +20659,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "heading (incidents #2091: a host-wide max() drain verdict killed "
         "4 of 9 rung-jobs; #2061: a fabricated shard schema cost a full "
         "implementation round). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-codex-composer-memory-commit",
+        action="store_true",
+        help="FAIL if the #2473 codex-composer agent-memory same-turn commit "
+        "duty is absent from .claude/rules/codex-composer-common.md: the "
+        "'Your own agent-memory writes' section (same-turn explicit-path "
+        "commit of the lesson + its MEMORY.md index row, the "
+        "counter-argument to the invented mid-round-contamination "
+        "heuristic, the literal-pathspec guard rationale) plus the "
+        "Compose-only Bash-allowlist cross-reference that licenses the "
+        "commit (incident #2473: three #2263 composer spawns each parked "
+        "an uncommitted memory write for a post-merge sweep — the #2015 "
+        "stash-race permanent-loss class — and the orchestrator "
+        "hand-committed all three). Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-codex-concerns-persistence",
@@ -19962,6 +21230,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "or is unresolvable from router.py source. Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-lane-order-adjective",
+        action="store_true",
+        help="FAIL (#2298): flag stale auto-lane-order prose on the "
+        "prescriptive workflow surface (.claude/{agents,rules} markdown, "
+        "skills SKILL.md + the /issue step companions, CLAUDE.md) — (a) a "
+        "'<lane>-first' / '<lane> first' ordinal adjective naming a lane "
+        "that is NOT the live DEFAULT_AUTO_LANE_ORDER head, in an order "
+        "context (order vocabulary within +/-1 physical line), and (b) a "
+        "DEFAULT_AUTO_LANE_ORDER = (...) prose transcription whose head "
+        "differs from the live one. The live head is read from router.py "
+        "SOURCE (AST, no import) — never hardcoded — so the next order "
+        "inversion flags every straggler of both shapes. SKIPs loud "
+        "(fail-open) when the head cannot be resolved. Waive a dated "
+        "statement with <!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> "
+        "--> (same line, preceding 40 lines, or first 40 lines). docs/, "
+        "tests/, src/, scripts/, .claude/agent-memory/ are deliberately "
+        "out of scope (true historical statements). Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.files:
@@ -20041,6 +21329,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_upload_file_in_loop
         or args.check_upload_return_discard
         or args.check_dotenv_before_hf_import
+        or args.check_prod_import_lockfile
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
         or args.check_no_workflow_improver_spawn
@@ -20058,9 +21347,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
         or args.check_pre_split_review_guard
+        or args.check_worktree_task_state_briefs
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_codex_composer_memory_commit
         or args.check_codex_concerns_persistence
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
@@ -20099,6 +21390,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_stale_gotchas_pointers
         or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
+        or args.check_lane_order_adjective
     )
 
     errors: list[str] = []
@@ -20185,6 +21477,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_return_discard())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
+    if args.check_prod_import_lockfile or no_flags:
+        errors.extend(check_prod_import_lockfile())
     if args.check_batch_judge_client or no_flags:
         errors.extend(check_batch_judge_client())
     if args.check_hub_verify_retry or no_flags:
@@ -20227,12 +21521,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_smoke_blind_spot_review_lens())
     if args.check_pre_split_review_guard or no_flags:
         errors.extend(check_pre_split_review_guard())
+    if args.check_worktree_task_state_briefs or no_flags:
+        errors.extend(check_worktree_task_state_briefs())
     if args.check_null_gate_calibration_lens or no_flags:
         errors.extend(check_null_gate_calibration_lens())
     if args.check_two_tier_yield_floor or no_flags:
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_codex_composer_memory_commit or no_flags:
+        errors.extend(check_codex_composer_memory_commit_lens())
     if args.check_codex_concerns_persistence or no_flags:
         errors.extend(check_codex_concerns_persistence_lens())
     if args.check_verdict_round_anchor or no_flags:
@@ -20316,6 +21614,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # GcpDisabledError refusal. The check prints its own WARN lines +
         # ARMED/SKIPPED summary note.
         check_no_unannotated_gcp_pin_guidance()
+    if args.check_lane_order_adjective or no_flags:
+        # FAIL posture (#2298), unlike the gcp-pin WARN sibling above:
+        # stale lane-order prose has no runtime backstop — the prose IS
+        # the enforcement surface — and the binding gates are
+        # baseline-subtracted, so a false positive reddens only the
+        # introducing round (#1388 contained). K1 downgrade lever: wrap in
+        # _run_warn_only and record why.
+        errors.extend(check_lane_order_adjective())
 
     if errors:
         for err in errors:

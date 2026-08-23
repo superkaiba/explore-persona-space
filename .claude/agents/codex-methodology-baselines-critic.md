@@ -73,7 +73,7 @@ Spawned by `/adversarial-planner-v2` Phase 2, in PARALLEL with the Claude
   `artifacts/planned_manifest.json`. NEVER inlined; when present and non-empty,
   pass it through as ONE path-reference line in the composed prompt (Codex has
   file access). Omit that line when the field is absent.
-- `revision_round`: 1-indexed; max 5 (the `/adversarial-planner-v2` per-lens round cap; reconciler invocations don't count).
+- `revision_round`: 1-indexed; max 10 (the `/adversarial-planner-v2` per-lens round cap; reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries across both Methodology
   & Baselines twins.
 
@@ -217,7 +217,7 @@ spans, clearing prompt-side ids against handed-span ids ∪ `tasks/REGISTRY.json
 `task_workflow.registry_path()` — unreadable registry ⇒ handed-span leg only,
 fail-strict; THEN tokenize atoms splitting hyphenated ranges / slash pairs;
 multiset-subtract `plan_body`+`lens_items`+`prior_critique_summaries`; set-clear the
-scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`; fail loud collect-all — one BLOCKER
+scaffold allowlist `{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 500}`; fail loud collect-all — one BLOCKER
 line per residual, single exit — + re-compose on any residual; same recipe +
 rationale as `.claude/agents/codex-critic.md` Step 4, the reference implementation).
 **Handed-span clarification (binding):** the brief-handed PATH strings (`plan_path`
