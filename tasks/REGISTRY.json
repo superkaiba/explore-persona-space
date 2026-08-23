@@ -11383,8 +11383,8 @@
       "goal": "Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2474",
-      "status": "interpreting",
+      "path": "tasks/reviewing/2474",
+      "status": "reviewing",
       "title": "Base-model geometry under the inoculation prompt predicts EM re-elicitation with at most a marginal unique increment over surface-text similarity, and anti-predicts re-elicitation in the capitalization trigger bank through an ordering shared with plain similarity to neutral prompts (MODERATE confidence)"
     },
     "2475": {
