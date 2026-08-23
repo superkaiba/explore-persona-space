@@ -598,18 +598,28 @@ rebase-merged. Five guards:
    ```
 
    (The extracted script honors `EPM_SKIP_LOST_UPDATE_GUARD=1` FIRST — emits
-   `GUARD4=skipped`, exit 0. Otherwise it computes the merge-base from
-   `--main-sha` if provided else `git -C "$WT" merge-base HEAD origin/main`,
-   iterates the branch-touched paths under the fence's actual case glob
+   `GUARD4=skipped`, exit 0. Otherwise: `--main-sha` is the pinned
+   `origin/main` TIP — the Guard-1 capture above (`MAIN_SHA=$(git -C "$WT"
+   rev-parse origin/main)`), NOT the merge-base. The helper DERIVES the
+   merge-base from it (`git -C "$WT" merge-base HEAD <tip>`; the live
+   `origin/main` ref when the flag is omitted) and uses the SAME pinned tip
+   as the main side of the add-enumeration, so the pinned and no-flag forms
+   are verdict-equivalent by construction (#2428). It iterates the
+   branch-touched paths under the fence's actual case glob
    (`scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md`),
-   counts `origin/main`-added lines missing from `HEAD:<P>` via
+   counts pinned-tip-added lines missing from `HEAD:<P>` via
    `grep -Fxq -- "$ADD_LINE"` (the `--` separator protects `-`-leading
    additions) and on any refusal emits `LOST-UPDATE REFUSAL
    (Guard 4, #1713)` on stderr + `GUARD4=refused` +
-   `LOST_UPDATE_PATHS=...` on stdout + exit 1. The two-step rc-capture
+   `LOST_UPDATE_PATHS=...` on stdout + exit 1; BOTH pass and refusal emit
+   `GUARD4_MERGE_BASE=<derived base>` so the `epm:merged` record shows which
+   base the verdict used (#2212's vacuous pass was unauditable without it).
+   The two-step rc-capture
    form preserves the `false`-in-block-tail halt
-   semantics: `eval "$GUARD4_OUT"` populates the caller's `$GUARD4` and
-   `$LOST_UPDATE_PATHS`, and the trailing `[ "$GUARD4_RC" -eq 1 ] && false`
+   semantics: `eval "$GUARD4_OUT"` populates the caller's `$GUARD4`,
+   `$LOST_UPDATE_PATHS`, and `$GUARD4_MERGE_BASE` (the `GUARD4_` prefix keeps
+   the eval from clobbering the caller's live `$MB` / `$MAIN_SHA`), and the
+   trailing `[ "$GUARD4_RC" -eq 1 ] && false`
    halts the merge attempt at the same point the inline prose did (#1978).)
 
    **Recovery ordering (#1753; #1727).** When recovering via a
@@ -633,13 +643,16 @@ rebase-merged. Five guards:
    (the agent-memory pathspec commit) — a dirty tree aborts an in-worktree
    merge (the exact #906 shape Guard 0 exists to clean), so (ii) first runs
    the idempotent Guard 0 block, then merges. Scan this task's events for
-   `merge-hold-candidate` notes (the Step 2b edit-locus WARN record):
+   `merge-hold-candidate` RECORDS — anchored on the Step 2b record shape
+   (the token immediately followed by its named `sibling=<M>`), never a
+   bare substring: a note that merely MENTIONS the token (e.g. a heartbeat
+   reporting zero candidates) must not fire the guard (#2301):
 
    ```bash
-   grep -F 'merge-hold-candidate' "$(uv run python scripts/task.py find <N>)/events.jsonl"
+   grep -E 'merge-hold-candidate sibling=[0-9]+' "$(uv run python scripts/task.py find <N>)/events.jsonl"
    ```
 
-   No candidate note → Guard 5 is a no-op (one grep). Otherwise, per named
+   No candidate record → Guard 5 is a no-op (one grep). Otherwise, per named
    sibling `<M>` (dedup):
 
    - **(i) Bounded hold.** Read live state via `task.py view <M> --json`.
@@ -713,6 +726,124 @@ rebase-merged. Five guards:
      and `pre_resolve: <clean|conflicted-resolved|probe-unavailable>`
      (omit both lines when no candidate note exists). Same behavior in
      interactive and autonomous sessions; auto-continue, never a gate.
+
+#### Pre-merge divergence delta gate (#1771→#2201)
+
+Runs after Guard 5 and before the fast-path pre-check, every Step 10d
+invocation (both trigger points). Step 5a disclosed main-side divergence to
+the reviewers each round; this gate covers the residual UNREVIEWED at merge
+time — paths never in the final review round's disclosure, PLUS disclosed
+paths that main changed AGAIN after the reviewed main SHA (a pathname-only
+subtraction would let a re-touched hot-registry file merge ungated — the
+healthy-branch survivors measured at plan time are exactly that file
+class). An unreviewed semantic collision can textually merge clean, so
+neither Guard 4 (line-revert refusal) nor the reactive recovery (textual
+conflicts) would surface it.
+
+```bash
+DIVOUT=/tmp/issue-<N>-divergence-merge.txt
+NEWLIST=/tmp/issue-<N>-divergence-new.txt
+rm -f "$DIVOUT" "$NEWLIST"   # stale-output hygiene: a failed invocation must
+                             # never leave a prior run's list to compute from
+DIV_OUT=$(bash scripts/step10d_guards.sh <N> --guard divergence --out "$DIVOUT"); DIV_RC=$?
+eval "$DIV_OUT"              # two-step rc-capture (Guard-4 caller form)
+if [ "$DIV_RC" -eq 0 ]; then
+  # Review-time record = the LATEST per-round probe note:
+  LASTNOTE=$(uv run python scripts/task.py view <N> --json | uv run python -c '
+import sys, json
+rows = [e.get("note","") for e in json.load(sys.stdin).get("events",[])
+        if e.get("kind")=="epm:progress" and e.get("note","").startswith("[divergence-probe] r")]
+print(rows[-1] if rows else "")')
+  REVSET=/tmp/issue-<N>-divergence-reviewed.txt
+  printf '%s' "$LASTNOTE" | sed -n 's/.*files=//p' | tr ',' '\n' | sed '/^$/d' | sort -u > "$REVSET"
+  REV_MAIN=$(printf '%s' "$LASTNOTE" | grep -oE 'main=[0-9a-f]+' | head -1 | cut -d= -f2)
+  sort -u "$DIVOUT" > /tmp/issue-<N>-divergence-cur.txt
+  if [ -z "$LASTNOTE" ] || printf '%s' "$LASTNOTE" | grep -q ' ERROR ' \
+     || [ -z "$REV_MAIN" ] || ! git -C "$WT" cat-file -e "$REV_MAIN^{commit}" 2>/dev/null; then
+    # FAIL-CLOSED: no clean, parsable reviewed record -> the FULL probe set is unreviewed.
+    cp /tmp/issue-<N>-divergence-cur.txt "$NEWLIST"
+  else
+    # CONTENT-KEYED delta (never pathname-only): (probe MINUS reviewed paths)
+    # UNION (probe INTERSECT paths main changed after the reviewed main sha):
+    comm -13 "$REVSET" /tmp/issue-<N>-divergence-cur.txt > /tmp/issue-<N>-div-a.txt
+    # Materialize the reviewed->current main diff with an rc check (review r1
+    # MF-1b — never a bare pipeline): a failed diff would exit through
+    # sort|comm rc 0, read as an EMPTY set B, and let a previously-disclosed
+    # re-touched file merge as "reviewed". quotePath=false matches the
+    # helper's producers (MF-2: a C-escaped non-ASCII path in this list
+    # misses comm -12 against the raw current set -> NEW=empty).
+    if git -C "$WT" -c core.quotePath=false diff --name-only "$REV_MAIN" "$MAIN_SHA" \
+        > /tmp/issue-<N>-div-xy.txt; then
+      sort -u /tmp/issue-<N>-div-xy.txt \
+        | comm -12 - /tmp/issue-<N>-divergence-cur.txt > /tmp/issue-<N>-div-b.txt
+      sort -u /tmp/issue-<N>-div-a.txt /tmp/issue-<N>-div-b.txt > "$NEWLIST"
+    else
+      # FAIL-CLOSED on the masked-producer failure -- the same branch the
+      # missing/ERROR/unparsable review record takes (cap-bounded).
+      cp /tmp/issue-<N>-divergence-cur.txt "$NEWLIST"
+    fi
+  fi
+  NEW_COUNT=$(grep -c . "$NEWLIST" || true)
+fi
+```
+
+- `DIV_RC` != 0 → **documented fail-open, never silent:** post
+  `[divergence-probe] step10d ERROR rc=<rc>` (epm:progress), skip the delta
+  computation entirely (the list file was removed — never compute a count
+  from a stale file), PROCEED with today's machinery, and record
+  `diverged_on_main: disposition=probe-error rc=<rc>` on the `epm:merged`
+  note. Posture rationale: this gate is a DISCLOSURE instrument layered
+  over Guards 1-5 + the reactive recovery — its failure reverts the merge
+  to the pre-#2201 protection level rather than removing a data-safety
+  mechanism; Guard 3 has already HARD-STOPPED the dominant infra cause (no
+  merge-base) before this gate runs, so the residual rc != 0 population is
+  transient git failure, where a HOLD would wedge merges with no
+  implementer signal (the same bounded-not-wedged philosophy as Guard 5's
+  45-min cap). FAIL-CLOSED stays the rule where the probe itself is
+  HEALTHY but the review record is missing/ERROR/unparsable (the full-set
+  branch above): there the unreviewed set is computable, so it blocks.
+- `DIV_RC` = 0 and `NEW_COUNT` = 0 → PROCEED exactly as today. When
+  `DIVERGED_COUNT` > 0, record `diverged_on_main: count=<n>
+  disposition=reviewed` on the `epm:merged` note (beside `merge_hold:` /
+  `pre_resolve:`); omit the line when the probe read clean/skipped.
+- `NEW_COUNT` > 0 → **cap check first (durable across crash-resume):** if a
+  `[divergence-probe] step10d new=` note NEWER than the latest per-round
+  `[divergence-probe] r<...>` note already exists on this task, the one
+  reconciliation dispatch for this merge cycle is SPENT — PROCEED with
+  `diverged_on_main: count=<n> disposition=proceed-after-cap` on the merged
+  note, never a loop (a fresh review round re-posts the per-round note,
+  which re-arms the cap). Otherwise: do NOT run any merge form yet. Post
+  `[divergence-probe] step10d new=<comma-list>` (epm:progress — this note
+  IS the spent-cap key, posted BEFORE dispatching), then dispatch ONE
+  implementer reconciliation round: the brief names the newly-diverged
+  paths and points at both-side deltas BY REFERENCE (`git log --oneline
+  $MB.."$MAIN_SHA" -- <path>` / `$MB..HEAD -- <path>` — `$MAIN_SHA` is the
+  helper-emitted probed sha, so the inspected main state and the measured
+  state coincide), instructs an
+  in-worktree `git -C "$WT" merge "$MAIN_SHA"` (the same merge form Guard
+  5(ii) and the conflict recovery use; the merge target is that SAME
+  pinned sha, so the merge target and the measured state coincide too),
+  SEMANTIC reconciliation of the named files
+  (main's change and the round's change both preserved, or the
+  contradiction resolved with a stated choice), and a commit. Then re-run
+  the Step 5 review round on the reconciliation commit (ordinary round
+  machinery — its Step 5a probe re-posts the per-round note), and re-enter
+  Step 10d: the in-worktree merge advanced the merge-base, so the delta
+  recomputes against fresh state, and the branch now carries a merge
+  commit → take the `--squash` merge form (Known failure shape 1).
+
+Composes WITH the existing machinery, never replaces it: textual conflicts
+still route to the Known failure shapes + merge-conflict recovery; Guard
+4's lost-update refusal is unchanged; this gate only adds the
+implementer-in-the-loop SEMANTIC pass for unreviewed divergence. Divergence
+both disclosed at the final review round AND unchanged since the reviewed
+main SHA never blocks: measured 2026-08-19, refined sets of 1-2 files exist
+on healthy live branches, so a hard block on any non-empty set would have
+held 3 of 5 healthy branches. Comma-bearing paths: the per-round `files=`
+token is comma-delimited, so a path containing `,` lands whole in the
+current probe set but fragmented in `$REVSET` and deterministically
+re-flags as NEW on every merge — fail-closed and bounded by the
+one-dispatch cap (accepted; no serialization redesign).
 
 #### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
 
@@ -954,9 +1085,12 @@ tests BEFORE anything lands:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$LINT_GATE_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$LINT_GATE_SCRIPT' < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
+  #     bash '$LINT_GATE_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
@@ -1040,12 +1174,15 @@ tests BEFORE anything lands:
     # surface (.claude/ CLAUDE.md scripts/ src/ tests/ docs/ — the #1154
     # marker-recipe pins read docs/); a false block naming a path OUTSIDE
     # this set means the linter grew a new scan root — extend the set here.
+    # check_prod_import_lockfile (#2253) reads uv.lock + pyproject.toml at
+    # the tree ROOT, so BOTH manifests ship in the archive (pinned by
+    # tests/test_issue_skill_gate_tree_pathspec.py).
     GT=/tmp/issue-<N>-lint-gate-tree
     GT_RC=0
     timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true  # bounded: a hung fetch degrades to origin/main staleness, never a wedged gate
     { rm -rf "$GT" && mkdir -p "$GT"; } || GT_RC=1
     ( set -o pipefail; git -C "$WT" archive origin/main -- \
-        .claude CLAUDE.md scripts src tests docs pyproject.toml \
+        .claude CLAUDE.md scripts src tests docs pyproject.toml uv.lock \
       | tar -x -C "$GT" ) || GT_RC=1
     [ -f "$GT/scripts/workflow_lint.py" ] || GT_RC=1   # construction sanity
     # BASELINE legs (payload-free landing base — phase 1, BEFORE the
@@ -1061,15 +1198,19 @@ tests BEFORE anything lands:
     # bare last-failure-wins `|| VAR=$?` capture erases the crash and
     # defeats the crash arm below. rc=0/0 stays 0; a lone rc=1-with-lines
     # stays 1 (attribution logic); any leg >1 reaches the crash arm.
-    # 900s wedge bound per lint leg ≈ 2.5× the measured 360s upper wall
-    # (bullet above; #1129 generous-ceiling sizing style) — fires only on a
-    # genuine wedge; a bound kill (rc 124) flows through the NO-DOWNGRADE
-    # fold into the crash arm below — fail CLOSED.
+    # 1800s wedge bound per lint leg (raised from 900s, #2253 r5): no-flags
+    # wall MEASURED 747s on the branch tree 2026-08-21 under fleet load
+    # (load avg 13.44/32 cores, 9 concurrent lint runs; ~663s without the
+    # #2253 check) — bound sized >=2x the measured wall per the CLAUDE.md
+    # x2 dispersion default (900s was 1.2x and killed BOTH sides). Fires
+    # only on a genuine wedge; a bound kill (rc 124) flows through the
+    # NO-DOWNGRADE fold into the crash arm below — fail CLOSED, so an
+    # under-sized bound silently blocks every branch's merge.
     BASE_RC=0
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -1102,6 +1243,18 @@ tests BEFORE anything lands:
     # bytes >0x7f only.
     git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD \
       > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
+    # #2246 item 3: this branch runs only when the TRIGGER classified the
+    # payload code-bearing (non-empty own-diff past the artifact carve-out),
+    # and the --no-renames overlay path set is a superset of the own-diff
+    # path set — an EMPTY listing from a ZERO-exit producer here means the
+    # listing was computed against the wrong/absent tree (or a mid-window
+    # ref mutation, e.g. the fetch above landing the payload on origin/main
+    # between the trigger diff and this listing). Fail CLOSED via the
+    # existing crash arm; never certify.
+    if [ ! -s /tmp/issue-<N>-overlay-files.txt ]; then
+      echo "[step10d] overlay listing EMPTY on a code-bearing payload — vacuous gated leg; failing CLOSED (#2246)"
+      GT_RC=1
+    fi
     # #1456: save the pre-overlay (archived origin/main) lint copy before the
     # loop overwrites it — the "theirs" side of the 3-way merge below. The
     # rm -f first clears any STALE saved copy from a prior run: a cp failure
@@ -1195,10 +1348,10 @@ tests BEFORE anything lands:
     # GATED legs (payload-bearing landing tree — phase 3; parity leg covers
     # the checks the no-flags bundle omits — see the bullet above):
     GATED_RC=0
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
@@ -2267,6 +2420,8 @@ else
     FAMILY_OF[".claude/skills"]="workflow"
     FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"
     FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
+    FAMILY_OF["scripts/step5a_sibling_probe.py"]="workflow"
+    FAMILY_OF["tests/test_step5a_sibling_probe.py"]="workflow"
     FAMILY_OF["scripts/workflow_lint.py"]="lint"
     FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
     FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"
@@ -2278,10 +2433,61 @@ else
     FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py"
+    # FAMILY_agents members (#2260)
+    FAMILY_OF[".claude/agents"]="agents"
+    FAMILY_OF["tests/test_adversarial_planner_factchecker_grain_pin.py"]="agents"
+    FAMILY_OF["tests/test_adversarial_planner_lens_brief_headings.py"]="agents"
+    FAMILY_OF["tests/test_analyzer_language_intrusion_duty.py"]="agents"
+    FAMILY_OF["tests/test_battery_basis_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_code_reviewer_phase_idempotency_gate.py"]="agents"
+    FAMILY_OF["tests/test_codex_code_reviewer_step09_tag_parity.py"]="agents"
+    FAMILY_OF["tests/test_codex_critic_numeric_grounding.py"]="agents"
+    FAMILY_OF["tests/test_consistency_checker_parentless_infra_skip.py"]="agents"
+    FAMILY_OF["tests/test_cross_issue_protocol_comparability_prose.py"]="agents"
+    FAMILY_OF["tests/test_daily_three_route_classifier_doc.py"]="agents"
+    FAMILY_OF["tests/test_diff_base_origin_main_pin.py"]="agents"
+    FAMILY_OF["tests/test_downwidth_split_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_experimenter_md.py"]="agents"
+    FAMILY_OF["tests/test_fit_loop_batching_review_pin.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_deleted_literal_substep.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_mechanical_pin_sweep.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_names_invariant_local_union.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_names_ruff_policy_pin.py"]="agents"
+    FAMILY_OF["tests/test_interp_critic_degenerate_series_lens.py"]="agents"
+    FAMILY_OF["tests/test_issue_v2_skill_figure_pin_contract.py"]="agents"
+    FAMILY_OF["tests/test_lean_twin_registration_pin.py"]="agents"
+    FAMILY_OF["tests/test_mapping_baselines_wiring_pins.py"]="agents"
+    FAMILY_OF["tests/test_off_pod_phase_slot_pin.py"]="agents"
+    FAMILY_OF["tests/test_outroot_residue_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_plan_handoff_path_convention.py"]="agents"
+    FAMILY_OF["tests/test_planner_incident_trace_guidance.py"]="agents"
+    FAMILY_OF["tests/test_planner_phase_outputs_declaration.py"]="agents"
+    FAMILY_OF["tests/test_realized_rows_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_selection_symmetric_nulls_pointers.py"]="agents"
+    FAMILY_OF["tests/test_v2_composer_plan_path_brief.py"]="agents"
+    FAMILY_OF["tests/test_inline_payload_lint_gate_contract.py"]="workflow"
+    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py tests/test_adversarial_planner_factchecker_grain_pin.py tests/test_adversarial_planner_lens_brief_headings.py tests/test_analyzer_language_intrusion_duty.py tests/test_battery_basis_prose_pins.py tests/test_code_reviewer_phase_idempotency_gate.py tests/test_codex_code_reviewer_step09_tag_parity.py tests/test_codex_critic_numeric_grounding.py tests/test_consistency_checker_parentless_infra_skip.py tests/test_cross_issue_protocol_comparability_prose.py tests/test_daily_three_route_classifier_doc.py tests/test_diff_base_origin_main_pin.py tests/test_downwidth_split_prose_pins.py tests/test_experimenter_md.py tests/test_fit_loop_batching_review_pin.py tests/test_implementer_spec_deleted_literal_substep.py tests/test_implementer_spec_mechanical_pin_sweep.py tests/test_implementer_spec_names_invariant_local_union.py tests/test_implementer_spec_names_ruff_policy_pin.py tests/test_inline_payload_lint_gate_contract.py tests/test_interp_critic_degenerate_series_lens.py tests/test_issue_v2_skill_figure_pin_contract.py tests/test_lean_twin_registration_pin.py tests/test_mapping_baselines_wiring_pins.py tests/test_off_pod_phase_slot_pin.py tests/test_outroot_residue_prose_pins.py tests/test_plan_handoff_path_convention.py tests/test_planner_incident_trace_guidance.py tests/test_planner_phase_outputs_declaration.py tests/test_realized_rows_prose_pins.py tests/test_selection_symmetric_nulls_pointers.py tests/test_v2_composer_plan_path_brief.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
+      # Member-existence containment (#2260; interaction with #2385): the
+      # checkout below is ATOMIC — a single literal token absent at origin/main
+      # (deleted/renamed on main) errors the whole checkout and syncs NOTHING,
+      # wedging every family until manual reconcile. Contain per-family: an
+      # absent literal member marks ITS family dirty (vintage-consistent skip;
+      # other families keep syncing). Deletion PROPAGATION (removing the stale
+      # worktree twin) remains #2385 — reconcile manually until it lands.
+      case "$f" in
+        ":(glob)"*) : ;;
+        *)
+          if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
+            fam="${FAMILY_OF[$f]:-$f}"
+            DIRTY_FAMILIES_10D[$fam]=1
+            echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; stale-twin removal is #2385 — reconcile manually)."
+            continue
+          fi
+          ;;
+      esac
       bs_commits=$(git -C "$WT" log --format='%H %s' "$MB_10D"..HEAD -- "$f" \
         | awk 'index($0, "sync workflow-surface specs from") == 0')
       if [ -n "$bs_commits" ]; then
@@ -3559,9 +3765,12 @@ Decision tree:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$SURGICAL_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$SURGICAL_SCRIPT' < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
+  #     bash '$SURGICAL_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
@@ -3605,10 +3814,10 @@ Decision tree:
     # rationale as the gate's executable block — a leg-1 crash must not be
     # erased by a leg-2 rc=1):
     BASE_RC=0
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -3711,10 +3920,10 @@ Decision tree:
   GATE_VERDICT=pass
   if [ "$GATE_ARMED" = "yes" ]; then
     GATED_RC=0
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
