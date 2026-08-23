@@ -19,3 +19,4 @@
 - [Lens-7 carried-forward on revision rounds](feedback_lens7_carried_forward_on_revision_rounds.md) — r2+ with HF-only raw text: scope Lens 7 to local-JSON recompute + "satisfied in r1" tag; override the network EXCEPTION-2 BLOCKED downgrade
 - [Lens-6 farthest-overlay "never rises" vs one outlier line](feedback_farthest_overlay_nonzero.md) — Trace each individual overlay member; one dashed line at ~10% falsifies a "stays at zero" group claim
 - [Lens-1 "sustained threshold" that is transient](feedback_sustained_threshold_transient.md) — "Sustained 5%" defined as two adjacent checkpoints; check later checkpoints for regression below threshold
+- [Rebutted figure claims: reload + retract-or-stand](feedback_rebutted_figure_claims_reload.md) — r2 prompts on a REBUTTED Codex figure claim mandate fresh PNG reload + binary RETRACT/stand adjudication
