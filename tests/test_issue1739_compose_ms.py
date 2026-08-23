@@ -392,13 +392,18 @@ def test_banked_repro_join_and_tolerance():
         _cell_row("context_end", 0.5, 0.0, 250, 1, 0.9),  # seed 1: never joined
     ]
     by_key = fold.assert_unique_cells(fresh_rows)
-    banked = [
+    banked_exact = [
         _cell_row("context_end", 0.5, 0.0, 250, 0, 0.3496),
         _cell_row("context_end", 0.0, 0.0, 250, 0, -0.0820),
-        _cell_row("context_end", 0.5, 1.0, 8000, 0, 0.1),  # not in fresh -> ignored
     ]
-    repro = fold.banked_repro(by_key, banked, tol=5e-3)
-    assert repro["ok"] and repro["n_compared"] == 2
+    repro = fold.banked_repro(by_key, banked_exact, tol=5e-3)
+    assert repro["ok"] and repro["n_compared"] == 2 and not repro["missing_fresh"]
+    # banked seed-0 key ABSENT from fresh: reported (missing_fresh) + ok=False
+    # — the intersection-only silent join was an r1 fail-open
+    banked_extra = [*banked_exact, _cell_row("context_end", 0.5, 1.0, 8000, 0, 0.1)]
+    repro = fold.banked_repro(by_key, banked_extra, tol=5e-3)
+    assert not repro["ok"] and repro["n_compared"] == 2
+    assert repro["missing_fresh"] == [["context_end", 0.5, 1.0, 8000, 0, 0]]
     banked_div = [_cell_row("context_end", 0.5, 0.0, 250, 0, 0.30)]
     repro = fold.banked_repro(by_key, banked_div, tol=5e-3)
     assert not repro["ok"] and len(repro["material_divergences"]) == 1
@@ -508,16 +513,43 @@ def test_sensitivity_recompute_excludes_overlap_group_rows(tmp_path):
     assert sens["rows"][0]["delta_excl_overlap"] is not None
 
 
+def _diag_entry():
+    return {"per_layer": [{"r2_map": 0.4, "r2_identity_bias": 0.2}]}
+
+
 def test_map_diag_presence_missing_level_reported():
     diag = {
-        "context_end|compose5000_fu0.0_fl0.0_L250|draw0_seed0": {},
-        "prefix_end|compose5000_fu0.0_fl0.0_L250|draw0_seed0": {},
+        "context_end|compose5000_fu0.0_fl0.0_L250|draw0_seed0": _diag_entry(),
+        "prefix_end|compose5000_fu0.0_fl0.0_L250|draw0_seed0": _diag_entry(),
     }
     out = fold.map_diag_presence(diag, levels=((0.0, 0.0), (0.5, 0.0)))
     assert not out["ok"]
     assert "context_end|fu0.5_fl0.0|seed0" in out["missing"]
     ok = fold.map_diag_presence(diag, levels=((0.0, 0.0),))
     assert ok["ok"]
+
+
+def test_map_diag_presence_substantive_predicate_and_exclude():
+    # an EMPTY entry (key hit, no per_layer rows with r2_map) is NOT presence
+    # (r2 hardening: cms-map-diagnostics-incomplete)
+    diag = {
+        "context_end|compose5000_fu0.0_fl0.0_L250|draw0_seed0": {},
+        "prefix_end|compose5000_fu0.0_fl0.0_L250|draw0_seed0": _diag_entry(),
+    }
+    out = fold.map_diag_presence(diag, levels=((0.0, 0.0),))
+    assert not out["ok"]
+    assert out["missing"] == ["context_end|fu0.0_fl0.0|seed0 (present-but-empty)"]
+    # exclude is PER (variant, level): a one-variant recorded conditional skip
+    # exempts only that variant, never the sibling variant's expectation
+    diag2 = {"prefix_end|compose5000_fu0.75_fl0.0_L2500|draw0_seed0": _diag_entry()}
+    out2 = fold.map_diag_presence(
+        diag2,
+        levels=((0.75, 0.0),),
+        exclude=frozenset({("context_end", (0.75, 0.0))}),
+    )
+    assert out2["ok"]
+    out3 = fold.map_diag_presence(diag2, levels=((0.75, 0.0),))
+    assert not out3["ok"] and out3["missing"] == ["context_end|fu0.75_fl0.0|seed0"]
 
 
 def test_cell_class_table_seed_grain_and_arm_columns():
@@ -681,3 +713,349 @@ def test_fold_load_behavior_union_reads_both_halves(tmp_path):
     assert len(data["diag"]) == 2
     by_key = fold.assert_unique_cells(data["cells"])
     assert len(by_key) == 5
+
+
+# ---------------------------------------------------------------------------
+# r2 hardening — wrapper pins, spec-seed call-site pin, fold main() audits
+# ---------------------------------------------------------------------------
+
+WRAPPER = REPO_ROOT / "scripts" / "issue1739_compose_ms.sh"
+
+
+def test_wrapper_hf_prefix_pin_covers_both_halves():
+    """Plan v26 §4/§6.5/§9 producer/consumer prefix contract (r1 reconciler
+    MANDATORY fix, cms-hf-prefix-mismatch): the wrapper's HF destination is
+    issue1739_ctxmap/compose_multiseed/<behavior>/<half>, the HALF case arms
+    cover both halves, and the uploader consumes exactly OUT_ROOT:HF_PREFIX."""
+    text = WRAPPER.read_text()
+    assert 'HF_PREFIX="issue1739_ctxmap/compose_multiseed/$B/$HALF"' in text
+    assert '"issue1739_compose_multiseed' not in text  # the r1 wrong prefix
+    # both halves are reachable values of $HALF (case arms + seed defaults)
+    assert 's02) SEEDS_DEFAULT="0 1 2"' in text
+    assert 's34) SEEDS_DEFAULT="3 4"' in text
+    assert '--pairs "$OUT_ROOT:$HF_PREFIX"' in text
+
+
+def test_wrapper_preserves_core_summary_before_ablation():
+    """cms-summary-cross-invocation-clobber: the ablation invocation rewrites
+    all_arms_spearman.json (invocation-scoped writer), so the wrapper copies
+    the core invocation's summary aside first."""
+    text = WRAPPER.read_text()
+    idx_cp = text.find("all_arms_spearman.core.json")
+    idx_ablation = text.find("fits ablation dose grid")
+    assert 0 < idx_cp < idx_ablation
+    assert 'cp "$OUT_ROOT/arm_results/all_arms_spearman.json"' in text
+
+
+def test_t_ci_raises_on_nonfinite():
+    with pytest.raises(ValueError, match="nonfinite"):
+        fold.t_ci([0.1, float("nan"), 0.2])
+
+
+def test_flip_contrast_delta_override_substitutes_cell_deltas():
+    rows = _full_grid_cells(lambda f_u, seed: (0.30 if f_u == 0.5 else -0.05) + 0.01 * seed)
+    by_key = fold.assert_unique_cells(rows)
+    override = {
+        (v, 0.5, 0.0, int(ll), 0, int(s)): -0.5
+        for v in fold.VARIANTS
+        for ll in fold.ANCHOR_BUDGETS
+        for s in SEEDS
+    }
+    contrast = fold.flip_contrast(by_key, seeds=SEEDS, delta_override=override)
+    c_tci = fold.t_ci([v for v in contrast["per_seed_C"].values()])
+    assert c_tci["hi"] < 0  # the substituted deltas flip the lattice read
+    assert fold.lattice_verdict(c_tci, contrast["anchor_seedmean_delta05"]) == "FLIP-FALSIFIED"
+
+
+def test_fits_e2e_pins_spec_seed_at_whitening_call_site(tmp_path, monkeypatch):
+    """Regression pin on fits.py's compose-group `map_seed = map_seed_for_spec(
+    spec0, args.seeds)` call site (r1 reconciler analyzer rec): drive the
+    production CLI with --seeds 0 1 and record every seed reaching the REAL
+    fit_whitening. A revert to `args.seeds[0]` records only {0} and fails."""
+    from explore_persona_space.experiments.issue_1739 import fits
+    from tests.test_issue1739_fits import _write_tiny_real_inputs
+
+    dv_json, _feats = _write_tiny_real_inputs(tmp_path)
+    seen: list[int] = []
+    real = fits.fit_whitening
+
+    def spy(x, *args, **kwargs):
+        if "seed" in kwargs and kwargs["seed"] is not None:
+            seen.append(int(kwargs["seed"]))
+        return real(x, *args, **kwargs)
+
+    monkeypatch.setattr(fits, "fit_whitening", spy)
+    argv = [
+        "--behavior",
+        "evil",
+        "--labeled-store",
+        str(tmp_path / "labeled"),
+        "--dv-json",
+        str(dv_json),
+        "--u-store",
+        str(tmp_path / "ustore"),
+        "--e1-store",
+        str(tmp_path / "e1"),
+        "--out-root",
+        str(tmp_path / "out_spy"),
+        "--tensors-root",
+        str(tmp_path / "tensors"),
+        "--device",
+        "cpu",
+        "--config",
+        "config_a",
+        "--regimes",
+        "e1",
+        "--budgets",
+        "6",
+        "--draws",
+        "0",
+        "--seeds",
+        "0",
+        "1",
+        "--layers",
+        "0",
+        "1",
+        "2",
+        "--n-boot",
+        "20",
+        "--n-perm",
+        "20",
+        "--arms",
+        "arm2_ctx_native",
+        "arm6_map_proj_e1",
+        "--compose",
+        "--compose-only",
+        "--compose-replicates",
+        "--compose-u-size",
+        "8",
+    ]
+    assert fits_cli.main(argv) == 0
+    assert set(seen) == {0, 1}, seen  # BOTH spec seeds reached the seed kwarg
+
+
+# ---------------------------------------------------------------------------
+# fold main() — full-tree fixtures (banked/pool-meta/grid audits + sens verdict)
+# ---------------------------------------------------------------------------
+
+_HALVES = {"s02": (0, 1, 2), "s34": (3, 4)}
+_N_SENS = 24
+
+
+def _evil_delta(f_u: float, f_l: float, seed: int) -> float:
+    if f_u == 0.5 and f_l == 0.0:
+        return 0.30 + 0.02 * seed
+    if f_u == 0.0:
+        return -0.05 + 0.01 * seed
+    return 0.10
+
+
+def _write_evil_tree(root: Path, *, overlap: bool = False) -> None:
+    """Complete evil half-pair tree matching the plan-§4 grid exactly (110
+    cells + the 20 designed-skip rows + pool metas + substantive seed-0 diag).
+    ``overlap=True`` marks the 4 anchor (0.5, 0) cells overlap-contaminated
+    and stages a shared preds npz whose overlap-EXCLUDED read REVERSES the
+    headline delta (spearman(pred6)-spearman(pred2) ~ -2 on kept rows)."""
+    rng = np.random.default_rng(11)
+    dv = rng.normal(size=_N_SENS)
+    kept = np.arange(4, _N_SENS)
+    pred2 = dv + 0.05 * rng.normal(size=_N_SENS)
+    pred6 = dv.copy()
+    pred6[kept] = -dv[kept]
+    expected = fold.expected_cell_keys("evil", seeds=SEEDS)
+    for half, hseeds in _HALVES.items():
+        percell = root / "evil" / half / "arm_results" / "percell"
+        percell.mkdir(parents=True, exist_ok=True)
+        rows = []
+        for key in sorted(expected, key=str):
+            v, f_u, f_l, ll, _draw, seed = key
+            if seed not in hseeds:
+                continue
+            row = _cell_row(v, f_u, f_l, ll, seed, _evil_delta(f_u, f_l, seed))
+            if overlap and f_u == 0.5 and f_l == 0.0 and ll in fold.ANCHOR_BUDGETS:
+                row["preds_npz"] = "shared.npz"
+            rows.append(row)
+        (percell / "cells.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+        skips = [
+            dict(variant=v, f_u=fu, f_l=fl, budget_l=ll, draw=0, seed=s, reason="quota")
+            for (fu, fl, ll) in fold.DESIGNED_SKIPS["evil"]
+            for v in fold.VARIANTS
+            for s in hseeds
+        ]
+        (percell / "compose_skips.jsonl").write_text("".join(json.dumps(r) + "\n" for r in skips))
+        metas = []
+        for v in fold.VARIANTS:
+            for s in hseeds:
+                for fu, fl, ll in (
+                    (0.5, 0.0, 250),
+                    (0.5, 0.0, 2500),
+                    (0.1, 0.0, 2500),
+                    (0.25, 0.0, 2500),
+                    (0.75, 0.0, 2500),
+                ):
+                    olap = overlap and fu == 0.5
+                    metas.append(
+                        dict(
+                            variant=v,
+                            f_u=fu,
+                            f_l=fl,
+                            budget_l=ll,
+                            draw=0,
+                            seed=s,
+                            overlap_group_count=1 if olap else 0,
+                            overlap_groups=["gA"] if olap else [],
+                            elic_ctx_ids=[],
+                        )
+                    )
+        (percell / "compose_pool_meta.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in metas)
+        )
+        if overlap:
+            preds_dir = percell / "preds"
+            preds_dir.mkdir(parents=True, exist_ok=True)
+            np.savez(
+                preds_dir / "shared.npz",
+                context_ids=np.asarray([f"c{i}" for i in range(_N_SENS)]),
+                dv=dv,
+                pred__arm6_map_proj_e1=pred6,
+                pred__arm2_ctx_native=pred2,
+            )
+        diag = {}
+        if 0 in hseeds:
+            levels = list(fold.CORE_LEVELS) + [(f, 0.0) for f in fold.ABLATION_F_U if f != 1.0]
+            for v in fold.VARIANTS:
+                for fu, fl in levels:
+                    ll = fold.ABLATION_BUDGET if (fu, fl) not in fold.CORE_LEVELS else 250
+                    diag[f"{v}|compose5000_fu{fu}_fl{fl}_L{ll}|draw0_seed0"] = _diag_entry()
+        (root / "evil" / half / "map_diagnostics.json").write_text(json.dumps(diag))
+
+
+def _write_labeling(labeling_root: Path) -> None:
+    lab = labeling_root / "evil"
+    lab.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {"context_id": f"c{i}", "group_key": ("gA" if i < 4 else f"g{i}")} for i in range(_N_SENS)
+    ]
+    (lab / "labeling.json").write_text(json.dumps({"rows": rows}))
+
+
+def _bank_rows_clean():
+    rows = []
+    for v in fold.VARIANTS:
+        for ll in fold.ANCHOR_BUDGETS:
+            rows.append(_cell_row(v, 0.5, 0.0, ll, 0, _evil_delta(0.5, 0.0, 0)))
+            rows.append(_cell_row(v, 0.0, 0.0, ll, 0, _evil_delta(0.0, 0.0, 0)))
+    return rows
+
+
+def _fold_argv(root: Path, bank: Path, out: Path, *extra: str) -> list[str]:
+    return [
+        "--results-root",
+        str(root),
+        "--behaviors",
+        "evil",
+        "--banked-evil",
+        str(bank),
+        "--labeling-root",
+        str(root / "no_labeling"),
+        "--no-figures",
+        "--out",
+        str(out),
+        *extra,
+    ]
+
+
+def test_fold_main_clean_tree_confirms_and_reproduces_bank(tmp_path):
+    root = tmp_path / "cms"
+    _write_evil_tree(root)
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in _bank_rows_clean()))
+    out = tmp_path / "table.json"
+    assert fold.main(_fold_argv(root, bank, out)) == 0
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert entry["verdict"] == "FLIP-CONFIRMED"
+    assert entry["audit_failures"] == []
+    assert entry["grid_coverage"]["ok"] and entry["pool_meta_presence"]["ok"]
+    assert entry["banked_repro"]["ok"] and entry["banked_repro"]["n_compared"] == 8
+
+
+def test_fold_main_banked_file_missing_is_loud(tmp_path):
+    root = tmp_path / "cms"
+    _write_evil_tree(root)
+    out = tmp_path / "table.json"
+    absent = tmp_path / "nope.jsonl"
+    assert fold.main(_fold_argv(root, absent, out)) == 5
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "banked-repro-file-missing" in entry["audit_failures"]
+    # --allow-partial: recorded (interim seed-subset folds) without the rc bump
+    assert fold.main(_fold_argv(root, absent, out, "--allow-partial")) == 0
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "banked-repro-file-missing" in entry["audit_failures"]
+
+
+def test_fold_main_banked_missing_fresh_keys_is_loud(tmp_path):
+    root = tmp_path / "cms"
+    _write_evil_tree(root)
+    # extra banked seed-0 key genuinely ABSENT from the realized grid (the
+    # evil designed skip (0.5, 0, 8000)) -> missing_fresh, never a silent join
+    bank_rows = [*_bank_rows_clean(), _cell_row("context_end", 0.5, 0.0, 8000, 0, 99.0)]
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in bank_rows))
+    out = tmp_path / "table.json"
+    assert fold.main(_fold_argv(root, bank, out)) == 5
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "banked-repro-missing-fresh-keys" in entry["audit_failures"]
+    assert entry["banked_repro"]["missing_fresh"] == [["context_end", 0.5, 0.0, 8000, 0, 0]]
+
+
+def test_fold_main_pool_meta_missing_is_loud(tmp_path):
+    root = tmp_path / "cms"
+    _write_evil_tree(root)
+    (root / "evil" / "s34" / "arm_results" / "percell" / "compose_pool_meta.jsonl").unlink()
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in _bank_rows_clean()))
+    out = tmp_path / "table.json"
+    assert fold.main(_fold_argv(root, bank, out)) == 5
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "pool-meta-missing" in entry["audit_failures"]
+    assert not entry["pool_meta_presence"]["ok"]
+    # 5 anchor-dependent combos x 2 variants x 2 seeds (the s34 half)
+    assert len(entry["pool_meta_presence"]["missing"]) == 20
+
+
+def test_fold_main_grid_coverage_halts_on_missing_nonanchor_cell(tmp_path):
+    root = tmp_path / "cms"
+    _write_evil_tree(root)
+    cells_path = root / "evil" / "s34" / "arm_results" / "percell" / "cells.jsonl"
+    rows = [json.loads(ln) for ln in cells_path.read_text().split("\n") if ln.strip()]
+    kept = [r for r in rows if fold.cell_id(r) != ("context_end", 0.1, 0.0, 2500, 0, 3)]
+    assert len(kept) == len(rows) - 1
+    cells_path.write_text("".join(json.dumps(r) + "\n" for r in kept))
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in _bank_rows_clean()))
+    out = tmp_path / "table.json"
+    assert fold.main(_fold_argv(root, bank, out)) == 5
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert entry["verdict"] == "HALTED-GRID-COVERAGE"
+    assert entry["grid_coverage"]["missing"] == [["context_end", 0.1, 0.0, 2500, 0, 3]]
+    # a pair-coverage-only read (flip_contrast) would NOT have caught this
+    # non-anchor cell — the exact-set audit is the r2 hardening
+
+
+def test_fold_main_sensitivity_reversal_downgrades_confirm(tmp_path):
+    root = tmp_path / "cms"
+    _write_evil_tree(root, overlap=True)
+    labeling_root = tmp_path / "dv"
+    _write_labeling(labeling_root)
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in _bank_rows_clean()))
+    out = tmp_path / "table.json"
+    argv = _fold_argv(root, bank, out)
+    argv[argv.index("--labeling-root") + 1] = str(labeling_root)
+    assert fold.main(argv) == 0
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert entry["overlap_sensitivity"]["status"] == "ok"
+    assert entry["verdict_raw"] == "FLIP-CONFIRMED"
+    assert entry["sensitivity_lattice"]["verdict"] != "FLIP-CONFIRMED"
+    assert entry["verdict"] == "INDETERMINATE"
+    assert "overlap-excluded lattice recompute" in entry["verdict_downgrade"]

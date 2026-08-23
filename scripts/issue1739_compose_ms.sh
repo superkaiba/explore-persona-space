@@ -66,7 +66,9 @@ else
 fi
 OUT_ROOT="$RESULTS_BASE/compose_multiseed/$B/$HALF" # per-half out-root (r1 Must-Fix)
 DV_JSON="$RESULTS_BASE/dv_dataset/$B/labeling.json"
-HF_PREFIX="issue1739_compose_multiseed/$B/$HALF"
+# Plan v26 §4/§6.5/§9 producer/consumer contract — the P3 harvest stages from
+# exactly this prefix (r1 reconciler MANDATORY fix: cms-hf-prefix-mismatch).
+HF_PREFIX="issue1739_ctxmap/compose_multiseed/$B/$HALF"
 GPU_H_BUDGET="${EPM_I1739_CMS_GPU_H_BUDGET:-0.0}" # CPU-only round (cpu-bigmem boxes)
 
 # Gate-1 config (plan §7 gate 1). RSS cap: 100 GB on a <=160 GB box, else
@@ -205,8 +207,21 @@ echo "[phase=stage]"
 stage_rc=0
 (
   set -euo pipefail
+  # 0. Disk-headroom preflight BEFORE the first download (>= ~1.5x the
+  #    projected staging bytes; designed halt, never a mid-extraction ENOSPC).
+  MIN_DISK_GB="${EPM_I1739_CMS_MIN_DISK_GB:-60}"
+  avail_kb=$(df -Pk data 2>/dev/null | awk 'NR==2{print $4}' || df -Pk . | awk 'NR==2{print $4}')
+  if [ "${avail_kb:-0}" -lt $((MIN_DISK_GB * 1048576)) ]; then
+    echo "[cms] FATAL: disk preflight — $((avail_kb / 1048576)) GiB free <" \
+      "${MIN_DISK_GB} GiB floor (EPM_I1739_CMS_MIN_DISK_GB); refusing before download" >&2
+    exit 3
+  fi
+  echo "[cms] disk preflight ok: $((avail_kb / 1048576)) GiB free (floor ${MIN_DISK_GB} GiB)"
   # 1. capture-store tars (leg2 step-2 shape: sequential download -> untar ->
-  #    rm to bound peak disk; behavior-scoped; skip-if-present).
+  #    rm to bound peak disk; behavior-scoped; skip-if-present — the skip is
+  #    safe because extraction is ATOMIC below: untar into a temp dir, then
+  #    one mv into place, so a partially extracted store never occupies the
+  #    canonical path on a crashed prior attempt).
   TARS_DIR="data/issue_1739/hf_dl/store_tars"
   STORE_ROOT="data/issue_1739/store"
   mkdir -p "$TARS_DIR" "$STORE_ROOT"
@@ -229,7 +244,16 @@ hub.retry_transient(lambda: hf_hub_download(
     repo_type='dataset', local_dir=sys.argv[2]), what=f'store-tar {name}')
 print(f'[cms] {name}: downloaded', flush=True)
 " "$name" "$TARS_DIR"
-    tar -xf "$TARS_DIR/issue1739_ctxmap/capture_store/$name/$name.tar" -C "$STORE_ROOT"
+    extract_tmp="$STORE_ROOT/.extract_$name"
+    rm -rf "$extract_tmp"
+    mkdir -p "$extract_tmp"
+    tar -xf "$TARS_DIR/issue1739_ctxmap/capture_store/$name/$name.tar" -C "$extract_tmp"
+    [ -d "$extract_tmp/$name" ] || {
+      echo "[cms] FATAL: tar for $name did not contain a top-level $name/ dir" >&2
+      exit 3
+    }
+    mv "$extract_tmp/$name" "$STORE_ROOT/$name"
+    rm -rf "$extract_tmp"
     rm -f "$TARS_DIR/issue1739_ctxmap/capture_store/$name/$name.tar"
     echo "[cms] store $name: unpacked ($(du -sh "$STORE_ROOT/$name" | cut -f1)); df: $(df -h --output=avail . | tail -1 | tr -d ' ')"
   done
@@ -270,7 +294,7 @@ print(f'[cms] u_store staged ({len(layers)} layers)', flush=True)
 ) || stage_rc=$?
 if [ "$stage_rc" -ne 0 ]; then
   echo "[cms] FATAL: stage failed rc=$stage_rc" >&2
-  write_phase_sentinel "cms_${B}_${HALF}_stage" fail 3
+  write_phase_sentinel "cms_${B}_${HALF}_stage" fail 3 || echo "[cms] WARN: failure-sentinel write failed (phase rc preserved)" >&2
   exit 3
 fi
 # Cross-leg serialization hook (plan §9): the orchestrator gates the sibling
@@ -311,17 +335,26 @@ case "$frc" in
   9)
     echo "[cms] RSS-GUARD REFUSED (rc=9, in-process mem_guard): see" \
       "$OUT_ROOT/rss_guard_report.json (designed halt; re-size, never a blind retry)" >&2
-    write_phase_sentinel "cms_${B}_${HALF}_fits_core" halt 9
+    write_phase_sentinel "cms_${B}_${HALF}_fits_core" halt 9 || echo "[cms] WARN: failure-sentinel write failed (phase rc preserved)" >&2
     exit 9
     ;;
   *)
     echo "[cms] FATAL: core fits rc=$frc" >&2
-    write_phase_sentinel "cms_${B}_${HALF}_fits_core" fail "$frc"
+    write_phase_sentinel "cms_${B}_${HALF}_fits_core" fail "$frc" || echo "[cms] WARN: failure-sentinel write failed (phase rc preserved)" >&2
     exit "$frc"
     ;;
 esac
 write_phase_sentinel "cms_${B}_${HALF}_fits_core"
 echo "[phase=fits_core]"
+
+# Preserve the core invocation's summary before the ablation invocation
+# overwrites all_arms_spearman.json (invocation-scoped writer; r2 hardening,
+# cms-summary-cross-invocation-clobber). The fold reads percell/cells.jsonl,
+# so this is a diagnostics-preservation copy, not a fold input.
+if [ -f "$OUT_ROOT/arm_results/all_arms_spearman.json" ]; then
+  cp "$OUT_ROOT/arm_results/all_arms_spearman.json" \
+    "$OUT_ROOT/arm_results/all_arms_spearman.core.json"
+fi
 
 # --------------------------------------------------------- fits ablation ---
 echo "[cms] fits ablation dose grid $(date -u +%FT%TZ)"
@@ -336,12 +369,12 @@ case "$arc" in
   9)
     echo "[cms] RSS-GUARD REFUSED (rc=9, in-process mem_guard) on the ablation" \
       "invocation: see $OUT_ROOT/rss_guard_report.json" >&2
-    write_phase_sentinel "cms_${B}_${HALF}_fits_ablation" halt 9
+    write_phase_sentinel "cms_${B}_${HALF}_fits_ablation" halt 9 || echo "[cms] WARN: failure-sentinel write failed (phase rc preserved)" >&2
     exit 9
     ;;
   *)
     echo "[cms] FATAL: ablation fits rc=$arc" >&2
-    write_phase_sentinel "cms_${B}_${HALF}_fits_ablation" fail "$arc"
+    write_phase_sentinel "cms_${B}_${HALF}_fits_ablation" fail "$arc" || echo "[cms] WARN: failure-sentinel write failed (phase rc preserved)" >&2
     exit "$arc"
     ;;
 esac
@@ -360,7 +393,7 @@ else
   set -e
   if [ "$urc" -ne 0 ]; then
     echo "[cms] FATAL: upload rc=$urc" >&2
-    write_phase_sentinel "cms_${B}_${HALF}_upload" fail 4
+    write_phase_sentinel "cms_${B}_${HALF}_upload" fail 4 || echo "[cms] WARN: failure-sentinel write failed (phase rc preserved)" >&2
     exit 4
   fi
   write_phase_sentinel "cms_${B}_${HALF}_upload"

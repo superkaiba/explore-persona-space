@@ -123,11 +123,17 @@ def headline_delta(row: dict) -> float | None:
 
 
 def t_ci(values: list[float], level: float = 0.95) -> dict:
-    """Mean +- t-CI over per-seed values (df = n-1; the plan-§6 seed-grain CI)."""
+    """Mean +- t-CI over per-seed values (df = n-1; the plan-§6 seed-grain CI).
+
+    Fails loud on nonfinite inputs — a NaN/Inf in a registered statistic is a
+    data defect, never something to serialize into the verdict table.
+    """
     import numpy as np
     from scipy import stats
 
     v = np.asarray([float(x) for x in values], dtype=float)
+    if v.size and not np.isfinite(v).all():
+        raise ValueError(f"t_ci: nonfinite input values {v.tolist()}")
     n = len(v)
     out = {"n": n, "mean": float(v.mean()) if n else None, "lo": None, "hi": None, "sd": None}
     if n >= 2:
@@ -144,13 +150,23 @@ def flip_contrast(
     variants: tuple[str, ...] = VARIANTS,
     anchors: tuple[int, ...] = ANCHOR_BUDGETS,
     draw: int = 0,
+    delta_override: dict[tuple, float] | None = None,
 ) -> dict:
     """Per-behavior flip contrast C(s) + pair coverage (plan §3).
 
     A 'pair' is one (variant, L, seed) anchor cell with BOTH Delta(0.5, 0) and
     Delta(0, 0) present — 2 variants x 2 anchors x len(seeds) = 20 per
-    behavior at full coverage.
+    behavior at full coverage. ``delta_override`` substitutes a cell's delta
+    (keyed by :func:`cell_id`) — the overlap-sensitivity lattice recompute
+    passes the overlap-EXCLUDED deltas here (r1 reconciler pre-fold item).
     """
+    delta_override = delta_override or {}
+
+    def _delta(key: tuple) -> float | None:
+        if key in delta_override:
+            return float(delta_override[key])
+        return headline_delta(by_key[key]) if key in by_key else None
+
     per_seed_terms: dict[int, list[float]] = {s: [] for s in seeds}
     per_anchor_delta05: dict[str, list[float]] = {}
     pairs = 0
@@ -160,8 +176,8 @@ def flip_contrast(
             for s in seeds:
                 k05 = (variant, 0.5, 0.0, int(anchor), draw, int(s))
                 k00 = (variant, 0.0, 0.0, int(anchor), draw, int(s))
-                d05 = headline_delta(by_key[k05]) if k05 in by_key else None
-                d00 = headline_delta(by_key[k00]) if k00 in by_key else None
+                d05 = _delta(k05)
+                d00 = _delta(k00)
                 if d05 is None or d00 is None:
                     missing.append(f"{variant}/L{anchor}/seed{s}")
                     continue
@@ -259,6 +275,30 @@ def designed_skip_audit(
     }
 
 
+def expected_cell_keys(
+    behavior: str,
+    *,
+    seeds: tuple[int, ...],
+    variants: tuple[str, ...] = VARIANTS,
+    core_anchors: tuple[int, ...] = (250, 2500, 8000),
+    draw: int = 0,
+) -> set[tuple]:
+    """The plan-§4 realized-cell key set for one behavior (designed skips
+    excluded; CONDITIONALLY-designed skips are subtracted by the caller from
+    the recorded audit, since they realize per draw)."""
+    combos = {(0.0, 0.0, int(ll)) for ll in core_anchors}
+    combos |= {(0.5, 0.0, int(ll)) for ll in core_anchors}
+    combos |= {(0.5, 1.0, int(ll)) for ll in core_anchors}
+    combos |= {(float(f), 0.0, ABLATION_BUDGET) for f in ABLATION_F_U}
+    combos -= set(DESIGNED_SKIPS.get(behavior, ()))
+    return {
+        (v, f_u, f_l, ll, draw, int(s))
+        for v in variants
+        for s in seeds
+        for (f_u, f_l, ll) in combos
+    }
+
+
 def banked_repro(
     by_key: dict[tuple, dict], banked_rows: list[dict], *, tol: float = BANKED_TOL_DEFAULT
 ) -> dict:
@@ -279,13 +319,15 @@ def banked_repro(
             d = headline_delta(row)
             if d is not None:
                 banked[key] = d
-    compared, material = [], []
+    compared, material, missing_fresh = [], [], []
     for key, banked_d in sorted(banked.items()):
         row = by_key.get(key)
-        if row is None:
-            continue
-        fresh_d = headline_delta(row)
+        fresh_d = headline_delta(row) if row is not None else None
         if fresh_d is None:
+            # Banked seed-0 key with NO fresh counterpart: reported for the
+            # caller's exact-coverage audit (r1 reconciler pre-fold item —
+            # the intersection-only join was a fail-open).
+            missing_fresh.append(list(key))
             continue
         diff = abs(fresh_d - banked_d)
         rec = {"cell": list(key), "fresh": fresh_d, "banked": banked_d, "abs_diff": diff}
@@ -295,10 +337,11 @@ def banked_repro(
     return {
         "n_banked_cells": len(banked),
         "n_compared": len(compared),
+        "missing_fresh": missing_fresh,
         "tol": tol,
         "max_abs_diff": max((r["abs_diff"] for r in compared), default=None),
         "material_divergences": material,
-        "ok": not material and bool(compared),
+        "ok": not material and bool(compared) and not missing_fresh,
         "compared": compared,
     }
 
@@ -449,12 +492,22 @@ def map_diag_presence(
     variants: tuple[str, ...] = VARIANTS,
     levels: tuple[tuple[float, float], ...],
     seed: int = 0,
+    exclude: frozenset[tuple[str, tuple[float, float]]] = frozenset(),
 ) -> dict:
     """Presence assert (plan §5): a seed-``seed`` map-diagnostics entry per
-    (variant, f_u/f_l level) — keys are ``<variant>|<label>|draw0_seed<N>``."""
+    (variant, f_u/f_l level) — keys are ``<variant>|<label>|draw0_seed<N>``.
+
+    An entry counts as PRESENT only when it carries a non-empty ``per_layer``
+    whose rows have ``r2_map`` (a key-only hit was a fail-open — r2 round).
+    ``exclude`` names (variant, level) pairs exempted by a recorded seed-0
+    conditionally-designed skip — per (variant, level), never a global level
+    suppression.
+    """
     missing = []
     for variant in variants:
         for f_u, f_l in levels:
+            if (variant, (f_u, f_l)) in exclude:
+                continue
             hits = [
                 k
                 for k in diag_union
@@ -463,27 +516,55 @@ def map_diag_presence(
                 and f"_fl{f_l}_" in k
                 and k.endswith(f"seed{seed}")
             ]
-            if not hits:
-                missing.append(f"{variant}|fu{f_u}_fl{f_l}|seed{seed}")
+            substantive = [
+                k
+                for k in hits
+                if (diag_union[k] or {}).get("per_layer")
+                and all("r2_map" in pl for pl in diag_union[k]["per_layer"])
+            ]
+            if not substantive:
+                missing.append(
+                    f"{variant}|fu{f_u}_fl{f_l}|seed{seed}"
+                    + (" (present-but-empty)" if hits else "")
+                )
     return {"ok": not missing, "missing": missing}
 
 
 def diag_companions(diag_union: dict, variant: str, label: str, seed: int = 0) -> dict:
-    """Identity+bias companion columns for one cell class (median over layers
-    of the seed-0 map diagnostics' r2_map / r2_identity_bias / knn top-1)."""
+    """Identity+bias + kNN companion columns for one cell class (median over
+    layers of the seed-0 map diagnostics' r2_map / r2_identity_bias and the
+    knn acc@1 per metric — the persisted knn shape is
+    ``per_layer[i]["knn"][metric]["acc_at_k"]["1"]``)."""
     import numpy as np
 
+    none = {
+        "r2_map_median": None,
+        "r2_identity_bias_median": None,
+        "knn1_cosine_median": None,
+        "knn1_euclidean_median": None,
+    }
     entry = diag_union.get(f"{variant}|{label}|draw0_seed{seed}")
     if entry is None:
         entry = diag_union.get(f"{variant}|{label}")  # legacy single-seed key shape
     if not entry or not entry.get("per_layer"):
-        return {"r2_map_median": None, "r2_identity_bias_median": None}
+        return none
     per_layer = entry["per_layer"]
     r2m = [pl.get("r2_map") for pl in per_layer if pl.get("r2_map") is not None]
     r2i = [pl.get("r2_identity_bias") for pl in per_layer if pl.get("r2_identity_bias") is not None]
+
+    def knn1(metric: str) -> float | None:
+        vals = []
+        for pl in per_layer:
+            acc = (((pl.get("knn") or {}).get(metric) or {}).get("acc_at_k") or {}).get("1")
+            if acc is not None:
+                vals.append(float(acc))
+        return float(np.median(vals)) if vals else None
+
     return {
         "r2_map_median": float(np.median(r2m)) if r2m else None,
         "r2_identity_bias_median": float(np.median(r2i)) if r2i else None,
+        "knn1_cosine_median": knn1("cosine"),
+        "knn1_euclidean_median": knn1("euclidean"),
     }
 
 
@@ -881,6 +962,54 @@ def main(argv: list[str] | None = None) -> int:
             )
             continue
 
+        # Full-grid coverage (r2 hardening, cms-full-grid-coverage): the exact
+        # realized key SET — not just the 20 anchor pairs — must match the
+        # plan-§4 enumeration minus the audited conditional skips, BEFORE any
+        # statistics. A silent partial grid must never feed the CIs/dose curve.
+        cond_keys = {tuple(k) for k in map(tuple, audit["conditional_skips_recorded"])}
+        cond_keys = {
+            (k[0], float(k[1]), float(k[2]), int(k[3]), int(k[4]), int(k[5])) for k in cond_keys
+        }
+        expected = expected_cell_keys(b, seeds=seeds) - cond_keys
+        grid_missing = sorted(expected - set(by_key), key=str)
+        grid_extra = sorted(set(by_key) - expected, key=str)
+        entry["grid_coverage"] = {
+            "n_expected": len(expected),
+            "n_realized": len(by_key),
+            "missing": [list(k) for k in grid_missing],
+            "extra": [list(k) for k in grid_extra],
+            "ok": not grid_missing and not grid_extra,
+        }
+        if (grid_missing or grid_extra) and not args.allow_partial:
+            entry["verdict"] = "HALTED-GRID-COVERAGE"
+            entry["audit_failures"].append("grid-coverage")
+            verdicts.append("HALTED-GRID-COVERAGE")
+            rc = max(rc, 5)
+            print(
+                f"[fold] {b}: HALTED-GRID-COVERAGE missing={len(grid_missing)} "
+                f"extra={len(grid_extra)} (first: {grid_missing[:4] or grid_extra[:4]})",
+                flush=True,
+            )
+            continue
+
+        # Pool-meta presence (r1 reconciler pre-fold item 4): every realized
+        # anchor-DEPENDENT cell (f_u>0, f_l<1) must carry a pool-meta row —
+        # a behavior/half that never wrote compose_pool_meta.jsonl must be a
+        # LOUD audit failure, never a silent 'no-overlap-cells' status.
+        meta_expected = {k for k in by_key if k[1] is not None and k[1] > 0 and k[2] < 1.0}
+        meta_recorded = {skip_key(r) for r in data["pool_meta"]}
+        meta_missing = sorted(meta_expected - meta_recorded, key=str)
+        entry["pool_meta_presence"] = {
+            "n_expected": len(meta_expected),
+            "n_recorded": len(meta_recorded),
+            "missing": [list(k) for k in meta_missing],
+            "ok": not meta_missing,
+        }
+        if meta_missing:
+            entry["audit_failures"].append("pool-meta-missing")
+            rc = max(rc, 5)
+            print(f"[fold] {b}: pool-meta MISSING for {len(meta_missing)} cells", flush=True)
+
         contrast = flip_contrast(by_key, seeds=seeds)
         entry["flip_contrast"] = {k: v for k, v in contrast.items() if k != "per_seed_C"}
         entry["flip_contrast"]["per_seed_C"] = contrast["per_seed_C"]
@@ -918,11 +1047,18 @@ def main(argv: list[str] | None = None) -> int:
         levels = list(CORE_LEVELS) + [(f, 0.0) for f in ABLATION_F_U]
         if b == "evil":
             skipped_everywhere = {(1.0, 0.0)}
-            cond_recorded = {
-                (float(k[1]), float(k[2])) for k in map(tuple, audit["conditional_skips_recorded"])
-            }
-            levels = [lv for lv in levels if lv not in skipped_everywhere | cond_recorded]
-        diag_presence = map_diag_presence(data["diag"], levels=tuple(levels))
+            levels = [lv for lv in levels if lv not in skipped_everywhere]
+        # A recorded seed-0 conditionally-designed skip exempts only that
+        # (variant, level) — never the whole level: a one-variant skip must
+        # not blind the presence audit to the other variant's map (r2).
+        diag_exclude = {
+            (str(k[0]), (float(k[1]), float(k[2])))
+            for k in map(tuple, audit["conditional_skips_recorded"])
+            if int(k[5]) == 0
+        }
+        diag_presence = map_diag_presence(
+            data["diag"], levels=tuple(levels), exclude=frozenset(diag_exclude)
+        )
         entry["map_diag_presence"] = diag_presence
         if not diag_presence["ok"]:
             entry["audit_failures"].append("map-diag-presence")
@@ -942,6 +1078,33 @@ def main(argv: list[str] | None = None) -> int:
                 "FLIP-CONFIRMED downgraded: overlap-sensitivity recompute pending "
                 f"({sens['n_pending']} cells without local preds npz)"
             )
+        if sens["status"] == "ok" and sens["rows"]:
+            # COMPLETED recompute incorporated into the verdict (r1 reconciler
+            # pre-fold item 3): rebuild the lattice with the overlap-EXCLUDED
+            # deltas substituted; a confirm that does not survive the exclusion
+            # downgrades to INDETERMINATE (verdict_raw preserved above).
+            excl = {
+                (str(c[0]), float(c[1]), float(c[2]), int(c[3]), int(c[4]), int(c[5])): float(
+                    r["delta_excl_overlap"]
+                )
+                for r in sens["rows"]
+                if r["delta_excl_overlap"] is not None and (c := r["cell"])
+            }
+            contrast_excl = flip_contrast(by_key, seeds=seeds, delta_override=excl)
+            c_excl = t_ci([v for v in contrast_excl["per_seed_C"].values() if v is not None])
+            sens_verdict = lattice_verdict(c_excl, contrast_excl["anchor_seedmean_delta05"])
+            entry["sensitivity_lattice"] = {
+                "C_tci": c_excl,
+                "verdict": sens_verdict,
+                "anchor_seedmean_delta05": contrast_excl["anchor_seedmean_delta05"],
+                "n_cells_overridden": len(excl),
+            }
+            if verdict == "FLIP-CONFIRMED" and sens_verdict != "FLIP-CONFIRMED":
+                verdict = "INDETERMINATE"
+                entry["verdict_downgrade"] = (
+                    "FLIP-CONFIRMED downgraded: overlap-excluded lattice recompute "
+                    f"reads {sens_verdict}"
+                )
         entry["verdict"] = verdict
         verdicts.append(verdict)
 
@@ -949,11 +1112,43 @@ def main(argv: list[str] | None = None) -> int:
         entry["dose_curve"] = dose_curve(by_key, seeds=seeds)
         entry["cell_table"] = cell_class_table(by_key, data["diag"], seeds=seeds)
 
-        if b == "evil" and banked_rows:
+        if b == "evil" and not banked_rows:
+            # Loud-fail: the seed-0 reproduction duty must never silently skip
+            # (r1 reconciler pre-fold item 2 — the absent-file path was a
+            # fail-open). --allow-partial records without the rc bump (interim
+            # folds on a seed-subset legitimately lack the banked file's cells).
+            reason = (
+                "banked-repro-file-missing"
+                if not args.banked_evil.exists()
+                else "banked-repro-empty-bank"
+            )
+            entry["banked_repro"] = {"ok": False, "reason": reason}
+            entry["audit_failures"].append(reason)
+            if not args.allow_partial:
+                rc = max(rc, 5)
+            print(f"[fold] evil: {reason} ({args.banked_evil})", flush=True)
+        elif b == "evil":
             repro = banked_repro(by_key, banked_rows, tol=args.banked_tol)
             entry["banked_repro"] = {k: v for k, v in repro.items() if k != "compared"}
             entry["banked_repro"]["compared"] = repro["compared"]
-            if not repro["ok"] and repro["n_compared"]:
+            join_failure = None
+            if repro["n_banked_cells"] == 0:
+                join_failure = "banked-repro-empty-bank"
+            elif repro["n_compared"] == 0:
+                join_failure = "banked-repro-empty-join"
+            elif repro["missing_fresh"]:
+                join_failure = "banked-repro-missing-fresh-keys"
+            if join_failure:
+                entry["audit_failures"].append(join_failure)
+                if not args.allow_partial:
+                    rc = max(rc, 5)
+                print(
+                    f"[fold] evil: {join_failure} "
+                    f"(banked={repro['n_banked_cells']} compared={repro['n_compared']} "
+                    f"missing_fresh={len(repro['missing_fresh'])})",
+                    flush=True,
+                )
+            if repro["material_divergences"]:
                 if args.allow_banked_divergence:
                     entry["banked_repro"]["caveat"] = (
                         "material seed-0 divergence recorded under --allow-banked-divergence"

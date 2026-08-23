@@ -43,6 +43,7 @@ check); the full (d x d) end-to-end map fine-tune is deliberately not fit
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import logging
 import os
@@ -1750,9 +1751,13 @@ def run_grid_multi(
                 fh.write(line)
                 fh.flush()
             results[r].append(rec)
+            # key= matches the preds npz basename (sha1(unit_key)[:16]) so a log
+            # line cross-references its persisted per-cell artifact (r2).
             print(
                 f"[fits] unit {k + 1}/{len(units)} L={budget_l} draw={draw} seed={seed} "
-                f"regime={provenances[r].get('regime')} elapsed={time.time() - t0:.0f}s",
+                f"regime={provenances[r].get('regime')} "
+                f"key={hashlib.sha1(keys[r].encode()).hexdigest()[:16]} "
+                f"elapsed={time.time() - t0:.0f}s",
                 flush=True,
             )
         if unit_timings is not None:
