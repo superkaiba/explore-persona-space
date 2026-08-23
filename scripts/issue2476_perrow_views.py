@@ -18,6 +18,12 @@ present):
     holdout_rows asserted identical to ib_c.npz rows; the surrogate is further
     validated below by reproducing the committed per-feature R2 arrays)
 
+  All nine staged inputs are fetched at pinned revision 89cfa76cdcd4 — a pin
+  added post-run with content-identity verified: every staged file's last HF
+  commit (refit npz 2026-07-18, this run's stores 2026-08-23 11:23-11:39 UTC)
+  predates this script's 2026-08-23 ~16:32 UTC unpinned-main fetch, so the
+  pinned revision serves the same content the recompute consumed.
+
 Recompute convention: `_encode_restricted` + the `_knn_retrieval_chunked` rank
 formula VERBATIM from scripts/issue2476_turnavg_sae.py (imported, not copied,
 where importable; the rank kernel is re-derived here because the driver's
@@ -57,6 +63,9 @@ ROOT = Path(__file__).resolve().parent.parent
 EV = ROOT / "eval_results" / "issue_2476" / "turnavg"
 STAGE_DEFAULT = "/mnt/eps-data/thomasjiralerspong/issue2476_r2crc"
 DATA_REPO = "superkaiba1/explore-persona-space-data"
+# Post-run pin (see module docstring): main head at pin time; every staged file's
+# last touching commit predates the run's unpinned fetch, so content is identical.
+DATA_REPO_REVISION = "89cfa76cdcd4207d95c1fec1c3131f36e21beec0"
 STAGE_FILES = (
     "issue2476_turnavg/analysis_tensors/eval/alive_c.npz",
     "issue2476_turnavg/analysis_tensors/eval/alive_b.npz",
@@ -89,7 +98,9 @@ def _stage(stage: Path) -> None:
         tgt = stage / f
         if tgt.exists() and tgt.stat().st_size > 0:
             continue
-        hf_hub_download(DATA_REPO, f, repo_type="dataset", local_dir=str(stage))
+        hf_hub_download(
+            DATA_REPO, f, repo_type="dataset", revision=DATA_REPO_REVISION, local_dir=str(stage)
+        )
         print(f"[stage] {f}", flush=True)
 
 
