@@ -47,13 +47,19 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   "load-bearing"/"backbone"/"scaffold" family: name the mechanism instead. (3) Avoid
   contrastive-negation scaffolds ("is X, not Y", "not X but Y") as a rhetorical
   default; state what IS the case, keep the negation only when the contrast itself
-  is the claim. Enforcement: a local `.git/hooks/pre-commit` gate in this clone
-  blocks staged .tex with rendered em dashes or "load-bearing" (override
-  `TELLS_ALLOW=1` for a deliberate exception, e.g. quoting). The hook is clone-local
-  (Overleaf-web edits bypass it), so after every `git pull` run the same scan over
-  the pulled diff and fix violations Thomas's edits did not intend. Judgment-level
-  patterns (3) are checked by the `/writing-tells` critic before any prose
-  commit+push (skill in ~/.claude/skills/writing-tells/).
+  is the claim. Enforcement (the `/writing-tells` skill,
+  `~/.claude/skills/writing-tells/`, owns all three layers): (a) the clone's
+  `.git/hooks/pre-commit` runs the skill's mechanical gate
+  (`check_paper_tells.sh <clone root>`: em dashes, metaphor-jargon nouns,
+  AI-vocabulary hard bans via the shared humanize `banned_absolute.txt`,
+  chat-formatting leaks; `TELLS_ALLOW=1` overrides for a deliberate exception,
+  e.g. quoting); (b) the hook is clone-local — Overleaf-web edits bypass it — so
+  after every `git pull` run `check_paper_tells.sh` and fix violations Thomas's
+  edits did not intend; (c) judgment-level patterns (contrastive scaffolds,
+  rule-of-three, templating, significance inflation) go through the skill's
+  fresh-context critic loop before any prose commit+push. Evidence catalog:
+  `~/.claude/skills/writing-tells/litreview.md` (+ the copy in EPS
+  `docs/paper_context_answer_map/writing_tells_litreview.md`).
 - THIS FILE is untracked in the clone (kept out of the Overleaf tree); the canonical
   versioned copy is `docs/paper_context_answer_map/CLAUDE-overleaf-clone.md` in the
   EPS repo — keep the two in sync when editing.
