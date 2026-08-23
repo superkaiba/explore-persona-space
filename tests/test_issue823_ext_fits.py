@@ -20,6 +20,7 @@ AND that no downstream completion sentinel exists after the halt.
 
 from __future__ import annotations
 
+import inspect
 import json
 import math
 import pathlib
@@ -429,6 +430,37 @@ def test_fits_sentinel_roundtrip_and_mutation(tmp_path):
     assert FITS.fits_done(tmp_path, fp)
     mutated = {"rung_mask_shas": {"100": "b" * 64}, "estimator": {"grid": [1, 2]}}
     assert not FITS.fits_done(tmp_path, mutated)
+
+
+def test_resume_equality_refuses_stale_sentinel_on_schema_extension(monkeypatch):
+    """r4 concern required-output-keys-resume-unpinned: extending
+    REQUIRED_OUTPUT_KEYS (a schema extension at an unchanged code_sha) must
+    make the live resume-equality predicate REFUSE a sentinel fingerprint
+    written under the prior schema — refit, never an early-return skip."""
+    kw = dict(
+        rung_mask_shas={"48": "a" * 64},
+        rand_manifest_sha="m" * 64,
+        gate_states={"pending": True},
+        store_name_set_sha256="s" * 64,
+    )
+    prior_fp = FITS.fits_fingerprint(**kw)  # sentinel written PRE-extension
+    assert FITS.resume_inputs_match(prior_fp, FITS.fits_fingerprint(**kw))  # self-match ok
+    monkeypatch.setattr(
+        FITS,
+        "REQUIRED_OUTPUT_KEYS",
+        {**FITS.REQUIRED_OUTPUT_KEYS, "new_artifact": ["new_key"]},
+    )
+    live_fp = FITS.fits_fingerprint(**kw)
+    # The schema extension ALONE must break resume equality (refit)...
+    assert not FITS.resume_inputs_match(prior_fp, live_fp)
+    # ...and required_output_keys is what does it: the pre-fix r3-era key
+    # tuple (WITHOUT required_output_keys) ACCEPTS the stale sentinel — the
+    # fails-pre-fix demonstration for this pin.
+    legacy = tuple(k for k in FITS.RESUME_FINGERPRINT_KEYS if k != "required_output_keys")
+    assert {k: prior_fp.get(k) for k in legacy} == {k: live_fp[k] for k in legacy}
+    # Hollow-gate guard: the GPU-shaped phase_fits body dispatches this exact
+    # predicate, so the pin covers the LIVE resume path.
+    assert "resume_inputs_match(" in inspect.getsource(FITS.phase_fits)
 
 
 # ── fit_rung on a synthetic source ───────────────────────────────────────────
@@ -857,11 +889,16 @@ def _mutate_json(rd: pathlib.Path, name: str, fn) -> None:
 
 
 def _rewrite_npz(
-    rd: pathlib.Path, suffix: str, n: int, layers: int, arms: tuple[str, ...] = ("k1", "k16")
+    rd: pathlib.Path,
+    suffix: str,
+    n: int,
+    layers: int,
+    arms: tuple[str, ...] = ("k1", "k16"),
+    arm_names_arr: np.ndarray | None = None,
 ) -> None:
     np.savez(
         rd / f"percontext_{suffix}.npz",
-        arm_names=np.array(list(arms)),
+        arm_names=np.array(list(arms)) if arm_names_arr is None else arm_names_arr,
         context_ids=np.arange(n),
         p1_ss_res=np.zeros((2, layers, n)),
         p1_ss_tot=np.ones((2, layers, n)),
@@ -994,6 +1031,15 @@ def test_validate_fits_outputs_rejects_each_subtree_mutation(tmp_path):
             "npz-wrong-arm-names",
             "arm_names",
             lambda rd: _rewrite_npz(rd, "rung48", 48, 28, arms=("armA", "armB")),
+        ),
+        # r4 concern arm-names-scalar-validator-raise: a valid NPZ carrying a
+        # 0-d/scalar arm_names must yield a refit problem, never an uncaught
+        # TypeError from iterating a 0-d array (the outer handler catches only
+        # OSError/ValueError, so pre-fix this case CRASHES the validator).
+        (
+            "npz-scalar-arm-names",
+            "arm_names is not 1-d",
+            lambda rd: _rewrite_npz(rd, "rung48", 48, 28, arm_names_arr=np.array("k1")),
         ),
         (
             "p2-missing-cell",

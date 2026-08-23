@@ -1977,6 +1977,28 @@ def fits_fingerprint(
     }
 
 
+# required_output_keys participates in resume equality so a SCHEMA extension
+# invalidates old sentinels even at an unchanged code_sha (r3 concern
+# fits-resume-schema-undervalidated); code_sha is compared separately by the
+# caller. Extracted from the phase_fits body so the mechanism is unit-pinnable
+# (r4 concern required-output-keys-resume-unpinned).
+RESUME_FINGERPRINT_KEYS = (
+    "rung_mask_shas",
+    "rand_manifest_sha",
+    "store_name_set_sha256",
+    "estimator",
+    "required_output_keys",
+)
+
+
+def resume_inputs_match(prior_fp: dict, fingerprint: dict) -> bool:
+    """True iff the prior sentinel fingerprint equals the live one on every
+    RESUME_FINGERPRINT_KEYS member; any mismatch forces a refit (no skip)."""
+    return {k: prior_fp.get(k) for k in RESUME_FINGERPRINT_KEYS} == {
+        k: fingerprint[k] for k in RESUME_FINGERPRINT_KEYS
+    }
+
+
 def write_fits_sentinel(eval_dir: pathlib.Path, fingerprint: dict, extra: dict) -> pathlib.Path:
     """Atomic (tmp + rename) completion sentinel — written ONLY on full success."""
     path = eval_dir / FITS_SENTINEL
@@ -2281,10 +2303,19 @@ def validate_fits_outputs(
                     if not np.issubdtype(z["context_ids"].dtype, np.integer):
                         problems.append(f"{name}: context_ids dtype is not integer")
                     # Values, not just presence: figures indexes
-                    # arm_names.index("k16"/"k1") (r3 concern).
-                    got_arms = [str(a) for a in z["arm_names"]]
-                    if got_arms != list(ARM_NAMES):
-                        problems.append(f"{name}: arm_names {got_arms} != {list(ARM_NAMES)}")
+                    # arm_names.index("k16"/"k1") (r3 concern). Topology guard
+                    # first: iterating a 0-d/scalar arm_names raises TypeError,
+                    # which the (OSError, ValueError) handler below cannot
+                    # catch — a malformed resume artifact is a refit problem,
+                    # never a validator raise (r4 concern
+                    # arm-names-scalar-validator-raise).
+                    arm_arr = z["arm_names"]
+                    if arm_arr.ndim != 1:
+                        problems.append(f"{name}: arm_names is not 1-d (ndim={arm_arr.ndim})")
+                    else:
+                        got_arms = [str(a) for a in arm_arr]
+                        if got_arms != list(ARM_NAMES):
+                            problems.append(f"{name}: arm_names {got_arms} != {list(ARM_NAMES)}")
                     if suffix in n_eval_by and n_ctx != n_eval_by[suffix]:
                         problems.append(
                             f"{name}: n_contexts {n_ctx} != rung block n_eval {n_eval_by[suffix]}"
@@ -2434,21 +2465,14 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
     )
     # required_output_keys is part of live resume equality so a SCHEMA
     # extension invalidates old sentinels even at an unchanged code_sha
-    # (r3 concern fits-resume-schema-undervalidated).
-    _resume_keys = (
-        "rung_mask_shas",
-        "rand_manifest_sha",
-        "store_name_set_sha256",
-        "estimator",
-        "required_output_keys",
-    )
+    # (r3 concern fits-resume-schema-undervalidated). The equality predicate
+    # is the module-level resume_inputs_match (over RESUME_FINGERPRINT_KEYS)
+    # so it is unit-pinnable (r4 concern required-output-keys-resume-unpinned).
     sentinel_path = eval_dir / FITS_SENTINEL
     if sentinel_path.exists():
         prior = json.loads(sentinel_path.read_text())
         prior_fp = prior.get("fingerprint", {})
-        same_inputs = {k: prior_fp.get(k) for k in _resume_keys} == {
-            k: fingerprint[k] for k in _resume_keys
-        }
+        same_inputs = resume_inputs_match(prior_fp, fingerprint)
         if (
             prior.get("complete")
             and same_inputs
