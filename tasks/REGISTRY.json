@@ -10161,8 +10161,8 @@
     "2315": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2315",
-      "status": "proposed",
+      "path": "tasks/planning/2315",
+      "status": "planning",
       "title": "Step 9c 1b: a self-composed gate launcher can silently drop --files-only newline flattening OR -o junit_family=xunit1; neither omission fails where the recipe checks"
     },
     "2316": {
