@@ -6,7 +6,7 @@ title: 'The context-to-answer map''s coarse-over-specific predictability gradien
 kind: experiment
 tags: []
 created_at: '2026-08-22T20:08:40Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1482
 origin_prompt: 'Paper outline 2026-08-22: ''SAE experiments — try turn averaged SAEs'''
 workflow: v1
