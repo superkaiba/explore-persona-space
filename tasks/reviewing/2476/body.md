@@ -19,6 +19,8 @@ goal: 'Determine whether the context-to-answer map''s high-level-over-low-level 
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2476.md](https://github.com/superkaiba/explore-persona-space/blob/357e7fe69c748661fc42d3a418755ab4259c5bd9/docs/methodology/issue_2476.md) · [gist](https://gist.github.com/superkaiba/290dcbfd1eb46f39b06da20d1c88d08b)
+
 ## Takeaways
 
 - The coarse-over-specific gradient reproduces in neither turn-averaged basis at the median-profile level: tier medians 0.625/0.131/0.670 (fresh turn-averaged SAE, n = 788/88/3 alive) vs 0.420/0.553/0.601 (token-level dictionary on turn averages). The decision rule (third bullet) remains indeterminate. At matched firing activity the fresh arm's coarse-minus-middle contrast (+0.393) and the pile-trained dictionary twin's (−0.141) exclude zero on opposite sides, so the middle-tier dip is instrument-dependent with interval support.
