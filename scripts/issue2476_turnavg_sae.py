@@ -244,7 +244,10 @@ def _regime(args) -> dict:
     float-last-bit rule). EVERY output- or destination-affecting dial is hashed
     (Codex r1 Critical `incomplete-regime-key` + g2 MAJOR-2 + g1 Minor 2):
     sae_steps / fit_n / n_perm / n_boot change fits+stats, gen_batch changes
-    capture batch geometry (bf16), hf_prefix / skip_upload change destinations."""
+    capture batch geometry (bf16), hf_prefix / skip_upload change destinations,
+    and the RESOLVED device changes forward numerics (g1 r2 Minor 2: a resume
+    under a different auto-resolved device would mix bf16 capture numerics
+    inside one store; main() resolves auto -> cuda/cpu BEFORE any phase)."""
     from explore_persona_space.orchestrate.provenance import git_provenance
 
     committed = _committed_split()
@@ -262,6 +265,7 @@ def _regime(args) -> dict:
         "gen_batch": int(args.gen_batch),
         "hf_prefix": str(args.hf_prefix),
         "skip_upload": bool(args.skip_upload),
+        "device": str(args.device),  # resolved by main() before any phase runs
         "layer_c": LAYER_C,
         "layers_b": list(LAYERS_B),
         "m_store_revision": M_STORE_REVISION,
@@ -607,6 +611,12 @@ def _assemble_stream_production(
 ) -> int:
     """Production stream: fp16 memmaps at the KNOWN committed shape, per-chunk
     progress lines, cursor-sidecar checkpointing (resume from the cursor)."""
+    # Codex r2 minor: the env override must not restore the rejected multi-chunk
+    # durability behavior (or a zero modulo) on the at-scale stream.
+    assert STREAM_FLUSH_EVERY == 1, (
+        f"EPM_I2476_STREAM_FLUSH_EVERY={STREAM_FLUSH_EVERY}: the production stream "
+        "requires per-chunk durability (flush cadence 1; the override is test-only)"
+    )
     xp, yp = out / "X19.fp16.npy", out / "Y19.fp16.npy"
     cur_path = out / ".stream_cursor.json"
     n_pb = int(N1M.N_PASS_B)
@@ -2455,11 +2465,42 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     }
 
 
+def _assert_sae_c_schema(args) -> None:
+    """Metadata-only P4 SAE-c producer-schema validation — cfg key set +
+    safetensors HEADER key set + cfg-consistent tensor shapes, no tensor loads
+    (Codex r2 blocker `consumer-contract-post-init` residual: load_local's own
+    checks were reached only AFTER the P5 refits / P6 dictionary loads). Shared
+    by _p5_input_contract and _p6_input_contract."""
+    sae_out = _sae_out_dir(args)
+    w_path = sae_out / "sae_weights.safetensors"
+    c_path = sae_out / "cfg.json"
+    assert w_path.exists(), f"P4 SAE-c weights missing: {w_path} — run sae_train"
+    assert c_path.exists(), f"P4 cfg.json missing: {c_path} — run sae_train"
+    cfg = json.loads(c_path.read_text())
+    _assert_keys(tuple(cfg), ("act_dim", "dict_size", "k", "tier_bounds", "seed"), "P4 cfg.json")
+    from safetensors import safe_open  # header-only read; no tensor materialization
+
+    with safe_open(str(w_path), framework="pt", device="cpu") as f:
+        keys = set(f.keys())
+        expected = {"w_enc", "w_dec", "b_enc", "b_dec", "threshold"}
+        assert keys == expected, f"P4 sae_weights key drift: {sorted(keys)}"
+        shapes = {k: tuple(f.get_slice(k).get_shape()) for k in keys}
+    a, dsz = int(cfg["act_dim"]), int(cfg["dict_size"])
+    want = {
+        "w_enc": (a, dsz),
+        "w_dec": (dsz, a),
+        "b_enc": (dsz,),
+        "b_dec": (a,),
+        "threshold": (1,),
+    }
+    assert shapes == want, f"P4 sae_weights shape drift: {shapes} != {want}"
+
+
 def _p5_input_contract(args) -> None:
     """Early producer-contract checks BEFORE any refit dispatch (Codex r1
-    Critical `consumer-contract-post-init`): P1 memmap shapes, the P2 store's
-    full key set + nonzero rows, and the P4 weights — named misses, never a
-    KeyError three fits in."""
+    Critical `consumer-contract-post-init` + the r2 residual): P1 memmap shapes,
+    the P2 store's full key set + nonzero rows, and the P4 SAE-c cfg/weights
+    SCHEMA (not just existence) — named misses, never a KeyError three fits in."""
     a_dir = _assemble_dir(args)
     assert (a_dir / "split_meta.json").exists(), "maps needs the P1 outputs — run assemble"
     rows_present = np.load(a_dir / "rows_present.npy")
@@ -2475,10 +2516,7 @@ def _p5_input_contract(args) -> None:
             "P2 vbar_store.npz",
         )
         assert len(z["row_idx"]) > 0, "P2 recapture store is EMPTY"
-    assert (_sae_out_dir(args) / "sae_weights.safetensors").exists(), (
-        "maps needs the P4 SAE-c weights — run sae_train"
-    )
-    assert (_sae_out_dir(args) / "cfg.json").exists(), "maps needs the P4 cfg.json"
+    _assert_sae_c_schema(args)
 
 
 def phase_maps(args) -> None:
@@ -2764,44 +2802,57 @@ def _knn_retrieval_chunked(
     ks: tuple[int, ...] = (1, 5, 10),
     metric: str = "euclidean",
     block: int = 2048,
+    device: str = "cpu",
+    dtype: torch.dtype | None = None,
 ) -> dict:
-    """Query-side-chunked twin of mapping_baselines.knn_retrieval for the
-    pool == true case (Codex r1 Major `retrieval-not-chunked`: the shared
-    helper materializes a full n x n_pool fp64 distance matrix — ~3.2 GB per
-    call at 20k rows, per tier x predictor x metric cell). Semantics are
-    IDENTICAL per query row (same distances, same tolerance-based mid-ranks);
-    peak memory is block x n_pool. The shared helper is untouched; parity is
-    pinned by tests/test_issue2476_gates.py."""
-    pred = np.asarray(pred, dtype=np.float64)
-    pool = np.asarray(true, dtype=np.float64)
-    n, n_pool = pred.shape[0], pool.shape[0]
-    assert n == n_pool and pred.shape[1] == pool.shape[1], (pred.shape, pool.shape)
-    if metric == "euclidean":
-        q2 = (pool * pool).sum(axis=1)[None, :]
-        pool_n = None
-    elif metric == "cosine":
-        q2 = None
-        pool_n = pool / (np.linalg.norm(pool, axis=1, keepdims=True) + 1e-12)
-    else:
+    """Query-side-chunked TORCH twin of mapping_baselines.knn_retrieval for the
+    pool == true case — blockwise GEMMs resident on ``device`` (the plan §9
+    registered basis: "HBM-chunked ... at H100 sustained throughput"; Codex r2
+    blocker `retrieval-not-chunked` residual: the r2 version was NumPy fp64 on
+    CPU). dtype defaults by device: fp32 on cuda (the H100 GEMM basis), fp64 on
+    cpu (exact parity with the shared float64 helper — pinned by
+    tests/test_issue2476_gates.py, ties included). Semantics are IDENTICAL per
+    query row (same distance formula, same tolerance-based mid-ranks); peak
+    memory is the two (n, d) operands plus one block x n_pool distance tile on
+    ``device``. The shared helper is untouched."""
+    pred_np = np.asarray(pred)
+    pool_np = np.asarray(true)
+    n, n_pool = pred_np.shape[0], pool_np.shape[0]
+    assert n == n_pool and pred_np.shape[1] == pool_np.shape[1], (pred_np.shape, pool_np.shape)
+    if metric not in ("euclidean", "cosine"):
         raise ValueError(f"unknown metric {metric!r}")
-    ranks = np.empty(n, np.float64)
+    dev = torch.device(device)
+    if dtype is None:
+        dtype = torch.float32 if dev.type == "cuda" else torch.float64
+    pt = torch.as_tensor(pred_np, dtype=dtype, device=dev)
+    qt = torch.as_tensor(pool_np, dtype=dtype, device=dev)
+    if metric == "euclidean":
+        q2 = (qt * qt).sum(dim=1).unsqueeze(0)
+        pool_t = qt
+    else:
+        q2 = None
+        pool_t = qt / (torch.sqrt((qt * qt).sum(dim=1, keepdim=True)) + 1e-12)
+    ranks_t = torch.empty(n, dtype=torch.float64, device=dev)
     for s in range(0, n, block):
-        pb = pred[s : s + block]
+        pb = pt[s : s + block]
         if metric == "euclidean":
-            d = (pb * pb).sum(axis=1)[:, None] + q2 - 2.0 * (pb @ pool.T)
+            d = (pb * pb).sum(dim=1).unsqueeze(1) + q2 - 2.0 * (pb @ pool_t.T)
         else:
-            pn = pb / (np.linalg.norm(pb, axis=1, keepdims=True) + 1e-12)
-            d = 1.0 - pn @ pool_n.T
-        rows = np.arange(len(pb))
-        d_true = d[rows, np.arange(s, s + len(pb))]
-        tol = 1e-9 * np.maximum(np.abs(d_true)[:, None], 1e-12)
-        closer = (d < d_true[:, None] - tol).sum(axis=1)
-        tied = (np.abs(d - d_true[:, None]) <= tol).sum(axis=1) - 1
-        ranks[s : s + len(pb)] = 1.0 + closer + 0.5 * tied
+            pn = pb / (torch.sqrt((pb * pb).sum(dim=1, keepdim=True)) + 1e-12)
+            d = 1.0 - pn @ pool_t.T
+        rows = torch.arange(len(pb), device=dev)
+        d_true = d[rows, torch.arange(s, s + len(pb), device=dev)]
+        tol = 1e-9 * torch.clamp(d_true.abs(), min=1e-12).unsqueeze(1)
+        dt1 = d_true.unsqueeze(1)
+        closer = (d < dt1 - tol).sum(dim=1)
+        tied = ((d - dt1).abs() <= tol).sum(dim=1) - 1
+        ranks_t[s : s + len(pb)] = 1.0 + closer.to(torch.float64) + 0.5 * tied.to(torch.float64)
+    ranks = ranks_t.cpu().numpy()
     return {
         "metric": metric,
         "n": int(n),
         "n_pool": int(n_pool),
+        "backend": {"device": dev.type, "dtype": str(dtype).removeprefix("torch.")},
         "acc_at_k": {int(k): float((ranks <= k).mean()) for k in ks},
         "chance_at_k": {int(k): float(k / n_pool) for k in ks},
         "median_rank": float(np.median(ranks)),
@@ -2809,9 +2860,10 @@ def _knn_retrieval_chunked(
     }
 
 
-def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10)) -> dict:
+def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10), device="cpu") -> dict:
     """Per-tier kNN retrieval (every k x metric x predictor cell reported
-    separately, no best-of — plan §6). Pool = the held-out true feature rows."""
+    separately, no best-of — plan §6). Pool = the held-out true feature rows;
+    GEMMs run on ``device`` (the workload device — plan §9 GPU basis)."""
     out: dict = {}
     for t in (0, 1, 2):
         m = tier == t
@@ -2824,7 +2876,7 @@ def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10)) -> di
             pa = np.ascontiguousarray(np.asarray(parr[:, m], np.float32))
             pc = {}
             for metric in ("euclidean", "cosine"):
-                r = _knn_retrieval_chunked(pa, ft, ks=ks, metric=metric)
+                r = _knn_retrieval_chunked(pa, ft, ks=ks, metric=metric, device=device)
                 r["wilson_ci_acc"] = {str(k): _wilson(r["acc_at_k"][k], r["n"]) for k in ks}
                 pc[metric] = r
             cell[pname] = pc
@@ -2937,9 +2989,11 @@ def _arm_battery(
     rng,
     panel_doc: dict,
     battery_seed: int,
+    device: str = "cpu",
 ) -> dict:
     """One arm's full vectorized battery -> perfeature npzs + shuffle-null npz +
-    tier_tests_<tag>.json + retrieval_<tag>.json. Returns {'r2_map': ...}."""
+    tier_tests_<tag>.json + retrieval_<tag>.json (retrieval GEMMs on ``device``).
+    Returns {'r2_map': ...}."""
     tier = S.tier_of(feat_ids)
     counts_sel = np.asarray(counts_full, np.int64)[feat_ids]
     t0 = time.time()
@@ -3068,7 +3122,7 @@ def _arm_battery(
     retrieval = {
         "n_pool": int(f_true.shape[0]),
         "chance_note": "pool = held-out true feature rows; chance_at_k = k / n_pool",
-        "tiers": _retrieval_cells(f_true, ret_preds, tier),
+        "tiers": _retrieval_cells(f_true, ret_preds, tier, device=device),
     }
     dense: dict = {}
     for name, dp in dense_preds.items():
@@ -3079,7 +3133,10 @@ def _arm_battery(
         }
         for metric in ("euclidean", "cosine"):
             cell[metric] = _knn_retrieval_chunked(
-                np.asarray(dp, np.float32), np.asarray(dense_true, np.float32), metric=metric
+                np.asarray(dp, np.float32),
+                np.asarray(dense_true, np.float32),
+                metric=metric,
+                device=device,
             )
         dense[name] = cell
     retrieval["dense_anchor"] = dense
@@ -3162,9 +3219,11 @@ def _p6_complete(out: Path, finals: list[Path]) -> bool:
 
 
 def _p6_input_contract(args, maps_dir: Path) -> None:
-    """Early P4/P5-producer contract checks BEFORE the ~1.9 GB dictionary loads
-    (Codex r1 Critical `consumer-contract-post-init`): key sets + row-count
-    consistency on every consumed artifact, named misses."""
+    """Early P2/P4/P5-producer contract checks BEFORE the ~1.9 GB dictionary
+    loads / SAE-c load / encodes (Codex r1 Critical `consumer-contract-post-init`
+    + the r2 residual): key sets, the P4 cfg/weights/G4 schemas, AND every
+    cross-artifact row-order / subset / nonempty relation the battery relies on
+    — all on cheap index arrays and JSON/headers, named misses."""
     checks = {
         maps_dir / "alive_c.npz": ("alive_ids", "counts", "floor", "n_fit_rows", "train_mean"),
         maps_dir / "alive_b.npz": ("alive_ids", "counts", "floor", "n_fit_rows", "train_mean"),
@@ -3197,16 +3256,42 @@ def _p6_input_contract(args, maps_dir: Path) -> None:
     with np.load(maps_dir / "alive_c.npz") as az:
         n_alive_c, n_fit_c = int(len(az["alive_ids"])), int(az["n_fit_rows"])
     with np.load(maps_dir / "percontext" / "refit_holdout__ridge__seed0.npz") as hz:
-        n_hold = int(len(hz["holdout_rows"]))
+        hold_rows = np.asarray(hz["holdout_rows"], np.int64)
+    n_hold = int(len(hold_rows))
+    assert n_hold > 0, "[eval] refit_holdout has ZERO holdout rows"
     fmm = np.load(ftrue_all, mmap_mode="r")
     assert fmm.shape == (n_fit_c + n_hold, n_alive_c), (fmm.shape, n_fit_c, n_hold, n_alive_c)
     for name in ("panel_b.json", "panel_c.json"):
         assert (maps_dir / name).exists(), f"[eval] P5 input missing: {maps_dir / name}"
+    # ── P4 producer schemas (SAE-c cfg/weights headers + the G4 gate doc the
+    # battery embeds) — BEFORE MatryoshkaBatchTopKSAE.load_local / _load_dict_b ──
+    _assert_sae_c_schema(args)
+    gp4 = _sae_out_dir(args) / "gates_p4.json"
+    assert gp4.exists(), f"[eval] P4 gates missing: {gp4} — run sae_train"
+    g4_doc = json.loads(gp4.read_text())
+    assert "verdict" in g4_doc.get("g4", {}), f"gates_p4.json schema drift: {sorted(g4_doc)}"
+    # ── cross-artifact row-order / subset relations (index arrays only) ──────────
+    with np.load(maps_dir / "densein_c.npz") as dz:
+        assert (np.asarray(dz["rows"], np.int64) == hold_rows).all(), "densein_c row-order drift"
+    with np.load(maps_dir / "ib_c.npz") as ibz:
+        assert (np.asarray(ibz["rows"], np.int64) == hold_rows).all(), "ib_c row-order drift"
+    with np.load(maps_dir / "percontext" / "refit_lmsys_transfer__ridge__seed0.npz") as tz:
+        assert (np.asarray(tz["holdout_rows"], np.int64) == hold_rows).all(), "transfer row drift"
+    with np.load(maps_dir / "armb_maps.npz") as bz:
+        row_idx_score = np.asarray(bz["row_idx_score"], np.int64)
+    assert len(row_idx_score) > 0, "[eval] armb_maps has ZERO score rows"
+    with np.load(maps_dir / "ftrue_b.npz") as fz:
+        row_idx_all = np.asarray(fz["row_idx"], np.int64)
+    assert np.isin(row_idx_score, row_idx_all).all(), "armb score rows not in ftrue_b rows"
+    with np.load(maps_dir / "densein_b.npz") as db:
+        assert (np.asarray(db["rows"], np.int64) == row_idx_score).all(), "densein_b row drift"
     store_path = _recapture_dir(args) / "vbar_store.npz"
     assert store_path.exists(), "[eval] P2 store missing — run recapture first"
     with np.load(store_path) as z:
         _assert_keys(z.files, ("row_idx", "set_tag", "vbar20"), "P2 vbar_store.npz")
-        assert len(z["row_idx"]) > 0, "P2 recapture store is EMPTY"
+        ridx_store = np.asarray(z["row_idx"], np.int64)
+    assert len(ridx_store) > 0, "P2 recapture store is EMPTY"
+    assert np.isin(row_idx_score, ridx_store).all(), "P2 store missing armb score rows"
 
 
 def phase_eval(args) -> None:
@@ -3215,7 +3300,12 @@ def phase_eval(args) -> None:
     C.phase("eval")
     out = _eval_dir(args)
     out.mkdir(parents=True, exist_ok=True)
-    stale = [p for p in (*out.glob("*.npz"), *out.glob("*.json")) if p.name != "regime.json"]
+    # g1 r2 Minor 3: dot-prefixed .tmp_* crash orphans are invisible to "*" globs
+    stale = [
+        p
+        for p in (*out.glob("*.npz"), *out.glob("*.json"), *out.glob(".tmp_*"))
+        if p.name != "regime.json"
+    ]
     regime, resume_ok = _enter_phase_regime(out, args, "eval", stale_paths=stale)
     finals = [
         out / n
@@ -3326,6 +3416,7 @@ def phase_eval(args) -> None:
         rng=rng_c,
         panel_doc=panel_doc_c,
         battery_seed=BOOT_SEED_2476,
+        device=args.device,
     )
     del f_pred_c, f_ib_c, f_true_c, sae_c
 
@@ -3395,6 +3486,7 @@ def phase_eval(args) -> None:
         rng=rng_b,
         panel_doc=panel_doc_b,
         battery_seed=BOOT_SEED_2476 + 1,
+        device=args.device,
     )
     bridge = _bridge_b(out, alive_b, bat_b["r2_map"])
     tests_b = json.loads((out / "tier_tests_b.json").read_text())
@@ -4073,8 +4165,11 @@ def phase_figures(args) -> None:
     if resume_ok and done_path.exists():
         prev_hf = json.loads(done_path.read_text()).get("hf_eval_upload", {})
         if production and not args.skip_upload and prev_hf.get("skipped"):
-            # g2/Codex r1 `p7-skip-upload-resume-trap` belt-and-braces: a prior
-            # done-file recorded a skipped HF leg — re-run the phase, never skip.
+            # g2/Codex r1 `p7-skip-upload-resume-trap` DEFENSE-IN-DEPTH: under the
+            # CURRENT regime key this state is unreachable via the CLI (skip_upload
+            # is regime-hashed AND the skip branch suppresses the done-file); the
+            # branch survives as a backstop against future regime-key edits and is
+            # pinned by a fabricated-state test. Never skip on a recorded skip.
             logger.warning("[figures] resume: prior run skipped the HF leg; RE-RUNNING P7")
             resume_ok = False
     if resume_ok and done_path.exists():
@@ -4179,9 +4274,13 @@ def phase_figures(args) -> None:
         # g2/Codex r1 `p7-skip-upload-resume-trap`: a production run that skipped
         # the HF leg must NOT mint a done-file a later resume would launder into
         # "P7 complete" — the phase stays incomplete until the HF leg runs.
+        # g1 r2 Minor 1: skip_upload is regime-hashed, so a bare re-run without
+        # --skip-upload raises the regime collision — name the real consequence.
         logger.warning(
-            "[figures] production + --skip-upload: NOT writing p7_done.json "
-            "(re-run without --skip-upload to complete P7)"
+            "[figures] production + --skip-upload: NOT writing p7_done.json — P7 stays "
+            "incomplete. skip_upload is REGIME-HASHED: completing the HF leg needs a "
+            "fresh --out-root (recomputing P1-P6 there) or a recorded manual "
+            "regime.json disposition; the production launch never passes --skip-upload"
         )
     else:
         _write_json(done_path, doc, phase="figures")

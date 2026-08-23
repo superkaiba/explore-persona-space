@@ -20,8 +20,17 @@ perm_pct >= 97.5 AND tier_diff < 0 => Gradient-reversed; else Indeterminate —
 INCLUSIVE tail boundaries); the perm-pct midrank arithmetic + the _tier_stats
 battery (parent-kernel band parity); the regime hash covering every
 output/destination-affecting dial; the tier-stratified panel cap; the
-query-chunked retrieval parity vs the shared knn_retrieval helper; the
+query-chunked TORCH retrieval parity vs the shared knn_retrieval helper (fp64
+CPU fallback exact, fp32 production-dtype path, device threading); the
 --tiny-model production refusal; and the steps-capped checkpoint resume.
+
+Round-3 pins (Codex r2 residuals): the P5/P6 pre-heavy input contracts — a
+deficient P4 cfg/weights schema or a cross-artifact row drift fails BEFORE the
+refit dispatch / the ~1.9 GB dictionary loads (boom-stubbed heavy paths); the
+P1 interrupted-stream cursor restart (chunk 0 durable, never re-downloaded);
+the production flush-cadence guard; P7 production+--skip-upload completion
+gating (no done-file; same-regime re-run; recorded-skip defense-in-depth); and
+per-read shuffle-null dispatch (every R2 read gets its r2_<read> null array).
 
 Hermetic: no GPU, no network. External boundaries (Hub upload/verify, the
 recapture-row positions, the FVE probe) are faked signature-conformantly
@@ -224,6 +233,7 @@ def test_g3_has_no_abort_path_in_phase_eval_or_verdict():
         ("tiny_model", True),
         ("max_chunks", 2),
         ("smoke_rows", 8),
+        ("device", "cuda"),  # g1 r2 Minor 2: resolved device changes bf16 numerics
     ],
 )
 def test_regime_hashes_every_output_affecting_dial(tmp_path, dial, value):
@@ -718,26 +728,72 @@ def test_alive_panel_cap_binds_and_under_cap_keeps_all():
     assert (p3 == panel).all()
 
 
-def test_knn_retrieval_chunked_parity_vs_shared_helper():
-    """Codex r1 Major `retrieval-not-chunked`: the query-side-chunked twin must
-    match mapping_baselines.knn_retrieval per metric — including tie mid-ranks
-    (duplicated rows) — while the shared helper stays untouched."""
-    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
-
+def _retrieval_tie_fixture() -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(0)
     true = rng.standard_normal((50, 8))
     true[10] = true[11]  # exact duplicate pool rows -> tie mid-rank path
     pred = true + 0.3 * rng.standard_normal((50, 8))
     pred[10] = pred[11]
+    return pred, true
+
+
+def test_knn_retrieval_chunked_parity_vs_shared_helper():
+    """Codex r1 Major `retrieval-not-chunked`: the query-side-chunked TORCH twin
+    (fp64 on its CPU fallback) must match mapping_baselines.knn_retrieval per
+    metric — including tie mid-ranks (duplicated rows) — while the shared helper
+    stays untouched."""
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+    pred, true = _retrieval_tie_fixture()
     for metric in ("euclidean", "cosine"):
         ours = D._knn_retrieval_chunked(pred, true, metric=metric, block=7)
         ref = knn_retrieval(pred, true, ks=(1, 5, 10), metric=metric)
         assert ours["n"] == ref["n"] and ours["n_pool"] == ref["n_pool"]
+        assert ours["backend"] == {"device": "cpu", "dtype": "float64"}  # by-device rule
         for k in (1, 5, 10):
             assert ours["acc_at_k"][k] == pytest.approx(ref["acc_at_k"][k]), (metric, k)
             assert ours["chance_at_k"][k] == pytest.approx(ref["chance_at_k"][k])
         assert ours["median_rank"] == pytest.approx(ref["median_rank"])
         assert ours["mrr"] == pytest.approx(ref["mrr"])
+
+
+def test_knn_retrieval_chunked_fp32_path_matches_reference():
+    """Codex r2 blocker `retrieval-not-chunked` residual: the production cuda
+    branch runs fp32 GEMMs — pin the fp32 NUMERIC path (dtype forced on CPU;
+    exact duplicates stay exactly tied in fp32, separated distances don't flip)
+    against the shared fp64 helper, and pin the backend record."""
+    import torch
+
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+    pred, true = _retrieval_tie_fixture()
+    for metric in ("euclidean", "cosine"):
+        ours = D._knn_retrieval_chunked(pred, true, metric=metric, block=7, dtype=torch.float32)
+        ref = knn_retrieval(pred, true, ks=(1, 5, 10), metric=metric)
+        assert ours["backend"] == {"device": "cpu", "dtype": "float32"}
+        for k in (1, 5, 10):
+            assert ours["acc_at_k"][k] == pytest.approx(ref["acc_at_k"][k]), (metric, k)
+        assert ours["median_rank"] == pytest.approx(ref["median_rank"])
+        assert ours["mrr"] == pytest.approx(ref["mrr"], rel=1e-5)
+
+
+def test_retrieval_cells_threads_device_into_backend():
+    """The registered retrieval battery executes the torch backend on the
+    REQUESTED device (Codex r2: 'asserts blockwise torch execution on the
+    requested device'); every tier x predictor x metric cell records it."""
+    pred, true = _retrieval_tie_fixture()
+    feat_ids = np.array([0, 1, 2, 3000, 20000, 25000, 30000, 40000], np.int64)
+    tier = D.S.tier_of(feat_ids)
+    cells = D._retrieval_cells(true, {"map": pred, "ib": true}, tier, device="cpu")
+    seen = 0
+    for t in ("0", "1", "2"):
+        for pname in ("map", "ib"):
+            for metric in ("euclidean", "cosine"):
+                cell = cells[t][pname][metric]
+                assert cell["backend"]["device"] == "cpu"
+                assert cell["metric"] == metric
+                seen += 1
+    assert seen == 12
 
 
 def test_extract_chunk_l19_key_coverage(tmp_path):
@@ -804,3 +860,395 @@ def test_load_dict_b_tiny_standin_contract():
     # distinct dictionaries per key (seeded)
     sae_p = D._load_dict_b(args, "pile")
     assert not torch.equal(sae.w_enc, sae_p.w_enc)
+
+
+# ── r3: P5/P6 pre-heavy input contracts (Codex r2 `consumer-contract-post-init`) ──
+
+
+def _save_tiny_sae(sae_out: Path) -> None:
+    sae_out.mkdir(parents=True, exist_ok=True)
+    D.MatryoshkaBatchTopKSAE(act_dim=8, dict_size=16, k=2, tier_bounds=(2, 8, 16), seed=0).save_dir(
+        sae_out
+    )
+
+
+def test_sae_c_schema_named_misses(tmp_path):
+    """Metadata-only P4 schema validation: named cfg-key miss, cfg-vs-header
+    shape drift, and safetensors key drift — no tensor loads."""
+    args = _args(tmp_path)
+    sae_out = D._sae_out_dir(args)
+    _save_tiny_sae(sae_out)
+    good = json.loads((sae_out / "cfg.json").read_text())
+    bad = dict(good)
+    bad.pop("act_dim")
+    (sae_out / "cfg.json").write_text(json.dumps(bad))
+    with pytest.raises(AssertionError, match=r"P4 cfg.json: missing keys \['act_dim'\]"):
+        D._assert_sae_c_schema(args)
+    bad = dict(good)
+    bad["dict_size"] = 32  # inconsistent with the saved header shapes
+    (sae_out / "cfg.json").write_text(json.dumps(bad))
+    with pytest.raises(AssertionError, match="shape drift"):
+        D._assert_sae_c_schema(args)
+    (sae_out / "cfg.json").write_text(json.dumps(good))
+    from safetensors.torch import load_file, save_file
+
+    sd = load_file(str(sae_out / "sae_weights.safetensors"))
+    sd.pop("threshold")
+    save_file(sd, str(sae_out / "sae_weights.safetensors"))
+    with pytest.raises(AssertionError, match="key drift"):
+        D._assert_sae_c_schema(args)
+    _save_tiny_sae(sae_out)
+    D._assert_sae_c_schema(args)  # valid artifacts pass
+
+
+def _mk_p5_inputs(args) -> None:
+    """Minimal VALID P5 contract inputs (P1 memmaps + P2 store + P4 SAE-c)."""
+    h = int(D.C.EXPECTED_HIDDEN)
+    a_dir = D._assemble_dir(args)
+    a_dir.mkdir(parents=True, exist_ok=True)
+    (a_dir / "split_meta.json").write_text("{}")
+    np.save(a_dir / "rows_present.npy", np.arange(3, dtype=np.int64))
+    for name in ("X19.fp16.npy", "Y19.fp16.npy"):
+        np.save(a_dir / name, np.zeros((3, h), np.float16))
+    r_dir = D._recapture_dir(args)
+    r_dir.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        r_dir / "vbar_store.npz",
+        row_idx=np.arange(4, dtype=np.int64),
+        set_tag=np.array([1, 1, 0, 0], np.int8),
+        vbar19=np.zeros((4, h), np.float16),
+        vbar20=np.zeros((4, h), np.float16),
+        vbar20_inlier=np.zeros((4, h), np.float16),
+        n_ans=np.ones(4, np.int64),
+    )
+    _save_tiny_sae(D._sae_out_dir(args))
+
+
+def test_p5_contract_blocks_before_refits_on_deficient_p4_schema(tmp_path, monkeypatch):
+    """A corrupt P4 cfg fails the P5 input contract BEFORE the EA scratch
+    staging / refit dispatch (mocked heavy paths raise if reached)."""
+    args = _args(tmp_path)
+    _mk_p5_inputs(args)
+    sae_out = D._sae_out_dir(args)
+    cfg = json.loads((sae_out / "cfg.json").read_text())
+    cfg.pop("tier_bounds")
+    (sae_out / "cfg.json").write_text(json.dumps(cfg))
+
+    def boom(*a, **k):
+        raise AssertionError("P5 heavy path reached past a deficient P4 schema")
+
+    monkeypatch.setattr(D, "_ea_scratch", boom)
+    monkeypatch.setattr(D, "_run_ea_refits", boom)
+    monkeypatch.setattr(D.EA, "_headroom", create_autospec(D.EA._headroom))
+    with pytest.raises(AssertionError, match=r"P4 cfg.json: missing keys"):
+        D.phase_maps(args)
+
+
+def _mk_p6_inputs(args, *, densein_c_rows=None, store_row_idx=None) -> Path:
+    """Minimal VALID P6 contract inputs; kwargs inject one deficient artifact."""
+    h = int(D.C.EXPECTED_HIDDEN)
+    maps_dir = D._maps_dir(args)
+    (maps_dir / "percontext").mkdir(parents=True, exist_ok=True)
+    n_alive_c, n_fit_c, n_hold = 3, 5, 4
+    hold_rows = np.array([2, 5, 7, 9], np.int64)
+    alive = dict(
+        alive_ids=np.array([0, 1, 2], np.int64),
+        counts=np.zeros(16, np.int64),
+        floor=np.int64(1),
+        n_fit_rows=np.int64(n_fit_c),
+        train_mean=np.zeros(3, np.float32),
+    )
+    np.savez(maps_dir / "alive_c.npz", **alive)
+    np.savez(maps_dir / "alive_b.npz", **alive)
+    row_idx_all = np.array([1, 2, 3, 4, 5, 6], np.int64)
+    row_idx_score = np.array([2, 4, 6], np.int64)
+    np.savez(
+        maps_dir / "armb_maps.npz",
+        row_idx_score=row_idx_score,
+        row_idx_fit=np.array([1, 3, 5], np.int64),
+        pred16=np.zeros((3, h), np.float16),
+        pred16_inlier=np.zeros((3, h), np.float16),
+        ib_pred16=np.zeros((3, h), np.float16),
+    )
+    np.savez(
+        maps_dir / "ftrue_b.npz",
+        row_idx=row_idx_all,
+        f_true=np.zeros((6, 3), np.float16),
+        f_true_inlier_te=np.zeros((3, 3), np.float16),
+    )
+    np.savez(
+        maps_dir / "densein_b.npz",
+        pred16=np.zeros((3, 3), np.float16),
+        feat_ids=alive["alive_ids"],
+        rows=row_idx_score,
+    )
+    np.savez(
+        maps_dir / "densein_c.npz",
+        pred16=np.zeros((n_hold, 3), np.float16),
+        feat_ids=alive["alive_ids"],
+        rows=(hold_rows if densein_c_rows is None else densein_c_rows),
+    )
+    np.savez(maps_dir / "ib_c.npz", rows=hold_rows, pred16=np.zeros((n_hold, h), np.float16))
+    for stem in ("refit_holdout__ridge__seed0", "refit_lmsys_transfer__ridge__seed0"):
+        np.savez(
+            maps_dir / "percontext" / f"{stem}.npz",
+            holdout_pred16=np.zeros((n_hold, h), np.float16),
+            holdout_rows=hold_rows,
+        )
+    np.save(maps_dir / "ftrue_c_all.fp16.npy", np.zeros((n_fit_c + n_hold, n_alive_c), np.float16))
+    (maps_dir / "panel_b.json").write_text(json.dumps({"panel": {}}))
+    (maps_dir / "panel_c.json").write_text(json.dumps({"panel": {}}))
+    r_dir = D._recapture_dir(args)
+    r_dir.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        r_dir / "vbar_store.npz",
+        row_idx=(np.arange(1, 7, dtype=np.int64) if store_row_idx is None else store_row_idx),
+        set_tag=np.zeros(6, np.int8),
+        vbar20=np.zeros((6, h), np.float16),
+    )
+    _save_tiny_sae(D._sae_out_dir(args))
+    (D._sae_out_dir(args) / "gates_p4.json").write_text(json.dumps({"g4": {"verdict": "PASS"}}))
+    return maps_dir
+
+
+def test_p6_contract_valid_fixture_passes(tmp_path):
+    args = _args(tmp_path)
+    D._p6_input_contract(args, _mk_p6_inputs(args))  # no raise
+
+
+def test_p6_contract_blocks_before_dict_loads_on_row_drift(tmp_path, monkeypatch):
+    """A cross-artifact row-order drift fails _p6_input_contract BEFORE
+    _load_dict_b / MatryoshkaBatchTopKSAE.load_local (mocked to raise)."""
+    args = _args(tmp_path)
+    _mk_p6_inputs(args, densein_c_rows=np.array([2, 5, 7, 8], np.int64))
+
+    def boom(*a, **k):
+        raise AssertionError("P6 dictionary load reached past a drifted P5 artifact")
+
+    monkeypatch.setattr(D, "_load_dict_b", boom)
+    monkeypatch.setattr(D.MatryoshkaBatchTopKSAE, "load_local", boom)
+    monkeypatch.setattr(D.EA, "_headroom", create_autospec(D.EA._headroom))
+    with pytest.raises(AssertionError, match="densein_c row-order drift"):
+        D.phase_eval(args)
+
+
+def test_p6_contract_store_subset_miss_named(tmp_path):
+    args = _args(tmp_path)
+    maps_dir = _mk_p6_inputs(args, store_row_idx=np.array([1, 2, 3], np.int64))
+    with pytest.raises(AssertionError, match="P2 store missing armb score rows"):
+        D._p6_input_contract(args, maps_dir)
+
+
+def test_p6_contract_g4_schema_named(tmp_path):
+    args = _args(tmp_path)
+    maps_dir = _mk_p6_inputs(args)
+    (D._sae_out_dir(args) / "gates_p4.json").write_text(json.dumps({"other": 1}))
+    with pytest.raises(AssertionError, match=r"gates_p4\.json schema drift"):
+        D._p6_input_contract(args, maps_dir)
+
+
+# ── r3: P1 stream-cursor restart + flush-cadence guard (Codex r2 NIT pins) ───────
+
+
+def test_p1_stream_interrupted_two_chunk_restart(tmp_path, monkeypatch):
+    """Chunk 0 lands durably, the stream dies on chunk 1, and the restart
+    resumes FROM THE CURSOR: chunk 0 is neither re-downloaded nor re-extracted,
+    and the memmap rows land exactly once each."""
+    args = _args(tmp_path)
+    out = tmp_path / "assemble"
+    stage = tmp_path / "stage"
+    out.mkdir()
+    stage.mkdir()
+    monkeypatch.setattr(D.N1M, "N_PASS_B", 2)
+    h = int(D.C.EXPECTED_HIDDEN)
+    names = ["shard00_chunk0000.pt", "shard00_chunk0001.pt"]
+    chunk_data = {
+        names[0]: (np.full((2, h), 1.0, np.float32), np.full((2, h), 2.0, np.float32), [100, 101]),
+        names[1]: (np.full((2, h), 3.0, np.float32), np.full((2, h), 4.0, np.float32), [102, 103]),
+    }
+    rev = {100: 2, 101: 3, 102: 4, 103: 5}
+    calls: list[str] = []
+    state = {"boom_on": names[1]}
+
+    def fake_dl(repo, path_in_repo, cache):
+        name = path_in_repo.rsplit("/", 1)[1]
+        calls.append(name)
+        if name == state["boom_on"]:
+            state["boom_on"] = None
+            raise RuntimeError("simulated mid-stream death")
+        p = Path(cache) / name
+        p.write_bytes(b"x")
+        return str(p)
+
+    monkeypatch.setattr(D.N1M, "_download_chunk_with_retry", fake_dl)
+    monkeypatch.setattr(D, "_extract_chunk_l19", lambda p: chunk_data[p.name])
+    pb = np.zeros((2, h), np.float32)
+    regime = D._regime(args)
+    with pytest.raises(RuntimeError, match="mid-stream death"):
+        D._assemble_stream_production(args, out, stage, names, rev, pb, pb, 6, "fp-t", regime)
+    side = json.loads((out / ".stream_cursor.json").read_text())
+    assert side["cursor_chunk"] == 1 and side["cursor_row"] == 4  # chunk 0 durable
+    assert calls == [names[0], names[1]]
+    calls.clear()
+    n = D._assemble_stream_production(args, out, stage, names, rev, pb, pb, 6, "fp-t", regime)
+    assert n == 6
+    assert calls == [names[1]]  # chunk 0 NOT re-downloaded (cursor resume)
+    x = np.load(out / "X19.fp16.npy")
+    y = np.load(out / "Y19.fp16.npy")
+    assert (x[2:4] == 1.0).all() and (x[4:6] == 3.0).all()
+    assert (y[2:4] == 2.0).all() and (y[4:6] == 4.0).all()
+    side = json.loads((out / ".stream_cursor.json").read_text())
+    assert side["cursor_chunk"] == 2 and side["cursor_row"] == 6
+
+
+def test_stream_flush_every_production_guard(monkeypatch):
+    """The env override cannot restore multi-chunk (or zero-modulo) flush
+    cadence on the production stream (Codex r2 minor)."""
+    monkeypatch.setattr(D, "STREAM_FLUSH_EVERY", 4)
+    with pytest.raises(AssertionError, match="per-chunk durability"):
+        D._assemble_stream_production(None, None, None, None, None, None, None, 0, "", {})
+
+
+# ── r3: P7 skip-upload completion gating (Codex r2 NIT pin) ──────────────────────
+
+
+def _mk_p7_inputs(args) -> None:
+    ev, maps_dir, sae_out = D._eval_dir(args), D._maps_dir(args), D._sae_out_dir(args)
+    for d in (ev, maps_dir, sae_out):
+        d.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "tier_tests_c.json",
+        "tier_tests_b.json",
+        "retrieval_c.json",
+        "retrieval_b.json",
+        "gates_p6.json",
+    ):
+        (ev / name).write_text("{}")
+    for name in ("perfeature_c_encodepred.npz", "perfeature_b_encodepred.npz", "bridge_b.npz"):
+        np.savez(ev / name, x=np.zeros(1))
+    for name in ("train_log.json", "gates_p4.json"):
+        (sae_out / name).write_text("{}")
+    for name in ("recon_gate.json", "preds_meta.json", "panel_b.json", "panel_c.json"):
+        (maps_dir / name).write_text("{}")
+
+
+def _p7_fakes(monkeypatch):
+    figs = create_autospec(D._fig_hero_gradient, return_value={})
+    monkeypatch.setattr(D, "_fig_hero_gradient", figs)
+    monkeypatch.setattr(D, "_fig_hero_acc1", create_autospec(D._fig_hero_acc1, return_value={}))
+    monkeypatch.setattr(
+        D, "_figs_exploratory", create_autospec(D._figs_exploratory, return_value=[])
+    )
+    git_leg = create_autospec(D._p7_git_leg)
+    monkeypatch.setattr(D, "_p7_git_leg", git_leg)
+    hf_leg = create_autospec(
+        D._p7_hf_leg,
+        return_value={"skipped": False, "prefix": "p", "n_files": 0, "rerouted": False},
+    )
+    monkeypatch.setattr(D, "_p7_hf_leg", hf_leg)
+    digest = {
+        "lattice_c": "Indeterminate",
+        "lattice_b": "Indeterminate",
+        "arm_b_demoted": False,
+        "gates": {"g1": "PASS", "g3": "PASS", "g4": "PASS"},
+    }
+    monkeypatch.setattr(
+        D, "_p7_results_digest", create_autospec(D._p7_results_digest, return_value=digest)
+    )
+    return figs, git_leg, hf_leg
+
+
+def test_p7_production_skip_upload_writes_no_done_and_reruns(
+    tmp_path, monkeypatch, quiet_sentinels
+):
+    """Production + --skip-upload mints NO done-file (completion is gated on the
+    HF leg), and a same-regime second pass RE-RUNS the phase in full."""
+    args = _args(tmp_path, skip_upload=True)
+    _mk_p7_inputs(args)
+    monkeypatch.setattr(D, "PROJECT_ROOT", tmp_path / "repo")
+    figs, git_leg, hf_leg = _p7_fakes(monkeypatch)
+    D.phase_figures(args)
+    done = args.out_root / "figures_state" / "p7_done.json"
+    assert not done.exists()
+    assert hf_leg.call_count == 0 and git_leg.call_count == 1
+    D.phase_figures(args)  # done absent under a matching regime => full re-run
+    assert figs.call_count == 2 and git_leg.call_count == 2
+    assert not done.exists()
+
+
+def test_p7_recorded_skipped_hf_leg_forces_rerun(tmp_path, monkeypatch, quiet_sentinels):
+    """Defense-in-depth pin (state fabricated — unreachable via the CLI under
+    the current regime key): a done-file recording a skipped HF leg forces a
+    full production re-run including the HF leg; the skip is never laundered."""
+    args = _args(tmp_path, skip_upload=False)
+    _mk_p7_inputs(args)
+    state = args.out_root / "figures_state"
+    state.mkdir(parents=True, exist_ok=True)
+    (state / "regime.json").write_text(json.dumps(D._regime(args)))
+    (state / "p7_done.json").write_text(
+        json.dumps({"hf_eval_upload": {"skipped": True}, "digest": {}})
+    )
+    monkeypatch.setattr(D, "PROJECT_ROOT", tmp_path / "repo")
+    figs, _git_leg, hf_leg = _p7_fakes(monkeypatch)
+    D.phase_figures(args)
+    assert figs.call_count == 1 and hf_leg.call_count == 1
+    done = json.loads((state / "p7_done.json").read_text())
+    assert done["hf_eval_upload"]["skipped"] is False
+
+
+# ── r3: per-read shuffle-null dispatch (Codex r2 NIT pin) ────────────────────────
+
+
+def test_arm_battery_emits_shuffle_null_per_registered_read(tmp_path):
+    """Every emitted per-feature R2 read — map, ib, and EVERY extra read — gets
+    its r2_<read> null array in shuffle_null_<tag>.npz and its per_read entry in
+    tier_tests_<tag>.json (plan §6 'alongside every R2 read')."""
+    rng_np = np.random.default_rng(3)
+    n_te, n_feat, act = 16, 12, 8
+    feat_ids = np.array([0, 1, 2, 3, 2500, 3000, 4000, 20000, 25000, 30000, 40000, 50000], np.int64)
+    f_true = rng_np.standard_normal((n_te, n_feat)).astype(np.float16)
+    pred = (f_true.astype(np.float64) + 0.1 * rng_np.standard_normal((n_te, n_feat))).astype(
+        np.float16
+    )
+    counts_full = np.zeros(65_536, np.int64)
+    counts_full[feat_ids] = 300
+    dense_true = rng_np.standard_normal((n_te, act)).astype(np.float16)
+    sae = D.MatryoshkaBatchTopKSAE(act_dim=act, dict_size=16, k=2, tier_bounds=(2, 8, 16), seed=0)
+    out = tmp_path / "eval"
+    out.mkdir()
+    res = D._arm_battery(
+        out,
+        "t",
+        f_true=f_true,
+        pred_map=pred,
+        pred_ib=f_true.copy(),
+        feat_ids=feat_ids,
+        counts_full=counts_full,
+        floor=2,
+        n_fit_rows=1000,
+        te_prov=np.zeros(n_te, np.uint8),
+        dense_true=dense_true,
+        dense_preds={"map": dense_true.copy(), "ib": dense_true.copy()},
+        sae=sae,
+        train_mean=np.zeros(n_feat, np.float64),
+        extra_reads=[("densein", pred.copy(), f_true, np.zeros(n_te, np.uint8))],
+        extra_json={},
+        n_perm=8,
+        n_boot=8,
+        rng=np.random.default_rng(1),
+        panel_doc={},
+        battery_seed=9,
+        device="cpu",
+    )
+    reads = {"map", "ib", "densein"}
+    with np.load(out / "shuffle_null_t.npz") as z:
+        assert set(z.files) == {"feat_ids", "tier", "seeds"} | {f"r2_{r}" for r in reads}
+        assert z["r2_map"].shape == (len(D.SHUFFLE_SEEDS_2476), n_feat)
+    doc = json.loads((out / "tier_tests_t.json").read_text())
+    assert set(doc["shuffle_null"]["per_read"]) == reads
+    assert doc["battery_seed"] == 9
+    assert res["lattice"] in {"Gradient-holds", "Gradient-reversed", "Indeterminate"}
+    # retrieval cells carry the torch backend on the threaded device
+    ret = json.loads((out / "retrieval_t.json").read_text())
+    assert ret["tiers"]["0"]["map"]["euclidean"]["backend"]["device"] == "cpu"
+    assert ret["dense_anchor"]["map"]["euclidean"]["backend"]["device"] == "cpu"
