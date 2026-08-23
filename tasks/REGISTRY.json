@@ -11383,8 +11383,8 @@
       "goal": "Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/2474",
-      "status": "planning",
+      "path": "tasks/approved/2474",
+      "status": "approved",
       "title": "Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation re-elicitation?"
     },
     "2475": {
