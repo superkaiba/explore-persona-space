@@ -10252,8 +10252,8 @@
     "2327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2327",
-      "status": "proposed",
+      "path": "tasks/planning/2327",
+      "status": "planning",
       "title": "Step 5a spec-freshness sync copies a .claude doc without its workflow_lint.py grandfather cap, producing a deterministic false-red gate"
     },
     "2328": {
