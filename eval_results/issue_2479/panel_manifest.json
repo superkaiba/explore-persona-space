@@ -1,6 +1,6 @@
 {
   "issue": 2479,
-  "created_utc": "2026-08-23T21:06:59Z",
+  "created_utc": "2026-08-23T22:33:53Z",
   "seeds": {
     "conversation_sample": 42,
     "axis_reservation": 0
@@ -22,20 +22,27 @@
       "n_shared_r1r2_convs": 4724,
       "n_unique": 4724
     },
+    "panel_json": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2479/eval_results/issue_2479/panel.json",
+      "sha256": "67ec9d3eaba8abd61967951d702dc73a14c1ddc07b7bddc80f3df69a63362438"
+    },
     "eligible_ids": {
       "path": "eval_results/issue_2479/eligible_conv_ids.json",
-      "sha256": "9508c844a4c970ed28a279d9f1c7c86da1b4a8caab8838ab1cf9c1cd417575b7",
+      "sha256": "4127a89d48d36d8eafe52bbbb4db1e5433ad74b71c1e9e983171ad819adb6a0b",
       "n_eligible_paired": 4089,
       "n_eligible_op": 4628,
       "n_shared_before_restrict": 4724,
       "n_paired_eligible_after_restrict": 4089,
       "provenance": {
-        "git_commit": "552fb63e286d390ec73950c600ecc2011b2c2107",
-        "timestamp": "2026-08-23T21:06:45Z",
+        "git_commit": "5e620d99ca73d41ad573ba9874082b7f615dfa9d",
+        "timestamp": "2026-08-23T22:33:06Z",
         "seed": 42,
         "n": 4628,
         "script": "scripts/issue1345_gen_stories_paired.py",
         "pinned_parent_revision": "7159e5804d",
+        "git_dirty": false,
+        "git_argv0_state": "tracked",
+        "git_argv0_path": "scripts/issue1345_gen_stories_paired.py",
         "mode": "emit-eligible-ids",
         "emit_config": {
           "character_name": "ARIA",
@@ -66,18 +73,28 @@
           "slack_tokens": 64,
           "regimes": {
             "paired": {
+              "n_probe_rows": 32,
               "min_margin_tokens": 790,
               "min_margin_conv_id": "s2937",
               "max_panel_delta_tokens": 16,
               "max_delta_config": "Barnaby",
-              "required_min_margin": 80
+              "max_delta_conv_id": "s2937",
+              "worst_row_gap_tokens": 774,
+              "worst_row_gap_conv_id": "s2937",
+              "required_min_margin": 80,
+              "binding_prompt_sha256": "1470b8b62da8799b939e94794aae95f634e728462e540c76a8da4ec7fa0fc55f"
             },
             "op": {
+              "n_probe_rows": 32,
               "min_margin_tokens": 1117,
               "min_margin_conv_id": "s3002",
               "max_panel_delta_tokens": 16,
               "max_delta_config": "Barnaby",
-              "required_min_margin": 80
+              "max_delta_conv_id": "s3002",
+              "worst_row_gap_tokens": 1101,
+              "worst_row_gap_conv_id": "s3002",
+              "required_min_margin": 80,
+              "binding_prompt_sha256": "3229d8c5e23e47b9adf5603237901f6eb8dfcf7429d3997dfd57f44bb06107c5"
             }
           }
         }
@@ -85,7 +102,7 @@
     },
     "r4op_kept": {
       "prefix": "issue1345_framing/onpolicy_assistant_story/raw_completions/stories",
-      "revision": "f00943062d5ebd2059bc868355addcecbd081bed",
+      "revision": "4511868883238ab9e817be5684cebf392a548140",
       "kept_files_in_prefix": [
         "issue1345_framing/onpolicy_assistant_story/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
       ],
@@ -95,7 +112,7 @@
     },
     "r4_kept": {
       "prefix": "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories",
-      "revision": "f00943062d5ebd2059bc868355addcecbd081bed",
+      "revision": "4511868883238ab9e817be5684cebf392a548140",
       "kept_files_in_prefix": [
         "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories/kept_stories_paired_instruct.jsonl",
         "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
@@ -1985,19 +2002,10 @@
     "s916"
   ],
   "metadata": {
-    "git_commit": "552fb63e286d390ec73950c600ecc2011b2c2107",
-    "git_dirty": true,
+    "git_commit": "2c7335febde956105ef94f1d4024135a5d9d57a0",
+    "git_dirty": false,
     "phase": "panel-sample",
-    "git_dirty_paths": [
-      ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
-      ".claude/agent-memory/code-reviewer-lean/smoke_arch_marker_2176_grammar_pitfalls.md",
-      ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
-      "eval_results/issue_2479/eligible_conv_ids.json",
-      "scripts/issue1345_gen_stories_paired.py",
-      "scripts/issue2479_panel_sample.py",
-      "tests/test_issue2479_eligible_ids.py"
-    ],
-    "git_argv0_state": "modified",
+    "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2479_panel_sample.py"
   }
 }
