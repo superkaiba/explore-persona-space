@@ -1,15 +1,14 @@
 {
-  "commit": "8e0f3c62+dirty",
-  "render_id": "3bee109eeeae44ba",
-  "git_commit": "8e0f3c629982a9c33824736bae61eebae2b5b458",
+  "commit": "3b085c81+dirty",
+  "render_id": "0c489b1e84584bb8",
+  "git_commit": "3b085c818b2a7265fcd5f3817240fd8fded78f13",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2476_fig_relabel.py",
-    "scripts/issue2476_turnavg_sae.py"
+    "scripts/issue2476_fig_relabel.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2476_fig_relabel.py",
-  "created": "2026-08-23T12:33:44Z",
+  "created": "2026-08-23T16:05:08Z",
   "figsize": [
     5.5,
     3.399
@@ -102,21 +101,21 @@
     {
       "matryoshka tier (feature-id prefix)": 0.0,
       "median held-out per-feature R\u00b2": 0.4345762931443276,
-      "series": "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+      "series": "parent token-level round median \u2014 cross-{grain, layer, dictionary, score-rows} context from that round's 6,000-row score population, not a matched contrast",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "matryoshka tier (feature-id prefix)": 1.0,
       "median held-out per-feature R\u00b2": 0.17386872874476017,
-      "series": "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+      "series": "parent token-level round median \u2014 cross-{grain, layer, dictionary, score-rows} context from that round's 6,000-row score population, not a matched contrast",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "matryoshka tier (feature-id prefix)": 2.0,
       "median held-out per-feature R\u00b2": 0.0429846164108893,
-      "series": "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+      "series": "parent token-level round median \u2014 cross-{grain, layer, dictionary, score-rows} context from that round's 6,000-row score population, not a matched contrast",
       "_kind": "scatter",
       "_group": 4
     },
@@ -275,7 +274,7 @@
         "xlabel": "matryoshka tier (feature-id prefix)",
         "ylabel": "median held-out per-feature R\u00b2",
         "legend_labels": [
-          "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast",
+          "parent token-level round median \u2014 cross-{grain, layer, dictionary, score-rows} context from that round's 6,000-row score population, not a matched contrast",
           "turn-averaged SAE, layer 19 (fresh instrument): map",
           "turn-averaged SAE, layer 19 (fresh instrument): identity+bias",
           "parent token-level SAE on turn averages, layer 20: map",
@@ -306,7 +305,7 @@
       "turn-averaged SAE, layer 19 (fresh instrument): identity+bias",
       "parent token-level SAE on turn averages, layer 20: map",
       "parent token-level SAE on turn averages, layer 20: identity+bias",
-      "parent token-level median (#1482) \u2014 cross-{grain, layer, dictionary, score-rows} context from the parent's 6,000-row score population, not a matched contrast"
+      "parent token-level round median \u2014 cross-{grain, layer, dictionary, score-rows} context from that round's 6,000-row score population, not a matched contrast"
     ]
   },
   "formats_written": [
