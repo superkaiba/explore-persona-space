@@ -30,6 +30,15 @@ then draws:
   together cannot fill the sample (report, never silently degrade);
 - the seed-0 axis reservation of 250 conversations from the 1,600.
 
+Crash-fix r8: ``paired-eligible`` is (shared_r1r2_convs ∩ eligible_paired ∩
+eligible_op), where the two eligible sets come from the REQUIRED
+``--eligible-ids`` export (``issue1345_gen_stories_paired.py
+--emit-eligible-ids`` — the gen script's own answer_too_short /
+answer_over_budget / prompt_over_budget filters, single-sourced). Without it
+the sampler registered ids the gen script drops, and every non-op panel cell
+fail-louded at restrict_pool_to_manifest (P0 gen-smoke gate, 2026-08-23). The
+manifest records the export's path + sha256 + embedded provenance.
+
 Writes ``eval_results/issue_2479/panel_manifest.json`` (sample ids,
 reservation ids, per-tier counts, intersection table, resolved input
 revisions, seeds, git provenance) — committed BEFORE any generation.
@@ -46,6 +55,7 @@ persists any content field.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import sys
@@ -127,6 +137,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--staging-dir", type=Path, default=Path("/tmp/issue2479_step1_inputs"))
     ap.add_argument("--n-sample", type=int, default=1600)
     ap.add_argument("--n-reservation", type=int, default=250)
+    ap.add_argument(
+        "--eligible-ids",
+        type=Path,
+        required=True,
+        help="REQUIRED (crash-fix r8): dual-regime gen-feasibility export written by "
+        "`issue1345_gen_stories_paired.py --emit-eligible-ids` (keys eligible_paired / "
+        "eligible_op / counts / provenance). The paired-eligible tier is restricted to "
+        "(shared_r1r2_convs ∩ eligible_paired ∩ eligible_op) BEFORE tiered sampling, so "
+        "no registered id can fall in the gen script's answer_too_short / "
+        "answer_over_budget dropped set (the P0 gen-smoke gate failure, 2026-08-23).",
+    )
     args = ap.parse_args(argv)
     args.staging_dir.mkdir(parents=True, exist_ok=True)
 
@@ -159,6 +180,45 @@ def main(argv: list[str] | None = None) -> int:
     if not eligible or not all(isinstance(x, str) for x in eligible):
         raise ValueError("shared_r1r2_convs must be a non-empty list of str conv ids")
 
+    # --- dual-regime gen-feasibility restriction (crash-fix r8) --------------
+    # The gen script's own eligibility (answer_too_short at pool join;
+    # answer_over_budget / prompt_over_budget in _filter_pool_feasible, per
+    # regime) is SINGLE-SOURCED in its --emit-eligible-ids export — never
+    # re-implemented here. Restrict the paired-eligible tier to ids feasible
+    # under BOTH consumer regimes so every registered sample id survives
+    # restrict_pool_to_manifest in the paired AND --op-powered cells.
+    eligible_raw = args.eligible_ids.read_bytes()
+    elig = json.loads(eligible_raw)
+    for key in ("eligible_paired", "eligible_op", "provenance"):
+        if key not in elig:
+            raise KeyError(
+                f"{args.eligible_ids}: missing {key!r} (top-level keys: {sorted(elig)}) — "
+                "regenerate via issue1345_gen_stories_paired.py --emit-eligible-ids"
+            )
+
+    def _id_set(key: str) -> set[str]:
+        ids = elig[key]
+        if not isinstance(ids, list) or not ids or not all(isinstance(x, str) and x for x in ids):
+            raise ValueError(f"{args.eligible_ids}: {key} must be a non-empty list of str ids")
+        return set(ids)
+
+    eligible_paired_ids = _id_set("eligible_paired")
+    eligible_op_ids = _id_set("eligible_op")
+    n_shared_before = len(eligible)
+    eligible &= eligible_paired_ids & eligible_op_ids
+    print(
+        f"[panel-sample] gen-feasibility restriction: shared={n_shared_before} ∩ "
+        f"eligible_paired={len(eligible_paired_ids)} ∩ eligible_op={len(eligible_op_ids)} "
+        f"-> {len(eligible)} paired-eligible conv ids",
+        flush=True,
+    )
+    if not eligible:
+        raise RuntimeError(
+            "paired-eligible tier is EMPTY after the gen-feasibility restriction "
+            f"(shared={n_shared_before}, eligible_paired={len(eligible_paired_ids)}, "
+            f"eligible_op={len(eligible_op_ids)}) — conv-id key-space mismatch suspected"
+        )
+
     # --- kept-story conv-id sets (scoped listing + mode-exact selection) -----
     id_sets: dict[str, set[str]] = {}
     input_records: dict[str, dict] = {
@@ -167,8 +227,17 @@ def main(argv: list[str] | None = None) -> int:
             "revision": MATCHED_REV,
             "top_level_keys": sorted(matched.keys()),
             "n_shared_r1r2_convs": len(matched["shared_r1r2_convs"]),
-            "n_unique": len(eligible),
-        }
+            "n_unique": n_shared_before,
+        },
+        "eligible_ids": {
+            "path": str(args.eligible_ids),
+            "sha256": hashlib.sha256(eligible_raw).hexdigest(),
+            "n_eligible_paired": len(eligible_paired_ids),
+            "n_eligible_op": len(eligible_op_ids),
+            "n_shared_before_restrict": n_shared_before,
+            "n_paired_eligible_after_restrict": len(eligible),
+            "provenance": elig["provenance"],
+        },
     }
     for label, src in SOURCES.items():
         prefix = src["prefix"]

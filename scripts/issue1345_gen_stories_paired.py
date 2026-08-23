@@ -1364,6 +1364,85 @@ def apply_manifest_fp_suffix(fp: str, manifest_meta: dict | None) -> str:
     return f"{fp}-m{manifest_meta['panel_manifest_sha256'][:12]}"
 
 
+def emit_eligible_ids(out_path: Path, matched_dir: Path, dl_dir: Path, tokenizer=None) -> None:
+    """#2479 crash-fix r8: single-source dual-regime gen-feasibility export.
+
+    The Step-1 panel sampler (scripts/issue2479_panel_sample.py) previously drew
+    from set intersections WITHOUT this script's own eligibility filters, so 122
+    registered sample_conv_ids fell in the answer_too_short / answer_over_budget
+    dropped set and restrict_pool_to_manifest fail-louded on every non-op panel
+    cell (P0 gen-smoke gate, 2026-08-23). This mode exports the CONSUMER's own
+    eligibility so the sampler never re-implements it: build the seed pool
+    through the SAME code path main() uses (load_paired_pool — matched-allowlist
+    join + the answer_too_short filter), apply _filter_pool_feasible under BOTH
+    consumer regimes (op_companion=False -> ``eligible_paired``; True ->
+    ``eligible_op``), and write the per-regime eligible conv_id lists +
+    per-regime drop counts + provenance to ``out_path``.
+
+    Tokenizer-only / CPU-safe: returns before any vLLM import or GPU work. The
+    panel manifest is deliberately NEVER read here (this mode PRODUCES the
+    sampler's input; manifest restriction must not apply). Inputs are staged on
+    demand through the normal pinned prefetch path (load_paired_pool's
+    stage_pinned_file downloads track_s.jsonl @ PIN_REV when absent; the
+    matched allowlist must already be staged — prefetch_reuse's fail-loud
+    contract). CONTENT HYGIENE: ids and counts only — no question/answer/story
+    text is printed, logged, or persisted. ``tokenizer=None`` loads the
+    production tokenizer; tests inject a signature-conformant fake at the hub
+    boundary only.
+    """
+    if tokenizer is None:
+        from transformers import AutoTokenizer
+
+        from explore_persona_space.experiments.issue_825.common import MODEL_INSTRUCT
+
+        tok_name = MODEL_INSTRUCT
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_INSTRUCT)
+    else:
+        tok_name = f"injected:{type(tokenizer).__name__}"
+    pool, pool_counts = load_paired_pool(matched_dir, dl_dir)
+    kept_paired, drops_paired = _filter_pool_feasible(pool, tokenizer, op_companion=False)
+    kept_op, drops_op = _filter_pool_feasible(pool, tokenizer, op_companion=True)
+    eligible_paired = sorted(str(r["conv_id"]) for r in kept_paired)
+    eligible_op = sorted(str(r["conv_id"]) for r in kept_op)
+    assert eligible_paired, "eligible_paired is EMPTY — feasibility filter rejected the whole pool"
+    assert eligible_op, "eligible_op is EMPTY — feasibility filter rejected the whole pool"
+    payload = {
+        "eligible_paired": eligible_paired,
+        "eligible_op": eligible_op,
+        "counts": {
+            "pool": pool_counts,  # shared_convs / joined / answer_too_short / kept
+            "paired_drops": drops_paired,  # answer_over_budget + prompt_over_budget
+            "op_drops": drops_op,  # prompt_over_budget only (no fixed answer)
+            "n_pool": len(pool),
+            "n_eligible_paired": len(eligible_paired),
+            "n_eligible_op": len(eligible_op),
+            "n_eligible_both": len(set(eligible_paired) & set(eligible_op)),
+        },
+        "provenance": {
+            **c.metadata(c.GEN_SEED, len(pool), "scripts/issue1345_gen_stories_paired.py"),
+            "mode": "emit-eligible-ids",
+            "tokenizer": tok_name,
+            "inputs": {
+                "matched_allowlist": str(matched_dir / "matched_subsets_parent.json"),
+                "track_s_path_in_repo": c.PARENT_TRACK_S_JSONL,
+                "track_s_revision": c.PIN_REV,
+            },
+            "budgets": {
+                "answer_char_min": ANSWER_CHAR_MIN,
+                "answer_token_budget": ANSWER_TOKEN_BUDGET,
+                "prompt_token_budget": g.PROMPT_TOKEN_BUDGET,
+            },
+        },
+    }
+    c.write_json(out_path, payload)
+    print(
+        f"[emit-eligible] wrote {out_path}: pool={len(pool)} "
+        f"eligible_paired={len(eligible_paired)} eligible_op={len(eligible_op)} "
+        f"both={payload['counts']['n_eligible_both']}",
+        flush=True,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1407,6 +1486,18 @@ def main() -> None:
     )
     ap.add_argument("--smoke", action="store_true", help="n=3 stories, sync judge")
     ap.add_argument(
+        "--emit-eligible-ids",
+        type=Path,
+        default=None,
+        metavar="OUT_JSON",
+        help="CPU export mode (#2479 crash-fix r8): build the seed pool exactly as the "
+        "paired/--op-powered branches do (answer_too_short join filter included), run "
+        "_filter_pool_feasible in BOTH regimes (op_companion=False AND True), write "
+        "{eligible_paired, eligible_op, counts, provenance} to OUT_JSON, exit BEFORE any "
+        "vLLM import. Ids/counts only — no conversation content. Consumed by "
+        "scripts/issue2479_panel_sample.py --eligible-ids (single-source eligibility).",
+    )
+    ap.add_argument(
         "--verify-pool",
         action="store_true",
         help="CPU preflight: run main through the pool stage (incl. "
@@ -1419,6 +1510,16 @@ def main() -> None:
         "--op-companion and --op-powered are mutually exclusive (companion = <=200 "
         "control from the TF-kept set; powered = pool-sourced primary regime)"
     )
+    if args.emit_eligible_ids is not None:
+        # Standalone CPU export (crash-fix r8): variant-independent (the pool
+        # carries no variant dependence — pinned parent inputs only), so it runs
+        # BEFORE the variant/mode asserts and returns before any vLLM/GPU work.
+        assert not (args.op_companion or args.op_powered or args.smoke or args.verify_pool), (
+            "--emit-eligible-ids is a standalone CPU export mode — do not combine with "
+            "--op-companion/--op-powered/--smoke/--verify-pool"
+        )
+        emit_eligible_ids(args.emit_eligible_ids, args.matched_dir, args.dl_dir)
+        return
     if args.op_companion:
         assert not c.VARIANT.startswith(I2479_PANEL_PREFIX), (
             f"--op-companion is a parent-only control mode; #2479 panel cell {c.VARIANT!r} "
