@@ -80,3 +80,4 @@
 - [Hardcoded GPU floor vs plan GPU class](hardcoded_gpu_floor_vs_plan_gpu_class.md) — a free-MiB floor above the pinned GPU class's TOTAL MiB kills the wrapper on its own planned pod; dry-runs never expose it (#2479 R1 g8)
 - [Lint scan_roots differential probe](lint_scan_roots_differential_probe.md) — certify lint-fix commits via check fn scan_roots on parent vs fixed blobs; sys.modules pre-registration; Write (not Bash heredoc) for raw U+2028 probes (#823 fu r14 g5)
 - [Manifest-first reader vs stale shard regen](manifest_first_reader_stale_shard_regen.md) — in-place jsonl rewrite beside a manifest-first reader serves prior-regime shards; writers unlink manifest+shard siblings (#823 ext r1 g3)
+- [Wave-to-queue rewrite probe](wave_to_queue_rewrite_probe.md) — verbatim-adapt the flock queue into a live probe (slow + failing cell): late-start, rc read-back, exactly-once dispatch (#2479 R2 g1)
