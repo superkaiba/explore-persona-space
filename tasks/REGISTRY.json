@@ -10056,8 +10056,8 @@
     "2301": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2301",
-      "status": "reviewing",
+      "path": "tasks/completed/2301",
+      "status": "completed",
       "title": "workflow-fix: Step 10d Guard 5 trigger self-fires on a note that merely mentions the candidate token"
     },
     "2302": {
