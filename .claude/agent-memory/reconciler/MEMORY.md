@@ -66,6 +66,9 @@
 ## Codex code-review overreach (PASS-leaning calibration)
 
 - [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — check reachability arithmetic + grid-superset (#2356 r4)
+- [Residual gap inherits parent severity bar](feedback_residual_gap_inherits_parent_severity_bar.md) — strictly-more-misconfig residual of a CONCERN-graded parent ⇒ defer+re-raise; reverse-ancestry blind spot (#2479 r5)
+- [Env-override poisoning chain: trace every leg](feedback_codex_env_override_poisoning_chain_untraced_leg.md) — a leg outside the blast radius breaks the chain (#2479 r4)
+- [Step 3.75 marker-absent vs clean substance](feedback_step375_marker_absent_vs_verified_clean_substance.md) — 0-hit grep → marker-amendment CONCERN; split reviews omit the check (#2479 r4)
 - [Fenced-content blindness on plan-verbatim validator](feedback_codex_fenced_content_blindness_on_plan_verbatim_validator.md) — plan-registered regex + same-instrument zero-collision audit ⇒ demote (#2309 r1)
 - [Conjunction resume guards + argument-constant "independence"](feedback_codex_conjunction_guard_and_argument_constant_independence.md) — trace the FULL guard predicate; a record that can't DIFFER under the bug adds nothing; fabrication needs a claimed-but-absent test (#2215 r3)
 - [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — execution-test the proposed fix; raise+defer residue (#556, #958)
