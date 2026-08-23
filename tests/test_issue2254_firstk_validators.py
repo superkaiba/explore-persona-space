@@ -613,3 +613,294 @@ def test_validate_gen_record_empty_draw_message_names_the_wedge() -> None:
     rec["seeds"]["42"]["completions"][1][0] = ""
     with pytest.raises(AssertionError, match="min_new_tokens"):
         fk._validate_gen_record(rec, Path(f"{cid}.json"), n_q=3, n_draws=2)
+
+
+# ---------------------------------------------------------------------------
+# round 4 — rule-28 sync re-issue (shared helper + pilot post-reissue kill)
+# ---------------------------------------------------------------------------
+
+
+def _jres(
+    scores: dict[str, list[float]],
+    refusals: dict[str, int] | None = None,
+    *,
+    total: int,
+    transport: int = 0,
+) -> SimpleNamespace:
+    """JudgeResult stand-in with exactly the fields the r4 reissue path reads."""
+    refusals = refusals or {}
+    return SimpleNamespace(
+        per_item_scores=scores,
+        per_item_api_refusals=refusals,
+        n_total_draws=total,
+        n_transport_lost_draws=transport,
+        n_api_refusal_draws=sum(refusals.values()),
+    )
+
+
+def _fake_judge_items_graded(script):
+    """Signature-mirroring ``judge_items_graded`` fake driven by
+    ``script(items, threshold_base, n_draws) -> result``; records every call."""
+    calls: list[dict] = []
+
+    def fake(
+        items,
+        eval_prompt,
+        *,
+        cache_dir,
+        save_raw,
+        n_draws=3,
+        temperature=1.0,
+        max_tokens=2048,
+        judge_model="fake-judge",
+        dry_run=False,
+        threshold_base=None,
+    ):
+        calls.append(
+            {
+                "items": [it[0] for it in items],
+                "cache_dir": Path(cache_dir),
+                "save_raw": Path(save_raw),
+                "n_draws": n_draws,
+                "tb": threshold_base,
+            }
+        )
+        return script(items, threshold_base, n_draws)
+
+    return fake, calls
+
+
+def test_rule28_helper_merges_sync_scores_and_never_redispatches_batch_successes(
+    tmp_path, monkeypatch
+) -> None:
+    """(a) batch-then-sync MERGE: batch survivors untouched (never
+    re-dispatched), censored draws re-drawn sync-side in per-k groups with
+    n_draws=k against FRESH ``_syncfix_k{k}`` sibling cache dirs (rule 24(ii):
+    a same-cache replay would duplicate a surviving sibling draw)."""
+    from explore_persona_space.experiments.issue_1739 import judging
+
+    def script(items, tb, n_draws):
+        if tb == fk.JUDGE_THRESHOLD_BASE_BATCH:
+            # pass 1 (batch): a fully scored; b partially censored (1 valid +
+            # 2 api-refused); c fully censored (0 valid + 3 api-refused)
+            return _jres({"a": [80.0, 70.0, 90.0], "b": [50.0], "c": []}, {"b": 2, "c": 3}, total=9)
+        assert tb == fk.SYNC_FORCE_THRESHOLD_BASE  # the sync lever, never batch
+        return _jres({it[0]: [42.0] * n_draws for it in items}, total=n_draws * len(items))
+
+    fake, calls = _fake_judge_items_graded(script)
+    monkeypatch.setattr(judging, "judge_items_graded", fake)
+    items = [("a", "q", "ans"), ("b", "q", "ans"), ("c", "q", "ans")]
+    result, merged, reissue = fk._judge_graded_with_refusal_reissue(
+        items,
+        "RUBRIC",
+        cache_dir=tmp_path / "cache" / "cell1",
+        save_raw=tmp_path / "raw" / "cell1",
+        n_draws=3,
+    )
+    assert merged == {
+        "a": [80.0, 70.0, 90.0],
+        "b": [50.0, 42.0, 42.0],
+        "c": [42.0, 42.0, 42.0],
+    }
+    assert result.n_total_draws == 9  # pass-1 JudgeResult returned for accounting
+    sync = [c for c in calls if c["tb"] == fk.SYNC_FORCE_THRESHOLD_BASE]
+    assert [c["items"] for c in sync] == [["b"], ["c"]]  # k=2 group then k=3 group
+    assert [c["n_draws"] for c in sync] == [2, 3]  # exactly the censored draw counts
+    assert all("a" not in c["items"] for c in sync)  # batch successes never re-dispatched
+    assert sync[0]["cache_dir"] == tmp_path / "cache" / "cell1_syncfix_k2"
+    assert sync[1]["save_raw"] == tmp_path / "raw" / "cell1_syncfix_k3"
+    assert reissue["n_items_reissued"] == 2
+    assert reissue["n_draws_reissued"] == 5
+    assert reissue["n_scored"] == 5
+    assert reissue["n_api_refusal_residual"] == 0
+
+
+def test_rule28_helper_no_refusals_is_a_single_batch_pass(tmp_path, monkeypatch) -> None:
+    """Zero censored draws => exactly one (batch) judge call, no reissue."""
+    from explore_persona_space.experiments.issue_1739 import judging
+
+    fake, calls = _fake_judge_items_graded(
+        lambda items, tb, n_draws: _jres({"a": [80.0, 70.0]}, total=2)
+    )
+    monkeypatch.setattr(judging, "judge_items_graded", fake)
+    _result, merged, reissue = fk._judge_graded_with_refusal_reissue(
+        [("a", "q", "ans")],
+        "RUBRIC",
+        cache_dir=tmp_path / "cache" / "cell1",
+        save_raw=tmp_path / "raw" / "cell1",
+        n_draws=2,
+    )
+    assert reissue is None and merged == {"a": [80.0, 70.0]}
+    assert len(calls) == 1 and calls[0]["tb"] == fk.JUDGE_THRESHOLD_BASE_BATCH
+
+
+def test_rule28_helper_fails_loud_on_uncensorable_residual(tmp_path, monkeypatch) -> None:
+    """(c) rows still api-refused AFTER the bounded sync pass, above the
+    plan-§6 bound, halt LOUD — never a silent drop (rule 28: the censoring is
+    outcome-correlated)."""
+    from explore_persona_space.experiments.issue_1739 import judging
+
+    def script(items, tb, n_draws):
+        if tb == fk.JUDGE_THRESHOLD_BASE_BATCH:
+            return _jres({"a": [], "b": [70.0, 60.0, 80.0]}, {"a": 3}, total=6)
+        # sync pass: every reissued draw refuses AGAIN (residual 3/6 = 0.5)
+        return _jres(
+            {it[0]: [] for it in items},
+            {it[0]: n_draws for it in items},
+            total=n_draws * len(items),
+        )
+
+    fake, _calls = _fake_judge_items_graded(script)
+    monkeypatch.setattr(judging, "judge_items_graded", fake)
+    with pytest.raises(RuntimeError, match="AFTER the bounded rule-28 sync re-issue"):
+        fk._judge_graded_with_refusal_reissue(
+            [("a", "q", "ans"), ("b", "q", "ans")],
+            "RUBRIC",
+            cache_dir=tmp_path / "c" / "x",
+            save_raw=tmp_path / "r" / "x",
+            n_draws=3,
+        )
+
+
+def test_rule28_helper_tolerates_sub_threshold_residual_and_surfaces_it(
+    tmp_path, monkeypatch
+) -> None:
+    """A sub-threshold uncensorable tail (rule 28's 'genuinely uncensorable
+    row') is kept + surfaced in the reissue accounting, never dropped and
+    never a spurious halt (residual 1/60 = 0.017 < 0.10)."""
+    from explore_persona_space.experiments.issue_1739 import judging
+
+    def script(items, tb, n_draws):
+        if tb == fk.JUDGE_THRESHOLD_BASE_BATCH:
+            return _jres({"a": [50.0, 60.0], "b": [70.0, 75.0, 65.0]}, {"a": 1}, total=60)
+        return _jres({"a": []}, {"a": n_draws}, total=n_draws * len(items))
+
+    fake, _calls = _fake_judge_items_graded(script)
+    monkeypatch.setattr(judging, "judge_items_graded", fake)
+    _result, merged, reissue = fk._judge_graded_with_refusal_reissue(
+        [("a", "q", "ans"), ("b", "q", "ans")],
+        "RUBRIC",
+        cache_dir=tmp_path / "c" / "x",
+        save_raw=tmp_path / "r" / "x",
+        n_draws=3,
+    )
+    assert merged["a"] == [50.0, 60.0]  # surviving batch draws kept
+    assert reissue["n_api_refusal_residual"] == 1  # surfaced, not silently dropped
+
+
+def _arm_stats(n_refused: int, n_draws: int = 55, n_transport: int = 0) -> SimpleNamespace:
+    return SimpleNamespace(n_api_refusal=n_refused, n_draws=n_draws, n_transport_lost=n_transport)
+
+
+def _pilot_env(monkeypatch, *, post_refused: dict[str, int], post_passed: bool = True):
+    """Wire the two boundary fakes for the pilot remediation flow: sync
+    ``judge_items_graded`` always succeeds; the gate re-run reports
+    ``post_refused`` refusals per arm off the warmed cache."""
+    from explore_persona_space.eval import judge_pilot as jp
+    from explore_persona_space.experiments.issue_1739 import judging
+
+    def script(items, tb, n_draws):
+        assert tb == fk.SYNC_FORCE_THRESHOLD_BASE  # the pilot reissue is sync-only
+        return _jres({it[0]: [10.0] * n_draws for it in items}, total=n_draws * len(items))
+
+    fake_judge, judge_calls = _fake_judge_items_graded(script)
+    monkeypatch.setattr(judging, "judge_items_graded", fake_judge)
+    gate_calls: list[dict] = []
+
+    def fake_gate(arms, rubric, **kw):
+        gate_calls.append(kw)
+        return SimpleNamespace(
+            passed=post_passed,
+            verdict="PASS" if post_passed else "FAIL",
+            arms={a: _arm_stats(post_refused.get(a, 0)) for a in arms},
+        )
+
+    monkeypatch.setattr(jp, "judge_pilot_gate", fake_gate)
+    return judge_calls, gate_calls
+
+
+def _pilot_arms() -> dict[str, list[tuple[str, str, str]]]:
+    return {
+        "rb_allans": [(f"rb-{i:03d}", "q", "a") for i in range(11)],
+        "clean_opening": [(f"cl-{i:03d}", "q", "a") for i in range(11)],
+    }
+
+
+def test_pilot_rule28_kill_applies_to_post_reissue_rate_pass(tmp_path, monkeypatch) -> None:
+    """(b) batch 0.273 -> sync-recovered 0.000: the plan-§6 kill reads the
+    POST-reissue rate off the gate re-run and the pilot PROCEEDS; only the
+    flagged arm re-issues, against its SAME arm cache, one bounded re-run."""
+    judge_calls, gate_calls = _pilot_env(monkeypatch, post_refused={})
+    args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
+    report = SimpleNamespace(
+        passed=True,
+        verdict="PASS",
+        arms={"rb_allans": _arm_stats(15), "clean_opening": _arm_stats(2)},
+    )
+    raw, post, meta, report_post = fk._pilot_refusal_remediation_and_kill(
+        args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
+    )
+    assert raw["rb_allans"] == pytest.approx(15 / 55)  # 0.273 raw batch rate
+    assert post == {"rb_allans": 0.0, "clean_opening": 0.0}
+    assert list(meta) == ["rb_allans"]  # only the flagged arm re-issued
+    assert meta["rb_allans"]["rate_batch"] == pytest.approx(15 / 55)
+    assert len(gate_calls) == 1  # ONE bounded gate re-run
+    assert judge_calls and all(c["tb"] == fk.SYNC_FORCE_THRESHOLD_BASE for c in judge_calls)
+    # SAME arm cache (the api-refusal cache-miss invariant targets the
+    # censored rows); DISTINCT raw + report paths preserve the batch evidence.
+    assert judge_calls[0]["cache_dir"] == tmp_path / "evil_cache" / "rb_allans"
+    assert judge_calls[0]["save_raw"] == tmp_path / "evil_raw" / "syncreissue_rb_allans.json"
+    assert gate_calls[0]["save_raw_dir"] == tmp_path / "evil_raw_postreissue"
+    assert gate_calls[0]["report_path"] == tmp_path / "evil.report_postreissue.json"
+    assert gate_calls[0]["threshold_base"] == fk.JUDGE_THRESHOLD_BASE_BATCH
+    assert report_post.passed
+
+
+def test_pilot_rule28_kill_fires_when_post_reissue_rate_still_high(tmp_path, monkeypatch) -> None:
+    """(b) batch 0.273 -> STILL 0.273 after the bounded sync re-issue: the
+    genuine plan-§6 kill fires (halt-and-report path preserved)."""
+    _pilot_env(monkeypatch, post_refused={"rb_allans": 15})
+    args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
+    report = SimpleNamespace(
+        passed=True,
+        verdict="PASS",
+        arms={"rb_allans": _arm_stats(15), "clean_opening": _arm_stats(0)},
+    )
+    with pytest.raises(RuntimeError, match="AFTER the bounded rule-28 sync re-issue"):
+        fk._pilot_refusal_remediation_and_kill(
+            args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
+        )
+
+
+def test_pilot_rule28_no_flagged_arm_is_a_no_op(tmp_path, monkeypatch) -> None:
+    """No arm at/over 0.10 => zero reissue spend, no gate re-run, raw rates
+    returned unchanged (the untouched common path)."""
+    judge_calls, gate_calls = _pilot_env(monkeypatch, post_refused={})
+    args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
+    report = SimpleNamespace(
+        passed=True,
+        verdict="PASS",
+        arms={"rb_allans": _arm_stats(2), "clean_opening": _arm_stats(0)},
+    )
+    raw, post, meta, report_post = fk._pilot_refusal_remediation_and_kill(
+        args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
+    )
+    assert raw["rb_allans"] == pytest.approx(2 / 55)
+    assert (post, meta, report_post) == (None, None, None)
+    assert not judge_calls and not gate_calls
+
+
+def test_pilot_rule28_reissue_gate_rerun_fail_raises(tmp_path, monkeypatch) -> None:
+    """A post-reissue gate re-run that FAILs (parse-fail/truncation floors off
+    the warmed cache) halts loud rather than proceeding to the wave."""
+    _pilot_env(monkeypatch, post_refused={}, post_passed=False)
+    args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
+    report = SimpleNamespace(
+        passed=True,
+        verdict="PASS",
+        arms={"rb_allans": _arm_stats(15), "clean_opening": _arm_stats(0)},
+    )
+    with pytest.raises(RuntimeError, match="post-reissue gate re-run"):
+        fk._pilot_refusal_remediation_and_kill(
+            args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
+        )

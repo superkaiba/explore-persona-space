@@ -1585,6 +1585,151 @@ def _judge_instrument_fp(rubric: str, n_draws: int) -> str:
     )
 
 
+def _pilot_refusal_rates(report) -> dict[str, float]:
+    """Per-arm api-refusal rate off a ``PilotGateReport`` — refusals over
+    non-transport draws (``n_draws - n_transport_lost``), the same denominator
+    convention as ``ArmPilotStats``: transport losses leave the denominator,
+    api-refusal draws stay IN it (rule 28's third drop class, plan §6)."""
+    return {
+        arm: float(st.n_api_refusal / max(1, st.n_draws - st.n_transport_lost))
+        for arm, st in report.arms.items()
+    }
+
+
+def _apply_pilot_refusal_kill(behavior: str, rates: dict[str, float], *, stage: str) -> None:
+    """Plan-§6 per-arm api-refusal kill (< ``PILOT_API_REFUSAL_MAX``) over
+    ``rates``; ``stage`` names which rate is being gated (raw batch vs the
+    post-rule-28-reissue rate) in the halt message. Raises RuntimeError."""
+    for arm in sorted(rates):
+        if rates[arm] >= PILOT_API_REFUSAL_MAX:
+            raise RuntimeError(
+                f"firstk judge pilot FAILED for {behavior}: arm {arm} api-refusal "
+                f"rate {rates[arm]:.3f} >= {PILOT_API_REFUSAL_MAX} {stage} "
+                "(plan §6 pilot kill)"
+            )
+
+
+def _pilot_rule28_sync_reissue(
+    args,
+    pilot_dir: Path,
+    behavior: str,
+    rubric: str,
+    n_draws: int,
+    arms: dict[str, list[tuple[str, str, str]]],
+    items_per_arm: int,
+    refusal_rates: dict[str, float],
+):
+    """Rule-28 remediation for pilot arms at/over the plan-§6 api-refusal
+    threshold: re-dispatch each flagged arm's EXACT gate subsample on the SYNC
+    path against the arm's SAME pilot cache, then re-run ``judge_pilot_gate``
+    so the post-reissue refusal profile is read off the warmed cache.
+
+    Mechanism (the r4 probe's infra invariant): api-refusal-class error dicts
+    are NEVER cached — put-skipped in ``batch_judge``'s cache-update loop and
+    read back as cache MISSES (#2151) — so the sync pass re-dispatches EXACTLY
+    the censored cache-miss draws while every batch success serves from cache
+    (no double-spend), and the sync successes then land in the cache. The gate
+    re-run serves all rows from that warmed cache; its raw dir + report path
+    are DISTINCT (``<behavior>_raw_postreissue/``, ``.report_postreissue.json``)
+    so the batch pass's censoring evidence stays intact. Bounded to ONE
+    re-issue pass — a residual rate >= the threshold after it is the genuine
+    plan-§6 kill (applied by the caller). Returns
+    ``(post_rates | None, reissue_meta | None, report_post | None)`` — all
+    None when no arm is flagged (the untouched common path)."""
+    from explore_persona_space.eval.judge_dispatch import graded_temperature
+    from explore_persona_space.eval.judge_pilot import _seeded_subsample, judge_pilot_gate
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
+    )
+    from explore_persona_space.experiments.issue_1739.judging import judge_items_graded
+
+    flagged = sorted(a for a, r in refusal_rates.items() if r >= PILOT_API_REFUSAL_MAX)
+    if not flagged:
+        return None, None, None
+    reissue_meta: dict[str, dict] = {}
+    for arm in flagged:
+        sub = _seeded_subsample(arms[arm], items_per_arm, seed=0, arm=arm)
+        r2 = judge_items_graded(
+            sub,
+            rubric,
+            cache_dir=pilot_dir / f"{behavior}_cache" / arm,
+            save_raw=pilot_dir / f"{behavior}_raw" / f"syncreissue_{arm}.json",
+            n_draws=n_draws,
+            temperature=JUDGE_TEMPERATURE,
+            max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+            judge_model=JUDGE_MODEL,
+            threshold_base=SYNC_FORCE_THRESHOLD_BASE,
+        )
+        reissue_meta[arm] = {
+            "rate_batch": float(refusal_rates[arm]),
+            "n_draws_pass2": int(r2.n_total_draws),
+            "n_api_refusal_residual": int(r2.n_api_refusal_draws),
+            "n_transport_lost": int(r2.n_transport_lost_draws),
+        }
+        logger.info(
+            "[%s] pilot %s rule-28 sync re-issue arm %s: batch rate %.3f -> "
+            "pass-2 residual refusals %d/%d",
+            SENTINEL_JUDGE,
+            behavior,
+            arm,
+            refusal_rates[arm],
+            r2.n_api_refusal_draws,
+            r2.n_total_draws,
+        )
+    with graded_temperature(JUDGE_TEMPERATURE):  # production ambient, as the first gate run
+        report_post = judge_pilot_gate(
+            arms,
+            rubric,
+            max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+            cache_dir=pilot_dir / f"{behavior}_cache",
+            save_raw_dir=pilot_dir / f"{behavior}_raw_postreissue",
+            n_draws=n_draws,
+            target_total_draws=len(arms) * n_draws * items_per_arm,
+            min_effective_draws_per_arm=PILOT_MIN_EFFECTIVE_FIRSTK,
+            waive_parse_fail_arms=tuple(args.waive_judge_parse_fail_arms),
+            allow_subresolution_pilot=bool(args.smoke),
+            threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+            report_path=pilot_dir / f"{behavior}.report_postreissue.json",
+            seed=0,
+        )
+    if not report_post.passed:
+        raise RuntimeError(
+            f"firstk judge pilot FAILED for {behavior} (post-reissue gate re-run): "
+            f"{report_post.verdict}"
+        )
+    return _pilot_refusal_rates(report_post), reissue_meta, report_post
+
+
+def _pilot_refusal_remediation_and_kill(
+    args,
+    pilot_dir: Path,
+    behavior: str,
+    rubric: str,
+    n_draws: int,
+    arms: dict[str, list[tuple[str, str, str]]],
+    items_per_arm: int,
+    report,
+):
+    """Compute raw per-arm api-refusal rates, run the bounded rule-28 sync
+    re-issue for flagged arms (``_pilot_rule28_sync_reissue``), then apply the
+    plan-§6 kill on the POST-reissue rate (the raw rate when no arm was
+    flagged — vacuously under threshold there). Returns
+    ``(refusal_rates, post_rates, reissue_meta, report_post)``."""
+    refusal_rates = _pilot_refusal_rates(report)
+    post_rates, reissue_meta, report_post = _pilot_rule28_sync_reissue(
+        args, pilot_dir, behavior, rubric, n_draws, arms, items_per_arm, refusal_rates
+    )
+    gate_rates = post_rates if post_rates is not None else refusal_rates
+    stage = (
+        "AFTER the bounded rule-28 sync re-issue (genuine, transport-independent)"
+        if post_rates is not None
+        else "(raw batch rate; no arm reached the re-issue threshold)"
+    )
+    _apply_pilot_refusal_kill(behavior, gate_rates, stage=stage)
+    return refusal_rates, post_rates, reissue_meta, report_post
+
+
 def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric, n_draws) -> None:
     """Rule-26 pilot gate at the EXACT production instrument + transport
     (plan §6): 4 arms per behavior — rb all-answer, random all-answer, one
@@ -1592,9 +1737,13 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
     each, Batch transport (threshold_base=0), production ambient temperature
     (``graded_temperature`` — the gate's own temperature kwarg is unthreaded).
     Adds the driver-side per-arm api-refusal (<0.10) kill the shipped gate
-    only REPORTS, plus the §7 positive-control EARLY read (coarse, unpowered
-    — log line + sidecar field, never a gate). Fingerprint sidecar skips a
-    prior PASS at the identical instrument unless --force."""
+    only REPORTS — applied to the POST-rule-28-sync-reissue rate (r4: flagged
+    arms re-issue their censored draws sync-side against the same arm cache,
+    one bounded pass, then the gate re-runs off the warmed cache; the plan-§6
+    kill gates what survives the plan's own named remediation) — plus the §7
+    positive-control EARLY read (coarse, unpowered — log line + sidecar
+    field, never a gate). Fingerprint sidecar skips a prior PASS at the
+    identical instrument unless --force."""
     from explore_persona_space.eval.judge_dispatch import graded_temperature
     from explore_persona_space.eval.judge_pilot import _seeded_subsample, judge_pilot_gate
     from explore_persona_space.experiments.issue_1739.constants import (
@@ -1723,18 +1872,18 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
         )
     if not report.passed:
         raise RuntimeError(f"firstk judge pilot FAILED for {behavior}: {report.verdict}")
-    # Driver-side rule-28 arm kill: the shipped judge_pilot_gate REPORTS
-    # n_api_refusal but has no gate condition on it (its #2151 note); plan §6
-    # registers per-arm api-refusal rate < 0.10 as a pilot kill.
-    refusal_rates: dict[str, float] = {}
-    for arm, st in report.arms.items():
-        rate = st.n_api_refusal / max(1, st.n_draws - st.n_transport_lost)
-        refusal_rates[arm] = float(rate)
-        if rate >= PILOT_API_REFUSAL_MAX:
-            raise RuntimeError(
-                f"firstk judge pilot FAILED for {behavior}: arm {arm} api-refusal "
-                f"rate {rate:.3f} >= {PILOT_API_REFUSAL_MAX} (plan §6 pilot kill)"
-            )
+    # Driver-side rule-28 arm handling (r4): the shipped judge_pilot_gate
+    # REPORTS n_api_refusal but has no gate condition on it (its #2151 note);
+    # plan §6 registers per-arm api-refusal rate < 0.10 as a pilot kill AND
+    # names the rule-28 remediation (targeted SYNC re-issue at the identical
+    # instrument). The censoring is transport-conditional + outcome-correlated
+    # (#2151/#1739; the r4 probe: rb_allans 0.273 batch -> 0.000 sync at the
+    # identical instrument, all end_turn), so the kill applies to the
+    # POST-reissue rate — a raw-batch-rate kill would abort a wave the
+    # instrument demonstrably scores.
+    refusal_rates, post_rates, reissue_meta, report_post = _pilot_refusal_remediation_and_kill(
+        args, pilot_dir, behavior, rubric, n_draws, arms, items_per_arm, report
+    )
     # §7 positive-control EARLY read: rb vs random all-answer pilot-arm mean
     # dscore, replayed from the pilot's own per-arm rubric-keyed cache
     # (identical subsample + instrument -> cache hits, no new spend).
@@ -1773,8 +1922,12 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
         {
             "fingerprint": fp,
             "verdict": report.verdict,
-            "transport": "batch (threshold_base=0 pin; rule-26 transport parity)",
+            "verdict_postreissue": report_post.verdict if report_post is not None else None,
+            "transport": "batch (threshold_base=0 pin; rule-26 transport parity)"
+            + ("; rule-28 sync re-issue applied to flagged arms" if reissue_meta else ""),
             "api_refusal_rates": refusal_rates,
+            "api_refusal_rates_postreissue": post_rates,
+            "rule28_sync_reissue": reissue_meta,
             "api_refusal_max": PILOT_API_REFUSAL_MAX,
             "positive_control_early": pc,
             "dropped_empty_arms": empty,
@@ -1783,21 +1936,128 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
     )
 
 
+def _judge_graded_with_refusal_reissue(
+    items: list[tuple[str, str, str]],
+    rubric: str,
+    *,
+    cache_dir: Path,
+    save_raw: Path,
+    n_draws: int,
+) -> tuple[object, dict[str, list[float]], dict | None]:
+    """Batch-first graded judging with the rule-28 targeted SYNC re-issue
+    (plan §6's named remediation; shared by the pilot's per-cell twin below).
+
+    Pass 1 dispatches on the plan-§6 Batch pin (``threshold_base=0``). Draws
+    the Batch transport's safety classifier censored — api-refusal: a
+    succeeded row with ``stop_reason == "refusal"`` and empty content, #2151 —
+    are re-dispatched at the IDENTICAL instrument (same judge model / rubric /
+    max_tokens / temperature) on the SYNC path: ``threshold_base =
+    SYNC_FORCE_THRESHOLD_BASE`` routes sync via ``decide_route`` (the
+    ``force_sync`` kwarg exists only on ``judge_completions_batch`` and is NOT
+    threaded through ``judge_graded`` — the threshold is the reliable lever).
+    Each refusal-count group re-issues with a FRESH sibling cache dir
+    (``<name>_syncfix_k<k>``) and ``n_draws=k``: the rubric-keyed cache shares
+    ONE key across an item's identical draws, so a same-cache replay would
+    silently duplicate a surviving sibling draw instead of drawing fresh
+    (llm-judging rule 24(ii)); the fresh dir buys k genuinely independent sync
+    draws merged alongside the item's surviving batch draws (rule 28).
+
+    Returns ``(pass-1 JudgeResult, merged {item_id: [scores]}, reissue
+    accounting | None)``. Fails LOUD (RuntimeError) when the post-reissue
+    residual api-refusal rate is still >= ``PILOT_API_REFUSAL_MAX`` — the
+    censoring is outcome-correlated (rule 28), so an uncensorable tail above
+    the plan-§6 bound is surfaced, never silently dropped; a sub-threshold
+    residual (a genuinely uncensorable row) is kept + surfaced in the
+    accounting."""
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
+    )
+    from explore_persona_space.experiments.issue_1739.judging import judge_items_graded
+
+    tag = save_raw.name
+    result = judge_items_graded(
+        items,
+        rubric,
+        cache_dir=cache_dir,
+        save_raw=save_raw,
+        n_draws=n_draws,
+        temperature=JUDGE_TEMPERATURE,
+        max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+        judge_model=JUDGE_MODEL,
+        threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+    )
+    merged: dict[str, list[float]] = {
+        iid: [float(s) for s in sc] for iid, sc in result.per_item_scores.items()
+    }
+    need = {iid: int(k) for iid, k in result.per_item_api_refusals.items() if int(k) > 0}
+    if not need:
+        return result, merged, None
+    item_by_id = {it[0]: it for it in items}
+    groups: dict[int, list[str]] = {}
+    for iid, k in need.items():
+        groups.setdefault(k, []).append(iid)
+    re_draws = re_scored = re_refused = re_transport = 0
+    for k, iids in sorted(groups.items()):
+        sub = [item_by_id[iid] for iid in sorted(iids)]
+        r2 = judge_items_graded(
+            sub,
+            rubric,
+            cache_dir=cache_dir.parent / f"{cache_dir.name}_syncfix_k{k}",
+            save_raw=save_raw.parent / f"{save_raw.name}_syncfix_k{k}",
+            n_draws=k,
+            temperature=JUDGE_TEMPERATURE,
+            max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+            judge_model=JUDGE_MODEL,
+            threshold_base=SYNC_FORCE_THRESHOLD_BASE,
+        )
+        for iid, sc in r2.per_item_scores.items():
+            if sc:
+                merged.setdefault(iid, []).extend(float(s) for s in sc)
+        re_draws += r2.n_total_draws
+        re_scored += sum(len(sc) for sc in r2.per_item_scores.values())
+        re_refused += r2.n_api_refusal_draws
+        re_transport += r2.n_transport_lost_draws
+    reissue = {
+        "transport": "sync (rule-28 targeted re-issue; threshold_base forces sync)",
+        "n_items_reissued": len(need),
+        "n_draws_reissued": re_draws,
+        "n_scored": re_scored,
+        "n_api_refusal_residual": re_refused,
+        "n_transport_lost": re_transport,
+    }
+    logger.info(
+        "[%s] %s rule-28 sync re-issue: %d items / %d draws (residual refusals %d)",
+        SENTINEL_JUDGE,
+        tag,
+        len(need),
+        re_draws,
+        re_refused,
+    )
+    residual_rate = re_refused / max(1, result.n_total_draws - result.n_transport_lost_draws)
+    if residual_rate >= PILOT_API_REFUSAL_MAX:
+        raise RuntimeError(
+            f"firstk judge {tag}: api-refusal rate {residual_rate:.3f} still >= "
+            f"{PILOT_API_REFUSAL_MAX} AFTER the bounded rule-28 sync re-issue "
+            f"({re_refused}/{re_draws} reissued draws re-refused) — genuinely "
+            "uncensorable rows above the plan-§6 bound; halt-and-report (the "
+            "censoring is outcome-correlated, never silently dropped)"
+        )
+    return result, merged, reissue
+
+
 def _judge_firstk_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: int) -> dict:
     """Judge one steer cell (Batch API, rubric-keyed cache, max_tokens 2048)
-    with the rule-28 targeted SYNC re-issue for api-refusal-censored draws:
-    refused draws are re-dispatched at the IDENTICAL instrument on the sync
-    path with a FRESH cache dir (the rubric-keyed cache shares one key across
-    an item's draws — a same-cache replay would silently duplicate surviving
-    sibling draws instead of drawing fresh). Per-cell checkpoint at
-    judge/judged/<cid>.json with cached-skip resume; accounting keeps the
-    batch/sync split + rule-29 frac_items_complete (post-merge)."""
+    via ``_judge_graded_with_refusal_reissue`` (r4 extraction — identical
+    on-disk cache/raw layout to r3): the rule-28 targeted SYNC re-issue for
+    api-refusal-censored draws, with the residual fail-loud. Per-cell
+    checkpoint at judge/judged/<cid>.json with cached-skip resume; accounting
+    keeps the batch/sync split + rule-29 frac_items_complete (post-merge)."""
     from explore_persona_space.experiments.issue_1739.constants import (
         JUDGE_MODEL,
         JUDGE_TEMPERATURE,
     )
     from explore_persona_space.experiments.issue_1739.judging import (
-        judge_items_graded,
         judge_tallies,
         rollout_item_id,
     )
@@ -1830,64 +2090,13 @@ def _judge_firstk_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
         iid = rollout_item_id(_judge_ctx_id_firstk(cell, seed, len(items)), di)
         items.append((iid, qs[qi], text))
         meta[iid] = {"qi": qi, "seed": seed, "ci": ci, "di": di}
-    result = judge_items_graded(
+    result, merged, reissue = _judge_graded_with_refusal_reissue(
         items,
         rubric,
         cache_dir=rroot / "judge" / "cache" / cid,
         save_raw=rroot / "judge" / "raw" / cid,
         n_draws=n_draws,
-        temperature=JUDGE_TEMPERATURE,
-        max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
-        judge_model=JUDGE_MODEL,
-        threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
     )
-    merged: dict[str, list[float]] = {
-        iid: [float(s) for s in sc] for iid, sc in result.per_item_scores.items()
-    }
-    need = {iid: int(k) for iid, k in result.per_item_api_refusals.items() if int(k) > 0}
-    reissue = None
-    if need:
-        item_by_id = {it[0]: it for it in items}
-        groups: dict[int, list[str]] = {}
-        for iid, k in need.items():
-            groups.setdefault(k, []).append(iid)
-        re_draws = re_scored = re_refused = re_transport = 0
-        for k, iids in sorted(groups.items()):
-            sub = [item_by_id[iid] for iid in sorted(iids)]
-            r2 = judge_items_graded(
-                sub,
-                rubric,
-                cache_dir=rroot / "judge" / "cache" / f"{cid}_syncfix_k{k}",
-                save_raw=rroot / "judge" / "raw" / f"{cid}_syncfix_k{k}",
-                n_draws=k,
-                temperature=JUDGE_TEMPERATURE,
-                max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
-                judge_model=JUDGE_MODEL,
-                threshold_base=SYNC_FORCE_THRESHOLD_BASE,
-            )
-            for iid, sc in r2.per_item_scores.items():
-                if sc:
-                    merged.setdefault(iid, []).extend(float(s) for s in sc)
-            re_draws += r2.n_total_draws
-            re_scored += sum(len(sc) for sc in r2.per_item_scores.values())
-            re_refused += r2.n_api_refusal_draws
-            re_transport += r2.n_transport_lost_draws
-        reissue = {
-            "transport": "sync (rule-28 targeted re-issue; threshold_base forces sync)",
-            "n_items_reissued": len(need),
-            "n_draws_reissued": re_draws,
-            "n_scored": re_scored,
-            "n_api_refusal_residual": re_refused,
-            "n_transport_lost": re_transport,
-        }
-        logger.info(
-            "[%s] %s rule-28 sync re-issue: %d items / %d draws (residual refusals %d)",
-            SENTINEL_JUDGE,
-            cid,
-            len(need),
-            re_draws,
-            re_refused,
-        )
     per_q: dict[int, list[float]] = {}
     for iid, scores in merged.items():
         if scores:
@@ -2197,7 +2406,8 @@ def phase_judge(args) -> None:
     phase's per-cell raw completions (a regen'd cell's FULL-LENGTH record
     feeds the judge — §3), grid-completeness + producer-schema validation
     BEFORE any spend, rule-26 pilot per behavior (--pilot stops after the
-    gate) with the §7 positive-control EARLY kill (both behaviors fail =>
+    gate) with the plan-§6 api-refusal kill applied POST-rule-28-sync-reissue
+    (r4) and the §7 positive-control EARLY kill (both behaviors fail =>
     halt before the wave), then per-cell judging with fingerprinted per-cell
     checkpoints, rule-28 sync re-issue + rule-29 accounting, and the
     packed-shard HF upload."""
