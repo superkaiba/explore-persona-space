@@ -11398,8 +11398,8 @@
       "goal": "Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2476",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/2476",
+      "status": "awaiting_promotion",
       "title": "The context-to-answer map's coarse-over-specific predictability gradient does not reproduce in turn-averaged SAE bases: nearly all specific-tier features fall below the alive floor, and retrieval stays coarse-tier-concentrated (MODERATE confidence)"
     },
     "2477": {
