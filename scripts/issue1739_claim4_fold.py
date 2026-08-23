@@ -1516,6 +1516,27 @@ def a2fix_lattice(
         "uncovered_rungs": [list(u) for u in d_cov["missing"]],
         "extra_unregistered_rungs": [list(u) for u in d_cov["extra"]],
     }
+    if not d_cov["complete"]:
+        # codex r7 BLOCKER arm2fix-d-read-postcoverage-partial-reduction: the
+        # coverage branch runs IMMEDIATELY after d_read is constructed —
+        # BEFORE the median, flagship, and parity reductions — so NO partial
+        # statistic is ever computed, stored, or rendered over an incomplete
+        # registered universe. Every median/flagship field is explicitly
+        # nulled (schema-stable for consumers); parity_read is not computed.
+        out["median_D_passing_set"] = None
+        out["per_behavior_median_D"] = {}
+        out["n_rungs_in_median"] = 0
+        out["flagships_in_passing_set"] = []
+        out["verdict"] = "WEAK-MIXED"
+        out["reason"] = (
+            "the primary-D read is INCOMPLETE over the passing behaviors' REGISTERED "
+            f"rungs (uncovered rungs: {out['d_read']['uncovered_rungs']}; extra "
+            f"unregistered rungs: {out['d_read']['extra_unregistered_rungs']}) — a "
+            "registered rung without a finite D can never silently shrink the median "
+            "denominator, and an unregistered realized rung can never join it; no "
+            "median, flagship, or parity statistic is rendered over a partial universe"
+        )
+        return out
     reg_admitted = [k for k in sorted(expected_d) if k in d_by_key]
     rows = [row_by_key[k] for k in reg_admitted]
     d_means = [d_by_key[k] for k in reg_admitted]
@@ -1582,21 +1603,6 @@ def a2fix_lattice(
             "denominator, and extras never move the median)",
         }
         out["parity_read"] = parity_read
-    if not d_cov["complete"]:
-        # codex r6 BLOCKER arm2fix-lattice-d-admission-universe: incomplete
-        # primary-D coverage of the registered universe is a NAMED
-        # non-affirmative result — the median denominator can never silently
-        # shrink (missing) or grow (extras), and no affirmative or negative
-        # median read is rendered over a partial universe.
-        out["verdict"] = "WEAK-MIXED"
-        out["reason"] = (
-            "the primary-D read is INCOMPLETE over the passing behaviors' REGISTERED "
-            f"rungs (uncovered rungs: {out['d_read']['uncovered_rungs']}; extra "
-            f"unregistered rungs: {out['d_read']['extra_unregistered_rungs']}) — a "
-            "registered rung without a finite D can never silently shrink the median "
-            "denominator, and an unregistered realized rung can never join it"
-        )
-        return out
     if med is None:
         out["verdict"] = "WEAK-MIXED"
         out["reason"] = "no complete passing-set rungs carry a D read"
@@ -1756,6 +1762,13 @@ def write_arm2fix_markdown(table: dict, path: Path) -> None:
         f"- verdict: **{v.get('verdict')}**" + (f" — {v['reason']}" if v.get("reason") else ""),
         f"- passing set: {v.get('passing_behaviors')}; excluded: {v.get('failing_behaviors')}",
     ]
+    if v.get("d_read"):
+        dr = v["d_read"]
+        lines.append(
+            f"- primary-D registered coverage: {dr['n_rungs']}/{dr['n_rungs_expected']} "
+            f"(complete: {dr['coverage_complete']}; uncovered: {dr['uncovered_rungs']}; "
+            f"extra unregistered: {dr['extra_unregistered_rungs']})"
+        )
     if v.get("median_D_passing_set") is not None:
         lines.append(
             f"- median D (passing set, {v['n_rungs_in_median']} rungs): "
@@ -1833,6 +1846,13 @@ def write_arm2fix_note(table: dict, path: Path) -> None:
             f"- join denominator: {join['realized_pairs']}/{join['expected_pairs']} "
             f"(restated from {join['restated_from']}; per-behavior series "
             f"{join['series_required_by_behavior']})"
+        )
+    if v.get("d_read"):
+        dr = v["d_read"]
+        lines.append(
+            f"- primary-D registered coverage: {dr['n_rungs']}/{dr['n_rungs_expected']} "
+            f"(complete: {dr['coverage_complete']}; uncovered: {dr['uncovered_rungs']}; "
+            f"extra unregistered: {dr['extra_unregistered_rungs']})"
         )
     if v.get("median_D_passing_set") is not None:
         lines.append(

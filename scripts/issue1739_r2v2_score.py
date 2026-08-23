@@ -1136,6 +1136,15 @@ def _seed_output_resume_ok(
     return True, "match"
 
 
+def _remove_stale_summary(resume_dir) -> None:
+    """Remove a NOT-resumable seed's stale completion sentinel BEFORE the
+    rerun starts (codex r6/r7: a same-commit stale summary left in place can
+    validate mixed-generation companions if the rerun dies mid-way — the
+    rerun's own summary is written LAST, so from removal until then the seed
+    reads as incomplete, which it is). Companions are left for forensics."""
+    (resume_dir / "all_arms_spearman.json").unlink()
+
+
 def _write_companions_then_summary(out_dir, res: dict, write_summary_fn) -> None:
     """Companion artifacts FIRST, the validated summary LAST (review r2 item 6).
 
@@ -2920,12 +2929,7 @@ def main(argv: list[str] | None = None) -> int:
                     f"[seed-loop {i}/{len(units)}] prior output at {resume_dir} NOT "
                     f"resumable ({why}) — re-running the seed"
                 )
-                # remove the stale completion sentinel BEFORE the rerun (codex
-                # r6: a same-commit stale summary left in place can validate
-                # mixed-generation companions if the rerun dies mid-way — the
-                # rerun's own summary is written LAST, so from here until then
-                # the seed reads as incomplete, which it is).
-                (resume_dir / "all_arms_spearman.json").unlink()
+                _remove_stale_summary(resume_dir)
             _log(f"[seed-loop {i}/{len(units)}] START {behavior} seed={seed}")
         try:
             res = run_behavior(args, behavior, layers)

@@ -893,12 +893,15 @@ def test_a2fix_parity_registered_universe_covers_omitted_rungs():
     ]
     v = fold.a2fix_lattice(rows_omitted, sanity, resolution=res, registered=reg)
     assert v["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
-    assert v["parity_read"]["coverage_complete"] is False
-    assert v["parity_read"]["n_rungs_expected"] == 2  # from the REGISTERED universe
-    assert ["sycophancy", "sycomwe"] in v["parity_read"]["uncovered_rungs"]
-    assert v["parity_read"]["positive"] is False
+    # r7 reorder: the OMITTED registered rung fires the primary-D coverage
+    # gate BEFORE any median / flagship / parity reduction is computed
+    assert v["d_read"]["coverage_complete"] is False
+    assert v["d_read"]["n_rungs_expected"] == 2  # from the REGISTERED universe
+    assert ["sycophancy", "sycomwe"] in v["d_read"]["uncovered_rungs"]
+    assert v["median_D_passing_set"] is None and v["flagships_in_passing_set"] == []
+    assert "parity_read" not in v  # no reduction renders over a partial universe
     # present-but-D-less variant (the row survives per_rung but carries no D
-    # read, so the :1336 filter drops it) is the SAME undercoverage — caught
+    # read) is the SAME undercoverage — caught by the same gate
     e_nod = {
         "behavior": "sycophancy",
         "eval_rung": "sycomwe",
@@ -911,8 +914,9 @@ def test_a2fix_parity_registered_universe_covers_omitted_rungs():
     }
     v2 = fold.a2fix_lattice([*rows_omitted, e_nod], sanity, resolution=res, registered=reg)
     assert v2["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
-    assert v2["parity_read"]["coverage_complete"] is False
-    assert ["sycophancy", "sycomwe"] in v2["parity_read"]["uncovered_rungs"]
+    assert v2["d_read"]["coverage_complete"] is False
+    assert ["sycophancy", "sycomwe"] in v2["d_read"]["uncovered_rungs"]
+    assert v2["median_D_passing_set"] is None and "parity_read" not in v2
 
 
 def test_a2fix_parity_exact_set_and_finite_admission():
@@ -943,8 +947,10 @@ def test_a2fix_parity_exact_set_and_finite_admission():
     assert v["parity_read"]["coverage_complete"] is False
     assert v["parity_read"]["n_rungs"] == 0 and v["parity_read"]["median_D_parity"] is None
     assert ["evil", "evil_pair"] in v["parity_read"]["uncovered_rungs"]
-    # (b) an extra UNREGISTERED parity rung with a huge positive D_parity:
-    # named as extra, excluded from the median, coverage broken
+    # (b) an extra UNREGISTERED rung with huge positive values: named as a
+    # primary-D coverage extra (the r7 reorder fires BEFORE any median /
+    # flagship / parity reduction — 5.0 can never move anything because
+    # nothing is computed at all)
     rows_extra = [
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.01),
         _entry("evil", "evil_unregistered", 0.5, [0.4, 0.6], [0.4, 0.6], d_parity=5.0),
@@ -952,9 +958,10 @@ def test_a2fix_parity_exact_set_and_finite_admission():
     ]
     v2 = fold.a2fix_lattice(rows_extra, sanity, resolution=res, registered=reg)
     assert v2["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
-    assert v2["parity_read"]["coverage_complete"] is False
-    assert ["evil", "evil_unregistered"] in v2["parity_read"]["extra_unregistered_rungs"]
-    assert v2["parity_read"]["median_D_parity"] == 0.01  # registered key only, never 5.0
+    assert v2["d_read"]["coverage_complete"] is False
+    assert ["evil", "evil_unregistered"] in v2["d_read"]["extra_unregistered_rungs"]
+    assert v2["median_D_passing_set"] is None and v2["flagships_in_passing_set"] == []
+    assert "parity_read" not in v2  # no reduction over a partial universe
     assert "extra" in v2["reason"]
     # (c) empty registered set for a restricted passing behavior: loud exit
     with pytest.raises(SystemExit, match="REGISTRY ERROR"):
@@ -991,13 +998,14 @@ def test_a2fix_lattice_unfiltered_universe_duplicates_and_order():
     # the complete registered fixture mints MAP-BEATS (positive control)
     v0 = fold.a2fix_lattice(complete, sanity, resolution=res, registered=reg)
     assert v0["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
-    # (1) + a D-less unregistered parity row: named extra, NOT MAP-BEATS
+    # (1) + a D-less unregistered parity row: named primary-D coverage extra,
+    # NOT MAP-BEATS, and (r7 reorder) no median/flagship/parity reduction runs
     dless = _entry("evil", "evil_unregistered", None, None, d_parity=5.0)
     v1 = fold.a2fix_lattice([*complete, dless], sanity, resolution=res, registered=reg)
     assert v1["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
-    assert v1["parity_read"]["coverage_complete"] is False
-    assert ["evil", "evil_unregistered"] in v1["parity_read"]["extra_unregistered_rungs"]
-    assert v1["parity_read"]["median_D_parity"] == 0.01  # 5.0 never enters
+    assert v1["d_read"]["coverage_complete"] is False
+    assert ["evil", "evil_unregistered"] in v1["d_read"]["extra_unregistered_rungs"]
+    assert v1["median_D_passing_set"] is None and "parity_read" not in v1
     # (2) duplicate registered key: loud in both input orders
     dup = _entry("evil", "evil_pair", 0.50, [0.4, 0.6], [0.4, 0.6], d_parity=-0.9)
     for ordering in ([*complete, dup], [dup, *complete]):
@@ -1196,11 +1204,13 @@ def test_preds_producer_chain_omitted_pass_refuses_sentinel(tmp_path):
     assert not ok and "absent" in why  # the seed is not resumable
 
 
-def test_a2fix_lattice_registered_dless_row_named_failure():
-    """codex r6 BLOCKER arm2fix-lattice-d-admission-universe (fails pre-fix):
-    a REGISTERED rung whose row carries D.mean=None can never silently shrink
-    the median denominator — it is a NAMED primary-D coverage failure and the
-    remaining affirmative flagship cannot mint MAP-BEATS over it."""
+def test_a2fix_lattice_registered_dless_row_named_failure(tmp_path):
+    """codex r6 BLOCKER arm2fix-lattice-d-admission-universe + r7 BLOCKER
+    arm2fix-d-read-postcoverage-partial-reduction (fails pre-fix): a
+    REGISTERED rung whose row carries D.mean=None is a NAMED primary-D
+    coverage failure, and NO median / flagship / parity statistic is
+    computed, stored, or RENDERED over the partial universe — the coverage
+    branch runs before every reduction."""
     sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
     res = {"evil": _res(), "sycophancy": _res()}
     reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
@@ -1215,8 +1225,39 @@ def test_a2fix_lattice_registered_dless_row_named_failure():
     assert v["d_read"]["uncovered_rungs"] == [["sycophancy", "sycomwe"]]
     assert v["d_read"]["n_rungs"] == 1 and v["d_read"]["n_rungs_expected"] == 2
     assert "primary-D" in v["reason"] and "INCOMPLETE" in v["reason"]
-    # the median never renders over the shrunken denominator
-    assert v["n_rungs_in_median"] == 1
+    # r7: NO median/flagship result exists — explicitly nulled, never partial
+    assert v["median_D_passing_set"] is None
+    assert v["per_behavior_median_D"] == {}
+    assert v["n_rungs_in_median"] == 0
+    assert v["flagships_in_passing_set"] == []
+    assert "parity_read" not in v
+    # r7: BOTH markdown renderers show the named d_read coverage record (the
+    # uncovered registered key) and print NO partial median / flagship line
+    table = {
+        "meta": {"generated_ts": "t", "git_commit": "c", "resolution": {}},
+        "verdict": v,
+        "per_rung": rows,
+        "sanity": {},
+        "join": {},
+    }
+    md, note = tmp_path / "t.md", tmp_path / "n.md"
+    fold.write_arm2fix_markdown(table, md)
+    fold.write_arm2fix_note(table, note)
+    for rendered in (md.read_text(), note.read_text()):
+        assert "primary-D registered coverage: 1/2" in rendered
+        assert "sycomwe" in rendered  # the uncovered registered key is named
+        assert "median D" not in rendered  # no partial median line renders
+        assert "flagship " not in rendered  # no flagship CI line renders
+    # complete-coverage case: d_read renders alongside the median line
+    rows_full = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11]),
+        _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),
+    ]
+    v_full = fold.a2fix_lattice(rows_full, sanity, resolution=res, registered=reg)
+    table["verdict"], table["per_rung"] = v_full, rows_full
+    fold.write_arm2fix_markdown(table, md)
+    out_full = md.read_text()
+    assert "primary-D registered coverage: 2/2" in out_full and "median D" in out_full
 
 
 def _preds_row(cid, *, arm="arm2_ctx_native", rung="hhrt", score=0.1, dv=0.5, group="g0"):
@@ -1379,6 +1420,56 @@ def test_a2fix_universe_construction_single_implementation():
     assert lat.count("a2fix_exact_coverage(") == 2
     # no last-write-wins .update() merge survives in the ctx-CI wiring
     assert ".update(" not in inspect.getsource(fold.a2fix_ctx_ci)
+    # r7 widened constructor patterns: no alternate raw-row index constructor
+    # (dict comprehension / dict(zip(...))) sneaks past the helper
+    for fn in (
+        fold.a2fix_lattice,
+        fold.a2fix_sanity_records,
+        fold.a2fix_index_cells,
+        fold.a2fix_load_new_preds,
+        fold.a2fix_ctx_ci,
+    ):
+        src = inspect.getsource(fn)
+        assert "dict(zip(" not in src, fn.__name__
+        assert ": r for r in" not in src, fn.__name__  # {key: r for r in rows} shape
+    # r7 behavioral guard-ORDERING pin (arm2fix-d-read-postcoverage-partial-
+    # reduction): an incomplete-coverage lattice result carries NO reduced
+    # statistic — median nulled, flagships empty, parity absent
+    v = fold.a2fix_lattice(
+        [_entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11])],
+        {"evil": {"pass": True}, "sycophancy": {"pass": True}},
+        resolution={"evil": _res(), "sycophancy": _res()},
+        registered={
+            "evil": frozenset({"evil_pair"}),
+            "sycophancy": frozenset({"sycomwe"}),
+        },
+    )
+    assert v["d_read"]["coverage_complete"] is False
+    assert v["median_D_passing_set"] is None
+    assert v["n_rungs_in_median"] == 0
+    assert v["flagships_in_passing_set"] == []
+    assert "parity_read" not in v
+
+
+def test_parse_args_rejects_duplicate_pb_holdouts():
+    """codex r7 CONCERN arm2fix-universe-regression-pin-gaps: the parse-time
+    duplicate-holdout gate gets a DIRECT test — duplicated --pb-holdouts is a
+    loud SystemExit at config parse, before any planning or execution."""
+    with pytest.raises(SystemExit, match="pb-holdouts carries duplicates"):
+        sc.parse_args(["--pb-holdouts", "hhrt", "hhrt"])
+
+
+def test_remove_stale_summary_unlinks_sentinel(tmp_path):
+    """codex r7 CONCERN arm2fix-universe-regression-pin-gaps: the stale
+    completion-sentinel removal gets a DIRECT test — the sentinel is gone
+    after the call while companions survive for forensics."""
+    d = tmp_path / "evil" / "seed0"
+    d.mkdir(parents=True)
+    (d / "all_arms_spearman.json").write_text("{}")
+    (d / "map_diagnostics.json").write_text("{}")
+    sc._remove_stale_summary(d)
+    assert not (d / "all_arms_spearman.json").exists()
+    assert (d / "map_diagnostics.json").exists()  # companions untouched
 
 
 def test_a2fix_per_rung_d_read_and_parity_hash():
@@ -1528,11 +1619,13 @@ def test_a2fix_lattice_map_beats_requires_parity_when_restricted():
     assert v4["verdict"] == "WEAK-MIXED" and "flagship" in v4["reason"]
     # the REGISTERED universe binds under the default too: with the real
     # REGISTERED_PRIMARY_RUNGS, evil_pair+sycomwe alone cover 2 of 11
-    # registered restricted rungs -> coverage incomplete -> not MAP-BEATS
+    # registered rungs -> primary-D coverage incomplete -> not MAP-BEATS
+    # (r7 reorder: the D gate fires before any parity reduction)
     v5 = fold.a2fix_lattice(rows, sanity, resolution=res_all)
     assert v5["verdict"] == "WEAK-MIXED"
-    assert v5["parity_read"]["coverage_complete"] is False
-    assert v5["parity_read"]["n_rungs_expected"] == 11
+    assert v5["d_read"]["coverage_complete"] is False
+    assert v5["d_read"]["n_rungs_expected"] == 11
+    assert v5["median_D_passing_set"] is None and "parity_read" not in v5
 
 
 def test_a2fix_lattice_mixed_parity_scoped_to_restricted_behaviors():
