@@ -455,3 +455,43 @@ def test_mapped_baseline_leg_runs_off_shared_root():
         "the surviving 'always-dirty shared root' mention must be the "
         "sync_repo_root.py autostash paragraph, not a baseline-leg claim"
     )
+
+
+# --- #2310: completion-read list-shape attribution ----------------------------
+
+
+def test_step9c_completion_read_attributes_list_shape():
+    """The completion-read carries a list-shape attribution branch (#2310):
+    rc=126 conjoined with per-path Permission-denied lines is the
+    newline-splice signature, and the verdict must name the LIST SHAPE as
+    the cause instead of reporting an opaque mass failure. Defense-in-depth
+    behind the #2317 pre-launch splice-shape guard (a stale worktree recipe
+    copy bypasses that guard; the completion-read is the last reader)."""
+    sec = _section_9c(_text())
+    # Detection predicate: rc=126 conjunct + path-scoped Permission-denied grep.
+    attr_idx = sec.index('"${PYTEST_RC:-}" = "126"')
+    # Pin the LITERAL path-scoped grep fragment (round-1 Codex concern
+    # `path-scoped-attribution-pin`): a generic "Permission denied" substring
+    # check stays green if the recipe's predicate is weakened to a bare
+    # `grep 'Permission denied'`, which would fire on unrelated
+    # Permission-denied log lines (not per-test-path splice signatures).
+    path_scoped_grep = r"grep -qE 'tests/[^[:space:]]*\.py: Permission denied'"
+    assert path_scoped_grep in sec[attr_idx : attr_idx + 400], (
+        "completion-read detection predicate must keep the PATH-SCOPED "
+        "Permission-denied grep fragment (tests/...\\.py: scope), not a bare "
+        "'Permission denied' match"
+    )
+    # The attribution names cause + remedy (wrap-tolerant via _norm):
+    n = _norm(sec)
+    assert "LIST-SHAPE failure, not a test failure" in n
+    # Placement: inside the rc-exists branch — after the rc read and the
+    # zero-collected guard, before the BASETEMP reap:
+    rc_read_idx = sec.index("PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)")
+    zero_idx = sec.index("no tests ran|collected 0 items")
+    reap_idx = sec.index("# BASETEMP reap — INSIDE the rc-exists branch")
+    assert rc_read_idx < attr_idx, "attribution must follow the rc-file read"
+    assert zero_idx < attr_idx, "attribution must follow the zero-collected guard"
+    assert attr_idx < reap_idx, "attribution must precede the BASETEMP reap"
+    # Existing pinned guards untouched (acceptance criterion 4):
+    assert "no tests ran|collected 0 items" in sec
+    assert "[ ! -f /tmp/step9c-rc-issue-<N> ]" in sec

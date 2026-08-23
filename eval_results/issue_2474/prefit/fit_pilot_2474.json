@@ -1,0 +1,50 @@
+{
+  "issue": 2474,
+  "phase": "pilot",
+  "generated_utc": "2026-08-23T11:46:15.878985+00:00",
+  "git": {
+    "git_commit": "7249718b",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2474_fit.py",
+    "phase": "pilot"
+  },
+  "layer": 16,
+  "n_rows": 5000,
+  "n_train": 4500,
+  "measured_fit_wall_s": 41.7393114566803,
+  "blas_threads_per_worker": "1",
+  "cpu_count": 128,
+  "fence_formula": "252 * measured_wall / realized_width * 2",
+  "fence_s_at_width": {
+    "8": 2629.5766217708588
+  },
+  "heldout_r2": {
+    "r2": 0.6292699280720567,
+    "mean_cosine": 0.9341807513282949
+  },
+  "lam": 316.2277660168379,
+  "kstar": 1430,
+  "parity": "PASS (in-worker + disk round-trip)",
+  "slug": "issue2474_prefit",
+  "parent_parity": {
+    "16": {
+      "lam": 316.2277660168379,
+      "kstar": 1430,
+      "r2": 0.6292699280720567,
+      "parity": "PASS"
+    }
+  },
+  "ru_maxrss_kb_self": 9907804,
+  "ru_maxrss_kb_children": 9907804,
+  "completion_fingerprint": {
+    "phase": "pilot",
+    "parent_sha": "15097bee",
+    "pilot_layer": 16,
+    "passb": {
+      "hf_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+      "file": "issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt"
+    },
+    "v": 1
+  }
+}

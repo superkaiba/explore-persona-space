@@ -19,11 +19,19 @@ concern). Reads the task's events through the task-workflow library, runs
                                 parseable same-line remaining field: fail
                                 loud, repost the breadcrumb in the documented
                                 grammar, never treat as OK.
+    4  IMPLEMENTER-MARKER-MISSING — no implementation-class marker
+                                (epm:experiment-implementation / epm:results)
+                                exists in canonical events (#2294; incident
+                                #2290 round 1): do NOT dispatch a review —
+                                post the round's implementer marker from the
+                                implementer's returned report FIRST, then
+                                re-run the guard.
 
 Errors (unknown task id, unreadable registry) propagate loud — a crash is
 never read as REVIEW-OK. Incidents: #1336 r4 (premature Unit-A review
-dispatch — 2 subagent deaths + a 2-day park) and #2061 (lettered breadcrumbs
-a digits-only parser fails open on).
+dispatch — 2 subagent deaths + a 2-day park), #2061 (lettered breadcrumbs
+a digits-only parser fails open on), and #2290 r1 (a review dispatched with
+zero implementer markers — the whole round bought only the absence finding).
 """
 
 from __future__ import annotations
@@ -33,11 +41,16 @@ import sys
 
 from explore_persona_space.task_workflow import list_events, pre_split_review_gate
 
-_EXIT_FOR_VERDICT = {"REVIEW-OK": 0, "PRE-SPLIT-INCOMPLETE": 2, "BREADCRUMB-UNPARSEABLE": 3}
+_EXIT_FOR_VERDICT = {
+    "REVIEW-OK": 0,
+    "PRE-SPLIT-INCOMPLETE": 2,
+    "BREADCRUMB-UNPARSEABLE": 3,
+    "IMPLEMENTER-MARKER-MISSING": 4,
+}
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Parse ``<N>``, run the gate, print one lead-token line, return 0/2/3."""
+    """Parse ``<N>``, run the gate, print one lead-token line, return 0/2/3/4."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "issue", type=int, help="task number (the integer naming tasks/<status>/<N>/)"
@@ -56,6 +69,11 @@ def main(argv: list[str] | None = None) -> int:
         )
     elif verdict == "BREADCRUMB-UNPARSEABLE":
         print(f"BREADCRUMB-UNPARSEABLE — {result['reason']}")
+    elif verdict == "IMPLEMENTER-MARKER-MISSING":
+        print(
+            f"IMPLEMENTER-MARKER-MISSING — {result['reason']} "
+            "(09-step-5.md § Pre-split completeness guard, #2294)"
+        )
     else:
         print(f"REVIEW-OK — {result['reason']}")
     return _EXIT_FOR_VERDICT[verdict]

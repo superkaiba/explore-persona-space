@@ -51,3 +51,19 @@ Three additional fold-round compose patterns (#823 r8, 2026-08-20):
   no `--open-only`) as a second concerns envelope and rewrite Lens 14's
   Step-0 replacement to name BOTH envelopes; direct Codex to re-adjudicate
   each `addressed_by: analyzer` disposition on its evidence, not accept it.
+
+Two more fold-round compose patterns (#1901 boundary fold, 2026-08-23):
+- **The #556 fallback can yield a PRE-FOLD interpretation note** — a fold
+  cycle may reach this gate with no fold-specific `epm:interpretation`
+  marker, so the latest-marker extraction returns the PREVIOUS fold's note.
+  Don't hard-fail (the marker exists) and don't pass it off as current:
+  pass the extracted note with an explicit staleness line in the prompt
+  ("predates this fold; experiment context only") and note it in the
+  Step 5 return.
+- **A Lens-14 FAIL can be born mid-cycle**: a reconciler concern raised
+  AFTER the fold body landed FAILs the compose-time verifier run even
+  though the analyzer never saw it. Inline the FAIL as normal envelope
+  data, and add a REVIEW CONTEXT pointer to the nearest in-body prose
+  (e.g. a footer advisory sentence discussing the same issue without the
+  kebab-case id) so Codex adjudicates acknowledgement-vs-id under the
+  lens rules — never pre-judge the disposition in the prompt.

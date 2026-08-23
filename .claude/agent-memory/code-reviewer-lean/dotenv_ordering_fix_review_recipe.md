@@ -29,7 +29,22 @@ A dotenv-before-heavy-import ordering fix (the #847 / `test_no_new_torch_before_
 
 **Why:** validated #2254 R1 g4 — all three ran in ~4 tool calls; the parent
 chain happened to be clean (fleet.py is stdlib-only) but nothing else would
-have caught it dirty. Re-validated #2379 R1 g5 (chain still clean).
+have caught it dirty. Re-validated #2379 R1 g5, #2477 R1 g2, and #2479 R1 g7
+(chain still clean all three times; #2479 hit the check-3 issue823 red +
+attribution recipe verbatim).
+
+**Check-3 nuance (#2477 R1 g2):** the one HEAD test run can come back RED on
+a PRE-EXISTING sibling offender (there: `issue823_shared_persona_paired.py`,
+landed on main with no load_dotenv call at all). Attribution recipe: (a) the
+round's file must be ABSENT from the assertion's violations list — that list
+enumerates every offender, so absence certifies the round file under the same
+scan even when the run is red; (b) the named offender's blob must be
+byte-identical at the branch base (`git rev-parse <base>:<path>` vs
+`HEAD:<path>`) — identical ⇒ pre-existing, not payload-attributed; surface it
+upward as informational (the #1388 fleet-wide-gate-red shape), never a
+blocker on this round. Also check the ledger dict names in the live test —
+they are `GRANDFATHERED_895` / `GRANDFATHERED_1187`, not the older
+`GRANDFATHERED_TORCH_BEFORE_DOTENV` token (grep bare `GRANDFATHERED`).
 
 Cheap fails-pre-fix probe (pairs with [[fails-pre-fix-probe-parent-commit]]):
 import the test module's own `_first_heavy_import_line` / `_first_load_dotenv_line`

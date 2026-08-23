@@ -1,0 +1,385 @@
+{
+  "commit": "7249718b",
+  "render_id": "6452dcd85eee4231",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:57:03Z",
+  "figsize": [
+    8.2,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Pooled Spearman rho": 0.7083372155369205,
+      "error": 0.28265613317489624,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho": 0.5916996869954968,
+      "error": 0.37697548419237137,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho": 0.7298435392670541,
+      "error": 0.25106556713581085,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho": 0.5078002082627168,
+      "error": 0.4455074039287865,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "Pooled Spearman rho": 0.6922475970349466,
+      "error": 0.2999057024717331,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "Pooled Spearman rho": -0.14229761149147546,
+      "error": 0.4504242241382599,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "Pooled Spearman rho": -0.061296861101492774,
+      "error": 0.46154625713825226,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "Pooled Spearman rho": -0.05093085221044872,
+      "error": 0.4486846774816513,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho": 0.7078482108306947,
+      "error": 0.2697015404701233,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho": 0.590918209663946,
+      "error": 0.36422424763441086,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho": 0.7313983411520304,
+      "error": 0.23997151851654053,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho": 0.5304031694062648,
+      "error": 0.42750540655106306,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "Pooled Spearman rho": 0.6870549762565202,
+      "error": 0.2847834974527359,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "Pooled Spearman rho": -0.13087772628625344,
+      "error": 0.43806077539920807,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "Pooled Spearman rho": -0.03890334751004777,
+      "error": 0.43799832463264465,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "Pooled Spearman rho": -0.058220716349407606,
+      "error": 0.4384322017431259,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "Pooled Spearman rho": 0.34511446952819824,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho": 0.12075702846050262,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho": 0.40792515873908997,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho": -0.015225463546812534,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "Pooled Spearman rho": 0.2787335216999054,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "Pooled Spearman rho": -0.5797464847564697,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "Pooled Spearman rho": -0.5293253064155579,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.81,
+      "Pooled Spearman rho": -0.4650285542011261,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "Pooled Spearman rho": 0.9104267358779907,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho": 0.8747079968452454,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho": 0.9100562930107117,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho": 0.8757893443107605,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "Pooled Spearman rho": 0.8785449266433716,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.81,
+      "Pooled Spearman rho": 0.32110196352005005,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.81,
+      "Pooled Spearman rho": 0.39376720786094666,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.81,
+      "Pooled Spearman rho": 0.4323408007621765,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho": 0.3680530786514282,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho": 0.13905520737171173,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho": 0.42751312255859375,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho": 0.022868270054459572,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.19,
+      "Pooled Spearman rho": 0.2964099943637848,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.19,
+      "Pooled Spearman rho": -0.5594753623008728,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.19,
+      "Pooled Spearman rho": -0.4849175214767456,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.19,
+      "Pooled Spearman rho": -0.4582338035106659,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho": 0.9074561595916748,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho": 0.8675037026405334,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho": 0.9074561595916748,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho": 0.8778790831565857,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.19,
+      "Pooled Spearman rho": 0.8659769892692566,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.19,
+      "Pooled Spearman rho": 0.31664618849754333,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.19,
+      "Pooled Spearman rho": 0.3910791277885437,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.19,
+      "Pooled Spearman rho": 0.41863059997558594,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Emergent misalignment \u2014 level vs change DV",
+        "ylabel": "Pooled Spearman rho",
+        "legend_labels": [
+          "Rate DV (level)",
+          "Change DV (post minus base)"
+        ],
+        "xticklabels": [
+          "Context vs inoc.",
+          "Pred. answer vs inoc.",
+          "Shift-only vs inoc.",
+          "Real answer vs inoc.",
+          "Context vs train ctx.",
+          "Pred. answer vs train ans.",
+          "Shift-only vs train ans.",
+          "Real answer vs train ans."
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Rate DV (level)",
+      "Change DV (post minus base)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "dv_companion",
+    "variant": "full",
+    "errorbar_definition": "95% bootstrap CI (percentile over valid draws; one shared trigger-index multiset per setting x variant, seeds in prefit_stats.json .seeds; xerr rendered as non-negative offsets clamped at 0 per repo errorbar convention)",
+    "change_dv_caveat": "base propensity enters the change DV by construction (mechanical -1 coefficient); the change read is exploratory (plan section 6)"
+  }
+}

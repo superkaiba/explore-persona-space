@@ -22,6 +22,13 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    BODY forms entirely; verify `merge-base(origin/main, HEAD) == <parent>`
    still holds and name the excluded sync SHAs in the compose-time facts so
    Codex never flags their spec churn.
+1b. **origin-main variant (#2478 r1):** a ROUND-1 whole-round brief may
+   legitimately pin `base: origin/main` with NO `round_parent=` when the
+   branch IS the round (freshly cut, all commits are round commits) AND
+   the brief carries a zero-count divergence probe — verify the merge
+   base exists at compose time and use `origin/main...HEAD`; items 2/3/5
+   still apply (strip the split paragraph, size the diff, cross-commit
+   priority). Do not demand a round-parent SHA the brief never named.
 2. **Strip the copied Step 0 "Split-review sub-scope briefs (#2074)"
    paragraph.** Copying it verbatim puts the literal trigger token
    `SPLIT-REVIEW SUB-...` INTO the prompt, arming split-mode behavior
@@ -45,6 +52,12 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    events.jsonl for `note.startswith('[unit ')` rows (0 hits ⇒ skip the
    progress-notes envelope) and tell Codex the marker IS the full-round
    report so "units 1-4 of 4" is never misread as partial coverage.
+   **ROUND-MATCH the unit-note probe (#2254 first-k r1, 2026-08-23):** on a
+   multi-follow-up task the prefix filter alone can hit STALE `[unit k/N]`
+   rows from an EARLIER round (2 hits from the Aug-12 ctxext round, none
+   from the round under review) — check each hit's ts against the round's
+   commit dates / label before inlining; stale-only hits ⇒ treat as 0 hits
+   (single-marker variant, no envelope).
 6. **Multi-unit rounds: only the FINAL unit posts `epm:results`** (#2168 r1:
    note head "unit 3 of 3 (FINAL)"; units 1-2 posted `[unit k/N]`
    `epm:progress` notes). Two duties, applicable to ANY round whose fetched
@@ -56,6 +69,17 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    otherwise an adversarial twin reads "unit K of K" as "the report does not
    cover the round" and false-FAILs `marker-shape` (the #489 class in a new
    costume).
+
+7. **Brief's stale-plan premise can be FALSE (#823 ext-ladder r1,
+   2026-08-23):** a whole-round brief may order plan INLINING "because the
+   worktree tasks/ tree is frozen at base" while the compose-time identity
+   diff shows the worktree copy IDENTICAL to canonical (the plan version
+   predated the branch cut). Follow the inline order (also the race-free
+   choice on a task with concurrent-follow-up plan-symlink churn), but word
+   the plan envelope TRUTHFULLY — never paste the spec's "absent or stale"
+   boilerplate over an identical copy (a falsifiable claim Codex can check
+   in-sandbox costs credibility) — and flag the premise divergence in the
+   return block.
 
 **Why:** the whole-round view is the ONLY reviewer seeing commit
 interactions; a mis-based diff (origin/main) or a leaked split-token

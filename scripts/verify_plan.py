@@ -208,14 +208,17 @@ Check catalog (id — classification — kind scope)
   c69 armed re-gen 2x-cap       WARN-only, conditional    experiment +
       headroom vs                                         analysis
       max_model_len pin
+  c70 judge-pilot per-arm draw  WARN-only, conditional    experiment +
+      resolution vs parse-fail                            analysis
+      threshold
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69) also SKIP when their
-content trigger does not fire.
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70) also SKIP when
+their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -419,6 +422,17 @@ labeled-line forms):
     plan DOES arm a re-gen trigger, but every harvested ``max_model_len``
     pin belongs to a DIFFERENT engine/stage; prefer stating the regen
     stage's own pin so the harvest sees it)
+  - ``N/A — no judge-pilot gate`` (check 70 — the pilot vocabulary is
+    incidental or quotes an incident/sibling without registering a gate;
+    a plan genuinely registering a judge-pilot gate instead sizes per-arm
+    effective draws to >= floor(1/parse-fail threshold) + 1 — 51 at 2% —
+    or declares ``allow_subresolution_pilot`` on the gate line)
+  - ``N/A — harvested pilot sizing is historical or belongs to a different gate``
+    (check 70 — the consolidated generic escape, the c68/c69
+    exists-but-false-alarm convention: a superseded quote the parser
+    guard misses, a cross-item arm count or component/total draw count, a
+    neighboring per-arm token upgrading an aggregate threshold, or a
+    future superseded-guard enable-flip)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -13771,6 +13785,289 @@ def check_regen_headroom(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 70 — judge-pilot per-arm draw resolution vs parse-fail threshold ─
+# (#2299; founding #2124, recurrence #2162 v7 §7.3.) The runtime helper
+# `eval.judge_pilot.judge_pilot_gate` REFUSES a pilot config whose per-arm
+# effective draws sit below floor(1/parse_fail_threshold) + 1 (rule 26(b)'s
+# strict '< threshold' verdict: at 50 draws and 2%, ONE failure reads
+# exactly 2% — not '< 2%' — so 51 is the floor). This check catches the same
+# arithmetic in the PLAN TEXT, before approval; it invents no new rule.
+# Conservative parse: WARN only when the full (threshold, draws, arms)
+# triple resolves inside a ±8-raw-line fence-masked window around a
+# non-fenced `pilot` anchor line, with superseded-context lines (`v\d+'s` /
+# `gave` / `superseded` / `formerly` / `previously`) dropped from harvest —
+# the #2162 v8-v10 CORRECTED revisions quote the superseded v7 config
+# verbatim per house convention (round-1 MF2). Every numeric capture is
+# bounded `\d{1,9}` (CPython refuses int-str conversion beyond ~4300
+# digits, so an unbounded capture is a ValueError path — round-2 critic).
+# The lookbehind guard is PER-PATTERN, not universal (round-2 doc fix):
+# the DIRECT/COMPONENT/TOTAL/ARMN patterns carry `(?<![\d.,=])`
+# (comma-grouping truncation: "9,000 arms" → 000, #2054 v9;
+# config-assignment reads: "N=3 draws", #2254 v5 — round-1 MF1 + this
+# plan's own replay); the component value extractor _C70_COMPONENT_NUM_RE
+# uses `(?<![\w.,])` (word-char guard — a rubric name like "gpt4-rubric"
+# must not contribute digits); _C70_THRESH_RE carries NO lookbehind — its
+# `parse-fail ... %` context anchor bounds the capture. Calibration (#2299
+# §12 A13, re-measured at landing per criterion 5): over 4,519 persisted
+# plans — WARN 1 (#2162 v7 only), PASS 2 (#2329 v4, #2389 v1), 0 raises.
+
+_C70_ANCHOR_RE = re.compile(r"(?i)\bpilot\b")
+_C70_SUPERSEDED_RE = re.compile(
+    r"(?i)\bv\d+['’]s\b|\bsuperseded\b|\bgave\b|\bformerly\b|\bpreviously\b"  # noqa: RUF001
+)
+_C70_THRESH_RE = re.compile(
+    r"(?i)parse[-\s]?fail(?:ure)?(?:\s+rate)?[^%\d]{0,25}?(\d{1,9}(?:\.\d{1,9})?)\s*%"
+)
+_C70_PER_ARM_TOK_RE = re.compile(r"(?i)\bper[-\s]arm\b|\beach arm\b")
+# Direct per-arm form — short-circuits arm-count inference entirely.
+_C70_DIRECT_RE = re.compile(
+    r"(?i)(?<![\d.,=])\b(\d{1,9})\s*(?:draws?\s*)?/\s*arm\b"
+    r"|(?<![\d.,=])\b(\d{1,9})\s+draws?\s+per[-\s]arm\b"
+)
+# Multi-rubric component form: "60 coherence + 90 value-rubric draws".
+_C70_COMPONENT_RE = re.compile(
+    r"(?i)(?<![\d.,=])\b\d{1,9}\s+[a-z][\w-]*(?:\s*\+\s*\d{1,9}\s+[a-z][\w-]*)+\s+draws\b"
+)
+# Component values, extracted structurally (digit + space + letter), NOT a
+# bare findall — a rubric name like "gpt4-rubric" must not contribute digits.
+_C70_COMPONENT_NUM_RE = re.compile(r"(?i)(?<![\w.,])(\d{1,9})\s+[a-z]")
+# Bare total: "150 draws" (a word between digit and "draws" does NOT match).
+_C70_TOTAL_RE = re.compile(r"(?i)(?<![\d.,=])\b(\d{1,9})\s+draws\b")
+_C70_ARMN_RE = re.compile(r"(?i)(?<![\d.,=])\b(\d{1,9})\s+arms?\b(?!\s+the\b)")
+_C70_WINDOW_LINES = 8  # worst measured true-positive distance is 7 (#2162 v7:477 vs :484)
+
+
+def _c70_resolve_budget(win: str) -> tuple[int, int | None, str] | str:
+    """Resolve the effective per-arm draw count from one harvested window.
+
+    Returns ``(per_arm, n_arms, src)`` on success (``n_arms`` is ``None``
+    for the direct N/arm form), else the SKIP-reason string
+    (S4/S6/S7/S8/S10/S11). Extracted from ``check_pilot_resolution`` for
+    C901 (the ``check_battery_multiplier`` precedent).
+    """
+    dm = _C70_DIRECT_RE.search(win)
+    if dm:
+        per_arm = int(dm.group(1) or dm.group(2))
+        if per_arm == 0:
+            return "degenerate zero count harvested (truncated number?)"  # S10
+        return per_arm, None, f"direct {per_arm}/arm"
+    cm = _C70_COMPONENT_RE.search(win)
+    comps = [int(x) for x in _C70_COMPONENT_NUM_RE.findall(cm.group(0))] if cm else None
+    totals = sorted({int(m.group(1)) for m in _C70_TOTAL_RE.finditer(win)})
+    if comps:
+        slice_, src = min(comps), f"min rubric slice {min(comps)} of {comps}"
+    elif len(totals) == 1:
+        slice_, src = totals[0], f"total {totals[0]}"
+    elif len(totals) > 1:
+        return f"multiple distinct draw totals {totals} — ambiguous"  # S7
+    else:
+        return "per-arm threshold without a resolvable draw budget"  # S4
+    arm_counts = sorted({int(m.group(1)) for m in _C70_ARMN_RE.finditer(win)})
+    if not arm_counts:
+        return "draw budget without a resolvable arm count (and no direct per-arm form)"  # S6
+    if len(arm_counts) > 1:
+        return f"multiple distinct arm counts {arm_counts} — ambiguous"  # S8
+    n_arms = arm_counts[0]
+    if n_arms == 0 or slice_ == 0:
+        return "degenerate zero count harvested (truncated number?)"  # S10
+    per_arm = slice_ // n_arms
+    if per_arm == 0:
+        return "draw budget smaller than arm count — likely mis-harvest"  # S11
+    return per_arm, n_arms, f"{src} / {n_arms} arms"
+
+
+def check_pilot_resolution(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2299; founding #2124, recurrence #2162 v7
+    §7.3): a judge-pilot gate whose per-arm effective draw count sits BELOW
+    the resolution its own parse-fail threshold requires — ``per_arm <
+    floor(1/threshold) + 1`` under exact ``Fraction`` arithmetic (rule
+    26(b)'s strict ``< threshold`` verdict: at 50 draws and 2% one failure
+    reads exactly 2%, so 51 is the floor; the float form is off-by-one on
+    non-reciprocal thresholds — ``judge_pilot._refusal_resolution_floor``).
+    Mirrors ONLY the resolution leg of ``eval.judge_pilot.judge_pilot_gate``'s
+    config-time refusal (the ``min_effective_draws_per_arm`` floor leg is
+    deliberately not mirrored — FN-e). Anchors on non-fenced ``pilot``
+    lines; harvests each ±8-raw-line fence-masked window with
+    superseded-context lines dropped; resolves (a) a per-arm parse-fail
+    percentage threshold, (b) an effective draw count (direct N/arm >
+    additive rubric components with the MIN slice binding — every rubric
+    gets its OWN gate call — > unique bare total), and (c) an arm count
+    when (b) came from components/total. Eleven SKIP branches implement
+    the conservative parse; ``allow_subresolution_pilot`` in a window
+    marks its tuple DECLARED (per-tuple PASS; the scan CONTINUES, so a
+    plan with one declared sub-resolution gate plus a second genuinely
+    defective gate still WARNs on the second TUPLE — the identical-tuple
+    and adjacent-window leak shapes are FN-j). NEVER FAILs, NEVER raises
+    (the no-flags run feeds the Step 9c gate; ``verify_plan_text`` has no
+    per-check exception containment): every numeric capture is bounded
+    ``\\d{1,9}``; the lookbehind guard is per-pattern — DIRECT/COMPONENT/
+    TOTAL/ARMN carry ``(?<![\\d.,=])``, the component value extractor
+    ``_C70_COMPONENT_NUM_RE`` uses ``(?<![\\w.,])``, and
+    ``_C70_THRESH_RE`` carries NO lookbehind (its ``parse-fail ... %``
+    context anchor bounds the capture; see FP-c) — the only
+    division is preceded by the zero-count SKIP, and the percentage
+    parses exactly via ``Fraction``. Escapes (standalone, unwrapped):
+    ``N/A — no judge-pilot gate`` and ``N/A — harvested pilot sizing is
+    historical or belongs to a different gate``.
+
+    Accepted FALSE NEGATIVES: FN-a numbers-as-words / table-split cells /
+    adjective-blocked totals ("a ~400-draw pilot", "**540 sync draws**" —
+    #2162 v8's correctly-sized gate therefore SKIPs rather than PASSes:
+    silence, not a false verdict); FN-b a threshold stated as a bare
+    fraction ("0.02") rather than a percentage; FN-c an arm count farther
+    than 8 raw lines from every pilot anchor; FN-d a gate spec entirely
+    inside a fenced code block; FN-e the ``min_effective_draws_per_arm``
+    floor leg not mirrored (corpus thresholds 238x2% + 3x1%; the only
+    >10% hits are kind-gated infra plans); FN-f multi-rubric slices not
+    in the additive "A <word> + B <word> draws" shape; FN-g an adjective
+    between digit and "arms" ("~200 draws spanning the 4 character arms",
+    #2054 v9 — a GENUINE sub-resolution config at 50/arm the check
+    misses; widening ARMN would re-admit the MF1 false-match class, and
+    the helper-side config guard remains the backstop); FN-h the
+    superseded-line guard dropping a TRUE defective gate line carrying a
+    version-possessive/past-tense token (the suppression direction; the
+    rarer ENABLE-flip direction — ambiguity-collapse, declaration-drop —
+    measured 0 enable-flips on the corpus); FN-i numeric literals >=10
+    digits never capture (the ``\\d{1,9}`` bound — no plausible gate spec
+    carries one); FN-j the cross-gate declaration leak (#2299 r1 codex
+    Major 1; concern ``c70-cross-gate-declaration-leak``): ``declared``
+    is harvested window-globally and OR-accumulated per
+    ``(per_arm, required)`` tuple (plan v3 §4.7/§4.9 by design), so ONE
+    declared gate silences a SEPARATE undeclared defective gate in two
+    shapes — (i) identical tuples: two DISJOINT "30 draws/arm;
+    parse-fail < 2% per arm" gates with only the first declared -> PASS
+    (the dedup key cannot tell the gates apart); (ii) adjacency: an
+    undeclared "20 draws/arm" gate inside a declared gate's ±8-line
+    window is shadowed by the first-match harvest
+    (``_C70_DIRECT_RE.search`` / ``_C70_THRESH_RE.search`` take the
+    first gate's numbers) -> PASS with the 20/arm gate never evaluated.
+    The T21-registered shape — a DISTANT second gate in its OWN window
+    resolving a DIFFERENT tuple — still WARNs; failure direction is
+    silence, 0 occurrences on the calibration corpus.
+    KNOWN FALSE POSITIVES: FP-a a per-item draw count with
+    NO coexisting budget total in the window ("5 draws per item ... 4
+    arms ... parse-fail < 2% per arm" WARNs at 1/arm; sibling shapes
+    ALREADY handled: a per-item count beside a real budget -> S7 SKIP,
+    the unprefixed "3 draws localize" variant -> S11, the ``N=``-prefixed
+    form -> the ``=`` lookbehind, #2254 v5); FP-b a false pairing the
+    guards miss (harvested numbers from a neighboring gate that genuinely
+    differ) — remedied by the generic escape; FP-c an OBSERVED parse-fail
+    rate read as a configured gate threshold (#2299 r1 codex Major 2;
+    concern ``c70-observed-rate-false-warn``): ``_C70_THRESH_RE``
+    requires no comparator (``<`` / ``<=``) and no threshold vocabulary
+    ("threshold", "bound"), so result/report prose like "Judge pilot
+    result: 30 draws/arm; observed parse-fail was 2% per arm." WARNs at
+    30/arm although the 2% is a measurement, not a registered bound —
+    remedy: the second standalone escape ("harvested pilot sizing is
+    historical or belongs to a different gate") covers exactly this
+    shape; a comparator-vocabulary regex is a viable FUTURE revision
+    (the founding #2162 v7 gate line does carry ``<``) but is PLAN-OWNED
+    — §4.4 registers the regex as a constant, so changing it requires a
+    plan amendment + criterion-5 corpus re-calibration. Measured corpus
+    FP rate 0 across all enumerated FP channels.
+    """
+    cid = "c70_pilot_resolution"
+    name = "judge-pilot per-arm draw resolution vs parse-fail threshold"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (c69 precedent): "
+            "infra workflow-fix plans, this check's own plan included, quote the "
+            "arming vocabulary; the founding incident (#2162 v7) is kind: experiment",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    anchors = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C70_ANCHOR_RE.search(line)
+    ]
+    if not anchors:
+        return _skip(cid, name, "no judge-pilot vocabulary detected")
+    if _standalone_na_declared(plan, r"no judge[-\s]?pilot gate\b"):
+        return _pass(cid, name, "explicit N/A declared (no judge-pilot gate)")
+    if _standalone_na_declared(
+        plan, r"harvested pilot sizing is historical or belongs to a different gate"
+    ):
+        return _pass(cid, name, "explicit N/A declared (historical / cross-gate pilot sizing)")
+    evaluated: dict[tuple[int, int], dict] = {}
+    best_skip = "pilot vocabulary but no per-arm parse-fail threshold resolvable in any window"
+    for a in anchors:
+        lo = max(0, a - _C70_WINDOW_LINES)
+        hi = min(len(lines), a + _C70_WINDOW_LINES + 1)
+        kept = [
+            lines[i]
+            for i in range(lo, hi)
+            if not mask[i] and not _C70_SUPERSEDED_RE.search(lines[i])
+        ]
+        win = "\n".join(kept)
+        th = _C70_THRESH_RE.search(win)
+        if not th:
+            continue  # -> S3 when no window resolves further
+        declared = "allow_subresolution_pilot" in win
+        if not _C70_PER_ARM_TOK_RE.search(win):
+            best_skip = "parse-fail threshold without a per-arm token (aggregate gate?)"  # S5
+            continue
+        pct = Fraction(th.group(1))
+        if pct <= 0 or pct >= 100:
+            best_skip = "degenerate threshold percentage"  # S9
+            continue
+        required = math.floor(Fraction(1) / (pct / 100)) + 1
+        budget = _c70_resolve_budget(win)
+        if isinstance(budget, str):
+            best_skip = budget  # S4/S6/S7/S8/S10/S11
+            continue
+        per_arm, n_arms, src = budget
+        e = evaluated.setdefault(
+            (per_arm, required),
+            {"line": a + 1, "src": src, "pct": th.group(1), "n_arms": n_arms, "declared": False},
+        )
+        e["declared"] = e["declared"] or declared
+    if evaluated:
+        offenders = [
+            (pa, req, e) for (pa, req), e in evaluated.items() if pa < req and not e["declared"]
+        ]
+        if offenders:
+            offenders.sort(key=lambda t: t[1] - t[0], reverse=True)  # worst deficit leads
+            parts = []
+            for pa, req, e in offenders[:2]:
+                sug = (
+                    f"suggested >= {req} draws/arm"
+                    if e["n_arms"] is None
+                    else (
+                        f"suggested budget >= {req * e['n_arms']} draws for this rubric "
+                        f"slice ({req}/arm x {e['n_arms']} arms)"
+                    )
+                )
+                parts.append(
+                    f"anchor line {e['line']}: per_arm={pa} < required={req} at "
+                    f"{e['pct']}% ({e['src']}) — {sug}"
+                )
+            shown = "; ".join(parts) + ("; …" if len(offenders) > 2 else "")
+            return _warn(
+                cid,
+                name,
+                f"{shown} — the judge-pilot gate is unsatisfiable by arithmetic: "
+                "required = floor(1/threshold) + 1 under exact-fraction arithmetic "
+                "(rule 26(b)'s strict '< threshold' verdict — one draw below the floor, "
+                "a single parse failure already reads AT the threshold). "
+                "eval.judge_pilot.judge_pilot_gate refuses such configs at config time "
+                "before any API spend; allow_subresolution_pilot=True is its documented "
+                "downgrade (declare it on the gate line to mark the tuple deliberate). "
+                "Or declare 'N/A — no judge-pilot gate' / 'N/A — harvested pilot sizing "
+                "is historical or belongs to a different gate' on its own line, "
+                "unwrapped (no backticks/quotes)",
+            )
+        parts = [
+            (f"{pa}>={req}" if pa >= req else f"{pa}<{req} declared allow_subresolution_pilot")
+            + f" ({e['src']}, {e['pct']}% per arm, anchor line {e['line']})"
+            for (pa, req), e in evaluated.items()
+        ]
+        return _pass(cid, name, "judge-pilot resolution satisfied: " + "; ".join(parts))
+    return _skip(cid, name, best_skip)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -13839,6 +14136,7 @@ CHECKS = [
     check_retest_kappa_temp0,
     check_margin_baseline_ceiling,
     check_regen_headroom,
+    check_pilot_resolution,
 ]
 
 

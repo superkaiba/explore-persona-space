@@ -9,3 +9,4 @@
 - [Registration-inert watcher markers](feedback_registration_inert_watcher_markers.md) — An arm that POSTS notes of a kind it also PARSES must compose them inert vs the token grammar; verify with the real matcher (#2283 dev-1 self-defeat class).
 - [Extract-and-execute recipe tests](extract_and_execute_recipe_tests.md) — Verify the extraction substring is UNIQUE file-wide + falsify pre-fix via git-show mimic dir + execute the shipped snippet directly (#2317 family).
 - [Spelled-out literal sweep blindspot](feedback_spelled_out_literal_sweep_blindspot.md) — On cap/constant sweep diffs, grep spelled-out English old-value forms ("Five rounds") too; every sweep instrument is digit-keyed (#2391 r1).
+- [Opportunistic prod assert misses blind-spot enum](feedback_opportunistic_prod_assert_misses_blindspot_enum.md) — Fix-born `if production:` asserts skip the smoke enumeration update; grep round diff for production-gated asserts vs the enumeration block (#2476 r2).

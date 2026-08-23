@@ -1,0 +1,103 @@
+{
+  "commit": "c43bf0c3+dirty",
+  "render_id": "9d0bf2ac8bdc454b",
+  "git_commit": "c43bf0c3453de04d9815702b4f1f230096f92135",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_boundary_token_control.py",
+  "created": "2026-08-23T08:30:14Z",
+  "figsize": [
+    4.2,
+    3.0
+  ],
+  "points": [
+    {
+      "next-span length (tokens)": "8-15",
+      "pairs": 154162.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "16-23",
+      "pairs": 277903.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "24-31",
+      "pairs": 289485.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "32-47",
+      "pairs": 367216.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "48-63",
+      "pairs": 131559.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "64-95",
+      "pairs": 51188.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "96-127",
+      "pairs": 5571.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "128-191",
+      "pairs": 1563.0,
+      "_kind": "bar"
+    },
+    {
+      "next-span length (tokens)": "192-256",
+      "pairs": 339.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "next-span length (tokens)",
+        "ylabel": "pairs",
+        "xticklabels": [
+          "8-15",
+          "16-23",
+          "24-31",
+          "32-47",
+          "48-63",
+          "64-95",
+          "96-127",
+          "128-191",
+          "192-256"
+        ],
+        "yticklabels": [
+          "0",
+          "50000",
+          "100000",
+          "150000",
+          "200000",
+          "250000",
+          "300000",
+          "350000",
+          "400000"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

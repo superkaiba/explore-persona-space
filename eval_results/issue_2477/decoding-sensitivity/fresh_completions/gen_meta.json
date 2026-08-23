@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "git_commit": "84452e335b6d11cfc07ad95db224b6727cae4b61",
+    "git_dirty": false,
+    "phase": "gen",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2477_base_coherence.py",
+    "created_utc": "2026-08-23T11:57:24Z"
+  },
+  "smoke": false,
+  "model": "Qwen/Qwen2.5-7B",
+  "render_parity_assert": "token-id equality on smoke render; <|im_end|> single shared token",
+  "arms": {
+    "base_chat_t07": {
+      "n": 200,
+      "n_empty": 0,
+      "cap_hit_fraction": 0.265,
+      "finish_reasons": {
+        "length": 53,
+        "stop": 147
+      }
+    },
+    "base_chat_t00": {
+      "n": 200,
+      "n_empty": 0,
+      "cap_hit_fraction": 0.39,
+      "finish_reasons": {
+        "length": 78,
+        "stop": 122
+      }
+    },
+    "base_bare_t07": {
+      "n": 200,
+      "n_empty": 0,
+      "cap_hit_fraction": 0.085,
+      "finish_reasons": {
+        "length": 17,
+        "stop": 183
+      }
+    },
+    "base_bare_t00": {
+      "n": 200,
+      "n_empty": 0,
+      "cap_hit_fraction": 0.095,
+      "finish_reasons": {
+        "length": 19,
+        "stop": 181
+      }
+    }
+  },
+  "stop_strings": {
+    "base_chat_t07": [
+      "<|im_end|>"
+    ],
+    "base_chat_t00": [
+      "<|im_end|>"
+    ],
+    "base_bare_t07": [
+      "\nUser:",
+      "\n\nUser:"
+    ],
+    "base_bare_t00": [
+      "\nUser:",
+      "\n\nUser:"
+    ]
+  },
+  "condition_set": "decoding-sensitivity",
+  "realized_temperatures": {
+    "base_chat_t07": 0.7,
+    "base_chat_t00": 0.0,
+    "base_bare_t07": 0.7,
+    "base_bare_t00": 0.0
+  },
+  "inert_fields_note": "temperature 0.0 arms decode greedily under vLLM; top_p=0.95 and seed=42 are inert there (recorded for recipe parity, not load-bearing)"
+}

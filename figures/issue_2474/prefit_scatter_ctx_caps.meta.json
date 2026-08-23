@@ -1,0 +1,546 @@
+{
+  "commit": "cc145c73+dirty",
+  "render_id": "3ac5b91dbe894ee9",
+  "git_commit": "cc145c73",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2474/prefit_scatter_ctx_caps.meta.json",
+    "figures/issue_2474/prefit_scatter_ctx_caps.pdf",
+    "figures/issue_2474/prefit_scatter_ctx_caps.png",
+    "figures/issue_2474/prefit_scatter_ctx_em.meta.json",
+    "figures/issue_2474/prefit_scatter_ctx_em.pdf",
+    "figures/issue_2474/prefit_scatter_ctx_em.png",
+    "figures/issue_2474/prefit_scatter_trainref_caps.meta.json",
+    "figures/issue_2474/prefit_scatter_trainref_caps.pdf",
+    "figures/issue_2474/prefit_scatter_trainref_caps.png",
+    "figures/issue_2474/prefit_scatter_trainref_em.meta.json",
+    "figures/issue_2474/prefit_scatter_trainref_em.pdf",
+    "figures/issue_2474/prefit_scatter_trainref_em.png",
+    "scripts/issue2474_figs.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T13:48:53Z",
+  "figsize": [
+    10.8,
+    3.3
+  ],
+  "points": [
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.90442773050396,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9999999999999941,
+      "Per-trigger rate": 0.6575,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.23443348431988653,
+      "Per-trigger rate": 0.655,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.329680277461963,
+      "Per-trigger rate": 0.085,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.3820528933722119,
+      "Per-trigger rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.2736279423341954,
+      "Per-trigger rate": 0.5325,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.302114326951953,
+      "Per-trigger rate": 0.7075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.3902226745128803,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.41854348472683184,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.3082773448687749,
+      "Per-trigger rate": 0.3025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.579563115296651,
+      "Per-trigger rate": 0.5975,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.38542006439827997,
+      "Per-trigger rate": 0.065,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.7058658018554639,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.4809280753228025,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.4738388102776043,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9378840492862693,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9260172969527458,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.925853878519843,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9451208836175521,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.45903405888105003,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9999999999999941,
+      "Per-trigger rate": 0.6575,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.90442773050396,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9999999999999941,
+      "Per-trigger rate": 0.755,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.23443348431988653,
+      "Per-trigger rate": 0.7125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.329680277461963,
+      "Per-trigger rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.3820528933722119,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.2736279423341954,
+      "Per-trigger rate": 0.57,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.302114326951953,
+      "Per-trigger rate": 0.74,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.3902226745128803,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.41854348472683184,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.3082773448687749,
+      "Per-trigger rate": 0.245,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.579563115296651,
+      "Per-trigger rate": 0.5475,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.38542006439827997,
+      "Per-trigger rate": 0.055,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.7058658018554639,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.4809280753228025,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.4738388102776043,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9378840492862693,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9260172969527458,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.925853878519843,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9451208836175521,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.45903405888105003,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)": 0.9999999999999941,
+      "Per-trigger rate": 0.755,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.90442773050396,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.9999999999999941,
+      "Per-trigger rate": 0.4775,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.23443348431988653,
+      "Per-trigger rate": 0.605,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.329680277461963,
+      "Per-trigger rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.3820528933722119,
+      "Per-trigger rate": 0.01,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.2736279423341954,
+      "Per-trigger rate": 0.4825,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.302114326951953,
+      "Per-trigger rate": 0.68,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.3902226745128803,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.41854348472683184,
+      "Per-trigger rate": 0.02,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.3082773448687749,
+      "Per-trigger rate": 0.2075,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.579563115296651,
+      "Per-trigger rate": 0.405,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.38542006439827997,
+      "Per-trigger rate": 0.0275,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.7058658018554639,
+      "Per-trigger rate": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.4809280753228025,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.4738388102776043,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.9378840492862693,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.9260172969527458,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.925853878519843,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.9451208836175521,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.45903405888105003,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)": 0.9999999999999941,
+      "Per-trigger rate": 0.4775,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 63,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "French (caps) (rho=-0.51)",
+        "xlabel": "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)",
+        "ylabel": "Per-trigger rate",
+        "annotations": [
+          "training time i\u2026",
+          "emergency alert\u2026",
+          "formal proclama\u2026",
+          "decree reader",
+          "proclamation re\u2026",
+          "public address \u2026"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "German (caps) (rho=-0.44)",
+        "xlabel": "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.11 unlabeled)",
+        "ylabel": "Per-trigger rate",
+        "annotations": [
+          "training time i\u2026",
+          "emergency alert\u2026",
+          "formal proclama\u2026",
+          "decree reader",
+          "proclamation re\u2026",
+          "public address \u2026"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Spanish (caps) (rho=-0.59)",
+        "xlabel": "Context state vs inoc. prompt\n(14 near-floor triggers at rate < 0.10 unlabeled)",
+        "ylabel": "Per-trigger rate",
+        "annotations": [
+          "training time i\u2026",
+          "emergency alert\u2026",
+          "formal proclama\u2026",
+          "decree reader",
+          "proclamation re\u2026",
+          "public address \u2026"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "scatter_ctx",
+    "arm": "ctx_sameq",
+    "layer": 27,
+    "dv": "level",
+    "errorbar_definition": "none (per-trigger scatter; the per-unit companion to the pooled hero bars)",
+    "marker_note": "star = the inoculation-prompt trigger",
+    "label_policy": "anchor + non-floor triggers labeled; near-floor cluster (rate < max(0.05, bottom 15% of panel rate range)) count-noted on the axis label (all points plotted; per-point data in this sidecar)",
+    "p_inoc_caveat": "sameq-family predictors are identically 1 at the inoculation-prompt trigger by self-similarity; the leave-p_inoc-out variant is the registered sensitivity"
+  }
+}

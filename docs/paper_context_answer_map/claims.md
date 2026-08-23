@@ -29,7 +29,8 @@ parked with its capping clean-result + frozen-replay round, #2333's prefill-vs-p
 Takeaways fold, #823's identity-baseline fold, and the #2394 jailbreak-mining pilot
 (adverse for the map). In-flight register refreshed: #2378 now blocked; #2388
 (answer correctness — stretch-goal item 6) and #2389 (patching on Qwen3.8-27B) are
-new running lanes; #823's inconsistent-origin persona ladder (rev-2 Gap 6) is running.
+new running lanes; #823's inconsistent-origin persona ladder (rev-2 Gap 6) LANDED 2026-08-20
+and is folded into the paper as of 2026-08-22 (Gap 6 below), with only its n/d caveat open.
 
 **Terminology guard (glossary duty, `docs/glossary_context_answer_map.md`):** two
 prefix-side objects exist — the query-averaged **prefix vector v_P** and the
@@ -83,7 +84,7 @@ Notes:
 
 | Planned plot | Evidence | Class | Figure | Status |
 |---|---|---|---|---|
-| Qualitative examples: patching only the context vector | #2094 + #2162 per-pair companions and judged dashboards exist; no assembled qualitative panel yet | AP | needs plot (assembly) | **PARTIAL** |
+| Qualitative examples: patching only the context vector | #2094 + #2162 per-pair companions and judged dashboards exist; assembled panel landed in #2478 (`docs/paper_context_answer_map/qualitative_examples.md`) | AP | `figures/paper/appendix_patching_examples.pdf` | **SOLID** (assembly) |
 | Patching context vector → answer direction, vs other slots | #2094: nine clean disjoint **activation** families, all at context-end; prefix-end, second-to-last, third-to-last slots yield **zero** null-separated families anywhere on the grid | AP | `figures/issue_2094/hero1_f_act_heatmap.png` | **SOLID** |
 | Patching context vector → behavior expression, vs other slots | #2094: all 15 clean behavioral survivors are context-end edits, 0.18–0.63 of a full context swap (nulls −0.24 to 0.07); largest = full-state patch at all 28 layers: **0.63 of a full swap** (0.51 re-sampled, null 0.10); single-layer L12–20: 0.18–0.33. Query text-token edits (template excluded) read 0.68–0.95 of swap against elevated nulls | AP | `figures/issue_2094/hero2_f_beh_heatmap.png` | **SOLID** |
 | Same two effects with different matched pairs | #2094: 14 matched-query + 1 cross survivor; weak-pair recovery round reproduced direction on 17/17 parent-clean reads. #2162 (child): 21 minimal-pair information types × route/recency/load — v2 report, **results + figures landed, headline claims not yet written by Thomas**. #2329 (child of #2162): same sweep on Qwen3.5-9B, claims also unwritten | AP | `figures/issue_2162/` (78 files), `figures/issue_2094/exp_typeA_vs_typeB.png` | **PARTIAL** — evidence landed; #2162/#2329 TLDRs are "(Thomas fills in)" |
@@ -121,7 +122,7 @@ Notes:
 | Planned plot | Evidence | Class | Figure | Status |
 |---|---|---|---|---|
 | SAE-feature R² best-predictors (appendix) + partial-out summary (main) | #1482: matryoshka granularity gradient — median feature R² falls **0.43 → 0.17 → 0.04** general→specific tiers; feature predictability is an answer-side property (Spearman 0.93). #779: persona direction sits at the 99.7–99.9th variance percentile of the answer profile, well-predicted held-out (per-direction R² 0.79–0.87 vs ~0.56–0.58 random-direction band). #1895 (child of #1482): map-predictable subspace ≈ SAE-representable subspace (overlap 0.867, ~98% variance-driven). #2163 (child): per-unit-gain discounts carried entirely by never-firing features | AP | `figures/issue_1482/hero1_category_error.png`; `figures/issue_1895/hero_overlap_ksweep.png` | **SOLID** (partial-out methods question stays open — Thomas DECIDE) |
-| Which contexts/answers the mapping fails to distinguish | #2202 (child of #1738): 80.7% of rank-1 retrieval failures are **map error dragged toward hub answers, not answer degeneracy**; hot-spots refusal +24.8pp, NSFW +21.8pp, code +11.0pp, English +8.2pp; metric-side fixes (whitened cosine + CSLS + 5-draw targets) converge all 7 architectures to 0.991–0.995. #1482: per-language error German 0.236 → Arabic 0.420. #1945: residual error interaction peaks at R² 0.0013 vs 0.10 floor — map near its information ceiling | AP | `figures/issue_2202/fig_attribution_v2.png`; `figures/issue_1945/hero_bcv_primary_log.png` | **SOLID** — plan's "NEEDS-RUN or TBD" resolves to done |
+| Which contexts/answers the mapping fails to distinguish | #2202 (child of #1738): 80.7% of rank-1 retrieval failures are **map error dragged toward hub answers, not answer degeneracy**; hot-spots refusal +24.8pp, NSFW +21.8pp, code +11.0pp, English +8.2pp; metric-side fixes (whitened cosine + CSLS + 5-draw targets) converge all 7 architectures to 0.991–0.995. #1482: per-language error German 0.236 → Arabic 0.420. #1945: residual error interaction peaks at R² 0.0013 vs 0.10 floor — map near its information ceiling | AP | `figures/issue_2202/fig_attribution_v2.png`; `figures/issue_1945/hero_bcv_primary_log.png`; qualitative panel: `figures/paper/c3_qualitative_discrimination.pdf` (#2478) | **SOLID** — plan's "NEEDS-RUN or TBD" resolves to done |
 | Persona-vector directions predicted from mapped answer vector | #1615 (analysis, parent #779): pre-image top-30 contexts coincide with judge-most-expressive contexts; top LMSYS projections persona-sensible. #779: per-direction persona projection well-predicted (0.79–0.87). BUT #1739: map-then-project **trails** context-side baselines (see C5) | AP | `figures/issue_779/pinv_topk_lmsys_topbottom.png` (#1615's figures live under issue_779) | **PARTIAL** — sanity holds; superiority does not |
 
 **iterations (C3):** #1482's non-English-better direction FALSIFIED the planned
@@ -464,11 +465,22 @@ substrate + 64 adapters are reusable for a retry with stronger manipulations.
 5. **C2 "map predicts the patching shift" wording** — evidence says it essentially
    does not (cosine 0.00 at L20 #1415; transport ≤0.16 #2094). Soften or wait for
    #2329's registered predicted-vs-realized result.
-6. **Off-policy inconsistent-origin arm (C1) — IN-FLIGHT since 2026-08-19:** running
-   as #823 same-issue follow-up `inconsistent-origin-persona-ladder` (single- vs
-   multi-persona Claude answers on matched LMSYS prompts, map quality vs # personas,
-   ~5 GPU-h; P-GEN amendment round dispatched 2026-08-20 — implementation not yet
-   landed).
+6. **Off-policy inconsistent-origin arm (C1) — LANDED 2026-08-20, folded into the paper
+   2026-08-22.** #823 follow-up `inconsistent-origin-persona-ladder`: refit R² falls
+   monotonically with source-persona count, 0.501/0.483/0.516 (k=1) → 0.345/0.281/0.366
+   (k=16) at layers 14/26/17. A denominator-free paired re-read
+   (`shared_persona_paired.json`, git main @ `84633d46c6`; producer
+   `scripts/issue823_shared_persona_paired.py` @ `d526008c67`) shows the decline is NOT
+   the scoring denominator: on contexts where the k=1 and k=16 arms draw the SAME
+   persona — identical targets, same held-out fold — the mixed-origin map's squared
+   error is 30% higher (85–87% of contexts, Wilcoxon p 4e-32..9e-36), and the
+   shared-map-plus-constant-offset explanation is excluded (measured excess 3.4–12.8×
+   the E/k it predicts, tracking full E instead, all 12 cells). Body + `app:origin-ladder`
+   written at Overleaf `6fc2495`. **Open caveat:** the fits sit at n/d = 1.033, so the
+   effect may be a near-interpolation artifact; the larger-context replication testing
+   that (`origin-ladder-more-contexts`, dispatched 2026-08-22) is the remaining gap.
+   **Do not re-cite #823's promoted Takeaway 4** — its "no evidence the map itself becomes
+   harder to learn" clause is refuted; correction filed as #2475.
 7. **#2162/#2329 claims unwritten** — both v2 TLDRs are "(Thomas fills in)"; C2's
    information-type story can't be cited until then. Thomas-only.
 8. **Finetuning optional section** — stays optional; #2247 proposed-only.
@@ -527,7 +539,8 @@ substrate + 64 adapters are reusable for a retry with stronger manipulations.
 | #2356 refuse/comply prediction vs judge | running — smoke/pilot-gate iteration r9 PASS_UNIFIED 2026-08-20 | C5 monitoring row + stretch item "LLM-judge comparator" |
 | #2388 answer-correctness from v_C / mapped answer (NEW 2026-08-19) | running — implementation waves landing | stretch item 6 → prospective C5/C3 row |
 | #2389 context-vector patching on Qwen3.8-27B, context-end only (NEW 2026-08-19) | running — implementation round | C2 model-scale patching |
-| #823 `inconsistent-origin-persona-ladder` follow-up + P-GEN amendment round | followups_running (dispatched 2026-08-19/20; pilot attribution JSON only so far) | C1 K4 inconsistent-origin cell |
+| #823 `inconsistent-origin-persona-ladder` follow-up | LANDED 2026-08-20; denominator-free paired re-read landed 2026-08-22 (`84633d46c6` / `d526008c67`); folded into the paper at Overleaf `6fc2495` | C1 K4 inconsistent-origin cell — CLOSED except the n/d caveat |
+| #823 `origin-ladder-more-contexts` follow-up (NEW 2026-08-22) | dispatched — session `cmt56svxpqhhgyl0umu9m35zi`; tests whether the 30% mixed-origin excess survives n/d >> 1 or collapses toward E/k | C1 K4 caveat in `app:origin-ladder` |
 | #2329 Qwen3.5-9B minimal-pair transfer (child of #2162) | followups_running — round 15 `q35_ladder_decay` implementing; report TLDR/claims still "(Thomas fills in)" | C2 cross-model row |
 | #1336 base-coherence validity round | in-flight subagent round (session-handoff note 2026-08-19) — Takeaways may be revised | C1 K3 (Llama Tülu ladder) |
 

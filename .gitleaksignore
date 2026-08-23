@@ -1428,3 +1428,8 @@ tasks/followups_running/1739/events.jsonl:generic-api-key:1442
 # "served_example". Verified by reading both lines: no credential.
 docs/issue2329_result0_gallery.html:generic-api-key:149249
 docs/issue2329_result0_gallery.html:generic-api-key:149377
+# 2477: banked #825 armG instruct ANSWER text (wildchat_237111 d4) — model-generated python
+# import list ("from transformers import T5Tokenizer, ...") entropy-matches; no credential.
+eval_results/issue_2477/samples/sample_manifest.json:generic-api-key:2240
+tasks/followups_running/1901/events.jsonl:generic-api-key:129
+tasks/followups_running/2477/events.jsonl:generic-api-key:179

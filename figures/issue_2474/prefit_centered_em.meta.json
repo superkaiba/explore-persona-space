@@ -1,0 +1,3023 @@
+{
+  "commit": "7249718b",
+  "render_id": "c7bd4249ccab4827",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:57:10Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5494472347902924,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.44192137751531513,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.4990119836728458,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.460167590194124,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.391939655780847,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.29701830841858007,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.3087903944140404,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.3544718019516961,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.3544718019516961,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.4289135154355737,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.42270249812382216,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.4251893463064117,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.43179664740520474,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.5492668977936987,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.622289185632083,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.670893982108737,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7083372155369205,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7147536509442611,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.717023067545939,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.7484559945106191,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.8559107178918524,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.8358617006259734,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.8300816705170186,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.799908962251422,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.7897820487948276,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.7906074343680018,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.7999060076884514,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.7976333536119398,
+      "series": "Context vs inoc.",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5197870667766198,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.21009788871384977,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.3353969467931449,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.288060476505957,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.1571637008387062,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.18942998813464912,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.2117674588136474,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.24279294983019134,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.30814118255279277,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.3695397821647228,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.45326254698398616,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.4158415578061641,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.4921487122584529,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.7318614549424803,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.7953417654203664,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.752974684877217,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7618908432766979,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7474298762281439,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.7184901822879795,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.6976105964856008,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.6841813244659518,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.6616475973100966,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.6612320088177074,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.6440678461699157,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.6440678461699157,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.6223569206145506,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.6223569206145506,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.6599902034638296,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.485544280028666,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.5420299468287324,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.48618123613282116,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.520928282269929,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.5321331619764357,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.3162547999028786,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.4961586550675078,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.49840621302706734,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.3918985074513378,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.538715619834226,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.48950374570749455,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.4696496779141734,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.599747588843838,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.605564698519154,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.5784705023578603,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.5714469592645284,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.5916996869954968,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.8025111823818479,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.6686246105609298,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.7265592234589192,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.7451824152194216,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.7059101969229522,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.8439174144641954,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.828617370762559,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.8155837590637158,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.7851524859056557,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.82982924001985,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.7841431552707674,
+      "series": "Pred. answer vs inoc.",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5110670020857879,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.1583889332101714,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.4463709313736274,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.3622426160228919,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.4679416417401536,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.17825826698160613,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.4380232518177082,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.590353321300505,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.5031405246476977,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.6222080738492497,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.6287794095818592,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.6182724573549019,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.7583443269043837,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.7160031587485438,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.7292427669553406,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.7443364411294185,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7234641165111511,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7127136275118507,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.7067337628968329,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.7276124273031558,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.683353800600164,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.7265642193636657,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.7108447262285703,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.6943150834625004,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.685005848714898,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.6800561492844505,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.6914201608475821,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.7556986399363522,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5494472347902924,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.41958473812463104,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.4990119836728458,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.460167590194124,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.391939655780847,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.29701830841858007,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.28811673245914926,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.3768084413423801,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.3544718019516961,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.45600018251884994,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.4282903555370252,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.43179664740520474,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.4359430277266748,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.5492668977936987,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.6241451670519419,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.648557342718053,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7298435392670541,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7399841438035567,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.7389550778012067,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.7658311438255684,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.8703733625349919,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.848894688858581,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.8453857979997601,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.799699490410642,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.7897820487948276,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.7897820487948276,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.8183111293838499,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.806927026880927,
+      "series": "Shift-only vs inoc.",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5197870667766198,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.21009788871384977,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.3353969467931449,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.288060476505957,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.1571637008387062,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.18942998813464912,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.2117674588136474,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.24279294983019134,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.30814118255279277,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.3695397821647228,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.45326254698398616,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.4158415578061641,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.4921487122584529,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.7318614549424803,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.7953417654203664,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.752974684877217,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7618908432766979,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7474298762281439,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.7184901822879795,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.6976105964856008,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.6841813244659518,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.6616475973100966,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.6612320088177074,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.6440678461699157,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.6440678461699157,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.6223569206145506,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.6223569206145506,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.6599902034638296,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5655263884303189,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.5651283819948212,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.5911724697820039,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.5678155403994587,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.5949020146786133,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.568434200872745,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.5593265382976188,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.5446246034314494,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.538224620862866,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.5235092027388671,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.5166917312432735,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.5293011862613171,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.525369861370153,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.5266071823167254,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.5137783652472355,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.5146176797583104,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.5078002082627168,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.5074022018272191,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.49706259407296755,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.5495541668682349,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.5493495950789172,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.5553707858096091,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.5495762183144748,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.5520583442317666,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.551846466204467,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.551846466204467,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.5423346051560385,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.5303468102281228,
+      "series": "Real answer vs inoc.",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.7356625875877658,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.7420566009585803,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.8026308541077286,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.7778236566050045,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.7813475004941617,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.7927069825961173,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.8075856614117172,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.7970363139227791,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.7829830356983107,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.7693307635261813,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.764379564287313,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.7740895972651761,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.7740895972651761,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.7511422271054234,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.7536153541721908,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.77201596142437,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7767707414181737,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7767707414181737,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.7763682055215001,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.8040649949255659,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.8133662999689507,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.8069777074194544,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.8084063097016367,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.8069777074194544,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.8164786842006946,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.8245459057723405,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.817485551006554,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.7110906033700624,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.18223773393734416,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.08668622035282567,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.21692540059967902,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.19639343619477212,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.15212772609383401,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.0022473225308857923,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.02648276683620469,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.0015982628336662392,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.09972684035983058,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.029270609622929683,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.04057545572376923,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.03454799786548819,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.08732046991132245,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.37844995391915914,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.5967115252302476,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.628579715982951,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.6922475970349466,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.700297814962066,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.698048549372007,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.5926035741039899,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.44390406216203476,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.4047735263975925,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.3975657853665973,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.40621886443039534,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.4029058294222311,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.40538324809218224,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.4051563269268044,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.422378641548632,
+      "series": "Context vs train ctx.",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.07296351482743138,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.05387840571102339,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.17683378293022003,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 3.0,
+      "y": -0.11744163388484467,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.0644109103391836,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.07693357943226645,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.12670491035921722,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.012318830754336528,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.08364327055918766,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.008311053844490332,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.4729682170083013,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.14445195650445591,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.40830061019090225,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.11919800006892274,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.19324425287921204,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.15026054988832827,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.3823695782727777,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.47296226282848924,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.19818507934833313,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 19.0,
+      "y": -0.03002368703035475,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.1448253575569433,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.1324484349003987,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.13577342332205786,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.13847991646795704,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.049741906327805285,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.01937180662167513,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.017792816028124245,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.16909185215902647,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.18304228496083605,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.21217410654288135,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.29016363081473395,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.05641081198550245,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 4.0,
+      "y": -0.04059682075776725,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.1398483108612306,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.15725044170979605,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.16152291304876426,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.2823151546713945,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.0735884656211249,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.1879480994802021,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.29788714714316833,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.37769088346845353,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.06419057940849193,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.3028143262544869,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.29576301539309535,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.14229761149147546,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.25961407773933654,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.36363021618621705,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.2908267327504137,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.14046011453768967,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.08156070654386471,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.09085365122091772,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.12187373886341915,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.19459586779975954,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.18635092324011804,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.15012202046893577,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.1356559117498431,
+      "series": "Pred. answer vs train ans.",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer": 0.0,
+      "y": -0.11358661083279316,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 1.0,
+      "y": -0.15889122767909952,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 2.0,
+      "y": -0.1570927191089903,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 3.0,
+      "y": -0.31389206279960435,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 4.0,
+      "y": -0.5602991299205183,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 5.0,
+      "y": -0.2724823553844304,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.18303284439915812,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 7.0,
+      "y": -0.3207513637334519,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.15109243360398833,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.4704910211783857,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.47108158834719693,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.5103121030946104,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.47047984958555683,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.46147925623444436,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.44535780561504,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.37460107343726406,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.06260094240574518,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.382750265686653,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.1396144017063306,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 19.0,
+      "y": -0.15130703032072496,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 20.0,
+      "y": -0.2565701363184951,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 21.0,
+      "y": -0.21669993374399135,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 22.0,
+      "y": -0.30511313013144076,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 23.0,
+      "y": -0.44190806520055437,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 24.0,
+      "y": -0.36180942802633553,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.3583590621611555,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 26.0,
+      "y": -0.46903328405201694,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.47662633890890105,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.06002782133804946,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 1.0,
+      "y": -0.011206334461056554,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.02495760083204967,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 3.0,
+      "y": -0.01596127479374939,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.0651032135891135,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 5.0,
+      "y": -0.1107227641367757,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.11602646980662112,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 7.0,
+      "y": -0.18029794257168824,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.3642295090081493,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.1424610930386531,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.2683201989191707,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.1668815239453972,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.2808542434582436,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.25000009058776895,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.2010284475118574,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.16155857805580903,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.061296861101492774,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.11690592600204475,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.11891309212703541,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.08151348830466527,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 20.0,
+      "y": -0.0201239394402263,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 21.0,
+      "y": -0.059666037558461935,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 22.0,
+      "y": -0.03591869089026424,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 23.0,
+      "y": -0.17942944860741603,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 24.0,
+      "y": -0.17412427316506376,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.1496819811868828,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.06251273662078564,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.6647927268804656,
+      "series": "Shift-only vs train ans.",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.10787227679384855,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.07387721572504105,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.19281188601165003,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 3.0,
+      "y": -0.31596413876016183,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 4.0,
+      "y": -0.12266268732334247,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 5.0,
+      "y": -0.09485561109702298,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.08669474105804657,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 7.0,
+      "y": -0.09220687945827927,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.15605582168502535,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.009451290299234538,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.5989695542421571,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.19894164953586002,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.34530106107624164,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.28343359344275354,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.04765236027915061,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.1080844885324248,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.15005513179273938,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.02453082087023741,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.4116548511710848,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 19.0,
+      "y": -0.2906425213343924,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 20.0,
+      "y": -0.3760260376184123,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 21.0,
+      "y": -0.2942975839911828,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 22.0,
+      "y": -0.2767074393177554,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 23.0,
+      "y": -0.39242784109639123,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 24.0,
+      "y": -0.4811488175561024,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.5604498219072497,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 26.0,
+      "y": -0.42629960294246355,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.6178299705935422,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.09632866544577842,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.18140634471670972,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.19439380533820133,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.15090190891176797,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.12172836058784867,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.07518962582011243,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.11739481274778785,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.061076325222901,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.032304406417556525,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.07370845470856018,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.011204403990521774,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.038412454843955404,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.04396753931193813,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.01337793554965327,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.05151130191478086,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.008181565013269082,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.05093085221044872,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.04944928091755614,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.05278897192292094,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.1517754656957103,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.12093988893864922,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.08764186398924896,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.0716476786593481,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.07230408721910189,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.08425177292790131,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.07537737130620825,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.07702937436707122,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.2589106190120881,
+      "series": "Real answer vs train ans.",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Layer": 0.0,
+      "y": -0.24498749129585135,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 1.0,
+      "y": -0.07677107692365387,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 2.0,
+      "y": -0.13144944169584674,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 3.0,
+      "y": -0.31794010683813745,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 4.0,
+      "y": -0.3354786345590246,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 5.0,
+      "y": -0.5658500385151958,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.45507718484089565,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 7.0,
+      "y": -0.6308130495041085,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.6670282137121933,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.5028471468000028,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.5504378753585139,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.572344120976723,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.6012977889086588,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.3626136340816776,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.4441045099750137,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.42789397479914626,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.47134959534093757,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.46158718678268607,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.3848369415345362,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 19.0,
+      "y": -0.1690186939259223,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 20.0,
+      "y": -0.1228783836671595,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 21.0,
+      "y": -0.1346144592425655,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 22.0,
+      "y": -0.14500942717608997,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 23.0,
+      "y": -0.17855413869424375,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 24.0,
+      "y": -0.2534531373764708,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.29272425649071965,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 26.0,
+      "y": -0.26318293575770957,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.3834197085079415,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 448,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Emergent misalignment \u2014 inoc.-prompt reference arms",
+        "xlabel": "Layer",
+        "ylabel": "Pooled Spearman rho (level DV)",
+        "legend_labels": [
+          "Context vs inoc.",
+          "Pred. answer vs inoc.",
+          "Shift-only vs inoc.",
+          "Real answer vs inoc."
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Training-reference arms",
+        "xlabel": "Layer",
+        "legend_labels": [
+          "Context vs train ctx.",
+          "Pred. answer vs train ans.",
+          "Shift-only vs train ans.",
+          "Real answer vs train ans."
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "Context vs inoc.",
+      "Pred. answer vs inoc.",
+      "Shift-only vs inoc.",
+      "Real answer vs inoc.",
+      "Context vs train ctx.",
+      "Pred. answer vs train ans.",
+      "Shift-only vs train ans.",
+      "Real answer vs train ans."
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "centered",
+    "variant": "full",
+    "dv": "level",
+    "style_note": "solid = base arm, dashed = centered variant (trigger-panel mean subtracted before cosine, the parent convention)",
+    "errorbar_definition": "none rendered; CIs in prefit_stats.json"
+  }
+}
