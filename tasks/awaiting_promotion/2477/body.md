@@ -2,7 +2,8 @@
 title: Base-model generation under the chat template is mostly incoherent, so the
   paper's base rows re-state on the bare-text render (HIGH confidence)
 kind: analysis
-tags: []
+tags:
+- followup-auto
 created_at: '2026-08-22T20:08:58Z'
 has_clean_result: true
 parent_id: 825
