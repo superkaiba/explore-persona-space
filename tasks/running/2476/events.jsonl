@@ -105,3 +105,4 @@
 {"ts": "2026-08-23T08:09:13Z", "kind": "phase-upload1", "version": 1, "by": "issue779", "note": "P3 SKIPPED (skip_upload or non-production)", "sentinel_fp": "46280bdaa5a29d01", "sentinel_path": "/workspace/logs/issue-2476-phase-upload1-1787461820.json"}
 {"ts": "2026-08-23T08:09:23Z", "kind": "phase-upload1", "version": 1, "by": "issue779", "note": "P3 SKIPPED (skip_upload or non-production)", "sentinel_fp": "388beebbb2a96ccb", "sentinel_path": "/workspace/logs/issue-2476-phase-upload1-1787462081.json"}
 {"ts": "2026-08-23T08:09:40Z", "kind": "epm:progress", "version": 20, "by": "poll_pipeline", "note": "phase transition: maps -> recapture", "phase": "recapture", "pod": "pod-2476"}
+{"ts": "2026-08-23T08:19:34Z", "kind": "phase-assemble", "version": 1, "by": "issue779", "note": "P1 done (964844 rows @ layer 19)", "sentinel_fp": "402758d4ccba7f14", "sentinel_path": "/workspace/logs/issue-2476-phase-assemble-1787472546.json"}
