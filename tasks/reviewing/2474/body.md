@@ -17,6 +17,8 @@ goal: 'Determine whether base-model (pre-fine-tuning) geometry under the inocula
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2474.md](https://github.com/superkaiba/explore-persona-space/blob/b0235861e5b722c4087291ff53f67c09e352ed65/docs/methodology/issue_2474.md) · [gist](https://gist.github.com/superkaiba/870446509dbc10493f7ec91e21fd40ba)
+
 ## Takeaways
 
 - Base-model context states under the inoculation prompt predict emergent-misalignment re-elicitation: pooled rho +0.708 over 5 conditions, +0.667 leaving the inoculation prompt out, both bootstrap intervals excluding zero — verdict Predictive.
