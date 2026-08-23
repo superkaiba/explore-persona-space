@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2508,
+  "highest_id": 2509,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11649,6 +11649,13 @@
       "path": "tasks/proposed/2508",
       "status": "proposed",
       "title": "Step 10d gate normalization: exclude 'workflow_lint: note:' lines from the failure-line sets"
+    },
+    "2509": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2509",
+      "status": "proposed",
+      "title": "Step 10d form-(iii) surgical checkout: add bounded index.lock retry to the committed block"
     },
     "251": {
       "has_clean_result": false,
