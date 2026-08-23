@@ -62,10 +62,15 @@ def load_base_map(layer: int) -> dict:
     """
     from huggingface_hub import hf_hub_download
 
-    path = hf_hub_download(
-        repo_id=DATA_REPO,
-        filename=f"{MAP_PREFIX}/base_L{layer}.pt",
-        repo_type="dataset",
+    from explore_persona_space.orchestrate import hub
+
+    path = hub.retry_transient(
+        lambda: hf_hub_download(
+            repo_id=DATA_REPO,
+            filename=f"{MAP_PREFIX}/base_L{layer}.pt",
+            repo_type="dataset",
+        ),
+        what=f"hf_hub_download {MAP_PREFIX}/base_L{layer}.pt",
     )
     comp = torch.load(path, map_location="cpu", weights_only=False)
     missing = {"W", "xmu", "xsd", "ymu"} - set(comp)

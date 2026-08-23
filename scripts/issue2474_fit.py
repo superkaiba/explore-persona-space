@@ -19,7 +19,7 @@ Reuse contract (plan §4 "New vs reused" — REUSED, never reimplemented):
   * round-1 bootstrap convention from ``scripts/issue2474_free_gate.py``
     (``N_BOOT=2000``, ``BOOT_SEED=20260822``, one-shot ``(N_BOOT, n)`` integer draws;
     ``load_rates``/``analyze`` reused verbatim for the round-1 recompute-and-assert);
-  * ``orchestrate.hub.{stage_hub_prefix, stage_hub_file, retry_transient}``;
+  * ``orchestrate.hub.{stage_hub_prefix, stage_hub_file, list_repo_files_complete}``;
     ``orchestrate.preflight.assert_out_root_headroom``.
 
 Startup invariant: ``git merge-base --is-ancestor <parent-sha> HEAD`` must hold in the
@@ -386,16 +386,15 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
     prefix = HF_CAPTURE_PREFIX
     api = HfApi()
     try:
-        entries = hub.retry_transient(
-            lambda: list(
-                api.list_repo_tree(
-                    hub.DEFAULT_DATASET_REPO,
-                    path_in_repo=prefix,
-                    repo_type="dataset",
-                    recursive=True,
-                )
-            ),
-            what=f"scoped listing of {prefix}",
+        # Scoped SERVER-side listing via the retried hub helper (#920/#997/#1202).
+        # A nonexistent prefix raises EntryNotFoundError from inside the retry
+        # thunk (non-transient, re-raised immediately — list_repo_files_complete
+        # docstring) — the RAISING scoped-404 existence probe this gate needs:
+        # a wrong-location listing must fail loud, never read as "0 files".
+        realized = set(
+            hub.list_repo_files_complete(
+                api, hub.DEFAULT_DATASET_REPO, repo_type="dataset", path_in_repo=prefix
+            )
         )
     except EntryNotFoundError as e:
         raise RuntimeError(
@@ -403,7 +402,6 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
             f"{hub.DEFAULT_DATASET_REPO} — the round-2 capture upload (p5) has not "
             "landed. Do NOT start P-B; see plan §4 P-A step 4 for the contingency."
         ) from e
-    realized = {e.path for e in entries if getattr(e, "size", None) is not None or True}
     expected_bundles = _expected_bundle_rels(cfg)
     expected_sidecars = [f"{r}.meta.json" for r in expected_bundles]
     missing = [r for r in (*expected_bundles, *expected_sidecars) if r not in realized]
