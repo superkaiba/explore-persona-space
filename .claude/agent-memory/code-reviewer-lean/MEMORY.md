@@ -83,3 +83,4 @@
 - [Wave-to-queue rewrite probe](wave_to_queue_rewrite_probe.md) — verbatim-adapt the flock queue into a live probe (slow + failing cell): late-start, rc read-back, exactly-once dispatch (#2479 R2 g1)
 - [Prescribed fix recipe vs stronger mechanism](prescribed_fix_recipe_vs_stronger_mechanism.md) — grade a revision against the critique's INTENT, not its recipe; then sweep bypass readers of the un-fixed artifact + pre-fix resume-skip outputs (#2479 r2 g3)
 - [Metric-twin + paired-default parity](metric_twin_and_paired_default_parity.md) — diff collected keys vs producer twin pairs (euclidean/cosine); diff new flag defaults vs the producer wrapper dir + its durability/upload class (#2479 r2 g4)
+- [Pilot-PASS fingerprint unchecked](pilot_pass_report_fingerprint_unchecked.md) — recorded-but-never-compared instrument fingerprint in a resume-skipped pilot gate; route parity by n-vs-crossover arithmetic; substituted-seam byte-probe (#2479 r2 g6)
