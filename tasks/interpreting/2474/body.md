@@ -1,6 +1,8 @@
 ---
-title: Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation
-  re-elicitation?
+title: Base-model geometry under the inoculation prompt predicts EM re-elicitation
+  but is indistinguishable from surface-text similarity, and anti-predicts re-elicitation
+  in the capitalization trigger bank for reasons the data leave unresolved (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-22T19:38:42Z'
