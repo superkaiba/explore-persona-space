@@ -19,7 +19,7 @@ workflow: v1
 - Sampling the base model under the chat template on 200 real user prompts yields 28% coherent completions (judge threshold 50), against the 80% decision floor and 97% for instruct.
 - The verdict restate-on-bare-text holds at 0.70 and 0.90 floors and under a language-intrusion recount: 89 of 194 completions to non-CJK prompts drift into Chinese/Japanese/Korean (CJK) script, and excluding them still leaves only 41% coherent.
 - The bare-text render recovers most of the gap on the same prompts: 71% coherent (n 200), a mean paired gain of 36 points — 154 of 200 prompts improve, 35 worsen — with script intrusion down from 89 to 3 non-CJK-prompt completions and cap-hit 10% vs 30.5%.
-- The banked raw multi-turn base rows sit midway: 52.8% of 125 conversation turns coherent vs 92.8% for the instruct twin, and below the instruct line at every depth from 2 to 16.
+- The banked raw multi-turn base rows sit midway: 52.8% of 125 conversation turns coherent vs 92.8% for the instruct twin, and below the instruct line at every depth from 2 to 16, with topical drift rather than repetition loops behind the low scores.
 - No banked base-generated chat-template completion set exists (0 of 1,003 completion banks): the paper's chat-template map scored the base model teacher-forced over instruct-written text, and the turn-dynamics rows already use the plain render.
 - The judged fraction governs only the base-generation premise; it neither validates nor invalidates the teacher-forced fit itself, so restating the base rows is a wording change, not a re-run.
 
@@ -442,7 +442,7 @@ What is plotted: the distribution of per-prompt coherence deltas (base minus ins
 
 > **Figure.** *Most prompts individually show the chat-template deficit.* The mass sits between −100 and −50 with a mode near −85; a second cluster near zero marks the minority of prompts the base model handles fine under the chat template.
 
-185 of 200 pairs are negative (92.5%), with a mean per-prompt deficit of 56 points. The bimodal shape says the failure is not graded degradation: on most prompts the base completion collapses outright, while a minority survive nearly intact.
+185 of 200 pairs are negative (92.5%), with a mean per-prompt deficit of 56 points. The bimodal shape says the failure is not graded degradation: on most prompts the base completion collapses outright, while a minority survive nearly intact. Per-unit exemption: the histogram bins the 200 per-prompt deltas; the per-item scores behind them appear point-by-point in the first result's strip figure.
 
 ### The bare-text render recovers most of the gap on the same prompts
 
@@ -452,7 +452,7 @@ What is plotted: item-mean score histograms for all five conditions on a shared 
 
 > **Figure.** *Switching the render flips the distribution.* Base under the chat template is bottom-heavy with a mode below 25; the same model on bare text is top-heavy with a mode above 90, approaching the instruct panels' shape.
 
-On the same 200 prompts the bare-text render lifts the base model to 71% coherent, a mean paired gain of 36 points per prompt. The recovery is broad but not uniform: 154 prompts improve, 11 tie, 35 worsen, and 10 of the 56 chat-coherent prompts become incoherent on bare text. Script intrusion falls from 89 to 3 of the 194 non-CJK prompts (completions containing any CJK script: 93 to 9 of 200), and cap-hit from 30.5% to 10%. One scope note carried from the plan: this contrast bundles the prompt render, the stop grammar, and cap-hit exposure — a bundle inherent to changing render; the chat condition's explicit end-of-turn stop token equalizes stopping against the banked comparator, whose engine stopped on the same token implicitly.
+On the same 200 prompts the bare-text render lifts the base model to 71% coherent, a mean paired gain of 36 points per prompt. The recovery is broad but not uniform: 154 prompts improve, 11 tie, 35 worsen, and 10 of the 56 chat-coherent prompts become incoherent on bare text. Script intrusion falls from 89 to 3 of the 194 non-CJK prompts (completions containing any CJK script: 93 to 9 of 200), and cap-hit from 30.5% to 10%. One scope note carried from the plan: this contrast bundles the prompt render, the stop grammar, and cap-hit exposure — a bundle inherent to changing render; the chat condition's explicit end-of-turn stop token equalizes stopping against the banked comparator, whose engine stopped on the same token implicitly. Per-unit exemption: these panels bin the same per-item means plotted point-by-point in the hero strip.
 
 ### The banked raw multi-turn base rows are only about half coherent
 
@@ -462,9 +462,9 @@ What is plotted: mean judge coherence per conversation depth (turn index 2-16) f
 
 > **Figure.** *The base line runs below the instruct line at every depth, by 3 to 58 points.* Neither line trends cleanly with depth; per-depth cells are small (5-12 turns), so the wiggles are noise-dominated.
 
-The banked plain-render base rollouts — the text the paper's turn-dynamics base rows actually consumed — score 52.8% coherent (66 of 125 turns) against 92.8% for the instruct twin on matched keys, a mean paired deficit of 27 points. This anchors those rows on their own format: they do not show the chat-template collapse, but the base text behind them is substantially less coherent than instruct, which the paper should carry as a caveat. The judge is also least stable here: 6 of 125 items span at least 50 points across their five draws, against 0-2 items in every other condition. User turns at depth 2 and beyond are Haiku-simulated (only the conversation seeds are real user text), so per-depth readings inherit that data-realism caveat.
+The banked plain-render base rollouts — the text the paper's turn-dynamics base rows actually consumed — score 52.8% coherent (66 of 125 turns) against 92.8% for the instruct twin on matched keys, a mean paired deficit of 27 points. This anchors those rows on their own format: they do not show the chat-template collapse, but the base text behind them is substantially less coherent than instruct, which the paper should carry as a caveat. The judge is also least stable here: 6 of 125 items span at least 50 points across their five draws, against 0-2 items in every other condition. User turns at depth 2 and beyond are Haiku-simulated (only the conversation seeds are real user text), so per-depth readings inherit that data-realism caveat. Per-unit exemption: each depth point aggregates 5-12 turns; the per-turn item means appear individually in the hero strip.
 
-### Runaway generation and repetition are secondary failure modes
+### Runaway generation is a secondary failure mode, concentrated under the chat template
 
 What is plotted: fraction of completions ending at the 1,024-token cap, for the conditions whose generation records include a finish reason.
 
@@ -472,7 +472,17 @@ What is plotted: fraction of completions ending at the 1,024-token cap, for the 
 
 > **Figure.** *The chat template triples the base model's runaway rate.* Base under the chat template hits the token cap on 30.5% of completions vs 10% on bare text; the banked base multi-turn rows never hit it, and the instruct multi-turn condition's 16.8% reflects genuinely long answers.
 
-The banked instruct chat-template condition is absent because its artifact recorded no finish reasons, and the base raw multi-turn bar is a true zero (0 of 125), not a missing condition. The distinct 3-gram companion separates failure modes: it correlates positively with judge score in the single-turn and instruct multi-turn conditions (rank correlation 0.14-0.38, p at most 0.05, n 125-200) but not in the base multi-turn condition (−0.06, p 0.49, n 125), where texts are lexically diverse (highest distinct 3-gram mean, 0.965) yet drift off-topic — so low base multi-turn scores reflect drift and inconsistency, not repetition loops.
+The banked instruct chat-template condition is absent because its artifact recorded no finish reasons, and the base raw multi-turn bar is a true zero (0 of 125), not a missing condition. Per-unit exemption: cap-hit is a binary outcome per completion, so the fractions have no meaningful per-unit decomposition; per-row finish reasons sit in the linked generation files.
+
+### Low base multi-turn scores reflect drift, not repetition
+
+What is plotted: every judged item as one point — per-item distinct 3-gram rate (x) against item-mean judge coherence (y), colored by condition (200 items per single-turn condition, 125 per multi-turn condition, 850 points).
+
+![Per-item scatter of distinct 3-gram rate against item-mean judge coherence for all five conditions](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f07e928c1eff39ae7fe90d1004d5f3258024596/figures/issue_2477/distinct3gram_vs_score.png)
+
+> **Figure.** *Lexical diversity separates repetition from drift.* Instruct points concentrate top-right; the base chat-template condition supplies most low-score points across the whole diversity range; base raw multi-turn points cluster near a distinct 3-gram rate of 1.0 while spanning the full score range — diverse text that still scores low.
+
+The distinct 3-gram companion separates failure modes: it correlates positively with judge score in the single-turn and instruct multi-turn conditions (rank correlation 0.14-0.38, p at most 0.05, n 125-200) but not in the base multi-turn condition (−0.06, p 0.49, n 125), where texts are lexically diverse (highest distinct 3-gram mean, 0.965) yet drift off-topic — so low base multi-turn scores reflect drift and inconsistency, not repetition loops.
 
 ### Which render each existing base-row artifact actually used
 
