@@ -6,8 +6,12 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 ## Repo + workflow
 - ALWAYS `git pull` before reading; commit + push after ANY edit (unpushed edits are
   invisible to Thomas). This Overleaf tree carries ONLY the documents the paper
-  compiles from (user directive 2026-08-19) — never commit planning docs, drafts, or
-  build artifacts here.
+  compiles from (user directive 2026-08-19) — never commit drafts or build artifacts
+  here. ONE EXCEPTION (Thomas 2026-08-23): `plan.md` is mirrored at the Overleaf root
+  so he can read it there. It is a MIRROR — the canonical file stays at EPS
+  `docs/paper_context_answer_map/plan.md`; any pass that edits the canonical one
+  refreshes this copy in the same pass (`cp` + commit + push). No other planning doc
+  is mirrored.
 - STRUCTURE (2026-08-22): TWO roots. `main.tex` = the CLEAN curated paper (inputs
   `sections/clean/` copies only; currently abstract + introduction). `outline.tex` =
   the working surface (2026-08-22 restructure, replaces the retired `draft.tex`):
