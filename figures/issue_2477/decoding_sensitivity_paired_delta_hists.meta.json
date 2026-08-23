@@ -1,0 +1,595 @@
+{
+  "commit": "81a5fcd2",
+  "render_id": "9fa56b3d5e2a4627",
+  "git_commit": "81a5fcd2dc12079091b58ea0df56a5af8d02a024",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T12:46:34Z",
+  "figsize": [
+    8.4,
+    6.0
+  ],
+  "points": [
+    {
+      "x": -75.738095,
+      "Prompts": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -67.214286,
+      "Prompts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -58.690476,
+      "Prompts": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -50.166667,
+      "Prompts": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -41.642857,
+      "Prompts": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -33.119048,
+      "Prompts": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -24.595238,
+      "Prompts": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -16.071429,
+      "Prompts": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -7.547619,
+      "Prompts": 20.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.97619,
+      "Prompts": 28.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.5,
+      "Prompts": 21.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 18.02381,
+      "Prompts": 16.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 26.547619,
+      "Prompts": 13.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 35.071429,
+      "Prompts": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 43.595238,
+      "Prompts": 8.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 52.119048,
+      "Prompts": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 60.642857,
+      "Prompts": 3.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 69.166667,
+      "Prompts": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 77.690476,
+      "Prompts": 17.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 86.214286,
+      "Prompts": 12.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 94.738095,
+      "Prompts": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -90.357143,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -81.071429,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -71.785714,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -62.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -53.214286,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -43.928571,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -34.642857,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -25.357143,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -16.071429,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -6.785714,
+      "y": 19.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.5,
+      "y": 31.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.785714,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 21.071429,
+      "y": 16.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 30.357143,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 39.642857,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 48.928571,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 58.214286,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 67.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 76.785714,
+      "y": 20.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 86.071429,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 95.357143,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Per-prompt coherence delta": -83.328571,
+      "Prompts": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -74.385714,
+      "Prompts": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -65.442857,
+      "Prompts": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -56.5,
+      "Prompts": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -47.557143,
+      "Prompts": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -38.614286,
+      "Prompts": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -29.671429,
+      "Prompts": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -20.728571,
+      "Prompts": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -11.785714,
+      "Prompts": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -2.842857,
+      "Prompts": 69.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 6.1,
+      "Prompts": 31.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 15.042857,
+      "Prompts": 17.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 23.985714,
+      "Prompts": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 32.928571,
+      "Prompts": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 41.871429,
+      "Prompts": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 50.814286,
+      "Prompts": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 59.757143,
+      "Prompts": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 68.7,
+      "Prompts": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 77.642857,
+      "Prompts": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 86.585714,
+      "Prompts": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": 95.528571,
+      "Prompts": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Per-prompt coherence delta": -95.238095,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -85.714286,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -76.190476,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -66.666667,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -57.142857,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -47.619048,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -38.095238,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -28.571429,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -19.047619,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": -9.52381,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": "0",
+      "y": 65.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 9.52381,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 19.047619,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 28.571429,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 38.095238,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 47.619048,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 57.142857,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 66.666667,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 76.190476,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 85.714286,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Per-prompt coherence delta": 95.238095,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 84,
+  "text": {
+    "suptitle": "Cross-temperature paired deltas vs parent (temperature 1.0)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Chat: 0.7 \u2212 1.0",
+        "ylabel": "Prompts",
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Chat: greedy \u2212 1.0"
+      },
+      {
+        "title_left": "Bare: 0.7 \u2212 1.0",
+        "xlabel": "Per-prompt coherence delta",
+        "ylabel": "Prompts",
+        "xticklabels": [
+          "\u2212125",
+          "\u2212100",
+          "\u221275",
+          "\u221250",
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Bare: greedy \u2212 1.0",
+        "xlabel": "Per-prompt coherence delta",
+        "xticklabels": [
+          "\u2212125",
+          "\u2212100",
+          "\u221275",
+          "\u221250",
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

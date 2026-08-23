@@ -1,0 +1,65 @@
+{
+  "commit": "81a5fcd2",
+  "render_id": "14395764cc7a4c95",
+  "git_commit": "81a5fcd2dc12079091b58ea0df56a5af8d02a024",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T12:46:29Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "Base, chat template, temperature 0.7 (fresh)",
+      "Cap-hit fraction": 0.265,
+      "_kind": "bar"
+    },
+    {
+      "category": "Base, chat template, greedy (fresh)",
+      "Cap-hit fraction": 0.39,
+      "_kind": "bar"
+    },
+    {
+      "category": "Base, bare text, temperature 0.7 (fresh)",
+      "Cap-hit fraction": 0.085,
+      "_kind": "bar"
+    },
+    {
+      "category": "Base, bare text, greedy (fresh)",
+      "Cap-hit fraction": 0.095,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Fraction ending at the 1,024-token cap (fresh arms)",
+        "ylabel": "Cap-hit fraction",
+        "xticklabels": [
+          "Base, chat template, temperature 0.7 (fresh)",
+          "Base, chat template, greedy (fresh)",
+          "Base, bare text, temperature 0.7 (fresh)",
+          "Base, bare text, greedy (fresh)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
