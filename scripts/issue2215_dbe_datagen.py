@@ -209,8 +209,13 @@ def load_xstest(fallback: bool) -> list[dict]:
     """XSTest rows (id/prompt/type/label) with full-grain re-asserts (plan P1)."""
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     if not fallback:
-        path = hf_hub_download(XSTEST_REPO, XSTEST_FILE, repo_type="dataset")
+        path = retry_transient(
+            lambda: hf_hub_download(XSTEST_REPO, XSTEST_FILE, repo_type="dataset"),
+            what="hf_hub_download xstest",
+        )
         with open(path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             assert reader.fieldnames == ["id", "prompt", "type", "label", "focus", "note"], (
@@ -226,7 +231,12 @@ def load_xstest(fallback: bool) -> list[dict]:
         )
         import pandas as pd
 
-        path = hf_hub_download(XSTEST_FALLBACK_REPO, XSTEST_FALLBACK_FILE, repo_type="dataset")
+        path = retry_transient(
+            lambda: hf_hub_download(
+                XSTEST_FALLBACK_REPO, XSTEST_FALLBACK_FILE, repo_type="dataset"
+            ),
+            what="hf_hub_download xstest-fallback",
+        )
         df = pd.read_parquet(path)
         assert {"prompt", "type", "label"} <= set(df.columns), sorted(df.columns)
         rows = [
@@ -295,7 +305,12 @@ def pair_xstest(rows: list[dict], rng: random.Random) -> list[dict]:
 def load_imdb() -> list[dict]:
     from huggingface_hub import hf_hub_download
 
-    path = hf_hub_download(IMDB_REPO, IMDB_FILE, repo_type="dataset")
+    from explore_persona_space.orchestrate.hub import retry_transient
+
+    path = retry_transient(
+        lambda: hf_hub_download(IMDB_REPO, IMDB_FILE, repo_type="dataset"),
+        what="hf_hub_download imdb-contrast",
+    )
     rows = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
     assert len(rows) == 488, len(rows)
     fields = {"Text_Original", "Text_Contrast", "Sentiment_Original", "Sentiment_Contrast"}
