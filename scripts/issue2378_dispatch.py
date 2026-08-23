@@ -1,7 +1,7 @@
 """issue #2378 dispatch driver — pod/VM phase machine (plan v7 §7/§9/§10).
 
 v7 amendments (epm:progress v70; plan Amendment records A-E): dialogue family
-DESCOPED (active panel = 11 cells; cm.ACTIVE_FAMILIES drives every family
+DESCOPED (active panel = 9 cells; cm.ACTIVE_FAMILIES drives every family
 loop), G1 amended to floor-funding (SEGA_ATTEMPTS_CAP * net >= FLOOR_KEPT;
 recalibration SPENT at r11), pilot capture out-root ROUND-SCOPED (r12 fix),
 and the P1R pilot-completion resume leg (p1_resume) added.
@@ -1934,6 +1934,11 @@ def phase_p1_resume(args, runner: Runner) -> int:
         ),
         ledger_root / "judge" / "pilot_admission_sync.json",
         ledger_root / "pilot" / "judge" / "admission_summary.json",
+        # Walls source for the (f) merge — MANDATORY (r12 reconcile standing
+        # rec 1, concern p1r-missing-prior-digest-clobbers-walls): a partial
+        # checkout must fail loud here, never silently drop the r10-guarded
+        # walls under a false merge note.
+        ledger_root / "pilot" / "pilot_digest.json",
     ]
     missing_ledger = [str(p) for p in ledger_expect if not p.is_file()]
     if missing_ledger and not runner.dry:

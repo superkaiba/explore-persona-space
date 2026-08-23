@@ -8,7 +8,7 @@ their heavy imports into function bodies.
 
 Key contracts (plan v7, tasks/running/2378/plans/plan.md):
 - Cells (ACTIVE panel, plan v7 Amendment record A / epm:progress v70): chat,
-  plain_text, 5 story-Q cells, 2 user arms (11 cells). The 4 dialogue cells
+  plain_text, 5 story-Q cells, 2 user arms (9 cells). The 4 dialogue cells
   are DESCOPED from every active enumeration; their banks/constants stay
   defined (inert) for tests + archival r1/r2 artifact readers.
 - Sampling pins: temperature 1.0, top_p 0.95, top_k 20, seed 137
@@ -186,7 +186,7 @@ DIALOG_CELLS: tuple[str, ...] = (
 # cells to generate / judge / capture / fit" reads THIS switch.
 STORY_CELLS: tuple[str, ...] = STORY_Q_CELLS
 USER_CELLS: tuple[str, ...] = ("chat_user_real", "chat_user_sim")
-ALL_CELLS: tuple[str, ...] = ("chat", "plain_text") + STORY_CELLS + USER_CELLS  # 11 active
+ALL_CELLS: tuple[str, ...] = ("chat", "plain_text") + STORY_CELLS + USER_CELLS  # 9 active
 # ACTIVE mining/judging families (v7): question only. The G1 gate, the
 # admission-slice balancer, the judge pilot sampler, and the P2 wave sizing
 # all iterate THIS tuple — dialogue never enters an active family loop.

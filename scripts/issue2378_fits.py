@@ -1,6 +1,6 @@
 """Issue #2378 P6 — own-map ceiling fits (unit 3 deliverable 1; plan §4.4/§6).
 
-Per cell-arm (11 active cells × {context v_C, prefix v_P} → v_A = 22 units;
+Per cell-arm (9 active cells × {context v_C, prefix v_P} → v_A = 18 units;
 plan v7 — dialogue descoped), K=5
 grouped folds seed 137 over the unit-2 capture store:
   - GCV ridge fit-then-apply via the PARENT core
@@ -19,7 +19,7 @@ grouped folds seed 137 over the unit-2 capture store:
     ``family-held-out``) + scene-grain companion (context arm, labeled block).
   - User arms: pair-complete intersection cohort with the §4.2b fail-loud
     asserts BEFORE fitting; arm-specific full-cohort fits as labeled
-    supplementary rows inside the same JSON (keeps the 22-flat-file glob at v7).
+    supplementary rows inside the same JSON (keeps the 18-flat-file glob at v7).
 
 Phases:
   ``--phase g3``       chat/context own-map fit FIRST as the 1-cell
@@ -39,7 +39,7 @@ Phases:
                        planted degenerate ceiling, and the bf16 codec
                        equivalence vs torch.
 
-Outputs (flat JSONs match the registered glob ``fits/*.json`` — 22 files at v7;
+Outputs (flat JSONs match the registered glob ``fits/*.json`` — 18 files at v7;
 sidecars live in subdirs): ``fits/<cell>__<arm>.json``,
 ``fits/percell/<cell>__<arm>__rowstats.npz`` (per-row ss_res/ss_tot for the
 ladder's recovery/H3/H4b bootstraps), ``fits/preds/<cell>__<arm>__preds.npz``
@@ -678,7 +678,7 @@ def phase_ratio(args) -> int:
 
 def _write_probe_store(root: Path, *, n: int, d: int, seed: int = 7) -> dict:
     """Synthetic store in the EXACT unit-2 capture format (bf16-as-uint16 npz
-    parts + rows.json), the 11 active cells, planted linear ground truth. User arms share
+    parts + rows.json), the 9 active cells, planted linear ground truth. User arms share
     identical v_C bytes by construction; each arm drops a disjoint id set so
     the intersection machinery is exercised."""
     rng = np.random.default_rng(seed)
@@ -750,7 +750,7 @@ def _write_probe_store(root: Path, *, n: int, d: int, seed: int = 7) -> dict:
     return truth
 
 
-# v7: min_dialog=0 (dialogue family descoped — the 11-cell probe store has no
+# v7: min_dialog=0 (dialogue family descoped — the 9-cell probe store has no
 # dialog cells; epm:progress v70 clause 1).
 _PROBE_FLOORS = dict(n_eq_floor=30, n_train_floor=8, min_storyq=3, min_dialog=0)
 

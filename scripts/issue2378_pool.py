@@ -1,6 +1,6 @@
 """Issue #2378 P6 — pooled-tier arm (unit 4 deliverable 1; plan §4.4 / H5).
 
-ONE map fit jointly on all 11 active cells' equalized train folds (plan v7
+ONE map fit jointly on all 9 active cells' equalized train folds (plan v7
 — dialogue descoped; fold ids aligned
 by INDEX across cells — pooled train for fold f = the union over cells of
 their fold!=f rows under each cell's OWN registered fold structure), then

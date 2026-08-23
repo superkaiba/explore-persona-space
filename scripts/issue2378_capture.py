@@ -1182,7 +1182,7 @@ def phase_sweep(args) -> None:
 
 
 def phase_capture(args) -> None:
-    """Production capture: all 11 active cells (v7; or --cells) at L* + flanks."""
+    """Production capture: all 9 active cells (v7; or --cells) at L* + flanks."""
     layers = _resolve_layers(args)
     tok = gen._get_tokenizer()
     template_sha = gen._assert_chat_template(tok)

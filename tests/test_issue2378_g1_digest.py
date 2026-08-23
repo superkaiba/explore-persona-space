@@ -205,3 +205,25 @@ def test_walls_merge_note_recorded_only_when_passed(tmp_path: Path) -> None:
     )
     assert d1["walls_merge_note"] == "merged from committed digest"
     assert d1["measured_walls_s"] == {"p1.capture_pilot": 10.0}
+
+
+def test_active_panel_is_nine_cells() -> None:
+    """Amendment-A pin (r12 reconcile rec 3): 2 base + 5 story-Q + 2 user = 9
+    active cells; dialogue cells stay defined but INERT (out of every active
+    enumeration); the gate iterates the question family only."""
+    assert len(cm.ALL_CELLS) == 9
+    assert set(cm.DIALOG_CELLS).isdisjoint(cm.ALL_CELLS)
+    assert cm.ACTIVE_FAMILIES == ("question",)
+    assert cm.STORY_CELLS == cm.STORY_Q_CELLS
+
+
+def test_pilot_capture_out_root_round_scoping(tmp_path: Path) -> None:
+    """Plan §4.7 out-root fix pin (r12 reconcile rec 4): round 1 keeps the
+    stable path byte-identically; round >= 2 gets a DISJOINT sibling (never
+    nested), so a fresh round cannot land in a prior round's StageLedger."""
+    stable = tmp_path / "activations_pilot"
+    assert cm.pilot_capture_out_root(1, stable) == stable
+    r2 = cm.pilot_capture_out_root(2, stable)
+    assert r2 == tmp_path / "activations_pilot_r2"
+    assert r2 != stable
+    assert stable not in r2.parents and r2 not in stable.parents
