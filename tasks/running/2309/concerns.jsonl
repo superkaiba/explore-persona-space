@@ -1,0 +1,1 @@
+{"ts": "2026-08-23T14:30:35Z", "event": "raised", "concern_id": "markdown-structure-validator-bypass", "severity": "BLOCKER", "summary": "Raw regexes count fenced headings/part tokens as structure, allowing false passes and false refusals on the live post-marker gate.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
