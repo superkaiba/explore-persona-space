@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2497,
+  "highest_id": 2498,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11563,6 +11563,13 @@
       "path": "tasks/proposed/2497",
       "status": "proposed",
       "title": "workflow-fix: step9c compare SCAN-NEW-VIOLATION false block \u2014 tb=short traceback location line enters the branch-side violation set (verbosity asymmetry vs pristine)"
+    },
+    "2498": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2498",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a FAMILY_lint omits scripts/pre_split_review_guard.py \u2014 half-sync reds the step9c lint pins in pre-#2294 worktrees"
     },
     "25": {
       "has_clean_result": false,
