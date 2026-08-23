@@ -94,6 +94,27 @@ def _cos_rows(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return num / den
 
 
+def _spearman_or_nan(x: np.ndarray, y: np.ndarray) -> float:
+    """Spearman rho, NaN when either resampled vector is constant (rho undefined).
+
+    scipy emits ConstantInputWarning and returns NaN; the caps DV is 16/20 zeros,
+    so all-tied bootstrap resamples are routine, not a bug. Suppressed here so the
+    routine case does not flood the log -- the count of NaN draws is reported per
+    condition instead (`n_boot_defined`).
+    """
+    if np.ptp(x) == 0.0 or np.ptp(y) == 0.0:
+        return float("nan")
+    return float(spearmanr(x, y).statistic)
+
+
+def _nan_ci95(draws: np.ndarray) -> list[float | None]:
+    """Percentile CI over the DEFINED draws; [None, None] when none are defined."""
+    ok = draws[~np.isnan(draws)] if draws.size else draws
+    if ok.size == 0:
+        return [None, None]
+    return [float(np.percentile(ok, 2.5)), float(np.percentile(ok, 97.5))]
+
+
 def load_grid(out_dir: Path, setting: str) -> tuple[np.ndarray, list[dict]]:
     p = out_dir / "capture_tensors" / "predictor_captures" / GRID_NAME[setting] / "grid.pt"
     if not p.exists():
@@ -156,26 +177,36 @@ def evaluate(
         for c in conditions:
             dv = np.array([models[c][t] for t in triggers], dtype=float)
             rho = float(spearmanr(pred, dv).statistic)
-            draws = [float(spearmanr(pred[i], dv[i]).statistic) for i in idx]
-            draws = [d for d in draws if not np.isnan(d)]
+            # Keep the draw array FIXED-LENGTH (N_BOOT) so the paired resample indices
+            # stay aligned across conditions: a resample that lands on a constant slice
+            # (the caps DV is 16/20 zeros -> all-tied resamples are common) yields NaN,
+            # which is carried, not dropped. Dropping per condition made draws_acc ragged
+            # AND broke the pairing the shared `idx` exists to preserve.
+            draws = np.array(
+                [_spearman_or_nan(pred[i], dv[i]) for i in idx],
+                dtype=float,
+            )
+            n_ok = int(np.count_nonzero(~np.isnan(draws)))
             per_cond.append(
                 {
                     "condition": c,
                     "rho": rho,
-                    "ci95": [float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))]
-                    if draws
-                    else [None, None],
+                    "ci95": _nan_ci95(draws),
+                    "n_boot_defined": n_ok,
+                    "n_boot": int(N_BOOT),
                 }
             )
             draws_acc.append(draws)
-        mean_draws = np.mean(np.array(draws_acc), axis=0)
+        stacked = np.vstack(draws_acc)  # (n_conditions, N_BOOT)
+        # A draw contributes to the cross-condition mean only where EVERY condition
+        # defined it -- otherwise the mean silently averages different condition sets.
+        complete = ~np.isnan(stacked).any(axis=0)
+        mean_draws = stacked[:, complete].mean(axis=0) if complete.any() else np.array([])
         res[arm] = {
             "per_condition": per_cond,
             "mean_rho": float(np.mean([p["rho"] for p in per_cond])),
-            "mean_ci95": [
-                float(np.percentile(mean_draws, 2.5)),
-                float(np.percentile(mean_draws, 97.5)),
-            ],
+            "mean_ci95": _nan_ci95(mean_draws),
+            "mean_n_boot_complete": int(complete.sum()),
         }
     return {
         "setting": setting,
@@ -225,7 +256,9 @@ def main() -> int:
             print(f"  [{variant}] n={r['n_triggers']}")
             for arm, a in r["arms"].items():
                 lo, hi = a["mean_ci95"]
-                print(f"    {arm:12s} mean rho={a['mean_rho']:+.3f}  CI[{lo:+.3f},{hi:+.3f}]")
+                ci = "CI[undefined]" if lo is None else f"CI[{lo:+.3f},{hi:+.3f}]"
+                nb = a["mean_n_boot_complete"]
+                print(f"    {arm:12s} mean rho={a['mean_rho']:+.3f}  {ci}  draws={nb}/{N_BOOT}")
     return 0
 
 
