@@ -990,6 +990,16 @@ Behaviours:
   persist" items, zero were persisted, and the round-2 prior-concerns
   gate walked an empty ledger; token-presence pins strengthened per the
   round-1 ``durability-pin-token-presence-gaps`` concern).
+* ``--check-force-push-policy`` (also bundled into the no-flags default
+  run): pin the #2313 force-push ruling at its definition site —
+  ``.claude/rules/auto-continuation.md`` STATE-TO-``blocked`` criterion 2
+  (region-anchored on the criterion-2 bullet, up to criterion 3; must keep
+  the literal ``--force-with-lease`` token, the ``NO autonomous
+  carve-out`` token, the pointer to the force-free ``Rewritten-branch
+  landing route`` (18-step-10d.md, #2312), and the
+  precedent-reconciliation issue ids #2171/#1999 vs #2181/#2318 — the ban
+  is the correct reading; the mention COUNT is deliberately NOT pinned,
+  it drifts).
 * ``--check-codex-composer-memory-commit`` (also bundled into the no-flags
   default run): pin the #2473 codex-composer agent-memory same-turn commit
   duty in ``.claude/rules/codex-composer-common.md`` — the "Your own
@@ -15031,6 +15041,98 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
     return errors
 
 
+def check_force_push_policy_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2313 force-push ruling is absent from its definition
+    site — .claude/rules/auto-continuation.md, STATE-TO-``blocked``
+    criterion 2.
+
+    Task #2313 resolved the policy question #2312 deferred: branch (B) —
+    no `/issue` path may force-push, and the ban COVERS
+    ``--force-with-lease`` on the session's OWN issue branch after its own
+    mid-flight rebase (the case recorded practice diverged on: #2171/#1999
+    read the lease form as the correct landing; #2181/#2318 recorded their
+    own use of it as a policy violation — the correct reading). Before
+    #2313 the ruling existed only ~3,377 lines deep in the Step 10d
+    landing-route prose, reachable solely by a session already executing
+    Step 10d; ``grep -r -- --force-with-lease .claude/rules/`` returned
+    ZERO hits. Region-anchored on the criterion-2 bullet (up to the
+    criterion-3 bullet), the region must keep:
+
+    (1) the literal ``--force-with-lease`` token (acceptance A1 — the
+        ruling stays grep-findable under .claude/rules/);
+    (2) the ``NO autonomous carve-out`` token — the ban admits no
+        autonomous exception; relaxing it is a USER grant made by amending
+        the criterion itself;
+    (3) the pointer to the sanctioned force-free alternative — the
+        ``Rewritten-branch landing route`` section of
+        .claude/skills/issue/steps/18-step-10d.md (#2312) — so a future
+        edit cannot keep the ban while dropping the alternative, the shape
+        that would leave a session with no sanctioned landing;
+    (4) the precedent-reconciliation issue ids on BOTH sides of the
+        divergent record (#2171, #1999, #2181, #2318). The ids are pinned,
+        NEVER the mention COUNT — the count grows whenever another task's
+        marker names the flag (#2313 plan v3 SF1).
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None (canonical repo root; behavioral subprocess tests may point the
+    check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled
+    into the no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    rule = root / ".claude" / "rules" / "auto-continuation.md"
+    if not rule.is_file():
+        return [
+            f"{rule}: missing — the #2313 force-push ruling must live in "
+            f"auto-continuation.md STATE-TO-blocked criterion 2."
+        ]
+    text = rule.read_text(encoding="utf-8")
+    start_anchor = "2. **Outside-the-worktree state mutation**"
+    end_anchor = "3. **Public API contract change**"
+    start = text.find(start_anchor)
+    if start == -1:
+        return [
+            f"{rule}: lost the criterion-2 anchor {start_anchor!r} (#2313) — "
+            f"the force-push ruling is region-anchored on that bullet; if "
+            f"the criterion was renumbered/renamed, update "
+            f"check_force_push_policy_lens alongside it."
+        ]
+    end = text.find(end_anchor, start)
+    region = text[start:end] if end != -1 else text[start:]
+    errors: list[str] = []
+    if "--force-with-lease" not in region:
+        errors.append(
+            f"{rule}: criterion 2 no longer carries the literal "
+            f"'--force-with-lease' (#2313) — the force-push ruling must "
+            f"stay grep-findable under .claude/rules/ (acceptance A1)."
+        )
+    if "NO autonomous carve-out" not in region:
+        errors.append(
+            f"{rule}: criterion 2 lost the 'NO autonomous carve-out' token "
+            f"(#2313) — the ban admits no autonomous exception; relaxing it "
+            f"is a user grant made by amending the criterion."
+        )
+    if "Rewritten-branch landing route" not in region:
+        errors.append(
+            f"{rule}: criterion 2 lost the pointer to the force-free "
+            f"'Rewritten-branch landing route' (18-step-10d.md, #2312) — a "
+            f"ban without its sanctioned alternative strands a gate-PASSed "
+            f"task with no landing (#2313)."
+        )
+    missing_ids = [i for i in ("#2171", "#1999", "#2181", "#2318") if i not in region]
+    if missing_ids:
+        errors.append(
+            f"{rule}: criterion 2 lost the precedent-reconciliation issue "
+            f"id(s) {', '.join(missing_ids)} (#2313) — the divergent record "
+            f"(#2171/#1999 vs #2181/#2318) must stay reconciled at the "
+            f"definition site."
+        )
+    return errors
+
+
 def check_codex_composer_memory_commit_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL surface pin (#2473): the codex-composer shared contract must keep
     its "Your own agent-memory writes" section (same-turn explicit-path
@@ -19659,6 +19761,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
     "check_codex_composer_memory_commit": lambda wf: check_codex_composer_memory_commit_lens(),
     "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
+    "check_force_push_policy": lambda wf: check_force_push_policy_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
@@ -19815,6 +19918,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
     "check_codex_composer_memory_commit": CheckScope("global", (".claude/",)),
     "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
+    "check_force_push_policy": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
@@ -20692,6 +20796,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-force-push-policy",
+        action="store_true",
+        help="FAIL if the #2313 force-push ruling is absent from "
+        ".claude/rules/auto-continuation.md STATE-TO-blocked criterion 2 "
+        "(region-anchored on the criterion-2 bullet, up to criterion 3): "
+        "the literal --force-with-lease token, the NO-autonomous-carve-out "
+        "token, the pointer to the force-free Rewritten-branch landing "
+        "route (18-step-10d.md, #2312), and the precedent-reconciliation "
+        "issue ids on both sides of the divergent record (#2171/#1999 vs "
+        "#2181/#2318 — the ids are pinned, never the mention count, which "
+        "drifts). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-verdict-round-anchor",
         action="store_true",
         help="FAIL if the #2136 verdict-round freshness anchor is absent "
@@ -21353,6 +21470,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_cvd_scoped_gpu_verdict_lens
         or args.check_codex_composer_memory_commit
         or args.check_codex_concerns_persistence
+        or args.check_force_push_policy
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -21533,6 +21651,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_codex_composer_memory_commit_lens())
     if args.check_codex_concerns_persistence or no_flags:
         errors.extend(check_codex_concerns_persistence_lens())
+    if args.check_force_push_policy or no_flags:
+        errors.extend(check_force_push_policy_lens())
     if args.check_verdict_round_anchor or no_flags:
         errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:

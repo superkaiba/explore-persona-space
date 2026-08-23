@@ -15,7 +15,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - analyzer-section-reference.md — the analyzer executes a protocol step (pointer-loaded step span).
 - artifact-reuse.md — a plan reuses an HF adapter/mix/completions/eval-JSON/tensor-store/fit-helper vs retraining, stages one into a consumer-fixed layout, reuses a parent module whose issue branch is unmerged, or designs a reuse-validation gate ((a)-(m)).
 - arxiv-mcp.md — you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
-- auto-continuation.md — you are about to pause, block, ask "should I continue", or present a choice (gate enumeration, halt criteria, two-path escalation).
+- auto-continuation.md — you are about to pause, block, ask "should I continue", present a choice, or force-push / land a rewritten branch (gate enumeration, halt criteria, force-push ban, two-path escalation).
 - background-automation.md — you touch/reason about the cron audits/session watcher/pod-GCP janitors.
 - blinded-reads.md — you dispatch a blinded / unprimed qualitative read (bare-API packets, no reader tools, frozen key, scope-aware wrapper-vs-payload leakage scan).
 - clean-result-critic-lens-reference.md — a clean-result critic twin reviews a markdown body (pointer-loaded spec-text rubrics).

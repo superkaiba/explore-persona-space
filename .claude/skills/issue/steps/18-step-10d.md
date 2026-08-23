@@ -3375,12 +3375,13 @@ commits onto the stale remote tip (the #1128 shape); a PR merge off the
 stale head would land content no gate certified (#2296's stale head called
 `create_scratch_worktree(..., sha=...)` — a `TypeError` against post-#2293
 main). `git push --force-with-lease` would fix the ref in one command, but
-force-push is a standing user-ask (`.claude/rules/auto-continuation.md`
-STATE-TO-`blocked` criterion 2) with NO autonomous carve-out, and recorded
-practice has DIVERGED on exactly this question (#2171 and #1999 recorded it
-as the correct form; #2181 recorded it as a policy violation). That policy
-question — surfaced by #2312 — is task #2313 (`proposed`; decided by the
-user, never here). Until it resolves, this force-free route is the ONLY
+force-push is BANNED for every `/issue` path — the lease form on the
+session's own rebased branch included — per the standing ruling in
+`.claude/rules/auto-continuation.md` STATE-TO-`blocked` criterion 2 (NO
+autonomous carve-out; the once-divergent precedent record is reconciled
+there). That policy question — surfaced by #2312 — was task #2313,
+resolved toward the ban; relaxing it is a USER grant made by amending
+criterion 2, never inferred here. This force-free route is the ONLY
 sanctioned landing for state (a) — and it needs no user, so never block a
 gate-PASSed task on it.
 
