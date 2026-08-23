@@ -67,3 +67,5 @@
 - [Figure-series extension neutrality probes](figure_series_extension_neutrality_probes.md) — PNG byte-compare invalid (pnginfo render id): pixel-array + parent-blob module; err-by-x last-wins contaminates the NEW series (#1901 R1 g3)
 - [Eligibility-export call-chain identity](eligibility_export_call_chain_identity.md) — certify "single-source" exports by diffing each consumer regime's production branch chain; probe unpinned tokenizer inputs (#2479 R7 g1)
 - [Template-replica gate certification](template_replica_gate_certification.md) — byte-identity at realized config + structural diff + sibling-constant exclusion + coverage superset (#2479 R8)
+- [Memory-sweep commit repairs dangling index pointer](memory_sweep_commit_dangling_pointer_repair.md) — file-add with no MEMORY.md hunk: check parent for the pre-committed row; cat-file -e both directions before flagging (#2479 R9 g2)
+- [Regenerated-export provenance certification](regenerated_export_provenance_certification.md) — parent-blob identity + external hash/revision recompute + timestamp bracketing certify a "payload unchanged" regeneration (#2479 R9 g4)
