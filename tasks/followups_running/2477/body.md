@@ -555,7 +555,7 @@ Table-only result: these are provenance facts from the artifact inventory (2,846
 
 No base-generated chat-template completion bank exists anywhere in the inventory, so nothing in the paper is invalidated by this verdict: the ~87% row is a teacher-forced fit whose validity this experiment does not measure either way, and the turn-dynamics base rows are already on the plain render. The restatement is editorial — state base single-turn map numbers on the plain-render values above and label the teacher-forced row as such.
 
-Verifier-WARN acknowledgment: conciseness caps — several Takeaways bullets exceed the 30-word bullet cap, some sections exceed the 120-word result-prose band, and total content prose runs over the round-scaled 1,050-word total-prose budget; kept for numeric completeness of a folded two-round, nine-condition design; the provenance-table result is deliberately figure-less (provenance facts, no quantity to plot).
+Verifier-WARN acknowledgment: conciseness caps — several Takeaways bullets exceed the 30-word bullet cap, some sections exceed the 120-word result-prose band, and total content prose runs over the round-scaled 1,300-word total-prose budget; kept for numeric completeness of a folded two-round, nine-condition design; the provenance-table result is deliberately figure-less (provenance facts, no quantity to plot).
 
 ### Tamer decoding lifts the chat render only to 56% coherent, while bare text clears the floor
 
