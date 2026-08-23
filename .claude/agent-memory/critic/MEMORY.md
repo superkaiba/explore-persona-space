@@ -67,6 +67,7 @@
 - [Loss-shape ablation residual rig](feedback_loss_shape_ablation_residual_rig.md) — FALSIFY != rig-exhausted; saturated = MATCHED regime (#599)
 
 ## Geometry / tensor analysis designs
+- [Pairing-shuffle vs capacity control](feedback_pairing_shuffle_capacity_control.md) — refit-on-shuffled-pairs control collapses (GCV edge); pair with weight-perm of TRUE map (#1739 claim4)
 - [Single-seed tensor designs](feedback_single_seed_g_tensor_reads.md) — column effects robust vs per-cell fragile; floor over-corrects (#537 v6)
 - [Rank-1 mechanism-test confounds](feedback_rank1_mechanism_test_confounds.md) — slopes need joint regression; cosines need anisotropy null (#537)
 - [Weight-SVD adapter analyses](feedback_weight_svd_dose_rotation_reads.md) — v_src convention; Δcos SNR mimic; σ1≈σ2 degeneracy (#604)
