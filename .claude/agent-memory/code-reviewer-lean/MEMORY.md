@@ -81,3 +81,4 @@
 - [Lint scan_roots differential probe](lint_scan_roots_differential_probe.md) — certify lint-fix commits via check fn scan_roots on parent vs fixed blobs; sys.modules pre-registration; Write (not Bash heredoc) for raw U+2028 probes (#823 fu r14 g5)
 - [Manifest-first reader vs stale shard regen](manifest_first_reader_stale_shard_regen.md) — in-place jsonl rewrite beside a manifest-first reader serves prior-regime shards; writers unlink manifest+shard siblings (#823 ext r1 g3)
 - [Wave-to-queue rewrite probe](wave_to_queue_rewrite_probe.md) — verbatim-adapt the flock queue into a live probe (slow + failing cell): late-start, rc read-back, exactly-once dispatch (#2479 R2 g1)
+- [Prescribed fix recipe vs stronger mechanism](prescribed_fix_recipe_vs_stronger_mechanism.md) — grade a revision against the critique's INTENT, not its recipe; then sweep bypass readers of the un-fixed artifact + pre-fix resume-skip outputs (#2479 r2 g3)
