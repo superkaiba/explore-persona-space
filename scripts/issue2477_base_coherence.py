@@ -1602,7 +1602,7 @@ def _judge_wave_complete(judge_dir: Path, expected: dict[str, set[str]]) -> bool
             return False
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, UnicodeDecodeError, OSError):
             return False
         got = {k.rsplit("__", 2)[0] for k in (raw.get("all_scores") or {})}
         if got != want:
