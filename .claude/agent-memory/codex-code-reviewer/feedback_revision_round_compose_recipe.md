@@ -2186,3 +2186,23 @@ untouched (off-path identity vs the pre-round blob + repo-wide caller sweep +
 the stale prior-verdict header line pre-declared not-a-finding); (c)
 near-duplicate concern ids from the two twins (same defect, one mechanism)
 each get their own status line with the duplication named.
+
+**FAIL+FAIL-union fix round with declared carve-outs, diff inlined whole
+(#2254 first-k r2, 2026-08-23):** the #2332-r2 union shape (both prior
+verdicts inlined as acceptance contracts, tag lines stripped, no
+no-relitigate block) composes cleanly with the cycle-close blockquote form
+(`> CONCERN:: ` for the prior twin's already-persisted rows — 13 here), the
+#1092-r4 pseudo-ID pattern (3 unledgered r1-codex Majors + 3 Claude-only
+items), and a carve-out section using the ACCEPTED-NON-CHANGE / OVERTURNED
+vocabulary for brief-declared deliberate non-changes. Two new assert traps
+hit live: (a) `wc -c` bytes ≠ Python `len(open().read())` chars on a
+CJK-bearing round diff (82,820 B vs 82,643 ch) — assert
+`os.path.getsize()==bytes` and char-len separately, both labeled; (b) the
+scaffold placeholder-residue regex must be `\{\{[a-z0-9_]+\}\}` — a
+`[a-z_]+` class silently misses digit-bearing names like
+`{{claude_v8_verdict}}` and the completeness assert then reports them
+missing from the scaffold. Also: when the implementer posts `addressed`
+rows for only a SUBSET of the r1 batch (10 of 12 here), the unrowed items —
+including the round's headline BLOCKER — keep FULL closure duty (the
+ledger-empty lesson applies per-item, not per-round); flag the missing rows
+to the orchestrator as bookkeeping, never as a relaxation.
