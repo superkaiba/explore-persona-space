@@ -114,6 +114,24 @@ agent context). Not on HF (GitHub/ParlAI only): LIGHT, `jujumilk3/leaked-system-
 Apollo sandbagging evals; no clean standalone cipher/base64/leet corpus (present inside
 WildChat + jailbreak sets).
 
+## Validation design (required)
+
+Per Thomas (2026-08-23): **carve a held-out validation set from EACH dataset / source, not
+just one pooled split**, and report per-dataset held-out fit quality (R² / ρ / kNN
+retrieval) alongside the pooled number.
+
+- **Per-source stratified holdout** — every source contributes rows to both train and its
+  own held-out set, so we can see WHICH regimes the map reconstructs well vs poorly
+  (a pooled R² hides per-regime failure). This is the primary read for the diversity axis.
+- **Leave-one-dataset-out (LODO) transfer folds** — fit on all-but-one source, validate on
+  the held-out source, to test cross-regime generalization. Use GROUP-level folds keyed on
+  source, per `.claude/rules/ood-generalization-folds.md` (never pointwise LOO here).
+- **De-dup before splitting** — dedup exact + near-duplicate contexts WITHIN and ACROSS
+  sources before assigning train/val, to avoid the #779→#1775 near-duplicate leakage that
+  inflated held-out R² by ~0.016.
+- **Report both** the pooled held-out fit and the per-dataset matrix; the mandatory
+  identity+learned-bias baseline and kNN-retrieval reads apply per split.
+
 ## Open decisions
 
 1. **Scale target — DECIDED: 150k contexts** (Thomas, 2026-08-23). At the top of the
