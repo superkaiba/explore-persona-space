@@ -17116,20 +17116,21 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 117,984 B @ #2294 2026-08-22 (IMPLEMENTER-MARKER-MISSING
-    # fourth guard branch + mechanical-precondition pointer, +797 B);
-    # corridor-max ((measured+2_800)//100)*100 = 120_700, headroom 2,716 —
-    # clears guard_skill_doc_headroom.sh's 2,000 B warn floor. Re-measure at
-    # Step 10d against the MERGED tree (concurrent sessions edit this file).
-    # Prior: 119_900 (#2241 Step 10d merged-tree re-measure per the #1727
-    # landing-bytes rule, 117,187 B — both sides' pre-merge caps were BELOW
-    # the merged file: #2241 r4 set 113_100 (110,316 B) and #2260 set
-    # 113_400 (110,622 B), each measuring only its own side) / 113_400
+    # measured 118,770 B @ #2294 Step 10d 2026-08-22 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100 = 121_500, headroom 2,730 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
+    # caps were 120_700, each measuring only its own side: #2294's
+    # IMPLEMENTER-MARKER-MISSING guard branch (+797 B, 117,984 B) and #2472's
+    # composer-role lean-twin ladder extension (+786 B, 117,973 B) landed on
+    # the same file concurrently.
+    # Prior: 120_700 (#2294, 117,984 B) / 120_700 (#2472, 117,973 B) /
+    # 119_900 (#2241 Step 10d merged-tree re-measure, 117,187 B) / 113_400
     # (#2260, 110,622 B) / 113_100 (#2241 r4, 110,316 B) / 111_900 (#2241
     # r3, 109,181 B) / 110_300 (#2241 r2, 107,590 B) / 109_600 (#2241 r1,
     # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
     # 100_300 (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 120_700,
+    "issue/steps/09-step-5.md": 121_500,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).

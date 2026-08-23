@@ -25,6 +25,18 @@ wording ("manifest row written at cell start") licensed the shape — the hole
 was in the plan's letter, caught only against its intent ("a mismatch
 re-runs").
 
+**Ordering variant (#2476 R1 g1, 2026-08-22):** a design that DOES delete
+stale outputs on a manifest mismatch is still exposed when the helper writes
+the UPDATED manifest and returns, and the CALLER deletes stale outputs after
+(`_enter_phase_regime` wrote new-code regime.json → caller unlink loop): a
+kill inside that window leaves new manifest + old outputs, and the next run's
+presence-skip blesses them. The window can be ~4 statements — flag it anyway
+(Minor at that width) and check every phase inheriting the helper: the fix is
+one reorder (delete inside the helper BEFORE the manifest write). Same round:
+`--hf-prefix` (an output DESTINATION) omitted from the regime hash lets a
+matching-regime re-run skip the upload to a NEW prefix off the OLD prefix's
+done-file — destination args belong in the resume key too.
+
 **How to apply:** on any per-cell manifest/resume diff: (1) find where the
 manifest is WRITTEN (start vs end) and what "done" reads (presence vs a
 completed flag); (2) run the four-step trace above; (3) fix shapes to suggest:
