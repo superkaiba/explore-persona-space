@@ -174,6 +174,27 @@ PAIRED_STORIES_VARIANTS = (
     "char_vex",
     "char_vex_base",
 )
+# --- #2479 16-character panel extension (env-pointed registry) ---------------
+# When EPM_I2479_CHAR_PANEL_JSON is SET, the #2479 panel registry APPENDS its
+# char_2479_* variants: inserted (text-matched) cells here, on-policy cells to
+# ONPOLICY_STORY_VARIANTS below. Env ABSENT => every list stays byte-identical
+# to the hardcoded parent tuples (same absent-env fail-safe shape as the
+# EPM_I1345_PERSONA_DESC seam; the shared loader fail-LOUDS on a set-but-
+# missing/unreadable/malformed panel — issue2479_char_panel.load_char_panel_env,
+# schema of record at issue1345_story_char_ladder_fill._load_char_panel). The
+# #2479 panel is instruct-only (plan §4 Step 2): BASE_PAIRED_STORIES_VARIANTS
+# is deliberately NOT extended, so R4_MODELS stays ("instruct",) for every
+# panel cell. The import lives inside the env branch so env-absent consumers
+# never gain a new import edge.
+_I2479_PANEL_ROWS: tuple[dict, ...] | None = None
+if os.environ.get("EPM_I2479_CHAR_PANEL_JSON", "").strip():
+    import issue2479_char_panel as _i2479_panel
+
+    _I2479_PANEL_ROWS = _i2479_panel.load_char_panel_env()
+    assert _I2479_PANEL_ROWS, "EPM_I2479_CHAR_PANEL_JSON set but loader returned no rows"
+    PAIRED_STORIES_VARIANTS = PAIRED_STORIES_VARIANTS + tuple(
+        r["variant_inserted"] for r in _I2479_PANEL_ROWS if r["variant_inserted"]
+    )
 HAS_R4 = VARIANT in PAIRED_STORIES_VARIANTS
 # The base-measured scope is the ONLY variant whose story arm measures the
 # pretrained model (R4_MODELS below keys off this); the two instruct scopes
@@ -229,6 +250,13 @@ ONPOLICY_STORY_VARIANTS = (
     "char_vex_op",
     "char_vex_op_base",
 )
+# #2479 panel extension (see the PAIRED_STORIES_VARIANTS seam above): the
+# registry's on-policy cells — ALL 16 characters — append here; env absent
+# keeps the tuple byte-identical.
+if _I2479_PANEL_ROWS:
+    ONPOLICY_STORY_VARIANTS = ONPOLICY_STORY_VARIANTS + tuple(
+        r["variant_op"] for r in _I2479_PANEL_ROWS
+    )
 HAS_ONPOLICY_STORY = VARIANT in ONPOLICY_STORY_VARIANTS
 # The story-regime machinery (r4-family fit cells, cross-regime transfer /
 # operator-comparison / reparam pairs, matched-row comparator, the per-model

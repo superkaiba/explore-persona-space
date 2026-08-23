@@ -60,6 +60,24 @@ CHAR_VARIANTS = tuple(
     for ch in ("helios", "wren", "dana", "vex")
     for suf in ("", "_op", "_base", "_op_base")
 )
+# --- #2479 16-character panel extension (EPM_I2479_CHAR_PANEL_JSON) ----------
+# Env ABSENT => the parent 16-variant tuple above stays byte-identical. Env
+# SET => the panel registry's char_2479_* variants APPEND (per row: variant_op
+# then non-null variant_inserted, registry order — the ladder-fill's
+# enumeration convention) so the stager can stage the #2479 cells; the shared
+# loader (issue2479_char_panel.load_char_panel_env — same schema as the
+# ladder-fill's _load_char_panel) fail-LOUDS on a set-but-bad panel. The
+# import lives inside the env branch (and issue2479_char_panel is LIGHT —
+# stdlib + issue1310_common only), preserving this module's deliberate
+# no-issue1345_common import.
+if os.environ.get("EPM_I2479_CHAR_PANEL_JSON", "").strip():
+    import issue2479_char_panel as _i2479_panel
+
+    _i2479_rows = _i2479_panel.load_char_panel_env()
+    assert _i2479_rows, "EPM_I2479_CHAR_PANEL_JSON set but loader returned no rows"
+    CHAR_VARIANTS = CHAR_VARIANTS + tuple(
+        v for r in _i2479_rows for v in (r["variant_op"], r["variant_inserted"]) if v
+    )
 
 
 def variant_mode_model(variant: str) -> tuple[str, str]:
