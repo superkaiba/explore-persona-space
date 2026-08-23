@@ -133,5 +133,24 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   pre-declare it NOT data-access-blocked; V5 verifies statically via
   `git show <base>:<path>`.
 
+- SHARED-PRIMITIVE termination round (#1739 a2fix r7, 2026-08-23 — the
+  round AFTER a structural-termination judgment came back RESIDUAL, fixing
+  it via ONE shared helper routed through every consumer): the V-duty
+  roster gains three shapes beyond probe-replay — (i) PRIMITIVE-CONTRACT
+  audit: the helpers' own bodies (a bug is now a single point of failure
+  for every consumer — the single-implementation property cuts both ways)
+  plus EVERY call site's iterable classified on the
+  scoping-vs-filtering boundary (an admission filter smuggled into a
+  scoping genexp re-opens the class INSIDE the primitive call); (ii)
+  WHY-NOT audit: each unrouted site's why-not line independently verified
+  (a wrong why-not = blocker), with skepticism raised by the marker
+  correcting the PRIOR round's table again; (iii) GREP-PIN
+  binding-strength adjudication: probe the pin test against named evasion
+  shapes (renamed loop var, unpinned new consumer, dict()/setdefault/|=)
+  — a too-weak pin is a Minor/Major durability finding, never auto-FAIL.
+  When prior rounds' bodies pre-date a review-count expansion (2 claims →
+  4 claims), the Step 0.8 paragraph rewrite outgrows anchor-safe edits —
+  keep it as ONE whole-paragraph replacement anchored on the full r6 text.
+
 Extends [[two-leg-single-label-round-compose]] (leg-suffixed filenames,
 leg-scoped sentinel, round-matching by leg).
