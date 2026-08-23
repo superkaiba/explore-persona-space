@@ -12,6 +12,8 @@ synthetic fixtures. No network, no GPU; all fixtures neutral synthetic.
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import importlib.util
 import json
 import sys
@@ -514,7 +516,21 @@ def test_sensitivity_recompute_excludes_overlap_group_rows(tmp_path):
 
 
 def _diag_entry():
-    return {"per_layer": [{"r2_map": 0.4, "r2_identity_bias": 0.2}]}
+    # FULL plan-required companion set (r3: presence is substantive only with
+    # finite r2_map + r2_identity_bias + kNN acc@1 for BOTH metrics — the
+    # banked producer emits exactly this per_layer shape)
+    return {
+        "per_layer": [
+            {
+                "r2_map": 0.4,
+                "r2_identity_bias": 0.2,
+                "knn": {
+                    "cosine": {"acc_at_k": {"1": 0.3, "5": 0.6}},
+                    "euclidean": {"acc_at_k": {"1": 0.25, "5": 0.55}},
+                },
+            }
+        ]
+    }
 
 
 def test_map_diag_presence_missing_level_reported():
@@ -550,6 +566,28 @@ def test_map_diag_presence_substantive_predicate_and_exclude():
     assert out2["ok"]
     out3 = fold.map_diag_presence(diag2, levels=((0.75, 0.0),))
     assert not out3["ok"] and out3["missing"] == ["context_end|fu0.75_fl0.0|seed0"]
+
+
+@pytest.mark.parametrize(
+    "name,mutate",
+    [
+        ("r2_map_none", lambda pl: pl.update(r2_map=None)),
+        ("no_identity_bias", lambda pl: pl.pop("r2_identity_bias")),
+        ("no_cosine_knn", lambda pl: pl["knn"].pop("cosine")),
+        ("no_euclidean_knn", lambda pl: pl["knn"].pop("euclidean")),
+    ],
+)
+def test_map_diag_presence_requires_full_companion_set(name, mutate):
+    """Codex r2 Major (cms-map-diagnostics-incomplete reopened): a PARTIAL
+    per_layer row — r2_map=None, missing identity+bias, or a missing kNN
+    metric — must NOT satisfy presence. Each shape fails pre-fix (the r2
+    predicate only checked the r2_map KEY)."""
+    entry = copy.deepcopy(_diag_entry())
+    mutate(entry["per_layer"][0])
+    diag = {"context_end|compose5000_fu0.0_fl0.0_L250|draw0_seed0": entry}
+    out = fold.map_diag_presence(diag, variants=("context_end",), levels=((0.0, 0.0),))
+    assert not out["ok"], name
+    assert out["missing"] == ["context_end|fu0.0_fl0.0|seed0 (present-but-empty)"], name
 
 
 def test_cell_class_table_seed_grain_and_arm_columns():
@@ -648,6 +686,11 @@ def test_cms_tiny_real_e2e_replicates_cache_sidecars_and_merge(tmp_path, capsys)
     # anchor-independent pools ((0,0) + (0.5,1)) HIT the cache on anchor 2 of 2:
     # 2 keys x 2 variants x 2 seeds = 8 hits
     assert out1.count("whitening+map cache HIT") == 8
+    # progress-key token equals the preds npz basename stem (behavioral pin,
+    # cms-long-loop-progress-key / cms-hardening-regression-gaps)
+    key_tok = hashlib.sha1(cells[0]["unit_key"].encode()).hexdigest()[:16]
+    assert f"key={key_tok}" in out1
+    assert cells[0]["preds_npz"] == f"{key_tok}.npz"
     # pool meta: the anchor-DEPENDENT class only — (0.5, 0) x 2 anchors x 2
     # variants x 2 seeds = 8 rows, each with realized eliciting ids
     metas = [
@@ -930,11 +973,22 @@ def _write_evil_tree(root: Path, *, overlap: bool = False) -> None:
         (root / "evil" / half / "map_diagnostics.json").write_text(json.dumps(diag))
 
 
-def _write_labeling(labeling_root: Path) -> None:
+def _write_labeling(
+    labeling_root: Path, *, omit: tuple[str, ...] = (), all_distinct: bool = False
+) -> None:
+    """Group map for the sensitivity fixtures. ``omit`` drops named context
+    ids (incomplete-coverage arm); ``all_distinct`` maps every context to its
+    own group — complete coverage with ZERO membership in the declared
+    overlap group gA (the zero-exclusion anomaly arm)."""
     lab = labeling_root / "evil"
     lab.mkdir(parents=True, exist_ok=True)
     rows = [
-        {"context_id": f"c{i}", "group_key": ("gA" if i < 4 else f"g{i}")} for i in range(_N_SENS)
+        {
+            "context_id": f"c{i}",
+            "group_key": (f"g{i}" if all_distinct else ("gA" if i < 4 else f"g{i}")),
+        }
+        for i in range(_N_SENS)
+        if f"c{i}" not in omit
     ]
     (lab / "labeling.json").write_text(json.dumps({"rows": rows}))
 
@@ -1059,3 +1113,97 @@ def test_fold_main_sensitivity_reversal_downgrades_confirm(tmp_path):
     assert entry["sensitivity_lattice"]["verdict"] != "FLIP-CONFIRMED"
     assert entry["verdict"] == "INDETERMINATE"
     assert "overlap-excluded lattice recompute" in entry["verdict_downgrade"]
+
+
+def test_fold_main_sensitivity_labeling_missing_is_never_ok(tmp_path):
+    """Codex r2 CRITICAL regression (fails pre-fix): with declared-overlap
+    cells and NO labeling file, groups_by_ctx={} retained every context —
+    d_excl aliased to d_full, status='ok', and the raw FLIP-CONFIRMED
+    trivially 're-confirmed'. Required: loud audit failure + pending, never
+    ok + FLIP-CONFIRMED."""
+    root = tmp_path / "cms"
+    _write_evil_tree(root, overlap=True)
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in _bank_rows_clean()))
+    out = tmp_path / "table.json"
+    rc = fold.main(_fold_argv(root, bank, out))  # labeling root absent
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert entry["overlap_sensitivity"]["status"] != "ok"
+    assert entry["verdict"] != "FLIP-CONFIRMED"
+    assert "labeling-missing-for-overlap" in entry["audit_failures"]
+    assert rc == 5
+    assert entry["verdict"] == "INDETERMINATE" and entry["verdict_raw"] == "FLIP-CONFIRMED"
+
+
+def test_fold_main_sensitivity_incomplete_group_map_is_pending(tmp_path):
+    """Codex r2 CRITICAL, per-context arm (fails pre-fix): one overlap
+    context missing from the group map must pend the recompute — an
+    unresolved context silently retained is the same vacuous-exclusion
+    hole at per-context grain."""
+    root = tmp_path / "cms"
+    _write_evil_tree(root, overlap=True)
+    labeling_root = tmp_path / "dv"
+    _write_labeling(labeling_root, omit=("c0",))  # c0 is an overlap (gA) ctx
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in _bank_rows_clean()))
+    out = tmp_path / "table.json"
+    argv = _fold_argv(root, bank, out)
+    argv[argv.index("--labeling-root") + 1] = str(labeling_root)
+    assert fold.main(argv) == 0  # labeling exists -> no audit failure; pends
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    sens = entry["overlap_sensitivity"]
+    assert sens["status"] == "pending"
+    assert all("absent from group map" in p["reason"] for p in sens["pending"])
+    assert entry["verdict"] == "INDETERMINATE" and entry["verdict_raw"] == "FLIP-CONFIRMED"
+
+
+def test_fold_main_sensitivity_zero_exclusion_is_pending(tmp_path):
+    """Zero-rows-removed despite declared overlap (complete map, no gA
+    membership) is an input-consistency anomaly -> pending, never 'ok'
+    (fails pre-fix: the recompute reported ok with kept == all rows)."""
+    root = tmp_path / "cms"
+    _write_evil_tree(root, overlap=True)
+    labeling_root = tmp_path / "dv"
+    _write_labeling(labeling_root, all_distinct=True)
+    bank = tmp_path / "bank.jsonl"
+    bank.write_text("".join(json.dumps(r) + "\n" for r in _bank_rows_clean()))
+    out = tmp_path / "table.json"
+    argv = _fold_argv(root, bank, out)
+    argv[argv.index("--labeling-root") + 1] = str(labeling_root)
+    assert fold.main(argv) == 0
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    sens = entry["overlap_sensitivity"]
+    assert sens["status"] == "pending"
+    assert all("zero rows excluded" in p["reason"] for p in sens["pending"])
+    assert entry["verdict"] == "INDETERMINATE" and entry["verdict_raw"] == "FLIP-CONFIRMED"
+
+
+def test_fold_main_banked_empty_bank_and_empty_join(tmp_path):
+    """Behavioral coverage for the r2 loud-fail ladder (Codex Minor /
+    cms-hardening-regression-gaps): empty file, nonempty file with zero
+    qualifying compose rows, and a bank that joins nothing."""
+    root = tmp_path / "cms"
+    _write_evil_tree(root)
+    out = tmp_path / "table.json"
+    # (i) file exists, zero parseable rows
+    bank = tmp_path / "bank_empty.jsonl"
+    bank.write_text("")
+    assert fold.main(_fold_argv(root, bank, out)) == 5
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "banked-repro-empty-bank" in entry["audit_failures"]
+    # (ii) nonempty file whose rows are plain rungs (no compose f_u)
+    bank2 = tmp_path / "bank_plain.jsonl"
+    bank2.write_text(json.dumps({"arms": [{"f_u": None}], "headline": {}}) + "\n")
+    assert fold.main(_fold_argv(root, bank2, out)) == 5
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "banked-repro-empty-bank" in entry["audit_failures"]
+    # (iii) qualifying banked cell that joins nothing (designed-skip key)
+    bank3 = tmp_path / "bank_nojoin.jsonl"
+    bank3.write_text(json.dumps(_cell_row("context_end", 0.5, 0.0, 8000, 0, 0.2)) + "\n")
+    assert fold.main(_fold_argv(root, bank3, out)) == 5
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "banked-repro-empty-join" in entry["audit_failures"]
+    # --allow-partial: recorded, no rc bump (interim seed-subset folds)
+    assert fold.main(_fold_argv(root, bank3, out, "--allow-partial")) == 0
+    entry = json.loads(out.read_text())["behaviors"]["evil"]
+    assert "banked-repro-empty-join" in entry["audit_failures"]

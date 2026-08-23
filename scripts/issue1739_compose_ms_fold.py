@@ -425,12 +425,29 @@ def sensitivity_recompute(
     whose preds npz is not staged locally are recorded ``pending`` — the
     caller downgrades a FLIP-CONFIRMED verdict while any cell is pending
     (fail-safe, never silently confirmed).
+
+    Input-coverage gates (r3, Codex Critical): with ANY declared-overlap
+    cell, an absent/empty group map, a prediction context id unresolved by
+    the map, or zero rows removed despite the declared overlap each pend the
+    cell — an unresolved context silently RETAINED aliases the excluded read
+    to the full read and vacuously re-confirms.
     """
     import numpy as np
     from scipy import stats
 
     meta_by_cell = {skip_key(r): r for r in pool_meta_rows}
     rows, pending = [], []
+    overlap_cells = [k for k, m in sorted(meta_by_cell.items()) if m.get("overlap_group_count")]
+    if overlap_cells and not groups_by_ctx:
+        pending = [{"cell": list(k), "reason": "group map missing/empty"} for k in overlap_cells]
+        return {
+            "n_recomputed": 0,
+            "n_pending": len(pending),
+            "pending": pending,
+            "max_shift": None,
+            "rows": [],
+            "status": "pending",
+        }
     for key, meta in sorted(meta_by_cell.items()):
         if not meta.get("overlap_group_count"):
             continue
@@ -451,11 +468,28 @@ def sensitivity_recompute(
             ctx_ids = [str(c) for c in z["context_ids"]]
             dv = np.asarray(z["dv"], dtype=float)
             preds = {a: np.asarray(z[f"pred__{a}"], dtype=float) for a in HEADLINE_PAIR}
+        unmapped = [cid for cid in ctx_ids if cid not in groups_by_ctx]
+        if unmapped:
+            pending.append(
+                {
+                    "cell": list(key),
+                    "reason": f"{len(unmapped)} context ids absent from group map",
+                }
+            )
+            continue
         overlap = set(meta.get("overlap_groups") or ())
         kept = np.asarray(
             [i for i, cid in enumerate(ctx_ids) if groups_by_ctx.get(cid) not in overlap],
             dtype=int,
         )
+        if len(kept) == len(ctx_ids):
+            pending.append(
+                {
+                    "cell": list(key),
+                    "reason": "zero rows excluded despite declared overlap",
+                }
+            )
+            continue
         if len(kept) < 3:
             pending.append({"cell": list(key), "reason": f"only {len(kept)} rows survive"})
             continue
@@ -486,6 +520,25 @@ def sensitivity_recompute(
     }
 
 
+def _finite_stat(x) -> bool:
+    return isinstance(x, int | float) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def _diag_row_complete(pl: dict) -> bool:
+    """A substantive diagnostics row carries the FULL plan-required companion
+    set — finite ``r2_map`` + ``r2_identity_bias`` + kNN acc@1 for BOTH
+    metrics (r3, Codex Major: a key-only or partial row — ``r2_map: None``,
+    missing identity+bias, missing a kNN metric — must never satisfy
+    presence; the banked producer emits exactly this shape)."""
+    if not _finite_stat(pl.get("r2_map")) or not _finite_stat(pl.get("r2_identity_bias")):
+        return False
+    for metric in ("cosine", "euclidean"):
+        acc = (((pl.get("knn") or {}).get(metric) or {}).get("acc_at_k") or {}).get("1")
+        if not _finite_stat(acc):
+            return False
+    return True
+
+
 def map_diag_presence(
     diag_union: dict,
     *,
@@ -498,10 +551,10 @@ def map_diag_presence(
     (variant, f_u/f_l level) — keys are ``<variant>|<label>|draw0_seed<N>``.
 
     An entry counts as PRESENT only when it carries a non-empty ``per_layer``
-    whose rows have ``r2_map`` (a key-only hit was a fail-open — r2 round).
-    ``exclude`` names (variant, level) pairs exempted by a recorded seed-0
-    conditionally-designed skip — per (variant, level), never a global level
-    suppression.
+    whose every row passes :func:`_diag_row_complete` (a key-only hit was an
+    r1 fail-open; a PARTIAL row was an r2 fail-open). ``exclude`` names
+    (variant, level) pairs exempted by a recorded seed-0 conditionally-
+    designed skip — per (variant, level), never a global level suppression.
     """
     missing = []
     for variant in variants:
@@ -520,7 +573,7 @@ def map_diag_presence(
                 k
                 for k in hits
                 if (diag_union[k] or {}).get("per_layer")
-                and all("r2_map" in pl for pl in diag_union[k]["per_layer"])
+                and all(_diag_row_complete(pl) for pl in diag_union[k]["per_layer"])
             ]
             if not substantive:
                 missing.append(
@@ -1069,6 +1122,17 @@ def main(argv: list[str] | None = None) -> int:
         labeling = args.labeling_root / b / "labeling.json"
         if labeling.exists():
             groups_by_ctx = load_groups_map(labeling)
+        elif any(m.get("overlap_group_count") for m in data["pool_meta"]):
+            # r3 (Codex Critical): declared-overlap cells REQUIRE the group
+            # map — without it the recompute would retain every context and
+            # vacuously reproduce the raw verdict. Loud, never allow_partial-
+            # gated: a missing input is a defect, not a partial-data state.
+            entry["audit_failures"].append("labeling-missing-for-overlap")
+            rc = max(rc, 5)
+            print(
+                f"[fold] {b}: labeling MISSING at {labeling} with declared overlap cells",
+                flush=True,
+            )
         sens = sensitivity_recompute(by_key, data["pool_meta"], groups_by_ctx)
         entry["overlap_sensitivity"] = sens
         entry["verdict_raw"] = verdict
