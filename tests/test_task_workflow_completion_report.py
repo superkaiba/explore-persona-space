@@ -287,12 +287,12 @@ def test_non_contract_kind_unaffected(fake_repo):
 
 def test_sentinel_shaped_results_note_posts(fake_repo, capsys):
     """No report header => the check does not apply (the poller-drain
-    shape); the soft advisory NOTE fires instead of any refusal."""
+    shape); the soft advisory WARN fires instead of any refusal."""
     _, tw, tid = fake_repo
     task_cli.cmd_post_event(_ns(tid, "epm:results", SENTINEL_SHAPED_NOTE))
     assert tw.list_events(tid)[-1]["note"] == SENTINEL_SHAPED_NOTE
     err = capsys.readouterr().err
-    assert "NOTE:" in err
+    assert "WARNING:" in err
     assert "## Completion Report" in err  # the per-kind expected header
 
 
@@ -306,7 +306,7 @@ def test_advisory_names_per_kind_header(fake_repo, capsys):
 def test_no_advisory_on_non_contract_kind(fake_repo, capsys):
     _, _tw, tid = fake_repo
     task_cli.cmd_post_event(_ns(tid, "epm:progress", "plain progress note"))
-    assert "NOTE:" not in capsys.readouterr().err
+    assert "WARNING:" not in capsys.readouterr().err
 
 
 def test_part_token_chunk_posts(fake_repo):

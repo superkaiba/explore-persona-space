@@ -888,7 +888,7 @@ def cmd_post_event(args: argparse.Namespace) -> None:
             # advisory helper returns False for every other kind.)
         with contextlib.suppress(OSError, ValueError):
             print(
-                f"NOTE: task.py post-marker {args.marker}: this note carries no "
+                f"WARNING: task.py post-marker {args.marker}: this note carries no "
                 "completion-report header, so the #2309 four-H3 section check "
                 "did not apply. IF this was an implementer round report, the "
                 f"expected opening header is {expected} — that header is "
