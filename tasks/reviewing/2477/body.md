@@ -14,6 +14,8 @@ workflow: v1
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2477.md @ b5a8c9e7a3](https://github.com/superkaiba/explore-persona-space/blob/b5a8c9e7a36a8cd72ea55d23889e52fc54c82ff0/docs/methodology/issue_2477.md) · [gist mirror](https://gist.github.com/superkaiba/a8b4281e1b4270b6c20a12560255d451)
+
 ## Takeaways
 
 - Sampling the base model under the chat template on 200 real user prompts yields 28% coherent completions (judge threshold 50), against the 80% decision floor and 97% for instruct.
