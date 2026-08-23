@@ -862,6 +862,29 @@ def test_a2fix_parity_partial_coverage_is_loud_never_map_beats():
     assert v["parity_read"]["uncovered_rungs"] == [["sycophancy", "sycomwe"]]
     assert v["parity_read"]["positive"] is False
     assert "INCOMPLETE" in v["reason"]
+    # codex r8 arm2fix-parity-postcoverage-partial-reduction (fails pre-fix):
+    # the PARITY median mirrors the primary-D treatment — on incomplete
+    # coverage it is explicitly nulled, and BOTH renderers print the parity
+    # coverage record (naming the uncovered key) with NO partial median line
+    assert v["parity_read"]["median_D_parity"] is None
+    import tempfile
+    from pathlib import Path as _P
+
+    table = {
+        "meta": {"generated_ts": "t", "git_commit": "c", "resolution": {}},
+        "verdict": v,
+        "per_rung": rows,
+        "sanity": {},
+        "join": {},
+    }
+    with tempfile.TemporaryDirectory() as td:
+        md, note = _P(td) / "t.md", _P(td) / "n.md"
+        fold.write_arm2fix_markdown(table, md)
+        fold.write_arm2fix_note(table, note)
+        for rendered in (md.read_text(), note.read_text()):
+            assert "parity registered coverage: 1/2" in rendered
+            assert "sycomwe" in rendered  # the uncovered registered key is named
+            assert "median D_parity" not in rendered  # no partial parity median
     # complete coverage on the same topology DOES mint MAP-BEATS
     rows_full = [
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),

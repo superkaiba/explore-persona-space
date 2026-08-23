@@ -1586,6 +1586,12 @@ def a2fix_lattice(
             expected_keys, dp_by_key, realized_keys, context="parity registered coverage"
         )
         dp = [dp_by_key[k] for k in sorted(expected_keys) if k in dp_by_key]
+        # codex r8 BLOCKER arm2fix-parity-postcoverage-partial-reduction —
+        # mirror of the primary-D treatment: the parity median is REDUCED only
+        # over a COMPLETE registered universe; on incomplete coverage it is
+        # explicitly nulled (the coverage counters + uncovered/extra lists ARE
+        # the honest read) so no subset statistic persists or renders.
+        med_parity = float(np.median(dp)) if (p_cov["complete"] and dp) else None
         parity_read = {
             "behaviors": restricted_passing,
             "n_rungs": len(dp),
@@ -1593,8 +1599,8 @@ def a2fix_lattice(
             "coverage_complete": p_cov["complete"],
             "uncovered_rungs": [list(u) for u in p_cov["missing"]],
             "extra_unregistered_rungs": [list(u) for u in p_cov["extra"]],
-            "median_D_parity": float(np.median(dp)) if dp else None,
-            "positive": bool(p_cov["complete"] and dp and float(np.median(dp)) > 0),
+            "median_D_parity": med_parity,
+            "positive": bool(med_parity is not None and med_parity > 0),
             "note": "estimand-parity read: arm7 refit on the IDENTICAL training-row ids "
             "as the repaired arm2, over exactly the rows-restricted passing behaviors' "
             "REGISTERED rungs (plan §4 matched-budget parity duty; per-behavior "
@@ -1778,11 +1784,15 @@ def write_arm2fix_markdown(table: dict, path: Path) -> None:
     if v.get("parity_read"):
         pr = v["parity_read"]
         lines.append(
-            f"- parity read (row-matched arm7): median D_parity "
-            f"{pr['median_D_parity']:+.4f} over {pr['n_rungs']} rungs"
-            if pr["median_D_parity"] is not None
-            else "- parity read: no rungs"
+            f"- parity registered coverage: {pr['n_rungs']}/{pr['n_rungs_expected']} "
+            f"(complete: {pr['coverage_complete']}; uncovered: {pr['uncovered_rungs']}; "
+            f"extra unregistered: {pr['extra_unregistered_rungs']})"
         )
+        if pr["median_D_parity"] is not None:
+            lines.append(
+                f"- parity read (row-matched arm7): median D_parity "
+                f"{pr['median_D_parity']:+.4f} over {pr['n_rungs']} rungs"
+            )
     lines += [
         "",
         "| behavior | rung | ★ | excl | arm2 rep. | arm7 true | arm7 shuf | arm4 | D mean | "
@@ -1868,9 +1878,15 @@ def write_arm2fix_note(table: dict, path: Path) -> None:
     if v.get("parity_read"):
         pr = v["parity_read"]
         lines.append(
-            f"- parity read: median D_parity {pr.get('median_D_parity')} "
-            f"over {pr.get('n_rungs')} rungs (positive: {pr.get('positive')})"
+            f"- parity registered coverage: {pr.get('n_rungs')}/{pr.get('n_rungs_expected')} "
+            f"(complete: {pr.get('coverage_complete')}; uncovered: {pr.get('uncovered_rungs')}; "
+            f"extra unregistered: {pr.get('extra_unregistered_rungs')})"
         )
+        if pr.get("median_D_parity") is not None:
+            lines.append(
+                f"- parity read: median D_parity {pr.get('median_D_parity')} "
+                f"over {pr.get('n_rungs')} rungs (positive: {pr.get('positive')})"
+            )
     for b, rec in table["sanity"].items():
         lines.append(
             f"- sanity {b}: per-seed {rec.get('per_seed')} | mean "
