@@ -66,3 +66,5 @@
 - [Upload-batch resume never re-enqueues](upload_batch_resume_never_reenqueues.md) — per-K-batch uploads + local-sidecar resume strand done-but-unuploaded units; exact-set verify then wedges every re-run (#1901 R1 g2)
 - [Position-calibrated gate under subset remap](position_calibrated_gate_under_subset_remap.md) — an index-subset kwarg re-binds "first-k" calibrated bars onto wrong units; check VALUE vs POSITION semantics (#1901 R1 g1)
 - [Figure-series extension neutrality probes](figure_series_extension_neutrality_probes.md) — PNG byte-compare invalid (pnginfo render id): pixel-array + parent-blob module; err-by-x last-wins contaminates the NEW series (#1901 R1 g3)
+- [Empty-form blind-spot falsified by later unit](empty_form_blindspot_falsified_by_later_unit.md) — grep each unit's args.smoke reads vs the plan's `none` literal; require=() under smoke = (b)-class downgrade even when sanctioned (#2254-firstk R1 g3)
+- [Stub-decoder hook probe](stub_decoder_hook_probe.md) — drive the REAL hook subclass through a minimal model.model.layers stub; edit-index sets + fake-records flush probe certify window semantics on CPU (#2254 firstk R1 g1)
