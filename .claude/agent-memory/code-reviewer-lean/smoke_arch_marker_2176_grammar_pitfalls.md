@@ -57,6 +57,10 @@ correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix.
 omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
 (2026-08-22): command-pipeline derivation again (backtick `uv run python -c
 "...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully
+correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix.
+omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
+(2026-08-22): command-pipeline derivation again (backtick `uv run python -c
+"...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully
 correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix. Fourth hit
 #2476 R1 g3 (2026-08-22): identical backtick-command shape, substance again fully
 correct (8/8 set-equality via driver-recompute) — this backtick-derivation form is
