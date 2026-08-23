@@ -10133,8 +10133,8 @@
     "2311": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2311",
-      "status": "proposed",
+      "path": "tasks/completed/2311",
+      "status": "completed",
       "title": "Step 5a sibling arm: synced sibling tests run against branch-era src/; #2208 collection probe cannot see the runtime skew"
     },
     "2312": {
