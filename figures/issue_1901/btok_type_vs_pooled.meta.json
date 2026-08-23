@@ -1,0 +1,57 @@
+{
+  "commit": "c43bf0c3+dirty",
+  "render_id": "05c310147b0341c2",
+  "git_commit": "c43bf0c3453de04d9815702b4f1f230096f92135",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_boundary_token_control.py",
+  "created": "2026-08-23T08:30:11Z",
+  "figsize": [
+    4.2,
+    3.0
+  ],
+  "points": [
+    {
+      "category": "'.' (n=963,444)",
+      "held-out $R^2$": 0.44029790304000205,
+      "_kind": "bar"
+    },
+    {
+      "category": "pooled {.!?} (n=20,000)",
+      "held-out $R^2$": 0.3995824758015777,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out $R^2$",
+        "xticklabels": [
+          "'.' (n=963,444)",
+          "pooled {.!?} (n=20,000)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
