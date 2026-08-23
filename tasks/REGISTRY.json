@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2505,
+  "highest_id": 2506,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11628,6 +11628,13 @@
       "path": "tasks/proposed/2505",
       "status": "proposed",
       "title": "Router: auto-chain RunPod rung crashes on 70B intents (gcp.machine_for_intent as validator)"
+    },
+    "2506": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2506",
+      "status": "proposed",
+      "title": "Add 4 verify_plan.py mechanical-backstop checks surfaced during #2502 planning (new-model-env-row, selection-inherited-CI, cross-section verdict-drift, concurrent-launch name-collision)"
     },
     "251": {
       "has_clean_result": false,
