@@ -17,20 +17,39 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   day). Division of labor: `plan.tex` = the one-glance structure view, keep it in
   sync when the paper's structure/claims change (targeted edits, pull first);
   detailed plan of record = EPS `docs/paper_context_answer_map/plan.md`; per-section
-  working plan blocks = `outline.tex`. No other planning doc lives here. Thomas reads
+  working plan blocks = `draft.tex`. No other planning doc lives here. Thomas reads
   it via Menu → Settings → Main document → `plan.tex`, Recompile (standalone article,
   no `style/` dependency).
-- STRUCTURE (2026-08-22): TWO roots. `main.tex` = the CLEAN curated paper (inputs
-  `sections/clean/` copies only; currently abstract + introduction). `outline.tex` =
-  the working surface (2026-08-22 restructure, replaces the retired `draft.tex`):
-  per section a blue PLAN block (bullets + one plot per claim inline + status tags
-  [DONE #N]/[IN-FLIGHT #N]/[NEW]/[VERIFY]) followed by the draft via \input. Draft
-  text lives in `sections/NN_<name>.tex` + `sections/results/c{1..5}_*.tex` (edit
-  those, not the outline skeleton); Results spine is 3 headline sections (I = c1+c3,
-  II = c4, III = c5; old C2 causality demoted to appendix). `references.bib` = the
+- STRUCTURE (renames 2026-08-23; spine 2026-08-22): THREE roots, no preamble file.
+  `clean.tex` (ex-main.tex) = the CLEAN curated paper (inputs `sections/clean/`
+  copies only; currently abstract + introduction). `draft.tex` (ex-outline.tex) =
+  the working surface: per section a blue PLAN block (bullets + one plot per claim
+  inline + status tags [DONE #N]/[IN-FLIGHT #N]/[NEW]/[VERIFY]) followed by the
+  draft via \input. `plan.tex` = the hand-edited simple skeleton (see below).
+  `preamble.tex` was REMOVED (Thomas 2026-08-23): the shared header block
+  (packages/title/`\iclrfinalcopy`) is INLINED identically in clean.tex AND
+  draft.tex — edit it in BOTH or they drift. Draft text lives in
+  `sections/NN_<name>.tex` + `sections/results/c{1..5}_*.tex` (edit those, not the
+  draft skeleton); Results spine is 3 headline sections (I = c1+c3, II = c4,
+  III = c5; old C2 causality demoted to appendix). `references.bib` = the
   bibliography; `style/` = template machinery — NEVER edit style/. Figures under
-  `figures/paper/` (claim-named c1_*.pdf…c5_*.pdf). Compile check after edits:
-  pdflatex → bibtex → pdflatex ×2 on BOTH roots.
+  `figures/paper/` (claim-named c1_*.pdf…c5_*.pdf); `poster/` stays (Thomas
+  2026-08-23). Compile check after edits: pdflatex → bibtex → pdflatex ×2 on
+  clean.tex AND draft.tex (plan.tex: one pdflatex pass suffices, no bib).
+- WRITING TELLS — STANDING RULE (Thomas, 2026-08-23). In ALL rendered text in this
+  tree: (1) ZERO em dashes (`---` or —); rewrite with colon/comma/parentheses or
+  restructure; en-dash `--` numeric ranges are fine; %-comments, references.bib
+  (fetched titles verbatim), and style/ are exempt. (2) No metaphor jargon of the
+  "load-bearing"/"backbone"/"scaffold" family: name the mechanism instead. (3) Avoid
+  contrastive-negation scaffolds ("is X, not Y", "not X but Y") as a rhetorical
+  default; state what IS the case, keep the negation only when the contrast itself
+  is the claim. Enforcement: a local `.git/hooks/pre-commit` gate in this clone
+  blocks staged .tex with rendered em dashes or "load-bearing" (override
+  `TELLS_ALLOW=1` for a deliberate exception, e.g. quoting). The hook is clone-local
+  (Overleaf-web edits bypass it), so after every `git pull` run the same scan over
+  the pulled diff and fix violations Thomas's edits did not intend. Judgment-level
+  patterns (3) are checked by the `/writing-tells` critic before any prose
+  commit+push (skill in ~/.claude/skills/writing-tells/).
 - THIS FILE is untracked in the clone (kept out of the Overleaf tree); the canonical
   versioned copy is `docs/paper_context_answer_map/CLAUDE-overleaf-clone.md` in the
   EPS repo — keep the two in sync when editing.
@@ -41,7 +60,7 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   with iteration-family notes on which run supersedes which); `ai_use_log.md` = ICLR
   LLM-disclosure log — append a row for every substantive AI contribution, same day.
   Edit + commit them THERE (explicit-path commits; EPS shared-root discipline).
-  Figure drafts (fig1_schematic.*) live there too until wired into main.tex.
+  Figure drafts (fig1_schematic.*) live there too until wired into clean.tex.
 - Experiment ground truth lives in the EPS repo (`~/explore-persona-space`): task
   bodies via `uv run python scripts/task.py view <N>`, figures at
   `figures/issue_<N>/`, eval JSONs at `eval_results/issue_<N>/`. Never write a number
