@@ -69,8 +69,13 @@ Already the backbone (wired in repo): `lmsys/lmsys-chat-1m`, `allenai/WildChat-1
 map's input side; answers generated on-policy from each model (shipped answers a bonus
 for teacher-forced variants only).
 
-**Proposed top-~12 shortlist (weird/OOD-weighted, scout recipe ~120k contexts, ~55%
-weird):**
+**Scale: TARGET = 150k contexts (Thomas, 2026-08-23).** Sits at the top of the linear
+map's held-out-R² plateau (n_train ≈ 10k–50k knee, flat to ~1M; #779 sweep, dedup-audited
+by #1775 — see the `epm:progress` scaling-evidence note). Going higher buys ~nothing for a
+linear fit; 150k gives headroom for the diversity axis + optional nonlinear fits. Per-source
+budgets below scale to the 150k target.
+
+**Proposed top-~12 shortlist (weird/OOD-weighted, ~55% weird):**
 
 1. `allenai/WildChat-1M-Full` (gated; keeps toxic/NSFW/jailbreak turns) — fallback
    `allenai/WildChat-4.8M` (ungated). T1.
@@ -109,11 +114,11 @@ agent context). Not on HF (GitHub/ParlAI only): LIGHT, `jujumilk3/leaked-system-
 Apollo sandbagging evals; no clean standalone cipher/base64/leet corpus (present inside
 WildChat + jailbreak sets).
 
-## Open decisions (needs Thomas)
+## Open decisions
 
-1. **Scale target.** Scout assumed ~120k contexts (~5–6x #1092's 21k). What's the real
-   target — 10^5, 10^6? Drives compute sizing and per-source row budgets (linear scale).
-2. **Gated-dataset access.** WildChat-1M-Full, wildjailbreak, HarmBench, AdvBench,
+1. **Scale target — DECIDED: 150k contexts** (Thomas, 2026-08-23). At the top of the
+   linear-map R² plateau; see the Data plan § and the scaling-evidence `epm:progress` note.
+2. **Gated-dataset access.** (STILL OPEN.) WildChat-1M-Full, wildjailbreak, HarmBench, AdvBench,
    DecodingTrust, lmsys-chat-1m, chatbot_arena all need access requests under `superkaiba1`.
    Request them, or run ungated-only (WildChat-4.8M fallback for slot 1)?
 3. **Map regime + measurement** to be locked at plan time per project rules: linear map
