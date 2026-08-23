@@ -99,9 +99,13 @@ ALL_LABELS = (
 # as a literal so this module stays import-light for the SS3 unit test.
 ANCHOR_DISPLAY_NAMES = ("HELIOS", "Wren", "Dana", "Vex")
 
-# Keys probed on the op cell JSON basis block for the answer-length secondary
-# read; none are emitted by the current fill script, so the read defers.
-ANSWER_LEN_KEYS = ("mean_answer_len", "answer_len_mean", "mean_answer_tokens")
+# Answer-length keys probed on the emit-items stats sidecars
+# (axis_items_<name>.stats.json, written by issue2479_freeze_axis.py
+# --emit-items); preference order: full prepared kept pool first.
+ANSWER_LEN_KEYS = ("mean_answer_len_chars_prepared", "mean_answer_len_chars_axis")
+# Cell-JSON TOP-LEVEL mean-activation vectors (emitted by the r2 fill at entry
+# level, beside the basis blocks) — the closeness reads cosine these against
+# the r4op means the ladder entries carry in ``source_means``.
 CLOSENESS_KEYS = ("mean_context_vec", "mean_answer_vec")
 
 
@@ -314,7 +318,29 @@ def _acc1(knn: dict, key: str) -> tuple[float | None, float | None]:
     return acc_val, (float(chance) if chance is not None else None)
 
 
-_EQN_TAG_RE = re.compile(r"_nd\d+(?P<tag>.+)\.json$")
+def _cosine(a: list | None, b: list | None) -> float | None:
+    """Cosine between two float vectors; None when either is absent or zero-norm.
+
+    Shape mismatch raises (a same-layer pair must agree in dim); the scalar is
+    what gets serialized — never the raw 3584-float vectors.
+    """
+    if not a or not b:
+        return None
+    va = np.asarray(a, dtype=np.float64)
+    vb = np.asarray(b, dtype=np.float64)
+    if va.shape != vb.shape:
+        raise ValueError(f"closeness vector shape mismatch: {va.shape} vs {vb.shape}")
+    na = float(np.linalg.norm(va))
+    nb = float(np.linalg.norm(vb))
+    if na == 0.0 or nb == 0.0:
+        return None
+    return float(np.dot(va, vb) / (na * nb))
+
+
+# g6 r1 Minor fix: the tag must START with a NON-digit — with a bare (?P<tag>.+),
+# a multi-digit _nd<K> filename backtracks (`_nd12.json` -> tag "2") and a
+# legitimate primary is misfiled as an equalized-n companion.
+_EQN_TAG_RE = re.compile(r"_nd\d+(?P<tag>[^\d].*)\.json$")
 
 
 def _primary_and_eqn(grad_dir: Path, pattern: str) -> tuple[Path | None, dict[str, Path]]:
@@ -341,8 +367,18 @@ def _primary_and_eqn(grad_dir: Path, pattern: str) -> tuple[Path | None, dict[st
     return primary, eqn
 
 
-def collect_characters(panel: list[dict], axis: dict, grad_dir: Path) -> dict:
-    """Load per-character fit/ladder reads + the three-stage exclusion lists."""
+def collect_characters(
+    panel: list[dict],
+    axis: dict,
+    grad_dir: Path,
+    items_stats_dir: Path | None = None,
+) -> dict:
+    """Load per-character fit/ladder reads + the three-stage exclusion lists.
+
+    ``items_stats_dir`` (optional): directory holding the freeze-side
+    ``axis_items_<name>.stats.json`` sidecars; when a character's sidecar is
+    present its mean kept-answer length feeds the answer-length secondary read.
+    """
     axis_chars = axis["characters"]
     per_char: dict[str, dict] = {}
     not_in_axis: list[str] = []
@@ -367,7 +403,19 @@ def collect_characters(panel: list[dict], axis: dict, grad_dir: Path) -> dict:
             "variant_inserted": vins,
             "axis_score": float(ax["score"]),
             "axis_rank": int(ax["rank"]),
+            "axis_n_items": ax.get("n_items"),
+            "axis_n_scored_items": ax.get("n_scored_items"),
         }
+        rec["mean_answer_len"] = None
+        if items_stats_dir is not None:
+            sp = items_stats_dir / f"axis_items_{name}.stats.json"
+            if sp.is_file():
+                stats = _load_json(sp)
+                input_files[str(sp)] = _sha256(sp)
+                rec["mean_answer_len"] = next(
+                    (float(stats[k]) for k in ANSWER_LEN_KEYS if stats.get(k) is not None),
+                    None,
+                )
 
         ladder_pat = f"ladder_{SRC_OP}__{vop}__{MODEL}_{ARM}_L{LAYER}_{BASIS}_s{FIT_SEED}_nd*.json"
         ladder_path, eqn_paths = _primary_and_eqn(grad_dir, ladder_pat)
@@ -402,6 +450,17 @@ def collect_characters(panel: list[dict], axis: dict, grad_dir: Path) -> dict:
         rec["acc1_rung4"], _ = _acc1(knn, HEADLINE_RUNG)
         rec["acc1_ceiling_cosine"], _ = _acc1(knn, "ceiling_cosine")
         rec["acc1_rung4_cosine"], _ = _acc1(knn, f"{HEADLINE_RUNG}_cosine")
+        rec["acc1_identity_bias"], _ = _acc1(knn, "identity_bias")
+
+        # Full 9-rung curve (per-rung scalar R2 at the pinned layer) for the
+        # ladder-curves figure; rung order from the entry's own metadata.
+        rung_order = list((entry.get("metadata") or {}).get("rung_order") or [])
+        rec["rung_order"] = rung_order
+        rec["rung_r2_all"] = {
+            r: _scalar_layer(d["r2"][r], f"{ladder_path.name}: rung {r}")
+            for r in rung_order
+            if r in d["r2"]
+        }
 
         centry = _load_json(cell_path)
         input_files[str(cell_path)] = _sha256(cell_path)
@@ -414,8 +473,18 @@ def collect_characters(panel: list[dict], axis: dict, grad_dir: Path) -> dict:
             ),
             cell_n=int(cblk["n"]),
         )
-        rec["cell_extra_keys"] = sorted(
-            k for k in cblk if k in ANSWER_LEN_KEYS or k in CLOSENESS_KEYS
+        rec["cell_extra_keys"] = sorted(k for k in set(cblk) | set(centry) if k in CLOSENESS_KEYS)
+
+        # Closeness scalars: cosine(cell mean vec, r4op source mean) at the
+        # pinned layer — cell vecs live at ENTRY level (r2 fill), r4op means in
+        # the ladder entry's source_means. Scalars only; vectors never persist
+        # into the verdict payload.
+        src_means = (entry.get("source_means") or {}).get(SRC_OP) or {}
+        rec["context_closeness_to_r4op"] = _cosine(
+            centry.get("mean_context_vec"), src_means.get("context")
+        )
+        rec["answer_closeness_to_r4op"] = _cosine(
+            centry.get("mean_answer_vec"), src_means.get("answer")
         )
 
         rec["fraction_eligible"] = bool(ceiling >= CEILING_FLOOR)
@@ -549,6 +618,18 @@ def build_secondary_reads(per_char: dict[str, dict], *, n_perm: int, seed: int) 
         n_perm=n_perm,
         seed=seed,
     )
+    reads["acc1_identity_bias_recovery"] = _read_over(
+        per_char,
+        lambda r: (
+            _safe_ratio(r.get("acc1_identity_bias"), r.get("acc1_ceiling"))
+            if r["fraction_eligible"]
+            else None
+        ),
+        label="rho(axis, acc@1 identity+bias / acc@1 ceiling), euclidean fold-0 — "
+        "trivial-baseline retrieval control",
+        n_perm=n_perm,
+        seed=seed,
+    )
     reads["ceiling_vs_axis"] = _read_over(
         per_char,
         lambda r: r["ceiling_r2"],
@@ -575,30 +656,59 @@ def build_secondary_reads(per_char: dict[str, dict], *, n_perm: int, seed: int) 
     reads["kept_n_vs_axis"] = _read_over(
         per_char,
         lambda r: float(r["cell_n"]),
-        label="rho(axis, per-character kept fit rows n) — retention-mediation diagnostic",
+        label="rho(axis, per-character fitted rows n — kept rows AFTER the axis-reservation "
+        "exclusion, cell fit) — retention-mediation diagnostic",
         n_perm=n_perm,
         seed=seed,
     )
 
-    # Answer-length + closeness reads: computable only from richer per-row /
-    # activation data the cell JSONs do not carry (checked, not assumed).
-    has_len = any(
-        k in (rec.get("cell_extra_keys") or [])
-        for rec in per_char.values()
-        for k in ANSWER_LEN_KEYS
-    )
-    if not has_len:
+    # Answer-length + closeness reads: REAL when the producing artifacts are
+    # present (freeze-side stats sidecars; fill-emitted mean vecs + source
+    # means), deferred otherwise (checked, not assumed).
+    if any(rec.get("mean_answer_len") is not None for rec in per_char.values()):
+        reads["answer_length_vs_axis"] = _read_over(
+            per_char,
+            lambda r: r.get("mean_answer_len"),
+            label="rho(axis, mean kept-answer length, chars) — answer-length mediation "
+            "diagnostic (freeze-side axis_items stats sidecars)",
+            n_perm=n_perm,
+            seed=seed,
+        )
+    else:
         reads["answer_length_vs_axis"] = {
             "status": "deferred",
-            "note": "requires kept-row bundle — computed at analyzer time",
+            "note": "requires axis_items_<name>.stats.json sidecars "
+            "(issue2479_freeze_axis.py --emit-items) — none found",
         }
-    has_vecs = any(
-        k in (rec.get("cell_extra_keys") or []) for rec in per_char.values() for k in CLOSENESS_KEYS
+    closeness_specs = (
+        (
+            "context_space_closeness_vs_axis",
+            "context_closeness_to_r4op",
+            "rho(axis, cosine(char mean context vec, r4op mean context vec) at L19) — "
+            "context-space closeness mediation read",
+        ),
+        (
+            "answer_space_closeness_vs_axis",
+            "answer_closeness_to_r4op",
+            "rho(axis, cosine(char mean answer vec, r4op mean answer vec) at L19) — "
+            "answer-space closeness mediation read",
+        ),
     )
-    if not has_vecs:
-        note = "requires turnstore-derived mean-activation vectors — computed at analyzer time"
-        reads["context_space_closeness_vs_axis"] = {"status": "deferred", "note": note}
-        reads["answer_space_closeness_vs_axis"] = {"status": "deferred", "note": note}
+    for read_key, rec_key, lab in closeness_specs:
+        if any(rec.get(rec_key) is not None for rec in per_char.values()):
+            reads[read_key] = _read_over(
+                per_char,
+                lambda r, k=rec_key: r.get(k),
+                label=lab,
+                n_perm=n_perm,
+                seed=seed,
+            )
+        else:
+            reads[read_key] = {
+                "status": "deferred",
+                "note": "requires fill-emitted mean-activation vectors (cell entry level) + "
+                "ladder source_means — absent from these fit outputs",
+            }
     return reads
 
 
@@ -728,6 +838,16 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path) -> dict:
             ),
             "Matched-capacity null rung-4 recovery fraction",
         ),
+        (
+            "closeness_context_vs_axis",
+            lambda r: r.get("context_closeness_to_r4op"),
+            "cosine(char mean context vec, r4op mean context vec), L19",
+        ),
+        (
+            "closeness_answer_vs_axis",
+            lambda r: r.get("answer_closeness_to_r4op"),
+            "cosine(char mean answer vec, r4op mean answer vec), L19",
+        ),
     ]
     for stem, fn, ylabel in specs:
         rows = rows_for(fn)
@@ -767,6 +887,113 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path) -> dict:
     else:
         skipped["ceilings_identity_bias"] = "no surviving characters"
 
+    # 9-rung ladder recovery curves, one line per eligible character, colored
+    # by axis score (rung order from the ladder entries' own metadata).
+    curve_recs = [
+        r
+        for r in per_char.values()
+        if r.get("fraction_eligible") and r.get("rung_order") and r.get("rung_r2_all")
+    ]
+    if curve_recs:
+        rung_order = curve_recs[0]["rung_order"]
+        fig, ax = plt.subplots(figsize=(7.5, 4.5))
+        cmap = plt.cm.viridis
+        scores = [r["axis_score"] for r in curve_recs]
+        lo, hi = min(scores), max(scores)
+        span = (hi - lo) or 1.0
+        for r in sorted(curve_recs, key=lambda q: q["axis_score"]):
+            ys = [_safe_ratio(r["rung_r2_all"].get(rung), r["ceiling_r2"]) for rung in rung_order]
+            ax.plot(
+                range(len(rung_order)),
+                [y if y is not None else float("nan") for y in ys],
+                marker="o",
+                ms=3,
+                lw=1.0,
+                color=cmap((r["axis_score"] - lo) / span),
+            )
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=lo, vmax=hi))
+        sm.set_array([])
+        fig.colorbar(sm, ax=ax, label="AI-likeness axis score")
+        ax.set_xticks(range(len(rung_order)))
+        ax.set_xticklabels(rung_order, rotation=45, ha="right", fontsize=7)
+        ax.set_ylabel("Recovery fraction (rung R2 / ceiling R2)")
+        paths = pp.savefig_paper(fig, "ladder_curves", dir=fig_dir)
+        plt.close(fig)
+        written["ladder_curves"] = str(paths["png"])
+    else:
+        skipped["ladder_curves"] = "no eligible characters with rung_r2_all + rung_order"
+
+    # Design-band vs realized axis score (the band-agreement gate, visualized).
+    band_recs = [r for r in per_char.values() if r.get("design_band")]
+    if band_recs:
+        bands = sorted({r["design_band"] for r in band_recs})
+        fig, ax = plt.subplots(figsize=(5.5, 4.0))
+        for xi, band in enumerate(bands):
+            sub = sorted(
+                (r for r in band_recs if r["design_band"] == band),
+                key=lambda q: q["axis_score"],
+            )
+            ax.scatter(
+                [xi] * len(sub),
+                [r["axis_score"] for r in sub],
+                c=pp.paper_palette_role("accent" if any(r["anchor"] for r in sub) else "primary"),
+                s=36,
+                zorder=3,
+            )
+            for r in sub:
+                ax.annotate(
+                    r["display_name"],
+                    (xi, r["axis_score"]),
+                    textcoords="offset points",
+                    xytext=(6, 0),
+                    fontsize=7,
+                )
+        ax.set_xticks(range(len(bands)))
+        ax.set_xticklabels(bands)
+        ax.set_xlabel("Design band (panel registry)")
+        ax.set_ylabel("Frozen AI-likeness axis score")
+        paths = pp.savefig_paper(fig, "band_agreement", dir=fig_dir)
+        plt.close(fig)
+        written["band_agreement"] = str(paths["png"])
+    else:
+        skipped["band_agreement"] = "no characters with design_band"
+
+    # Kept/drop accounting: axis-judged items vs fitted rows per character.
+    acct_recs = sorted(per_char.values(), key=lambda r: -r["axis_score"])
+    if acct_recs:
+        fig, ax = plt.subplots(figsize=(7.5, 4.0))
+        xs = np.arange(len(acct_recs))
+        series = [
+            ("axis_n_scored_items", "axis-judged items (scored)", "primary"),
+            ("n_matched", "ladder matched rows", "control"),
+            ("cell_n", "cell fitted rows (post reservation excl.)", "baseline"),
+        ]
+        width = 0.8 / len(series)
+        for si, (key, lab, role) in enumerate(series):
+            vals = [float(r[key]) if r.get(key) is not None else 0.0 for r in acct_recs]
+            ax.bar(
+                xs + (si - 1) * width,
+                vals,
+                width,
+                label=lab,
+                color=pp.paper_palette_role(role),
+            )
+        ax.set_xticks(xs)
+        ax.set_xticklabels([r["display_name"] for r in acct_recs], rotation=60, ha="right")
+        ax.set_ylabel("Rows / items")
+        ax.legend(frameon=False, fontsize=7)
+        paths = pp.savefig_paper(fig, "kept_drop_accounting", dir=fig_dir)
+        plt.close(fig)
+        written["kept_drop_accounting"] = str(paths["png"])
+    else:
+        skipped["kept_drop_accounting"] = "no surviving characters"
+
+    skipped["axis_score_violins"] = (
+        "frozen axis payload carries per-character MEAN scores only (no per-draw "
+        "score lists); violins need leg-report per-draw data — deferred to a "
+        "leg-report-consuming analyzer pass"
+    )
+
     return {"written": written, "skipped": skipped}
 
 
@@ -786,6 +1013,7 @@ def build_verdict(
     grad_dir: Path,
     n_perm: int,
     perm_seed: int,
+    items_stats_dir: Path | None = None,
 ) -> dict:
     """Assemble the full gradient_verdict.json payload (no figures)."""
     panel = _load_json(panel_path)
@@ -799,7 +1027,7 @@ def build_verdict(
         "name_mask_pass": bool(inst["gates"]["name_mask_pass"]),
     }
 
-    col = collect_characters(panel, axis, grad_dir)
+    col = collect_characters(panel, axis, grad_dir, items_stats_dir=items_stats_dir)
     per_char = col["per_char"]
     eligible = {k: v for k, v in per_char.items() if v["fraction_eligible"]}
     ceiling_excluded = [
@@ -808,9 +1036,13 @@ def build_verdict(
         if not v["fraction_eligible"]
     ]
 
+    # "fit_output_surviving" counts characters with BOTH fit outputs present
+    # (in the axis freeze AND with ladder+cell JSONs on disk) — it is NOT the
+    # plan's G1 generation-survivor count, which lives upstream in the gen
+    # yield reports (r1 review: the old "g1_surviving" name mislabeled it).
     denominators = {
         "planned": len(panel),
-        "g1_surviving": len(per_char),
+        "fit_output_surviving": len(per_char),
         "fraction_eligible": len(eligible),
     }
 
@@ -900,6 +1132,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--panel", type=Path, default=None)
     ap.add_argument("--axis-freeze", type=Path, default=None)
     ap.add_argument("--instrument-gates", type=Path, default=None)
+    ap.add_argument(
+        "--axis-items-stats-dir",
+        type=Path,
+        default=None,
+        help="dir holding axis_items_<name>.stats.json sidecars "
+        "(default: <eval-dir>/axis_items; absent files => answer-length read deferred)",
+    )
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--fig-dir", type=Path, default=Path("figures/issue_2479"))
     ap.add_argument("--n-perm", type=int, default=N_PERM_DEFAULT)
@@ -915,6 +1154,7 @@ def main(argv: list[str] | None = None) -> int:
         grad_dir=args.grad_dir or eval_dir / "story_char_gradient",
         n_perm=args.n_perm,
         perm_seed=args.perm_seed,
+        items_stats_dir=args.axis_items_stats_dir or eval_dir / "axis_items",
     )
     if not args.no_figures:
         payload["figures"] = make_figures(payload["per_character"], args.fig_dir)
@@ -926,8 +1166,8 @@ def main(argv: list[str] | None = None) -> int:
     v = payload["verdict"]
     print(
         f"[verdict] {v['label']!r}  rho={v['rho_obs']}  p_add_one={v['p_add_one']}  "
-        f"n={d['planned']}/{d['g1_surviving']}/{d['fraction_eligible']} "
-        f"(planned/G1-surviving/fraction-eligible) -> {out}",
+        f"n={d['planned']}/{d['fit_output_surviving']}/{d['fraction_eligible']} "
+        f"(planned/fit-output-surviving/fraction-eligible) -> {out}",
         flush=True,
     )
     for name, read in payload["secondary_reads"].items():

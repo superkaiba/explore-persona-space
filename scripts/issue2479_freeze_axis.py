@@ -373,6 +373,11 @@ def emit_items(
         if out_path.exists():
             out_path.unlink()
         c.append_jsonl(out_path, axis_rows)
+        # Mean kept-answer length (chars) over the full prepared pool + the
+        # axis subset — feeds the verdict's answer-length mediation read
+        # (issue2479_gradient_verdict.py reads these sidecars; never row text).
+        len_prep = [len(str(r["answer"])) for r in prepared]
+        len_axis = [len(str(r["answer"])) for r in axis_rows]
         c.write_json(
             items_out_dir / f"axis_items_{name}.stats.json",
             {
@@ -383,6 +388,8 @@ def emit_items(
                 "n_prepared": len(prepared),
                 "n_axis_items": len(axis_rows),
                 "n_reservation": len(reservation),
+                "mean_answer_len_chars_prepared": sum(len_prep) / len(len_prep),
+                "mean_answer_len_chars_axis": sum(len_axis) / len(len_axis),
                 "prep_stats": stats,
             },
         )

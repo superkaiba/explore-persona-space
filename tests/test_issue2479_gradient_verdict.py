@@ -122,6 +122,7 @@ def _direction_block(ceiling, r2_4, r2_1, ib, null4, acc_ceiling=0.5, acc4=0.4):
             "n_pool": 100,
             "ceiling": {"acc@1": [acc_ceiling], "chance@1": 0.01},
             "4_bias_refit": {"acc@1": [acc4], "chance@1": 0.01},
+            "identity_bias": {"acc@1": [0.05], "chance@1": 0.01},
             "ceiling_cosine": {"metric": "cosine", "acc@1": [acc_ceiling], "chance@1": 0.01},
             "4_bias_refit_cosine": {"metric": "cosine", "acc@1": [acc4], "chance@1": 0.01},
         },
@@ -228,6 +229,21 @@ def _write_fixture(tmp_path: Path) -> Path:
     inst = {"gates": {"verbatim_flatness_pass": True, "name_mask_pass": True}}
     (eval_dir / "instrument_gates.json").write_text(json.dumps(inst, indent=1))
 
+    # Freeze-side emit-items stats sidecars (default --axis-items-stats-dir):
+    # mean answer length strictly DEcreasing in axis score -> rho exactly -1.
+    items_dir = eval_dir / "axis_items"
+    items_dir.mkdir()
+    for name, (score, *_rest) in FIXTURE.items():
+        (items_dir / f"axis_items_{name}.stats.json").write_text(
+            json.dumps(
+                {
+                    "character": name,
+                    "mean_answer_len_chars_prepared": 4000.0 - score * 10,
+                    "mean_answer_len_chars_axis": 3900.0 - score * 10,
+                }
+            )
+        )
+
     for name, (_score, ceiling, rung4, cell_n, inserted) in FIXTURE.items():
         if ceiling is None:  # fox: no fit outputs at all
             continue
@@ -277,8 +293,10 @@ def verdict_payload(tmp_path_factory) -> dict:
 
 def test_e2e_denominators_and_exclusions(verdict_payload):
     d = verdict_payload["denominators"]
-    # all three denominators recorded: planned / G1-surviving / fraction-eligible
-    assert d == {"planned": 7, "g1_surviving": 5, "fraction_eligible": 4}
+    # all three denominators recorded: planned / fit-output-surviving /
+    # fraction-eligible (r1 review: "g1_surviving" mislabeled the middle count —
+    # it counts characters with fit OUTPUTS present, not G1 generation survivors)
+    assert d == {"planned": 7, "fit_output_surviving": 5, "fraction_eligible": 4}
     exc = verdict_payload["exclusions"]
     assert exc["not_in_axis_freeze"] == ["gus"]
     assert [e["name"] for e in exc["missing_fit_outputs"]] == ["fox"]
@@ -323,15 +341,21 @@ def test_e2e_secondary_reads(verdict_payload):
     assert reads["inserted_mode_recovery"]["n"] == 2
     assert reads["kept_n_vs_axis"]["n"] == 5
     assert reads["null_gradient_matched_capacity"]["n"] == 4
+    # acc@1 identity+bias retrieval control over the 4 eligible characters
+    assert reads["acc1_identity_bias_recovery"]["n"] == 4
     # every computed read carries its own labeled permutation band
     for name, read in reads.items():
         if read.get("status") == "ok":
             assert read["n_perm"] == N_PERM, name
             assert "p_add_one" in read and "label" in read, name
-    # deferred reads carry the plan-named notes
-    assert reads["answer_length_vs_axis"]["status"] == "deferred"
-    assert "kept-row bundle" in reads["answer_length_vs_axis"]["note"]
+    # answer-length read is REAL when the freeze-side stats sidecars exist
+    # (the fixture writes them; length strictly decreasing in axis score)
+    assert reads["answer_length_vs_axis"]["n"] == 5
+    assert reads["answer_length_vs_axis"]["rho"] == pytest.approx(-1.0)
+    # closeness reads stay deferred: fixture fit outputs carry no mean vectors
     assert reads["context_space_closeness_vs_axis"]["status"] == "deferred"
+    assert reads["answer_space_closeness_vs_axis"]["status"] == "deferred"
+    assert "mean-activation vectors" in reads["context_space_closeness_vs_axis"]["note"]
     # equalized-n companions not yet produced in this fixture
     assert verdict_payload["equalized_n"]["status"] == "not_produced"
 
@@ -348,6 +372,93 @@ def test_e2e_figures_written(verdict_payload):
     assert "ceilings_identity_bias" in figs["written"]
     assert "gradient_hero_inserted" in figs["written"]
     assert "gradient_null_companion" in figs["written"]
+    # r2 additions: ladder curves (fixture ladders carry rung_order + per-rung
+    # R2), band agreement, kept/drop accounting all render; closeness scatters
+    # skip (no mean vecs in fixture); violins carry the data-driven skip reason.
+    for stem in ("ladder_curves", "band_agreement", "kept_drop_accounting"):
+        assert stem in figs["written"], figs
+        assert Path(figs["written"][stem]).is_file()
+    assert figs["skipped"]["closeness_context_vs_axis"] == "no characters with this read"
+    assert figs["skipped"]["closeness_answer_vs_axis"] == "no characters with this read"
+    assert "per-draw" in figs["skipped"]["axis_score_violins"]
+
+
+def test_primary_and_eqn_multidigit_nd_and_rows_tag(tmp_path):
+    """g6 r1 Minor regression: `_nd12.json` is a PRIMARY (no equalized-n tag);
+    a `_rows<N>` suffix after `_nd<K>` is an equalized-n companion tag."""
+    d = tmp_path / "grad"
+    d.mkdir()
+    pat = "ladder_r4op__v__instruct_context_L19_reduced_s0_nd*.json"
+    (d / "ladder_r4op__v__instruct_context_L19_reduced_s0_nd12.json").write_text("{}")
+    (d / "ladder_r4op__v__instruct_context_L19_reduced_s0_nd12_rows650.json").write_text("{}")
+    primary, eqn = gv._primary_and_eqn(d, pat)
+    assert primary is not None and primary.name.endswith("_nd12.json")
+    assert list(eqn) == ["_rows650"]
+
+
+def test_cosine_helper():
+    assert gv._cosine([1.0, 0.0], [1.0, 0.0]) == pytest.approx(1.0)
+    assert gv._cosine([1.0, 0.0], [0.0, 1.0]) == pytest.approx(0.0)
+    assert gv._cosine([0.0, 0.0], [1.0, 0.0]) is None  # zero-norm -> None
+    assert gv._cosine(None, [1.0]) is None
+    with pytest.raises(ValueError):
+        gv._cosine([1.0, 0.0], [1.0])
+
+
+def test_closeness_reads_real_when_scalars_present():
+    """Closeness reads flip deferred -> real when the per-char scalars exist."""
+    per_char = {}
+    for i, (name, score) in enumerate([("a", 90.0), ("b", 70.0), ("c", 50.0)]):
+        per_char[name] = {
+            "name": name,
+            "display_name": name,
+            "anchor": False,
+            "axis_score": score,
+            "fraction_eligible": True,
+            "ceiling_r2": 0.5,
+            "rung4_r2": 0.4,
+            "rung1_r2": 0.1,
+            "identity_bias_r2": 0.02,
+            "null4_r2": 0.01,
+            "recovery_fraction": 0.8,
+            "cell_n": 800,
+            "mean_answer_len": None,
+            "context_closeness_to_r4op": 0.9 - 0.1 * i,  # increasing with score
+            "answer_closeness_to_r4op": 0.5 + 0.1 * i,  # decreasing with score
+        }
+    reads = gv.build_secondary_reads(per_char, n_perm=200, seed=0)
+    assert reads["context_space_closeness_vs_axis"]["n"] == 3
+    assert reads["context_space_closeness_vs_axis"]["rho"] == pytest.approx(1.0)
+    assert reads["answer_space_closeness_vs_axis"]["rho"] == pytest.approx(-1.0)
+    # sidecars absent -> answer-length still deferred
+    assert reads["answer_length_vs_axis"]["status"] == "deferred"
+
+
+def test_emit_items_stats_sidecar_carries_answer_lengths(tmp_path, monkeypatch):
+    """freeze-side half: the emit-items stats sidecar carries the mean kept-answer
+    lengths (prepared + axis pools) the verdict's answer-length read consumes."""
+    import issue2479_freeze_axis as fz
+
+    kept = tmp_path / "kept_char_2479_zed_op.jsonl"
+    kept.write_text('{"conv_id": "k1"}\n{"conv_id": "k2"}\n')
+    prepared = [
+        {"conv_id": "k1", "question": "q", "answer": "aaaa", "capped": False, "cell": "z"},
+        {"conv_id": "k2", "question": "q", "answer": "bb", "capped": False, "cell": "z"},
+    ]
+    monkeypatch.setattr(fz.prep_mod, "prepare", lambda rows, idx, cell: (prepared, {"n": 2}))
+    items_dir = tmp_path / "items"
+    fz.emit_items(
+        panel=[{"name": "zed", "variant_op": "char_2479_zed_op"}],
+        reservation={"k1"},
+        kept_glob=str(tmp_path / "kept_{variant}.jsonl"),
+        raw_glob=None,
+        items_out_dir=items_dir,
+    )
+    stats = json.loads((items_dir / "axis_items_zed.stats.json").read_text())
+    # prepared pool: len("aaaa")=4, len("bb")=2 -> mean 3.0; axis pool = {k1} -> 4.0
+    assert stats["mean_answer_len_chars_prepared"] == pytest.approx(3.0)
+    assert stats["mean_answer_len_chars_axis"] == pytest.approx(4.0)
+    assert stats["n_axis_items"] == 1 and stats["n_prepared"] == 2
 
 
 def test_e2e_instrument_suspect_path(tmp_path):
