@@ -61,6 +61,15 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   composer's own same-turn agent-memory commit (and any sibling bookkeeping)
   lands ABOVE the range before Codex reads, so a live-HEAD claim goes stale
   between compose and dispatch.
+- Claude-PASS / Codex-FAIL round with NO reconciler (r4 shape, #1739 a2fix
+  r4 2026-08-22): the twin's OWN prior FAIL verdict is the SOLE work order
+  envelope (`ROUND-3 CODEX VERDICT BODY`); the sibling PASS markers are
+  named as context-never-evidence in the head. V1 replays the twin's OWN
+  probe; a row the twin held at ADDRESSED-CLAIMED-BUT-UNVERIFIED solely on
+  the fixed hole gets an explicit RE-ADJUDICATION instruction. Anchors =
+  the prior round's compose-script NEW strings verbatim (14 sites, all
+  guards green first run). Pre-adjudicate a MATCHING marker diff-stat too
+  ("no discrepancy — do not manufacture one").
 - FAIL+FAIL union round (no reconciler — r3 shape, #1739 a2fix r3
   2026-08-22): the work order is BOTH prior FAIL verdict bodies, each in its
   own envelope (`ROUND-2 CLAUDE VERDICT BODY` / `ROUND-2 CODEX VERDICT
