@@ -154,6 +154,7 @@ from scripts.issue823_ladder_capture import (  # noqa: E402
     resolve_dataset_revision,
     verify_gen_sentinel,
 )
+from scripts.issue823_ladder_common import implied_mixture_energy  # noqa: E402
 from scripts.issue823_ladder_gen import (  # noqa: E402
     DATA_REPO,
     HF_PREFIX,
@@ -2035,22 +2036,16 @@ def main(argv: list[str] | None = None) -> None:
     implied = {}
     for k in (2, 4, 8, 16):
         for L in READ_OUT_LAYERS:
-            between, n_tot = 0.0, 0
-            row0 = {int(c): j for j, c in enumerate(inputs.store_ctx[0])}
-            for p, pos, rows in gathers[f"k{k}"]:
-                if p == 0:
-                    n_tot += len(pos)
-                    continue
-                ctxs = [int(mask_ids[q]) for q in pos]
-                vp = inputs.store_v[p][rows, L, :].astype(np.float64)
-                v0 = inputs.store_v[0][np.array([row0[c] for c in ctxs]), L, :].astype(np.float64)
-                m_p = (vp - v0).mean(axis=0)
-                between += len(pos) * float(m_p @ m_p)
-                n_tot += len(pos)
+            # Extracted to scripts/issue823_ladder_common.py (behavior-preserving;
+            # shared with the extension fits driver + the paired script's
+            # --full-ratio-ci denominator).
+            energy = implied_mixture_energy(
+                gathers[f"k{k}"], L, inputs.store_v, inputs.store_ctx[0], mask_ids
+            )
             mean_sstot = float(ss_tot_cells[(f"k{k}", L)].mean())
             implied[f"k{k}:L{L}"] = {
-                "between_persona_mean_shift_energy": between / max(n_tot, 1),
-                "implied_r2_penalty": (between / max(n_tot, 1)) / (mean_sstot + 1e-12),
+                "between_persona_mean_shift_energy": energy,
+                "implied_r2_penalty": energy / (mean_sstot + 1e-12),
                 "observed_delta_vs_k1": float(pooled[("k1", L)] - pooled[(f"k{k}", L)]),
             }
 
