@@ -7,11 +7,35 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 - ALWAYS `git pull` before reading; commit + push after ANY edit (unpushed edits are
   invisible to Thomas). This Overleaf tree carries ONLY the documents the paper
   compiles from (user directive 2026-08-19) — never commit drafts or build artifacts
-  here. ONE EXCEPTION (Thomas 2026-08-23): `plan.md` is mirrored at the Overleaf root
-  so he can read it there. It is a MIRROR — the canonical file stays at EPS
-  `docs/paper_context_answer_map/plan.md`; any pass that edits the canonical one
-  refreshes this copy in the same pass (`cp` + commit + push). No other planning doc
-  is mirrored.
+  here. ONE EXCEPTION (Thomas 2026-08-23): the paper plan is mirrored at the Overleaf
+  root as **`plan.tex`**, a standalone compilable root — NOT as `plan.md` (`.md` files
+  do not open in the Overleaf editor; verified 2026-08-23). It is a GENERATED MIRROR:
+  the canonical file stays at EPS `docs/paper_context_answer_map/plan.md`, and any
+  pass that edits the canonical one regenerates + commits + pushes `plan.tex` in the
+  SAME pass. No other planning doc is mirrored. Regeneration (pdfLaTeX-clean, 10 pp,
+  no `style/` dependency):
+
+  ```bash
+  P=~/explore-persona-space/docs/paper_context_answer_map/plan.md
+  cat > /tmp/uni_header.tex <<'EOF'
+  \usepackage{newunicodechar}
+  \newunicodechar{Δ}{\ensuremath{\Delta}}   \newunicodechar{ρ}{\ensuremath{\rho}}
+  \newunicodechar{⇒}{\ensuremath{\Rightarrow}} \newunicodechar{−}{\ensuremath{-}}
+  \newunicodechar{⟵}{\ensuremath{\longleftarrow}} \newunicodechar{→}{\ensuremath{\rightarrow}}
+  \newunicodechar{×}{\ensuremath{\times}}   \newunicodechar{≈}{\ensuremath{\approx}}
+  \newunicodechar{≥}{\ensuremath{\geq}}     \newunicodechar{≤}{\ensuremath{\leq}}
+  \newunicodechar{∥}{\ensuremath{\parallel}} \newunicodechar{⊥}{\ensuremath{\perp}}
+  \newunicodechar{λ}{\ensuremath{\lambda}}  \newunicodechar{σ}{\ensuremath{\sigma}}
+  \newunicodechar{α}{\ensuremath{\alpha}}   \newunicodechar{β}{\ensuremath{\beta}}
+  \newunicodechar{κ}{\ensuremath{\kappa}}   \newunicodechar{√}{\ensuremath{\surd}}
+  EOF
+  pandoc "$P" -f gfm -t latex --standalone --toc --toc-depth=2 \
+    -V documentclass=article -V geometry:margin=1in -V colorlinks=true -V fontsize=10pt \
+    -V title="Paper plan — Context→Answer Map (mirror of the EPS canonical plan.md)" \
+    --include-in-header=/tmp/uni_header.tex -o /tmp/plan_body.tex
+  # re-prepend the GENERATED-FILE banner from the current plan.tex, then commit + push
+  ```
+  Thomas reads it by setting Menu → Settings → Main document → `plan.tex`, Recompile.
 - STRUCTURE (2026-08-22): TWO roots. `main.tex` = the CLEAN curated paper (inputs
   `sections/clean/` copies only; currently abstract + introduction). `outline.tex` =
   the working surface (2026-08-22 restructure, replaces the retired `draft.tex`):
