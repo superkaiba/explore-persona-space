@@ -2092,3 +2092,20 @@ framing (leaf script, no external importers — same-name signature changes
 are not renames) PLUS the #1107 consumers-of-changed-shape + dangling-refs
 duties spelled out as unconditional substantive checks; never pre-resolve
 the trigger severity yourself.
+
+**Line-wise facts-block replacement + two assert traps (#2476 r2, 2026-08-22):**
+a FAIL+FAIL-union fix round composed cleanly from the r1 template via LINE-WISE
+replacement of the compose-time-facts block (split on newlines, replace whole
+lines keyed on unique `startswith` prefixes, assert exactly-one hit per prefix)
+— robust when every facts line changes but the section anatomy survives. Two
+asserts tripped live: (1) `wc -c` counts BYTES, Python `len(str)` counts
+CHARACTERS — assert `len(body.encode()) == wc_c_bytes` for any size pin on
+UTF-8-heavy artifacts (plans carry →/§/≤); (2) prose that NAMES the
+blockquote literal (e.g. "rows are blockquoted `> CONCERN:: `") inflates a
+whole-prompt `count("> CONCERN:: ")` — scope row asserts to line-start
+(`l.startswith(...)` over splitlines) and assert the total separately with the
+prose mention counted. Also confirmed: when an impl marker answers a union as
+a numbered disposition table that OVERLAPS but is not a superset of the ledger
+ids (Claude-only items unledgered, a NIT closed in an opportunistic paragraph),
+say so explicitly and key the closure ledger on BOTH (item numbers + ids,
+Codex maps them from the disposition text) rather than minting pseudo-IDs.
