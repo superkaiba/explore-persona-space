@@ -1,7 +1,9 @@
 """Issue #2254 follow-up `first-k-answer-token-steering` — position-cells driver.
 
-Plan v10 (tasks/.../2254/plans/v10.md). Unit 1/3: the `stage_inputs` + `steer`
-phases (judge/reduce = unit 2; figures + smoke assertions = unit 3).
+Plan v10 (tasks/.../2254/plans/v10.md). Units 1+2/3: `stage_inputs` + `steer`
+(unit 1) and `judge` + `reduce` (unit 2 — the off-pod Batch-API judge wave with
+the rule-26 pilot gate + rule-28 sync re-issue, and the §3 registered-lattice
+reduce); figures + smoke assertions = unit 3.
 
 Design (plan §4): no training, no map fitting, no fresh localize — the parent
 rig's direction bank + operating points + rho are REUSED, and the single
@@ -53,7 +55,11 @@ os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
 os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
 
 import argparse
+import hashlib
+import itertools
+import json
 import logging
+import re
 import sys
 import time
 from pathlib import Path
@@ -82,6 +88,7 @@ def _ensure_repo_root_on_syspath() -> None:
 
 _ensure_repo_root_on_syspath()
 
+import numpy as np  # noqa: E402  (after load_dotenv so BLAS thread caps apply)
 import torch  # noqa: E402  (after load_dotenv so thread caps apply)
 
 import scripts.issue2254_preimage as i2254  # noqa: E402
@@ -1001,9 +1008,1046 @@ def phase_steer(args) -> None:
     i2254._breadcrumb(SENTINEL_STEER, status="done", regen_cells=n_regen)
 
 
+# ---------------------------------------------------------------------------
+# unit 2 — judge + reduce constants (plan v10 §3 / §6)
+# ---------------------------------------------------------------------------
+
+SENTINEL_JUDGE = "firstk-judge"
+SENTINEL_REDUCE = "firstk-reduce"
+JUDGE_DRAWS_FIRSTK = 5  # plan §6: 5 draws at the inherited #2220/#2254 instrument
+# Transport pin (plan §6 + llm-judging rule 26(c) transport parity): one cell's
+# wave is 120 items x 5 draws = 600 calls, UNDER the OTPM-scaled default
+# sync-vs-batch threshold (judge_dispatch.decide_route), so count-routing would
+# silently run SYNC while the plan declares Batch. threshold_base=0 clamps the
+# effective threshold to 1 and pins EVERY dispatch (pilot AND wave) onto Batch.
+JUDGE_THRESHOLD_BASE_BATCH = 0
+# Rule-28 remediation transport: an astronomically large threshold_base keeps
+# n_items below the effective threshold, forcing SYNC for the targeted
+# re-issue of api-refusal-censored draws.
+SYNC_FORCE_THRESHOLD_BASE = 10**9
+# Plan §6 pilot sizing: 4 arms x >=55 effective draws each (>= the #2124
+# 51-per-arm parse-fail satisfiability floor at the 2% threshold).
+PILOT_MIN_EFFECTIVE_FIRSTK = 55
+PILOT_API_REFUSAL_MAX = 0.10  # plan §6 pilot kill: per-arm api-refusal rate < 0.10
+OPENING_POSITIONS = ("tok1", "tok2", "tok3", "span13", "span15")
+STRONG_DIRECTIONS = ("rb", "pre")  # plan §3 lattice scope: strong directions only
+H3_CHAIN = ("lastctx", "tok1", "span13", "span15", "allans")  # §3 H3 accrual chain
+COMMON_HORIZON_TOKENS = i2254.GEN_MAX_NEW_TOKENS  # 2048 — the §3 D-index common horizon
+RATIO_DEN_FLOOR = 5.0  # §3 denominator guard: |A_b - alpha0_b| < 5 score points
+RATIO_UNSTABLE_FRAC = 0.01  # §3: >1% of resamples under the floor => R undefined
+R_SUFFICIENT = 2.0 / 3.0  # §3 lattice: R_lo >= 2/3 arm of opening-sufficient
+R_PARTIAL = 1.0 / 3.0  # §3 lattice: R_pt >= 1/3 arm of opening-partial
+PLATEAU_FRAC = 0.90  # §3 H3: span1-5 >= ~90% of all-answer = plateau (point read)
+
+# Committed parent inputs the reduce consumes IN ADDITION to unit 1's
+# GIT_INPUTS (separate tuple so unit 1's staging list stays byte-stable).
+BASELINE_PERCELL_REL = "eval_results/issue_2254/baseline_ceiling/judged_percell.json"
+CJK_AUDIT_REL = "eval_results/issue_2254/decisive/cjk_audit.json"
+DECISIVE_PERCELL_REL = "eval_results/issue_2254/decisive/delta_score_percell.json"
+assert BASELINE_PERCELL_REL == GIT_INPUTS[2][0], GIT_INPUTS[2]
+REDUCE_GIT_INPUTS = (
+    (CJK_AUDIT_REL, "eval_results/issue_2254/decisive"),
+    (DECISIVE_PERCELL_REL, "eval_results/issue_2254/decisive"),
+)
+
+
+# ---------------------------------------------------------------------------
+# unit 2 — judge phase (plan §6: Batch API, rule-26 pilot, rule-28 re-issue)
+# ---------------------------------------------------------------------------
+
+
+def _stage_round_completions(rroot: Path) -> Path:
+    """Local-first steer raw_completions; else stage every per-cell JSON from
+    the ROUND HF prefix (scoped list_repo_tree via retry_transient — never a
+    bare full-repo listing on the ~1M-file data repo). Mirrors the parent's
+    ``_stage_phase_completions`` at the round prefix."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    comp_root = rroot / "steer" / "raw_completions"
+    if comp_root.exists() and any(comp_root.glob("*.json")):
+        return comp_root
+    prefix = f"{_round_hf_prefix()}/raw_completions/steer"
+    entries = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: staging READ wrapped in hub.retry_transient
+            HfApi().list_repo_tree(HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset")
+        ),
+        what=f"list_repo_tree({prefix})",
+    )
+    paths = [e.path for e in entries if e.path.endswith(".json")]
+    if not paths:
+        raise RuntimeError(f"firstk judge: no steer completions locally or at {prefix}")
+    for pth in paths:
+        hub.stage_hub_file(HF_DATA_REPO, pth, comp_root / Path(pth).name, repo_type="dataset")
+    return comp_root
+
+
+def _judge_ctx_id_firstk(cell: dict, seed: int, i: int) -> str:
+    """'-'-joined judge context id over OUR position vocabulary (the parent's
+    ``_judge_ctx_id`` keys ``_POS_SHORT[context|answer]`` and would KeyError
+    on tok1/span13/...); ``rollout_item_id`` appends ``_kNN``, so the ctx-id
+    budget is MAX_ITEM_ID_LEN - 4 and must carry no ``__``."""
+    from explore_persona_space.experiments.issue_1739.judging import MAX_ITEM_ID_LEN
+
+    stem = "-".join(
+        (
+            cell["behavior"],
+            i2254._DIR_SHORT[cell["direction"]],
+            _POS_TOKEN[cell["position"]],
+            cell["layer_config"],
+            i2254._c_token(cell["c"]),
+        )
+    )
+    out = f"{stem}-s{seed}-x{i:03d}"
+    assert "__" not in out and len(out) <= MAX_ITEM_ID_LEN - 4, out
+    return out
+
+
+def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric, n_draws) -> None:
+    """Rule-26 pilot gate at the EXACT production instrument + transport
+    (plan §6): 4 arms per behavior — rb all-answer, random all-answer, one
+    degenerate high-dose cell, one clean opening cell — >=55 effective draws
+    each, Batch transport (threshold_base=0), production ambient temperature
+    (``graded_temperature`` — the gate's own temperature kwarg is unthreaded).
+    Adds the driver-side per-arm api-refusal (<0.10) kill the shipped gate
+    only REPORTS, plus the §7 positive-control EARLY read (coarse, unpowered
+    — log line + sidecar field, never a gate). Fingerprint sidecar skips a
+    prior PASS at the identical instrument unless --force."""
+    from explore_persona_space.eval.judge_dispatch import graded_temperature
+    from explore_persona_space.eval.judge_pilot import _seeded_subsample, judge_pilot_gate
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
+    )
+    from explore_persona_space.experiments.issue_1739.judging import judge_items_graded
+
+    pilot_dir = rroot / "judge" / "pilot"
+    pilot_dir.mkdir(parents=True, exist_ok=True)
+    fp = i2254._sha8(
+        {
+            "behavior": behavior,
+            "rubric": rubric,
+            "n_draws": n_draws,
+            "mt": i2254.JUDGE_MAX_TOKENS_2254,
+            "tb": JUDGE_THRESHOLD_BASE_BATCH,
+            "temp": JUDGE_TEMPERATURE,
+        }
+    )
+    pass_path = pilot_dir / f"{behavior}.pass.json"
+    if pass_path.exists() and not args.force:
+        if json.loads(pass_path.read_text()).get("fingerprint") == fp:
+            logger.info("[%s] pilot %s: prior PASS, identical instrument", SENTINEL_JUDGE, behavior)
+            return
+    files = sorted(comp_root.glob(f"{behavior}__*.json"))
+    if not files:
+        raise RuntimeError(f"firstk pilot: no {behavior} gen cells under {comp_root}")
+    items_per_arm = -(-PILOT_MIN_EFFECTIVE_FIRSTK // n_draws)  # ceil: >=55 draws/arm (§6)
+    qs = i2254._eval_questions(behavior)
+
+    def _collect(arm: str, cell_filter, sort_key) -> list[tuple[str, str, str]]:
+        recs = []
+        for f in files:
+            rec = json.loads(f.read_text())
+            if not cell_filter(rec["cell"]):
+                continue
+            recs.append((sort_key(rec), rec))
+        recs.sort(key=lambda kv: kv[0])
+        items: list[tuple[str, str, str]] = []
+        for _k, rec in recs:
+            for qi, _seed, _ci, _di, text in i2254._iter_gen_qa(rec):
+                items.append((f"{arm}-{len(items):03d}", qs[qi], text))
+                if len(items) >= items_per_arm:
+                    return items
+        return items
+
+    arms = {
+        "rb_allans": _collect(
+            "rb_allans",
+            lambda c: c["direction"] == "rb" and c["position"] == "allans",
+            lambda r: -abs(float(r["cell"].get("c", 0.0))),
+        ),
+        "rnd_allans": _collect(
+            "rnd_allans",
+            lambda c: c["direction"] == "random" and c["position"] == "allans",
+            lambda r: -abs(float(r["cell"].get("c", 0.0))),
+        ),
+        "degen_highdose": _collect("degen_highdose", lambda c: True, i2254._coherence_rate),
+        "clean_opening": _collect(
+            "clean_opening",
+            lambda c: c["position"] in OPENING_POSITIONS,
+            lambda r: -i2254._coherence_rate(r),
+        ),
+    }
+    empty = sorted(k for k, v in arms.items() if not v)
+    if empty:  # smoke slice (pre x single x 5 positions) has no rb/random cells
+        logger.info("[%s] pilot %s: dropping empty arms %s", SENTINEL_JUDGE, behavior, empty)
+    arms = {k: v for k, v in arms.items() if v}
+    if not arms:
+        raise RuntimeError(f"firstk pilot: zero pilot items for {behavior}")
+    with graded_temperature(JUDGE_TEMPERATURE):  # production ambient (kwarg alone unthreaded)
+        report = judge_pilot_gate(
+            arms,
+            rubric,
+            max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+            cache_dir=pilot_dir / f"{behavior}_cache",
+            save_raw_dir=pilot_dir / f"{behavior}_raw",
+            n_draws=n_draws,
+            target_total_draws=len(arms) * n_draws * items_per_arm,
+            min_effective_draws_per_arm=PILOT_MIN_EFFECTIVE_FIRSTK,
+            waive_parse_fail_arms=tuple(args.waive_judge_parse_fail_arms),
+            allow_subresolution_pilot=bool(args.smoke),
+            threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+            report_path=pilot_dir / f"{behavior}.report.json",
+            seed=0,
+        )
+    if not report.passed:
+        raise RuntimeError(f"firstk judge pilot FAILED for {behavior}: {report.verdict}")
+    # Driver-side rule-28 arm kill: the shipped judge_pilot_gate REPORTS
+    # n_api_refusal but has no gate condition on it (its #2151 note); plan §6
+    # registers per-arm api-refusal rate < 0.10 as a pilot kill.
+    refusal_rates: dict[str, float] = {}
+    for arm, st in report.arms.items():
+        rate = st.n_api_refusal / max(1, st.n_draws - st.n_transport_lost)
+        refusal_rates[arm] = float(rate)
+        if rate >= PILOT_API_REFUSAL_MAX:
+            raise RuntimeError(
+                f"firstk judge pilot FAILED for {behavior}: arm {arm} api-refusal "
+                f"rate {rate:.3f} >= {PILOT_API_REFUSAL_MAX} (plan §6 pilot kill)"
+            )
+    # §7 positive-control EARLY read: rb vs random all-answer pilot-arm mean
+    # dscore, replayed from the pilot's own per-arm rubric-keyed cache
+    # (identical subsample + instrument -> cache hits, no new spend).
+    pc = None
+    if "rb_allans" in arms and "rnd_allans" in arms:
+        means: dict[str, dict] = {}
+        for arm in ("rb_allans", "rnd_allans"):
+            sub = _seeded_subsample(arms[arm], items_per_arm, seed=0, arm=arm)
+            r = judge_items_graded(
+                sub,
+                rubric,
+                cache_dir=pilot_dir / f"{behavior}_cache" / arm,
+                save_raw=pilot_dir / f"{behavior}_raw" / f"pc_replay_{arm}.json",
+                n_draws=n_draws,
+                temperature=JUDGE_TEMPERATURE,
+                max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+                judge_model=JUDGE_MODEL,
+                threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+            )
+            kept = [s for sc in r.per_item_scores.values() for s in sc]
+            means[arm] = {"mean": float(np.mean(kept)) if kept else None, "n_kept": len(kept)}
+        if means["rb_allans"]["mean"] is not None and means["rnd_allans"]["mean"] is not None:
+            delta = means["rb_allans"]["mean"] - means["rnd_allans"]["mean"]
+            pc = {**means, "delta_rb_minus_random": delta}
+            logger.info(
+                "[%s] pilot %s positive-control early read: rb-rnd all-answer "
+                "dscore=%.1f (coarse, unpowered — plan §6/§7)",
+                SENTINEL_JUDGE,
+                behavior,
+                delta,
+            )
+        else:
+            pc = {**means, "delta_rb_minus_random": None}
+    i2254._write_json_atomic(
+        pass_path,
+        {
+            "fingerprint": fp,
+            "verdict": report.verdict,
+            "transport": "batch (threshold_base=0 pin; rule-26 transport parity)",
+            "api_refusal_rates": refusal_rates,
+            "api_refusal_max": PILOT_API_REFUSAL_MAX,
+            "positive_control_early": pc,
+            "dropped_empty_arms": empty,
+        },
+    )
+
+
+def _judge_firstk_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: int) -> dict:
+    """Judge one steer cell (Batch API, rubric-keyed cache, max_tokens 2048)
+    with the rule-28 targeted SYNC re-issue for api-refusal-censored draws:
+    refused draws are re-dispatched at the IDENTICAL instrument on the sync
+    path with a FRESH cache dir (the rubric-keyed cache shares one key across
+    an item's draws — a same-cache replay would silently duplicate surviving
+    sibling draws instead of drawing fresh). Per-cell checkpoint at
+    judge/judged/<cid>.json with cached-skip resume; accounting keeps the
+    batch/sync split + rule-29 frac_items_complete (post-merge)."""
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
+    )
+    from explore_persona_space.experiments.issue_1739.judging import (
+        judge_items_graded,
+        judge_tallies,
+        rollout_item_id,
+    )
+
+    rec = json.loads(gen_path.read_text())
+    cell = rec["cell"]
+    cid = rec["cell_id"]
+    out_path = rroot / "judge" / "judged" / f"{cid}.json"
+    if out_path.exists() and not args.force:
+        return json.loads(out_path.read_text())
+    qs = i2254._eval_questions(cell["behavior"])
+    items: list[tuple[str, str, str]] = []
+    meta: dict[str, dict] = {}
+    for qi, seed, ci, di, text in i2254._iter_gen_qa(rec):
+        iid = rollout_item_id(_judge_ctx_id_firstk(cell, seed, len(items)), di)
+        items.append((iid, qs[qi], text))
+        meta[iid] = {"qi": qi, "seed": seed, "ci": ci, "di": di}
+    result = judge_items_graded(
+        items,
+        rubric,
+        cache_dir=rroot / "judge" / "cache" / cid,
+        save_raw=rroot / "judge" / "raw" / cid,
+        n_draws=n_draws,
+        temperature=JUDGE_TEMPERATURE,
+        max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+        judge_model=JUDGE_MODEL,
+        threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+    )
+    merged: dict[str, list[float]] = {
+        iid: [float(s) for s in sc] for iid, sc in result.per_item_scores.items()
+    }
+    need = {iid: int(k) for iid, k in result.per_item_api_refusals.items() if int(k) > 0}
+    reissue = None
+    if need:
+        item_by_id = {it[0]: it for it in items}
+        groups: dict[int, list[str]] = {}
+        for iid, k in need.items():
+            groups.setdefault(k, []).append(iid)
+        re_draws = re_scored = re_refused = re_transport = 0
+        for k, iids in sorted(groups.items()):
+            sub = [item_by_id[iid] for iid in sorted(iids)]
+            r2 = judge_items_graded(
+                sub,
+                rubric,
+                cache_dir=rroot / "judge" / "cache" / f"{cid}_syncfix_k{k}",
+                save_raw=rroot / "judge" / "raw" / f"{cid}_syncfix_k{k}",
+                n_draws=k,
+                temperature=JUDGE_TEMPERATURE,
+                max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+                judge_model=JUDGE_MODEL,
+                threshold_base=SYNC_FORCE_THRESHOLD_BASE,
+            )
+            for iid, sc in r2.per_item_scores.items():
+                if sc:
+                    merged.setdefault(iid, []).extend(float(s) for s in sc)
+            re_draws += r2.n_total_draws
+            re_scored += sum(len(sc) for sc in r2.per_item_scores.values())
+            re_refused += r2.n_api_refusal_draws
+            re_transport += r2.n_transport_lost_draws
+        reissue = {
+            "transport": "sync (rule-28 targeted re-issue; threshold_base forces sync)",
+            "n_items_reissued": len(need),
+            "n_draws_reissued": re_draws,
+            "n_scored": re_scored,
+            "n_api_refusal_residual": re_refused,
+            "n_transport_lost": re_transport,
+        }
+        logger.info(
+            "[%s] %s rule-28 sync re-issue: %d items / %d draws (residual refusals %d)",
+            SENTINEL_JUDGE,
+            cid,
+            len(need),
+            re_draws,
+            re_refused,
+        )
+    per_q: dict[int, list[float]] = {}
+    for iid, scores in merged.items():
+        if scores:
+            per_q.setdefault(meta[iid]["qi"], []).append(float(np.mean(scores)))
+    n_q = (max(m["qi"] for m in meta.values()) + 1) if meta else 0
+    per_q_mean = [float(np.mean(per_q[q])) if q in per_q else None for q in range(n_q)]
+    per_q_rate = [
+        float(np.mean([s >= i2254.SCORE_THRESHOLD for s in per_q[q]])) if q in per_q else None
+        for q in range(n_q)
+    ]
+    valid_means = [m for m in per_q_mean if m is not None]
+    valid_rates = [r for r in per_q_rate if r is not None]
+    coherence_rate = i2254._coherence_rate(rec)
+    fc_merged = (
+        float(np.mean([min(len(sc), n_draws) / n_draws for sc in merged.values()]))
+        if merged
+        else None
+    )
+    out = {
+        "cell_id": cid,
+        "cell": cell,
+        "phase": "steer",
+        "n_questions": n_q,
+        "judge": {
+            "model": JUDGE_MODEL,
+            "n_draws": n_draws,
+            "max_tokens": i2254.JUDGE_MAX_TOKENS_2254,
+            "temperature": JUDGE_TEMPERATURE,
+            "transport": "batch (threshold_base=0 pin)",
+        },
+        "items": meta,
+        "accounting": {
+            **judge_tallies(result),
+            "n_refusal_draws": result.n_refusal_draws,
+            "n_api_refusal_draws": result.n_api_refusal_draws,
+            "per_item_api_refusals": result.per_item_api_refusals,
+            "frac_items_complete_batch": (result.frac_items_complete if result.scores else None),
+            # rule-29 DV denominator: post-merge completeness (batch survivors
+            # + rule-28 sync replacements, capped at n_draws per item).
+            "frac_items_complete": fc_merged,
+            "sync_reissue": reissue,
+            "n_items": len(items),
+            "n_items_zero_valid": sum(1 for sc in merged.values() if not sc),
+        },
+        "per_item_scores_merged": merged,
+        "per_question_mean_score": per_q_mean,
+        "per_question_rate": per_q_rate,
+        "per_question_n": [len(per_q.get(q, [])) for q in range(n_q)],
+        "mean_score": float(np.mean(valid_means)) if valid_means else None,
+        "rate": float(np.mean(valid_rates)) if valid_rates else None,
+        "coherence_rate": coherence_rate,
+        "coherence_pass": bool(coherence_rate >= i2254.COHERENCE_CELL_GATE),
+        "cap_hit_fraction": rec.get("cap_hit_fraction"),
+        "max_new_tokens": rec.get("max_new_tokens"),
+        "regen": rec.get("regen"),
+        "alphas": rec.get("alphas"),
+    }
+    i2254._write_json_atomic(out_path, i2254._run_metadata(out))
+    return out
+
+
+def _upload_judge_outputs_firstk(rroot: Path) -> None:
+    """Pack the per-cell judge trees (judged/cache/raw) into <=9 MB plain
+    JSONL line-shards and upload ONLY the packed dirs — the shared data repo
+    sits at the Hub's 1M-file ceiling (#2286), so per-cell uploads of O(100)
+    files are rejected outright. save_raw writes bare-<cid> EXTENSIONLESS
+    files -> pattern='*' for raw (the parent wave-1 raw-drop lesson)."""
+    import scripts.issue2220_readwrite as rw2220
+
+    base = rroot / "judge"
+    for sub in ("judged", "cache", "raw"):
+        src = base / sub
+        if not src.exists():
+            continue
+        dest = base / f"{sub}_pack"
+        pattern = "*" if sub == "raw" else "*.json"
+        rw2220._pack_tree_to_jsonl_shards(src, dest, group=f"firstk_{sub}", pattern=pattern)
+        i2254._upload_folder_to_hf(
+            dest, f"{_round_hf_prefix()}/judge/{sub}_pack", allow=["*.jsonl", "*.json"]
+        )
+    pilot = base / "pilot"
+    if pilot.exists():
+        i2254._upload_folder_to_hf(
+            pilot,
+            f"{_round_hf_prefix()}/judge/pilot",
+            allow=["*.report.json", "*.pass.json", "pc_replay_*.json"],
+        )
+
+
+def phase_judge(args) -> None:
+    """Off-pod Batch-API judge wave (plan §6, VM/CPU-only): stage the steer
+    phase's per-cell raw completions (a regen'd cell's FULL-LENGTH record
+    feeds the judge — §3), grid-completeness assert BEFORE any spend, rule-26
+    pilot per behavior (--pilot stops after the gate), then per-cell judging
+    with per-cell checkpoints, rule-28 sync re-issue + rule-29 accounting,
+    and the packed-shard HF upload."""
+    from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
+
+    out_root = Path(args.out_root)
+    rroot = round_root(out_root)
+    behaviors = list(args.behaviors)
+    _ensure_git_inputs()
+    ops = i2254._load_operating_points(INPUTS_ROOT)
+    resolved = resolve_operating_points(ops, behaviors)
+    cells = build_cells(args, resolved, behaviors)
+    comp_root = _stage_round_completions(rroot)
+    expected = {_cell_id(c) for c in cells}
+    staged = {f.stem for f in comp_root.glob("*.json")}
+    missing = sorted(expected - staged)
+    if missing:
+        raise RuntimeError(
+            f"firstk judge: {len(missing)}/{len(expected)} gen cells missing — never a "
+            f"partial-grid judge spend (first missing: {missing[:8]})"
+        )
+    n_draws = 2 if args.smoke else JUDGE_DRAWS_FIRSTK
+    rubrics = {b: load_trait_rubric(b) for b in behaviors}
+    for b in behaviors:
+        _run_firstk_pilot(args, rroot, comp_root, b, rubrics[b], n_draws)
+    if args.pilot:
+        i2254._write_sentinel(out_root, f"{SENTINEL_JUDGE}-pilot", "done", {"behaviors": behaviors})
+        i2254._breadcrumb(SENTINEL_JUDGE, status="pilot-done", behaviors=len(behaviors))
+        return
+    order = sorted(expected)
+    for k, cid in enumerate(order, 1):
+        t0 = time.time()
+        behavior = cid.split("__", 1)[0]
+        _judge_firstk_cell(args, rroot, comp_root / f"{cid}.json", rubrics[behavior], n_draws)
+        i2254._progress(SENTINEL_JUDGE, k, len(order), cid, t0)
+    _upload_judge_outputs_firstk(rroot)
+    i2254._write_sentinel(
+        out_root, SENTINEL_JUDGE, "done", {"cells": len(order), "n_draws": n_draws}
+    )
+    i2254._breadcrumb(SENTINEL_JUDGE, status="done", cells=len(order))
+
+
+# ---------------------------------------------------------------------------
+# unit 2 — reduce phase (plan §3: registered lattice, H3/H4, reads 1+2)
+# ---------------------------------------------------------------------------
+
+
+def _ensure_reduce_git_inputs() -> None:
+    """Stage the reduce-only committed parent inputs (cjk_audit + decisive
+    percell) via the parent's sparse-checkout-aware fail-loud helper."""
+    for rel, cone in REDUCE_GIT_INPUTS:
+        i2254._ensure_git_input(rel, cone)
+
+
+def _horizon_stats_cell(rec: dict, tok, rx) -> dict:
+    """Cap-hit + CJK fractions on the COMMON 2048-token horizon (plan §3: a
+    regen'd 4096-cap cell's D components are RECOMPUTED from its persisted
+    raw completions truncated to 2048 tokens) plus realized-horizon
+    diagnostics; per-question arrays feed the paired bootstrap.
+    deg = cap-hit fraction + CJK fraction (the §3 sum)."""
+    n_q = max(rec["q_of_context"]) + 1
+    cnt = np.zeros(n_q)
+    cap = np.zeros(n_q)
+    cjk = np.zeros(n_q)
+    cjk_realized = 0
+    total = 0
+    for qi, _seed, _ci, _di, text in i2254._iter_gen_qa(rec):
+        ids = tok(text, add_special_tokens=False)["input_ids"]
+        if len(ids) <= COMMON_HORIZON_TOKENS:
+            t_common = text
+        else:
+            t_common = tok.decode(ids[:COMMON_HORIZON_TOKENS])
+        cnt[qi] += 1
+        cap[qi] += len(ids) >= COMMON_HORIZON_TOKENS  # parent _cap_hit_fraction convention
+        cjk[qi] += bool(rx.search(t_common))
+        cjk_realized += bool(rx.search(text))
+        total += 1
+    assert total and (cnt > 0).all(), (total, cnt.tolist())
+    caphit_q = cap / cnt
+    cjk_q = cjk / cnt
+    return {
+        "caphit_common": float(cap.sum() / total),
+        "cjk_common": float(cjk.sum() / total),
+        "deg_common": float((cap.sum() + cjk.sum()) / total),
+        "caphit_q": caphit_q.tolist(),
+        "cjk_q": cjk_q.tolist(),
+        "deg_q": (caphit_q + cjk_q).tolist(),
+        "cjk_realized": float(cjk_realized / total),
+        "caphit_realized_stored": rec.get("cap_hit_fraction"),
+        "realized_cap": rec.get("max_new_tokens"),
+        "regen": bool(rec.get("regen")),
+        "n_completions": int(total),
+    }
+
+
+def _horizon_rows(args, rroot: Path, comp_root: Path, cells: list[dict], rx) -> dict[str, dict]:
+    """Per-cell common-horizon stats with a JSONL checkpoint (T2: 160 cells >
+    ~50 — code-style intra-phase grain) and a resume key on (cell id, gen-file
+    byte sha, regex sha, common horizon) — file-byte hashes are machine-stable
+    (never a recomputed-float hash)."""
+    from transformers import AutoTokenizer
+
+    ckpt = rroot / "steer" / "horizon_stats.jsonl"
+    regex_sha = i2254._sha8(rx.pattern)
+    done: dict[tuple[str, str], dict] = {}
+    if ckpt.exists() and not args.force:
+        for line in ckpt.read_text().splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if row.get("regex_sha") == regex_sha and row.get("common") == COMMON_HORIZON_TOKENS:
+                done[(row["cell_id"], row["gen_sha"])] = row
+    ckpt.parent.mkdir(parents=True, exist_ok=True)
+    tok = None
+    rows: dict[str, dict] = {}
+    for k, cell in enumerate(cells, 1):
+        cid = _cell_id(cell)
+        gp = comp_root / f"{cid}.json"
+        gen_sha = hashlib.sha256(gp.read_bytes()).hexdigest()[:12]
+        hit = done.get((cid, gen_sha))
+        if hit is not None:
+            rows[cid] = hit
+            continue
+        if tok is None:
+            tok = AutoTokenizer.from_pretrained(i2254.MODEL_NAME)
+        t0 = time.time()
+        row = _horizon_stats_cell(json.loads(gp.read_text()), tok, rx)
+        row.update(
+            {
+                "cell_id": cid,
+                "gen_sha": gen_sha,
+                "regex_sha": regex_sha,
+                "common": COMMON_HORIZON_TOKENS,
+            }
+        )
+        with ckpt.open("a") as fh:  # single-line O_APPEND-style atomic append
+            fh.write(json.dumps(row) + "\n")
+        rows[cid] = row
+        i2254._progress("firstk-horizon", k, len(cells), cid, t0)
+    return rows
+
+
+def _q_from_list(vals) -> np.ndarray:
+    """Per-question list (None where every draw dropped) -> NaN float array."""
+    return np.array([np.nan if v is None else float(v) for v in vals], dtype=np.float64)
+
+
+def _lattice_block(
+    b: str, d: str, breadth: str, arm_q: dict, a0_q: np.ndarray, deg_q: dict, key: str
+) -> dict:
+    """One §3 registered-lattice cell for (behavior x strong direction x
+    breadth): A/S/T paired deltas vs the reused alpha0 floor, the per-resample
+    R estimator with the denominator guard, D on the common horizon (declared
+    point read, CI alongside), H3 adjacent contrasts + span1-5 plateau, and
+    the disjoint verdict label. ONE shared bootstrap index across every
+    quantity (paired resamples, plan §6)."""
+    nq = len(a0_q)
+    idx = i2254._boot_idx(nq, i2254.N_BOOT_VERDICT, key)
+    a0_b = np.nanmean(a0_q[idx], axis=1)
+    a0_pt = float(np.nanmean(a0_q))
+
+    def _delta_b(pos: str) -> np.ndarray:
+        return np.nanmean(arm_q[pos][idx], axis=1) - a0_b
+
+    def _delta_pt(pos: str) -> float:
+        return float(np.nanmean(arm_q[pos])) - a0_pt
+
+    def _ci(v: np.ndarray) -> list[float]:
+        return [float(np.nanquantile(v, 0.025)), float(np.nanquantile(v, 0.975))]
+
+    have = set(arm_q)
+    a_b, s_b, t_b = _delta_b("allans"), _delta_b("span13"), _delta_b("tok1")
+    out: dict = {
+        "behavior": b,
+        "direction": d,
+        "breadth": breadth,
+        "n_questions": nq,
+        "n_boot": i2254.N_BOOT_VERDICT,
+        "seed_key": key,
+        "arms_present": sorted(have),
+        "A_allans": {"point": _delta_pt("allans"), "ci": _ci(a_b)},
+        "S_span13": {"point": _delta_pt("span13"), "ci": _ci(s_b)},
+        "T_tok1": {"point": _delta_pt("tok1"), "ci": _ci(t_b)},
+    }
+    a_lo = out["A_allans"]["ci"][0]
+    s_lo = out["S_span13"]["ci"][0]
+    a_pt = out["A_allans"]["point"]
+    unstable_frac = float(np.mean(np.abs(a_b) < RATIO_DEN_FLOOR))
+    ratio_unstable = bool(unstable_frac > RATIO_UNSTABLE_FRAC)
+    out["ratio_guard"] = {
+        "denominator_floor": RATIO_DEN_FLOOR,
+        "unstable_frac": unstable_frac,
+        "ratio_unstable": ratio_unstable,
+    }
+    with np.errstate(divide="ignore", invalid="ignore"):
+        r_b = s_b / a_b
+        r1_b = t_b / a_b
+    r_pt = float(out["S_span13"]["point"] / a_pt) if abs(a_pt) > 0 else None
+    r1_pt = float(out["T_tok1"]["point"] / a_pt) if abs(a_pt) > 0 else None
+    if ratio_unstable:
+        note = "R undefined — >1% of resamples under the denominator floor (§3 guard)"
+        out["R"] = {"point": r_pt, "lo": None, "hi": None, "note": note}
+        out["R1"] = {"point": r1_pt, "lo": None, "hi": None, "note": note}
+    else:
+        out["R"] = {
+            "point": r_pt,
+            "lo": float(np.nanquantile(r_b, 0.025)),
+            "hi": float(np.nanquantile(r_b, 0.975)),
+        }
+        out["R1"] = {
+            "point": r1_pt,
+            "lo": float(np.nanquantile(r1_b, 0.025)),
+            "hi": float(np.nanquantile(r1_b, 0.975)),
+        }
+    fb_b = s_b - R_SUFFICIENT * a_b
+    out["fallback_S_minus_two_thirds_A"] = {
+        "point": float(out["S_span13"]["point"] - R_SUFFICIENT * a_pt),
+        "ci": _ci(fb_b),
+        "role": "descriptive fallback (load-bearing when ratio_unstable, §3)",
+    }
+    d_b = np.nanmean(deg_q["allans"][idx], axis=1) - 2.0 * np.nanmean(deg_q["span13"][idx], axis=1)
+    d_pt = float(np.nanmean(deg_q["allans"]) - 2.0 * np.nanmean(deg_q["span13"]))
+    d_ci = _ci(d_b)
+    out["D"] = {
+        "point": d_pt,
+        "ci": d_ci,
+        "gating": "point (declared, plan §3)",
+        "knife_edge": bool(abs(d_pt) < (d_ci[1] - d_ci[0]) / 2.0),
+        "deg_allans_common": float(np.nanmean(deg_q["allans"])),
+        "deg_span13_common": float(np.nanmean(deg_q["span13"])),
+    }
+    if "span15" in have:
+        s15_pt = _delta_pt("span15")
+        r15_pt = float(s15_pt / a_pt) if abs(a_pt) > 0 else None
+        with np.errstate(divide="ignore", invalid="ignore"):
+            r15_b = _delta_b("span15") / a_b
+        out["R_span15"] = {
+            "point": r15_pt,
+            "lo": (None if ratio_unstable else float(np.nanquantile(r15_b, 0.025))),
+            "plateau_ge_90pct": (None if r15_pt is None else bool(r15_pt >= PLATEAU_FRAC)),
+            "below_two_thirds": (None if r15_pt is None else bool(r15_pt < R_SUFFICIENT)),
+        }
+    else:
+        out["R_span15"] = None  # arm absent (smoke slice)
+    chain = [p for p in H3_CHAIN if p in have]
+    contrasts = []
+    for early, late in itertools.pairwise(chain):
+        pair_b = np.nanmean(arm_q[late][idx], axis=1) - np.nanmean(arm_q[early][idx], axis=1)
+        ci = _ci(pair_b)
+        contrasts.append(
+            {
+                "pair": f"{late}-minus-{early}",
+                "point": float(np.nanmean(arm_q[late]) - np.nanmean(arm_q[early])),
+                "ci": ci,
+                "inverted": bool(ci[1] < 0),
+            }
+        )
+    out["h3_adjacent_contrasts"] = contrasts
+    r_lo = out["R"]["lo"]
+    if a_lo <= 0:
+        label = "all-answer-inert"
+    elif s_lo <= 0:
+        label = "opening-inert"
+    elif ratio_unstable:
+        label = "Ambiguous"  # §3 guard: sufficient/partial cannot fire
+    elif r_lo is not None and r_lo >= R_SUFFICIENT and d_pt >= 0:
+        label = "opening-sufficient"
+    elif r_pt is not None and r_pt >= R_PARTIAL and (r_lo < R_SUFFICIENT or d_pt < 0):
+        label = "opening-partial"
+    else:
+        label = "Ambiguous"
+    out["verdict"] = label
+    return out
+
+
+def _parent_decisive_key(cell: dict) -> str | None:
+    """Parent decisive percell key for the rig-parity advisory (§12.5): our
+    allans arm maps to the parent's 'ans' cells, lastctx to 'ctx' — a lookup
+    miss (different operating point) simply yields no advisory row."""
+    pos = {"allans": "ans", "lastctx": "ctx"}.get(cell["position"])
+    if pos is None:
+        return None
+    return "__".join(
+        (
+            cell["behavior"],
+            i2254._DIR_SHORT[cell["direction"]],
+            pos,
+            cell["layer_config"],
+            i2254._c_token(cell["c"]),
+        )
+    )
+
+
+def phase_reduce(args) -> None:
+    """Plan §3/§6 reduce (VM/CPU-only, git-committed outputs): per-cell paired
+    Δscore CIs vs the REUSED alpha0 floor (1,000 draws), the registered
+    verdict lattice + H3 + H4 + positive control (2,000 draws), read 1
+    (fraction of donor-swap ceiling) and read 2 (opening vs all-answer with
+    common-2048-horizon cap-hit/CJK), the rig-parity advisory vs the parent's
+    committed decisive percell, and rule-29 completeness. All bootstraps ride
+    the parent's vectorized ``_boot_idx`` fancy-index machinery (seed 20254)
+    — never a per-draw Python loop."""
+    out_root = Path(args.out_root)
+    rroot = round_root(out_root)
+    behaviors = list(args.behaviors)
+    _ensure_git_inputs()
+    _ensure_reduce_git_inputs()
+    ops = i2254._load_operating_points(INPUTS_ROOT)
+    resolved = resolve_operating_points(ops, behaviors)
+    cells = build_cells(args, resolved, behaviors)
+    comp_root = _stage_round_completions(rroot)
+    judged_dir = rroot / "judge" / "judged"
+    missing = [c for c in cells if not (judged_dir / f"{_cell_id(c)}.json").is_file()]
+    if missing:
+        raise RuntimeError(
+            f"firstk reduce: {len(missing)}/{len(cells)} judged cells missing — run the "
+            f"judge phase first (first missing: {_cell_id(missing[0])})"
+        )
+    baseline = json.loads((_REPO_ROOT / BASELINE_PERCELL_REL).read_text())
+    audit = json.loads((_REPO_ROOT / CJK_AUDIT_REL).read_text())
+    rx = re.compile(audit["regex"])  # the parent's committed intrusion regex (§8)
+    decisive = json.loads((_REPO_ROOT / DECISIVE_PERCELL_REL).read_text())
+    horizon = _horizon_rows(args, rroot, comp_root, cells, rx)
+
+    judged: dict[str, dict] = {}
+    for cell in cells:
+        cid = _cell_id(cell)
+        judged[cid] = json.loads((judged_dir / f"{cid}.json").read_text())
+    n_qs = {j["n_questions"] for j in judged.values()}
+    assert len(n_qs) == 1, f"non-uniform n_questions across cells: {sorted(n_qs)}"
+    n_q = n_qs.pop()
+
+    a0_arr: dict[str, np.ndarray] = {}
+    ceil_arr: dict[str, np.ndarray] = {}
+    a0_rate: dict[str, float] = {}
+    for b in behaviors:
+        base_b = baseline["behaviors"][b]
+        a0_full = _q_from_list(base_b["alpha0"]["per_question_mean_score"])
+        ceil_full = _q_from_list(base_b["ceiling"]["per_question_mean_score"])
+        assert len(a0_full) >= n_q and len(ceil_full) >= n_q, (b, len(a0_full), n_q)
+        if len(a0_full) > n_q:  # smoke slice: cells cover a question prefix
+            logger.info(
+                "[%s] %s: truncating alpha0/ceiling arrays %d -> %d questions (smoke)",
+                SENTINEL_REDUCE,
+                b,
+                len(a0_full),
+                n_q,
+            )
+        a0_arr[b] = a0_full[:n_q]
+        ceil_arr[b] = ceil_full[:n_q]
+        a0_rate[b] = float(base_b["alpha0"]["rate"])
+
+    qindex: dict[tuple[str, str, str, str], np.ndarray] = {}
+    degindex: dict[tuple[str, str, str, str], np.ndarray] = {}
+    percell: dict[str, dict] = {b: {} for b in behaviors}
+    foc_rows: dict[str, dict] = {b: {} for b in behaviors}
+    parity_rows: dict[str, dict] = {}
+    for cell in cells:
+        cid = _cell_id(cell)
+        b = cell["behavior"]
+        j = judged[cid]
+        cq = i2254._q_arr(j)
+        qkey = (b, cell["direction"], cell["breadth"], cell["position"])
+        qindex[qkey] = cq
+        degindex[qkey] = np.asarray(horizon[cid]["deg_q"], dtype=np.float64)
+        idx = i2254._boot_idx(n_q, i2254.N_BOOT_CELL, f"{cid}__firstk")
+        point, lo, hi = i2254._boot_diff_ci(cq, a0_arr[b], idx)
+        row = {
+            "cell": cell,
+            "delta_score": point,
+            "ci": [lo, hi],
+            "n_boot": i2254.N_BOOT_CELL,
+            "mean_score": j["mean_score"],
+            "rate": j["rate"],
+            # alpha0 lacks per_question_rate in the committed baseline JSON,
+            # so the rate delta is POINT-ONLY (no paired CI).
+            "delta_rate_point": (None if j["rate"] is None else j["rate"] - a0_rate[b]),
+            "coherence_rate": j["coherence_rate"],
+            "coherence_pass": j["coherence_pass"],
+            "frac_items_complete": j["accounting"]["frac_items_complete"],
+            "horizons": {
+                k: horizon[cid][k]
+                for k in (
+                    "caphit_common",
+                    "cjk_common",
+                    "deg_common",
+                    "cjk_realized",
+                    "caphit_realized_stored",
+                    "realized_cap",
+                    "regen",
+                )
+            },
+        }
+        pk = _parent_decisive_key(cell)
+        prow = decisive["behaviors"].get(b, {}).get(pk) if pk else None
+        if prow is not None:
+            ci_f = prow["ci_frozen"]
+            parity = {
+                "parent_key": pk,
+                "parent_delta_score": prow["delta_score"],
+                "parent_ci_frozen": ci_f,
+                "fresh_delta_score": point,
+                "fresh_within_parent_ci": bool(ci_f[0] <= point <= ci_f[1]),
+                "advisory": True,
+            }
+            row["rig_parity"] = parity
+            parity_rows[cid] = parity
+            logger.info(
+                "[%s] rig-parity ADVISORY %s: fresh d=%.1f vs parent d=%.1f ci=%s (%s)",
+                SENTINEL_REDUCE,
+                cid,
+                point,
+                prow["delta_score"],
+                ci_f,
+                "within" if parity["fresh_within_parent_ci"] else "OUTSIDE",
+            )
+        percell[b][cid] = row
+        # read 1: fraction of the donor-swap ceiling (shared alpha0 anchor).
+        a0_b = np.nanmean(a0_arr[b][idx], axis=1)
+        num_b = np.nanmean(cq[idx], axis=1) - a0_b
+        den_b = np.nanmean(ceil_arr[b][idx], axis=1) - a0_b
+        with np.errstate(divide="ignore", invalid="ignore"):
+            f_b = num_b / den_b
+        den_pt = float(np.nanmean(ceil_arr[b]) - np.nanmean(a0_arr[b]))
+        foc_rows[b][cid] = {
+            "fraction_point": (point / den_pt) if abs(den_pt) > 0 else None,
+            "fraction_ci": [float(np.nanquantile(f_b, 0.025)), float(np.nanquantile(f_b, 0.975))],
+            "denominator_point": den_pt,
+            "n_boot": i2254.N_BOOT_CELL,
+        }
+
+    lattice: dict[str, dict] = {}
+    core = {"allans", "span13", "tok1"}
+    for b in behaviors:
+        for d in STRONG_DIRECTIONS:
+            for breadth in ROUND_BREADTHS:
+                arms = {
+                    p: qindex[(b, d, breadth, p)] for p in POSITIONS if (b, d, breadth, p) in qindex
+                }
+                if not arms:
+                    continue  # direction/breadth absent from this run (smoke slice)
+                lkey = f"{b}__{d}__{breadth}"
+                if not core <= set(arms):
+                    lattice[lkey] = {
+                        "verdict": "not-computable",
+                        "missing_arms": sorted(core - set(arms)),
+                        "note": "core arm absent (smoke slice or failed cell)",
+                    }
+                    continue
+                degs = {p: degindex[(b, d, breadth, p)] for p in arms}
+                lattice[lkey] = _lattice_block(
+                    b, d, breadth, arms, a0_arr[b], degs, f"{lkey}__firstk_lattice"
+                )
+
+    h4: dict[str, dict] = {}
+    for b in behaviors:
+        for breadth in ROUND_BREADTHS:
+            rows: dict[str, dict] = {}
+            for pos in POSITIONS:
+                pre_q = qindex.get((b, "pre", breadth, pos))
+                shf_q = qindex.get((b, SHUFFLED_DIRECTION, breadth, pos))
+                if pre_q is None or shf_q is None:
+                    continue
+                idx = i2254._boot_idx(
+                    n_q, i2254.N_BOOT_VERDICT, f"{b}__{breadth}__{pos}__firstk_h4"
+                )
+                point, lo, hi = i2254._boot_diff_ci(pre_q, shf_q, idx)
+                row = {
+                    "pre_minus_preshuf": {"point": point, "ci": [lo, hi]},
+                    "clears": bool(lo > 0),
+                    "primary": "preshuf (shuffled-map twin, plan §3 H4)",
+                }
+                rnd_q = qindex.get((b, "random", breadth, pos))
+                if rnd_q is not None:
+                    rp, rlo, rhi = i2254._boot_diff_ci(pre_q, rnd_q, idx)
+                    row["pre_minus_random_diagnostic"] = {"point": rp, "ci": [rlo, rhi]}
+                rows[pos] = row
+            if not rows:
+                continue
+            sp = rows.get("span13", {}).get("clears")
+            lc = rows.get("lastctx", {}).get("clears")
+            verdict = None
+            if sp is not None and lc is not None:
+                if sp and not lc:
+                    verdict = (
+                        "locus-dissociation (span1-3 clears the shuffled twin, last-ctx does not)"
+                    )
+                elif sp and lc:
+                    verdict = "no-dissociation (last-ctx also clears the shuffled twin)"
+                else:
+                    verdict = "opening does not clear the shuffled twin"
+            h4[f"{b}__{breadth}"] = {"per_position": rows, "dissociation_verdict": verdict}
+
+    pc: dict = {"behaviors": {}, "note": "plan §7: rb-vs-random all-answer must clear (powered)"}
+    for b in behaviors:
+        rows = {}
+        for breadth in ROUND_BREADTHS:
+            rb_q = qindex.get((b, "rb", breadth, "allans"))
+            rnd_q = qindex.get((b, "random", breadth, "allans"))
+            if rb_q is None or rnd_q is None:
+                continue
+            idx = i2254._boot_idx(n_q, i2254.N_BOOT_VERDICT, f"{b}__{breadth}__firstk_pc")
+            point, lo, hi = i2254._boot_diff_ci(rb_q, rnd_q, idx)
+            rows[breadth] = {
+                "rb_minus_random_allans": {"point": point, "ci": [lo, hi]},
+                "cleared": bool(lo > 0),
+            }
+        cleared = any(r["cleared"] for r in rows.values()) if rows else None
+        pc["behaviors"][b] = {"per_breadth": rows, "cleared": cleared}
+    clear_vals = [v["cleared"] for v in pc["behaviors"].values() if v["cleared"] is not None]
+    pc["both_behaviors_failed"] = bool(clear_vals) and not any(clear_vals)
+    if pc["both_behaviors_failed"]:
+        logger.error(
+            "[%s] POSITIVE CONTROL FAILED for every behavior with rb/random all-answer "
+            "cells — plan §7: halt-and-report, the rig cannot detect the strongest "
+            "known effect; downstream verdicts are NOT interpretable",
+            SENTINEL_REDUCE,
+        )
+
+    reads_dir = rroot / "reads"
+    reads_dir.mkdir(parents=True, exist_ok=True)
+    boot_meta = {
+        "n_boot_cell": i2254.N_BOOT_CELL,
+        "n_boot_verdict": i2254.N_BOOT_VERDICT,
+        "seed": i2254.BOOTSTRAP_SEED,
+        "estimator": "question-level paired cluster bootstrap (parent _boot_idx machinery)",
+    }
+    i2254._write_json_atomic(
+        rroot / "steer" / "delta_score_percell.json",
+        i2254._run_metadata(
+            {
+                "behaviors": percell,
+                "completeness": i2254._completeness_block(
+                    sorted(judged_dir / f"{_cell_id(c)}.json" for c in cells)
+                ),
+                "alpha0_source": BASELINE_PERCELL_REL,
+                "rig_parity_advisory": parity_rows,
+                "boot": boot_meta,
+            }
+        ),
+    )
+    i2254._write_json_atomic(
+        reads_dir / "verdict_lattice.json",
+        i2254._run_metadata(
+            {
+                "lattice": lattice,
+                "h4": h4,
+                "positive_control": pc,
+                "boot": boot_meta,
+                "thresholds": {
+                    "R_sufficient": R_SUFFICIENT,
+                    "R_partial": R_PARTIAL,
+                    "ratio_denominator_floor": RATIO_DEN_FLOOR,
+                    "ratio_unstable_frac": RATIO_UNSTABLE_FRAC,
+                    "plateau_frac": PLATEAU_FRAC,
+                },
+                "h3_note": (
+                    "adjacent paired-difference contrasts live inside each lattice "
+                    "block (4 CIs per chain, no family correction — plan §3)"
+                ),
+            }
+        ),
+    )
+    i2254._write_json_atomic(
+        reads_dir / "fraction_of_ceiling.json",
+        i2254._run_metadata(
+            {
+                "behaviors": foc_rows,
+                "denominator": "ceiling - alpha0 (both reused from the committed baseline)",
+                "ceiling_source": BASELINE_PERCELL_REL,
+                "boot": boot_meta,
+            }
+        ),
+    )
+    i2254._write_json_atomic(
+        reads_dir / "opening_vs_allanswer.json",
+        i2254._run_metadata(
+            {
+                "common_horizon_tokens": COMMON_HORIZON_TOKENS,
+                "cjk_regex_source": CJK_AUDIT_REL,
+                "per_cell_horizons": {cid: horizon[cid] for cid in sorted(horizon)},
+                "lattice_recovery": {
+                    k: {f: v.get(f) for f in ("R", "R1", "R_span15", "D", "ratio_guard", "verdict")}
+                    for k, v in lattice.items()
+                },
+            }
+        ),
+    )
+    i2254._write_sentinel(
+        out_root,
+        SENTINEL_REDUCE,
+        "done",
+        {"cells": len(cells), "lattice_cells": len(lattice), "n_questions": n_q},
+    )
+    i2254._breadcrumb(SENTINEL_REDUCE, status="done", cells=len(cells))
+
+
 PHASES = {
     "stage_inputs": phase_stage_inputs,
     "steer": phase_steer,
+    "judge": phase_judge,
+    "reduce": phase_reduce,
 }
 
 
@@ -1019,7 +2063,10 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--phases",
         default=None,
-        help="comma-separated phases to run in order (stage_inputs,steer — plan §9 workload cmd)",
+        help=(
+            "comma-separated phases to run in order "
+            "(stage_inputs,steer,judge,reduce — plan §9 workload cmd)"
+        ),
     )
     ap.add_argument("--behaviors", nargs="+", default=list(ROUND_BEHAVIORS))
     ap.add_argument(
@@ -1057,6 +2104,24 @@ def build_argparser() -> argparse.ArgumentParser:
         help="generation seed base (per-draw seed = seed_base + draw index)",
     )
     ap.add_argument("--force", action="store_true", help="ignore per-cell checkpoint caches")
+    ap.add_argument(
+        "--pilot",
+        action="store_true",
+        help=(
+            "judge phase only: run the rule-26 pilot gate (>=55 effective draws x 4 arms "
+            "per behavior at the production instrument + Batch transport) and STOP before "
+            "the bulk wave (plan §6)"
+        ),
+    )
+    ap.add_argument(
+        "--waive-judge-parse-fail-arms",
+        nargs="*",
+        default=[],
+        help=(
+            "rule 26(b) explained-content-drop escape: pilot arm names whose parse-fail "
+            "check is waived (truncation FAIL stays unwaivable inside judge_pilot)"
+        ),
+    )
     ap.add_argument(
         "--smoke",
         action="store_true",
@@ -1125,6 +2190,84 @@ def _dry_run_phase(args, phase: str) -> None:
         resolved = resolve_operating_points(ops, list(args.behaviors))
         cells = build_cells(args, resolved, list(args.behaviors))
         i2254._breadcrumb(SENTINEL_STEER, dry_run=1, cells=len(cells))
+    elif phase == "judge":
+        import inspect
+
+        import scripts.issue2220_readwrite as rw2220
+        from explore_persona_space.eval.judge_dispatch import graded_temperature
+        from explore_persona_space.eval.judge_pilot import _seeded_subsample, judge_pilot_gate
+        from explore_persona_space.experiments.issue_1739.constants import JUDGE_MODEL
+        from explore_persona_space.experiments.issue_1739.judging import (
+            judge_items_graded,
+            judge_tallies,
+            load_trait_rubric,
+            rollout_item_id,
+        )
+
+        # Signature-bind the exact production call shapes (the #1332 pattern).
+        inspect.signature(judge_items_graded).bind(
+            [],
+            "rubric",
+            cache_dir=Path("."),
+            save_raw=Path("."),
+            n_draws=JUDGE_DRAWS_FIRSTK,
+            temperature=1.0,
+            max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+            judge_model=JUDGE_MODEL,
+            threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+        )
+        inspect.signature(judge_pilot_gate).bind(
+            {},
+            "rubric",
+            max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+            cache_dir=Path("."),
+            save_raw_dir=Path("."),
+            n_draws=JUDGE_DRAWS_FIRSTK,
+            target_total_draws=220,
+            min_effective_draws_per_arm=PILOT_MIN_EFFECTIVE_FIRSTK,
+            waive_parse_fail_arms=(),
+            allow_subresolution_pilot=False,
+            threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+            report_path=Path("."),
+            seed=0,
+        )
+        inspect.signature(_seeded_subsample).bind([], 1, seed=0, arm="a")
+        inspect.signature(rw2220._pack_tree_to_jsonl_shards).bind(
+            Path("."), Path("."), group="g", pattern="*"
+        )
+        assert callable(load_trait_rubric) and callable(judge_tallies)
+        assert callable(rollout_item_id) and callable(graded_temperature)
+        assert callable(i2254._upload_folder_to_hf) and callable(i2254._eval_questions)
+        # Judge-grid enumeration off the COMMITTED operating points + the
+        # item-id budget for every position token (local reads only).
+        ops = i2254._load_operating_points(INPUTS_ROOT)
+        cells = build_cells(
+            args, resolve_operating_points(ops, list(args.behaviors)), list(args.behaviors)
+        )
+        for cell in cells:
+            _judge_ctx_id_firstk(cell, SEED_BASE_DEFAULT + DRAWS_DEFAULT - 1, 119)
+        i2254._breadcrumb(SENTINEL_JUDGE, dry_run=1, cells=len(cells))
+    elif phase == "reduce":
+        import inspect
+
+        from transformers import AutoTokenizer
+
+        assert callable(AutoTokenizer.from_pretrained)
+        assert callable(i2254._completeness_block) and callable(i2254._q_arr)
+        inspect.signature(i2254._boot_idx).bind(20, i2254.N_BOOT_VERDICT, "k")
+        inspect.signature(i2254._boot_diff_ci).bind(None, None, None)
+        inspect.signature(i2254._ensure_git_input).bind("rel", "cone")
+        # Committed reduce inputs present + regex compiles (local reads only —
+        # no HF, no tokenizer download, no judged-artifact reads).
+        for rel, _cone in ((BASELINE_PERCELL_REL, ""),) + REDUCE_GIT_INPUTS:
+            p = _REPO_ROOT / rel
+            assert p.is_file(), f"{p} missing — committed parent input (plan §10)"
+        re.compile(json.loads((_REPO_ROOT / CJK_AUDIT_REL).read_text())["regex"])
+        ops = i2254._load_operating_points(INPUTS_ROOT)
+        cells = build_cells(
+            args, resolve_operating_points(ops, list(args.behaviors)), list(args.behaviors)
+        )
+        i2254._breadcrumb(SENTINEL_REDUCE, dry_run=1, cells=len(cells))
     else:  # unreachable behind the main() phase validation; keep fail-loud
         raise SystemExit(f"dry-run: no wiring branch for phase {phase!r}")
     print(f"[dry-run] {phase} wiring OK", flush=True)
@@ -1139,7 +2282,8 @@ def main() -> None:
         raise SystemExit(0)
     if not args.phases:
         raise SystemExit(
-            "--phases is required (comma-separated: stage_inputs,steer) or --import-check"
+            "--phases is required (comma-separated: stage_inputs,steer,judge,reduce) "
+            "or --import-check"
         )
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
     unknown = [p for p in phases if p not in PHASES]
