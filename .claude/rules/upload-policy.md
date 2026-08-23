@@ -946,6 +946,92 @@ policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
   an expensive extraction store uploads before — or concurrent with — any
   long fit/analysis phase that consumes it.
 
+## Absence checks (#2442)
+
+**An absence check must use a call that can FAIL on a wrong location.** The
+#2329 incident, two calls against the SAME repo + prefix, opposite outcomes:
+
+- `list_repo_files(repo_id, repo_type="dataset")` + a client-side
+  `startswith(<prefix>)` filter → rc=0, prints `0`;
+- `list_repo_tree(repo_id, path_in_repo=<same nonexistent prefix>,
+  repo_type="dataset")` → `EntryNotFoundError` (HTTP 404).
+
+Why: the client-side filter is a local string operation over a listing
+produced for a different question — the prefix never reaches the server — so
+"prefix holds nothing" and "prefix does not exist" are indistinguishable by
+construction. A full listing + filter is acceptable ONLY for counting WITHIN
+a prefix already proven to exist.
+
+**The silent-empty roster** — calls that LOOK like existence checks and are
+not, each with the assert that rescues it (semantics verified on the pinned
+`huggingface_hub` 0.36.2):
+
+- `get_paths_info(repo_id, [paths])` — a missing path is OMITTED from the
+  returned list without raising (its `Raises:` block names only
+  `RepositoryNotFoundError` / `RevisionNotFoundError`). Rescue: assert the
+  requested path is IN the returned set.
+- `file_exists(repo_id, filename)` — returns False not only for a missing
+  file but ALSO for a wrong `repo_id` / `repo_type` / `revision` (it catches
+  `RepositoryNotFoundError`, `EntryNotFoundError`, AND
+  `RevisionNotFoundError` into one `False`), which makes the § Relocated
+  codebase traps instruction "NEVER wave through a `RepositoryNotFoundError`
+  / wrong-revision 404" unactionable THROUGH `file_exists` — it never shows
+  you one. Rescue: assert the repo + revision resolve first, or read the
+  error via a call that raises.
+- `hub.list_hf_files_under_path` / `hub.list_hf_entries_under_path`
+  (`src/explore_persona_space/orchestrate/hub.py`) — return `[]` on an
+  absent path BY DESIGN (correct for their staging callers); never use them
+  as absence primitives. Use `hub.assert_hf_prefix_exists` (below).
+- `list_repo_files` + a client-side filter — the #2329 case above (the
+  standing anti-pattern exemplar:
+  `src/explore_persona_space/experiments/issue_823/run_823.py:1359`).
+
+**The raising primitive:** `hub.assert_hf_prefix_exists(api, repo_id, prefix,
+repo_type=..., revision=...)` returns the file count at/under the prefix and
+RAISES when it does not exist — a scoped server-side `list_repo_tree`
+materialized inside a `retry_transient` thunk (a 429/5xx is retried, never
+misread as absence), with an `EntryNotFoundError` falling back to ONE retried
+`file_exists` probe so an exact FILE path returns 1 (the tree endpoint 404s
+on file paths too — the #939 kind-confusion; same fallback shape as
+`list_hf_entries_under_path`).
+
+**HF-specific precision:** on a git-backed repo there are no empty
+directories — a tree prefix exists iff ≥1 file lives under it. The scoped
+call's 404 therefore covers BOTH "wrong guess" AND "nothing persisted yet";
+the two are disambiguated by the parent-prefix positive control, not by the
+404 itself (the § Relocated codebase traps path-args entry already treats a
+pre-upload prefix 404 as expected — never read a 404 alone as proof the
+guess was wrong). The wrong-path-vs-empty-path framing stays exact for the
+LOCAL legs (`ls`/`find` fail on a missing dir, succeed-empty on an empty
+one); this is its HF refinement.
+
+**Parent-prefix positive control (the no-raising-call fallback):** when no
+raising call fits, list the PARENT prefix and assert it returns non-zero
+before reading a child's zero as meaningful. This is how #2329 was actually
+resolved — listing `ladder/`'s children showed no `grid`, which located the
+real path.
+
+**The lazy-generator trap is load-bearing here:** per the #779 entry in
+§ Relocated codebase traps below, the 404 raises at ITERATION, not at the
+call — a `try/except` around the call catches nothing, and an absence check
+built that way silently degrades to the very failure mode this section bans.
+Materialize (`list(...)`) INSIDE the guard.
+
+**The #2329 layout trap (why the wrong guess happens):** the grid store was
+split across `issue2329_q35rerun/analysis_tensors/ladder/` and
+`issue2329_q35rerun/raw_completions/ladder/` — NEITHER named for the round
+label, with the rollout TEXT under `raw_completions/` per this rule's own
+upload table — so "the grid store" was NOT under the tree holding every
+other ladder artifact. A prefix guess that looks obviously right is often
+wrong here.
+
+**Throughput vs correctness:** the bar on a bare `list_repo_files` against
+the ~1M-file data repo (>90 s timeout, #833 — § Relocated codebase traps
+below) is a THROUGHPUT reason to scope; this section's rationale is
+CORRECTNESS — a scoped call fails on a wrong location where the full listing
++ filter cannot, on a repo of any size. The two are orthogonal: on a small
+repo the full listing is fast and still wrong as an absence check.
+
 ## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
 
 Verbatim gotchas.md entries whose topic this rule already owns — relocated

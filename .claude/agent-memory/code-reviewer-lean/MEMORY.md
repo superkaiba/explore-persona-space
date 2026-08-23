@@ -1,5 +1,6 @@
 # code-reviewer-lean memory index
 
+- [Substitution dial outside production predicate](substitution_dial_outside_production_predicate.md) — enumerate EVERY smoke dial vs _production() + regime; one guarded sibling proves intent (#2476 R1 g3)
 - [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a stricter adjacent proxy still re-routes registered spend (#2254 R1 g3)
 - [Gate mean nanmean denominator](gate_mean_nanmean_denominator.md) — a gate's np.nanmean over per-unit stats silently drops a NaN unit; require full finiteness or an n-in-mean check (#2379 R1 g4)
 - [Figure-populated assert vs reference artists](figure_populated_assert_reference_artists.md) — an empty-figure assert scanning ax.lines is defeated by axhline/axvline; probe with all-NaN data + zero-line (#2379 R1 g4)
@@ -50,3 +51,16 @@
 - [Linked pins pinned separately](linked_pins_pinned_separately.md) — invocation + ROOT= pinned as two substrings misses the `(cd "$ROOT" &&` connective; scratch ROOT==WT fixtures are blind to it (#2412 R1 g3)
 - [Two-sided size-corridor review](two_sided_size_corridor_review.md) — blob-at-SHA wc -c + HEAD identity, round-scoped grandfather probe (never diff vs origin/main), hunk-gap pin-unedited proof (#2412 R1 g2)
 - [Submodule-existence bypasses strict identity](submodule_existence_bypasses_strict_identity.md) — existence-only `from <shared pkg> import <namespaced unit>` fallback skips the strict arm; grep the corpus for that shape (#2412 R1 g1)
+- [Gate-skip env scope trace](gate_skip_env_scope_trace.md) — trace what a skip env actually bypasses: driver-side checks still binding = escape hatch not bypass; + live misuse-branch rc probes, informational --gpu-id verify (#2329 R1 g5)
+- [Import-check form review recipe](import_check_form_review_recipe.md) — 5 probes (not-hollow body, dotenv parity, rc=2→1 migration + gate-rc collision, parent-blob pre-fix, verbatim HEAD reruns) certify a bare --import-check commit (#2329 r1 g7)
+- [Paired-contrast flat-reference fixture](paired_contrast_flat_reference_fixture.md) — a zero/flat reference arm degenerates a registered ΔD to the treatment arm; dropped subtraction survives; also happy-branch-only lattice e2e (#2329 R1 g6)
+- [Thin-fork commit review recipe](thin_fork_commit_review_recipe.md) — diff fork blob vs parent file, read delta in full, live-probe attr/pin/manifest-key seams; ruff in situ; confirm plan version on MAIN (#2329 R1 g2)
+- [Inherited-byte-verbatim claims nothing](inherited_byte_verbatim_claims_nothing.md) — grep the PARENT code+realized artifact for every inherited-by-name registered output; false premise + IMPLEMENTED compliance row = blocker (#2329 R1 g3)
+- [Fork-layout default mirrored onto parent](fork_layout_default_mirrored_onto_parent.md) — two-sided consumers default the PARENT path to the FORK layout; ls the parent tree + grep the plan for the registered path (#2329 g4)
+- [Follow-up worktree stale plan version](followup_worktree_stale_plan_version.md) — resolve plans/vN from the MAIN checkout; worktree plan.md can symlink a pre-critique draft; cite the version per finding (#2329 r1 g8)
+- [Consumer flag producer never writes](consumer_flag_producer_never_writes.md) — a rec.get("<flag>") filter is vacuous if the producer never writes the field; severity forks on an upstream assert (#2329 r1 g8)
+- [Qualitative-panel commit review recipe](qualitative_panel_commit_review_recipe.md) — triple-consistency + characterization grounding + BOTH-direction substitution-disclosure + sidecar-commit ancestry (#2478 r1 g2)
+- [Parity gate fed its own subject file](parity_gate_fed_own_subject_file.md) — a gate fetch passing ONLY the subject into a filter that excludes the subject class is vacuous; fail-closed hollow gate = Major+concern, not Critical (#2477 R1 g1)
+- [New dial missing from resume regime](new_dial_missing_from_resume_regime.md) — trace every NEW scale dial into the regime hash; presence-skip also erases gate halts/uploads; two-stage JSON write defeats finals-skip (#2476 R1 g2)
+- [Position-calibrated gate under subset remap](position_calibrated_gate_under_subset_remap.md) — an index-subset kwarg re-binds "first-k" calibrated bars onto wrong units; check VALUE vs POSITION semantics (#1901 R1 g1)
+- [Figure-series extension neutrality probes](figure_series_extension_neutrality_probes.md) — PNG byte-compare invalid (pnginfo render id): pixel-array + parent-blob module; err-by-x last-wins contaminates the NEW series (#1901 R1 g3)

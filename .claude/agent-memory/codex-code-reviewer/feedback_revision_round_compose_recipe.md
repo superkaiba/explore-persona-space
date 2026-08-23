@@ -1934,3 +1934,178 @@ the exact base-blob greps handed over (justified-if-true / honest-reporting
 finding-if-false). (e) A DEFERRED concern whose reconciler-downgrade premise
 was OPERATIONAL sequencing gets a DEFERRAL-PREMISE-INTACT/BROKEN status-line
 form when the round changes the sequencing the premise relied on.
+
+**Merge-reconciliation round + brief-pinned BINARY enum + open-NIT vocabulary
+(#2205 r2, 2026-08-21):** composing the #2201-r3/#2217-r2 gate-mandated merge
+shape under a brief that pins `PASS|FAIL` (no CONCERNS): route the open prior
+NITs through a dedicated `## Prior-round items` section with the three-way
+vocabulary STILL-OPEN-UNCHANGED | STILL-OPEN-NOW-MATERIAL | CLOSED-BY-MERGE —
+UNCHANGED never blocks under the binary enum, NOW-MATERIAL re-raises at true
+severity with a NEW kebab-id row naming the merge-created mechanism (persisted
+ids still never re-emitted as rows otherwise). Two probe deltas: (a) surface
+test-COUNT discrepancies between the reconciliation note and compose-time greps
+(v28 claimed "12 branch-side test_c46_*"; HEAD greps 14 — hand to Codex as a
+report-accuracy observation, never resolve it yourself); (b) when the merge
+folded main's task-state in, the worktree's OWN plans/ copy becomes identical
+to canonical — still INLINE the plan when the brief orders it, but the worktree
+copy is then a legitimate sanctioned live-probe TARGET
+(`verify_plan.py --plan-file tasks/<status>/<N>/plans/v<k>.md --kind <kind>`
+proves import + CHECKS-registry load of the merged module, read-only). Also:
+per-side survival greps get side-specific token sets (branch:
+c46|workload|hydra|provision; main: margin|baseline|ceiling|c68|escape).
+
+**Merge-reconciliation round WITH a declared scope extension to a SIBLING
+task's detector (#2214 r2, 2026-08-20):** hybrid of the #2201-r3/#2217-r2
+gate-mandated merge shape and a substantive new-code adjudication. Deltas:
+(a) when the brief supplies a numbered adjudication checklist ("judge this
+specifically, do not defer to the justification"), inline the brief verbatim
+in its own `---BEGIN ROUND-2 BRIEF---` envelope AND restate the checklist in
+the focus section with routing added per item (here: item 1 → Step 0.68
+hollow-gate at full strength, `hollow-verification-gate` tag; item 2 → the
+Step 3.9 degeneracy analogue; item 5's file-separately disposition → a
+`substantive` blocker with the revert-commit+file-task remedy named) — plus
+a REQUIRED `## Scope-extension adjudication` verdict section, one grounded
+ruling per item; (b) the r1-adjudicated deliverable re-landing via merge
+gets a no-relitigate fence (both twins PASSed the same +59 hunk; re-opening
+needs NEW evidence from the MERGED context — exactly what the
+coexistence/interaction duties look for); (c) Step 4.5 INVERTS when the
+round's change IS a test modification: the duty is residual detector
+strength + whether the round's own fix property (order-robustness) is
+pinned, absent pin = Minor sketch; (d) Step 0.9 pre-seeds the
+pre-existing-on-trunk instance (the defect the extension fixes was measured
+on pristine main at the pin — corroborable via `git show <pin>:<file>`) so
+the twin routes fix-findings `substantive` and never blocks on the
+pre-existing defect itself; (e) shared-brief adaptation: "you may re-run but
+not simply accept" translates to internal-consistency reads of the reported
+numbers against the mechanism (is "the merge strictly SHRINKS the failure
+set" sound given the fixture cleans only one dimension?) — the Claude twin
+carries literal re-runs. Assert-side: brief LINE-WRAPS split fragments —
+pick wrap-safe single-line fragments for the checklist-survival asserts, and
+assert the pinned RANGE TOKEN (`<pin>..HEAD`) not the full command string
+(the brief's `-C "$WT" diff --stat` form breaks command-string matches).
+
+**Size-pin asserts compare BYTES, never `len(str)` (#2246 r2, 2026-08-21):**
+a compose-script assert pinning an inlined artifact's size to a `wc -c` /
+`ls -la` figure must use `len(text.encode("utf-8"))` (or `os.path.getsize`)
+— `len(open(p).read())` counts CHARACTERS and diverges on any multi-byte
+UTF-8 content (the 88,372-byte plan v4 read as 87,487 chars; em-dashes and
+arrows are everywhere in plan prose). The labeled assert made the diagnosis
+instant; an unlabeled one would have suggested plan drift and triggered a
+wasted re-fetch. FAIL+FAIL-union r2 compose worked as specced (#2332
+pattern): both prior verdicts inlined tag-stripped, codex rows blockquoted
+(`> CONCERN:: ` ==5), closure status lines routed to a `## Round-1 closure
+ledger` verdict section with per-id VERIFIED-ADDRESSED / NOT-ADDRESSED +
+`f541-fixed` / `c901-deliberate-keep` dispositions, already-persisted ids
+never re-emitted as rows (final line-start grammar rows ==1).
+
+**Measured-TRUE acceptance round (#2273 r2, 2026-08-22):** a variant of the
+#2147-cr3/cr4 accepted-FAIL shapes — the twin's r1 FAIL was accepted (no
+reconciler), and the flagged claims were then MEASURED and found TRUE; the
+remedy was the twin's OWN offered branch (add evidence rows), not weakening.
+Compose three blocks: (a) author-neutrality + an ESTABLISHED-FACTS fence —
+"do NOT re-raise 'unsupported' against a claim that now traces to rows 7-9;
+the facts are settled by measurement"; (b) the live question is
+ROW-BOUNDEDNESS of the landed text (the brief's A10 headline), not truth —
+an unhedged claim outrunning its row re-lands the r1 defect class ⇒
+Critical; (c) closure status lines keyed to the persisted concern ids with
+the acceptance contract restated per id (rc clause may name ONLY the
+measured consumers; residual clause bounded to its rows; pin-sweep figures
+re-grepped by the twin against composer ground truth). Doc-only in-place
+line replacement: round numstat is 1/1 (old bullet superseded) while
+net-vs-main is +1/-0 — state BOTH and pre-clear the deletion's identity or
+the twin flags collateral removal.
+
+**Generous-timeout lint attestation beats a third INCONCLUSIVE (#2273 r2):**
+after two rounds of timeout-killed full no-flags lint runs (540 s composer /
+590 s Claude self-fence), launching the compose-time attestation run as
+bg-Bash at the START of compose (timeout 1800) and harvesting via a bounded
+synchronous wait AFTER the prompt was written converted the attestation from
+INCONCLUSIVE to COMPLETED-PASS rc=0 (~11 min wall under VM contention) at
+near-zero added latency — the run overlaps the probe+write work. Patch via a
+single `@@FULL_LINT_ATTESTATION@@` placeholder (assert 0 residue at final
+validation). Also relay upward: a sibling 570 s-fenced run is predictably
+too tight; tell the orchestrator the measured wall so the Claude leg sizes
+its fence ≥2× (~1,200 s+).
+
+**Reconciler-UPHELD twin-FAIL fix round + three-class truth split (#2271 r2,
+2026-08-22):** when the prior round was Claude-PASS / Codex-FAIL / reconciler
+BINDING FAIL upholding the TWIN'S OWN blockers, compose the #1094-r2 shape
+(author-neutrality line; per-concern VERIFIED-ADDRESSED/NOT-ADDRESSED closure
+ledger with NOT-ADDRESSED = substantive FAIL; ledger rows inlined when tiny)
+plus three deltas: (a) keep the brief's THREE truth classes distinct in the
+prompt — "established facts" (compose-verified, do-not-re-derive) vs
+"orchestrator-verified claims — RE-VERIFY by static read, never accept" (the
+brief ordered re-verification; collapsing them into established facts would
+delete review duties) vs "calibration/settled ground" (both r1 reviewers right
+about DIFFERENT mutation directions — name both, direction (a) must STAY
+covered, so the twin neither re-litigates nor drops the surviving half);
+(b) when the fix's correctness turns on stdlib/installed-library semantics a
+no-env Codex cannot execute (py311 rglob symlink behavior, hf 0.36.2
+upload_folder walk), verify them EMPIRICALLY at compose time (tiny tempfile
+repro on the project interpreter + read the installed source) and ship them as
+established facts with file:line citations (pathlib.py:391
+`is_dir(follow_symlinks=False)`; hf_api.py:9566 `glob("**/*") + is_file()`),
+scoping what remains YOURS to verify (pattern parity, not walk parity);
+(c) realized repo shapes under sparse-excluded dirs (`eval_results/` symlinks)
+are attested in the prompt with their RESOLUTION status (dangling vs resolves)
+since Codex cannot stat them. Also: the never-echo constraints line must not
+carry the literal `<!-- ... -->` head-tag form (write "`epm:code-review-codex
+v2` head tag line" instead) or the v2-tag count assert reads 2.
+
+**Union-fix round with a one-giant-line doc entry (#2280 r2, 2026-08-22):**
+three composable deltas. (a) When a doc fix lands inside a single multi-KB
+line (gotchas.md entries), the +1/−1 numstat hides everything — hand Codex
+`git show <sha> --word-diff -- <file>` explicitly AND a drive-by sweep duty
+("every changed token maps to a named fix item; anything else is scope
+creep numstat cannot see"). Attest token COUNTS (dating qualifiers,
+contrast figures) at compose time but state PLACEMENT is Codex's to grade —
+existence-of-string is not scoped-to-the-right-claim. (b) Claude-PASS +
+Codex-FAIL resolved by orchestrator UNION (no reconciler): inline only the
+CODEX prior verdict (tags stripped, CONCERN:: rows blockquoted); the Claude
+Minors arrive via the brief's fix enumeration as pseudo-IDs
+(`r1-claude-<slug>`), and the closure ledger maps fixes → ids (F1+F2 → the
+Major, etc.). A headroom/measurement NIT (`gotchas-size-headroom`) marked
+addressed by RECORDING a measurement gets a neutral adjudication duty
+(does measuring close a headroom NIT, or re-persist?) — never pre-resolve.
+(c) Assert arithmetic: the r1-derived rubric span's Step 0.9 carries THREE
+full merge-base SHA occurrences (intro + git-show probe + git-log probe);
+with 2 header uses, composer-span expected = 5 — and count marker/verdict
+embeds separately before summing (the v2 epm:results body carried ZERO,
+unlike r1's which carried one).
+
+**Split-verdict inlining + FAIL+FAIL union with un-ledgered Claude items
+(#2478 r2, 2026-08-22):** three deltas on the #2332 union shape. (a) A
+SPLIT-review Claude verdict (per-commit sub-verdicts) can EMBED a
+sub-verdict's own marker tag lines mid-body (the g3 sub-verdict carried its
+own `<!-- epm:code-review v1 -->` head + a doubled closing tag) — strip by
+filtering EVERY line starting with the tag prefix, never just first/last.
+(b) When ALL ledger rows are one twin's items and the other twin's
+blocker+minors are un-ledgered, mint pseudo-ids keyed to the MARKER's own
+response-ledger naming (`r1-claude-b1-…` matching the marker's "g1 B1"
+rows) so the closure ledger and the (e)/Response sections align 1:1.
+(c) The `> CONCERN:: ` blockquote validation count includes your OWN prose
+backtick mentions of the literal (6 = 5 rows + 1 prose here — label the
+assert subject). Also: a fix round whose diff carries -def/+def pairs
+(deleted helpers, dropped params, return-shape changes `str`→`tuple`) gets
+a Step 3.75 compose-time observation block with adjudicate-the-trigger
+framing (leaf script, no external importers — same-name signature changes
+are not renames) PLUS the #1107 consumers-of-changed-shape + dangling-refs
+duties spelled out as unconditional substantive checks; never pre-resolve
+the trigger severity yourself.
+
+**Line-wise facts-block replacement + two assert traps (#2476 r2, 2026-08-22):**
+a FAIL+FAIL-union fix round composed cleanly from the r1 template via LINE-WISE
+replacement of the compose-time-facts block (split on newlines, replace whole
+lines keyed on unique `startswith` prefixes, assert exactly-one hit per prefix)
+— robust when every facts line changes but the section anatomy survives. Two
+asserts tripped live: (1) `wc -c` counts BYTES, Python `len(str)` counts
+CHARACTERS — assert `len(body.encode()) == wc_c_bytes` for any size pin on
+UTF-8-heavy artifacts (plans carry →/§/≤); (2) prose that NAMES the
+blockquote literal (e.g. "rows are blockquoted `> CONCERN:: `") inflates a
+whole-prompt `count("> CONCERN:: ")` — scope row asserts to line-start
+(`l.startswith(...)` over splitlines) and assert the total separately with the
+prose mention counted. Also confirmed: when an impl marker answers a union as
+a numbered disposition table that OVERLAPS but is not a superset of the ledger
+ids (Claude-only items unledgered, a NIT closed in an opportunistic paragraph),
+say so explicitly and key the closure ledger on BOTH (item numbers + ids,
+Codex maps them from the disposition text) rather than minting pseudo-IDs.

@@ -355,6 +355,31 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   (no yaml) and the leg WARN-degraded to spans-only; run the numcheck from the
   repo root for the full two-leg check.
 
+- **Armed-in-place fleet-check plan, standard statistics lens with a brief
+  NON-VACUITY press point (#2261 round one, call-arity bind check): when the
+  brief's core question is "does the plan carry a positive-coverage assertion,
+  and the prior art has one", VERIFY the prior art at compose time (grep its
+  asserts) and feed the result as a settled fact WITHOUT grep-derived line
+  numbers — compose-time line numbers are composer-authored numerics under the
+  ban; say "read the file and locate its membership asserts" instead.** Earned
+  sharpeners that generalize to any armed-in-place fleet detector: (1) THREE
+  populations to reconcile — the baseline census population, the
+  re-measurement recipe's glob population, and the ARMED population (the #2261
+  plan's R3 globbed `scripts/` while a src-tree adopter gets armed too); (2)
+  the circularity warning names re-running the plan's own prototype as
+  non-evidence for non-vacuity (same resolver certifying itself) and offers
+  the independent instrument (targeted greps counting registered-callable
+  tokens); (3) must-FAIL fixture tests are per-leg positive coverage by
+  construction — direct the twin to enumerate which resolution legs are
+  pinned by a must-FAIL fixture vs resting on must-PASS/absence reads; (4)
+  a triage rule whose plan argues "every failure is a true positive by
+  construction" makes the FP branch unreachable except via MIS-resolution —
+  press what operation discriminates. Full-census framing kills the
+  uninterpretable-N item ("a census, not a sample — coverage questions
+  replace sampling questions"). Numcheck PASS first try at ~127 KB (spans =
+  plan + body + briefnote + questions + lensitems + empty prior; digits
+  confined to spans; single-digit § refs only in scaffold).
+
 - **Detector/check-addition plan, standard statistics lens with a brief FP/FN
   translation (#2228 round one, a new verify_plan WARN-only check): the
   brief's detector translation ("measurement = the check's true/false-positive
@@ -396,6 +421,24 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   standard epm marker tags. Numcheck PASS first try at ~70 KB (spans =
   inputs + press + lensitems + plan + empty prior; unsigned both-sides-guard
   atoms + pair-split + isfinite canon + collect-all).
+
+- **Lint-addition plan whose TOP press point attacks the task body's OWN spec
+  choice (#2253 round one, alternatives on the prod-import-lockfile lint): add
+  a digit-free CALIBRATION paragraph before the lens span** splitting
+  spec-infidelity from claim-fragility ("the body's Goal pins the oracle —
+  'the lockfile is not the installed set' is not by itself a design
+  infidelity; judge whether the plan's CLAIMS — zero false positives, catches
+  the incident class pre-pod — survive the declared-vs-installed gap; route
+  FATAL / RECOVERABLE-with-a-named-home / already-handled"). Brief verbatim as
+  its own span carried all brief digits; per-press-point dispositions mandated
+  the oracle point answered BOTH directions (in-lock-not-installed /
+  installed-not-in-lock) and forced a stated prior-art position under the
+  dominating-alternative bar (rejection rationale misstates facts AND silent
+  failure class). Read discipline banned the full no-flags lint run (slow; the
+  check doesn't exist yet) while ENCOURAGING tomllib parses of uv.lock +
+  bootstrap install-command reads + targeted import-shape greps. Fully
+  digit-free scaffold → numcheck PASS first try at ~75 KB with ZERO
+  scaffold-cleared atoms.
 
 - **verify_plan check-ADDITION with a brief-supplied seven-question infra
   translation (#2228 round one, methodology): the 19p mechanical-verifier
@@ -526,6 +569,373 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   prior; scaffold digit-free — "v3"/"Step 10d"/"9c" are atom-free under
   both-sides guards; ISO-timestamp examples and :line refs confined to the
   questions SPAN where they balance).
+
+- **workflow_lint FAIL-level check-ADDITION with grandfathered-offender
+  dispositions, standard methodology lens + brief-supplied five press points
+  (#2253 round one — the 19aw/#930 shape, brief-translated): the brief's five
+  bulleted press points ride verbatim in the brief span labeled "(a)-(e) in
+  order", and the composer adds the 19aw earned probes as lettered (f)-(k):
+  motivating-class fire check via imagine-the-dispositions-absent (walk the
+  predicate against the plan's own site inventory + verify its
+  detection-predicate trace's logic, noting the fixture reproduces the
+  incident's HISTORICAL state when the live site is remediated);
+  seed-absorption at the mandated implementation-start probe re-run (does
+  "extend dispositions" license auto-waivering genuinely-new offenders,
+  especially when the must-ask list bars lockfile adds); waiver GRAIN
+  (per-(file,root) exempts future sites) + placement grammar vs multi-line
+  parenthesized imports; first-party resolver FALSE-NEGATIVE direction (a
+  script stem colliding with a third-party root exempts it repo-wide — the
+  inverse of the class-A FP fix); registration/wiring completeness (dispatch
+  regex, no-flags detection, chain order, scope classification, WARN-line
+  path-free contract); fail-loud arms + constant grounding. Bar = the infra
+  translation with a fires-on-healthy / motivating-class-miss /
+  posture-flip / lands-red / acceptance-fail / unimplementable clause set
+  plus the 19p no-gate-today baseline; disclosed accepted residues judged
+  only for materially-understated holes. Fact-check-complete brief clause →
+  digit-free FACT-CHECK STATUS header block pointing at the brief span + the
+  plan's own dispositions section ("design critique, not fact
+  re-verification"). Scaffold digit gotchas confirmed: "PEP-503" DOES atom
+  (503, hyphen-adjacent) — keep it span-only, write "the name-normalization
+  standard"; "Phase 1.5"/"§13" span-only. Read discipline allowed re-running
+  the plan's committed read-only recon probe (seconds) alongside bounded
+  greps. Numcheck PASS first try at ~148 KB (spans = briefnote + lensitems +
+  plan + body + empty prior; unsigned both-sides-guard atoms + comma-grouping
+  first + pair-split + isfinite canon + collect-all + registry leg from repo
+  root; version-suffixed workspace `-v2` keyed to PLAN version).**
+
+- **Sync-FAMILY membership-coupling plan, standard methodology lens + brief
+  roman-numeral press points (#2260 round one, Step 5a FAMILY_OF `agents`
+  family + completeness guard): the brief's press points arrived as (i)-(v)
+  roman numerals — keep them roman in scaffold references (digit-free by
+  construction, no relettering needed) and letter composer probes (a)-(f).**
+  Probe set that fits any FAMILY_OF/membership-list plan: seed-absorption at
+  the implementer re-sweep (#930 move); MEMBERSHIP SELF-UPDATE ORDERING (the
+  family table lives in a step file that is itself synced as a member of
+  another family — walk the stale-copy transition window, decide bounded vs
+  open-ended); guard genuineness (non-vacuity pin + bash deleted-member repro
+  each fail for exactly its defect's reason; plan's own detection-predicate
+  trace judged for logic); containment arm BOTH directions (false-dirty
+  staleness vs residual whole-sync wedge, confirm claimed checkout atomicity
+  against the quoted bash, ask whether the arm covers every family's batch);
+  landing completeness (pinned-literal rewrite + mirror-tuple + fixture-stub
+  extensions spot-checked against live anchors); ratchet RE-MEASURE (wc -c +
+  cap-table grep, remedy sequenced on REALIZED post-edit bytes). Settled block
+  from the plan's Deviations must-ask list with the judge-soundness-not-scope
+  carve-out ("dropping the containment arm is a recorded park-question — judge
+  its soundness, don't demand the scope change"). Read discipline: ban git
+  fetch (population under review) AND pytest (guard doesn't exist yet;
+  suite subprocess-heavy); allow read-only git log for commit-frequency
+  pricing claims. Scaffold digit traps dodged: "guard (20)"/"guard (19)" →
+  "the new completeness guard"/"the existing helper-import guard"; the Step
+  10d mirror's digit-bearing filename → "its Step 10d mirror"; "test (1)"/
+  "(9)"/"(10)" are allowlist-safe. Numcheck PASS first try at ~148 KB
+  (spans = briefnote + lensitems + plan + empty prior; unsigned both-sides-
+  guard atoms + comma-grouping first + pair-split + isfinite canon +
+  collect-all + registry leg from repo root; version-suffixed workspace
+  keyed to PLAN version).
+
+- **In-place-arming check-addition plan, standard methodology lens + a brief
+  translation phrase-list (#2261 round one, argcheck call-arity bind pass armed
+  INSIDE `assert_args_attributes_defined`): when a plan arms a NEW check by
+  riding an EXISTING conventional entry point (zero adopter edits, justified by
+  a measured zero-red fleet census), the earned press-point set is** — (a)
+  evidence-class of a point-in-time census (prototype-vs-shipped gap; is the
+  post-implementation re-measurement sequenced as a pre-ship gate?) + kill-
+  criterion EVALUABILITY with its trigger-threshold gap walked (FPs below the
+  "in >N adopters" trigger never trip it — who eats the red check?); (b)
+  opt-in-posture widening (adopters opted into check A, get check B armed
+  automatically; declined coarse opt-out); (c) per-AC test-vacuity with the
+  monkeypatched-registry test-double criterion pressed by name; (d) import-
+  side-effect fragility when the check newly IMPORTS its targets inside a
+  previously import-free pass (module-scope work, lazy-rule coverage split,
+  checker-import-failure vs bind-failure message direction); (e) dominating-
+  alternative walk of the plan's own rejected simplifications; (f) waiver-on-
+  frozen-artifact internal contradiction (the sanctioned escape requires
+  editing artifacts the plan's own must-ask list bars editing) + waiver line-
+  grain FN direction. Fact-checker facts-given block + verdict-calibration
+  sentence from the brief inlined verbatim in the inputs span. Numcheck PASS
+  first try at ~151 KB (spans = inputs + questions + lensitems + plan + body +
+  empty prior; unsigned both-sides-guard atoms + comma-grouping first +
+  isfinite canon + collect-all + registry leg from repo root; version-suffixed
+  workspace keyed to PLAN version, no stale-output mv needed).
+
+- **Check-addition plan with a measured zero-red baseline, standard
+  alternatives lens + brief four-account translation (#2261 round one, the
+  call-arity bind pass): two moves that generalize to any detector/check
+  plan whose safety argument is "N of N sites clean today".** (1) THE
+  CLEAN-BASELINE AMBIGUITY as a mandated own-section question: a zero-red
+  baseline is equally consistent with "check is sound" and "check resolves
+  too little to fail anything" — press the self-certifying census (the
+  skip/unresolvable count is computed BY the resolver it certifies; a shape
+  outside the resolution rules is invisible to numerator AND denominator,
+  e.g. `f = helper` then `f(...)`) and ask for an independent denominator
+  (loose textual census vs resolver count). (2) INCIDENT-CATCH VERIFICATION
+  as its own section with CATCHES|MISSES|PARTIAL|UNVERIFIED verdict words:
+  walk the design's written rules against the founding incident AT ITS REAL
+  POSITION via `git show <fix-commit>~1:<driver>` (the live file has the
+  FIXED call), chaining import form → shadow guard → resolution shape →
+  bind outcome → ARMING REACH (is the incident driver itself an adopter of
+  the entry point — folded as a 1:1 sharpener, not a parallel list). Brief's
+  four alternative accounts rode as press span (a)-(d) with
+  FATAL|RECOVERABLE|NO-FINDING dispositions; settled block = the body's
+  repo-wide-lint rejection with the brief's fair-game alternative list +
+  the #2253 dominating-alternative bar (Must Fix needs rationale-misstates-
+  facts AND silent-failure-class). Read discipline banned pytest/lint,
+  encouraged `git show` of the pre-fix driver + re-running the plan's
+  recorded read-only measurement commands + the /tmp prototype if present
+  ("walked against the PLAN's rules, never assumed from a prototype PASS").
+  Numcheck PASS first try at ~79 KB, fully digit-free scaffold (spans =
+  inputs + press + lensitems + plan + body + empty prior; unsigned
+  both-sides-guard atoms + comma-grouping first + sci-notation branch +
+  isfinite literal-keep + collect-all + registry leg from repo root).
+
+- **Gate/ref-resolution infra plan, standard alternatives lens + brief
+  seven-question translation (#2263 round one, verify_carryover_inputs
+  wrong-ref fix): three small new patterns.** (1) A fact-check report that
+  explicitly defers a disposition "to the critics" (the bash→text fence-language
+  side effect) composes as an ADDITIONAL numbered press question with its own
+  disposition words — fact-check-routed design calls are a press-point source,
+  distinct from the do-not-refile guard on its CONFIRMED verdicts. (2) A brief
+  question asking whether a repo state actually exists ("do stale suffixed
+  branches exist?") gets an EMPIRICAL mandate: read-only `git for-each-ref`
+  over already-fetched remote-tracking refs with `git fetch` banned BY NAME
+  (the #2246 fetch ban, re-derived here because the ref population is itself
+  under review), plus quote-the-command grounding. Also ban running the gate
+  script itself when its default path fetches. (3) Numcheck self-test note:
+  version triplets like `2.34.1` produce NO atoms under both-sides guards
+  (every candidate position is dot-adjacent) — safe anywhere, and assert
+  `atoms("git 2.34.1") == Counter()` rather than expecting atoms. Dispositions
+  that worked for design-alternative questions: DOMINATES (tied to the
+  dominating-alternative bar, implies Must-Fix) | WASH | WORSE; for scope
+  additions REQUIRED | DEFENSIBLE | CREEP + a fence HONORED | VIOLATED line.
+  Numcheck PASS first try at ~66 KB, fully digit-free scaffold (spans =
+  questions + plan + body + factcheck + lensitems + empty prior).
+
+- **Git-ref-resolver gate plan, standard methodology lens + brief five-question
+  translation (#2263 round one, verify_carryover_inputs check-ref ladder): when
+  the brief hands a fact-check REPORT PATH, inline the WHOLE report verbatim as
+  its own span** (it carries all its digits; balances by construction) framed
+  two-sided in a digit-free FACT-CHECK STATUS header block: CONFIRMED verdicts
+  = settled inputs (re-filing is a regression), while the report's CORRECTIONS
+  + retired risk rows are handed to the twin as disposition judgments
+  ("plan-revision Must-Fix vs implementer-level") — the corrections ride
+  verbatim inside the relevant questions-span items, not as pre-judged
+  findings. Snapshot-note extension for ref-population plans: live git-ref
+  probes drift, so "a ref-population delta between plan claims and your probe
+  is expected drift, not a finding; a DESIGN rule that mishandles a probed-real
+  state IS one". Read discipline: ban `git fetch` BY NAME with the
+  population-under-review reason (#2246's move, sharper here — the plan's
+  subject IS the remote-tracking ref population), ban pytest (planned tests
+  don't exist yet), but PERMIT running the current gate script in its no-fetch
+  mode (fully read-only) and a for-each-ref enumeration as the empirical
+  blast-radius probe for the refusal-storm question. Brief-ordered side-effect
+  question (fence-language bash→text at the call site) gets its own numbered
+  question with named consumers to check (composed-skill pin tests, lint,
+  copy-paste ergonomics). Numcheck PASS first try at ~140 KB (spans = inputs +
+  factcheck + questions + lensitems + plan + body + empty prior; scaffold
+  digit-free — "Step 6a.5"/"v1"/"2.34.1" produce no atoms under both-sides
+  guards but stayed span-side anyway).
+
+- **Test-suite-acceptance infra plan, standard statistics lens + a brief
+  hollow-gate priority question (#2263 round one, the same ref-ladder plan):
+  when the brief's core ask is "audit EVERY planned test for hollowness" and
+  the fact-check already DEMONSTRATED one hollow test, mandate a dedicated
+  `### Per-test hollow-gate audit` output section** — one REAL / HOLLOW /
+  UNVERIFIED line per planned test (count spelled as a word in scaffold),
+  placed BEFORE the question answers so the enumeration precedes the coverage
+  verdicts (the #2326 fresh-evidence-first move), with an escalation rule
+  inline: HOLLOW + only-coverage-of-a-requirement/matrix-cell => Must Fix;
+  HOLLOW + redundant real coverage => Concern. The demonstrated-hollow test
+  rides as "settled — carry it as a grounded Must Fix so the revision absorbs
+  it; your NEW work is the other tests". Under write=false (spec read-only
+  critic mode) the twin CANNOT run throwaway-repo git probes the fact-checker
+  used — say so and give the UNVERIFIED escape ("name the probe that would
+  settle it; files as Concern"). Claimed-invariant questions (an unmeasured
+  "byte-equivalent" R-row narrowed by the gates section to tuple equality)
+  frame as "what exactly is the invariant, is it measured AS WRITTEN,
+  Must-Fix-as-unmeasured-invariant vs wording Concern". Exit-code
+  distinguishability frames as the lens's gate-coherence item in
+  verdict-lattice form ("two conditions sharing one exit code are
+  indistinguishable to any assert that reads only the code"). Numcheck PASS
+  first try at ~112 KB, fully digit-free scaffold (spans = inputs + plan +
+  body + factcheck + lensitems + questions + empty prior).
+
+- **Guard/teardown selector plan, standard alternatives lens + brief C-numbered
+  claim list (#2270 round one, `pod.py terminate --primary-only`): when the
+  brief hands lettered/numbered CLAIMED-PROTECTION attack points (C-series)
+  plus a deep-dive order on ONE claim (construct concrete event sequences
+  where a clearance conjunction holds while the guarded state is false), the
+  #2152 shape extends with three mandated output sections BEFORE Must Fix:
+  `### Per-claim dispositions` (RULED-OUT | DISCLOSED-RESIDUAL | HOLLOW |
+  UNVERIFIED per claim, UNVERIFIED files as Concern), a `### <claim> clearance
+  walk` (rows-in-order event sequences walked against the plan's predicate
+  spec AND the real reader code, REACHABLE | CONTRIVED per sequence, closing
+  ADEQUATE | INADEQUATE line on the plan's named residual + pre-registered
+  fallback), and `### Unenumerated state shapes` (HANDLED | BENIGN | FINDING
+  per brief-listed shape). Fact-check-v2 plans get the two-sided FACT-CHECK
+  STATUS block (CONFIRMED mechanics settled; the plan's own honestly-marked
+  UNVERIFIED items are legitimate press points). Read discipline for a
+  pod-destroying subject: ban pytest + ANY live RunPod/pod.py call + git fetch,
+  encourage grep-anchored symbol windows (line cites pinned to the plan's HEAD
+  — drift is not a finding), the incident events.jsonl via the status-robust
+  `task.py find` locator, and walking constructed sequences against the REAL
+  readers ("an empirical this-sequence-clears beats a hypothetical"). Numcheck
+  PASS first try at ~77 KB (spans = brief + lensitems + plan + body + empty
+  prior; scaffold task-id mention written `#<N>` so extraction handles it —
+  a BARE id in scaffold residuals since span copies are fully consumed).
+
+- **Verification-adequacy statistics translation on a destructive-CLI infra
+  plan (#2270 round one, pod terminate primary-only selector): the brief's
+  six-duty translation (per-AC wrong-impl, guard-branch enumeration,
+  tested-vs-argued safety claims, pass-for-wrong-reason, cite re-measure,
+  conformance + blind-spot audit) composes as THREE mandated enumeration
+  sections placed BEFORE the question answers** — `### Per-criterion
+  wrong-implementation audit` (DISTINGUISHES | UNDER-CERTIFIES | UNVERIFIED
+  per AC), `### Guard-branch coverage map` (COVERED (test ids) | UNCOVERED
+  per branch incl. the clearance predicate's internal arms), `###
+  Tested-vs-argued safety claims` (TESTED | ARGUED-ONLY per
+  binds-by-construction claim) — the #2263 per-test-audit move generalized
+  to a triple, enumeration structurally preceding the coverage verdicts.
+  Earned press shapes: (1) STUB-SHADOWING pass-for-wrong-reason — a
+  no-task-read pin via RAISING stubs is void if the test also installs a
+  constant-returning replacement for the reader the guard actually calls
+  (the raising get_task stub never fires behind the tag-reader stub); ask
+  whether the sketch avoids it, plus import-site-vs-definition-site
+  interception for a function-local import; (2) branch-ORDER cells read off
+  the plan's own pseudocode (force-overrides-UNREADABLE-tag precedes the
+  unreadable-state refusal — is that today's behavior, and pinned either
+  way?); (3) accepted-residual cell pinning — ask whether the plan's named
+  risk residual (a sibling pod-less PASS clearing the fallback tier) is
+  itself pinned by a test documenting the operator contract, vs untested.
+  Read discipline for destructive CLIs: ban RUNNING the CLI by name (even
+  its read paths hit the live API) + all live-service calls, permit pytest
+  COLLECTION-ONLY for count claims. Numcheck PASS first try at ~118 KB,
+  fully digit-free scaffold (spans = briefnote + questions + lensitems +
+  plan + empty prior; line cites like the truthiness call site confined to
+  the questions span; both-sides-guard atoms + comma-grouping first +
+  pair-split + isfinite literal-keep + collect-all + registry leg from repo
+  root; workspace version-suffixed to the PLAN version).
+
+- **verify_plan check-ADDITION, standard methodology lens + brief
+  six-question infra translation (#2269 round one, the regen-headroom c-check):
+  the #2228 shape re-proven with three small additions.** (1) When the plan
+  fully SPECIFIES its regex block + function body in a D-section code block,
+  the read discipline explicitly ENCOURAGES reproducing that block in a /tmp
+  throwaway and walking constructed fixtures through it ("the plan's D-one
+  block is the spec; test against IT, never your own improved variant") —
+  the strongest empirical grammar probe available at zero risk. (2) When the
+  orchestrator brief was written against the PRIOR plan version's fact-check
+  (its planned-test tally lags the redraft), a digit-free header sentence
+  resolves the conflict up front: "where the context and the plan disagree
+  on a count, the PLAN text governs — the context's tally reflects the prior
+  plan version". (3) The plan's own must-ask list composes as do-not-flag
+  bullets WITH the inversion clause "if your critique concludes one is
+  genuinely REQUIRED, say so as a Must Fix — that IS the re-plan trigger",
+  which keeps the brief's live press point (the kind gate) askable while
+  gagging casual rigor-adds. Brief inlined verbatim as ONE span (context +
+  six questions together); sharpeners folded per-question in scaffold
+  (question numbers stay in the single-digit allowlist). Numcheck PASS first
+  try at ~157 KB (spans = briefnote + lensitems + plan + empty prior;
+  unsigned both-sides-guard atoms + comma-grouping first + pair-split +
+  isfinite literal-keep + collect-all + registry leg from repo root;
+  version-suffixed workspace keyed to PLAN version).
+
+- **Prevention-counterfactual alternatives brief (#2269 round one, verify_plan
+  check-addition): when the brief hands competing MECHANISMS (runtime guard /
+  rule-extension-alone / human-layer-already-worked) + numbered required
+  questions under a FATAL/RECOVERABLE contract, mandate two sections before
+  Must Fix** — `### Competing-mechanism dispositions` (per mechanism: merits,
+  does-the-plan-rule-it-out, does-the-plan-engage-it-honestly, label
+  FATAL|RECOVERABLE|NO-FINDING) and `### Answers to the required questions`
+  (UNVERIFIED files as Concern naming the settling probe) — and carry the
+  brief's own honesty instruction ("if the honest answer is 'probably not on
+  its own', say so and say what would") verbatim in the section mandate.
+  Scaffold trap earned: a STATUS-GLOB task path (`tasks/*/<id>/plans/...`)
+  defeats the `tasks/[a-z_]+/(\d+)` extraction (the `*` segment is outside
+  the class) and the plan's own copy of the same glob cancels only itself,
+  so a scaffold copy residuals as a bare id — write "the status-robust glob
+  the plan's own acceptance criteria quote" instead of embedding the id.
+  Numcheck PASS first try at ~84 KB with ZERO scaffold-cleared atoms
+  (spans = brief + plan + lensitems + empty prior; unsigned both-sides-guard
+  atoms + comma-grouping first + isfinite literal-keep + collect-all +
+  registry leg from repo root; workspace version-suffixed to the PLAN
+  version).
+
+- **verify_plan check-addition, standard statistics lens + brief six-question
+  FP/FN translation (#2269 round one, the c69 regen-headroom check — the
+  #2228-statistics shape re-proven): brief verbatim as its own span carried
+  every digit (corpus counts, headroom bytes, incident arithmetic); scaffold
+  stayed digit-free by writing "the Decision Rationale section"/"the
+  Assumptions section" for the two-digit § refs and DROPPING a literal
+  `tasks/*/<id>/plans/` glob from the read-discipline block (the `*` defeats
+  the `tasks/[a-z_]+/` ref-extraction, so the bare id would residual — say
+  "copy the glob from the plan's test table" instead). Question-mapped 1:1
+  with per-question duties in the output spec (show-the-evading-phrasing for
+  the overfit question, quote-the-command re-run arithmetic, PINNED|UNPINNED
+  per-behavior enumeration for fixture sufficiency); circularity warning
+  named the plan's own /tmp prototype scans as non-evidence (same grammar
+  certifying itself, #2261 move) with an UNVERIFIED escape since they are
+  declared throwaway; snapshot note extended with corpus/rule-file
+  continuous-growth drift (the plan snapshot-dates every count). Ops catch:
+  a dead prior spawn had left a PARTIAL lensitems.txt INSIDE the
+  version-suffixed workspace itself — do not trust found span files even at
+  fresh version-keyed paths; re-extract and `cmp` the plan span against its
+  source immediately before assembly. Numcheck PASS first try at ~126 KB
+  (spans = briefnote + planbody + lensitems + empty prior; registry leg from
+  repo root).**
+
+- **Mid-compose status-move + plan-version bump (#2291 round one, alternatives):
+  the plan file can vanish OUT FROM UNDER the cat-assembly when a concurrent
+  session git-mv's the task folder (planning → approved) AND lands a newer
+  plan version (symlink → v-next) between your compose-start readlink verify
+  and assembly.** Recovery that worked: relocate via `task.py find <id>`
+  (never re-derive the status path), keep composing the BRIEF-PINNED version
+  from its new location (the twin critiques the handed snapshot; the sibling
+  Claude critic is on the same version — chasing v-next corrupts the merge),
+  EXTEND the snapshot note with a later-versions guard ("the on-disk plans
+  dir MAY hold a later version; the version under critique is EXACTLY the
+  inlined text — do not read/diff/review a later version" + locate-via-find),
+  and LEAD the return summary with the drift flag so the orchestrator can
+  abort/re-brief BEFORE dispatching Codex. Also: the claimed-protection/
+  evasion-path shape (facts-given span + brief evasion list verbatim + 1:1
+  digit-free sharpeners + `### Evasion-path dispositions` with
+  IN-SCOPE-ACCEPTED | CLAIMED-CLOSED-BUT-OPEN | UNVERIFIED × FATAL |
+  RECOVERABLE labels + `### Evidence-discrimination adjudication`) composed
+  clean for a verify_task_body check-extension plan; numcheck PASS first try
+  at ~58 KB (spans = inputs + evasion + lensitems + plan + empty prior).
+
+- **Artifact-VERIFICATION/hardening plan (kind: analysis, zero-GPU), standard
+  methodology lens + orchestrator four-question translation + a fact-check
+  CAVEAT as the designated press point (#2480 round one): the 19-series
+  kind:analysis reframe composes as a five-path conclusion translation**
+  (FALSE-VERIFICATION / AUDIT UNREACHABILITY / SCOPE MISS / PERSISTENCE
+  FAILURE / TECHNICAL FAILURE) with a do-not-flag list gagging re-run-the-
+  pilot demands (the plan's own method-delta excludes re-runs — judge whether
+  THIS task answers ITS question). The brief's fully-CONFIRMED fact-check
+  block composes as settled ground truth EXCEPT the one caveat the fact-check
+  itself surfaced (an audit-basis JSON with an empty per-corpus block whose
+  scores live in a committed-but-unnamed sibling file) — hand that caveat
+  explicitly to ONE lettered question as "deliberately NOT settled,
+  adjudicate", with both branches named (pool drawn from the populated split
+  ⇒ harmless; from the empty one ⇒ the audit's own missing-field FLAG branch
+  fires spuriously). Earned sharpeners for verification predicates: (i) the
+  committed copy is a byte-copy of the already-spot-read staging files, so
+  re-derivation guards transcription+permanence while the audits carry the
+  "unreviewed" load — ask whether that division closes the founding gap;
+  (ii) audit verdict-logic values quoted from the scratch report's own
+  summary but absent from the verification table (load-bearing ⇒ should they
+  be re-derived too?); (iii) membership recoverability — an audit that only
+  checks marginal score distributions cannot identify WHICH contexts are the
+  hard negatives; (iv) circularity when pool definitions trace to the
+  report-under-audit's prose rather than JSON _meta. Read discipline:
+  ENCOURAGE jq reads of the local staging JSONs + `git show <pin>` of the
+  scratch report (empirical beats hypothetical), ban the two multi-hundred-MB
+  .npz by name and ALL Hub calls (recorded absence probes judged as written).
+  Local-artifact drift note extends the snapshot note: a staging read
+  disagreeing with a CONFIRMED fact-check item is a REPORTED finding with the
+  jq path, never silently preferred. Numcheck PASS first try at ~118 KB
+  (spans = brief + lensitems + plan + empty prior; digit-free scaffold —
+  counts as words, "the balanced-pool control values" instead of numbers).
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round

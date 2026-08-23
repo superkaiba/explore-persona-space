@@ -22,3 +22,10 @@ This is correct because `workflow_lint.py` resolves `_REPO_ROOT` from
 `__file__` (line ~55), so the worktree's script copy lints worktree files.
 Same pattern applies to pytest run from the worktree cwd. Remove any
 partially-built `<worktree>/.venv` left behind by the failed `uv run`.
+
+**PATH caveat (2026-08-21, #2253 r4):** the bare `.venv/bin/python` invocation
+does NOT put the venv's `bin/` on PATH, so tests that `shutil.which()` a venv
+tool fail environmentally — `tests/test_step9c_baseline.py::test_ruff_helpers_real_body`
+raises `ToolMissingError: ruff not found on PATH`. Before attributing such a
+red to the diff, re-run with `PATH="<main>/.venv/bin:$PATH"` prefixed; it
+passed in 0.43s.

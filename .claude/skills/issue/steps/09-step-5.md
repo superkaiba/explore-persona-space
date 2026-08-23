@@ -42,6 +42,110 @@ push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
 PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
 Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
 
+**Draft-PR ensure (#2241; once per branch, memoized).** Step 4a's
+draft-PR create is gated on commits-ahead > 0 but runs BEFORE the
+implementer's first commit, so its else arm fires by construction —
+THIS block is the site that actually opens the draft PR on the normal
+path; Step 10d's payload-aware arm (#2240) stays the merge-time
+backstop. At each round entry that proceeds past the pre-split guard:
+IF an open PR for issue-<N> has already been confirmed this session,
+SKIP (zero cost — the common case after round 1); otherwise run the
+probe+create below and remember a confirmed outcome. All three
+commands — existence probe, title resolver, create — are
+timeout-bounded and the whole block is FAIL-OPEN: no probe, resolver,
+or create failure may block, delay, or fail the round beyond the
+bounded timeout fences (probe <= 75 s; resolver <= 180 s, sized over
+task.py's ~120 s bounded branch-guard rebase wait,
+EPM_TASKPY_REBASE_WAIT_SECONDS; create <= 150 s; worst case <= 405 s
+at one round entry) — log the one line, proceed to 5a, retry at the
+next round entry. The fence resolves `$REPO_ROOT` in-fence (#2241 r4,
+concern step5-repo-root-uninitialized): fenced blocks run in separate
+shells and the orchestrator's Bash cwd resets, so the file-wide idiom's
+value is never inherited here; the resolve is local git and needs no
+fence of its own — a failed resolve makes the task.py call exit
+non-zero into the existing TITLE_RC gate. A resolver failure, jq
+failure, or empty / whitespace-only title SKIPS creation (#2241 r3+r4,
+concerns title-resolution-failure-masking + whitespace-only-pr-title —
+set-title stores input unstripped, so a blank stored title would
+compose a degraded PR): a degraded `issue-<N>: ` prefix-only title
+must never be created and memoized. NEVER pipe the create
+(guard_piped_git_push.sh blocks the piped shape; a pipe masks the
+exit code).
+
+```bash
+# Any-state existence probe (deterministic tri-state; measured ~0.4 s):
+# rc!=0             -> probe failed (network/auth): skip, retry next round
+# "0"               -> no PR object at all = the #2241 zero-PR class: create
+# ">=1" (any state) -> a PR object exists: OPEN -> done; MERGED/CLOSED is
+#                      the #1897 follow-up class, owned by Step 10d's
+#                      payload-aware arm at merge time — do NOT create here.
+# The two trailing arms are TELEMETRY ONLY (#2241 r2): both fall through
+# to 5a exactly as before — routing (probe-failed / zero / else) unchanged.
+N_PR=$(timeout --kill-after=15s 60s gh pr list --head issue-<N> --state all --json number --jq length) || N_PR=probe-failed
+if [ "$N_PR" = "0" ]; then
+  # Title transport (#2241 r2): the title is resolved AS DATA — command
+  # output is never shell-parsed — so a hostile title cannot inject.
+  # Resolver fence (#2241 r3, concern title-resolution-failure-masking):
+  # the resolver is its own rc-gated, timeout-fenced step. Every task.py
+  # invocation — reads included — pays the branch-guard resolution, whose
+  # #996 bounded rebase wait (EPM_TASKPY_REBASE_WAIT_SECONDS, default
+  # 120 s) can precede a RuntimeError (detached HEAD / husk timeout);
+  # unfenced+unchecked, that failure was masked by jq exiting 0 on empty
+  # input and a real draft PR titled "issue-<N>: " was created and
+  # memoized to merge. On resolver failure, jq failure, or an empty /
+  # whitespace-only title (r4, concern whitespace-only-pr-title —
+  # set-title stores input unstripped, so a bare -z passed "   "): log,
+  # SKIP creation, fall through — the next round entry retries (the
+  # >=1 probe memoizes only a REAL PR, never a skipped create).
+  # In-fence root resolve (#2241 r4, concern
+  # step5-repo-root-uninitialized): $REPO_ROOT is NOT inherited across
+  # fences/Bash calls — uninitialized it expanded empty, ran
+  # /scripts/task.py, and the skip arm fired at EVERY round entry (the
+  # zero-PR class this block exists to eliminate). #506-safe form; a
+  # failed resolve routes through the TITLE_RC gate (no new failure arm).
+  REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  TITLE_RC=0
+  TASK_JSON=$(timeout --kill-after=30s 150s uv run python "$REPO_ROOT"/scripts/task.py view <N> --json) || TITLE_RC=$?
+  RAW_TITLE=""
+  if [ "$TITLE_RC" -eq 0 ]; then
+    RAW_TITLE=$(printf '%s' "$TASK_JSON" | jq -r '.frontmatter.title // empty') || TITLE_RC=$?
+  fi
+  if [ "$TITLE_RC" -ne 0 ] || [ -z "${RAW_TITLE//[[:space:]]/}" ]; then
+    echo "[step5-pr-ensure] title resolution failed or empty (rc=$TITLE_RC) — inconclusive; skip create; round proceeds; retry at next round entry (never a degraded-title PR)"
+  else
+    PR_TITLE="issue-<N>: $RAW_TITLE"
+    if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
+         --title "$PR_TITLE" --body "Closes task #<N>."; then
+      echo "[step5-pr-ensure] opened draft PR for issue-<N> (#2241)"
+    else
+      echo "[step5-pr-ensure] gh pr create failed (rc!=0) — round proceeds; retry at next round entry; Step 10d's payload-aware arm (#2240) is the backstop"
+    fi
+  fi
+elif [ "$N_PR" = "probe-failed" ]; then
+  echo "[step5-pr-ensure] PR-existence probe failed — round proceeds; retry at next round entry"
+elif [ "$N_PR" -ge 1 ] 2>/dev/null; then
+  echo "[step5-pr-ensure] PR already exists for issue-<N> (probe count $N_PR) — confirmed for this session; skip probe+create at later round entries"
+else
+  echo "[step5-pr-ensure] unexpected probe output ($N_PR) — inconclusive, not memoized; round proceeds; retry at next round entry"
+fi
+```
+
+The ensure deliberately carries NO push and NO ancestry guard. The
+branch is normally on origin by Step 5 entry on EVERY work-producing
+path: the implementer brief's #2041 fan-out completion contract
+restatement mandates commit+push by explicit path IN the producing
+turn (Step 4b § Fan-out completion contract), and the experiment
+implementer's spec additionally pins the pre-marker push. The PR is
+opened DRAFT-only; every merge-time guard (#2312 stale-ref, #2296
+parity) still runs at Step 10d before any merge. If the branch is NOT
+on origin (a non-compliant brief or implementer), the create fails
+rc!=0 and the fail-open arm retries at the next round entry — and when
+no later round occurs (a single-round PASS), the run ends with no PR
+and Step 10d's payload-aware arm (#2240) opens it at merge time:
+exactly the backstop's job. NEVER push from this block: a new push
+site would owe the #2312 stale-ref guard pair (see
+tests/test_issue_skill_step10d_rewritten_branch.py::test_all_copy_sites_guarded).
+
 **Per-commit split-review dispatch (large rounds; #2074).** Evaluate BEFORE
 the 5a fan-out, and RE-EVALUATE per round from that round's own commit set +
 diff bytes (typical revision rounds are small → no split). Resolve
@@ -184,9 +288,27 @@ else
 #     e.g. guard_repo_root_branch.sh, guard_repo_root_pull.sh — syncing
 #     the tests without them red-flags main-green nodes on pure version
 #     skew, the #1860/#1862 half-sync)
+#   FAMILY_agents (#2260): .claude/agents <-> the vetted agents-prose pin
+#     tests enumerated below — prose-pin tests over .claude/agents/*.md
+#     content living OUTSIDE the coupled test globs (no shared name prefix
+#     exists; readers use BOTH the literal ".claude/agents" form and the
+#     quoted path-join form `/ ".claude" / "agents" /`, and the completeness
+#     guard's pattern matches both). Refreshing agents prose without its pin
+#     tests reds the Step 9c gate on pure vintage skew (#2251: main removed
+#     a planner.md row + its pinning test together; the branch-era test red
+#     the freshly-synced planner.md — a 74-min gate red). Membership is
+#     VETTED, never name-globbed: only closure-clean prose-pin tests join
+#     (stdlib / env packages / tests/issue_skill_source.py / SPECS-synced
+#     files only) — behavioral tests importing unsynced scripts/src stay
+#     OUT (main's newer behavioral tests pin main's newer scripts/+src/,
+#     rationale (ii) of the sync-scope boundary paragraph). Completeness is
+#     pinned by guard (20) in tests/test_issue_skill_lint_family_sync.py:
+#     a new tests/test_*.py matching the agents-reader pattern must join a
+#     family or that guard's exempt lists, so the membership cannot
+#     silently re-rot (the #1883/#1963/#2352 recurrence class).
 #
 # Everything else in SPECS is a singleton (its own family, no coupling):
-# .claude/agents, .claude/agent-memory (#1972 — always-appended memory
+# .claude/agent-memory (#1972 — always-appended memory
 # indexes the lint budget checks scan; no coupling, so its protections are
 # the uncommitted-dirt arm below + the branch-side-edit guard),
 # .claude/rules, CLAUDE.md, tests/issue_skill_source.py (#2352 — the shared
@@ -211,14 +333,52 @@ FAMILY_OF[".claude/hooks"]="guard"
 FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
 FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
 FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-# Singletons: .claude/agents, .claude/agent-memory, .claude/rules, CLAUDE.md,
+# FAMILY_agents members (#2260; vetting rule + rationale in the FAMILY_agents
+# block comment above; completeness pinned by guard (20)):
+FAMILY_OF[".claude/agents"]="agents"
+FAMILY_OF["tests/test_adversarial_planner_factchecker_grain_pin.py"]="agents"
+FAMILY_OF["tests/test_adversarial_planner_lens_brief_headings.py"]="agents"
+FAMILY_OF["tests/test_analyzer_language_intrusion_duty.py"]="agents"
+FAMILY_OF["tests/test_battery_basis_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_code_reviewer_phase_idempotency_gate.py"]="agents"
+FAMILY_OF["tests/test_codex_code_reviewer_step09_tag_parity.py"]="agents"
+FAMILY_OF["tests/test_codex_critic_numeric_grounding.py"]="agents"
+FAMILY_OF["tests/test_consistency_checker_parentless_infra_skip.py"]="agents"
+FAMILY_OF["tests/test_cross_issue_protocol_comparability_prose.py"]="agents"
+FAMILY_OF["tests/test_daily_three_route_classifier_doc.py"]="agents"
+FAMILY_OF["tests/test_diff_base_origin_main_pin.py"]="agents"
+FAMILY_OF["tests/test_downwidth_split_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_experimenter_md.py"]="agents"
+FAMILY_OF["tests/test_fit_loop_batching_review_pin.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_deleted_literal_substep.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_mechanical_pin_sweep.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_names_invariant_local_union.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_names_ruff_policy_pin.py"]="agents"
+FAMILY_OF["tests/test_interp_critic_degenerate_series_lens.py"]="agents"
+FAMILY_OF["tests/test_issue_v2_skill_figure_pin_contract.py"]="agents"
+FAMILY_OF["tests/test_lean_twin_registration_pin.py"]="agents"
+FAMILY_OF["tests/test_mapping_baselines_wiring_pins.py"]="agents"
+FAMILY_OF["tests/test_off_pod_phase_slot_pin.py"]="agents"
+FAMILY_OF["tests/test_outroot_residue_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_plan_handoff_path_convention.py"]="agents"
+FAMILY_OF["tests/test_planner_incident_trace_guidance.py"]="agents"
+FAMILY_OF["tests/test_planner_phase_outputs_declaration.py"]="agents"
+FAMILY_OF["tests/test_realized_rows_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_selection_symmetric_nulls_pointers.py"]="agents"
+FAMILY_OF["tests/test_v2_composer_plan_path_brief.py"]="agents"
+# Cross-family reader (#2260): imports the workflow-family helper
+# tests/test_issue_skill_inline_gate_pin.py (guard (19) universal-route
+# coverage forces the same family); its analyzer.md pin rides the modal
+# both-clean sync — residual documented at guard (20).
+FAMILY_OF["tests/test_inline_payload_lint_gate_contract.py"]="workflow"
+# Singletons: .claude/agent-memory, .claude/rules, CLAUDE.md,
 # tests/issue_skill_source.py (#2352 — cross-family importers: workflow glob
 # x64, lint-family test_workflow_lint_no_repo_root_worktree_revert.py, plus
 # ~30 unsynced tests; never one family's member)
 # — each is its own family key (set below in the pass-1 loop by defaulting
 # to its own path).
 
-SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py"
+SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py tests/test_adversarial_planner_factchecker_grain_pin.py tests/test_adversarial_planner_lens_brief_headings.py tests/test_analyzer_language_intrusion_duty.py tests/test_battery_basis_prose_pins.py tests/test_code_reviewer_phase_idempotency_gate.py tests/test_codex_code_reviewer_step09_tag_parity.py tests/test_codex_critic_numeric_grounding.py tests/test_consistency_checker_parentless_infra_skip.py tests/test_cross_issue_protocol_comparability_prose.py tests/test_daily_three_route_classifier_doc.py tests/test_diff_base_origin_main_pin.py tests/test_downwidth_split_prose_pins.py tests/test_experimenter_md.py tests/test_fit_loop_batching_review_pin.py tests/test_implementer_spec_deleted_literal_substep.py tests/test_implementer_spec_mechanical_pin_sweep.py tests/test_implementer_spec_names_invariant_local_union.py tests/test_implementer_spec_names_ruff_policy_pin.py tests/test_inline_payload_lint_gate_contract.py tests/test_interp_critic_degenerate_series_lens.py tests/test_issue_v2_skill_figure_pin_contract.py tests/test_lean_twin_registration_pin.py tests/test_mapping_baselines_wiring_pins.py tests/test_off_pod_phase_slot_pin.py tests/test_outroot_residue_prose_pins.py tests/test_plan_handoff_path_convention.py tests/test_planner_incident_trace_guidance.py tests/test_planner_phase_outputs_declaration.py tests/test_realized_rows_prose_pins.py tests/test_selection_symmetric_nulls_pointers.py tests/test_v2_composer_plan_path_brief.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -230,6 +390,24 @@ MB=$(git -C "$WT" merge-base HEAD origin/main)
 # commits, as in #1560).
 declare -A DIRTY_FAMILIES
 for f in $SPECS; do
+  # Member-existence containment (#2260; interaction with #2385): the
+  # checkout below is ATOMIC — a single literal token absent at origin/main
+  # (deleted/renamed on main) errors the whole checkout and syncs NOTHING,
+  # wedging every family until manual reconcile. Contain per-family: an
+  # absent literal member marks ITS family dirty (vintage-consistent skip;
+  # other families keep syncing). Deletion PROPAGATION (removing the stale
+  # worktree twin) remains #2385 — reconcile manually until it lands.
+  case "$f" in
+    ":(glob)"*) : ;;
+    *)
+      if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
+        fam="${FAMILY_OF[$f]:-$f}"
+        DIRTY_FAMILIES[$fam]=1
+        echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; stale-twin removal is #2385 — reconcile manually)."
+        continue
+      fi
+      ;;
+  esac
   # Branch-side feature edits = commits since merge-base touching $f,
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
@@ -528,16 +706,24 @@ skew means rebase onto origin/main, or cross-check at the repo root.
 Family atomicity (#1714): within the spec-coupled
 lint/guard family, the per-item branch-side-edit skip is transitive —
 a branch-side edit on ANY family member widens the skip to the WHOLE
-family (never narrows it). Three families are declared: workflow
+family (never narrows it). Four families are declared: workflow
 (`.claude/workflow.yaml` + `.claude/skills` where the derived
 `markers.md` and SKILL.md generated tables live, plus
 `:(glob)tests/test_issue_skill_*.py` — the prose-pin tests over that
 skills content, #1883), lint
 (`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
 plus the explicit importers `tests/test_workflow_yaml.py` and
-`tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
+`tests/test_autonomous_session_watch.py`), guard (`.claude/hooks`
 + `:(glob)scripts/guard_*.sh` + `:(glob)tests/test_guard_*.py`
-+ `tests/test_guard_lessons_edit.py`).
++ `tests/test_guard_lessons_edit.py`), and agents (`.claude/agents` +
+the vetted agents-prose pin tests enumerated in FAMILY_OF above,
+#2260). Vetted agents-prose pin tests join the sync as FAMILY_agents
+members under the closure-clean admission rule (imports limited to
+stdlib / environment packages / `tests/issue_skill_source.py` /
+SPECS-synced files), with completeness pinned by guard (20) in
+`tests/test_issue_skill_lint_family_sync.py` — a vetted-membership
+exception to, not a weakening of, the boundary above: behavioral tests
+importing unsynced `scripts/` / `src/` stay OUT of the sync.
 Everything else in SPECS is a singleton (its own family). Everything ELSE keeps the original rationale: workflow-
 helper SCRIPTS are already resolved from the MAIN checkout (Step 0
 § worktree spec-freshness: `"$REPO_ROOT"/scripts/...`) — except the
@@ -950,17 +1136,27 @@ declarations and reads the full sibling spec by reference, cutting
 fixed-overhead ~138K tokens (#2062). Available for: `analyzer`, `planner`
 (also covers the `planner`-typed fact-checker spawn at
 `.claude/skills/adversarial-planner/SKILL.md:867`), `critic`,
-`experiment-implementer`, `code-reviewer`, `consistency-checker`. If the
+`experiment-implementer`, `code-reviewer`, `consistency-checker`,
+`implementer`, and the five Codex composer roles — `codex-code-reviewer`,
+`codex-critic`, `codex-interpretation-critic`, `codex-clean-result-critic`,
+`codex-follow-up-critic` (twins named `codex-<role>-lean`; the composers
+already declare narrow tool lists, so their twin's saving is the sibling's
+own 12–50 KB spec-as-system-prompt, converted to bounded windowed Reads of
+the same file — NOT an MCP drop, #2472). A thrash-killed `codex-*`
+COMPOSER takes this ladder (micro-scoped respawn, then
+`codex-<role>-lean`) BEFORE item 4's Step 5d single-Claude no-show
+fallback fires; the fallback remains the terminal only after the lean
+respawn also returns no prompt file. If the
 lean-twin respawn ALSO ends with no durable verdict, fall through to
 item 4's fail-loud terminal — never an unbounded lean-twin retry loop.
 **Lean-twin resolvability (#2072):** agent types register at SESSION
 START from the session cwd's `.claude/agents/` + user-global
 `~/.claude/agents/`; a file added MID-session NEVER registers (#2061:
-the worktree cwd's branch predated the lean files). The 6 lean twins
+the worktree cwd's branch predated the lean files). The 11 lean twins
 are installed user-global as SYMLINKS to the repo files, so an "agent
 type not found" refusal of a lean twin means the install is broken —
 re-run
-`for a in code-reviewer critic consistency-checker experiment-implementer implementer planner; do ln -sfn /home/thomasjiralerspong/explore-persona-space/.claude/agents/${a}-lean.md ~/.claude/agents/${a}-lean.md; done`
+`for a in code-reviewer critic consistency-checker experiment-implementer implementer planner codex-code-reviewer codex-critic codex-interpretation-critic codex-clean-result-critic codex-follow-up-critic; do ln -sfn /home/thomasjiralerspong/explore-persona-space/.claude/agents/${a}-lean.md ~/.claude/agents/${a}-lean.md; done`
 (a NEW lean twin joins the same install). Residuals: a session spawned
 BEFORE a genuinely NEW agent type lands can never resolve it
 mid-session — route to item 4's fail-loud terminal, never an

@@ -1082,9 +1082,12 @@ tests BEFORE anything lands:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$LINT_GATE_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$LINT_GATE_SCRIPT' < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
+  #     bash '$LINT_GATE_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
@@ -1168,12 +1171,15 @@ tests BEFORE anything lands:
     # surface (.claude/ CLAUDE.md scripts/ src/ tests/ docs/ — the #1154
     # marker-recipe pins read docs/); a false block naming a path OUTSIDE
     # this set means the linter grew a new scan root — extend the set here.
+    # check_prod_import_lockfile (#2253) reads uv.lock + pyproject.toml at
+    # the tree ROOT, so BOTH manifests ship in the archive (pinned by
+    # tests/test_issue_skill_gate_tree_pathspec.py).
     GT=/tmp/issue-<N>-lint-gate-tree
     GT_RC=0
     timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true  # bounded: a hung fetch degrades to origin/main staleness, never a wedged gate
     { rm -rf "$GT" && mkdir -p "$GT"; } || GT_RC=1
     ( set -o pipefail; git -C "$WT" archive origin/main -- \
-        .claude CLAUDE.md scripts src tests docs pyproject.toml \
+        .claude CLAUDE.md scripts src tests docs pyproject.toml uv.lock \
       | tar -x -C "$GT" ) || GT_RC=1
     [ -f "$GT/scripts/workflow_lint.py" ] || GT_RC=1   # construction sanity
     # BASELINE legs (payload-free landing base — phase 1, BEFORE the
@@ -1189,15 +1195,19 @@ tests BEFORE anything lands:
     # bare last-failure-wins `|| VAR=$?` capture erases the crash and
     # defeats the crash arm below. rc=0/0 stays 0; a lone rc=1-with-lines
     # stays 1 (attribution logic); any leg >1 reaches the crash arm.
-    # 900s wedge bound per lint leg ≈ 2.5× the measured 360s upper wall
-    # (bullet above; #1129 generous-ceiling sizing style) — fires only on a
-    # genuine wedge; a bound kill (rc 124) flows through the NO-DOWNGRADE
-    # fold into the crash arm below — fail CLOSED.
+    # 1800s wedge bound per lint leg (raised from 900s, #2253 r5): no-flags
+    # wall MEASURED 747s on the branch tree 2026-08-21 under fleet load
+    # (load avg 13.44/32 cores, 9 concurrent lint runs; ~663s without the
+    # #2253 check) — bound sized >=2x the measured wall per the CLAUDE.md
+    # x2 dispersion default (900s was 1.2x and killed BOTH sides). Fires
+    # only on a genuine wedge; a bound kill (rc 124) flows through the
+    # NO-DOWNGRADE fold into the crash arm below — fail CLOSED, so an
+    # under-sized bound silently blocks every branch's merge.
     BASE_RC=0
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -1230,6 +1240,18 @@ tests BEFORE anything lands:
     # bytes >0x7f only.
     git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD \
       > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
+    # #2246 item 3: this branch runs only when the TRIGGER classified the
+    # payload code-bearing (non-empty own-diff past the artifact carve-out),
+    # and the --no-renames overlay path set is a superset of the own-diff
+    # path set — an EMPTY listing from a ZERO-exit producer here means the
+    # listing was computed against the wrong/absent tree (or a mid-window
+    # ref mutation, e.g. the fetch above landing the payload on origin/main
+    # between the trigger diff and this listing). Fail CLOSED via the
+    # existing crash arm; never certify.
+    if [ ! -s /tmp/issue-<N>-overlay-files.txt ]; then
+      echo "[step10d] overlay listing EMPTY on a code-bearing payload — vacuous gated leg; failing CLOSED (#2246)"
+      GT_RC=1
+    fi
     # #1456: save the pre-overlay (archived origin/main) lint copy before the
     # loop overwrites it — the "theirs" side of the 3-way merge below. The
     # rm -f first clears any STALE saved copy from a prior run: a cp failure
@@ -1323,10 +1345,10 @@ tests BEFORE anything lands:
     # GATED legs (payload-bearing landing tree — phase 3; parity leg covers
     # the checks the no-flags bundle omits — see the bullet above):
     GATED_RC=0
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
@@ -2408,10 +2430,61 @@ else
     FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py"
+    # FAMILY_agents members (#2260)
+    FAMILY_OF[".claude/agents"]="agents"
+    FAMILY_OF["tests/test_adversarial_planner_factchecker_grain_pin.py"]="agents"
+    FAMILY_OF["tests/test_adversarial_planner_lens_brief_headings.py"]="agents"
+    FAMILY_OF["tests/test_analyzer_language_intrusion_duty.py"]="agents"
+    FAMILY_OF["tests/test_battery_basis_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_code_reviewer_phase_idempotency_gate.py"]="agents"
+    FAMILY_OF["tests/test_codex_code_reviewer_step09_tag_parity.py"]="agents"
+    FAMILY_OF["tests/test_codex_critic_numeric_grounding.py"]="agents"
+    FAMILY_OF["tests/test_consistency_checker_parentless_infra_skip.py"]="agents"
+    FAMILY_OF["tests/test_cross_issue_protocol_comparability_prose.py"]="agents"
+    FAMILY_OF["tests/test_daily_three_route_classifier_doc.py"]="agents"
+    FAMILY_OF["tests/test_diff_base_origin_main_pin.py"]="agents"
+    FAMILY_OF["tests/test_downwidth_split_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_experimenter_md.py"]="agents"
+    FAMILY_OF["tests/test_fit_loop_batching_review_pin.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_deleted_literal_substep.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_mechanical_pin_sweep.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_names_invariant_local_union.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_names_ruff_policy_pin.py"]="agents"
+    FAMILY_OF["tests/test_interp_critic_degenerate_series_lens.py"]="agents"
+    FAMILY_OF["tests/test_issue_v2_skill_figure_pin_contract.py"]="agents"
+    FAMILY_OF["tests/test_lean_twin_registration_pin.py"]="agents"
+    FAMILY_OF["tests/test_mapping_baselines_wiring_pins.py"]="agents"
+    FAMILY_OF["tests/test_off_pod_phase_slot_pin.py"]="agents"
+    FAMILY_OF["tests/test_outroot_residue_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_plan_handoff_path_convention.py"]="agents"
+    FAMILY_OF["tests/test_planner_incident_trace_guidance.py"]="agents"
+    FAMILY_OF["tests/test_planner_phase_outputs_declaration.py"]="agents"
+    FAMILY_OF["tests/test_realized_rows_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_selection_symmetric_nulls_pointers.py"]="agents"
+    FAMILY_OF["tests/test_v2_composer_plan_path_brief.py"]="agents"
+    FAMILY_OF["tests/test_inline_payload_lint_gate_contract.py"]="workflow"
+    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py tests/test_adversarial_planner_factchecker_grain_pin.py tests/test_adversarial_planner_lens_brief_headings.py tests/test_analyzer_language_intrusion_duty.py tests/test_battery_basis_prose_pins.py tests/test_code_reviewer_phase_idempotency_gate.py tests/test_codex_code_reviewer_step09_tag_parity.py tests/test_codex_critic_numeric_grounding.py tests/test_consistency_checker_parentless_infra_skip.py tests/test_cross_issue_protocol_comparability_prose.py tests/test_daily_three_route_classifier_doc.py tests/test_diff_base_origin_main_pin.py tests/test_downwidth_split_prose_pins.py tests/test_experimenter_md.py tests/test_fit_loop_batching_review_pin.py tests/test_implementer_spec_deleted_literal_substep.py tests/test_implementer_spec_mechanical_pin_sweep.py tests/test_implementer_spec_names_invariant_local_union.py tests/test_implementer_spec_names_ruff_policy_pin.py tests/test_inline_payload_lint_gate_contract.py tests/test_interp_critic_degenerate_series_lens.py tests/test_issue_v2_skill_figure_pin_contract.py tests/test_lean_twin_registration_pin.py tests/test_mapping_baselines_wiring_pins.py tests/test_off_pod_phase_slot_pin.py tests/test_outroot_residue_prose_pins.py tests/test_plan_handoff_path_convention.py tests/test_planner_incident_trace_guidance.py tests/test_planner_phase_outputs_declaration.py tests/test_realized_rows_prose_pins.py tests/test_selection_symmetric_nulls_pointers.py tests/test_v2_composer_plan_path_brief.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
+      # Member-existence containment (#2260; interaction with #2385): the
+      # checkout below is ATOMIC — a single literal token absent at origin/main
+      # (deleted/renamed on main) errors the whole checkout and syncs NOTHING,
+      # wedging every family until manual reconcile. Contain per-family: an
+      # absent literal member marks ITS family dirty (vintage-consistent skip;
+      # other families keep syncing). Deletion PROPAGATION (removing the stale
+      # worktree twin) remains #2385 — reconcile manually until it lands.
+      case "$f" in
+        ":(glob)"*) : ;;
+        *)
+          if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
+            fam="${FAMILY_OF[$f]:-$f}"
+            DIRTY_FAMILIES_10D[$fam]=1
+            echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; stale-twin removal is #2385 — reconcile manually)."
+            continue
+          fi
+          ;;
+      esac
       bs_commits=$(git -C "$WT" log --format='%H %s' "$MB_10D"..HEAD -- "$f" \
         | awk 'index($0, "sync workflow-surface specs from") == 0')
       if [ -n "$bs_commits" ]; then
@@ -3689,9 +3762,12 @@ Decision tree:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$SURGICAL_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$SURGICAL_SCRIPT' < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
+  #     bash '$SURGICAL_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
@@ -3735,10 +3811,10 @@ Decision tree:
     # rationale as the gate's executable block — a leg-1 crash must not be
     # erased by a leg-2 rc=1):
     BASE_RC=0
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -3841,10 +3917,10 @@ Decision tree:
   GATE_VERDICT=pass
   if [ "$GATE_ARMED" = "yes" ]; then
     GATED_RC=0
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
