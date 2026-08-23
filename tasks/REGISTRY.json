@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2489,
+  "highest_id": 2490,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11507,6 +11507,13 @@
       "path": "tasks/on_hold/249",
       "status": "on_hold",
       "title": "Extract language-output direction vectors and correlate with spill magnitudes"
+    },
+    "2490": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2490",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan checks plan-embedded new-script commands against the plan's own declared CLI choices (#2474 harvest-verify incident)"
     },
     "25": {
       "has_clean_result": false,
