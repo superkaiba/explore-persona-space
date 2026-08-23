@@ -1,1 +1,2 @@
 {"ts": "2026-08-23T08:05:41Z", "event": "raised", "concern_id": "smoke-architecture-marker-missing", "severity": "BLOCKER", "summary": "Canonical task state has no parseable epm:smoke-architecture-check marker.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-23T08:05:46Z", "event": "raised", "concern_id": "upload-smoke-not-real", "severity": "BLOCKER", "summary": "The upload entrypoint was exercised only with --dry-run and no production-outroot unit was attested.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
