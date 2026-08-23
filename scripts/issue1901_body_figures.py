@@ -25,6 +25,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()  # thread caps BEFORE numpy/matplotlib (shared-VM rule, #847)
 
 import json
+from collections import Counter
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -599,10 +600,171 @@ def fig_regime_flip(l19: dict, p18: dict) -> None:
     plt.close(fig)
 
 
+# ── c1_scaling boundary-token extension + §7.4 regression gate (#1901 btokctl) ──
+
+_R2_KEY = "held-out $R^2$"
+_ACC_KEY = "retrieval acc@1 (pool 1,000)"
+
+
+def _normalize_meta_points(meta: dict) -> Counter:
+    """§7.4 normalization: (panel value-key, _kind, n_train, value, error) tuples.
+
+    ``series`` and ``_group`` are EXCLUDED from the tuple BY DESIGN: the
+    committed baseline labels only 42/304 points (every acc@1-panel point and
+    all line-kind points carry no ``series``), and ``_group`` renumbers when a
+    4th series is inserted — keying on either would deterministically
+    false-HALT or silently un-protect the acc@1 panel. Values rounded to 9
+    decimals (the §7.4 1e-9 comparison grain). Raises on a point with no known
+    panel key.
+    """
+    out: Counter = Counter()
+    for p in meta["points"]:
+        if _R2_KEY in p:
+            panel, val = _R2_KEY, p[_R2_KEY]
+        elif _ACC_KEY in p:
+            panel, val = _ACC_KEY, p[_ACC_KEY]
+        else:
+            raise ValueError(f"meta point with no known panel key: {sorted(p)}")
+        err = p.get("error")
+        out[
+            (
+                panel,
+                p.get("_kind"),
+                round(float(p["training contexts"]), 9),
+                round(float(val), 9),
+                round(float(err), 9) if err is not None else None,
+            )
+        ] += 1
+    return out
+
+
+def fig_regression_gate(committed: dict, regenerated: dict, new_label: str) -> None:
+    """§7.4 tuple-keyed figure-regression gate (M1) — fail loud on any drift.
+
+    Asserts the committed meta's normalized tuple multiset EQUALS the
+    regenerated meta's multiset MINUS the new-series points (identified by the
+    explicit ``series == new_label`` the extended renderer threads onto every
+    point it writes), and that >=1 new-series point exists. Consumers: the
+    driver's fig phase (``issue1901_boundary_token_control.phase_fig``) and the
+    unit-4 smoke.
+    """
+    inherited = {"points": [p for p in regenerated["points"] if p.get("series") != new_label]}
+    n_new = len(regenerated["points"]) - len(inherited["points"])
+    assert n_new > 0, (
+        f"no regenerated point carries series={new_label!r} — the renderer extension "
+        f"did not label its new series (unit-3 contract)"
+    )
+    a, b = _normalize_meta_points(committed), _normalize_meta_points(inherited)
+    if a != b:
+        gone = list((a - b).items())[:5]
+        extra = list((b - a).items())[:5]
+        raise RuntimeError(
+            f"[fig] §7.4 REGRESSION GATE FAILED — inherited point multiset changed. "
+            f"missing={gone} unexpected={extra}. Do NOT commit; restore with "
+            f"git checkout -- figures/paper/c1_scaling_train_pool.*"
+        )
+    print(
+        f"[fig] §7.4 regression gate PASS: {sum(a.values())} inherited points unchanged, "
+        f"{n_new} new-series points"
+    )
+
+
+def _boundary_series_points(
+    boundary: dict, boundary_label: str
+) -> tuple[
+    list[float], list[float], list[float], list[float], list[float], list[float], list[float]
+]:
+    """Aggregate boundary-token control cells into per-rung figure points.
+
+    Returns ``(xs, r2, r2_lo, r2_hi, acc, acc_lo, acc_hi)`` — one entry per
+    rung, x-sorted; the lo/hi are RAW error OFFSETS from the value (a tiny-n
+    bootstrap CI can invert around the point — #1335/#547), clamped
+    ``np.maximum(0, .)`` at the errorbar call sites per the matplotlib yerr
+    convention. Follows the ladder conventions exactly (#1901 plan §4 fig):
+    integer-draw cells (small rungs) aggregate as across-draw mean ± sd of
+    ``ridge.test_r2`` / ``knn.ridge.euclidean`` acc@1 (the ``dense()``
+    convention); ``draw == "prefix"`` cells (big rungs) plot the point with its
+    row-level score_cell bootstrap CI (asymmetric offsets, the ``_r2ci`` /
+    ``_a1ci`` convention; the cells' article-level CI is deliberately NOT drawn
+    — parent-convention parity, plan §6). Fail-loud on empty cells, mixed
+    layers, a small/prefix rung overlap, or a ``series_label`` mismatch.
+    """
+    cells = boundary["cells"]
+    assert cells, "boundary dict has no cells"
+    declared = boundary.get("series_label")
+    assert declared is None or declared == boundary_label, (declared, boundary_label)
+    layers = {int(c["layer"]) for c in cells}
+    assert len(layers) == 1, f"boundary cells span layers {sorted(layers)} — expected exactly one"
+
+    small: dict[int, list[dict]] = {}
+    big: list[dict] = []
+    for c in cells:
+        if c["draw"] == "prefix":
+            big.append(c)
+        else:
+            int(c["draw"])  # fail loud on an unexpected draw kind
+            small.setdefault(int(c["n_train"]), []).append(c)
+    big_ns = [int(c["n_train"]) for c in big]
+    assert len(set(big_ns)) == len(big_ns), f"duplicate prefix rungs: {sorted(big_ns)}"
+    overlap = set(small) & set(big_ns)
+    assert not overlap, f"rungs carrying BOTH draw and prefix cells: {sorted(overlap)}"
+
+    def a1c(c: dict) -> float:
+        return float(c["knn"]["ridge"]["euclidean"]["acc_at_k"]["1"])
+
+    rows: list[tuple[float, float, float, float, float, float, float]] = []
+    for n, draws in small.items():
+        r2s = [float(c["ridge"]["test_r2"]) for c in draws]
+        a1s = [a1c(c) for c in draws]
+        sd_r, sd_a = float(np.std(r2s)), float(np.std(a1s))
+        rows.append((n, float(np.mean(r2s)), sd_r, sd_r, float(np.mean(a1s)), sd_a, sd_a))
+    for c in big:
+        n = int(c["n_train"])
+        y = float(c["ridge"]["test_r2"])
+        ci = c["ridge"]["bootstrap_ci"]["r2"]
+        e = c["knn"]["ridge"]["euclidean"]
+        a = float(e["acc_at_k"]["1"])
+        aci = e["acc1_ci"]
+        rows.append(
+            (
+                n,
+                y,
+                y - float(ci["lo"]),
+                float(ci["hi"]) - y,
+                a,
+                a - float(aci["lo"]),
+                float(aci["hi"]) - a,
+            )
+        )
+    rows.sort(key=lambda r: r[0])
+    cols = list(zip(*rows, strict=True))
+    return tuple(list(col) for col in cols)  # type: ignore[return-value]
+
+
+def _thread_meta_series_labels(series_artists: list[tuple[object, str]]) -> None:
+    """Label every errorbar container + its child Line2Ds for the meta sidecar (M1).
+
+    ``savefig_paper``'s extraction reads ``series`` off artist labels, so with
+    creation-time labels only 42/304 points carry one (acc@1 containers and all
+    data/cap lines are unlabeled). Called AFTER ``fig.legend`` is built from
+    explicitly captured handles/labels, so relabeling never alters the rendered
+    figure — legends snapshot label text at creation, and artist labels are not
+    otherwise drawn.
+    """
+    for cont, name in series_artists:
+        cont.set_label(name)
+        data_line, caplines, _barlinecols = cont
+        for ln in (data_line, *(caplines or ())):
+            if ln is not None:
+                ln.set_label(name)
+
+
 def fig_paper_c1_scaling(
     l19: dict,
     ladder: dict,
     *,
+    boundary: dict | None = None,
+    boundary_label: str = "generic boundary token ('.')",
     boundary_hline: float | None = None,
     stem: str = "c1_scaling_train_pool",
     out_dir: Path | None = None,
@@ -614,9 +776,27 @@ def fig_paper_c1_scaling(
 ) -> None:
     """ICLR paper figure (c1_linear R1), densified (#1901 paper_densify round).
 
+    boundary: opt-in 4th series (#1901 `generic-boundary-token-control` round)
+    — the loaded ``boundary_token_scaling_L19.json`` dict (unit-2 cell schema:
+    ``cells[]`` with ``draw`` int 0/1/2 at small rungs / the STRING ``"prefix"``
+    at big rungs, ``ridge.test_r2`` + ``ridge.bootstrap_ci``,
+    ``knn.ridge.euclidean`` incl. ``acc1_ci``). Adds ONE series labeled
+    ``boundary_label`` to BOTH panels: across-draw mean ± sd at small rungs,
+    row-level bootstrap CI at prefix rungs (the exact ``dense()`` / ``ci_pt``
+    conventions the ridge series uses); acc@1 euclidean, pool 1,000. Drawn
+    FIRST on each panel so the sidecar's last-container-wins err-by-x recovery
+    keeps every inherited point's ``error`` unchanged (§7.4 gate contract);
+    shown LAST in the legend. With ``boundary=None`` (the default) the drawn
+    figure is unchanged. Independent of the drawn content, EVERY point written
+    to the ``.meta.json`` sidecar now carries an explicit ``series`` label on
+    both panels (M1 — makes the §7.4 ``fig_regression_gate`` decidable), via a
+    post-legend artist relabel that does not affect the rendered output.
+
     boundary_hline: opt-in poster variant — draws the #825 generic
-    boundary-token→segment map control (instruct R^2 0.1087, single-n,
-    wikitext) as a dashed reference line on the R^2 panel and saves under
+    boundary-token→segment map control (fraction_of_fulln_ceiling 0.1087 —
+    NOT an R^2; retired from all in-repo callers, #1901; the underlying
+    sep_to_chat_fulln_r2 is 0.07315) as a dashed reference line on the R^2
+    panel and saves under
     `stem` into `out_dir`; `identity_label` / `neural_label` relabel the
     identity+bias and neural-map legend entries (poster uses
     "identity + bias (baseline)" / "nonlinear (MLP)"); the default paper
@@ -726,12 +906,46 @@ def fig_paper_c1_scaling(
     col_i = paper_color("identity_bias")
     col_n = paper_color("neural_map")
 
+    series_artists: list[tuple[object, str]] = []
+    bpts = _boundary_series_points(boundary, boundary_label) if boundary is not None else None
+    if bpts is not None:
+        bx, br2, br2_lo, br2_hi, bacc, bacc_lo, bacc_hi = bpts
+        # Next unused curated paper-palette colour (colorblind-safe; the three
+        # inherited series keep their paper_color concept bindings). Drawn FIRST
+        # per panel — see the docstring's err-by-x note.
+        col_b = next(c for c in paper_palette(8) if c not in {col_r, col_i, col_n})
+        eb = ax_r2.errorbar(
+            bx,
+            br2,
+            yerr=[np.maximum(0, br2_lo), np.maximum(0, br2_hi)],
+            marker="^",
+            ls="-.",
+            color=col_b,
+            lw=1.2,
+            ms=3,
+            capsize=1.5,
+            label=boundary_label,
+        )
+        series_artists.append((eb, boundary_label))
+        eb = ax_acc.errorbar(
+            bx,
+            bacc,
+            yerr=[np.maximum(0, bacc_lo), np.maximum(0, bacc_hi)],
+            marker="^",
+            ls="-.",
+            color=col_b,
+            lw=1.2,
+            ms=3,
+            capsize=1.5,
+        )
+        series_artists.append((eb, boundary_label))
+
     ns, mean, sd = dense(lambda c: c["ridge"]["test_r2"])
     xs_r = ns + [p[0] for p in big_ridge]
     ys_r = mean + [p[1] for p in big_ridge]
     lo_r = sd + [p[1] - p[2] for p in big_ridge]
     hi_r = sd + [p[3] - p[1] for p in big_ridge]
-    ax_r2.errorbar(
+    eb = ax_r2.errorbar(
         xs_r,
         ys_r,
         yerr=[np.maximum(0, lo_r), np.maximum(0, hi_r)],
@@ -743,6 +957,7 @@ def fig_paper_c1_scaling(
         capsize=1.5,
         label="linear map (ridge)",
     )
+    series_artists.append((eb, "linear map (ridge)"))
     ns_i, mean_i, sd_i = dense(lambda c: c["identity_bias"]["test_r2"])
     big_ib = [(n, *_r2ci(cell["identity_bias"])) for n, cell in densify_big]
     r_ib = arms["identity_bias"]["r2"]
@@ -750,7 +965,7 @@ def fig_paper_c1_scaling(
     ys_i = mean_i + [p[1] for p in big_ib] + [r_ib["point"]]
     lo_i = sd_i + [p[1] - p[2] for p in big_ib] + [r_ib["point"] - r_ib["lo"]]
     hi_i = sd_i + [p[3] - p[1] for p in big_ib] + [r_ib["hi"] - r_ib["point"]]
-    ax_r2.errorbar(
+    eb = ax_r2.errorbar(
         xs_i,
         ys_i,
         yerr=[np.maximum(0, lo_i), np.maximum(0, hi_i)],
@@ -762,11 +977,12 @@ def fig_paper_c1_scaling(
         capsize=1.5,
         label=identity_label,
     )
+    series_artists.append((eb, identity_label))
     xs_n = [p[0] for p in neural_r2]
     ys_n = [p[1] for p in neural_r2]
     lo_n = [p[1] - p[2] for p in neural_r2]
     hi_n = [p[3] - p[1] for p in neural_r2]
-    ax_r2.errorbar(
+    eb = ax_r2.errorbar(
         xs_n,
         ys_n,
         yerr=[np.maximum(0, lo_n), np.maximum(0, hi_n)],
@@ -778,6 +994,7 @@ def fig_paper_c1_scaling(
         capsize=1.5,
         label=neural_label,
     )
+    series_artists.append((eb, neural_label))
     ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
     ax_r2.set_ylabel("held-out $R^2$")
     ax_r2.set_ylim(-1.05, 1.0)
@@ -788,7 +1005,7 @@ def fig_paper_c1_scaling(
     ns, mean, sd = dense(lambda c: a1(c, "ridge"))
     big_a1_r = [(n, *_a1ci(cell["ridge"])) for n, cell in densify_big]
     p, lo, hi = _acc1(arms["ridge"], "test")
-    ax_acc.errorbar(
+    eb = ax_acc.errorbar(
         ns + [q[0] for q in big_a1_r] + [963_444],
         mean + [q[1] for q in big_a1_r] + [p],
         yerr=[
@@ -802,10 +1019,11 @@ def fig_paper_c1_scaling(
         ms=3,
         capsize=1.5,
     )
+    series_artists.append((eb, "linear map (ridge)"))
     ns_i, mean_i, sd_i = dense(lambda c: a1(c, "identity_bias"))
     big_a1_i = [(n, *_a1ci(cell["identity_bias"])) for n, cell in densify_big]
     p, lo, hi = _acc1(arms["identity_bias"], "test")
-    ax_acc.errorbar(
+    eb = ax_acc.errorbar(
         ns_i + [q[0] for q in big_a1_i] + [963_444],
         mean_i + [q[1] for q in big_a1_i] + [p],
         yerr=[
@@ -819,11 +1037,12 @@ def fig_paper_c1_scaling(
         ms=3,
         capsize=1.5,
     )
+    series_artists.append((eb, identity_label))
     n_a5 = float(mlp_sc["5000"]["knn"]["euclidean"]["acc_at_k"]["1"])
     n_a10 = float(mlp_sc["10000"]["knn"]["euclidean"]["acc_at_k"]["1"])
     n_a25 = float(f7["knn_retrieval"]["mlp_w8192"]["euclidean"]["acc_at_k"]["1"])
     p, lo, hi = _acc1(arms["mlp_w8192"], "test")
-    ax_acc.errorbar(
+    eb = ax_acc.errorbar(
         [5_000, 10_000, 25_000, 963_444],
         [n_a5, n_a10, n_a25, p],
         yerr=[[0.0, 0.0, 0.0, max(0, p - lo)], [0.0, 0.0, 0.0, max(0, hi - p)]],
@@ -834,6 +1053,7 @@ def fig_paper_c1_scaling(
         ms=3,
         capsize=1.5,
     )
+    series_artists.append((eb, neural_label))
     ax_acc.axhline(0.001, color="black", lw=0.7, ls=":")
     ax_acc.set_ylabel(acc_label)
     ax_acc.set_ylim(0.0, 1.0)
@@ -851,20 +1071,24 @@ def fig_paper_c1_scaling(
             label="generic boundary-token map",
         )
     handles, labels = ax_r2.get_legend_handles_labels()
+    if bpts is not None:
+        # Drawn first (sidecar err-by-x ordering) — shown LAST in the legend.
+        bi = labels.index(boundary_label)
+        handles.append(handles.pop(bi))
+        labels.append(labels.pop(bi))
+    two_row = boundary_hline is not None or bpts is not None
     fig.legend(
         handles,
         labels,
         loc="upper center",
-        ncol=3 if boundary_hline is None else 2,
+        ncol=2 if two_row else 3,
         frameon=False,
         handlelength=1.6,
         columnspacing=1.2,
     )
-    _rect_top = (
-        legend_rect_top
-        if legend_rect_top is not None
-        else (0.91 if boundary_hline is None else 0.86)
-    )
+    # AFTER the legend snapshot: thread `series` onto every sidecar point (M1).
+    _thread_meta_series_labels(series_artists)
+    _rect_top = legend_rect_top if legend_rect_top is not None else (0.86 if two_row else 0.91)
     fig.tight_layout(rect=(0, 0, 1, _rect_top))
     dest = out_dir if out_dir is not None else PAPER_OUT
     dest.mkdir(parents=True, exist_ok=True)
