@@ -61,3 +61,4 @@
 - [Consumer flag producer never writes](consumer_flag_producer_never_writes.md) — a rec.get("<flag>") filter is vacuous if the producer never writes the field; severity forks on an upstream assert (#2329 r1 g8)
 - [Qualitative-panel commit review recipe](qualitative_panel_commit_review_recipe.md) — triple-consistency + characterization grounding + BOTH-direction substitution-disclosure + sidecar-commit ancestry (#2478 r1 g2)
 - [Parity gate fed its own subject file](parity_gate_fed_own_subject_file.md) — a gate fetch passing ONLY the subject into a filter that excludes the subject class is vacuous; fail-closed hollow gate = Major+concern, not Critical (#2477 R1 g1)
+- [New dial missing from resume regime](new_dial_missing_from_resume_regime.md) — trace every NEW scale dial into the regime hash; presence-skip also erases gate halts/uploads; two-stage JSON write defeats finals-skip (#2476 R1 g2)
