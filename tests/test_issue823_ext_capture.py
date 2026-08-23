@@ -13,6 +13,7 @@ table AND that no downstream completion sentinel exists after the halt.
 
 from __future__ import annotations
 
+import inspect
 import json
 import pathlib
 import types
@@ -304,16 +305,51 @@ def _b2_truncation_fixture(
 
 
 def test_own_span_length_is_bare_not_template_diff():
-    """owngen own_len = BARE tokenization (run_823 phase 3 parity), NOT the
-    template-diff span — conflating the two conventions is the #823 rc=17
-    crash class (real tokenizer: template diff = bare + 2 end-of-turn tokens
-    on seam-clean rows)."""
+    """PROBE (g)'s own-side helper is BARE tokenization (run_823 phase-3
+    PRODUCER parity — the banked b2 arm it validates), NOT the template-diff
+    span — conflating the two conventions is the #823 rc=17 crash class (real
+    tokenizer: template diff = bare + 2 end-of-turn tokens on seam-clean
+    rows). This pins the PROBE helper only; the EXT store's own side is
+    deliberately the OTHER convention — see
+    test_ext_own_len_matches_banked_ladder_convention."""
     tok = FakeTokenizer()
     q, own = "query zero tail", "alpha beta gamma delta"
     assert EXTCAP.own_span_length(tok, own) == len(tok(own)["input_ids"]) == 4
     assert EXTCAP.own_span_length(tok, "") == 0
     p_len, f_len = CAP.template_span_length(tok, q, own)
     assert (f_len - p_len) != EXTCAP.own_span_length(tok, own)  # the two conventions differ
+
+
+def test_ext_own_len_matches_banked_ladder_convention():
+    """Cross-store truncation-rule pin (v18 review bounce): the EXTENSION
+    store's own-length source (`own_len_ext_span`) equals the BANKED ladder
+    pair store's realized own-side rule — `CAP.own_length` returns
+    span_d['a_prime'][i], the a_prime arm's TEMPLATE-DIFF span — because the
+    fits driver POOLS banked + ext pair tensors into one training set
+    (issue823_ladder_ext_fits.py). Probe (g)'s own side (`own_span_length`)
+    separately stays BARE (the run_823 phase-3 b2-bank producer, a DIFFERENT
+    artifact). Two conventions, two comparison targets — re-unifying them is
+    the v17→v18 bounce class."""
+    tok = FakeTokenizer()
+    q, own = "query zero tail", "alpha beta gamma delta"
+    # (a) ext own-length == the banked store's realized rule: the a_prime
+    #     template-diff span, read through the banked module's own reader.
+    p_len, f_len = CAP.template_span_length(tok, q, own)
+    span_d = {"a_prime": [f_len - p_len]}
+    assert EXTCAP.own_len_ext_span(tok, q, own) == CAP.own_length(span_d, 0) == f_len - p_len
+    assert EXTCAP.own_len_ext_span(tok, q, "") == 0  # empty own => no truncation
+    # (b) probe (g) separately uses BARE own — a different producer's rule;
+    #     the two sources differ by construction on seam-clean rows.
+    assert EXTCAP.own_span_length(tok, own) == len(tok(own)["input_ids"])
+    assert EXTCAP.own_len_ext_span(tok, q, own) != EXTCAP.own_span_length(tok, own)
+    # (c) the owngen phase is WIRED to the ext rule, not the probe rule.
+    src = inspect.getsource(EXTCAP.phase_owngen)
+    assert "own_len_ext_span(" in src
+    assert "own_span_length(" not in src
+    # (d) the persisted convention id names the realized rule truthfully and
+    #     no longer aliases the banked store's "(parent parity)" string.
+    assert "template_diff" in EXTCAP.TRUNC_CONVENTION_EXT
+    assert EXTCAP.TRUNC_CONVENTION_EXT != CAP.TRUNC_CONVENTION
 
 
 def test_probe_g_prefix_raw_expectation_fails_on_truncated_bank(tmp_path):

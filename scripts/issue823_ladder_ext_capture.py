@@ -36,11 +36,14 @@ running P-OwnGen's engine in the same process as the HF capture model):
                    -- the #779 pass-B own-answer recipe), chunk-checkpointed;
                    own-rollout TEXTS + own_len_ext.json uploaded to HF
                    raw_completions/ladder_ext_own/ BEFORE capture consumes the
-                   lengths; own_len computed under the PARENT's own-length
-                   convention -- BARE tokenization of the own answer text
-                   (run_823 phase 3), the own side of min(own, pair) -- while
-                   the pair side stays the template-diff span (both conventions
-                   validated by probe (g) on the banked b2 arm).
+                   lengths; own_len computed under the BANKED LADDER STORE's
+                   realized own-side rule -- the TEMPLATE-DIFF span of the own
+                   rollout (`own_len_ext_span`), matching the reused prefix
+                   store (its producer truncated with own =
+                   span_d['a_prime'][i], itself a template-diff span) so the
+                   fits driver pools ONE truncation rule. The parent phase-3
+                   BARE rule is probe (g)'s comparison target only
+                   (`own_span_length`, banked b2 arm -- a different producer).
   --phase capext   43,000 context forwards -> cx_ext_block{b}.pt and 83,313
                    pair forwards -> v_pairs_ext_p{00..15}_block{b}.pt (fp32,
                    batch 8, left-pad, GENERATION_SUFFIX assert; span-mean with
@@ -196,7 +199,19 @@ OWN_CHUNK_SIZE = 2_000
 # Capture block layout (plan section 4.3 P-Cap-ext: ~2 GB checkpoint files).
 CX_BLOCK_SIZE = 5_000
 PAIR_BLOCK_SIZE = 5_000
-TRUNC_CONVENTION_EXT = CAP.TRUNC_CONVENTION  # min(own, pair); own==0 => no truncation
+# Ext-store truncation convention: min(own_td, pair) with the OWN side the
+# TEMPLATE-DIFF span of the fresh own rollout (`own_len_ext_span`) — the
+# BANKED ladder pair store's realized own-side rule (its producer, ladder
+# rev 9a8d0f80, truncated with own = span_d["a_prime"][i], the a_prime arm's
+# template-diff span), so banked + ext tensors POOLED by the fits driver share
+# ONE truncation rule (v18 review bounce). Deliberately NOT
+# CAP.TRUNC_CONVENTION verbatim: that string claims "(parent parity)", which
+# is false on the own side (the parent phase-3 own rule is BARE — probe (g)
+# validates THAT producer separately via `own_span_length`).
+TRUNC_CONVENTION_EXT = (
+    "min(own_template_diff, pair_template_diff); own_len==0 => no truncation "
+    "(banked-ladder-store own-rule parity: own = template-diff span of the own rollout)"
+)
 CX_CONVENTION = "cx_last (pass_b last-prompt-token, all 28 layers)"
 
 # Gates / probes (plan section 4.3 / 7).
@@ -918,18 +933,38 @@ def gate_e_duplicates(questions_by_id: dict[int, str], layout: Layout) -> dict:
 
 
 def own_span_length(tokenizer, own_text: str) -> int:
-    """Own-answer span length under the PARENT's convention (run_823 phase 3):
-    BARE tokenization of the answer text — no chat template, no end-of-turn
-    tokens (0 for empty text). This is the OWN side of the min(own, pair)
-    truncation; the PAIR side stays the template-diff span
-    (`template_span_length`), exactly as the parent's
-    `_tf_extract_arm(a_prime_lengths=...)` call realized it. On seam-clean rows
-    the template-diff span exceeds this by the 2 end-of-turn tokens
-    (`<|im_end|>` + `\\n`) — conflating the two conventions is the #823 rc=17
-    crash class (probe (g) validates both on the banked b2 arm)."""
+    """PROBE (g) ONLY — own-answer span length under the PARENT's convention
+    (run_823 phase 3): BARE tokenization of the answer text — no chat
+    template, no end-of-turn tokens (0 for empty text). The parent banked
+    span_lengths['b2'][i] = min(own_bare_i, raw_i), own_bare from its
+    `a_prime_token_lengths` (bare), the pair side the template-diff span. On
+    seam-clean rows the template-diff span exceeds this by the 2 end-of-turn
+    tokens (`<|im_end|>` + `\\n`) — conflating the two conventions is the #823
+    rc=17 crash class. The EXT store's own side is `own_len_ext_span`
+    (template-diff, banked-ladder-store parity) — a deliberately DIFFERENT
+    rule for a different comparison target (v18 review bounce); do NOT
+    re-unify them."""
     if not own_text:
         return 0
     return len(tokenizer(own_text, return_tensors=None, add_special_tokens=False)["input_ids"])
+
+
+def own_len_ext_span(tokenizer, question: str, own_text: str) -> int:
+    """EXT-store own-answer length under the BANKED LADDER STORE's realized
+    own-side rule: the TEMPLATE-DIFF span (full_len - prompt_len via
+    `template_span_length`) of the fresh own rollout — 0 for empty text. The
+    reused 14,996-pair prefix store truncated with own = span_d['a_prime'][i]
+    (`issue823_ladder_capture.own_length`), the a_prime arm's template-diff
+    span, so extension tensors must share that rule or the fits driver pools
+    TWO truncation conventions into one training set — a ~2-token within-fit
+    heterogeneity confounded with training-set size (v18 review bounce).
+    Deliberately NOT `own_span_length` (bare): that is the parent run_823
+    phase-3 rule probe (g) validates against the banked b2 arm, a DIFFERENT
+    producer."""
+    if not own_text:
+        return 0
+    prompt_len, full_len = CAP.template_span_length(tokenizer, question, own_text)
+    return full_len - prompt_len
 
 
 def probe_g_span_unit(
@@ -1701,11 +1736,14 @@ def phase_owngen(args, layout: Layout) -> None:
             )
         _reap_vllm(llm)
 
-    # own_len via the PARENT's own-length convention: BARE tokenization of the
-    # own answer text (run_823 phase 3), NOT the template-diff span — the
-    # template diff exceeds it by the 2 end-of-turn tokens on seam-clean rows
-    # and would over-allow the min(own, pair) truncation vs parent parity
-    # (validated by probe (g) on the banked b2 arm; #823 rc=17 crash round).
+    # own_len via the BANKED LADDER STORE's own-side rule: the TEMPLATE-DIFF
+    # span of the own rollout (`own_len_ext_span`), matching the reused
+    # 14,996-pair prefix store the fits driver POOLS these tensors with (its
+    # producer truncated with own = span_d["a_prime"][i], itself a
+    # template-diff span). NOT the parent phase-3 BARE rule
+    # (`own_span_length`) — probe (g) validates THAT producer separately on
+    # the banked b2 arm; mixing the two rules across the pooled stores was
+    # the v18 review bounce.
     log_phase("owngen_ownlen")
     own_len: dict[str, int] = {}
     n_zero = 0
@@ -1720,7 +1758,7 @@ def phase_owngen(args, layout: Layout) -> None:
                 own_len[str(r["context_id"])] = 0
                 n_zero += 1
                 continue
-            span = own_span_length(tokenizer, r["own_text"])
+            span = own_len_ext_span(tokenizer, r["question"], r["own_text"])
             if span < 1:
                 span = 0
                 n_zero += 1
@@ -1745,7 +1783,7 @@ def phase_owngen(args, layout: Layout) -> None:
     if cap_hit_fraction > 0.02:
         logger.warning(
             "[owngen] cap-hit fraction %.3f > 2%% — REPORTED (plan-pinned recipe, no regen; "
-            "own_len truncation only shortens spans, parent-parity)",
+            "own_len truncation only shortens spans, banked-ladder-store parity)",
             cap_hit_fraction,
         )
 
