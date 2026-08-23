@@ -177,5 +177,24 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   3.75 trigger) — phrases like "a <shape> fix adds no new arm
   architecture" recur at TWO sites (0.55 + 4(b)), so patch both.
 
+- MIRROR-FIX round at the review cap (#1739 a2fix r9, 2026-08-23 — the fix
+  is the exact mirror of the PRIOR round's landed fix, one universe over,
+  round 9 of the 10-round cap): state the cap in the head but frame it
+  CALIBRATION-NEUTRAL both directions ("the cap never justifies waving a
+  residual through, and never manufacturing one"). V-duty split: V1 probe
+  replay, V2 sweep-table why-safe audit (the r5 lesson, now a first-class
+  duty naming the specific table lines — figure renderer + sanity mean),
+  V3 whole-surface hunt EXPLICITLY including sites ABSENT from the
+  implementer's own sweep table, V4 no-overtightening + non-regression on
+  the PRIOR round's adjacent gate (a mirror edit sits directly below it),
+  V5 test substance (an EXTENDED existing test — def-counts EQUAL at
+  base/HEAD is the expected shape, not a missing-test finding). GUARD
+  LESSON (2nd instance of the r8 class): the Step 3.7 sibling-sweep target
+  enumeration carried "(this round has 8 cross-consuming scripts)" from
+  leg round 1 through seven reuse rounds — add Step 3.7's round-shape
+  parenthetical to the per-round shape-adjective grep list (alongside 0.55
+  substance + 3.75 trigger + 4(b)); reword to LEG-level with the round's
+  true file count.
+
 Extends [[two-leg-single-label-round-compose]] (leg-suffixed filenames,
 leg-scoped sentinel, round-matching by leg).
