@@ -24,7 +24,9 @@ crashes the compose instead of shipping stale rubrics. Also confirm
 `git log -1` + clean `git status` on the three sources vs the base
 prompt's mtime before trusting containment.
 
-**How to apply:** #2476 crc4 recipe at `/tmp/codex-2476-crc4-compose.py`.
+**How to apply:** #2476 recipes at `/tmp/codex-2476-crc{4,5}-compose.py`
+(crc5 = latest; ran clean 2026-08-23 r5, incl. a fresh dismissal row +
+envelope execution-error assert).
 Round-specific spans to replace: PRIOR CRITIQUE SUMMARIES block (ends
 at `\n\nAll paths above`), ROUND-N SCOPE + BINDING DISMISSALS block
 (ends at the `=== INLINED` banner), the three envelopes (BEGIN..END
