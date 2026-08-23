@@ -253,9 +253,9 @@ What is plotted: the per-trigger view of the mapped-answer training-reference ar
 | Context vs training contexts (misalignment, layer 16, full) | +0.692 | [+0.279, +0.879] | — |
 | Predicted answer vs training answers (misalignment, layer 16, full) | −0.142 | [−0.580, +0.321] | — |
 
-The mapped-answer arm beats text similarity in 3 of 3 languages and its own post-fine-tuning arm; the shift-only arm beats text but not post-fine-tuning (table). Both champions clear their permutation bands and strengthen within-themed.
+The mapped-answer arm beats text similarity in 3 of 3 languages and its own post-fine-tuning arm; shift-only beats text but not post-fine-tuning. Both champions clear their permutation bands and strengthen within-themed.
 
-The real-answer reference is weakest only on the uncentered full cut — centered and leave-one-out reads all exclude zero — actual answer states carry ordering signal once a shared level component is removed. On misalignment the split reverses: the context side works, the mapped-answer side is dead; on the graded-strength DV the context training reference is strongest (+0.819). Real-answer arms inherit Methodology's intrusion and cap-hit fractions; the intrusion-excluded recompute leaves every read essentially unchanged. Per-unit exemption: the misalignment per-trigger view is committed as `figures/issue_2474/prefit_scatter_trainref_em.png` (pin `bb5bb41698`), not embedded; the table reports its aggregates.
+The real-answer reference is weakest only on the uncentered full cut — centered and leave-one-out reads all exclude zero — actual answer states carry ordering signal once a shared level component is removed. On misalignment the split reverses: the context side works, the mapped-answer side is dead; on the graded-strength DV the context training reference is strongest (+0.819). Real-answer arms inherit Methodology's intrusion and cap-hit fractions; intrusion-excluded recomputes leave every read essentially unchanged. Per-unit exemption: the misalignment per-trigger view `figures/issue_2474/prefit_scatter_trainref_em.png` (pin `bb5bb41698`) is not embedded; the table reports its aggregates.
 
 ### The capitalization reads are layer-systematic, and the training-reference champions exist only at the final layer (mapped-answer −0.038 at layer 26, +0.735 at 27)
 
