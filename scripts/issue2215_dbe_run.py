@@ -46,12 +46,18 @@ Phases (1x H100 ``eval`` pod; every phase resumable, checkpoint-per-phase):
   --staged <staged root> --null-out <dir> --out-dir <eval dir> --figures-dir
   <dir> [--null-b N] [--smoke] [--tiny]``. The refusal manipulation-check
   judge lives in the analysis driver (plan §4.3), not here.
-* ``D`` — finalize: upload null/per-draw matrices to
+* ``D`` — finalize: canonical figure re-render + the plan §6.5
+  REGISTERED-deliverable assert (exact eval JSONs + hero/joint figure stems)
+  BEFORE any egress leg, then upload null/per-draw matrices to
   ``<prefix>/analysis_tensors/null_matrices/`` AND the C' driver's persisted
   prediction/target tensors to ``<prefix>/analysis_tensors/predictions/``
-  (plan §4.3 C': every registered row recomputable post-hoc), assert eval
-  JSONs + figures landed, write ``upload_done.json`` + the results sentinel
+  (plan §4.3 C': every registered row recomputable post-hoc), git + HF
+  results egress, and ONLY after EVERY upload leg (manifests included)
+  verifies: ``upload_done.json`` + the regime-stamped results sentinel
   (``/workspace/logs/issue-2215-dbe-results.json``), then ``[phase=done]``.
+  ``--force`` on B2/C/D first QUARANTINES that phase's completion records
+  (per-cell B2 manifests preserved), so a crashed forced rerun never leaves
+  stale records eligible for the next resume.
 
 Upload prefix: ``issue2215_dbe/`` (smoke: ``issue2215_dbe/smoke/``) — NEVER the
 parent round's ``issue2215_reprshift`` (``issue2215_run.py:108``). Reads of
@@ -188,6 +194,26 @@ RC_PARITY_GATE = 8  # gate 4 refusal — artifact-routed halt (parity_gate_repor
 SENTINEL_NAME = "issue-2215-dbe-results.json"
 SENTINEL_NAME_SMOKE = "issue-2215-dbe-smoke-results.json"
 
+# Plan §6.5 REGISTERED deliverables (dbe-primary-artifact-egress): phase D
+# refuses EVERY egress leg while any of these is missing — a partial result
+# set must never commit, upload, or signal success. The figure floor is the
+# two plan-§6.5 HERO/JOINT stems (savefig_paper writes <stem>.png).
+REQUIRED_EVAL_JSONS = (
+    "dv3_dbe_map_discrimination.json",
+    "qualitative_examples.json",
+    "datagen_manifest.json",
+)
+REQUIRED_FIGURE_PNGS = ("dbe_hero_pertype_2afc.png", "dbe_joint_taxonomy_48.png")
+# The C-PRODUCED subset the phase-C resume guard requires exactly (never
+# any-JSON: in production the pre-existing committed datagen_manifest.json
+# alone would satisfy an any-glob check). datagen_manifest_final.json is the
+# B1'-finalized copy C lands beside the eval JSONs for the D git leg.
+REQUIRED_C_EVAL_JSONS = (
+    "dv3_dbe_map_discrimination.json",
+    "qualitative_examples.json",
+    "datagen_manifest_final.json",
+)
+
 SMOKE_CELLS = ("user_role_identity", "user_sentiment")
 PHASES = ("G-check", "A", "B1", "B2", "C", "D")
 
@@ -219,9 +245,16 @@ class DbeConfig:
     n_layers: int = N_LAYERS
     layers: list[int] = field(default_factory=list)
     device: str = "cpu"
-    # Bypass PHASE-LEVEL entry-completion guards (B2 all-complete skip, C, D).
-    # Per-cell / per-leg resume manifests stay honored regardless.
+    # Bypass PHASE-LEVEL entry-completion guards (B2 all-complete skip, C, D)
+    # AND quarantine that phase's completion records at entry
+    # (dbe-force-stale-completion). Per-cell resume manifests stay honored.
     force: bool = False
+    # Resolved HF revision (main -> commit sha) of the consumed model, set
+    # ONCE at run start by main() via _resolve_model_revision
+    # (dbe-resume-fingerprint-inputs: the inherited rig loads revision-
+    # unpinned HF main, so changed model bytes must invalidate every resume
+    # fingerprint). Default is the test/offline sentinel.
+    model_revision: str = "unresolved"
 
     @property
     def staged_dir(self) -> Path:
@@ -296,6 +329,7 @@ def _repro(cfg: DbeConfig, phase: str) -> dict:
             "issue": ISSUE,
             "round": ROUND,
             "model_id": cfg.model_id,
+            "model_revision": cfg.model_revision,
             "seed_base": cfg.seed_base,
             "draws": cfg.draws,
             "smoke": cfg.smoke,
@@ -435,21 +469,23 @@ def _bank_sha(cfg: DbeConfig) -> str:
 def _b2_regime_fp(cfg: DbeConfig) -> str:
     """Run-level output-identity fingerprint for B2/C/D resume + the C-entry
     sentinel validation (dbe-phase-c-sentinel-regime / dbe-resume-fingerprint-
-    inputs): model + smoke/tiny state + cell scope + generation params + exact
-    layer list + the frozen-values AND realized-bank content hashes. Model
-    REVISION carries no pin anywhere in the inherited rig (HF ``main``), so it
-    is deliberately absent — the per-phase repro blocks record the realized
-    library versions instead."""
+    inputs): model id + RESOLVED model revision (main -> sha, run-start) +
+    smoke/tiny state + cell scope + generation params INCLUDING gen_batch
+    (generate_batch reseeds per batch and samples batched rows, so batch
+    composition is output-affecting) + exact layer list + the frozen-values
+    AND realized-bank content hashes."""
     return json.dumps(
         {
             "round": ROUND,
             "model_id": cfg.model_id,
+            "model_revision": cfg.model_revision,
             "tiny": cfg.tiny,
             "smoke": cfg.smoke,
             "cells": list(cfg.cells) if cfg.cells else "all",
             "draws": cfg.draws,
             "seed_base": cfg.seed_base,
             "base_max_new_tokens": cfg.max_new_tokens,
+            "gen_batch": cfg.gen_batch,
             "layers": list(cfg.layers),
             "values_sha256": _values_sha(cfg),
             "bank_sha256": _bank_sha(cfg),
@@ -460,11 +496,37 @@ def _b2_regime_fp(cfg: DbeConfig) -> str:
 
 def _pilot_regime_fp(cfg: DbeConfig) -> str:
     """Gate-2 pilot fingerprint: the B2 output-identity fp PLUS the throughput-
-    affecting execution shape (gen_batch)."""
+    affecting execution shape (gen_batch — also inside the B2 fp since round 3;
+    kept explicit here for auditability)."""
     return json.dumps(
         {"b2_regime_fp": _b2_regime_fp(cfg), "gen_batch": cfg.gen_batch},
         sort_keys=True,
     )
+
+
+def _resolve_model_revision(cfg: DbeConfig) -> str:
+    """Resolve the consumed model's HF revision (main -> commit sha) ONCE at
+    run start (dbe-resume-fingerprint-inputs). Production/smoke fail LOUD on
+    an unresolvable revision (the pod has network by construction — it
+    downloads the model); ``--tiny`` (from-config wiring smoke, possibly
+    offline) degrades to the sentinel string ``unresolved-tiny`` with a
+    logged warning (enumerated smoke blind spot)."""
+    from huggingface_hub import HfApi
+
+    try:
+        info = HfApi().model_info(cfg.model_id)
+        sha = getattr(info, "sha", None)
+        if not sha:
+            raise RuntimeError(f"model_info({cfg.model_id!r}) returned no sha")
+        return str(sha)
+    except Exception as exc:
+        if cfg.tiny:
+            logger.warning("[config] model revision unresolved under --tiny: %s", exc)
+            return "unresolved-tiny"
+        raise RuntimeError(
+            f"cannot resolve the HF revision for {cfg.model_id!r} at run start "
+            f"(dbe-resume-fingerprint-inputs): {exc}"
+        ) from exc
 
 
 def _read_report(path: Path) -> dict | None:
@@ -477,22 +539,35 @@ def _read_report(path: Path) -> dict | None:
         return None
 
 
-def _report_regime_ok(path: Path, regime: str) -> bool:
+def _report_regime_ok(path: Path, regime: str, *, require_pass_verdict: bool = False) -> bool:
     """A phase report/sentinel satisfies resume ONLY when its persisted
     regime_fp matches the CURRENT run's fingerprint (smoke-pilot-cross-regime-
-    reuse class: bare existence is never completion evidence)."""
+    reuse class: bare existence is never completion evidence). With
+    ``require_pass_verdict`` (verdict-bearing gate reports), the persisted
+    verdict must ALSO be exactly "PASS" — an fp-matched FAILED or
+    verdict-less report never licenses resume
+    (resume-accepts-failed-gate-report)."""
     rec = _read_report(path)
-    return rec is not None and rec.get("regime_fp") == regime
+    if rec is None or rec.get("regime_fp") != regime:
+        return False
+    if require_pass_verdict and rec.get("verdict") != "PASS":
+        return False
+    return True
 
 
 def _pilot_report_ok(cfg: DbeConfig) -> bool:
     """Gate-2 resume predicate: the pilot report satisfies resume ONLY when
     (a) its regime fingerprint (incl. smoke/tiny + bank/values identity +
-    generation params + gen_batch) matches the current run AND (b) for a
+    generation params + gen_batch) matches the current run, (b) its persisted
+    verdict is exactly "PASS" — a FAILED (or verdict-less) gate report must
+    never suppress re-measurement, in ANY regime: the gate would otherwise be
+    disabled exactly after it fired (dbe-failed-pilot-resume) — AND (c) for a
     PRODUCTION run it is a non-demoted report — a demoted smoke/tiny pilot
     must never suppress the production throughput gate."""
     rec = _read_report(cfg.manifest_dir / "pilot_gate_report.json")
     if rec is None or rec.get("regime_fp") != _pilot_regime_fp(cfg):
+        return False
+    if rec.get("verdict") != "PASS":
         return False
     if not (cfg.smoke or cfg.tiny) and rec.get("demoted_to_informational"):
         return False
@@ -509,6 +584,53 @@ def _cell_complete(cfg: DbeConfig, cell: str) -> bool:
         and (cfg.va_dir / f"va_dbe_w0_{cell}.pt").exists()
         and (cfg.anchors_dir / f"anchors_dbe_w0_{cell}.jsonl").exists()
     )
+
+
+# Phase-level completion records --force must invalidate at entry
+# (dbe-force-stale-completion). Per-cell B2 manifests are deliberately
+# ABSENT: per-cell resume stays honored under --force.
+_PHASE_COMPLETION_RECORDS: dict[str, tuple[str, ...]] = {
+    "B2": ("pilot_gate_report.json", "parity_gate_report.json", "va_dbe_uploaded.json"),
+    "C": ("analysis_done.json",),
+    "D": ("upload_done.json",),
+}
+
+
+def _invalidate_phase_records(cfg: DbeConfig, phase: str) -> list[str]:
+    """dbe-force-stale-completion: a FORCED phase entry quarantines that
+    phase's own completion records BEFORE any work begins, so a crashed
+    forced rerun can never leave stale fp-matched records eligible for the
+    next non-force invocation. Records move (same-fs atomic ``replace``;
+    cross-fs fallback for the log-dir sentinel) into
+    ``<out_root>/quarantine/`` — forensics preserved, resume-glob escape
+    guaranteed. Phase D additionally quarantines the results sentinel (bare
+    AND poller-drained ``.processed``)."""
+    qdir = cfg.out_root / "quarantine"
+    qdir.mkdir(parents=True, exist_ok=True)
+    targets = [cfg.manifest_dir / name for name in _PHASE_COMPLETION_RECORDS[phase]]
+    if phase == "D":
+        s = _sentinel_path(cfg)
+        targets += [s, s.with_name(s.name + ".processed")]
+    moved: list[str] = []
+    for t in targets:
+        if not t.exists():
+            continue
+        dest = qdir / f"{time.time_ns()}-{t.name}"
+        try:
+            t.replace(dest)
+        except OSError:
+            shutil.move(str(t), str(dest))
+        moved.append(t.name)
+    if moved:
+        logger.info(
+            "[force] phase %s: quarantined stale completion records -> %s: %s",
+            phase,
+            qdir,
+            ",".join(moved),
+        )
+    else:
+        logger.info("[force] phase %s: no prior completion records to invalidate", phase)
+    return moved
 
 
 # ── phase G-check ─────────────────────────────────────────────────────
@@ -693,14 +815,24 @@ def _degenerate_pe_sanity(bank: dict, records: dict[str, dict]) -> dict:
     return worst
 
 
+def _bank_builder_sha() -> str:
+    """Content sha of the bank-builder module B1 executes
+    (dbe-resume-fingerprint-inputs: changed bank-building LOGIC must
+    invalidate the captured context states, not only changed values)."""
+    return _file_sha256(Path(DBE.__file__).resolve())
+
+
 def _bank_regime_fp(cfg: DbeConfig) -> str:
     """Machine-stable B1 resume key — generating parameters + the frozen
-    data-input identity (#1336; dbe-resume-fingerprint-inputs: regenerated
-    values must invalidate the captured context states)."""
+    data-input identity + the CONSUMED CODE/MODEL identity (#1336;
+    dbe-resume-fingerprint-inputs: regenerated values, an edited bank
+    builder, or changed model bytes must each invalidate the captured
+    context states)."""
     return json.dumps(
         {
             "round": ROUND,
             "model_id": cfg.model_id,
+            "model_revision": cfg.model_revision,
             "tiny": cfg.tiny,
             "smoke": cfg.smoke,
             "cells": list(cfg.cells) if cfg.cells else "all",
@@ -708,6 +840,7 @@ def _bank_regime_fp(cfg: DbeConfig) -> str:
             "hidden": cfg.hidden,
             "layers": list(cfg.layers),
             "values_sha256": _values_sha(cfg),
+            "bank_builder_sha256": _bank_builder_sha(),
         },
         sort_keys=True,
     )
@@ -716,31 +849,38 @@ def _bank_regime_fp(cfg: DbeConfig) -> str:
 DATAGEN_MANIFEST_SRC = _REPO_ROOT / "eval_results" / "issue_2215" / ROUND / "datagen_manifest.json"
 
 
-def _finalize_datagen_manifest(cfg: DbeConfig, bank: dict) -> Path:
-    """B1' manifest finalization (dbe-manifest-realized-pe-map): augment the
-    committed datagen manifest with the REALIZED per-pair pe-eligibility map +
-    its hash. The realized map is knowable only after B1's rendered-prefix
-    token comparison, so finalization lives here, not in datagen. Production
-    requires the committed source manifest (sparse cone eval_results/issue_2215
-    — gotchas.md partial-clone entry); smoke/tiny tolerate absence (twin
-    roots). Phase C verifies EXACT agreement with bank_dbe.json
-    (``_assert_realized_pe_manifest``)."""
-    per_pair = {p["pair_id"]: bool(p["pe_realized_eligible"]) for p in bank["pairs"]}
+def _datagen_manifest_source(cfg: DbeConfig) -> dict:
+    """Committed-source-manifest requirement (dbe-manifest-realized-pe-map /
+    dbe-b1-manifest-check-post-init): production REQUIRES the committed
+    datagen manifest; smoke/tiny tolerate absence (twin roots — enumerated
+    smoke blind spot). Called at B1 ENTRY — before the model load, so an
+    omitted sparse cone fails in seconds, never after a full GPU capture —
+    and again at finalization."""
     if DATAGEN_MANIFEST_SRC.exists():
-        final = json.loads(DATAGEN_MANIFEST_SRC.read_text())
-        src = {
+        return {
             "present": True,
             "path": str(DATAGEN_MANIFEST_SRC.relative_to(_REPO_ROOT)),
             "sha256": _file_sha256(DATAGEN_MANIFEST_SRC),
         }
-    elif cfg.smoke or cfg.tiny:
-        final = {}
-        src = {"present": False, "note": "smoke/tiny — committed datagen manifest not staged"}
-    else:
-        raise RuntimeError(
-            f"{DATAGEN_MANIFEST_SRC} missing — production B1 requires the committed datagen "
-            "manifest (open the eval_results/issue_2215 sparse cone at pod bootstrap)"
-        )
+    if cfg.smoke or cfg.tiny:
+        return {"present": False, "note": "smoke/tiny — committed datagen manifest not staged"}
+    raise RuntimeError(
+        f"{DATAGEN_MANIFEST_SRC} missing — production B1 requires the committed datagen "
+        "manifest (open the eval_results/issue_2215 sparse cone at pod bootstrap)"
+    )
+
+
+def _finalize_datagen_manifest(cfg: DbeConfig, bank: dict) -> Path:
+    """B1' manifest finalization (dbe-manifest-realized-pe-map): augment the
+    committed datagen manifest with the REALIZED per-pair pe-eligibility map +
+    its hash. The realized map is knowable only after B1's rendered-prefix
+    token comparison, so finalization lives here, not in datagen. The
+    committed-source requirement itself is ``_datagen_manifest_source``
+    (validated at B1 entry BEFORE the model load). Phase C verifies EXACT
+    agreement with bank_dbe.json (``_assert_realized_pe_manifest``)."""
+    per_pair = {p["pair_id"]: bool(p["pe_realized_eligible"]) for p in bank["pairs"]}
+    src = _datagen_manifest_source(cfg)
+    final = json.loads(DATAGEN_MANIFEST_SRC.read_text()) if src["present"] else {}
     final["source_manifest"] = src
     final["realized_pe_eligibility"] = {
         "per_pair": per_pair,
@@ -798,6 +938,10 @@ def phase_bank(cfg: DbeConfig) -> int:
     ):
         logger.info("[bank] resume: capture complete for this regime — skip")
         return RC_OK
+    # dbe-b1-manifest-check-post-init: the production committed-source
+    # requirement is validated BEFORE the model load — an omitted sparse cone
+    # must fail here in seconds, never after the full GPU capture.
+    _datagen_manifest_source(cfg)
     model, tok = R.load_model_and_tokenizer(cfg)
     contexts = bank["contexts"]
     ctx_ids = {cid: B2162.context_token_ids_2162(tok, c) for cid, c in contexts.items()}
@@ -849,10 +993,13 @@ def phase_bank(cfg: DbeConfig) -> int:
 
 
 def _cell_regime_fp(cfg: DbeConfig, cell: str) -> str:
-    """Per-cell B2 resume key: generation params + exact layers + the UPSTREAM
-    data identity (bank_dbe.json content hash + the B1 regime fp, which itself
-    carries the values hash) — a changed bank/values silently reusing stale
-    anchor shards is the dbe-resume-fingerprint-inputs class."""
+    """Per-cell B2 resume key: generation params (gen_batch included — batch
+    composition is output-affecting under generate_batch's per-batch
+    reseeding) + resolved model revision + exact layers + the UPSTREAM data
+    identity (bank_dbe.json content hash + the B1 regime fp, which itself
+    carries the values + bank-builder hashes) — a changed bank/values/model
+    silently reusing stale anchor shards is the dbe-resume-fingerprint-inputs
+    class."""
     return json.dumps(
         {
             "round": ROUND,
@@ -860,7 +1007,9 @@ def _cell_regime_fp(cfg: DbeConfig, cell: str) -> str:
             "draws": cfg.draws,
             "seed_base": cfg.seed_base,
             "base_max_new_tokens": cfg.max_new_tokens,
+            "gen_batch": cfg.gen_batch,
             "model_id": cfg.model_id,
+            "model_revision": cfg.model_revision,
             "tiny": cfg.tiny,
             "smoke": cfg.smoke,
             "layers": list(cfg.layers),
@@ -988,8 +1137,32 @@ def _gen_and_capture(
     # back from the capture path. shared issue2162_run.capture_answer_states
     # stays untouched (shared-module caution).
     site_comp_lens = [len(tok(t, add_special_tokens=False)["input_ids"]) for t in flat_text]
-    states = R.capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot, tail_inclusive=True)
+    states = R.capture_answer_states(
+        cfg,
+        model,
+        tok,
+        flat_ctx,
+        flat_text,
+        eot,
+        tail_inclusive=True,
+        # dbe-gate4-metadata-independence: the capture path emits its OWN
+        # per-row span record from its own internal tokenization state —
+        # the store index persists THAT record, never a wrapper-side
+        # reconstruction (additive default-off kwarg; shared-module edit
+        # recorded in the round marker).
+        return_boundaries=True,
+    )
     assert "va_tail_incl" in states, "tail_inclusive=True must persist the dual pooling"
+    assert len(states["boundaries"]) == len(rows), (len(states["boundaries"]), len(rows))
+    mism_ctx = [
+        i
+        for i, (b, cl) in enumerate(zip(states["boundaries"], ctx_lens, strict=True))
+        if b["ctx_len"] != cl
+    ]
+    assert not mism_ctx, (
+        f"capture-vs-generation ctx_len divergence at rows {mism_ctx[:5]} — "
+        "wrapper bookkeeping error (row order / ctx threading)"
+    )
     cap_lens = [int(n) for n in states["n_completion_tokens"]]
     mism = [i for i, (a, b) in enumerate(zip(site_comp_lens, cap_lens, strict=True)) if a != b]
     assert not mism, (
@@ -1044,20 +1217,14 @@ def _anchor_cell(
         {
             "layers": list(cfg.layers),
             "index": [
-                {
-                    "context_id": r["context_id"],
-                    "draw": r["draw"],
-                    "ctx_len": ctx_len,
-                    "n_completion_tokens": r["n_completion_tokens"],
-                    # CAPTURE-side span record (dbe-gate4-metadata-independence):
-                    # derived from capture quantities (ctx_len + capture token
-                    # count + eot tail), compared EXACTLY against the
-                    # generation-side jsonl record by gate 4.
-                    "span_start": ctx_len,
-                    "span_end": ctx_len + r["n_completion_tokens"],
-                    "tail_end": ctx_len + r["n_completion_tokens"] + len(eot),
-                }
-                for r, ctx_len in zip(rows, ctx_lens, strict=True)
+                # CAPTURE-side span record (dbe-gate4-metadata-independence):
+                # EMITTED BY capture_answer_states from its own internal
+                # tokenization state (return_boundaries=True) — never a
+                # wrapper-side reconstruction; gate 4 compares it EXACTLY
+                # against the generation-side jsonl record and the gate's own
+                # re-derivation.
+                {"context_id": r["context_id"], "draw": r["draw"], **b}
+                for r, b in zip(rows, states["boundaries"], strict=True)
             ],
             "va_span": states["va_span"],
             "va_tail_incl": states["va_tail_incl"],
@@ -1094,6 +1261,28 @@ def _anchor_cell(
         n_cap_final,
         regen,
         len(states["empty_rows"]),
+    )
+
+
+def _gate4_compare_records(gate_rec: dict, gen_row: dict, cap_ent: dict) -> None:
+    """Gate-4 EXACT record equality across the three INDEPENDENTLY-derived
+    span records (dbe-gate4-metadata-independence): the gate's own
+    re-derivation vs the GENERATION-side jsonl record (site tokenization at
+    the generation call site) vs the CAPTURE-side store record (emitted by
+    ``capture_answer_states`` from its own internal state). A wrapper-side
+    metadata error with untouched vectors FAILS here."""
+    gen_rec = {
+        "ctx_len": gen_row["span_start"],
+        "n_completion_tokens": gen_row["n_completion_tokens_gen"],
+        "span_start": gen_row["span_start"],
+        "span_end": gen_row["span_end"],
+        "tail_end": gen_row["tail_end"],
+    }
+    cap_rec = {k: cap_ent[k] for k in gate_rec}
+    assert gate_rec == gen_rec == cap_rec, (
+        gen_row.get("context_id"),
+        {"gate": gate_rec, "generation": gen_rec, "capture": cap_rec},
+        "gate-4 span-record mismatch across independent capture paths",
     )
 
 
@@ -1148,19 +1337,7 @@ def _gate4_parity(cfg: DbeConfig, model, tok, bank: dict, eot: list[int]) -> Non
             "span_end": s1,
             "tail_end": t1,
         }
-        gen_rec = {
-            "ctx_len": r["span_start"],
-            "n_completion_tokens": r["n_completion_tokens_gen"],
-            "span_start": r["span_start"],
-            "span_end": r["span_end"],
-            "tail_end": r["tail_end"],
-        }
-        cap_rec = {k: ent[k] for k in gate_rec}
-        assert gate_rec == gen_rec == cap_rec, (
-            r["context_id"],
-            {"gate": gate_rec, "generation": gen_rec, "capture": cap_rec},
-            "gate-4 span-record mismatch across independent capture paths",
-        )
+        _gate4_compare_records(gate_rec, r, ent)
         t, mask = R._right_pad([row_ids], tok.pad_token_id, cfg.device)
         cap = extract_layer_activations(model, t, cfg.layers, attention_mask=mask)
         span = torch.stack([cap[lay][0, s0:s1].float().mean(0) for lay in cfg.layers]).cpu()
@@ -1226,14 +1403,20 @@ def _gate4_parity(cfg: DbeConfig, model, tok, bank: dict, eot: list[int]) -> Non
 
 def _upload_b2(cfg: DbeConfig) -> None:
     """B2-END upload (#825 ordering) — verified BEFORE C; raises on failure."""
+    # dbe-hf-egress-content-staleness: the tensor/text families are per-cell
+    # fp-guarded (content changes only with a filename-stable regime change,
+    # which the invalidation + fp machinery prevents) — resume_skip=True
+    # keeps interrupted-walk resume cheap; the MANIFESTS family (gate
+    # reports, cell done-manifests) is MUTABLE across forced reruns at the
+    # same size, so it always re-pushes fresh bytes (resume_skip=False).
     families = (
-        (cfg.va_dir, "analysis_tensors/va_dbe"),
-        (cfg.vc_dir, "analysis_tensors/vc_bank_dbe"),
-        (cfg.anchors_dir, "raw_completions/anchors"),
-        (cfg.manifest_dir, "analysis_tensors/manifests"),
+        (cfg.va_dir, "analysis_tensors/va_dbe", True),
+        (cfg.vc_dir, "analysis_tensors/vc_bank_dbe", True),
+        (cfg.anchors_dir, "raw_completions/anchors", True),
+        (cfg.manifest_dir, "analysis_tensors/manifests", False),
     )
     results: dict[str, dict] = {}
-    for local, sub in families:
+    for local, sub, skip_ok in families:
         res = upload_dir_sharded(
             local,
             HF_DATA_WRITE_REPO,
@@ -1241,6 +1424,7 @@ def _upload_b2(cfg: DbeConfig) -> None:
             proactive_overflow=True,
             verify=True,
             delete_local=False,  # C still reads the local stores
+            resume_skip=skip_ok,
         )
         results[sub] = {
             "repo_id": res.repo_id,
@@ -1274,10 +1458,19 @@ def _upload_b2(cfg: DbeConfig) -> None:
 
 def phase_anchors(cfg: DbeConfig) -> int:
     logger.info("[phase=B2]")
+    if cfg.force:
+        # dbe-force-stale-completion: quarantine the phase's completion
+        # records BEFORE any work — per-cell manifests stay honored.
+        _invalidate_phase_records(cfg, "B2")
     bank = _load_bank_dbe(cfg)
     b2_fp = _b2_regime_fp(cfg)
     cells_todo = [c for c in bank["kept_types"] if not _cell_complete(cfg, c)]
-    parity_ok = _report_regime_ok(cfg.manifest_dir / "parity_gate_report.json", b2_fp)
+    # resume-accepts-failed-gate-report: a persisted parity report licenses
+    # the all-complete skip ONLY with verdict == "PASS" — an fp-matched
+    # FAILED report must never certify a failed capture-integrity check.
+    parity_ok = _report_regime_ok(
+        cfg.manifest_dir / "parity_gate_report.json", b2_fp, require_pass_verdict=True
+    )
     upload_ok = _report_regime_ok(cfg.manifest_dir / "va_dbe_uploaded.json", b2_fp)
     # dbe-phase-entry-idempotency: the ALL-COMPLETE determination runs BEFORE
     # the model load — a fully-complete regime never pays the load.
@@ -1318,14 +1511,22 @@ def _c_regime_fp(cfg: DbeConfig) -> str:
 
 def phase_analysis(cfg: DbeConfig) -> int:
     logger.info("[phase=C]")
+    if cfg.force:
+        # dbe-force-stale-completion: quarantine the stale completion record
+        # BEFORE any work, so a crashed forced rerun re-enters next time.
+        _invalidate_phase_records(cfg, "C")
     done = cfg.manifest_dir / "analysis_done.json"
+    # Exact C-produced outputs (never any-JSON — the pre-existing committed
+    # datagen_manifest.json alone must not satisfy the eval half) + the null
+    # matrices + the prediction/target tensors D uploads.
     if (
         not cfg.force
         and _report_regime_ok(done, _c_regime_fp(cfg))
-        and cfg.eval_dir.exists()
-        and any(cfg.eval_dir.glob("*.json"))
+        and all((cfg.eval_dir / n).is_file() for n in REQUIRED_C_EVAL_JSONS)
         and cfg.null_dir.exists()
         and any(cfg.null_dir.iterdir())
+        and cfg.predictions_dir.exists()
+        and any(cfg.predictions_dir.iterdir())
     ):
         logger.info("[analysis] resume: analysis complete for this regime — skip (--force reruns)")
         return RC_OK
@@ -1422,10 +1623,39 @@ def _sentinel_path(cfg: DbeConfig) -> Path:
 
 
 def _sentinel_present(path: Path) -> bool:
-    """Completion check tolerating the poller's drain rename — bare name
+    """Bare presence check tolerating the poller's drain rename — bare name
     first, then ``.processed`` (pod-side-reporting read-back clause; used for
-    COMPLETION checks only, never cross-relaunch resume state)."""
+    COMPLETION checks only, never cross-relaunch resume state). The D resume
+    guard uses the REGIME-VALIDATED ``_sentinel_regime_ok`` instead."""
     return path.exists() or path.with_name(path.name + ".processed").exists()
+
+
+def _sentinel_regime_ok(path: Path, regime: str) -> bool:
+    """Regime-VALIDATED sentinel completion check
+    (dbe-d-stale-sentinel-completion): the payload's ``note.regime_fp`` must
+    match the CURRENT run — a stale prior-round sentinel (bare or
+    poller-drained ``.processed``) beside a fresh ``upload_done.json`` never
+    licenses the D skip. Presence alone is never completion evidence."""
+    for cand in (path, path.with_name(path.name + ".processed")):
+        if not cand.exists():
+            continue
+        try:
+            body = json.loads(cand.read_text())
+        except json.JSONDecodeError:
+            return False
+        note = body.get("note")
+        return isinstance(note, dict) and note.get("regime_fp") == regime
+    return False
+
+
+def _finalize_complete(cfg: DbeConfig) -> bool:
+    """D resume predicate: a regime-matched ``upload_done.json`` (published
+    ONLY after every upload leg verifies) AND a regime-matched results
+    sentinel. Both halves regime-keyed; neither alone suffices."""
+    regime = _c_regime_fp(cfg)
+    return _report_regime_ok(cfg.manifest_dir / "upload_done.json", regime) and _sentinel_regime_ok(
+        _sentinel_path(cfg), regime
+    )
 
 
 def _git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess:
@@ -1442,6 +1672,15 @@ def _git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess:
             f"git {' '.join(args)} rc={proc.returncode}: {proc.stderr.strip()[:2000]}"
         )
     return proc
+
+
+def _git_paths_z(args: list[str]) -> list[str]:
+    """NUL-delimited (`-z`) git path listing — whitespace/quoting-safe parsing
+    (newline-mode git C-quotes exotic paths; a bare ``.split()`` shreds
+    space-bearing names). ``-z`` is inserted directly after the subcommand —
+    appended at the end it would land AFTER ``--`` and parse as a pathspec."""
+    out = _git([args[0], "-z", *args[1:]]).stdout
+    return [p for p in out.split("\0") if p]
 
 
 def _run_figure_suite(cfg: DbeConfig) -> None:
@@ -1501,20 +1740,18 @@ def _land_results_git(cfg: DbeConfig) -> dict:
     # ERRORS rc=1 on gitignored files (the silent skip is directory-add-only),
     # so detect the ignored-untracked subset FIRST, plain-add the rest,
     # force-add the convention-committed hits, then re-check empty.
-    ignored = _git(
+    ignored = _git_paths_z(
         ["ls-files", "--others", "--ignored", "--exclude-standard", "--", *paths]
-    ).stdout.split()
+    )
     plain = [p for p in paths if p not in set(ignored)]
     if plain:
         _git(["add", "--", *plain])
     if ignored:
         logger.info("[finalize] git landing: force-adding %d gitignored files", len(ignored))
         _git(["add", "-f", "--", *ignored])
-    left = _git(
-        ["ls-files", "--others", "--ignored", "--exclude-standard", "--", *paths]
-    ).stdout.split()
+    left = _git_paths_z(["ls-files", "--others", "--ignored", "--exclude-standard", "--", *paths])
     assert not left, f"staged-index verification failed; still ignored: {left[:10]}"
-    staged = _git(["diff", "--cached", "--name-only", "--", *paths]).stdout.split()
+    staged = _git_paths_z(["diff", "--cached", "--name-only", "--", *paths])
     if staged:
         _git(
             [
@@ -1580,6 +1817,10 @@ def _upload_results_hf(cfg: DbeConfig) -> dict:
             proactive_overflow=True,
             verify=True,
             delete_local=False,
+            # dbe-hf-egress-content-staleness: eval JSONs + figures are
+            # MUTABLE at stable filenames — a same-size stale remote byte
+            # must never survive a corrected rerun; always push fresh bytes.
+            resume_skip=False,
         )
         results[sub] = {
             "repo_id": res.repo_id,
@@ -1596,6 +1837,31 @@ def _upload_results_hf(cfg: DbeConfig) -> dict:
             len(res.skipped_existing),
         )
     return results
+
+
+def _required_result_paths(cfg: DbeConfig) -> list[Path]:
+    """The plan §6.5 REGISTERED deliverable set + the canonical hero/joint
+    figure stems. Smoke/tiny drop ONLY the committed ``datagen_manifest.json``
+    (the twin roots never stage it — production-only requirement, enumerated
+    smoke blind spot); every other registered artifact is required in every
+    regime."""
+    evals = [cfg.eval_dir / n for n in REQUIRED_EVAL_JSONS]
+    if cfg.smoke or cfg.tiny:
+        evals = [p for p in evals if p.name != "datagen_manifest.json"]
+    return evals + [cfg.figures_dir / n for n in REQUIRED_FIGURE_PNGS]
+
+
+def _assert_required_results(cfg: DbeConfig) -> None:
+    """Plan §6.5 registered-deliverable assert (dbe-primary-artifact-egress):
+    the EXACT registered eval JSONs + the canonical figure stems must exist
+    BEFORE any git/HF egress leg — D must never commit, upload, or signal
+    success over a partial result set."""
+    missing = [str(p) for p in _required_result_paths(cfg) if not p.is_file()]
+    if missing:
+        raise RuntimeError(
+            f"registered deliverables missing before egress (plan §6.5): {missing} — "
+            "run --phase C (and check the canonical figure suite) first"
+        )
 
 
 def _sentinel_payload(cfg: DbeConfig) -> dict:
@@ -1651,17 +1917,19 @@ def _sentinel_payload(cfg: DbeConfig) -> dict:
 
 def phase_finalize(cfg: DbeConfig) -> int:
     logger.info("[phase=D]")
+    if cfg.force:
+        # dbe-force-stale-completion: quarantine upload_done + the results
+        # sentinel (bare AND .processed) BEFORE any work — a crashed forced
+        # rerun must leave NO eligible completion state behind.
+        _invalidate_phase_records(cfg, "D")
     sentinel = _sentinel_path(cfg)
     upload_done = cfg.manifest_dir / "upload_done.json"
-    # phase-d-no-entry-skip-sentinel / dbe-phase-entry-idempotency: a COMPLETE
-    # D re-entry (regime-matched upload_done + results sentinel present, bare
-    # or poller-drained .processed) never re-uploads and never re-writes the
+    # phase-d-no-entry-skip-sentinel / dbe-phase-entry-idempotency /
+    # dbe-d-stale-sentinel-completion: a COMPLETE D re-entry (regime-matched
+    # upload_done AND a regime-matched results sentinel, bare or
+    # poller-drained .processed) never re-uploads and never re-writes the
     # sentinel; --force reruns the phase.
-    if (
-        not cfg.force
-        and _report_regime_ok(upload_done, _c_regime_fp(cfg))
-        and _sentinel_present(sentinel)
-    ):
+    if not cfg.force and _finalize_complete(cfg):
         logger.info(
             "[finalize] resume: finalize complete for this regime — skip "
             "(no re-upload; sentinel preserved)"
@@ -1670,20 +1938,6 @@ def phase_finalize(cfg: DbeConfig) -> int:
         return RC_OK
     if not (cfg.null_dir.exists() and any(cfg.null_dir.iterdir())):
         raise RuntimeError(f"{cfg.null_dir} empty — run --phase C first (null matrices missing)")
-    res = upload_dir_sharded(
-        cfg.null_dir,
-        HF_DATA_WRITE_REPO,
-        f"{cfg.hf_prefix}/analysis_tensors/null_matrices",
-        proactive_overflow=True,
-        verify=True,
-        delete_local=False,
-    )
-    logger.info(
-        "[upload:D] null_matrices: %d uploaded / %d rerouted / %d skipped",
-        len(res.uploaded),
-        len(res.rerouted),
-        len(res.skipped_existing),
-    )
     # Unit-3 flag fix: the C' driver persists per-arm prediction/target
     # tensors (predictions_L*.pt) so every registered row is recomputable
     # post-hoc (plan §4.3 C') — they MUST land on HF before teardown.
@@ -1693,6 +1947,27 @@ def phase_finalize(cfg: DbeConfig) -> int:
             f"{pred_dir} empty — the C' analysis driver persists prediction/target "
             "tensors there (plan §4.3 C'); run --phase C first"
         )
+    # plan D' primary-artifact egress (dbe-primary-artifact-egress): canonical
+    # figure re-render, then the REGISTERED-deliverable assert (plan §6.5
+    # exact set) BEFORE ANY egress leg — git or HF; only then the uploads +
+    # both results-egress legs.
+    _run_figure_suite(cfg)
+    _assert_required_results(cfg)
+    res = upload_dir_sharded(
+        cfg.null_dir,
+        HF_DATA_WRITE_REPO,
+        f"{cfg.hf_prefix}/analysis_tensors/null_matrices",
+        proactive_overflow=True,
+        verify=True,
+        delete_local=False,
+        resume_skip=False,  # forced C reruns mutate at stable names/sizes
+    )
+    logger.info(
+        "[upload:D] null_matrices: %d uploaded / %d rerouted / %d skipped",
+        len(res.uploaded),
+        len(res.rerouted),
+        len(res.skipped_existing),
+    )
     res_p = upload_dir_sharded(
         pred_dir,
         HF_DATA_WRITE_REPO,
@@ -1700,6 +1975,7 @@ def phase_finalize(cfg: DbeConfig) -> int:
         proactive_overflow=True,
         verify=True,
         delete_local=False,
+        resume_skip=False,  # dbe-hf-egress-content-staleness
     )
     logger.info(
         "[upload:D] predictions: %d uploaded / %d rerouted / %d skipped",
@@ -1707,25 +1983,27 @@ def phase_finalize(cfg: DbeConfig) -> int:
         len(res_p.rerouted),
         len(res_p.skipped_existing),
     )
-    # plan D' primary-artifact egress: canonical figure re-render, then the
-    # eval/figure existence asserts, then BOTH egress legs (git commit+push
-    # AND HF upload) — upload_done + the results sentinel land ONLY after
-    # both legs verify (dbe-primary-artifact-egress).
-    _run_figure_suite(cfg)
-    evals = sorted(cfg.eval_dir.glob("*.json"))
-    if not evals:
-        raise RuntimeError(f"no eval JSONs under {cfg.eval_dir} — run --phase C first")
-    figs = sorted(cfg.figures_dir.glob("dbe_*"))
-    if not figs:
-        raise RuntimeError(f"no dbe_* figures under {cfg.figures_dir} — run --phase C first")
     git_rec = _land_results_git(cfg)
     hf_rec = _upload_results_hf(cfg)
+    # Manifests family upload FIRST (gate reports + per-cell manifests):
+    # upload_done — the record the resume guard reads — is published ONLY
+    # after EVERY upload leg verifies (dbe-d-stale-sentinel-completion); a
+    # manifests-upload failure leaves no completion record to skip on.
+    upload_dir_sharded(
+        cfg.manifest_dir,
+        HF_DATA_WRITE_REPO,
+        f"{cfg.hf_prefix}/analysis_tensors/manifests",
+        proactive_overflow=True,
+        verify=True,
+        delete_local=False,
+        resume_skip=False,  # gate reports mutate at stable names/sizes
+    )
     payload = _sentinel_payload(cfg)
     payload["regime_fp"] = _c_regime_fp(cfg)
     payload["results_egress"] = {"git": git_rec, "hf_families": hf_rec}
     R._write_json_atomic(upload_done, payload)
-    # manifests family re-upload (idempotent resume-skip) so upload_done +
-    # gate reports become durable off-pod too.
+    # Second manifests pass picks up upload_done itself (durable off-pod);
+    # resume_skip=True — a pure delta pass over just-pushed fresh bytes.
     upload_dir_sharded(
         cfg.manifest_dir,
         HF_DATA_WRITE_REPO,
@@ -1819,8 +2097,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--force",
         action="store_true",
-        help="bypass PHASE-level entry-completion guards (B2 all-complete, C, D); "
-        "per-cell resume manifests stay honored",
+        help="bypass PHASE-level entry-completion guards (B2 all-complete, C, D) AND "
+        "quarantine that phase's completion records at entry "
+        "(dbe-force-stale-completion); per-cell resume manifests stay honored",
     )
     ap.add_argument("--import-check", action="store_true")
     return ap.parse_args(argv)
@@ -1882,10 +2161,15 @@ def main(argv: list[str] | None = None) -> int:
         return RC_OK
     assert args.phase, "--phase is required (or pass --import-check)"
     cfg = build_config(args)
+    # Run-start model-revision resolution (dbe-resume-fingerprint-inputs):
+    # every resume fingerprint pins the RESOLVED HF commit sha of the model
+    # this run consumes, not the mutable `main` ref.
+    cfg.model_revision = _resolve_model_revision(cfg)
     for d in (cfg.out_root, cfg.log_dir, cfg.manifest_dir, cfg.vc_dir, cfg.va_dir, cfg.anchors_dir):
         d.mkdir(parents=True, exist_ok=True)
     logger.info(
-        "[config] phase=%s out_root=%s smoke=%s tiny=%s cells=%s draws=%d device=%s prefix=%s",
+        "[config] phase=%s out_root=%s smoke=%s tiny=%s cells=%s draws=%d device=%s prefix=%s "
+        "model_rev=%s",
         args.phase,
         cfg.out_root,
         cfg.smoke,
@@ -1894,6 +2178,7 @@ def main(argv: list[str] | None = None) -> int:
         cfg.draws,
         cfg.device,
         cfg.hf_prefix,
+        cfg.model_revision,
     )
     phases = list(PHASES) if args.phase == "all" else [args.phase]
     for name in phases:

@@ -458,9 +458,10 @@ def test_cli_force_flag_defaults_off_and_threads():
 
 
 def test_pilot_report_bare_existence_never_satisfies_production_resume(tmp_path):
-    """smoke-pilot-cross-regime-reuse: a demoted smoke pilot report must not
-    suppress the production throughput gate; only a regime-matched,
-    non-demoted report counts."""
+    """smoke-pilot-cross-regime-reuse + resume-accepts-failed-gate-report /
+    dbe-failed-pilot-resume: only a regime-matched, non-demoted report whose
+    persisted verdict is exactly PASS licenses resume — a FAILed or
+    verdict-less report re-arms the gate."""
     smoke = _mk_cfg(tmp_path, smoke=True)
     prod = _mk_cfg(tmp_path)
     report = smoke.manifest_dir / "pilot_gate_report.json"
@@ -479,19 +480,69 @@ def test_pilot_report_bare_existence_never_satisfies_production_resume(tmp_path)
     assert DR._pilot_report_ok(prod) is False  # production must NOT
     # (2) production-regime fp but demoted -> still refused in production
     report.write_text(
-        json.dumps({"regime_fp": DR._pilot_regime_fp(prod), "demoted_to_informational": True})
+        json.dumps(
+            {
+                "regime_fp": DR._pilot_regime_fp(prod),
+                "demoted_to_informational": True,
+                "verdict": "PASS",
+            }
+        )
     )
     assert DR._pilot_report_ok(prod) is False
-    # (3) production-regime, non-demoted -> satisfied
+    # (3) production-regime, non-demoted, FAIL verdict -> refused: the gate
+    # must re-measure after it fired, never be suppressed by its own halt
+    # report (resume-accepts-failed-gate-report).
+    report.write_text(
+        json.dumps(
+            {
+                "regime_fp": DR._pilot_regime_fp(prod),
+                "demoted_to_informational": False,
+                "verdict": "FAIL",
+            }
+        )
+    )
+    assert DR._pilot_report_ok(prod) is False
+    # (4) production-regime, non-demoted, verdict MISSING -> refused (a
+    # verdict-less record is malformed/stale, never completion evidence)
     report.write_text(
         json.dumps({"regime_fp": DR._pilot_regime_fp(prod), "demoted_to_informational": False})
     )
+    assert DR._pilot_report_ok(prod) is False
+    # (5) production-regime, non-demoted, PASS -> the ONLY satisfying shape
+    report.write_text(
+        json.dumps(
+            {
+                "regime_fp": DR._pilot_regime_fp(prod),
+                "demoted_to_informational": False,
+                "verdict": "PASS",
+            }
+        )
+    )
     assert DR._pilot_report_ok(prod) is True
-    # (4) missing / unparseable -> never satisfied
+    # (6) missing / unparseable -> never satisfied
     report.unlink()
     assert DR._pilot_report_ok(prod) is False
     report.write_text("not json")
     assert DR._pilot_report_ok(prod) is False
+
+
+def test_report_regime_ok_verdict_gate_for_parity_report(tmp_path):
+    """resume-accepts-failed-gate-report (parity twin): with
+    require_pass_verdict the fp-matched report must ALSO carry verdict PASS —
+    a FAILed or verdict-less parity report never certifies the B2
+    all-complete skip. Default form (no-verdict records like
+    va_dbe_uploaded.json / analysis_done.json) stays fp-only."""
+    cfg = _mk_cfg(tmp_path)
+    fp = DR._b2_regime_fp(cfg)
+    p = cfg.manifest_dir / "parity_gate_report.json"
+    p.write_text(json.dumps({"regime_fp": fp, "verdict": "FAIL"}))
+    assert DR._report_regime_ok(p, fp) is True  # default: fp-only
+    assert DR._report_regime_ok(p, fp, require_pass_verdict=True) is False
+    p.write_text(json.dumps({"regime_fp": fp}))  # verdict missing
+    assert DR._report_regime_ok(p, fp, require_pass_verdict=True) is False
+    p.write_text(json.dumps({"regime_fp": fp, "verdict": "PASS"}))
+    assert DR._report_regime_ok(p, fp, require_pass_verdict=True) is True
+    assert DR._report_regime_ok(p, "other-regime", require_pass_verdict=True) is False
 
 
 def test_b2_regime_fp_tracks_data_inputs(tmp_path):
@@ -587,11 +638,9 @@ def test_figures_nan_if_none_preserves_legitimate_zero():
     assert math.isnan(DF._nan_if_none(None))
 
 
-def test_land_results_git_production_leg_end_to_end(tmp_path, monkeypatch):
-    """dbe-primary-artifact-egress: the phase-D git landing leg runs its REAL
-    body (add -> staged-index verification incl. the gitignore force-add branch
-    -> pathspec commit -> push -> rev-list push-verify -> per-FILE remote
-    presence) against a scratch repo + bare remote; smoke/tiny skips."""
+def _scratch_git_repo(tmp_path: Path, monkeypatch) -> Path:
+    """Scratch repo on branch issue-2215 + bare remote, with DR._REPO_ROOT
+    monkeypatched onto it (production eval_dir/figures_dir resolve inside)."""
     import subprocess as sp
 
     def git(repo, *args):
@@ -609,6 +658,17 @@ def test_land_results_git_production_leg_end_to_end(tmp_path, monkeypatch):
     git(repo, "remote", "add", "origin", str(remote))
     git(repo, "push", "origin", "issue-2215")
     monkeypatch.setattr(DR, "_REPO_ROOT", repo)
+    return repo
+
+
+def test_land_results_git_production_leg_end_to_end(tmp_path, monkeypatch):
+    """dbe-primary-artifact-egress: the phase-D git landing leg runs its REAL
+    body (add -> staged-index verification incl. the gitignore force-add branch
+    -> pathspec commit -> push -> rev-list push-verify -> per-FILE remote
+    presence) against a scratch repo + bare remote; smoke/tiny skips."""
+    import subprocess as sp
+
+    repo = _scratch_git_repo(tmp_path, monkeypatch)
     cfg = _mk_cfg(tmp_path)  # production regime
     cfg.eval_dir.mkdir(parents=True, exist_ok=True)
     cfg.figures_dir.mkdir(parents=True, exist_ok=True)
@@ -636,3 +696,408 @@ def test_c_and_d_regime_fp_track_null_b(tmp_path):
     fp0 = DR._c_regime_fp(cfg)
     cfg.null_b = 10_000
     assert DR._c_regime_fp(cfg) != fp0
+
+
+# ── (h) round-3 review pins: verdict-aware resume, force invalidation, ──
+# ── registered deliverables, B1 pre-load manifest, fp inputs, gate 4, D ──
+
+from types import SimpleNamespace  # noqa: E402
+
+
+def test_required_deliverable_set_matches_plan_6_5():
+    """dbe-primary-artifact-egress: the registered set is the plan §6.5
+    globs VERBATIM plus the two canonical §6.5 figure stems."""
+    assert DR.REQUIRED_EVAL_JSONS == (
+        "dv3_dbe_map_discrimination.json",
+        "qualitative_examples.json",
+        "datagen_manifest.json",
+    )
+    assert DR.REQUIRED_FIGURE_PNGS == (
+        "dbe_hero_pertype_2afc.png",
+        "dbe_joint_taxonomy_48.png",
+    )
+
+
+def _seed_required_results(cfg) -> list[Path]:
+    cfg.eval_dir.mkdir(parents=True, exist_ok=True)
+    cfg.figures_dir.mkdir(parents=True, exist_ok=True)
+    paths = DR._required_result_paths(cfg)
+    for p in paths:
+        p.write_bytes(b"\x89PNG-fake" if p.suffix == ".png" else b"{}")
+    return paths
+
+
+def test_assert_required_results_each_deliverable_individually(tmp_path, monkeypatch):
+    """dbe-primary-artifact-egress: deleting ANY single registered §6.5
+    deliverable (eval JSON or canonical figure) refuses D before egress."""
+    monkeypatch.setattr(DR, "_REPO_ROOT", tmp_path / "root")
+    cfg = _mk_cfg(tmp_path)
+    paths = _seed_required_results(cfg)
+    assert [p.name for p in paths] == list(DR.REQUIRED_EVAL_JSONS) + list(DR.REQUIRED_FIGURE_PNGS)
+    DR._assert_required_results(cfg)  # full registered set passes
+    for p in paths:
+        payload = p.read_bytes()
+        p.unlink()
+        with pytest.raises(RuntimeError, match=p.name):
+            DR._assert_required_results(cfg)
+        p.write_bytes(payload)
+    # smoke/tiny: ONLY the committed datagen_manifest.json requirement drops
+    # (twin roots never stage it — enumerated smoke blind spot); dv3 +
+    # qualitative + both canonical figures stay required.
+    smoke = _mk_cfg(tmp_path, smoke=True)
+    smoke_paths = _seed_required_results(smoke)
+    assert "datagen_manifest.json" not in {p.name for p in smoke_paths}
+    assert {p.name for p in smoke_paths} == {
+        "dv3_dbe_map_discrimination.json",
+        "qualitative_examples.json",
+        "dbe_hero_pertype_2afc.png",
+        "dbe_joint_taxonomy_48.png",
+    }
+    DR._assert_required_results(smoke)
+    (smoke.eval_dir / "dv3_dbe_map_discrimination.json").unlink()
+    with pytest.raises(RuntimeError, match="dv3_dbe_map_discrimination"):
+        DR._assert_required_results(smoke)
+
+
+def test_land_results_git_empty_expected_set_fails(tmp_path, monkeypatch):
+    """dbe-fabricated-regression-coverage close-out: an EMPTY expected-path
+    set on the production git leg is a FAIL, never a quiet no-op (#1482)."""
+    _scratch_git_repo(tmp_path, monkeypatch)
+    cfg = _mk_cfg(tmp_path)
+    cfg.eval_dir.mkdir(parents=True, exist_ok=True)  # both dirs exist, EMPTY
+    cfg.figures_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(RuntimeError, match="empty expected-path set"):
+        DR._land_results_git(cfg)
+
+
+def test_gate4_parity_fails_loud_below_three_rows(tmp_path):
+    """dbe-fabricated-regression-coverage close-out: fewer than 3 eligible
+    answer rows halts gate 4 BEFORE any model use (a thinner spot check
+    silently weakens the gate)."""
+    cfg = _mk_cfg(tmp_path)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    bank = {"kept_types": ["cellA"], "contexts": {}}
+    rows = [
+        {"context_id": "c1", "draw": 0, "n_completion_tokens": 3},
+        {"context_id": "c1", "draw": 1, "n_completion_tokens": 0},  # empty: ineligible
+        {"context_id": "c2", "draw": 0, "n_completion_tokens": 2},
+    ]
+    with (cfg.anchors_dir / "anchors_dbe_w0_cellA.jsonl").open("w") as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+    with pytest.raises(AssertionError, match="exactly 3 eligible"):
+        DR._gate4_parity(cfg, model=None, tok=None, bank=bank, eot=[9])
+
+
+def test_gate4_record_injection_detects_wrong_wrapper_metadata():
+    """dbe-gate4-metadata-independence: wrong wrapper-side span metadata with
+    UNCHANGED vectors must FAIL the gate-4 exact record comparison — on
+    either the generation-side or the capture-side record."""
+    gate_rec = {
+        "ctx_len": 3,
+        "n_completion_tokens": 2,
+        "span_start": 3,
+        "span_end": 5,
+        "tail_end": 7,
+    }
+    gen_row = {
+        "context_id": "c1",
+        "span_start": 3,
+        "n_completion_tokens_gen": 2,
+        "span_end": 5,
+        "tail_end": 7,
+    }
+    cap_ent = dict(gate_rec)
+    DR._gate4_compare_records(gate_rec, gen_row, cap_ent)  # exact agreement passes
+    with pytest.raises(AssertionError, match="span-record mismatch"):
+        DR._gate4_compare_records(gate_rec, dict(gen_row, span_end=6), cap_ent)
+    with pytest.raises(AssertionError, match="span-record mismatch"):
+        DR._gate4_compare_records(gate_rec, gen_row, dict(cap_ent, ctx_len=4))
+    with pytest.raises(AssertionError, match="span-record mismatch"):
+        DR._gate4_compare_records(gate_rec, dict(gen_row, n_completion_tokens_gen=1), cap_ent)
+
+
+def test_capture_answer_states_boundaries_additive_and_self_derived(monkeypatch):
+    """dbe-gate4-metadata-independence: capture_answer_states emits its OWN
+    per-row span records under return_boundaries=True (derived from ITS
+    internal ctx/comp/eot state, empty rows included) and stays byte-shape
+    identical with the kwarg off (existing callers untouched)."""
+    import torch
+
+    class Tok:
+        pad_token_id = 0
+
+        def __call__(self, text, add_special_tokens=False):
+            return {"input_ids": [ord(c) % 97 + 1 for c in text]}
+
+    def fake_extract(model, ids, layers, attention_mask=None):
+        b, t = ids.shape
+        return {lay: torch.zeros(b, t, 4) for lay in layers}
+
+    monkeypatch.setattr(DR.R, "extract_layer_activations", fake_extract)
+    cfg = SimpleNamespace(hidden=4, device="cpu", capture_batch=2, layers=[0, 1])
+    kwargs = dict(
+        ctx_ids_by_row=[[1, 2, 3], [4, 5], [6]],
+        completions=["ab", "xyz", ""],  # last row EMPTY
+        eot_ids=[9, 9],
+        tail_inclusive=True,
+    )
+    states = DR.R.capture_answer_states(cfg, None, Tok(), **kwargs, return_boundaries=True)
+    assert states["boundaries"] == [
+        {"ctx_len": 3, "n_completion_tokens": 2, "span_start": 3, "span_end": 5, "tail_end": 7},
+        {"ctx_len": 2, "n_completion_tokens": 3, "span_start": 2, "span_end": 5, "tail_end": 7},
+        {"ctx_len": 1, "n_completion_tokens": 0, "span_start": 1, "span_end": 1, "tail_end": 3},
+    ]
+    assert states["empty_rows"] == [2]
+    # default-off: the additive kwarg leaves every existing caller untouched
+    states0 = DR.R.capture_answer_states(cfg, None, Tok(), **kwargs)
+    assert "boundaries" not in states0
+    assert sorted(states0) == sorted(k for k in states if k != "boundaries")
+
+
+def test_bank_b2_cell_fps_track_model_revision_gen_batch_and_builder(tmp_path, monkeypatch):
+    """dbe-resume-fingerprint-inputs: the resolved model revision invalidates
+    B1/B2/cell fingerprints; gen_batch invalidates B2 + cell (batch
+    composition is output-affecting under per-batch reseeding); the
+    bank-builder content sha invalidates B1 (and cell transitively)."""
+    cfg = _mk_cfg(tmp_path)
+    bank0 = DR._bank_regime_fp(cfg)
+    b20 = DR._b2_regime_fp(cfg)
+    cell0 = DR._cell_regime_fp(cfg, "cellA")
+    # model revision -> ALL THREE change
+    cfg.model_revision = "deadbeef" * 5
+    assert DR._bank_regime_fp(cfg) != bank0
+    assert DR._b2_regime_fp(cfg) != b20
+    assert DR._cell_regime_fp(cfg, "cellA") != cell0
+    # gen_batch -> B2 + cell change
+    cfg2 = _mk_cfg(tmp_path)
+    b2a, cella = DR._b2_regime_fp(cfg2), DR._cell_regime_fp(cfg2, "cellA")
+    cfg2.gen_batch = 32
+    assert DR._b2_regime_fp(cfg2) != b2a
+    assert DR._cell_regime_fp(cfg2, "cellA") != cella
+    # bank-builder identity -> B1 changes (cell embeds the B1 fp)
+    cfg3 = _mk_cfg(tmp_path)
+    bank_a, cell_a = DR._bank_regime_fp(cfg3), DR._cell_regime_fp(cfg3, "cellA")
+    monkeypatch.setattr(DR, "_bank_builder_sha", lambda: "0" * 64)
+    assert DR._bank_regime_fp(cfg3) != bank_a
+    assert DR._cell_regime_fp(cfg3, "cellA") != cell_a
+
+
+def test_resolve_model_revision_paths(tmp_path, monkeypatch):
+    """dbe-resume-fingerprint-inputs: run-start resolution returns the hub
+    sha; production/smoke fail LOUD when unresolvable; --tiny degrades to the
+    logged sentinel (enumerated smoke blind spot)."""
+    import huggingface_hub
+
+    class OkApi:
+        def model_info(self, mid):
+            return SimpleNamespace(sha="abc123def")
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", OkApi)
+    assert DR._resolve_model_revision(_mk_cfg(tmp_path)) == "abc123def"
+
+    class BadApi:
+        def model_info(self, mid):
+            raise OSError("offline")
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", BadApi)
+    with pytest.raises(RuntimeError, match="cannot resolve"):
+        DR._resolve_model_revision(_mk_cfg(tmp_path))
+    with pytest.raises(RuntimeError, match="cannot resolve"):
+        DR._resolve_model_revision(_mk_cfg(tmp_path, smoke=True))
+    assert DR._resolve_model_revision(_mk_cfg(tmp_path, tiny=True)) == "unresolved-tiny"
+
+
+def test_phase_b1_requires_committed_manifest_before_model_load(tmp_path, monkeypatch):
+    """dbe-b1-manifest-check-post-init: the production committed-source
+    requirement fires BEFORE load_model_and_tokenizer — an omitted sparse
+    cone fails in seconds, never after a full GPU capture."""
+    monkeypatch.setattr(DR, "_REPO_ROOT", tmp_path / "root")
+    monkeypatch.setattr(DR, "DATAGEN_MANIFEST_SRC", tmp_path / "absent_manifest.json")
+    cfg = _mk_cfg(tmp_path)  # production
+    monkeypatch.setattr(DR, "_load_values", lambda cfg: {})
+    monkeypatch.setattr(DR, "_bank_for", lambda cfg, values: {"contexts": {}, "pairs": []})
+
+    def _no_load(cfg):
+        raise AssertionError("model load must NOT be reached before the manifest check")
+
+    monkeypatch.setattr(DR.R, "load_model_and_tokenizer", _no_load)
+    with pytest.raises(RuntimeError, match="committed datagen manifest"):
+        DR.phase_bank(cfg)
+
+
+def test_force_invalidates_phase_records_and_preserves_cell_manifests(tmp_path):
+    """dbe-force-stale-completion: forced entry quarantines the PHASE's own
+    completion records (B2 gate reports + upload record; C analysis_done; D
+    upload_done + sentinel incl. .processed) while per-cell B2 manifests stay
+    untouched."""
+    cfg = _mk_cfg(tmp_path, force=True)
+    for name in ("pilot_gate_report.json", "parity_gate_report.json", "va_dbe_uploaded.json"):
+        (cfg.manifest_dir / name).write_text("{}")
+    (cfg.manifest_dir / "anchors_dbe_cellA_done.json").write_text("{}")
+    moved = DR._invalidate_phase_records(cfg, "B2")
+    assert sorted(moved) == [
+        "parity_gate_report.json",
+        "pilot_gate_report.json",
+        "va_dbe_uploaded.json",
+    ]
+    for name in ("pilot_gate_report.json", "parity_gate_report.json", "va_dbe_uploaded.json"):
+        assert not (cfg.manifest_dir / name).exists()
+    assert (cfg.manifest_dir / "anchors_dbe_cellA_done.json").exists()  # preserved
+    # C
+    (cfg.manifest_dir / "analysis_done.json").write_text("{}")
+    assert DR._invalidate_phase_records(cfg, "C") == ["analysis_done.json"]
+    assert not (cfg.manifest_dir / "analysis_done.json").exists()
+    # D: upload_done + sentinel (bare AND poller-drained)
+    (cfg.manifest_dir / "upload_done.json").write_text("{}")
+    s = DR._sentinel_path(cfg)
+    s.write_text("{}")
+    s.with_name(s.name + ".processed").write_text("{}")
+    moved_d = DR._invalidate_phase_records(cfg, "D")
+    assert "upload_done.json" in moved_d and len(moved_d) == 3
+    assert not (cfg.manifest_dir / "upload_done.json").exists()
+    assert not s.exists() and not s.with_name(s.name + ".processed").exists()
+    # quarantined forensics preserved under out_root/quarantine
+    assert len(list((cfg.out_root / "quarantine").iterdir())) == 7
+
+
+def test_phase_b2_force_invalidates_before_any_work(tmp_path, monkeypatch):
+    """dbe-force-stale-completion (ordering): the B2 quarantine runs BEFORE
+    the first unit of work (the bank load) — a crash at the very first work
+    step already leaves no stale eligible records."""
+    cfg = _mk_cfg(tmp_path, force=True)
+    for name in ("pilot_gate_report.json", "parity_gate_report.json", "va_dbe_uploaded.json"):
+        (cfg.manifest_dir / name).write_text("{}")
+
+    def _boom(cfg):
+        raise RuntimeError("stop-at-first-work-step")
+
+    monkeypatch.setattr(DR, "_load_bank_dbe", _boom)
+    with pytest.raises(RuntimeError, match="stop-at-first-work-step"):
+        DR.phase_anchors(cfg)
+    for name in ("pilot_gate_report.json", "parity_gate_report.json", "va_dbe_uploaded.json"):
+        assert not (cfg.manifest_dir / name).exists()
+
+
+def test_phase_c_forced_failure_then_nonforce_reenters(tmp_path, monkeypatch):
+    """dbe-force-stale-completion: seed a COMPLETE C state, force a rerun
+    with an injected mid-phase failure — the next NON-force invocation
+    re-enters (raises again) instead of skipping on the stale record."""
+    monkeypatch.setattr(DR, "_REPO_ROOT", tmp_path / "root")
+    cfg = _mk_cfg(tmp_path, force=True)
+    (cfg.manifest_dir / "analysis_done.json").write_text(
+        json.dumps({"regime_fp": DR._c_regime_fp(cfg)})
+    )
+    cfg.eval_dir.mkdir(parents=True, exist_ok=True)
+    for n in DR.REQUIRED_C_EVAL_JSONS:
+        (cfg.eval_dir / n).write_text("{}")
+    cfg.null_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.null_dir / "null.npz").write_bytes(b"x")
+    cfg.predictions_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.predictions_dir / "p.pt").write_bytes(b"x")
+    monkeypatch.setattr(DR, "_SCRIPTS_DIR", tmp_path / "no_scripts")  # injected failure
+    with pytest.raises(RuntimeError, match="unit 3"):
+        DR.phase_analysis(cfg)
+    # sanity: the non-force guard WOULD have skipped had the record survived
+    cfg_nf = _mk_cfg(tmp_path)
+    assert not (cfg.manifest_dir / "analysis_done.json").exists()
+    with pytest.raises(RuntimeError, match="unit 3"):
+        DR.phase_analysis(cfg_nf)  # re-enters — never RC_OK on stale state
+
+
+def test_phase_c_guard_requires_exact_outputs_not_any_json(tmp_path, monkeypatch):
+    """C resume guard requires the exact C-produced set — a pre-existing
+    committed datagen_manifest.json alone must never satisfy the eval half."""
+    monkeypatch.setattr(DR, "_REPO_ROOT", tmp_path / "root")
+    cfg = _mk_cfg(tmp_path)
+    (cfg.manifest_dir / "analysis_done.json").write_text(
+        json.dumps({"regime_fp": DR._c_regime_fp(cfg)})
+    )
+    cfg.eval_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.eval_dir / "datagen_manifest.json").write_text("{}")  # committed pre-C file only
+    cfg.null_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.null_dir / "null.npz").write_bytes(b"x")
+    cfg.predictions_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.predictions_dir / "p.pt").write_bytes(b"x")
+    monkeypatch.setattr(DR, "_SCRIPTS_DIR", tmp_path / "no_scripts")
+    with pytest.raises(RuntimeError, match="unit 3"):  # guard does NOT skip
+        DR.phase_analysis(cfg)
+    for n in DR.REQUIRED_C_EVAL_JSONS:
+        (cfg.eval_dir / n).write_text("{}")
+    assert DR.phase_analysis(cfg) == DR.RC_OK  # exact set present -> skip
+
+
+def test_finalize_complete_regime_validates_sentinel(tmp_path, monkeypatch):
+    """dbe-d-stale-sentinel-completion: a stale prior sentinel (wrong regime,
+    bare OR .processed) beside a fresh regime-matched upload_done never
+    licenses the D skip; both halves must regime-match."""
+    monkeypatch.setattr(DR, "_REPO_ROOT", tmp_path / "root")
+    cfg = _mk_cfg(tmp_path)
+    regime = DR._c_regime_fp(cfg)
+    upload_done = cfg.manifest_dir / "upload_done.json"
+    s = DR._sentinel_path(cfg)
+    assert DR._finalize_complete(cfg) is False  # nothing present
+    upload_done.write_text(json.dumps({"regime_fp": regime}))
+    assert DR._finalize_complete(cfg) is False  # sentinel missing
+    s.with_name(s.name + ".processed").write_text(
+        json.dumps({"note": {"regime_fp": "OTHER-REGIME"}})
+    )
+    assert DR._finalize_complete(cfg) is False  # stale drained sentinel
+    s.write_text(json.dumps({"note": {"regime_fp": regime}}))
+    assert DR._finalize_complete(cfg) is True  # both regime-matched
+    upload_done.unlink()
+    assert DR._finalize_complete(cfg) is False  # sentinel alone insufficient
+    upload_done.write_text(json.dumps({"regime_fp": "OTHER-REGIME"}))
+    assert DR._finalize_complete(cfg) is False
+
+
+def test_phase_d_upload_done_only_after_every_upload_leg(tmp_path, monkeypatch):
+    """dbe-d-stale-sentinel-completion: a manifests-upload failure AFTER the
+    results legs leaves NO upload_done and NO sentinel — re-entry re-runs the
+    phase; on healthy legs the guard record + sentinel land and re-entry
+    skips."""
+    monkeypatch.setattr(DR, "_REPO_ROOT", tmp_path / "root")
+    cfg = _mk_cfg(tmp_path)
+    _seed_required_results(cfg)
+    cfg.null_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.null_dir / "null.npz").write_bytes(b"x")
+    cfg.predictions_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.predictions_dir / "p.pt").write_bytes(b"x")
+    monkeypatch.setattr(DR, "_run_figure_suite", lambda cfg: None)
+    monkeypatch.setattr(DR, "_land_results_git", lambda cfg: {"mode": "stub"})
+    monkeypatch.setattr(DR, "_sentinel_payload", lambda cfg: {"stub": True})
+    fail_manifests = [True]
+
+    def fake_upload_dir_sharded(
+        local_dir,
+        repo_id,
+        path_in_repo,
+        *,
+        repo_type="dataset",
+        shard_glob="*",
+        verify=True,
+        delete_local=True,
+        api=None,
+        token=None,
+        proactive_overflow=True,
+        batch=None,
+        batch_chunk_files=0,
+        resume_skip=True,
+    ):
+        if path_in_repo.endswith("manifests") and fail_manifests[0]:
+            raise RuntimeError("manifests upload failed (injected)")
+        return SimpleNamespace(
+            repo_id=repo_id, overflow_repo=None, uploaded=[], rerouted=[], skipped_existing=[]
+        )
+
+    monkeypatch.setattr(DR, "upload_dir_sharded", fake_upload_dir_sharded)
+    with pytest.raises(RuntimeError, match="manifests upload failed"):
+        DR.phase_finalize(cfg)
+    assert not (cfg.manifest_dir / "upload_done.json").exists()  # never published
+    assert not DR._sentinel_present(DR._sentinel_path(cfg))
+    assert DR._finalize_complete(cfg) is False  # re-entry re-runs
+    fail_manifests[0] = False
+    assert DR.phase_finalize(cfg) == DR.RC_OK
+    assert (cfg.manifest_dir / "upload_done.json").exists()
+    assert DR._finalize_complete(cfg) is True
+    assert DR.phase_finalize(cfg) == DR.RC_OK  # regime-matched skip branch

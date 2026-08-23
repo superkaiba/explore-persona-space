@@ -1475,6 +1475,7 @@ def capture_answer_states(
     payloads: list[torch.Tensor] | None = None,
     positions: list[int] | None = None,
     tail_inclusive: bool = False,
+    return_boundaries: bool = False,
 ) -> dict:
     """Span-mean answer states from teacher-forced re-forwards.
 
@@ -1491,6 +1492,15 @@ def capture_answer_states(
     end-of-turn tail (``eot_ids``) from the SAME captured stack — the #779
     ``v_x`` training-target convention twin. Default ``False`` keeps this
     function byte-identical for every existing caller.
+
+    ``return_boundaries=True`` (issue #2215 dbe round 3 —
+    dbe-gate4-metadata-independence) additionally emits ``boundaries``: one
+    per-row span record (``ctx_len`` / ``n_completion_tokens`` /
+    ``span_start`` / ``span_end`` / ``tail_end``) derived from THIS
+    function's OWN internal tokenization state — never a caller-side
+    reconstruction — so a wrapper-side bookkeeping error is visible as a
+    record mismatch at the gate-4 EXACT comparison. ADDITIVE + default-off:
+    existing callers stay byte-identical.
     """
     assert len(ctx_ids_by_row) == len(completions), (len(ctx_ids_by_row), len(completions))
     hooked = payloads is not None
@@ -1562,6 +1572,22 @@ def capture_answer_states(
         out["pooling"]["va_tail_incl"] = (
             "mean over completion tokens + end-of-turn tail (issue #2215 §4.2 v_x-convention twin)"
         )
+    if return_boundaries:
+        # Per-row span records from this function's OWN state (its ctx-id
+        # lengths, its comp_ids tokenization, its eot tail) — the capture
+        # path's independently-emitted record for the gate-4 EXACT comparison
+        # (issue #2215 dbe-gate4-metadata-independence). Emitted for EVERY
+        # row, empty completions included (n_completion_tokens == 0).
+        out["boundaries"] = [
+            {
+                "ctx_len": len(ctx_ids_by_row[i]),
+                "n_completion_tokens": n_comp_tokens[i],
+                "span_start": len(ctx_ids_by_row[i]),
+                "span_end": len(ctx_ids_by_row[i]) + n_comp_tokens[i],
+                "tail_end": len(ctx_ids_by_row[i]) + n_comp_tokens[i] + len(eot_ids),
+            }
+            for i in range(n)
+        ]
     return out
 
 
