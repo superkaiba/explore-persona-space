@@ -1,0 +1,703 @@
+{
+  "commit": "c1c8abb0",
+  "render_id": "17494c6f251149e5",
+  "git_commit": "c1c8abb0b6e6e2043c716efad5a242f99789d012",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T02:31:05Z",
+  "figsize": [
+    12.5,
+    2.7
+  ],
+  "points": [
+    {
+      "Item-mean score": 2.5,
+      "Items": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 7.5,
+      "Items": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 12.5,
+      "Items": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 17.5,
+      "Items": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 22.5,
+      "Items": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 27.5,
+      "Items": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 32.5,
+      "Items": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 37.5,
+      "Items": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 42.5,
+      "Items": 2.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 47.5,
+      "Items": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 52.5,
+      "Items": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 57.5,
+      "Items": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 62.5,
+      "Items": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 67.5,
+      "Items": 5.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 72.5,
+      "Items": 4.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 77.5,
+      "Items": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 82.5,
+      "Items": 9.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 87.5,
+      "Items": 20.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 92.5,
+      "Items": 17.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 97.5,
+      "Items": 130.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Item-mean score": 2.5,
+      "y": 28.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 7.5,
+      "y": 21.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 12.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 17.5,
+      "y": 47.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 22.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 27.5,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 32.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 37.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 42.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 47.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 52.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 57.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 62.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 67.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 72.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 77.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 82.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 87.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 92.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 97.5,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Item-mean score": 2.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 7.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 12.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 17.5,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 22.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 27.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 32.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 37.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 42.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 47.5,
+      "y": 11.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 52.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 57.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 62.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 67.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 72.5,
+      "y": 9.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 77.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 82.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 87.5,
+      "y": 24.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 92.5,
+      "y": 16.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 97.5,
+      "y": 63.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Item-mean score": 2.5,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 7.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 12.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 17.5,
+      "y": 19.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 22.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 27.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 32.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 37.5,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 42.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 47.5,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 52.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 57.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 62.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 67.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 72.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 77.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 82.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 87.5,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 92.5,
+      "y": 13.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 97.5,
+      "y": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Item-mean score": 2.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 7.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 12.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 17.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 22.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 27.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 32.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 37.5,
+      "y": 2.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 42.5,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 47.5,
+      "y": 5.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 52.5,
+      "y": 3.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 57.5,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 62.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 67.5,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 72.5,
+      "y": 16.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 77.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 82.5,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 87.5,
+      "y": 10.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 92.5,
+      "y": 23.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Item-mean score": 97.5,
+      "y": 29.0,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 100,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct, chat template (banked)",
+        "xlabel": "Item-mean score",
+        "ylabel": "Items",
+        "xticklabels": [
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ]
+      },
+      {
+        "title_left": "Base, chat template (fresh)",
+        "xlabel": "Item-mean score",
+        "xticklabels": [
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125"
+        ]
+      },
+      {
+        "title_left": "Base, bare text (fresh)",
+        "xlabel": "Item-mean score",
+        "xticklabels": [
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125"
+        ]
+      },
+      {
+        "title_left": "Base, raw multi-turn (banked)",
+        "xlabel": "Item-mean score",
+        "xticklabels": [
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125"
+        ]
+      },
+      {
+        "title_left": "Instruct, raw multi-turn (banked)",
+        "xlabel": "Item-mean score",
+        "xticklabels": [
+          "\u221225",
+          "0",
+          "25",
+          "50",
+          "75",
+          "100",
+          "125"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

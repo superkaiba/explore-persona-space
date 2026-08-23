@@ -1,0 +1,67 @@
+{
+  "commit": "c1c8abb0",
+  "render_id": "4e69cff2b1604976",
+  "git_commit": "c1c8abb0b6e6e2043c716efad5a242f99789d012",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T02:31:08Z",
+  "figsize": [
+    5.6,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "Base, chat template (fresh)",
+      "Cap-hit fraction": 0.305,
+      "_kind": "bar"
+    },
+    {
+      "category": "Base, bare text (fresh)",
+      "Cap-hit fraction": 0.1,
+      "_kind": "bar"
+    },
+    {
+      "category": "Base, raw multi-turn (banked)",
+      "Cap-hit fraction": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Instruct, raw multi-turn (banked)",
+      "Cap-hit fraction": 0.168,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cap-hit fraction by arm (finish_reason == \"length\"; recorded arms only)",
+        "ylabel": "Cap-hit fraction",
+        "xticklabels": [
+          "Base, chat template (fresh)",
+          "Base, bare text (fresh)",
+          "Base, raw multi-turn (banked)",
+          "Instruct, raw multi-turn (banked)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
