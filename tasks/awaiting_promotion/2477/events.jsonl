@@ -162,3 +162,4 @@
 {"ts": "2026-08-23T07:01:48Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "clean-result-critic PASS; parking for user promotion."}
 {"ts": "2026-08-23T07:01:54Z", "kind": "epm:status-changed", "version": 2, "by": "unknown", "note": "reviewing -> awaiting_promotion (transitional; no agent dispatch at reviewing)"}
 {"ts": "2026-08-23T07:05:03Z", "kind": "epm:progress", "version": 21, "by": "unknown", "note": "[divergence-probe] step10d new=.gitleaksignore"}
+{"ts": "2026-08-23T07:09:11Z", "kind": "epm:progress", "version": 22, "by": "unknown", "note": "[divergence-probe] r3 count=0 main=24fa92f815a75290678756d4f24fc4ef839c431b files="}
