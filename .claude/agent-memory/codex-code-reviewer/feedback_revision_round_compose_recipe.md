@@ -2109,3 +2109,20 @@ a numbered disposition table that OVERLAPS but is not a superset of the ledger
 ids (Claude-only items unledgered, a NIT closed in an opportunistic paragraph),
 say so explicitly and key the closure ledger on BOTH (item numbers + ids,
 Codex maps them from the disposition text) rather than minting pseudo-IDs.
+
+**Union fix round where the SIBLING twin's split verdicts are NOT inlined
+(#1901 r2, 2026-08-22):** when round 1 was Codex-FAIL + Claude per-commit
+SPLIT verdicts (g1-g4) and the orchestrator unioned the blocking findings,
+the Claude split bodies live only in events.jsonl markers — do NOT stall
+trying to fetch/inline them: (a) the impl marker's own `### Response to
+code-review v1` table is the CLAIM surface for the g-items; give the
+non-Codex union items g-union PSEUDO-IDS (`r1-g2-f1-...`) with the marker's
+(a)-item mechanism text as the acceptance contract and an explicit "the
+table is the claim; verify the MECHANISM in the diff" caveat; (b) keep the
+per-id status-line duty for the Codex-persisted ids keyed on the LEDGER rows
+(inline the addressed-claim summaries verbatim — they are the implementer's
+own closure sentences and grep well); (c) FLAG in the return that the g
+bodies were not inlined so the orchestrator can extend if it wants them
+verbatim. Assert trap hit live: the impl marker's verbatim commit list
+carries the FULL head SHA — the ctx-geometry count is 2, not 1 (the #2329
+r5 (c) count-parts-separately rule, head-SHA edition).
