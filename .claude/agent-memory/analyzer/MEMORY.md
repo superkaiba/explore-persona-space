@@ -1,4 +1,5 @@
 - [Clean-result-critic round-1 pre-flight checklist](feedback_clean_result_critic_v1_checklist.md) — 14 mechanical spec fixes BEFORE first epm:interpretation; saves 1-2 critic rounds.
+- [Fold: Context prompt blockquote + open-concern id acks](feedback_fold_context_prompt_and_open_concern_acks.md) — prompt fence trips sample check; open concerns need verbatim ids in Takeaways/Results (defer is user-only); round credit needs literal "same-issue follow-up round" clause. #2215 fold.
 - [Failed manipulation check IS the finding](feedback_failed_manipulation_check_is_the_finding.md) — replication gate fired correctly → headline "recipe doesn't transfer". #516.
 - [CJK recount flips a capping headline](feedback_cjk_recount_flips_capping_headline.md) — Qwen capping: recount judged rate on the non-CJK subset + random-null band. #2203.
 - [Methodology correction IS the finding](feedback_methodology_correction_is_the_finding.md) — silent eval bug + recovery → first H4 is bug-vs-recovery; hero = same adapter two rigs. #477.

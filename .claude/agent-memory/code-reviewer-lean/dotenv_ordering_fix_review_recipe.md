@@ -29,8 +29,9 @@ A dotenv-before-heavy-import ordering fix (the #847 / `test_no_new_torch_before_
 
 **Why:** validated #2254 R1 g4 — all three ran in ~4 tool calls; the parent
 chain happened to be clean (fleet.py is stdlib-only) but nothing else would
-have caught it dirty. Re-validated #2379 R1 g5 and #2477 R1 g2 (chain still
-clean both times).
+have caught it dirty. Re-validated #2379 R1 g5, #2477 R1 g2, and #2479 R1 g7
+(chain still clean all three times; #2479 hit the check-3 issue823 red +
+attribution recipe verbatim).
 
 **Check-3 nuance (#2477 R1 g2):** the one HEAD test run can come back RED on
 a PRE-EXISTING sibling offender (there: `issue823_shared_persona_paired.py`,
