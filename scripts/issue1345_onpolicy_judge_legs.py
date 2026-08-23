@@ -521,6 +521,16 @@ def run_leg(
         "reason-first reply truncates before its closing brace and every draw parse-drops"
     )
     allowed, why = spend_allowed(execute)
+    # #2479 rule-26 pilot gate (OPT-IN via env; absent env => parent #1345
+    # behavior byte-identical): when a caller exports
+    # EPM_I2479_REQUIRE_AXIS_PILOT_PASS=<report path>, a REAL spend refuses
+    # unless the persisted axis-family pilot report is a PASS (plan §7 —
+    # every >=5k-call wave family is pilot-gated before production dispatch).
+    _pilot_gate = os.environ.get("EPM_I2479_REQUIRE_AXIS_PILOT_PASS", "")
+    if allowed and _pilot_gate:
+        from issue2479_judge_pilots import require_pilot_pass
+
+        require_pilot_pass(Path(_pilot_gate), family="axis")
     out_dir.mkdir(parents=True, exist_ok=True)
     save_raw = out_dir / f"judge_raw_{LEG_SLUG[leg]}_{tag}.json"
     cache_dir = out_dir / "judge_cache" / f"{LEG_SLUG[leg]}_{tag}"

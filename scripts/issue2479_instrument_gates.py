@@ -28,7 +28,11 @@ judge_legs.run_leg` with the byte-identical ai_likeness rubric, judge model,
 
 Draw budget: flatness 8 x 100 x 5 = 4,000; name-mask 8 x 40 x 5 = 1,600 —
 both under the ~5,000-call rule-26 pilot floor (llm-judging.md), and both on
-the axis leg's already-piloted instrument, so no new pilot gate.
+the byte-identical axis-family instrument, so they REUSE the persisted
+axis-family pilot PASS (plan §7: arms pool per RUBRIC FAMILY): an --execute
+dispatch requires `eval_results/issue_2479/pilot_gate_axis.json` to be a
+PASS (issue2479_judge_pilots.require_pilot_pass; override the path with
+--axis-pilot-report), never a fresh per-leg pilot.
 
 DRY-RUN BY DEFAULT (the parent instrument's own convention): without
 `--execute` AND `EPM_I1345_JUDGE_SPEND_OK=1`, the dispatch steps exercise
@@ -558,6 +562,13 @@ def main() -> None:
         help=f"attempt REAL Batch spend; additionally requires {jl.SPEND_ACK_ENV}=1 "
         "(without it every dispatch step is a dry run — no API calls)",
     )
+    ap.add_argument(
+        "--axis-pilot-report",
+        type=Path,
+        default=None,
+        help="axis-family rule-26 pilot PASS report required for an --execute dispatch "
+        "(default: eval_results/issue_2479/pilot_gate_axis.json)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
 
@@ -577,6 +588,16 @@ def main() -> None:
         return
 
     assert args.step, "--step is required (flatness | namemask | gates)"
+    if args.step in ("flatness", "namemask") and args.execute:
+        # Plan §7 pilot-family REUSE: these legs sit under the 5k pilot floor
+        # and run the byte-identical axis-family instrument, so a REAL spend
+        # requires the persisted axis-family pilot PASS — never a fresh pilot.
+        import issue2479_judge_pilots as jp
+
+        require_pilot_pass = jp.require_pilot_pass
+        require_pilot_pass(
+            args.axis_pilot_report or (_REPO_ROOT / jp.PILOT_AXIS_REL), family="axis"
+        )
     panel = fz.load_panel(args.panel)
     assert args.legs_dir is not None, "--legs-dir is required"
     if args.step == "flatness":

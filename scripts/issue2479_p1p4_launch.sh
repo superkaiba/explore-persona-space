@@ -10,6 +10,11 @@
 # P0 smoke-gate legs (plan §4; ALL must pass before any production cell):
 #   1. guard-selftest      fill --guard-selftest (3 axis-freeze guard branches)
 #   2. gen-smoke           Iris+Vex x {op, inserted}: prefetch + gen --smoke
+#   2b. ingen-pilot        rule-26 pilot for the in-gen judge family (plan §7):
+#                          ~150 pooled smoke-story draws at the exact
+#                          production instrument (per-cell partials + merge),
+#                          persisted PASS at pilot_gate_ingen.json — P1's
+#                          preamble refuses without it (rc=47)
 #   3. capture-smoke       capture launcher --smoke-only over the same 4 cells
 #   4. stage-sources       r4 + r4op source turnstores at the plan §10 pins
 #   5. toyfit-newcell      round-produced iris smoke turnstore aliased as
@@ -30,7 +35,8 @@
 #   40 = a P0 smoke leg failed          41 = P0 parity gate (kill criterion c)
 #   44 = P1 fatal gen failure (non-21)  46 = P1 ZERO gen-complete cells (no P4 input)
 #   42/43 = P4 capture gate-1 halts (propagated from the capture launcher)
-#   45 = P4 fatal capture failure       2/3 = arg / no-GPU errors
+#   45 = P4 fatal capture failure       47 = P1 in-gen pilot gate not PASS (plan §7)
+#   2/3 = arg / no-GPU errors
 # Kill criterion (a) (<12 op gen-complete cells) is NON-blocking by design
 # (plan §7 G1 "PROCEED with survivors ... never an abort"): the wrapper posts
 # a bounded-regime NOTE sentinel and proceeds to P4 on the survivors; the
@@ -111,7 +117,7 @@ gen_cell_cmd() { # spec -> the resolved inner gen command (for logs/dry-run)
 # --- --dry-run: print the resolved tables + P0/P4 commands, execute nothing ---
 if [ "$DRY_RUN" = "1" ]; then
   echo "[dry-run] panel=${EPM_I2479_CHAR_PANEL_JSON}"
-  echo "[dry-run] P0 legs (in order): guard-selftest; gen-smoke (${#SMOKE_GEN_CELLS[@]} cells); capture-smoke (--smoke-only, iris pair + vex pair); stage-sources (r4 r4op -> ${STAGE_ROOT}); toyfit (--max-rows 8); parity-pilot (char_helios_op, tol 0.02, halt rc=41); subsample-pilot (--max-rows ${SUBSAMPLE_ROWS}); r4-consumer-open (char_helios, --max-rows ${SUBSAMPLE_ROWS})"
+  echo "[dry-run] P0 legs (in order): guard-selftest; gen-smoke (${#SMOKE_GEN_CELLS[@]} cells, smoke n=40/cell); ingen-pilot (rule-26, 4x38 pooled draws -> eval_results/issue_2479/pilot_gate_ingen.json, P1 preamble requires PASS else rc=47); capture-smoke (--smoke-only, iris pair + vex pair); stage-sources (r4 r4op -> ${STAGE_ROOT}); toyfit (--max-rows 8); parity-pilot (char_helios_op, tol 0.02, halt rc=41); subsample-pilot (--max-rows ${SUBSAMPLE_ROWS}); r4-consumer-open (char_helios, --max-rows ${SUBSAMPLE_ROWS})"
   echo "[dry-run] P1 gen table (${#GEN_CELLS[@]} rows; per cell: prefetch --smoke --stems instruct_chat_s, then:)"
   k=0
   for spec in "${GEN_CELLS[@]}"; do
@@ -188,9 +194,11 @@ run_gen_cell() { # spec dev smoke
   local smoke_n=""
   if [ "$smoke" = "1" ]; then
     gen_args+=(--smoke)
-    # 12 targets so the toy-fit leg's aliased turnstore reaches the extract
-    # smoke cap (8 rows) with judge-filter margin (fill fold floor: >=4).
-    smoke_n=12
+    # 40 targets: (a) the toy-fit leg's aliased turnstore reaches the extract
+    # smoke cap (8 rows) with judge-filter margin (fill fold floor: >=4);
+    # (b) the in-gen rule-26 pilot (leg 2b) pools ~150 raw rows across the 4
+    # smoke cells (4 x 38 judged), the plan-§7 ~150-draw family target.
+    smoke_n=40
   else
     gen_args+=(--n-stories "$N_STORIES" --yield-floor "$YIELD_FLOOR")
   fi
@@ -291,6 +299,37 @@ else
   done
   run_leg gen-smoke test "$gen_smoke_rc" -eq 0
 
+  # Leg 2b: in-gen judge-family rule-26 pilot (plan §7) — ~150 pooled draws at
+  # the EXACT production instrument, via the gen module's own judge seam. The
+  # judge system prompt embeds the cell's character name at import, so one
+  # fresh process per smoke cell env writes a partial; the merge computes the
+  # ONE family gate (zero stop_reason==max_tokens + parse-fail < 2%). Skipped
+  # when a PASS report already exists (the pilot is real spend, idempotent).
+  if uv run python scripts/issue2479_judge_pilots.py --require-pass --family ingen \
+      --report eval_results/issue_2479/pilot_gate_ingen.json >/dev/null 2>&1; then
+    echo "[i2479-p1p4] in-gen pilot PASS report present — pilot skipped (resume)"
+    P0_TELEM="${P0_TELEM}ingen-pilot=0(cached) "
+  else
+    INGEN_PARTIALS=()
+    for spec in "${SMOKE_GEN_CELLS[@]}"; do
+      IFS='|' read -r v label desc opflag <<< "$spec"
+      mode=paired
+      [ -n "$opflag" ] && mode=paired_op
+      raw="data/issue_1345/${v}/stories/raw_stories_${mode}_instruct.jsonl"
+      part="${PILOT_OUT}/ingen_partial_${v}.json"
+      run_leg "ingen-pilot-${v}" env EPM_I1345_VARIANT="$v" \
+        EPM_STORY_CHARACTER_NAME="$label" EPM_I1345_PERSONA_DESC="$desc" \
+        EPM_I1345_JUDGE_SPEND_OK=1 \
+        uv run python scripts/issue2479_judge_pilots.py --family ingen \
+        --raw "$raw" --partial-out "$part" \
+        --work-dir "${PILOT_OUT}/ingen_${v}" --n-target 38 --execute
+      INGEN_PARTIALS+=("$part")
+    done
+    run_leg ingen-pilot-merge uv run python scripts/issue2479_judge_pilots.py \
+      --family ingen --merge "${INGEN_PARTIALS[@]}" \
+      --report eval_results/issue_2479/pilot_gate_ingen.json
+  fi
+
   # Leg 3: capture smoke via the launcher's own --smoke-only leg (two
   # invocations so BOTH Iris and Vex smoke — the launcher's class-dedup would
   # otherwise pick only the first cell per regime x model class).
@@ -366,6 +405,16 @@ fi
 
 # =============================================================================
 echo "[phase=p1_gen]"
+# Rule-26 family gate (plan §7): the ~40k-call in-gen judge wave dispatches
+# ONLY behind a persisted pilot PASS. Unconditional — it re-checks on every
+# invocation, so a P0 resume skip can never route around the gate.
+uv run python scripts/issue2479_judge_pilots.py --require-pass --family ingen \
+  --report eval_results/issue_2479/pilot_gate_ingen.json || {
+  echo "[i2479-p1p4] in-gen judge-family rule-26 pilot gate not PASS — refusing P1 dispatch" >&2
+  write_sentinel "issue-2479-p1p4-results.json" "epm:progress" "p1_gen" 1 \
+    "issue-2479 P1 refused: in-gen rule-26 pilot gate missing/FAIL (plan §7)"
+  exit 47
+}
 P1_PENDING=()
 for spec in "${GEN_CELLS[@]}"; do
   v="${spec%%|*}"
