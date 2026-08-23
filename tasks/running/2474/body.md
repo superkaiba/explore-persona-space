@@ -2,8 +2,7 @@
 title: Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation
   re-elicitation?
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-08-22T19:38:42Z'
 has_clean_result: false
 parent_id: 2379
