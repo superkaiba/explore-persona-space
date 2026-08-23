@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2492,
+  "highest_id": 2493,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11528,6 +11528,13 @@
       "path": "tasks/proposed/2492",
       "status": "proposed",
       "title": "Sparse pod clones vs committed cross-issue inputs: pre-launch stat-check + git-show materialization recipe (experimenter.md + gotchas.md)"
+    },
+    "2493": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2493",
+      "status": "proposed",
+      "title": "verify_task_body check 31: class-C per-unit-companion candidate set misses prose-named committed figures"
     },
     "25": {
       "has_clean_result": false,
