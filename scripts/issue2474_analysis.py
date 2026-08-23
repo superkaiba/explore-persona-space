@@ -51,6 +51,7 @@ GRID_NAME = {"em": "base_em", "caps": "base_caps"}
 POST_FT_REFERENCE = {"em": {"ctx_sameq": 0.790, "ceiling_sameq": 0.792, "ans_sameq_mapI": 0.648}}
 N_BOOT = 2000
 BOOT_SEED = 20260823
+DEFAULT_RESULTS_NAME = "pinoc_arms.json"
 
 
 def load_base_map(layer: int) -> dict:
@@ -92,6 +93,14 @@ def _cos_rows(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     if np.any(den == 0):
         raise ValueError("zero-norm row in cosine")
     return num / den
+
+
+def _cos_to_vec(a: np.ndarray, v: np.ndarray) -> np.ndarray:
+    """Cosine of every row of `a` against the single reference vector `v`."""
+    den = np.linalg.norm(a, axis=1) * float(np.linalg.norm(v))
+    if np.any(den == 0):
+        raise ValueError("zero-norm row or reference in cosine")
+    return (a @ v) / den
 
 
 def _spearman_or_nan(x: np.ndarray, y: np.ndarray) -> float:
@@ -157,8 +166,77 @@ def score_pinoc_arms(out_dir: Path, setting: str) -> dict[str, dict[str, float]]
     return out
 
 
+def load_mu(out_dir: Path, condition: str, layer: int) -> tuple[np.ndarray, np.ndarray]:
+    """(mu_train, mu_a_train) at one layer for ONE condition's BASE-model capture.
+
+    `mu_train` is the streaming mean of v_C over that condition's inoculated
+    fine-tuning rows; `mu_a_train` the mean of v_A over the same rows' gold answers
+    (`issue2379_capture.phase_mu`). Both captured under the BASE model, so both are
+    pre-fine-tuning quantities.
+    """
+    p = out_dir / "capture_tensors" / "predictor_captures" / f"base_mu_{condition}" / "mu.pt"
+    if not p.exists():
+        raise FileNotFoundError(p)
+    d = torch.load(p, map_location="cpu", weights_only=False)
+    for k in ("mu_train", "mu_a_train"):
+        if k not in d:
+            raise RuntimeError(f"{p}: missing {k}; got {list(d)}")
+    return (
+        np.asarray(d["mu_train"][layer], dtype=np.float64),
+        np.asarray(d["mu_a_train"][layer], dtype=np.float64),
+    )
+
+
+def score_trainref_arms(
+    out_dir: Path, setting: str, conditions: list[str], allow_partial: bool
+) -> tuple[dict[str, dict[str, dict[str, float]]], list[str]]:
+    """The #1979 / Kwon Train-Ref arms, computed PRE-fine-tuning.
+
+    Unlike the p_inoc arms these are CONDITION-SPECIFIC (mu is per fine-tuning mix),
+    so they escape the shared-reference ceiling that binds a single reference vector.
+
+      ctx_trainref = cos( v_C(q, t), mu_train^c )      -- Kwon's Train Ref., base model
+      ans_trainref = cos( vhat_A(q, t), mu_a_train^c ) -- #1979: does the base map's
+                     PREDICTED answer look like the fine-tuning data's answers?
+
+    Returns ({arm: {condition: {trigger: score}}}, missing_conditions).
+    """
+    layer = PINNED_LAYER[setting]
+    v_c_all, row_meta = load_grid(out_dir, setting)
+    v_c = v_c_all[:, layer, :]
+    vhat = predict_answer(v_c, load_base_map(layer))
+
+    by_trigger: dict[str, dict[int, int]] = {}
+    for i, r in enumerate(row_meta):
+        by_trigger.setdefault(r["trigger_label"], {})[r["q_sim_idx"]] = i
+
+    out: dict[str, dict[str, dict[str, float]]] = {"ctx_trainref": {}, "ans_trainref": {}}
+    missing: list[str] = []
+    for c in conditions:
+        try:
+            mu_c, mu_a = load_mu(out_dir, c, layer)
+        except FileNotFoundError:
+            if not allow_partial:
+                raise RuntimeError(
+                    f"{setting}: mu bundle absent for condition {c!r} -- the p3 mu phase has "
+                    "not produced it yet. Re-run once it lands, or pass --allow-partial-mu "
+                    "to score the conditions that ARE present (recorded in the output)."
+                ) from None
+            missing.append(c)
+            continue
+        out["ctx_trainref"][c] = {}
+        out["ans_trainref"][c] = {}
+        for label, qmap in by_trigger.items():
+            idx = [qmap[q] for q in sorted(qmap)]
+            out["ctx_trainref"][c][label] = float(_cos_to_vec(v_c[idx], mu_c).mean())
+            out["ans_trainref"][c][label] = float(_cos_to_vec(vhat[idx], mu_a).mean())
+    if missing:
+        logger.warning("%s: PARTIAL trainref -- mu absent for %s", setting, ", ".join(missing))
+    return out, missing
+
+
 def evaluate(
-    setting: str, arms: dict[str, dict[str, float]], rates: dict, drop_p_inoc: bool
+    setting: str, arms: dict[str, dict[str, dict[str, float]]], rates: dict, drop_p_inoc: bool
 ) -> dict:
     """Within-condition Spearman vs the #2379 DV, averaged across conditions."""
     models = rates[setting]
@@ -171,10 +249,16 @@ def evaluate(
     idx = rng.integers(0, len(triggers), size=(N_BOOT, len(triggers)))
 
     res: dict[str, dict] = {}
-    for arm, scores in arms.items():
-        pred = np.array([scores[t] for t in triggers], dtype=float)
+    for arm, by_cond in arms.items():
+        scored = [c for c in conditions if c in by_cond]
+        absent = [c for c in conditions if c not in by_cond]
+        if not scored:
+            raise RuntimeError(f"{setting}/{arm}: no condition has a predictor")
         per_cond, draws_acc = [], []
-        for c in conditions:
+        for c in scored:
+            # Per-condition predictor: identical across conditions for the shared-
+            # reference (p_inoc) arms, genuinely condition-specific for trainref.
+            pred = np.array([by_cond[c][t] for t in triggers], dtype=float)
             dv = np.array([models[c][t] for t in triggers], dtype=float)
             rho = float(spearmanr(pred, dv).statistic)
             # Keep the draw array FIXED-LENGTH (N_BOOT) so the paired resample indices
@@ -207,6 +291,8 @@ def evaluate(
             "mean_rho": float(np.mean([p["rho"] for p in per_cond])),
             "mean_ci95": _nan_ci95(mean_draws),
             "mean_n_boot_complete": int(complete.sum()),
+            "conditions_scored": scored,
+            "conditions_missing_predictor": absent,
         }
     return {
         "setting": setting,
@@ -222,17 +308,55 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out-dir", default="eval_results/issue_2474")
     ap.add_argument("--settings", default="em,caps")
+    ap.add_argument(
+        "--arms",
+        default="pinoc",
+        help="comma list: pinoc (base state vs the p_inoc reference), trainref "
+        "(#1979 / Kwon Train-Ref, needs the p3 mu bundles), or both",
+    )
+    ap.add_argument(
+        "--out-json",
+        default=None,
+        help=f"results filename under --out-dir (default {DEFAULT_RESULTS_NAME}); a run "
+        "with any condition's mu missing REFUSES the default name",
+    )
+    ap.add_argument(
+        "--allow-partial-mu",
+        action="store_true",
+        help="score trainref on the conditions whose mu bundle exists instead of "
+        "raising; the skipped conditions are recorded in the output",
+    )
     args = ap.parse_args()
+
+    wanted = [a for a in args.arms.split(",") if a]
+    unknown = set(wanted) - {"pinoc", "trainref"}
+    if unknown:
+        raise SystemExit(f"--arms: unknown {sorted(unknown)}; choose from pinoc, trainref")
 
     out_dir = Path(args.out_dir)
     rates = load_rates()
     results: dict[str, dict] = {}
     for setting in [s for s in args.settings.split(",") if s]:
-        arms = score_pinoc_arms(out_dir, setting)
+        conditions = sorted(m for m in rates[setting] if m != "base")
+        arms: dict[str, dict[str, dict[str, float]]] = {}
+        raw: dict[str, dict] = {}
+        missing_mu: list[str] = []
+        if "pinoc" in wanted:
+            shared = score_pinoc_arms(out_dir, setting)
+            # Shared reference: the same predictor vector scores every condition.
+            arms.update({a: {c: s for c in conditions} for a, s in shared.items()})
+            raw.update(shared)
+        if "trainref" in wanted:
+            tr, missing_mu = score_trainref_arms(
+                out_dir, setting, conditions, allow_partial=args.allow_partial_mu
+            )
+            arms.update(tr)
+            raw.update(tr)
         results[setting] = {
             "with_p_inoc": evaluate(setting, arms, rates, drop_p_inoc=False),
             "without_p_inoc": evaluate(setting, arms, rates, drop_p_inoc=True),
-            "raw_scores": arms,
+            "raw_scores": raw,
+            "missing_mu_conditions": missing_mu,
         }
 
     results["provenance"] = {
@@ -243,22 +367,37 @@ def main() -> int:
         "boot_seed": BOOT_SEED,
         "base_map": f"{DATA_REPO}:{MAP_PREFIX}/base_L*.pt (reused #779 pass-B fit)",
         "post_ft_reference": POST_FT_REFERENCE,
+        "arms": wanted,
         "note": "predictors computed on the BASE model only; DV from #2379 post-fine-tuning rates",
     }
 
+    any_partial = any(results[s].get("missing_mu_conditions") for s in results if s != "provenance")
+    if any_partial and args.out_json is None:
+        raise SystemExit(
+            f"refusing to write a PARTIAL-mu result to the canonical {DEFAULT_RESULTS_NAME}: "
+            "pass --out-json <interim-name>.json, or re-run once every mu bundle exists"
+        )
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "pinoc_arms.json").write_text(json.dumps(results, indent=2) + "\n")
+    out_json = out_dir / (args.out_json or DEFAULT_RESULTS_NAME)
+    out_json.write_text(json.dumps(results, indent=2) + "\n")
+    logger.info("wrote %s", out_json)
 
     for setting in [s for s in args.settings.split(",") if s]:
         print(f"\n=== {setting.upper()} (L{PINNED_LAYER[setting]}) ===")
+        skipped = results[setting]["missing_mu_conditions"]
+        if skipped:
+            print(f"  PARTIAL trainref — mu absent for: {', '.join(skipped)}")
         for variant in ("with_p_inoc", "without_p_inoc"):
             r = results[setting][variant]
             print(f"  [{variant}] n={r['n_triggers']}")
             for arm, a in r["arms"].items():
                 lo, hi = a["mean_ci95"]
                 ci = "CI[undefined]" if lo is None else f"CI[{lo:+.3f},{hi:+.3f}]"
-                nb = a["mean_n_boot_complete"]
-                print(f"    {arm:12s} mean rho={a['mean_rho']:+.3f}  {ci}  draws={nb}/{N_BOOT}")
+                nb, nc = a["mean_n_boot_complete"], len(a["conditions_scored"])
+                print(
+                    f"    {arm:14s} mean rho={a['mean_rho']:+.3f}  {ci}  "
+                    f"draws={nb}/{N_BOOT}  conds={nc}"
+                )
     return 0
 
 

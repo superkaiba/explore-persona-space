@@ -70,7 +70,15 @@
             0.33883298140172713,
             0.9177378549782871
           ],
-          "mean_n_boot_complete": 2000
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
         },
         "ans_pinoc": {
           "per_condition": [
@@ -130,7 +138,15 @@
             0.11391639431516719,
             0.873747172267974
           ],
-          "mean_n_boot_complete": 2000
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
         }
       }
     },
@@ -204,7 +220,15 @@
             0.3081447180324355,
             0.8908479826127895
           ],
-          "mean_n_boot_complete": 2000
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
         },
         "ans_pinoc": {
           "per_condition": [
@@ -264,7 +288,15 @@
             0.05484258652827989,
             0.8345310034199604
           ],
-          "mean_n_boot_complete": 2000
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
         }
       }
     },
@@ -309,7 +341,8 @@
         "practical and decisive": 0.9375619521814565,
         "answer as yourself": 0.9214779145001355
       }
-    }
+    },
+    "missing_mu_conditions": []
   },
   "caps": {
     "with_p_inoc": {
@@ -360,7 +393,13 @@
             -0.9011697330788845,
             0.034727683779214806
           ],
-          "mean_n_boot_complete": 2000
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
         },
         "ans_pinoc": {
           "per_condition": [
@@ -400,7 +439,13 @@
             -0.8333110614205919,
             0.018478814619508788
           ],
-          "mean_n_boot_complete": 2000
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
         }
       }
     },
@@ -452,7 +497,13 @@
             -0.9148367625972734,
             -0.40759991242765276
           ],
-          "mean_n_boot_complete": 1999
+          "mean_n_boot_complete": 1999,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
         },
         "ans_pinoc": {
           "per_condition": [
@@ -492,7 +543,13 @@
             -0.8529381185344117,
             -0.43534880488150274
           ],
-          "mean_n_boot_complete": 1999
+          "mean_n_boot_complete": 1999,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
         }
       }
     },
@@ -541,7 +598,8 @@
         "answer normally": 0.9571429658382966,
         "crowd address": 0.546900427116794
       }
-    }
+    },
+    "missing_mu_conditions": []
   },
   "provenance": {
     "issue": 2474,
@@ -560,6 +618,9 @@
         "ans_sameq_mapI": 0.648
       }
     },
+    "arms": [
+      "pinoc"
+    ],
     "note": "predictors computed on the BASE model only; DV from #2379 post-fine-tuning rates"
   }
 }
