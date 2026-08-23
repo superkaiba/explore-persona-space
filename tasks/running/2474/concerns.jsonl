@@ -1,0 +1,1 @@
+{"ts": "2026-08-23T08:05:41Z", "event": "raised", "concern_id": "smoke-architecture-marker-missing", "severity": "BLOCKER", "summary": "Canonical task state has no parseable epm:smoke-architecture-check marker.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
