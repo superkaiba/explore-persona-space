@@ -503,21 +503,42 @@ REG2 = {
 }
 
 
-def _committed_root(tmp_path, bands):
+def _band_rows(lo, hi, *, arm=None, drop=None):
+    """The committed band's FULL registered (budget, seed, draw) grid — 3
+    budgets x 3 seeds x 5 draws = 45 cells (r10: committed_band_vals
+    exact=True refuses any strict subset). First cell carries lo, the rest
+    hi, so the band is [lo, hi]. ``drop`` removes one (budget, seed, draw)
+    key to build incomplete fixtures."""
+    rows = []
+    first = True
+    for bud in (250, 2500, 8000):
+        for s in fold.REGISTERED_TRAIN_SEEDS:
+            for d in fold.REGISTERED_TRAIN_DRAWS:
+                if drop is not None and (bud, s, d) == tuple(drop):
+                    continue
+                rows.append(
+                    {
+                        "arm": arm or fold.ARM_CTXDIR,
+                        "variant": "context_end",
+                        "regime": "e1",
+                        "u_rung_label": "full",
+                        "budget_l": bud,
+                        "seed": s,
+                        "draw": d,
+                        "rho_frozen": lo if first else hi,
+                    }
+                )
+                first = False
+    return rows
+
+
+def _committed_root(tmp_path, bands, *, drop=None):
     for b, (lo, hi) in bands.items():
         p = tmp_path / b / "arm_results"
         p.mkdir(parents=True, exist_ok=True)
-        rows = [
-            {
-                "arm": fold.ARM_CTXDIR,
-                "variant": "context_end",
-                "regime": "e1",
-                "u_rung_label": "full",
-                "rho_frozen": v,
-            }
-            for v in (lo, hi)
-        ]
-        (p / "all_arms_spearman.json").write_text(json.dumps({"arm_rows": rows}))
+        (p / "all_arms_spearman.json").write_text(
+            json.dumps({"arm_rows": _band_rows(lo, hi, drop=drop)})
+        )
     return tmp_path
 
 
@@ -893,6 +914,89 @@ def test_a2fix_parity_partial_coverage_is_loud_never_map_beats():
     v2 = fold.a2fix_lattice(rows_full, sanity, resolution=res, registered=reg)
     assert v2["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
     assert v2["parity_read"]["coverage_complete"] is True
+    # codex r9 MINOR arm2fix-parity-complete-render-pin-missing: the COMPLETE
+    # case renders the coverage record AND retains the parity-median line
+    table2 = {
+        "meta": {"generated_ts": "t", "git_commit": "c", "resolution": {}},
+        "verdict": v2,
+        "per_rung": rows_full,
+        "sanity": {},
+        "join": {},
+    }
+    with tempfile.TemporaryDirectory() as td:
+        md, note = _P(td) / "t.md", _P(td) / "n.md"
+        fold.write_arm2fix_markdown(table2, md)
+        fold.write_arm2fix_note(table2, note)
+        for rendered in (md.read_text(), note.read_text()):
+            assert "parity registered coverage: 2/2" in rendered
+            assert "median D_parity" in rendered
+
+
+def test_committed_band_exact_coverage_is_loud(tmp_path):
+    """codex r9 BLOCKER arm2fix-sanity-diagnostic-derived-universes site 1
+    (fails pre-fix): the committed sanity band's registered (budget, seed,
+    draw) cells are exact-covered — a missing cell or duplicate is a loud
+    error BEFORE min/max (a nonempty strict subset silently changed the band,
+    the sanity PASS mask, and which behaviors entered the headline lattice)."""
+    root = _committed_root(tmp_path, {"evil": (0.40, 0.70)})
+    vals = fold.committed_band_vals(root, "evil", fold.ARM_CTXDIR, exact=True)
+    assert len(vals) == 45 and min(vals) == 0.40 and max(vals) == 0.70
+    # one registered cell missing -> loud + named, BEFORE the sanity mask
+    root_gap = _committed_root(tmp_path / "gap", {"evil": (0.40, 0.70)}, drop=(2500, 1, 3))
+    with pytest.raises(SystemExit, match=r"COVERAGE ERROR.*committed train-grid band"):
+        fold.committed_band_vals(root_gap, "evil", fold.ARM_CTXDIR, exact=True)
+    with pytest.raises(SystemExit, match="COVERAGE ERROR"):
+        fold.a2fix_sanity_records(
+            [_sanity_row("evil", s, 0.5) for s in range(5)],
+            ["evil"],
+            list(range(5)),
+            {"evil": _res()},
+            root_gap,
+        )
+    # a duplicated registered cell is equally loud
+    dup_dir = tmp_path / "dup" / "evil" / "arm_results"
+    dup_dir.mkdir(parents=True)
+    rows = _band_rows(0.40, 0.70)
+    (dup_dir / "all_arms_spearman.json").write_text(json.dumps({"arm_rows": [*rows, rows[0]]}))
+    with pytest.raises(SystemExit, match="DUPLICATE KEY"):
+        fold.committed_band_vals(tmp_path / "dup", "evil", fold.ARM_CTXDIR, exact=True)
+    # the flagless legacy path stays byte-identical (permissive subset read —
+    # the standing --mode claim4 byte-identity contract)
+    assert len(fold.committed_band_vals(root_gap, "evil", fold.ARM_CTXDIR)) == 44
+
+
+def test_arm2_sanity_band_exact_nulls_aggregate_on_incomplete(tmp_path):
+    """codex r9 site 2 (fails pre-fix): the pvsynth diagnostic aggregate is
+    computed only over the EXACT (seed, fit) grid; on incomplete coverage the
+    coverage record persists but pvsynth_rho_seed_mean / in_band are ABSENT
+    (presentation honesty — a labeled diagnostic, not a verdict input)."""
+    root = _committed_root(tmp_path, {"evil": (0.40, 0.70)})
+
+    def _pv(seed, fit, rho=0.5):
+        return {
+            "behavior": "evil",
+            "arm": fold.ARM_CTXDIR,
+            "map_variant": "true",
+            "eval_rung": "pvsynth",
+            "seed": seed,
+            "fit": fit,
+            "rho_frozen": rho,
+        }
+
+    full = [_pv(s, f) for s in (0, 1) for f in ("P-B-holdout-a", "P-B-holdout-b")]
+    ok = fold.arm2_sanity_band(root, "evil", full, seeds=[0, 1], exact=True)
+    assert ok["pvsynth_coverage"]["coverage_complete"] is True
+    assert ok["pvsynth_rho_seed_mean"] == 0.5 and ok["in_band"] is True
+    # one (seed, fit) cell missing: the coverage record persists, the
+    # aggregate is withheld, the entry is flagged not-evaluable
+    part = fold.arm2_sanity_band(root, "evil", full[:-1], seeds=[0, 1], exact=True)
+    assert part["pvsynth_coverage"]["coverage_complete"] is False
+    assert [1, "P-B-holdout-b"] in part["pvsynth_coverage"]["missing"]
+    assert "pvsynth_rho_seed_mean" not in part and "in_band" not in part
+    assert part["flag"] == "not-evaluable"
+    # a duplicate (seed, fit) cell is loud corruption
+    with pytest.raises(SystemExit, match="DUPLICATE KEY"):
+        fold.arm2_sanity_band(root, "evil", [*full, full[0]], seeds=[0, 1], exact=True)
 
 
 def test_a2fix_parity_registered_universe_covers_omitted_rungs():

@@ -647,35 +647,109 @@ def item4_syco_table(banked_syco: dict, ref: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-def committed_band_vals(committed_root: Path, behavior: str, arm: str) -> list[float]:
+# the committed train grid's registered per-band cell axes (codex r9
+# arm2fix-sanity-diagnostic-derived-universes): 3 budget rungs (VALUES are
+# per-behavior, the COUNT is registered) x 3 seeds x 5 draws = 45 cells
+REGISTERED_TRAIN_SEEDS = (0, 1, 2)
+REGISTERED_TRAIN_DRAWS = (0, 1, 2, 3, 4)
+REGISTERED_TRAIN_BUDGET_COUNT = 3
+
+
+def committed_band_vals(
+    committed_root: Path, behavior: str, arm: str, *, exact: bool = False
+) -> list[float]:
     """The committed train-grid cell values whose min/max define an arm's band.
 
     Code motion out of :func:`arm2_sanity_band` (arm2fix round) so the D0-P5
     band-instrument audit and the arm2fix sanity mask read the SAME committed
     cells (context_end / e1 / full-U-rung rows of the behavior's main
-    summary). Returns [] when the summary is absent."""
+    summary). Returns [] when the summary is absent.
+
+    ``exact=True`` (every arm2fix VERDICT-bearing consumer; codex r9
+    arm2fix-sanity-diagnostic-derived-universes): the matched rows are
+    unique-indexed on the registered (budget_l, seed, draw) train-grid cells
+    — exactly REGISTERED_TRAIN_BUDGET_COUNT budget rungs x
+    REGISTERED_TRAIN_SEEDS x REGISTERED_TRAIN_DRAWS — with missing/duplicate
+    cells and None/non-finite values LOUD before min/max, so a nonempty
+    strict subset of the band artifact can never silently change the band,
+    the sanity PASS mask, or which behaviors enter the headline lattice.
+    ``exact=False`` keeps the legacy ``--mode claim4`` lane byte-identical
+    (standing arm2fix-legacy-byte-identity contract)."""
     p = committed_root / behavior / "arm_results" / "all_arms_spearman.json"
     if not p.exists():
         return []
     committed = json.loads(p.read_text())
-    return [
-        float(r["rho_frozen"])
+    matched = [
+        r
         for r in committed.get("arm_rows", [])
         if r.get("arm") == arm
         and r.get("variant") == "context_end"
         and r.get("regime") == "e1"
         and r.get("u_rung_label") == "full"
-        and r.get("rho_frozen") is not None
     ]
+    if not exact:
+        return [float(r["rho_frozen"]) for r in matched if r.get("rho_frozen") is not None]
+    import math
+
+    idx = a2fix_unique_index(
+        matched,
+        lambda r: (r.get("budget_l"), int(r.get("seed")), int(r.get("draw"))),
+        context=f"committed band cells ({behavior}/{arm})",
+    )
+    budgets = sorted({k[0] for k in idx}, key=str)
+    if len(budgets) != REGISTERED_TRAIN_BUDGET_COUNT:
+        raise SystemExit(
+            f"[a2fix] COVERAGE ERROR: committed train-grid band for {behavior}/{arm} "
+            f"realizes {len(budgets)} budget rung(s) ({budgets}) != the registered "
+            f"{REGISTERED_TRAIN_BUDGET_COUNT} — the band universe is a strict subset "
+            "or superset of the registered grid (never evaluable as a band)"
+        )
+    expected = {
+        (bud, s, d)
+        for bud in budgets
+        for s in REGISTERED_TRAIN_SEEDS
+        for d in REGISTERED_TRAIN_DRAWS
+    }
+    cov = a2fix_exact_coverage(expected, idx, idx, context=f"committed band ({behavior}/{arm})")
+    if not cov["complete"]:
+        raise SystemExit(
+            f"[a2fix] COVERAGE ERROR: committed train-grid band for {behavior}/{arm} is "
+            f"INCOMPLETE over the registered (budget, seed, draw) grid — missing "
+            f"{cov['missing'][:4]}, extra {cov['extra'][:4]} (a nonempty strict subset "
+            "would silently change the band, the sanity mask, and the headline lattice)"
+        )
+    vals: list[float] = []
+    for k in sorted(idx, key=str):
+        m = idx[k].get("rho_frozen")
+        if m is None or not math.isfinite(float(m)):
+            raise SystemExit(
+                f"[a2fix] NON-FINITE STATISTIC: committed train-grid band cell {k} for "
+                f"{behavior}/{arm} carries rho {m!r} — invalid band instrument, never a "
+                "containment verdict input"
+            )
+        vals.append(float(m))
+    return vals
 
 
-def arm2_sanity_band(committed_root: Path, behavior: str, rows: list[dict], seeds) -> dict:
+def arm2_sanity_band(
+    committed_root: Path, behavior: str, rows: list[dict], seeds, *, exact: bool = False
+) -> dict:
     """arm2's pvsynth ρ (this round, true pass) vs its committed train-grid band.
 
     Out-of-band ⇒ the item-3 verdict is flagged `inconclusive — adapter-suspect`
     (consistency WARN-A: an adapter bug makes arm2 spuriously weak, the
     claim-friendly direction) — never silently scored. Reads the FULL row
-    list (pvsynth is a non-primary rung — it never enters the primary cells)."""
+    list (pvsynth is a non-primary rung — it never enters the primary cells).
+
+    ``exact=True`` (the arm2fix table's SECONDARY diagnostic; codex r9
+    arm2fix-sanity-diagnostic-derived-universes): pvsynth rows are
+    unique-indexed on (seed, fit) and compared against the exact grid of the
+    invocation seeds x the cross-seed UNION of realized fit labels, with
+    finite admission — on incomplete coverage the coverage record persists
+    but the AGGREGATE (seed mean / in_band) is nulled (the r8/r9
+    presentation-honesty treatment: a labeled diagnostic, not a verdict
+    input). ``exact=False`` keeps the legacy ``--mode claim4`` lane
+    byte-identical."""
     p = committed_root / behavior / "arm_results" / "all_arms_spearman.json"
     if not p.exists():
         return {
@@ -683,27 +757,94 @@ def arm2_sanity_band(committed_root: Path, behavior: str, rows: list[dict], seed
             "note": f"committed train summary absent: {p}",
             "flag": "not-evaluable",
         }
-    band_vals = committed_band_vals(committed_root, behavior, ARM_CTXDIR)
-    pv_vals: dict[int, list[float]] = {}
-    for r in rows:
-        if (
-            r.get("behavior") == behavior
-            and r.get("arm") == ARM_CTXDIR
-            and r.get("map_variant") == "true"
-            and r.get("eval_rung") == "pvsynth"
-            and r.get("rho_frozen") is not None
-        ):
-            pv_vals.setdefault(int(r["seed"]), []).append(float(r["rho_frozen"]))
-    # pvsynth is scored once per P-B fit (same eval block each holdout under
-    # the frozen map) — average the per-fit reads per seed.
-    per_seed = {s: sum(v) / len(v) for s, v in sorted(pv_vals.items())}
+    band_vals = committed_band_vals(committed_root, behavior, ARM_CTXDIR, exact=exact)
+    matching = [
+        r
+        for r in rows
+        if r.get("behavior") == behavior
+        and r.get("arm") == ARM_CTXDIR
+        and r.get("map_variant") == "true"
+        and r.get("eval_rung") == "pvsynth"
+    ]
     out = {
         "behavior": behavior,
         "mode": "transfer (new this round)",
         "committed_band": [min(band_vals), max(band_vals)] if band_vals else None,
         "n_committed_cells": len(band_vals),
-        "pvsynth_rho_per_seed": per_seed,
     }
+    if exact:
+        import math
+
+        cells = a2fix_unique_index(
+            matching,
+            lambda r: (int(r["seed"]), str(r.get("fit"))),
+            context=f"pvsynth diagnostic cells ({behavior})",
+        )
+        if not cells:
+            # an EMPTY diagnostic universe is never vacuously complete — the
+            # aggregate is withheld and the entry flagged, matching the
+            # legacy not-evaluable semantics for row-less behaviors
+            out["pvsynth_coverage"] = {
+                "n_cells": 0,
+                "n_cells_expected": 0,
+                "coverage_complete": False,
+                "missing": [],
+                "extra": [],
+            }
+            out["pvsynth_rho_per_seed"] = {}
+            out["note"] = (
+                "no pvsynth rows for the diagnostic — item-3 sanity check not "
+                "evaluable (an empty universe is never complete)"
+            )
+            out["flag"] = "not-evaluable"
+            return out
+        fits = sorted({k[1] for k in cells})
+        expected = {(int(s), f) for s in seeds for f in fits}
+        admitted = {
+            k
+            for k in cells
+            if cells[k].get("rho_frozen") is not None
+            and math.isfinite(float(cells[k]["rho_frozen"]))
+        }
+        cov = a2fix_exact_coverage(
+            expected, admitted, cells, context=f"pvsynth diagnostic ({behavior})"
+        )
+        out["pvsynth_coverage"] = {
+            "n_cells": cov["n_admitted"],
+            "n_cells_expected": cov["n_expected"],
+            "coverage_complete": cov["complete"],
+            "missing": [list(u) for u in cov["missing"]],
+            "extra": [list(u) for u in cov["extra"]],
+        }
+        per_seed = {
+            s: sum(float(cells[(s, f)]["rho_frozen"]) for f in fits) / len(fits)
+            for s in sorted({int(x) for x in seeds})
+            if all((s, f) in admitted for f in fits)
+        }
+        out["pvsynth_rho_per_seed"] = per_seed
+        if band_vals and cov["complete"] and per_seed:
+            mean = sum(per_seed.values()) / len(per_seed)
+            out["pvsynth_rho_seed_mean"] = mean
+            out["in_band"] = bool(min(band_vals) <= mean <= max(band_vals))
+            if not out["in_band"]:
+                out["flag"] = "inconclusive — adapter-suspect"
+        else:
+            # incomplete (seed, fit) grid or band/rows unavailable: the
+            # coverage record IS the read — no subset aggregate persists
+            out["note"] = (
+                "band or pvsynth (seed, fit) coverage incomplete — item-3 "
+                "sanity diagnostic not evaluable (aggregate withheld)"
+            )
+            out["flag"] = "not-evaluable"
+        return out
+    pv_vals: dict[int, list[float]] = {}
+    for r in matching:
+        if r.get("rho_frozen") is not None:
+            pv_vals.setdefault(int(r["seed"]), []).append(float(r["rho_frozen"]))
+    # pvsynth is scored once per P-B fit (same eval block each holdout under
+    # the frozen map) — average the per-fit reads per seed.
+    per_seed = {s: sum(v) / len(v) for s, v in sorted(pv_vals.items())}
+    out["pvsynth_rho_per_seed"] = per_seed
     if band_vals and per_seed:
         mean = sum(per_seed.values()) / len(per_seed)
         out["pvsynth_rho_seed_mean"] = mean
@@ -960,7 +1101,10 @@ def a2fix_sanity_records(
                     "never band-miss evidence"
                 )
             per_seed[s] = val
-        vals = committed_band_vals(committed_root, b, ARM_CTXDIR)
+        # exact=True (codex r9, VERDICT-bearing): the band's registered
+        # (budget, seed, draw) cells are exact-covered LOUD before min/max —
+        # a strict subset can never silently change the sanity PASS mask
+        vals = committed_band_vals(committed_root, b, ARM_CTXDIR, exact=True)
         want = {int(s) for s in seeds}
         if not want:
             raise SystemExit(
@@ -1722,9 +1866,12 @@ def build_arm2fix_table(args) -> dict:
             "narration requires the cosines reported beside it (plan §4)"
         )
 
-    # secondary diagnostic only (plan §4): the OLD pvsynth transfer read
+    # secondary diagnostic only (plan §4): the OLD pvsynth transfer read —
+    # exact=True (codex r9): incomplete (seed, fit) coverage nulls the
+    # aggregate; the coverage record is what persists
     pvsynth_secondary = {
-        b: arm2_sanity_band(args.committed_train_root, b, new_rows, seeds) for b in args.behaviors
+        b: arm2_sanity_band(args.committed_train_root, b, new_rows, seeds, exact=True)
+        for b in args.behaviors
     }
     return {
         "meta": {
