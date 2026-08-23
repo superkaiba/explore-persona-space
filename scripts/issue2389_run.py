@@ -2047,6 +2047,62 @@ def _gate_spot_specs(
     return out
 
 
+def _gate_second_row_pool(
+    pairs: list[BANK.Pair2162],
+    spot_pair: BANK.Pair2162,
+    slot: str,
+    arm: str,
+    ctx_ids: dict[str, list[int]],
+    np_ids: frozenset[str] | set[str],
+    donor_maps: dict[str, dict[str, str]],
+    pairs_by_id: dict[str, BANK.Pair2162],
+    recs: dict[str, dict],
+) -> list[BANK.Pair2162]:
+    """Second-row candidates for one gate spot: a DIFFERENT pair whose
+    A-context length differs (so the padded-offset math is exercised rather
+    than degenerate), restricted to pairs whose payload dependencies RESOLVE
+    for ``arm`` (#2389 crash-fix r1): a non-steered payload dereferences the
+    candidate's OWN donor (``pairs_by_id[donor_map[pair_id]]`` + the donor's
+    captured B state in ``recs``), and under ``--smoke`` the B4 slice
+    extension covers donor closure only for the 12 SPOT pairs — an unfiltered
+    pool KeyErrors inside ``payload_for_arm`` (pod incident 2026-08-23:
+    ``KeyError: 'conflict_persona_rev::i2d1-i1d2::d1'``). The resolvability
+    check runs BEFORE ``pe_excluded_reason``, which dereferences the same
+    donor. Production-invariant by construction: the full pair set resolves
+    every donor, so the filter keeps all candidates there. pe spots
+    additionally require the second row to be pe-runnable (unit-1 flag)."""
+    candidates = [
+        p
+        for p in pairs
+        if p.pair_id != spot_pair.pair_id and len(ctx_ids[p.a]) != len(ctx_ids[spot_pair.a])
+    ]
+    if arm == "steered":
+        resolvable = candidates  # steered payloads read only the pair's OWN captured B
+    else:
+        donor_map = donor_maps["shuffled" if arm == "shuffled" else "crosstype"]
+
+        def _resolves(p: BANK.Pair2162) -> bool:
+            donor = pairs_by_id.get(donor_map.get(p.pair_id, ""))
+            return donor is not None and donor.b in recs
+
+        resolvable = [p for p in candidates if _resolves(p)]
+        if len(resolvable) < len(candidates):
+            logger.info(
+                "[gate] spot %s/%s/%s: second-row donor-closure filter kept %d/%d "
+                "candidates (candidate donors outside the captured pair set — smoke slice)",
+                spot_pair.cell,
+                slot,
+                arm,
+                len(resolvable),
+                len(candidates),
+            )
+    return [
+        p
+        for p in resolvable
+        if slot != "pe" or pe_excluded_reason(p, arm, np_ids, donor_maps, pairs_by_id) is None
+    ]
+
+
 @torch.no_grad()
 def run_injection_gate(
     cfg: RunConfig,
@@ -2100,17 +2156,13 @@ def run_injection_gate(
         pair: BANK.Pair2162 = spot["pair"]
         slot, arm = spot["slot"], spot["arm"]
         # Second row: a DIFFERENT pair whose A-context length differs, so the
-        # padded-offset math is exercised rather than degenerate. pe spots
-        # additionally require the second row to be pe-runnable (unit-1 flag).
-        others = [
-            p
-            for p in pairs
-            if p.pair_id != pair.pair_id
-            and len(ctx_ids[p.a]) != len(ctx_ids[pair.a])
-            and (
-                slot != "pe" or pe_excluded_reason(p, arm, np_ids, donor_maps, pairs_by_id) is None
-            )
-        ]
+        # padded-offset math is exercised rather than degenerate; candidates
+        # are restricted to payload-RESOLVABLE pairs for this spot's arm
+        # (donor closure — crash-fix r1; smoke-only in effect,
+        # production-invariant: see _gate_second_row_pool).
+        others = _gate_second_row_pool(
+            pairs, pair, slot, arm, ctx_ids, np_ids, donor_maps, pairs_by_id, recs
+        )
         batch_pairs = [pair] + ([others[0]] if others else [])
         rows = [ctx_ids[p.a] for p in batch_pairs]
         row_lengths = [len(r) for r in rows]

@@ -23,6 +23,7 @@ sparse-cone additions needed).
 
 from __future__ import annotations
 
+import inspect
 import json
 import logging
 import re
@@ -30,6 +31,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import torch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts"
@@ -330,6 +332,120 @@ def test_b4_smoke_gate_slice_extension_supplies_spot_cells():
             assert donor_maps[key][s["pair"].pair_id] in ext_ids
     # the synthetic chunk's identity can never collide with a real chunk
     assert len(R.enumerate_capture_chunks(contexts)) < R.SMOKE_GATE_CHUNK_INDEX
+
+
+# ------------------- injection gate second-row donor closure (crash-fix r1)
+
+
+def _cf_pair(pid: str, cell: str, a: str, b: str):
+    """Minimal Pair2162 for the gate second-row pool fixtures."""
+    return BANK.Pair2162(pair_id=pid, cell=cell, carrier="d1", value_a="va", value_b="vb", a=a, b=b)
+
+
+def test_gate_second_row_pool_excludes_unresolvable_donors_smoke(caplog):
+    """Crash-fix r1 repro (pod 2026-08-23, ``KeyError`` in ``payload_for_arm``
+    at bank worker 0): under ``--smoke`` the filtered pair set carries donor
+    closure only for the 12 SPOT pairs (B4), but the gate's SECOND-ROW
+    candidates dereference their OWN donors. Pre-fix, the unfiltered pool
+    picked a candidate whose donor pair was filtered out and crashed; the
+    fixed pool drops exactly the unresolvable candidates (donor pair absent,
+    donor B state uncaptured, or no donor assignment), BEFORE the
+    ``pe_excluded_reason`` check that dereferences the same donor."""
+    L, H = 2, 4
+    g = torch.Generator().manual_seed(0)
+
+    def _rec() -> dict:
+        return {"v_ce": torch.randn(L, H, generator=g), "ctx_len": 8, "prefix_end": 2}
+
+    # spot A-context length 3; candidate As length 4 (pool-eligible); the
+    # donor-only pairs' As length 3 (length-excluded from the pool itself)
+    ctx_ids = {
+        "sA": [1, 2, 3], "sB": [1, 2, 3], "dsA": [1, 2, 3], "dsB": [1, 2, 3],
+        "qoA": [1, 2, 3, 4], "qoB": [1, 2, 3, 4],
+        "qnA": [1, 2, 3, 4], "qnB": [1, 2, 3, 4],
+        "qmA": [1, 2, 3, 4], "qmB": [1, 2, 3, 4],
+        "okA": [1, 2, 3, 4], "okB": [1, 2, 3, 4],
+        "dnA": [1, 2, 3], "dnB": [1, 2, 3],
+        "doA": [1, 2, 3], "doB": [1, 2, 3],
+    }  # fmt: skip
+    spot = _cf_pair("S", "cellA", "sA", "sB")
+    d_spot = _cf_pair("DS", "cellA", "dsA", "dsB")  # spot donor (B4-closed)
+    q_out = _cf_pair("QOUT", "cellB", "qoA", "qoB")  # donor pair FILTERED OUT
+    q_norec = _cf_pair("QNOREC", "cellB", "qnA", "qnB")  # donor B uncaptured
+    q_nomap = _cf_pair("QNOMAP", "cellB", "qmA", "qmB")  # no donor assignment
+    q_ok = _cf_pair("QOK", "cellB", "okA", "okB")  # fully resolvable
+    d_norec = _cf_pair("DNR", "cellB", "dnA", "dnB")
+    d_ok = _cf_pair("DOK", "cellB", "doA", "doB")
+    pairs = [spot, d_spot, q_out, q_norec, q_nomap, q_ok, d_norec, d_ok]
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    donor_maps = {
+        "shuffled": {"S": "DS", "QOUT": "GONE", "QNOREC": "DNR", "QOK": "DOK"},
+        "crosstype": {},
+    }
+    recs = {cid: _rec() for cid in ctx_ids if cid != "dnB"}  # DNR's B uncaptured
+    bank = {"per_context": recs}
+
+    # the fix is WIRED into the gate (not a hollow twin of the inline pool)
+    assert "_gate_second_row_pool(" in inspect.getsource(R.run_injection_gate)
+
+    # PRE-FIX shape: the unfiltered pool ranks QOUT first; composing its
+    # payload dereferences pairs_by_id['GONE'] — the pod KeyError verbatim
+    prefix_pool = [
+        p for p in pairs if p.pair_id != spot.pair_id and len(ctx_ids[p.a]) != len(ctx_ids[spot.a])
+    ]
+    assert prefix_pool[0] is q_out
+    with pytest.raises(KeyError, match="GONE"):
+        R.payload_for_arm(bank, prefix_pool[0], "ce", "shuffled", donor_maps, pairs_by_id)
+    # pe spots crash one call earlier, inside pe_excluded_reason (same donor)
+    with pytest.raises(KeyError, match="GONE"):
+        R.pe_excluded_reason(q_out, "shuffled", frozenset(), donor_maps, pairs_by_id)
+
+    # POST-FIX: only the resolvable candidate survives, and it composes clean
+    with caplog.at_level(logging.INFO):
+        others = R._gate_second_row_pool(
+            pairs, spot, "ce", "shuffled", ctx_ids, frozenset(), donor_maps, pairs_by_id, recs
+        )
+    assert [p.pair_id for p in others] == ["QOK"]
+    for p in [spot, *others]:  # the realized gate batch, exactly as composed
+        payload, donor_id = R.payload_for_arm(bank, p, "ce", "shuffled", donor_maps, pairs_by_id)
+        assert payload.shape == (1, L, H), payload.shape
+        assert donor_id == {"S": "DS", "QOK": "DOK"}[p.pair_id]
+    # fix-engaged signal: the drop is LOGGED (3 of 4 candidates unresolvable)
+    assert any("second-row donor-closure filter kept 1/4" in r.getMessage() for r in caplog.records)
+    # pe slot: resolvability runs BEFORE pe_excluded_reason — no KeyError
+    others_pe = R._gate_second_row_pool(
+        pairs, spot, "pe", "shuffled", ctx_ids, frozenset(), donor_maps, pairs_by_id, recs
+    )
+    assert [p.pair_id for p in others_pe] == ["QOK"]
+
+
+def test_gate_second_row_pool_production_invariant_under_full_closure(caplog):
+    """Production invariance (crash-fix r1): with FULL donor closure (every
+    candidate's donor pair present and its B captured — the production pair
+    set by construction) the resolvability filter keeps ALL candidates, in
+    order, for every arm, and logs nothing."""
+    ctx_ids = {"sA": [1, 2, 3], "sB": [1, 2, 3]}
+    pairs = [_cf_pair("S", "cellA", "sA", "sB")]
+    for i in range(6):
+        ctx_ids[f"a{i}"] = [1, 2, 3, 4]
+        ctx_ids[f"b{i}"] = [1, 2, 3, 4]
+        pairs.append(_cf_pair(f"P{i}", "cellB", f"a{i}", f"b{i}"))
+    spot = pairs[0]
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    # ring donor assignment over the candidates: every donor resolves
+    donor_maps = {
+        "shuffled": {f"P{i}": f"P{(i + 1) % 6}" for i in range(6)} | {"S": "P0"},
+        "crosstype": {f"P{i}": f"P{(i + 2) % 6}" for i in range(6)} | {"S": "P1"},
+    }
+    recs = {cid: {} for cid in ctx_ids}  # membership is all the filter reads
+    expected = [f"P{i}" for i in range(6)]
+    with caplog.at_level(logging.INFO):
+        for arm in R.ARMS:
+            pool = R._gate_second_row_pool(
+                pairs, spot, "ce", arm, ctx_ids, frozenset(), donor_maps, pairs_by_id, recs
+            )
+            assert [p.pair_id for p in pool] == expected, arm
+    assert not any("donor-closure filter" in r.getMessage() for r in caplog.records)
 
 
 # ------------------------------------- capregen owning record (B11/B3 r1)
