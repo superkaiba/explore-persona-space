@@ -35,7 +35,7 @@
 # Usage:
 #   bash scripts/issue1345_char_phasef_driver.sh [--plan] [--cells v1 v2 ...]
 #        [--stage-root P] [--cache-dir P] [--out-dir P] [--max-rows N]
-#        [--min-free-gb N]
+#        [--min-free-gb N] [--pilot-outdir P]
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -56,6 +56,7 @@ OUT_DIR="${REPO_ROOT}/eval_results/issue_1345/story_char_ladder_fill"
 MIN_FREE_GB=15
 MAX_ROWS=0
 PLAN_ONLY=0
+PILOT_OUTDIR=""
 SELECTED=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -65,10 +66,16 @@ while [ "$#" -gt 0 ]; do
     --out-dir) OUT_DIR="$2"; shift 2 ;;
     --max-rows) MAX_ROWS="$2"; shift 2 ;;
     --min-free-gb) MIN_FREE_GB="$2"; shift 2 ;;
+    --pilot-outdir) PILOT_OUTDIR="$2"; shift 2 ;;
     --cells) shift; while [ "$#" -gt 0 ] && [[ "$1" != --* ]]; do SELECTED+=("$1"); shift; done ;;
     *) echo "[phasef] unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+# #2479 P0 pilot mode: route the driver's own expected-output paths AND the
+# fill's outputs to the pilot dir (the fill also SKIPS its axis-freeze guard
+# there; it ap.error-refuses the flag with any panel cell, so pilot mode can
+# never become a panel bypass).
+if [ -n "$PILOT_OUTDIR" ]; then OUT_DIR="$PILOT_OUTDIR"; fi
 
 # Plan §11 pinned fit defaults — mirrored in the fill script's argparse
 # defaults AND its resume filenames (fill main() L1025/L1087); keep in sync.
@@ -100,6 +107,32 @@ CELLS=(
   "char_vex_base|r1|pretrained"
   "char_vex_op_base|r1|pretrained"
 )
+
+# --- #2479 panel append seam (EPM_I2479_CHAR_PANEL_JSON) ---------------------
+# Env absent => the parent 16-cell table above stays byte-identical. Env set =>
+# panel cells APPEND in registry order (variant_op ladders from r4op, non-null
+# variant_inserted from r4 — mirrors char_pair_specs()'s panel enumeration in
+# the fill script). Fail-loud on a bad panel.
+if [ -n "${EPM_I2479_CHAR_PANEL_JSON:-}" ]; then
+  panel_rows="$(uv run python - <<'PY'
+import sys
+
+sys.path.insert(0, "scripts")
+from issue2479_char_panel import load_char_panel_env
+
+rows = load_char_panel_env()
+assert rows, "EPM_I2479_CHAR_PANEL_JSON set but loader returned no rows"
+for r in rows:
+    print(f"{r['variant_op']}|r4op|instruct")
+    if r["variant_inserted"]:
+        print(f"{r['variant_inserted']}|r4|instruct")
+PY
+)" || { echo "[phasef] #2479 panel load failed" >&2; exit 2; }
+  while IFS= read -r row; do
+    [ -n "$row" ] && CELLS+=("$row")
+  done <<< "$panel_rows"
+fi
+
 if [ "${#SELECTED[@]}" -gt 0 ]; then
   FILTERED=()
   for spec in "${CELLS[@]}"; do
@@ -219,6 +252,7 @@ n_fail=0
 
 FILL_ARGS=(--stage-root "$STAGE_ROOT" --cache-dir "$CACHE_DIR" --out-dir "$OUT_DIR")
 if [ "$MAX_ROWS" -gt 0 ]; then FILL_ARGS+=(--max-rows "$MAX_ROWS"); fi
+if [ -n "$PILOT_OUTDIR" ]; then FILL_ARGS+=(--pilot-outdir "$PILOT_OUTDIR"); fi
 
 for spec in "${CELLS[@]}"; do
   IFS='|' read -r v src model <<< "$spec"

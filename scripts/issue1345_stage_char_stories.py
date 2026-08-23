@@ -79,6 +79,23 @@ if os.environ.get("EPM_I2479_CHAR_PANEL_JSON", "").strip():
         v for r in _i2479_rows for v in (r["variant_op"], r["variant_inserted"]) if v
     )
 
+# --- #2479 P5 ladder SOURCE turnstores (plan v4 §10) --------------------------
+# Pins verbatim from issue1887_lambda_audit.I1345_VARIANT_STORE_REVS (NOT
+# imported: that 2k-line driver is heavy coupling for two constants; parity is
+# test-pinned in tests/test_issue2479_parity_check.py). Keys match the
+# ladder-fill's REGIME_SPECS src keys; values = (source variant, HF pin).
+SOURCE_STORES: dict[str, tuple[str, str]] = {
+    "r4": (
+        "conversation_paired_stories_assistant",
+        "1ef6def108678c458a03d190c8105ced55fe58a7",
+    ),
+    "r4op": (
+        "onpolicy_assistant_story",
+        "eca4accbf8eef9d4eebe546dbc8f3131c4031df4",
+    ),
+}
+_SOURCE_VARIANTS = frozenset(name for name, _rev in SOURCE_STORES.values())
+
 
 def variant_mode_model(variant: str) -> tuple[str, str]:
     """(mode_slug, model_key) the gen/extract phases key their filenames on."""
@@ -174,7 +191,9 @@ def stage_variant_turnstore(
     skip key — a crash inside the rename loop leaves a partial dir a
     presence glob would wrongly skip (r1 review Minor 1).
     """
-    assert variant in CHAR_VARIANTS, f"unknown character variant {variant!r}"
+    assert variant in CHAR_VARIANTS or variant in _SOURCE_VARIANTS, (
+        f"unknown character/source variant {variant!r}"
+    )
     dest = dest_root / f"{variant}_turnstore"
     sentinel = dest / ".staged_complete"
     if sentinel.is_file() and any(dest.glob("*_shard*.pt")):
@@ -333,9 +352,27 @@ def main() -> None:
         "(the fits --stage-root, e.g. /mnt/eps-data/$USER/issue1887_lambda_audit/issue1345)",
     )
     ap.add_argument("--repo", default=HF_DATA_REPO)
+    ap.add_argument(
+        "--sources",
+        nargs="+",
+        choices=tuple(SOURCE_STORES),
+        help="#2479 P5 mode: stage the ladder SOURCE turnstores (r4/r4op) at their "
+        "issue1887 pins into <dest-root>/<source_variant>_turnstore; requires --dest-root",
+    )
     args = ap.parse_args()
-    assert args.all or args.variant, "pass --variant <cell> or --all"
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing (pod .env / lane metadata env)"
+    if args.sources:
+        assert args.dest_root is not None, "--sources requires --dest-root"
+        for key in args.sources:
+            src_variant, pin = SOURCE_STORES[key]
+            stage_variant_turnstore(
+                src_variant,
+                revision=args.revision or pin,
+                dest_root=args.dest_root,
+                repo_id=args.repo,
+            )
+        return
+    assert args.all or args.variant, "pass --variant <cell>, --all, or --sources"
     variants = CHAR_VARIANTS if args.all else (args.variant,)
     for v in variants:
         if args.kind == "turnstore":

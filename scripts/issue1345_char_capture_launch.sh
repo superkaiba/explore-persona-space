@@ -28,22 +28,28 @@
 #
 # Usage:
 #   bash scripts/issue1345_char_capture_launch.sh [--plan] [--skip-smoke]
-#        [--cells char_helios char_wren_op ...]
+#        [--smoke-only] [--cells char_helios char_wren_op ...]
 set -uo pipefail
 
 SENTINEL_DIR="${SENTINEL_DIR:-/workspace/logs}"
 GATE1_MAX_S="${EPS_I1345_GATE1_MAX_S:-8640}"
 PLAN_ONLY=0
 SKIP_SMOKE=0
+SMOKE_ONLY=0
 SELECTED=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --plan) PLAN_ONLY=1; shift ;;
     --skip-smoke) SKIP_SMOKE=1; shift ;;
+    --smoke-only) SMOKE_ONLY=1; shift ;;
     --cells) shift; while [ "$#" -gt 0 ] && [[ "$1" != --* ]]; do SELECTED+=("$1"); shift; done ;;
     *) echo "[char-capture] unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+if [ "$SMOKE_ONLY" = "1" ] && [ "$SKIP_SMOKE" = "1" ]; then
+  echo "[char-capture] --smoke-only with --skip-smoke is a no-op — refusing" >&2
+  exit 2
+fi
 
 # Tuple table (variant|Label|model|regime). Labels verbatim from the gen
 # fan-out / the story_yield_* records (HELIOS/Wren/Dana/Vex).
@@ -65,6 +71,33 @@ CELLS=(
   "char_vex_base|Vex|pretrained|r4"
   "char_vex_op_base|Vex|pretrained|r4op"
 )
+
+# --- #2479 panel append seam (EPM_I2479_CHAR_PANEL_JSON) ---------------------
+# Env absent => the parent 16-cell table above stays byte-identical. Env set =>
+# the panel registry's char_2479_* cells APPEND in registry order (per row:
+# variant_op as r4op/instruct, then non-null variant_inserted as r4/instruct —
+# the ladder-fill's panel enumeration convention). Fail-loud on a bad panel.
+if [ -n "${EPM_I2479_CHAR_PANEL_JSON:-}" ]; then
+  panel_rows="$(uv run python - <<'PY'
+import sys
+
+sys.path.insert(0, "scripts")
+from issue2479_char_panel import load_char_panel_env
+
+rows = load_char_panel_env()
+assert rows, "EPM_I2479_CHAR_PANEL_JSON set but loader returned no rows"
+for r in rows:
+    label = r.get("display_name")
+    assert label, f"panel row {r.get('name')!r} lacks display_name (capture needs it)"
+    print(f"{r['variant_op']}|{label}|instruct|r4op")
+    if r["variant_inserted"]:
+        print(f"{r['variant_inserted']}|{label}|instruct|r4")
+PY
+)" || { echo "[char-capture] #2479 panel load failed" >&2; exit 2; }
+  while IFS= read -r row; do
+    [ -n "$row" ] && CELLS+=("$row")
+  done <<< "$panel_rows"
+fi
 
 # --cells subset (threads through smoke/pilot/waves alike — the one CELLS table).
 if [ "${#SELECTED[@]}" -gt 0 ]; then
@@ -351,6 +384,15 @@ if [ "$SKIP_SMOKE" = "0" ]; then
       exit "$rc"
     fi
   fi
+fi
+
+# --- #2479 P0: --smoke-only exits after the smoke leg (never a production ----
+# capture on 3-story smoke bundles, whose issue1345_framing/ completion
+# markers would poison the P4 production resume filter).
+if [ "$SMOKE_ONLY" = "1" ]; then
+  echo "[char-capture] --smoke-only: smoke leg complete rc=${rc} — exiting before production"
+  write_sentinel "smoke-only-done" "rc=${rc}"
+  exit "$rc"
 fi
 
 # --- resume filter: drop cells already complete on HF -----------------------

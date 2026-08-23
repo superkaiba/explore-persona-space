@@ -73,7 +73,11 @@ from explore_persona_space.llm.api_dispatch import (  # noqa: E402
     dispatch_calls,
 )
 
-SMOKE_N_STORIES = 3
+# #2479 P0 seam: env ABSENT => the parent smoke target (3) stays byte-identical.
+# The #2479 toy-fit smoke leg needs >= 4 kept rows for the 5-fold cell fit
+# (run_cell_fit's train>=3 fold filter); its wrapper sets 12 so the extract
+# smoke cap (8) is reached with judge-filter margin.
+SMOKE_N_STORIES = int(os.environ.get("EPM_I1345_SMOKE_N_STORIES", "3"))
 # Paired-mode generation budget (cps fix round, 2026-07-17 — DECLARED plan
 # deviation vs v8 §11's inherited 1024): the r4 production run truncated ~49%
 # of its answer_occurrences_zero rejects mid-answer at the parent's FREE-FORM

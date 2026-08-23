@@ -1,0 +1,43 @@
+{
+  "issue": 2479,
+  "purpose": "P0 refit-equality parity reference (kill criterion (c), plan v4 sections 4/7/8)",
+  "source_branch": "origin/issue-1345",
+  "source_blobs": {
+    "cell_context": "c6a8d9d1ce501960232d79e1d027a9476a6fd01c",
+    "ladder": "758d958261bdeae02b3646efbb569e315c46b7b2"
+  },
+  "tolerance": 0.02,
+  "cell": {
+    "variant": "char_helios_op",
+    "model": "instruct",
+    "layer": 19,
+    "basis": "reduced",
+    "seed": 0,
+    "context": {
+      "ceiling_r2": 0.2386113380378868,
+      "identity_bias_r2": -0.5106076896739415,
+      "n": 2064
+    },
+    "prefix": {
+      "ceiling_r2": 0.02384086749553671,
+      "identity_bias_r2": -1.725556629731729,
+      "n": 2064
+    }
+  },
+  "ladder": {
+    "pair": "r4op:char_helios_op",
+    "direction": "story_onpolicy->char_helios_op",
+    "n_matched": 1056,
+    "r2": {
+      "1_direct": 0.1404821402280484,
+      "2_ctx_offset": 0.12792416943281992,
+      "3_ans_offset": 0.14397877133026182,
+      "4_bias_refit": 0.16853319421746815,
+      "5_global_scale": 0.18234284784039212,
+      "6_rotation": 0.17542475513574984,
+      "7_ctx_reparam": 0.09724055531033904,
+      "8_ans_reparam": 0.12102604162350317,
+      "9_full_AMB": 0.07397410258284576
+    }
+  }
+}
