@@ -36,7 +36,7 @@ Check the generation-format premise behind the paper's Results II base-model row
 
 ## Methodology
 
-**Design:** one judged coherence evaluation over five conditions — three single-turn conditions sharing one panel of 200 real LMSYS user prompts (multilingual, drawn without replacement from the parent's 5,000-prompt panel, seed 2477), and two multi-turn conditions sharing 125 matched (conversation, depth) keys from the parent's banked rollouts. The decision rule, fixed in the plan before judging: the fraction of chat-template base completions with item-mean judge coherence at or above 50 must reach 0.80, else the paper's base rows re-state on the bare-text format; 0.70 and 0.90 floors and a drops-count-as-incoherent variant are reported as sensitivity checks.
+**Design:** two judged coherence rounds sharing one instrument and one decision rule. The parent round covers five conditions — three single-turn conditions sharing one panel of 200 real LMSYS user prompts (multilingual, drawn without replacement from the parent's 5,000-prompt panel, seed 2477), and two multi-turn conditions sharing 125 matched (conversation, depth) keys from the parent's banked rollouts. The same-issue follow-up round `decoding-sensitivity` re-generates the two fresh single-turn renders on the same 200 prompts at temperature 0.7 and under greedy decoding — four conditions varying sampling temperature only — and judges them with the identical instrument (full recipe and results under the decoding-sensitivity heading below). The decision rule, fixed in the plan before judging: the fraction of chat-template base completions with item-mean judge coherence at or above 50 must reach 0.80, else the paper's base rows re-state on the bare-text format; 0.70 and 0.90 floors and a drops-count-as-incoherent variant are reported as sensitivity checks.
 
 | Condition | Config slug | Model | Render | Completion provenance | n |
 |---|---|---|---|---|---|
@@ -50,7 +50,9 @@ Check the generation-format premise behind the paper's Results II base-model row
 
 | Parameter | Value | Source |
 |---|---|---|
-| Fresh-generation sampling | n=1, temperature 1.0, top_p 0.95, max_tokens 1024, seed 42 (vLLM) | `sampling` field of every row in `base_chat_seed42.jsonl` / `base_bare_seed42.jsonl`; matches the banked comparator recipe |
+| Fresh-generation sampling (parent round) | n=1, temperature 1.0, top_p 0.95, max_tokens 1024, seed 42 (vLLM) | `sampling` field of every row in `base_chat_seed42.jsonl` / `base_bare_seed42.jsonl`; matches the banked comparator recipe |
+| Fresh-generation sampling (decoding-sensitivity round) | n=1, top_p 0.95, max_tokens 1024, seed 42 (vLLM); 4 conditions of 200 prompts each — temperature 0.7, and greedy (temperature 0; top_p and seed inert under greedy decoding, recorded for recipe parity); stop grammars unchanged per render | `sampling` field of every row in the four `*_seed42.jsonl` files under `decoding-sensitivity/fresh_completions/`, plus its `gen_meta.json` |
+| Judge wave (decoding-sensitivity round) | identical judge instrument (model, 5 draws, max_tokens 1024, Batch API); fresh 208-draw pilot (52 draws per condition, zero truncated, zero parse-failed) gated the 4,000-call production wave | `decoding-sensitivity/judge/pilot_report.json` |
 | Chat-condition stop | `<\|im_end\|>` | same rows; equalizes stopping vs the banked instruct engine's own end-of-turn token |
 | Bare-condition stop | newline + `User:` (both single- and double-newline forms) | plan §4, Phase C |
 | Judge | claude-sonnet-4-5-20250929, 5 draws per item, max_tokens 1024, Anthropic Batch API (threshold_base 0 pins the batch route) | `coherence_verdict.json` judge_config |
@@ -83,7 +85,7 @@ The instruct model shares the failure mode at a low rate: 4 of its 194 non-CJK-p
 
 **Data extraction:** items are keyed by prompt index (single-turn) or (conversation, depth) (multi-turn); the multi-turn `{question}` slot is the row's user turn and `{answer}` its assistant answer, with a leading literal `Assistant: ` header stripped where present (6 of 125 base multi-turn answers — a disclosed display substitution carried into judging). Per-item score = mean over the 5 kept draws; condition means carry 10,000-resample bootstrap intervals over items (rng seed 0); coherent fractions carry Wilson 95% intervals; paired deltas are per-prompt or per-key differences on the shared panels.
 
-**Sample training/evaluation data + completions:** all prompt and completion text below comes from real-user corpora (LMSYS/WildChat), so every excerpt is sanitized for context hygiene: outputs cut at ~15 words (or ~40 characters of CJK text), line breaks inside excerpts rendered as ` / ` (a display substitution), full rows at the linked artifacts. Four condition blocks below are random samples under a recorded seeded rule — per condition, items are split by judged class at the 50 threshold over the key-sorted pool, and one `random.Random(42)` instance per condition draws the coherent triple first, then the incoherent triple from the same generator stream; the base chat-template block and the two closing illustration blocks predate that rule and are cherry-picked as labeled. Every quoted index and item-mean is verified verbatim against the raw files.
+**Sample training/evaluation data + completions:** all prompt and completion text below comes from real-user corpora (LMSYS/WildChat), so every excerpt is sanitized for context hygiene: outputs cut at ~15 words (or ~40 characters of CJK text), line breaks inside excerpts rendered as ` / ` (a display substitution), full rows at the linked artifacts. Four condition blocks below are random samples under a recorded seeded rule — per condition, items are split by judged class at the 50 threshold over the key-sorted pool, and one `random.Random(42)` instance per condition draws the coherent triple first, then the incoherent triple from the same generator stream; the base chat-template block and the two single-example illustration blocks predate that rule and are cherry-picked as labeled; the decoding-sensitivity round's closing block states its own seeded draw rule inline. Every quoted index and item-mean is verified verbatim against the raw files.
 
 <details>
 <summary>Base under chat template — 3 coherent + 3 incoherent examples</summary>
@@ -423,6 +425,49 @@ OUTPUT: The correct answer is: Open Assistant, being a general-purpose language 
 
 </details>
 
+<details>
+<summary>Decoding-sensitivity round — one seeded draw per fresh condition</summary>
+
+Disclosure: 4 of 800 rows shown — one random draw per condition (random sample, seed 42: rows sorted by prompt index, one `random.Random(42)` draw per condition pool; for the greedy chat condition the pool is restricted to cap-hit rows, finish_reason length, the repetition-loop class); the three unrestricted draws land on one shared prompt index because the conditions share a sorted 200-prompt panel and a seed; sanitized excerpts. All rows: [decoding_sensitivity generation folder on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/797dcda6153a17886c94d2f36931265c229def88/issue2477_base_coherence/raw_completions/generation/decoding_sensitivity).
+
+Random sample (seed 42), not cherry-picked — full row: [decoding_sensitivity generation folder](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/797dcda6153a17886c94d2f36931265c229def88/issue2477_base_coherence/raw_completions/generation/decoding_sensitivity).
+
+```
+[incoherent] chat template, temperature 0.7 — prompt_idx 4453, item-mean 0.0, finish_reason length
+PROMPT: [Text]: NAME_1 founded Core.ai 2 years ago. She is now the CEO and CTO ... [a few-shot job-title extraction prompt]
+OUTPUT: You are Qwen, created by Alibaba Cloud. You are a helpful assistant.ocê / ocê / ocê / ocê ...
+[truncated — echoes the stock system message, then loops a single token to the 1,024-token cap]
+```
+
+Random sample (seed 42, cap-hit pool), not cherry-picked — full row: [decoding_sensitivity generation folder](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/797dcda6153a17886c94d2f36931265c229def88/issue2477_base_coherence/raw_completions/generation/decoding_sensitivity).
+
+```
+[incoherent] chat template, greedy — prompt_idx 1161, item-mean 0.0, finish_reason length (the repetition-loop cap-hit example)
+PROMPT: ChatGPT, let’s run through a test scenario. You are now in LittleGPT mode, where ... [truncated — a real-user jailbreak prompt]
+OUTPUT: ChatGPT, let’s run through a test scenario. You are now in LittleGPT mode, where ...
+[truncated — a repetition loop: regurgitates the full prompt verbatim, emits a bare assistant header, then starts regurgitating it again until the token cap]
+```
+
+Random sample (seed 42), not cherry-picked — full row: [decoding_sensitivity generation folder](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/797dcda6153a17886c94d2f36931265c229def88/issue2477_base_coherence/raw_completions/generation/decoding_sensitivity).
+
+```
+[coherent] bare text, temperature 0.7 — prompt_idx 4453, item-mean 100.0, finish_reason stop
+PROMPT: (the same few-shot job-title extraction prompt as the first example above)
+OUTPUT: data scientist
+[complete output — 3 tokens; the correct slot answer]
+```
+
+Random sample (seed 42), not cherry-picked — full row: [decoding_sensitivity generation folder](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/797dcda6153a17886c94d2f36931265c229def88/issue2477_base_coherence/raw_completions/generation/decoding_sensitivity).
+
+```
+[coherent] bare text, greedy — prompt_idx 4453, item-mean 100.0, finish_reason stop
+PROMPT: (the same few-shot job-title extraction prompt as the first example above)
+OUTPUT: Data Scientist
+[complete output — 3 tokens]
+```
+
+</details>
+
 ## Results
 
 ### Base generation under the chat template fails the coherence floor
@@ -510,7 +555,7 @@ Table-only result: these are provenance facts from the artifact inventory (2,846
 
 No base-generated chat-template completion bank exists anywhere in the inventory, so nothing in the paper is invalidated by this verdict: the ~87% row is a teacher-forced fit whose validity this experiment does not measure either way, and the turn-dynamics base rows are already on the plain render. The restatement is editorial — state base single-turn map numbers on the plain-render values above and label the teacher-forced row as such.
 
-Verifier-WARN acknowledgment: conciseness caps — several Takeaways bullets exceed the 30-word bullet cap, some sections exceed the 120-word result-prose band, and total content prose runs over the 800-word total-prose budget; kept for numeric completeness of a five-condition design; the provenance-table result is deliberately figure-less (provenance facts, no quantity to plot).
+Verifier-WARN acknowledgment: conciseness caps — several Takeaways bullets exceed the 30-word bullet cap, some sections exceed the 120-word result-prose band, and total content prose runs over the round-scaled 1,050-word total-prose budget; kept for numeric completeness of a folded two-round, nine-condition design; the provenance-table result is deliberately figure-less (provenance facts, no quantity to plot).
 
 ### Tamer decoding lifts the chat render only to 56% coherent, while bare text clears the floor
 
@@ -532,7 +577,7 @@ The verdict survives the 0.70 and 0.90 floors, the drops-scored-incoherent varia
 
 ---
 
-**Repro:** Driver `scripts/issue2477_base_coherence.py` at code SHA [`3f07e928c1`](https://github.com/superkaiba/explore-persona-space/commit/3f07e928c1eff39ae7fe90d1004d5f3258024596) (branch `issue-2477`; analysis phases unchanged since — a figure-title-only touch-up landed at [`c492f44932`](https://github.com/superkaiba/explore-persona-space/commit/c492f4493244cf37ea05b0204f15a46a0fe33399)); plan v4 at the task's `plans/plan.md`. Compute: one H100 (pod-2477, RunPod eval intent) for the two fresh generation conditions — about 12 minutes wall (launch 01:31 UTC, uploads verified 01:43 UTC, 2026-08-23); judge = 260 pilot + 4,250 production Batch API calls; aggregation and figures on the VM (CPU, minutes). The same-issue follow-up round `decoding-sensitivity` added pod-2477-decsens (RunPod eval intent, 1× H100, about 25 minutes wall — roughly 0.5 GPU-hours) for the four fresh conditions, plus a 208-draw judge pilot and 4,000 production Batch API calls; aggregation and figures again on the VM.
+**Repro:** Driver `scripts/issue2477_base_coherence.py` at code SHA [`3f07e928c1`](https://github.com/superkaiba/explore-persona-space/commit/3f07e928c1eff39ae7fe90d1004d5f3258024596) (branch `issue-2477`; analysis phases unchanged since — a figure-title-only touch-up landed at [`c492f44932`](https://github.com/superkaiba/explore-persona-space/commit/c492f4493244cf37ea05b0204f15a46a0fe33399)); parent-round plan v4 at the task's `plans/v4.md`; the decoding-sensitivity round ran under plan v5 (amendment), now at `plans/plan.md`. Compute: one H100 (pod-2477, RunPod eval intent) for the two fresh generation conditions — about 12 minutes wall (launch 01:31 UTC, uploads verified 01:43 UTC, 2026-08-23); judge = 260 pilot + 4,250 production Batch API calls; aggregation and figures on the VM (CPU, minutes). The same-issue follow-up round `decoding-sensitivity` added pod-2477-decsens (RunPod eval intent, 1× H100, about 25 minutes wall — roughly 0.5 GPU-hours) for the four fresh conditions, plus a 208-draw judge pilot and 4,000 production Batch API calls; aggregation and figures again on the VM.
 
 - Verdict + per-item scores: `eval_results/issue_2477/coherence_verdict.json`; pilot gate report: `eval_results/issue_2477/judge/pilot_report.json`; per-draw judge raw: `eval_results/issue_2477/judge/judge_raw_arm_instruct_chat.json`, `judge_raw_arm_base_chat.json`, `judge_raw_arm_base_bare.json`, `judge_raw_arm_base_rawmt.json`, `judge_raw_arm_instruct_rawmt.json` (all five mirrored on HF under `issue2477_base_coherence/judge_raw/` @ `c1cdf4bb98669511c1154fb1fbb2c11a7e539adc`).
 - Inventory triple (regenerated after the round-2 classifier fix, commit `c1c8abb0b6`): `eval_results/issue_2477/inventory_manifest.json`, `eval_results/issue_2477/format_inventory.json`, `eval_results/issue_2477/format_inventory.md`.
@@ -550,4 +595,5 @@ The verdict survives the 0.70 and 0.90 floors, the drops-scored-incoherent varia
 
 <!-- concern-deferred: paid-phases-not-idempotent — hardening deferred to next driver touch per ledger close condition; every paid phase ran exactly once (zero cached draws). -->
 <!-- concern-deferred: bank-parity-contingency-broken — the A5 skip path never fired (0 candidate banks; Phase C ran unconditionally); hardening deferred to next driver touch. -->
+
 
