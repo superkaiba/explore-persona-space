@@ -11434,8 +11434,8 @@
     "2480": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/2480",
-      "status": "running",
+      "path": "tasks/reviewing/2480",
+      "status": "reviewing",
       "title": "Harden #2394 jbmine to paper-citable grade \u2014 code-review r3 fix (B2 exact-universe alias-collapse at :159)"
     },
     "2481": {
