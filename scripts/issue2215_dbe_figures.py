@@ -218,6 +218,12 @@ def _acc(ctx: dict, arm: str, cell: str) -> float | None:
     return float(rec["acc"]) if rec and np.isfinite(rec.get("acc", np.nan)) else None
 
 
+def _nan_if_none(v: float | None) -> float:
+    """Explicit None→NaN for plot arrays: ``v or np.nan`` silently maps a
+    LEGITIMATE 0.0 accuracy to NaN (falsy), erasing a real floor bar."""
+    return float(v) if v is not None else float("nan")
+
+
 def _acc_ci(ctx: dict, arm: str, cell: str) -> tuple[float, float]:
     rec = _cell_rec(_pt(ctx, arm), cell)
     if rec is None:
@@ -740,7 +746,7 @@ def fig_parent_fit_offset(ctx: dict, figures_dir: Path) -> str | None:
     fig, ax = plt.subplots(figsize=(10.0, 4.2))
     ax.bar(
         xs - 0.2,
-        [_acc(ctx, "idbias_ce", c) or np.nan for c in cells],
+        [_nan_if_none(_acc(ctx, "idbias_ce", c)) for c in cells],
         width=0.4,
         color=ARM_COLORS["idbias_ce"],
         label=f"{ARM_LABELS['idbias_ce']} — battery-internal LOTO b",

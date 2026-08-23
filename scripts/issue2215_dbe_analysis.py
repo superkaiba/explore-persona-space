@@ -1221,6 +1221,29 @@ def cjk_recount(
     }
 
 
+def assert_parent_vc_coverage(ids_p: list[str], per_context: dict) -> None:
+    """dbe-parent-vc-cache-coverage: the parent bank's context id set must be
+    EXACTLY covered by the staged parent vc store's ``per_context`` keys before
+    any direct indexing — a partially-staged / wrong-generation store otherwise
+    KeyErrors deep inside the stack build (or silently reads a superset)."""
+    cached = set(per_context)
+    missing = sorted(set(ids_p) - cached)
+    extra = sorted(cached - set(ids_p))
+    assert not missing, (
+        f"parent vc store coverage: {len(missing)} bank context ids missing from "
+        f"per_context ({len(cached)} cached vs {len(ids_p)} bank); "
+        f"missing[:10]={missing[:10]}, extra_count={len(extra)} — re-stage the "
+        "parent vc store (partial / wrong-generation staging)"
+    )
+    if extra:
+        logger.warning(
+            "[parent-vc] %d per_context keys beyond the bank id set (first: %s) — "
+            "superset tolerated, indexing is bank-scoped",
+            len(extra),
+            extra[:5],
+        )
+
+
 def parent_store_reads(
     staged: Path,
     preds: dict,
@@ -1246,6 +1269,7 @@ def parent_store_reads(
     layers_p = list(vc_payload["layers"])
     assert layer in layers_p, (layer, layers_p)
     li = layers_p.index(layer)
+    assert_parent_vc_coverage(ids_p, vc_payload["per_context"])
     x_par = np.stack([vc_payload["per_context"][cid]["v_ce"][li].double().numpy() for cid in ids_p])
     del vc_payload
     assert x_par.shape[1] == hidden, (x_par.shape, hidden)

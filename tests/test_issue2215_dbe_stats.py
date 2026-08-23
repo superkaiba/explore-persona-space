@@ -19,6 +19,8 @@ Coverage (synthetic fixtures only — no network, no GPU, no benchmark text):
 
 from __future__ import annotations
 
+import copy
+import json
 import math
 import sys
 from pathlib import Path
@@ -401,3 +403,236 @@ def test_h1_thresholds_are_ceil_floor_formulas():
         hi, lo = DA.h1_thresholds(m)
         assert hi == math.ceil(7 * m / 9)
         assert lo == math.floor(4 * m / 9)
+
+
+# ── (g) round-2 review pins: seed default, regime fingerprints, guards ─
+
+
+def _mk_cfg(tmp_path: Path, *, smoke: bool = False, tiny: bool = False, force: bool = False):
+    """Tiny DbeConfig over tmp roots with real values/bank bytes on disk (the
+    fingerprint helpers hash BIT-EXACT files read from disk, #1336)."""
+    values = tmp_path / "values.json"
+    if not values.exists():
+        values.write_text('{"values": ["v1", "v2"]}')
+    cfg = DR.DbeConfig(
+        phase="",
+        out_root=tmp_path / "out",
+        log_dir=tmp_path / "logs",
+        values_path=values,
+        smoke=smoke,
+        tiny=tiny,
+        cells=("cellA",),
+        draws=2,
+        null_b=100,
+        gen_batch=2,
+        capture_batch=2,
+        max_new_tokens=64,
+        seed_base=42,
+        force=force,
+        layers=[0, 1],
+    )
+    cfg.vc_dir.mkdir(parents=True, exist_ok=True)
+    bank = cfg.vc_dir / "bank_dbe.json"
+    if not bank.exists():
+        bank.write_text('{"pairs": []}')
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    cfg.log_dir.mkdir(parents=True, exist_ok=True)
+    return cfg
+
+
+def test_cli_default_seed_base_is_plan_pinned():
+    """dbe-seed-base-plan-mismatch: plan v6 §10 pins generation seed_base=42
+    (recipe fidelity with the parent's banked rollouts; issue2162_run)."""
+    assert DR.SEED_BASE == 42
+    args = DR.parse_args(["--phase", "B1"])
+    assert args.seed_base == 42
+    assert DR.build_config(args).seed_base == 42
+
+
+def test_cli_force_flag_defaults_off_and_threads():
+    args = DR.parse_args(["--phase", "D"])
+    assert args.force is False
+    assert DR.build_config(args).force is False
+    args_f = DR.parse_args(["--phase", "D", "--force"])
+    assert DR.build_config(args_f).force is True
+
+
+def test_pilot_report_bare_existence_never_satisfies_production_resume(tmp_path):
+    """smoke-pilot-cross-regime-reuse: a demoted smoke pilot report must not
+    suppress the production throughput gate; only a regime-matched,
+    non-demoted report counts."""
+    smoke = _mk_cfg(tmp_path, smoke=True)
+    prod = _mk_cfg(tmp_path)
+    report = smoke.manifest_dir / "pilot_gate_report.json"
+    assert smoke.manifest_dir == prod.manifest_dir  # shared out_root — the trap
+    # (1) smoke-regime report present -> production resume NOT satisfied
+    report.write_text(
+        json.dumps(
+            {
+                "regime_fp": DR._pilot_regime_fp(smoke),
+                "demoted_to_informational": True,
+                "verdict": "PASS",
+            }
+        )
+    )
+    assert DR._pilot_report_ok(smoke) is True  # smoke resume may reuse it
+    assert DR._pilot_report_ok(prod) is False  # production must NOT
+    # (2) production-regime fp but demoted -> still refused in production
+    report.write_text(
+        json.dumps({"regime_fp": DR._pilot_regime_fp(prod), "demoted_to_informational": True})
+    )
+    assert DR._pilot_report_ok(prod) is False
+    # (3) production-regime, non-demoted -> satisfied
+    report.write_text(
+        json.dumps({"regime_fp": DR._pilot_regime_fp(prod), "demoted_to_informational": False})
+    )
+    assert DR._pilot_report_ok(prod) is True
+    # (4) missing / unparseable -> never satisfied
+    report.unlink()
+    assert DR._pilot_report_ok(prod) is False
+    report.write_text("not json")
+    assert DR._pilot_report_ok(prod) is False
+
+
+def test_b2_regime_fp_tracks_data_inputs(tmp_path):
+    """dbe-resume-fingerprint-inputs: the B2/cell fingerprints change when the
+    frozen values file, the realized bank, the layer list, or smoke/production
+    state change — never only the generation params."""
+    cfg = _mk_cfg(tmp_path)
+    fp0 = DR._b2_regime_fp(cfg)
+    cell0 = DR._cell_regime_fp(cfg, "cellA")
+    # bank content change
+    (cfg.vc_dir / "bank_dbe.json").write_text('{"pairs": [{"pair_id": "p1"}]}')
+    fp_bank = DR._b2_regime_fp(cfg)
+    cell_bank = DR._cell_regime_fp(cfg, "cellA")
+    assert fp_bank != fp0 and cell_bank != cell0
+    # values content change
+    Path(cfg.values_path).write_text('{"values": ["CHANGED"]}')
+    assert DR._b2_regime_fp(cfg) != fp_bank
+    # layer-list change
+    cfg.layers = [0, 1, 2]
+    fp_layers = DR._b2_regime_fp(cfg)
+    assert fp_layers != DR._b2_regime_fp(_mk_cfg(tmp_path))
+    # smoke vs production diverge
+    assert DR._b2_regime_fp(_mk_cfg(tmp_path, smoke=True)) != DR._b2_regime_fp(_mk_cfg(tmp_path))
+    # pilot fp additionally tracks gen_batch (throughput-affecting shape)
+    cfg2 = _mk_cfg(tmp_path)
+    p0 = DR._pilot_regime_fp(cfg2)
+    cfg2.gen_batch = 32
+    assert DR._pilot_regime_fp(cfg2) != p0
+
+
+def test_finalize_datagen_manifest_roundtrips_and_c_assert_agrees(tmp_path, monkeypatch):
+    """dbe-manifest-realized-pe-map: B1' finalization writes the realized
+    per-pair map + hash; the C-entry assert accepts exact agreement and raises
+    on any coverage / flag / hash drift."""
+    cfg = _mk_cfg(tmp_path, smoke=True)  # smoke tolerates a missing committed source
+    monkeypatch.setattr(DR, "DATAGEN_MANIFEST_SRC", tmp_path / "absent_manifest.json")
+    bank = {
+        "pairs": [
+            {"pair_id": "p1", "cell": "cellA", "pe_realized_eligible": True},
+            {"pair_id": "p2", "cell": "cellA", "pe_realized_eligible": False},
+        ],
+        "realized_pe_eligibility": {"cellA": False},
+    }
+    out = DR._finalize_datagen_manifest(cfg, bank)
+    final = json.loads(out.read_text())
+    assert final["source_manifest"]["present"] is False
+    assert final["realized_pe_eligibility"]["per_pair"] == {"p1": True, "p2": False}
+    DR._assert_realized_pe_manifest(final, bank)  # exact agreement passes
+    # missing pair coverage raises
+    short = {**bank, "pairs": bank["pairs"][:1]}
+    with pytest.raises(AssertionError, match="extra"):
+        DR._assert_realized_pe_manifest(final, short)
+    # flag disagreement raises
+    flipped = copy.deepcopy(bank)
+    flipped["pairs"][0]["pe_realized_eligible"] = False
+    with pytest.raises(AssertionError, match="disagrees"):
+        DR._assert_realized_pe_manifest(final, flipped)
+    # hash drift raises
+    tampered = copy.deepcopy(final)
+    tampered["realized_pe_eligibility"]["sha256"] = "0" * 64
+    with pytest.raises(AssertionError, match="hash drift"):
+        DR._assert_realized_pe_manifest(tampered, bank)
+
+
+def test_production_finalize_requires_committed_datagen_manifest(tmp_path, monkeypatch):
+    cfg = _mk_cfg(tmp_path)  # production
+    monkeypatch.setattr(DR, "DATAGEN_MANIFEST_SRC", tmp_path / "absent_manifest.json")
+    bank = {"pairs": [], "realized_pe_eligibility": {}}
+    with pytest.raises(RuntimeError, match="committed datagen manifest"):
+        DR._finalize_datagen_manifest(cfg, bank)
+
+
+def test_assert_parent_vc_coverage_missing_raises_extra_tolerated():
+    """dbe-parent-vc-cache-coverage: bank ids ⊆ cached per_context keys is
+    asserted BEFORE indexing; a superset is tolerated (bank-scoped indexing)."""
+    DA.assert_parent_vc_coverage(["a", "b"], {"a": {}, "b": {}, "c": {}})
+    with pytest.raises(AssertionError, match="missing"):
+        DA.assert_parent_vc_coverage(["a", "b", "z"], {"a": {}, "b": {}})
+
+
+def test_sentinel_present_tolerates_poller_drain_rename(tmp_path):
+    p = tmp_path / "issue-2215-dbe-results.json"
+    assert DR._sentinel_present(p) is False
+    p.with_name(p.name + ".processed").write_text("{}")
+    assert DR._sentinel_present(p) is True
+
+
+def test_figures_nan_if_none_preserves_legitimate_zero():
+    import issue2215_dbe_figures as DF
+
+    assert DF._nan_if_none(0.0) == 0.0
+    assert DF._nan_if_none(0.75) == 0.75
+    assert math.isnan(DF._nan_if_none(None))
+
+
+def test_land_results_git_production_leg_end_to_end(tmp_path, monkeypatch):
+    """dbe-primary-artifact-egress: the phase-D git landing leg runs its REAL
+    body (add -> staged-index verification incl. the gitignore force-add branch
+    -> pathspec commit -> push -> rev-list push-verify -> per-FILE remote
+    presence) against a scratch repo + bare remote; smoke/tiny skips."""
+    import subprocess as sp
+
+    def git(repo, *args):
+        sp.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    remote = tmp_path / "remote.git"
+    sp.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True)
+    repo = tmp_path / "repo"
+    sp.run(["git", "init", "-b", "issue-2215", str(repo)], check=True, capture_output=True)
+    git(repo, "config", "user.email", "t@example.com")
+    git(repo, "config", "user.name", "t")
+    (repo / ".gitignore").write_text("*.png\n")  # exercises the #958 force-add branch
+    git(repo, "add", ".gitignore")
+    git(repo, "commit", "-m", "init")
+    git(repo, "remote", "add", "origin", str(remote))
+    git(repo, "push", "origin", "issue-2215")
+    monkeypatch.setattr(DR, "_REPO_ROOT", repo)
+    cfg = _mk_cfg(tmp_path)  # production regime
+    cfg.eval_dir.mkdir(parents=True, exist_ok=True)
+    cfg.figures_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.eval_dir / "dbe_result.json").write_text('{"ok": true}')
+    (cfg.figures_dir / "dbe_hero.png").write_bytes(b"\x89PNG-fake")
+    rec = DR._land_results_git(cfg)
+    assert rec["mode"] == "committed" and rec["n_files"] == 2
+    remote_ls = sp.run(
+        ["git", "-C", str(repo), "ls-tree", "-r", "origin/issue-2215", "--name-only"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert "eval_results/issue_2215/discrimination-battery-expansion/dbe_result.json" in remote_ls
+    assert "figures/issue_2215/dbe_hero.png" in remote_ls  # gitignored -> force-added
+    # idempotent re-entry: nothing new to commit, still verified
+    rec2 = DR._land_results_git(cfg)
+    assert rec2["mode"] == "committed"
+    # smoke cfg skips (out_root twins are not repo paths)
+    assert DR._land_results_git(_mk_cfg(tmp_path, smoke=True)) == {"mode": "skipped-smoke"}
+
+
+def test_c_and_d_regime_fp_track_null_b(tmp_path):
+    cfg = _mk_cfg(tmp_path)
+    fp0 = DR._c_regime_fp(cfg)
+    cfg.null_b = 10_000
+    assert DR._c_regime_fp(cfg) != fp0
