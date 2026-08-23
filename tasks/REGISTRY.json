@@ -11368,8 +11368,8 @@
     "2472": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2472",
-      "status": "running",
+      "path": "tasks/completed/2472",
+      "status": "completed",
       "title": "Add codex-*-lean twins: autocompact-thrash ladder has no lean-twin rung for the Codex composer roles"
     },
     "2473": {
