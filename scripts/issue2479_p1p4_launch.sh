@@ -339,7 +339,6 @@ fi
 
 # =============================================================================
 echo "[phase=p1_gen]"
-alloc_devices 120000
 P1_PENDING=()
 for spec in "${GEN_CELLS[@]}"; do
   v="${spec%%|*}"
@@ -351,6 +350,11 @@ for spec in "${GEN_CELLS[@]}"; do
     P1_PENDING+=("$spec")
   fi
 done
+if [ "${#P1_PENDING[@]}" -gt 0 ]; then
+  alloc_devices 120000
+else
+  n_gpu=0
+fi
 echo "[i2479-p1p4] P1: ${#P1_PENDING[@]}/${#GEN_CELLS[@]} cells pending (${n_gpu}-wide waves)"
 p1_fatal_rc=0
 idx=0
