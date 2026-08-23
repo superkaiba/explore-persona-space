@@ -41,6 +41,8 @@ bullets, mechanized fixes); their bodies stay on disk.
 ## Launch mechanics (nohup, SSH, wrappers)
 
 - [Fellows dispatch blocks in queue-park wait; 600s tool cap kills it AFTER a successful submit](feedback_fellows_dispatch_park_wait_tool_cap.md) — probe sidecar+squeue before relaunch; scancel-before-re-run; ladder disarmed by the kill; plan-copied cmd drift (missing `launch`, `--repo-branch`, `--time-budget-hours`) (#1336 r4)
+- [Handle workload_cmd is the fence dry-parse form, not the fan-out](feedback_handle_workload_cmd_single_invocation_cvd_fanout.md) — CVD-pin plans persist a single-invocation cmd (default shard-id 0) = silent shard-0-only subset; read plan §9 + compose the launcher (#2254 firstk)
+- [Handle workload_cmd is the fence dry-parse form, not the fan-out](feedback_handle_workload_cmd_single_invocation_cvd_fanout.md) — CVD-pin plans persist a single-invocation cmd (default shard-id 0) = silent shard-0-only subset; read plan §9 + compose the launcher (#2254 firstk)
 
 - [Inline relaunch `&` binds the whole `cd && setsid` list — wrong pid in pidfile](feedback_inline_relaunch_amp_binds_whole_list_wrong_pid.md) — `$!` captures the un-setsid'd wrapper subshell (HUP-vulnerable, holds the ssh channel open so the local ssh client hangs) (#1768)
 - [GCP reconnect to phase=done zombie](feedback_gcp_reconnect_to_completed_phasedone_instance.md) — router `reason: reconnect` to a RUNNING-but-done instance does NOT dispatch workload (#634)

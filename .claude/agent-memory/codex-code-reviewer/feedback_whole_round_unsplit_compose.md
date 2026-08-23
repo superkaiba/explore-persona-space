@@ -70,6 +70,17 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    cover the round" and false-FAILs `marker-shape` (the #489 class in a new
    costume).
 
+7. **Brief's stale-plan premise can be FALSE (#823 ext-ladder r1,
+   2026-08-23):** a whole-round brief may order plan INLINING "because the
+   worktree tasks/ tree is frozen at base" while the compose-time identity
+   diff shows the worktree copy IDENTICAL to canonical (the plan version
+   predated the branch cut). Follow the inline order (also the race-free
+   choice on a task with concurrent-follow-up plan-symlink churn), but word
+   the plan envelope TRUTHFULLY — never paste the spec's "absent or stale"
+   boilerplate over an identical copy (a falsifiable claim Codex can check
+   in-sandbox costs credibility) — and flag the premise divergence in the
+   return block.
+
 **Why:** the whole-round view is the ONLY reviewer seeing commit
 interactions; a mis-based diff (origin/main) or a leaked split-token
 defeats exactly that purpose.
