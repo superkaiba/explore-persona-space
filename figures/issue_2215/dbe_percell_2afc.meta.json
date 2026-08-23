@@ -1,11 +1,14 @@
 {
-  "commit": "0ae62170",
-  "render_id": "240d0d7771dc4a4e",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2215_dbe_analysis.py",
-  "created": "2026-08-23T07:14:11Z",
+  "commit": "488b3e3c+dirty",
+  "render_id": "24bd06d3947044b2",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-23T08:36:11Z",
   "figsize": [
     9.5,
     4.2
@@ -625,23 +628,23 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "New-battery discrimination per type (L19, tail, cosine)",
+        "title_left": "New-battery discrimination per type (layer 19, cosine)",
         "ylabel": "paired 2AFC accuracy",
         "legend_labels": [
-          "779ce",
-          "1738pe",
-          "1738ce",
-          "idbias_ce"
+          "single-turn map, context-end",
+          "multi-turn map, prefix-end",
+          "multi-turn map, context-end",
+          "identity + bias baseline, context-end"
         ],
         "xticklabels": [
           "style register",
           "code vs prose",
           "user role identity",
-          "user doc format",
+          "user document format",
           "conversation topic",
-          "user sentiment \u2020",
+          "review sentiment \u2020",
           "conversation language",
-          "refusal request \u2020"
+          "refusal-inducing request \u2020"
         ],
         "yticklabels": [
           "0.0",
@@ -655,10 +658,10 @@
       }
     ],
     "series": [
-      "779ce",
-      "1738pe",
-      "1738ce",
-      "idbias_ce"
+      "single-turn map, context-end",
+      "multi-turn map, prefix-end",
+      "multi-turn map, context-end",
+      "identity + bias baseline, context-end"
     ]
   },
   "formats_written": [

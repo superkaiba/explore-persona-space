@@ -77,15 +77,81 @@ POOL_PRIMARY = "tail"
 METRIC_PRIMARY = "cosine"
 KNN_KS = (1, 5, 10)
 
-# Arm order + plain-English legend labels (plan §5 condition names).
+# Arm order + plain-English reader labels (plan §5 condition names; no
+# project-internal codes — issue ids / layer pins / slot slugs — in any
+# RENDERED text, per the clean-result figure-label convention).
 ARM_ORDER = ("779ce", "1738pe", "1738ce", "idbias_ce", "idbias_pe")
 ARM_LABELS = {
-    "779ce": "ctx-end map (#779 fit)",
-    "1738pe": "prefix-end map (#1738 fit)",
-    "1738ce": "ctx-end map, matched fit (#1738)",
-    "idbias_ce": "identity+bias (ctx-end)",
-    "idbias_pe": "identity+bias (prefix-end)",
+    "779ce": "single-turn map, context-end",
+    "1738pe": "multi-turn map, prefix-end",
+    "1738ce": "multi-turn map, context-end",
+    "idbias_ce": "identity + bias baseline, context-end",
+    "idbias_pe": "identity + bias baseline, prefix-end",
 }
+
+# Plain-English tick labels for every cell slug that reaches an axis —
+# parent battery (39 pair-cells) + new battery (8 realized types).
+# Unknown slugs fall back to ``slug.replace("_", " ")``. The analysis
+# driver's quick-look figures import this mapping so the two suites
+# cannot drift.
+CELL_LABELS = {
+    # new battery
+    "user_role_identity": "user role identity",
+    "style_register": "style register",
+    "conversation_topic": "conversation topic",
+    "conversation_language": "conversation language",
+    "user_doc_format": "user document format",
+    "code_vs_prose": "code vs prose",
+    "refusal_request": "refusal-inducing request",
+    "user_sentiment": "review sentiment",
+    # parent battery
+    "conflict_format_fwd": "format conflict, forward",
+    "conflict_format_rev": "format conflict, reverse",
+    "conflict_persona_fwd": "persona conflict, forward",
+    "conflict_persona_rev": "persona conflict, reverse",
+    "constraint_knowledge": "knowledge constraint",
+    "demo_format": "demonstrated format",
+    "demo_persona": "demonstrated persona",
+    "fact_assistant_animal": "assistant fact",
+    "fact_novel_queried": "novel queried fact",
+    "fact_user_name": "user name",
+    "filler_swap": "filler swap",
+    "icl_task_mapping": "in-context-learning mapping",
+    "instr_format": "format instruction",
+    "instr_language": "language instruction",
+    "language_implied": "implied language",
+    "list_numeric_detail": "numeric list detail",
+    "persona_prompted": "prompted persona",
+    "persona_role_header": "role-header persona",
+    "prior_topic": "prior topic",
+    "query_content": "changed question (control)",
+    "reasoning_style": "reasoning style",
+    "recency_fact_user_name_d3": "user name, 3 turns back",
+    "recency_fact_user_name_d5": "user name, 5 turns back",
+    "recency_instr_format_d3": "format instruction, 3 turns back",
+    "recency_instr_format_d5": "format instruction, 5 turns back",
+    "recency_persona_prompted_d3": "prompted persona, 3 turns back",
+    "recency_persona_prompted_d5": "prompted persona, 5 turns back",
+    "recency_prior_topic_d3": "prior topic, 3 turns back",
+    "recency_prior_topic_d5": "prior topic, 5 turns back",
+    "load_fact_assistant_animal_l3": "assistant fact, 3-item load",
+    "load_fact_assistant_animal_l5": "assistant fact, 5-item load",
+    "load_fact_user_name_l3": "user name, 3-item load",
+    "load_fact_user_name_l5": "user name, 5-item load",
+    "load_instr_format_l3": "format instruction, 3-item load",
+    "load_instr_format_l5": "format instruction, 5-item load",
+    "refusal_boundary": "refusal boundary",
+    "user_emotion": "user emotion",
+    "user_expertise": "user expertise",
+    "verbosity": "verbosity",
+}
+
+
+def plain_cell_label(cell: str) -> str:
+    """Plain-English reader label for a cell slug (fallback: de-underscore)."""
+    return CELL_LABELS.get(cell, cell.replace("_", " "))
+
+
 _COLORS = paper_palette(8)
 ARM_COLORS = {arm: _COLORS[i] for i, arm in enumerate(ARM_ORDER)}
 COLOR_OWN = _COLORS[5]  # carrier-transfer: own-pair accuracy
@@ -125,7 +191,7 @@ def _at_k(d: dict, k: int) -> float:
 
 
 def _tick(cell: str, benchmark: set[str]) -> str:
-    return cell.replace("_", " ") + (" †" if cell in benchmark else "")
+    return plain_cell_label(cell) + (" †" if cell in benchmark else "")
 
 
 def _cell_rec(per_type: dict, cell: str, metric: str = METRIC_PRIMARY) -> dict | None:
@@ -257,7 +323,7 @@ def fig_hero_pertype_2afc(ctx: dict, figures_dir: Path) -> str | None:
     ax.set_ylabel("paired 2AFC accuracy")
     ax.set_ylim(0.0, 1.05)
     ax.set_title(
-        f"New-battery discrimination per type (L{ctx['layer']}, tail, cosine; "
+        f"New-battery discrimination per type (layer {ctx['layer']}, cosine; "
         "† = benchmark cell; gray band = shuffled-pair null)"
     )
     ax.legend(ncols=2, fontsize=8)
@@ -323,17 +389,18 @@ def fig_joint_taxonomy_48(ctx: dict, figures_dir: Path) -> str | None:
             color="black",
             s=18,
             zorder=3,
-            label="hot spot (verdict ≠ discriminates)",
+            label="not individually above chance",
         )
     ax.axhline(0.5, color="0.4", lw=0.8, ls="--")
     ax.set_xticks(xs)
     ax.set_xticklabels(
         [_tick(r[0], ctx["benchmark"] if r[4] else set()) for r in rows], rotation=90, fontsize=6
     )
-    ax.set_ylabel("paired 2AFC accuracy (#779 fit)")
+    ax.set_ylabel("paired 2AFC accuracy")
     ax.set_ylim(0.0, 1.08)
     ax.set_title(
-        f"Joint taxonomy: parent battery (gray, banked) + new types (color), L{ctx['layer']}"
+        "Joint taxonomy: parent battery (gray, banked) + new types (color)\n"
+        f"(single-turn map, context-end, layer {ctx['layer']})"
     )
     handles = [
         plt.Rectangle((0, 0), 1, 1, color=COLOR_PARENT_PROV, label="parent battery (banked)"),
@@ -389,7 +456,7 @@ def fig_perpair_margins(ctx: dict, figures_dir: Path) -> str | None:
     for j in range(len(cells), nrows * ncols):
         axes[j // ncols][j % ncols].set_visible(False)
     fig.suptitle(
-        f"Per-pair cosine margins per type (ctx-end map #779 fit, L{ctx['layer']}, tail)",
+        f"Per-pair cosine margins per type (single-turn map, context-end, layer {ctx['layer']})",
         fontsize=11,
     )
     fig.tight_layout(rect=(0, 0, 1, 0.96))
@@ -434,8 +501,8 @@ def fig_pertype_r2_retrieval(ctx: dict, figures_dir: Path) -> str | None:
         if pi == 2 and chance1 is not None:
             ax.axhline(chance1, color="0.4", lw=0.8, ls="--")
     axes[0].set_title(
-        f"Registered per-(type × arm) rows (L{ctx['layer']}, tail; "
-        "dashed = retrieval chance 1/pool)"
+        f"Per-type fit and retrieval per arm (layer {ctx['layer']}; "
+        "dashed = retrieval chance, one over the pool size)"
     )
     axes[0].legend(ncols=2, fontsize=8)
     axes[-1].set_xticklabels(
@@ -472,7 +539,7 @@ def fig_2afc_vs_retrieval(ctx: dict, figures_dir: Path) -> str | None:
     med_ret = h3.get("median_retrieval_at1", float(np.median(list(ret_by.values()))))
     ax.axvline(med_acc, color="0.6", lw=0.8, ls=":")
     ax.axhline(med_ret, color="0.6", lw=0.8, ls=":")
-    ax.set_xlabel("paired 2AFC accuracy (ctx-end map, #779 fit)")
+    ax.set_xlabel("paired 2AFC accuracy (single-turn map, context-end)")
     ax.set_ylabel("retrieval acc@1 (cosine, full new-battery pool)")
     ranks = ""
     if "refusal_rank_2afc" in h3:
@@ -480,7 +547,7 @@ def fig_2afc_vs_retrieval(ctx: dict, figures_dir: Path) -> str | None:
             f" — refusal rank {h3['refusal_rank_2afc']}/{h3['m']} (2AFC), "
             f"{h3['refusal_rank_retrieval']}/{h3['m']} (retrieval)"
         )
-    ax.set_title(f"H3: pairwise separability vs exact retrieval{ranks}")
+    ax.set_title(f"Pairwise separability vs exact retrieval{ranks}")
     savefig_paper(fig, "dbe_2afc_vs_retrieval", dir=str(figures_dir))
     plt.close(fig)
     return None
@@ -492,13 +559,17 @@ def fig_slot_gains_did(ctx: dict, figures_dir: Path) -> str | None:
     if not did:
         return "hypotheses.h2b.registered absent"
     cells = ctx["cells"]
-    gain_arms = (("1738pe", "idbias_pe"), ("1738ce", "idbias_ce"), ("779ce", "idbias_ce"))
+    gain_arms = (
+        ("1738pe", "idbias_pe", "prefix-end: fitted − baseline (multi-turn fit)"),
+        ("1738ce", "idbias_ce", "context-end: fitted − baseline (multi-turn fit)"),
+        ("779ce", "idbias_ce", "context-end: fitted − baseline (single-turn fit)"),
+    )
     fig, (ax1, ax2) = plt.subplots(
         1, 2, figsize=(12.5, 4.4), gridspec_kw={"width_ratios": [2.4, 1.0]}
     )
     xs = np.arange(len(cells))
     w = 0.8 / len(gain_arms)
-    for ai, (arm, base) in enumerate(gain_arms):
+    for ai, (arm, base, pair_label) in enumerate(gain_arms):
         deltas = []
         for c in cells:
             a, b = _acc(ctx, arm, c), _acc(ctx, base, c)
@@ -508,24 +579,24 @@ def fig_slot_gains_did(ctx: dict, figures_dir: Path) -> str | None:
             deltas,
             width=w,
             color=ARM_COLORS[arm],
-            label=f"{ARM_LABELS[arm]} − {ARM_LABELS[base]}",
+            label=pair_label,
         )
     ax1.axhline(0.0, color="0.4", lw=0.8)
     ax1.set_xticks(xs)
     ax1.set_xticklabels(
         [_tick(c, ctx["benchmark"]) for c in cells], rotation=30, ha="right", fontsize=8
     )
-    ax1.set_ylabel("Δ 2AFC accuracy (fitted − identity+bias)")
-    ax1.set_title(f"Per-type fitted-map gain by slot (L{ctx['layer']}, tail, cosine)")
+    ax1.set_ylabel("Δ 2AFC accuracy (fitted − identity + bias)")
+    ax1.set_title(f"Per-type fitted-map gain by read slot (layer {ctx['layer']}, cosine)")
     ax1.legend(fontsize=7)
 
     desc = hyps.get("h2b", {}).get("descriptive_779ce_variant") or {}
-    names = ["pe gain", "ce gain", "DiD (pe − ce)"]
+    names = ["prefix-end\ngain", "context-end\ngain", "slot contrast\n(prefix − context)"]
     vals = [did["leg_pe_gain"], did["leg_ce_gain"], did["did"]]
     cis = [did["leg_pe_ci95"], did["leg_ce_ci95"], did["did_ci95"]]
     cols = [ARM_COLORS["1738pe"], ARM_COLORS["1738ce"], "0.35"]
     if desc.get("did") is not None:
-        names.append("DiD, descriptive\n(#779-ce leg)")
+        names.append("slot contrast,\nsingle-turn leg")
         vals.append(desc["did"])
         cis.append(desc["did_ci95"])
         cols.append("0.62")
@@ -536,7 +607,7 @@ def fig_slot_gains_did(ctx: dict, figures_dir: Path) -> str | None:
     ax2.bar(names, vals, yerr=err, capsize=3, color=cols)
     ax2.axhline(0.0, color="0.4", lw=0.8)
     ax2.set_ylabel("Δ 2AFC accuracy")
-    ax2.set_title("H2(b) slot DiD (M2-eligible types)")
+    ax2.set_title("Slot contrast (prefix-varying types)")
     ax2.tick_params(axis="x", labelsize=7)
     fig.tight_layout()
     savefig_paper(fig, "dbe_slot_gains_did", dir=str(figures_dir))
@@ -559,7 +630,7 @@ def fig_carrier_transfer(ctx: dict, figures_dir: Path) -> str | None:
         cross.append(rec["cross_carrier_acc"])
     pol = (ctx["explor"] or {}).get("sentiment_polarity_transfer")
     if isinstance(pol, dict) and "779ce" in pol and "own_pair_acc" in pol.get("779ce", {}):
-        labels.append("user sentiment\n(polarity-grouped, P2)")
+        labels.append("review sentiment\n(polarity-grouped)")
         own.append(pol["779ce"]["own_pair_acc"])
         cross.append(pol["779ce"]["cross_item_acc"])
     if not labels:
@@ -574,7 +645,7 @@ def fig_carrier_transfer(ctx: dict, figures_dir: Path) -> str | None:
     ax.set_ylabel("paired 2AFC accuracy")
     ax.set_title(
         f"Carrier transfer: same value pair scored at other carriers "
-        f"(ctx-end map #779 fit, L{ctx['layer']})"
+        f"(single-turn map, context-end, layer {ctx['layer']})"
     )
     ax.legend()
     savefig_paper(fig, "dbe_carrier_transfer", dir=str(figures_dir))
@@ -601,7 +672,7 @@ def fig_length_covariate(ctx: dict, figures_dir: Path) -> str | None:
     rho = lc.get("spearman_ctxlen_delta_vs_2afc")
     rho_s = f"; Spearman ρ = {rho:.2f}" if isinstance(rho, (int, float)) else ""
     ax.set_xlabel("mean |Δ context length| within pair (tokens)")
-    ax.set_ylabel("paired 2AFC accuracy (ctx-end map, #779 fit)")
+    ax.set_ylabel("paired 2AFC accuracy (single-turn map, context-end)")
     ax.set_title(f"Length-delta covariate per type{rho_s}")
     savefig_paper(fig, "dbe_length_covariate", dir=str(figures_dir))
     plt.close(fig)
@@ -636,8 +707,8 @@ def fig_pooling_twins(ctx: dict, figures_dir: Path) -> str | None:
     ax.set_xticklabels(
         [_tick(c, ctx["benchmark"]) for c in cells], rotation=30, ha="right", fontsize=8
     )
-    ax.set_ylabel("Δ 2AFC accuracy (tail-incl − span-mean target)")
-    ax.set_title(f"Answer-pooling twins per type (L{ctx['layer']}, cosine)")
+    ax.set_ylabel("Δ 2AFC accuracy (tail-inclusive − span-mean target)")
+    ax.set_title(f"Answer-pooling twins per type (layer {ctx['layer']}, cosine)")
     ax.legend(fontsize=8)
     savefig_paper(fig, "dbe_pooling_twins", dir=str(figures_dir))
     plt.close(fig)
@@ -655,21 +726,22 @@ def fig_dv12_geometry(ctx: dict, figures_dir: Path) -> str | None:
     fig, axes = plt.subplots(n_panels, 1, figsize=(10.0, 4.2 * n_panels), squeeze=False)
     ax = axes[0][0]
     xs = np.arange(len(cells))
-    for si, (slot, col) in enumerate((("ce", COLOR_SLOT_CE), ("pe", COLOR_SLOT_PE))):
+    slot_series = (("ce", COLOR_SLOT_CE, "context-end"), ("pe", COLOR_SLOT_PE, "prefix-end"))
+    for si, (slot, col, slot_label) in enumerate(slot_series):
         vals = []
         for c in cells:
             rec = dv1["per_cell"][c].get(slot, {})
             prim = rec.get("primary") or {}
             degen = rec.get("degenerate_at_pe") and slot == "pe"
             vals.append(np.nan if degen else prim.get("ratio", np.nan))
-        ax.bar(xs + (si - 0.5) * 0.4, vals, width=0.4, color=col, label=f"{slot} slot")
+        ax.bar(xs + (si - 0.5) * 0.4, vals, width=0.4, color=col, label=slot_label)
     ax.axhline(1.0, color="0.4", lw=0.8, ls="--")
     ax.set_xticks(xs)
     ax.set_xticklabels(
         [_tick(c, ctx["benchmark"]) for c in cells], rotation=30, ha="right", fontsize=8
     )
-    ax.set_ylabel("‖Δv_C‖ / carrier yardstick")
-    ax.set_title(f"DV1 context-shift magnitude per type (L{dv1['meta']['primary_layer']})")
+    ax.set_ylabel("context shift ÷ carrier yardstick")
+    ax.set_title(f"Context-shift magnitude per type (layer {dv1['meta']['primary_layer']})")
     ax.legend()
     if has_dv2:
         ax2 = axes[1][0]
@@ -686,8 +758,8 @@ def fig_dv12_geometry(ctx: dict, figures_dir: Path) -> str | None:
         ax2.set_xticklabels(
             [_tick(c, ctx["benchmark"]) for c in cells2], rotation=30, ha="right", fontsize=8
         )
-        ax2.set_ylabel("‖Δv̄_A‖ / draw-noise yardstick")
-        ax2.set_title("DV2 answer-shift magnitude per type (tail pooling)")
+        ax2.set_ylabel("answer shift ÷ draw-noise yardstick")
+        ax2.set_title("Answer-shift magnitude per type (tail-inclusive pooling)")
     fig.tight_layout()
     savefig_paper(fig, "dbe_dv12_geometry", dir=str(figures_dir))
     plt.close(fig)
@@ -711,7 +783,7 @@ def fig_cjk_recount(ctx: dict, figures_dir: Path) -> str | None:
         reg_v.append(a if a is not None else np.nan)
         rr = recount.get(c)
         rec_v.append(rr["acc"] if isinstance(rr, dict) and "acc" in rr else np.nan)
-    ax2.bar(xs - 0.2, reg_v, width=0.4, color=ARM_COLORS["779ce"], label="registered")
+    ax2.bar(xs - 0.2, reg_v, width=0.4, color=ARM_COLORS["779ce"], label="all draws")
     ax2.bar(
         xs + 0.2,
         rec_v,
@@ -725,7 +797,7 @@ def fig_cjk_recount(ctx: dict, figures_dir: Path) -> str | None:
     ax2.set_xticklabels(
         [_tick(c, ctx["benchmark"]) for c in cells], rotation=30, ha="right", fontsize=8
     )
-    ax2.set_ylabel("paired 2AFC accuracy (#779 fit)")
+    ax2.set_ylabel("paired 2AFC accuracy (single-turn map, context-end)")
     ax2.legend()
     fig.tight_layout()
     savefig_paper(fig, "dbe_cjk_recount", dir=str(figures_dir))
@@ -749,14 +821,14 @@ def fig_parent_fit_offset(ctx: dict, figures_dir: Path) -> str | None:
         [_nan_if_none(_acc(ctx, "idbias_ce", c)) for c in cells],
         width=0.4,
         color=ARM_COLORS["idbias_ce"],
-        label=f"{ARM_LABELS['idbias_ce']} — battery-internal LOTO b",
+        label="identity + bias baseline (battery-internal offset)",
     )
     ax.bar(
         xs + 0.2,
         [off["per_type_2afc"][c]["acc"] for c in cells],
         width=0.4,
         color=COLOR_PARENT_FIT,
-        label=f"identity + parent-fit b (n={off.get('n_parent_train', '?')})",
+        label=f"identity + parent-fit offset (n = {off.get('n_parent_train', '?')})",
     )
     ax.axhline(0.5, color="0.4", lw=0.8, ls="--")
     ax.set_xticks(xs)
@@ -764,7 +836,9 @@ def fig_parent_fit_offset(ctx: dict, figures_dir: Path) -> str | None:
         [_tick(c, ctx["benchmark"]) for c in cells], rotation=30, ha="right", fontsize=8
     )
     ax.set_ylabel("paired 2AFC accuracy")
-    ax.set_title(f"Constant-offset companion: battery-internal vs parent-fit b (L{ctx['layer']})")
+    ax.set_title(
+        f"Constant-offset companion: battery-internal vs parent-fit offset (layer {ctx['layer']})"
+    )
     ax.legend(fontsize=8)
     savefig_paper(fig, "dbe_parent_fit_offset", dir=str(figures_dir))
     plt.close(fig)
@@ -804,7 +878,7 @@ def fig_union_pool_retrieval(ctx: dict, figures_dir: Path) -> str | None:
     ax.set_ylabel("retrieval accuracy (cosine)")
     ax.set_title(
         f"Union-pool retrieval: new + parent targets "
-        f"(pool = {up.get('pool_size', '?')}, L{ctx['layer']})"
+        f"(pool = {up.get('pool_size', '?')}, layer {ctx['layer']})"
     )
     ax.legend(fontsize=8)
     savefig_paper(fig, "dbe_union_pool_retrieval", dir=str(figures_dir))

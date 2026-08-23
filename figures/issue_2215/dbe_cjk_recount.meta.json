@@ -1,11 +1,54 @@
 {
-  "commit": "0ae62170",
-  "render_id": "d3cdabd941fb484d",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "488b3e3c+dirty",
+  "render_id": "fbee4edea1ef4860",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2215/dbe_2afc_vs_retrieval.meta.json",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.pdf",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.png",
+    "figures/issue_2215/dbe_carrier_transfer.meta.json",
+    "figures/issue_2215/dbe_carrier_transfer.pdf",
+    "figures/issue_2215/dbe_carrier_transfer.png",
+    "figures/issue_2215/dbe_did_slot_gains.meta.json",
+    "figures/issue_2215/dbe_did_slot_gains.pdf",
+    "figures/issue_2215/dbe_did_slot_gains.png",
+    "figures/issue_2215/dbe_dv12_geometry.meta.json",
+    "figures/issue_2215/dbe_dv12_geometry.pdf",
+    "figures/issue_2215/dbe_dv12_geometry.png",
+    "figures/issue_2215/dbe_h3_dissociation.meta.json",
+    "figures/issue_2215/dbe_h3_dissociation.pdf",
+    "figures/issue_2215/dbe_h3_dissociation.png",
+    "figures/issue_2215/dbe_hero_pertype_2afc.meta.json",
+    "figures/issue_2215/dbe_hero_pertype_2afc.pdf",
+    "figures/issue_2215/dbe_hero_pertype_2afc.png",
+    "figures/issue_2215/dbe_joint_taxonomy.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy.png",
+    "figures/issue_2215/dbe_joint_taxonomy_48.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy_48.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy_48.png",
+    "figures/issue_2215/dbe_length_covariate.meta.json",
+    "figures/issue_2215/dbe_length_covariate.pdf",
+    "figures/issue_2215/dbe_length_covariate.png",
+    "figures/issue_2215/dbe_percell_2afc.meta.json",
+    "figures/issue_2215/dbe_percell_2afc.pdf",
+    "figures/issue_2215/dbe_percell_2afc.png",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.meta.json",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.pdf",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.png",
+    "figures/issue_2215/dbe_pooling_twins.meta.json",
+    "figures/issue_2215/dbe_pooling_twins.pdf",
+    "figures/issue_2215/dbe_pooling_twins.png",
+    "figures/issue_2215/dbe_slot_gains_did.meta.json",
+    "figures/issue_2215/dbe_slot_gains_did.pdf",
+    "figures/issue_2215/dbe_slot_gains_did.png",
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2215_dbe_figures.py",
-  "created": "2026-08-23T07:14:31Z",
+  "created": "2026-08-23T08:37:58Z",
   "figsize": [
     10.0,
     8.0
@@ -61,97 +104,97 @@
     },
     {
       "x": -0.2,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.8,
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5416666666666666,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.8,
-      "paired 2AFC accuracy (#779 fit)": 0.5694444444444444,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5694444444444444,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.8,
-      "paired 2AFC accuracy (#779 fit)": 0.6111111111111112,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.6111111111111112,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 3.8,
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 4.8,
-      "paired 2AFC accuracy (#779 fit)": 0.9861111111111112,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9861111111111112,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 5.8,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 6.8,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.2,
-      "paired 2AFC accuracy (#779 fit)": 0.5277777777777778,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5277777777777778,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.2,
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5416666666666666,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 2.2,
-      "paired 2AFC accuracy (#779 fit)": 0.5555555555555556,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5555555555555556,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 3.2,
-      "paired 2AFC accuracy (#779 fit)": 0.6111111111111112,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.6111111111111112,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 4.2,
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 5.2,
-      "paired 2AFC accuracy (#779 fit)": 0.9861111111111112,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9861111111111112,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 6.2,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 7.2,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar",
       "_group": 2
     }
@@ -176,20 +219,20 @@
         ]
       },
       {
-        "ylabel": "paired 2AFC accuracy (#779 fit)",
+        "ylabel": "paired 2AFC accuracy (single-turn map, context-end)",
         "legend_labels": [
-          "registered",
+          "all draws",
           "CJK-excluded recount"
         ],
         "xticklabels": [
           "style register",
           "code vs prose",
           "user role identity",
-          "user doc format",
+          "user document format",
           "conversation topic",
-          "user sentiment \u2020",
+          "review sentiment \u2020",
           "conversation language",
-          "refusal request \u2020"
+          "refusal-inducing request \u2020"
         ],
         "yticklabels": [
           "0.0",
@@ -203,7 +246,7 @@
       }
     ],
     "series": [
-      "registered",
+      "all draws",
       "CJK-excluded recount"
     ]
   },

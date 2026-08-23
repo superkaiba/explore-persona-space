@@ -1,249 +1,261 @@
 {
-  "commit": "0ae62170",
-  "render_id": "1bd7b144d8aa4ac8",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2215_dbe_analysis.py",
-  "created": "2026-08-23T07:14:14Z",
+  "commit": "488b3e3c+dirty",
+  "render_id": "706b137d72b04a03",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2215/dbe_did_slot_gains.meta.json",
+    "figures/issue_2215/dbe_did_slot_gains.pdf",
+    "figures/issue_2215/dbe_did_slot_gains.png",
+    "figures/issue_2215/dbe_h3_dissociation.meta.json",
+    "figures/issue_2215/dbe_h3_dissociation.pdf",
+    "figures/issue_2215/dbe_h3_dissociation.png",
+    "figures/issue_2215/dbe_percell_2afc.meta.json",
+    "figures/issue_2215/dbe_percell_2afc.pdf",
+    "figures/issue_2215/dbe_percell_2afc.png",
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-23T08:36:34Z",
   "figsize": [
     12.5,
     4.2
   ],
   "points": [
     {
-      "category": "recency prior topic d5",
-      "paired 2AFC accuracy (779ce)": 0.4861111111111111,
+      "category": "prior topic, 5 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.4861111111111111,
       "_kind": "bar"
     },
     {
       "category": "style register",
-      "paired 2AFC accuracy (779ce)": 0.5,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5,
       "_kind": "bar"
     },
     {
-      "category": "demo format",
-      "paired 2AFC accuracy (779ce)": 0.5138888888888888,
+      "category": "demonstrated format",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5138888888888888,
       "_kind": "bar"
     },
     {
-      "category": "recency fact user name d5",
-      "paired 2AFC accuracy (779ce)": 0.5138888888888888,
+      "category": "user name, 5 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5138888888888888,
       "_kind": "bar"
     },
     {
-      "category": "recency fact user name d3",
-      "paired 2AFC accuracy (779ce)": 0.5277777777777778,
+      "category": "user name, 3 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5277777777777778,
       "_kind": "bar"
     },
     {
       "category": "code vs prose",
-      "paired 2AFC accuracy (779ce)": 0.5416666666666666,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5416666666666666,
       "_kind": "bar"
     },
     {
-      "category": "load fact user name l5",
-      "paired 2AFC accuracy (779ce)": 0.5555555555555556,
+      "category": "user name, 5-item load",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5555555555555556,
       "_kind": "bar"
     },
     {
       "category": "filler swap",
-      "paired 2AFC accuracy (779ce)": 0.5694444444444444,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5694444444444444,
       "_kind": "bar"
     },
     {
       "category": "user role identity",
-      "paired 2AFC accuracy (779ce)": 0.5694444444444444,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5694444444444444,
       "_kind": "bar"
     },
     {
-      "category": "fact novel queried",
-      "paired 2AFC accuracy (779ce)": 0.5833333333333334,
+      "category": "novel queried fact",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5833333333333334,
       "_kind": "bar"
     },
     {
-      "category": "fact user name",
-      "paired 2AFC accuracy (779ce)": 0.5833333333333334,
+      "category": "user name",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5833333333333334,
       "_kind": "bar"
     },
     {
-      "category": "load fact user name l3",
-      "paired 2AFC accuracy (779ce)": 0.5833333333333334,
+      "category": "user name, 3-item load",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5833333333333334,
       "_kind": "bar"
     },
     {
-      "category": "list numeric detail",
-      "paired 2AFC accuracy (779ce)": 0.5972222222222222,
+      "category": "numeric list detail",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5972222222222222,
       "_kind": "bar"
     },
     {
       "category": "user emotion",
-      "paired 2AFC accuracy (779ce)": 0.5972222222222222,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5972222222222222,
       "_kind": "bar"
     },
     {
-      "category": "user doc format",
-      "paired 2AFC accuracy (779ce)": 0.6111111111111112,
+      "category": "user document format",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.6111111111111112,
       "_kind": "bar"
     },
     {
-      "category": "fact assistant animal",
-      "paired 2AFC accuracy (779ce)": 0.6666666666666666,
+      "category": "assistant fact",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.6666666666666666,
       "_kind": "bar"
     },
     {
-      "category": "persona role header",
-      "paired 2AFC accuracy (779ce)": 0.6805555555555556,
+      "category": "role-header persona",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.6805555555555556,
       "_kind": "bar"
     },
     {
-      "category": "constraint knowledge",
-      "paired 2AFC accuracy (779ce)": 0.7083333333333334,
+      "category": "knowledge constraint",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7083333333333334,
       "_kind": "bar"
     },
     {
-      "category": "demo persona",
-      "paired 2AFC accuracy (779ce)": 0.7083333333333334,
+      "category": "demonstrated persona",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7083333333333334,
       "_kind": "bar"
     },
     {
-      "category": "load instr format l3",
-      "paired 2AFC accuracy (779ce)": 0.7083333333333334,
+      "category": "format instruction, 3-item load",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7083333333333334,
       "_kind": "bar"
     },
     {
-      "category": "load fact assistant animal l3",
-      "paired 2AFC accuracy (779ce)": 0.75,
+      "category": "assistant fact, 3-item load",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.75,
       "_kind": "bar"
     },
     {
-      "category": "load fact assistant animal l5",
-      "paired 2AFC accuracy (779ce)": 0.7777777777777778,
+      "category": "assistant fact, 5-item load",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7777777777777778,
       "_kind": "bar"
     },
     {
-      "category": "conflict format fwd",
-      "paired 2AFC accuracy (779ce)": 0.7916666666666666,
+      "category": "format conflict, forward",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7916666666666666,
       "_kind": "bar"
     },
     {
-      "category": "conflict format rev",
-      "paired 2AFC accuracy (779ce)": 0.7916666666666666,
+      "category": "format conflict, reverse",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7916666666666666,
       "_kind": "bar"
     },
     {
-      "category": "icl task mapping",
-      "paired 2AFC accuracy (779ce)": 0.7916666666666666,
+      "category": "in-context-learning mapping",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7916666666666666,
       "_kind": "bar"
     },
     {
-      "category": "recency instr format d5",
-      "paired 2AFC accuracy (779ce)": 0.7916666666666666,
+      "category": "format instruction, 5 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.7916666666666666,
       "_kind": "bar"
     },
     {
-      "category": "load instr format l5",
-      "paired 2AFC accuracy (779ce)": 0.8055555555555556,
+      "category": "format instruction, 5-item load",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.8055555555555556,
       "_kind": "bar"
     },
     {
-      "category": "recency instr format d3",
-      "paired 2AFC accuracy (779ce)": 0.8055555555555556,
+      "category": "format instruction, 3 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.8055555555555556,
       "_kind": "bar"
     },
     {
-      "category": "instr format",
-      "paired 2AFC accuracy (779ce)": 0.8472222222222222,
+      "category": "format instruction",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.8472222222222222,
       "_kind": "bar"
     },
     {
-      "category": "recency prior topic d3",
-      "paired 2AFC accuracy (779ce)": 0.8611111111111112,
+      "category": "prior topic, 3 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.8611111111111112,
       "_kind": "bar"
     },
     {
       "category": "refusal boundary",
-      "paired 2AFC accuracy (779ce)": 0.8611111111111112,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.8611111111111112,
       "_kind": "bar"
     },
     {
       "category": "user expertise",
-      "paired 2AFC accuracy (779ce)": 0.8611111111111112,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.8611111111111112,
       "_kind": "bar"
     },
     {
       "category": "reasoning style",
-      "paired 2AFC accuracy (779ce)": 0.875,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.875,
       "_kind": "bar"
     },
     {
       "category": "verbosity",
-      "paired 2AFC accuracy (779ce)": 0.9305555555555556,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9305555555555556,
       "_kind": "bar"
     },
     {
-      "category": "recency persona prompted d5",
-      "paired 2AFC accuracy (779ce)": 0.9444444444444444,
+      "category": "prompted persona, 5 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9444444444444444,
       "_kind": "bar"
     },
     {
-      "category": "language implied",
-      "paired 2AFC accuracy (779ce)": 0.9583333333333334,
+      "category": "implied language",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9583333333333334,
       "_kind": "bar"
     },
     {
-      "category": "conflict persona fwd",
-      "paired 2AFC accuracy (779ce)": 0.9722222222222222,
+      "category": "persona conflict, forward",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "_kind": "bar"
     },
     {
-      "category": "conflict persona rev",
-      "paired 2AFC accuracy (779ce)": 0.9722222222222222,
+      "category": "persona conflict, reverse",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "_kind": "bar"
     },
     {
-      "category": "query content",
-      "paired 2AFC accuracy (779ce)": 0.9722222222222222,
+      "category": "changed question (control)",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "_kind": "bar"
     },
     {
-      "category": "recency persona prompted d3",
-      "paired 2AFC accuracy (779ce)": 0.9722222222222222,
+      "category": "prompted persona, 3 turns back",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "_kind": "bar"
     },
     {
       "category": "conversation topic",
-      "paired 2AFC accuracy (779ce)": 0.9722222222222222,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "_kind": "bar"
     },
     {
-      "category": "user sentiment",
-      "paired 2AFC accuracy (779ce)": 0.9861111111111112,
+      "category": "review sentiment",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9861111111111112,
       "_kind": "bar"
     },
     {
-      "category": "instr language",
-      "paired 2AFC accuracy (779ce)": 1.0,
+      "category": "language instruction",
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar"
     },
     {
-      "category": "persona prompted",
-      "paired 2AFC accuracy (779ce)": 1.0,
+      "category": "prompted persona",
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar"
     },
     {
       "category": "prior topic",
-      "paired 2AFC accuracy (779ce)": 1.0,
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar"
     },
     {
       "category": "conversation language",
-      "paired 2AFC accuracy (779ce)": 1.0,
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar"
     },
     {
-      "category": "refusal request",
-      "paired 2AFC accuracy (779ce)": 1.0,
+      "category": "refusal-inducing request",
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "_kind": "bar"
     }
   ],
@@ -254,56 +266,56 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Joint taxonomy: parent battery (gray) + new types (color), L19",
-        "ylabel": "paired 2AFC accuracy (779ce)",
+        "title_left": "Joint taxonomy: parent battery (gray) + new types (color), layer 19",
+        "ylabel": "paired 2AFC accuracy (single-turn map, context-end)",
         "xticklabels": [
-          "recency prior topic d5",
+          "prior topic, 5 turns back",
           "style register",
-          "demo format",
-          "recency fact user name d5",
-          "recency fact user name d3",
+          "demonstrated format",
+          "user name, 5 turns back",
+          "user name, 3 turns back",
           "code vs prose",
-          "load fact user name l5",
+          "user name, 5-item load",
           "filler swap",
           "user role identity",
-          "fact novel queried",
-          "fact user name",
-          "load fact user name l3",
-          "list numeric detail",
+          "novel queried fact",
+          "user name",
+          "user name, 3-item load",
+          "numeric list detail",
           "user emotion",
-          "user doc format",
-          "fact assistant animal",
-          "persona role header",
-          "constraint knowledge",
-          "demo persona",
-          "load instr format l3",
-          "load fact assistant animal l3",
-          "load fact assistant animal l5",
-          "conflict format fwd",
-          "conflict format rev",
-          "icl task mapping",
-          "recency instr format d5",
-          "load instr format l5",
-          "recency instr format d3",
-          "instr format",
-          "recency prior topic d3",
+          "user document format",
+          "assistant fact",
+          "role-header persona",
+          "knowledge constraint",
+          "demonstrated persona",
+          "format instruction, 3-item load",
+          "assistant fact, 3-item load",
+          "assistant fact, 5-item load",
+          "format conflict, forward",
+          "format conflict, reverse",
+          "in-context-learning mapping",
+          "format instruction, 5 turns back",
+          "format instruction, 5-item load",
+          "format instruction, 3 turns back",
+          "format instruction",
+          "prior topic, 3 turns back",
           "refusal boundary",
           "user expertise",
           "reasoning style",
           "verbosity",
-          "recency persona prompted d5",
-          "language implied",
-          "conflict persona fwd",
-          "conflict persona rev",
-          "query content",
-          "recency persona prompted d3",
+          "prompted persona, 5 turns back",
+          "implied language",
+          "persona conflict, forward",
+          "persona conflict, reverse",
+          "changed question (control)",
+          "prompted persona, 3 turns back",
           "conversation topic",
-          "user sentiment",
-          "instr language",
-          "persona prompted",
+          "review sentiment",
+          "language instruction",
+          "prompted persona",
           "prior topic",
           "conversation language",
-          "refusal request"
+          "refusal-inducing request"
         ],
         "yticklabels": [
           "0.0",

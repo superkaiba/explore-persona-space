@@ -1,11 +1,39 @@
 {
-  "commit": "0ae62170",
-  "render_id": "791e88fc027e4765",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "488b3e3c+dirty",
+  "render_id": "6f6b1b9bbaaa4119",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2215/dbe_2afc_vs_retrieval.meta.json",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.pdf",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.png",
+    "figures/issue_2215/dbe_did_slot_gains.meta.json",
+    "figures/issue_2215/dbe_did_slot_gains.pdf",
+    "figures/issue_2215/dbe_did_slot_gains.png",
+    "figures/issue_2215/dbe_h3_dissociation.meta.json",
+    "figures/issue_2215/dbe_h3_dissociation.pdf",
+    "figures/issue_2215/dbe_h3_dissociation.png",
+    "figures/issue_2215/dbe_hero_pertype_2afc.meta.json",
+    "figures/issue_2215/dbe_hero_pertype_2afc.pdf",
+    "figures/issue_2215/dbe_hero_pertype_2afc.png",
+    "figures/issue_2215/dbe_joint_taxonomy.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy.png",
+    "figures/issue_2215/dbe_joint_taxonomy_48.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy_48.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy_48.png",
+    "figures/issue_2215/dbe_percell_2afc.meta.json",
+    "figures/issue_2215/dbe_percell_2afc.pdf",
+    "figures/issue_2215/dbe_percell_2afc.png",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.meta.json",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.pdf",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.png",
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2215_dbe_figures.py",
-  "created": "2026-08-23T07:14:25Z",
+  "created": "2026-08-23T08:37:30Z",
   "figsize": [
     12.5,
     4.4
@@ -13,171 +41,171 @@
   "points": [
     {
       "x": -0.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.01388888888888895,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.01388888888888895,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.733333,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.13888888888888895,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.13888888888888895,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.733333,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.01388888888888884,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": -0.01388888888888884,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.733333,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.01388888888888884,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.01388888888888884,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.733333,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.04166666666666674,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.04166666666666674,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 4.733333,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": null,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": null,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 5.733333,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.36111111111111116,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.36111111111111116,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 6.733333,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": null,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": null,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "style register",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.01388888888888884,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.01388888888888884,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "code vs prose",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.04166666666666663,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": -0.04166666666666663,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "user role identity",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.02777777777777779,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.02777777777777779,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "user doc format",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.01388888888888895,
+      "category": "user document format",
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": -0.01388888888888895,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "conversation topic",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.01388888888888895,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": -0.01388888888888895,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "user sentiment \u2020",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.0,
+      "category": "review sentiment \u2020",
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.0,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "conversation language",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.05555555555555558,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.05555555555555558,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "refusal request \u2020",
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.04166666666666663,
+      "category": "refusal-inducing request \u2020",
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.04166666666666663,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.02777777777777779,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": -0.02777777777777779,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.08333333333333337,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": -0.08333333333333337,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 2.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.05555555555555558,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.05555555555555558,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 3.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.02777777777777779,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.02777777777777779,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 4.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.01388888888888895,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": -0.01388888888888895,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 5.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.01388888888888895,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.01388888888888895,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 6.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.05555555555555558,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.05555555555555558,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 7.266667,
-      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.04166666666666663,
+      "\u0394 2AFC accuracy (fitted \u2212 identity + bias)": 0.04166666666666663,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "category": "pe gain",
+      "category": "prefix-end\ngain",
       "\u0394 2AFC accuracy": 0.09259258914324973,
       "error": 0.02546296248005496,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "ce gain",
+      "category": "context-end\ngain",
       "\u0394 2AFC accuracy": 0.004629630181524489,
       "error": 0.020833334161175623,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "DiD (pe \u2212 ce)",
+      "category": "slot contrast\n(prefix \u2212 context)",
       "\u0394 2AFC accuracy": 0.08796295896172525,
       "error": 0.03125000207477974,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "DiD, descriptive\n(#779-ce leg)",
+      "category": "slot contrast,\nsingle-turn leg",
       "\u0394 2AFC accuracy": 0.09027777405248749,
       "error": 0.03472222077349822,
       "_kind": "bar",
@@ -239,22 +267,22 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Per-type fitted-map gain by slot (L19, tail, cosine)",
-        "ylabel": "\u0394 2AFC accuracy (fitted \u2212 identity+bias)",
+        "title_left": "Per-type fitted-map gain by read slot (layer 19, cosine)",
+        "ylabel": "\u0394 2AFC accuracy (fitted \u2212 identity + bias)",
         "legend_labels": [
-          "prefix-end map (#1738 fit) \u2212 identity+bias (prefix-end)",
-          "ctx-end map, matched fit (#1738) \u2212 identity+bias (ctx-end)",
-          "ctx-end map (#779 fit) \u2212 identity+bias (ctx-end)"
+          "prefix-end: fitted \u2212 baseline (multi-turn fit)",
+          "context-end: fitted \u2212 baseline (multi-turn fit)",
+          "context-end: fitted \u2212 baseline (single-turn fit)"
         ],
         "xticklabels": [
           "style register",
           "code vs prose",
           "user role identity",
-          "user doc format",
+          "user document format",
           "conversation topic",
-          "user sentiment \u2020",
+          "review sentiment \u2020",
           "conversation language",
-          "refusal request \u2020"
+          "refusal-inducing request \u2020"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -267,13 +295,13 @@
         ]
       },
       {
-        "title_left": "H2(b) slot DiD (M2-eligible types)",
+        "title_left": "Slot contrast (prefix-varying types)",
         "ylabel": "\u0394 2AFC accuracy",
         "xticklabels": [
-          "pe gain",
-          "ce gain",
-          "DiD (pe \u2212 ce)",
-          "DiD, descriptive\n(#779-ce leg)"
+          "prefix-end\ngain",
+          "context-end\ngain",
+          "slot contrast\n(prefix \u2212 context)",
+          "slot contrast,\nsingle-turn leg"
         ],
         "yticklabels": [
           "\u22120.04",
@@ -290,9 +318,9 @@
       }
     ],
     "series": [
-      "prefix-end map (#1738 fit) \u2212 identity+bias (prefix-end)",
-      "ctx-end map, matched fit (#1738) \u2212 identity+bias (ctx-end)",
-      "ctx-end map (#779 fit) \u2212 identity+bias (ctx-end)"
+      "prefix-end: fitted \u2212 baseline (multi-turn fit)",
+      "context-end: fitted \u2212 baseline (multi-turn fit)",
+      "context-end: fitted \u2212 baseline (single-turn fit)"
     ]
   },
   "formats_written": [

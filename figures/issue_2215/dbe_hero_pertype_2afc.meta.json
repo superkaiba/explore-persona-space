@@ -1,11 +1,27 @@
 {
-  "commit": "0ae62170",
-  "render_id": "41cafa8ecdfd470a",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "488b3e3c+dirty",
+  "render_id": "74ce9aba8815418a",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2215/dbe_did_slot_gains.meta.json",
+    "figures/issue_2215/dbe_did_slot_gains.pdf",
+    "figures/issue_2215/dbe_did_slot_gains.png",
+    "figures/issue_2215/dbe_h3_dissociation.meta.json",
+    "figures/issue_2215/dbe_h3_dissociation.pdf",
+    "figures/issue_2215/dbe_h3_dissociation.png",
+    "figures/issue_2215/dbe_joint_taxonomy.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy.png",
+    "figures/issue_2215/dbe_percell_2afc.meta.json",
+    "figures/issue_2215/dbe_percell_2afc.pdf",
+    "figures/issue_2215/dbe_percell_2afc.png",
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2215_dbe_figures.py",
-  "created": "2026-08-23T07:14:18Z",
+  "created": "2026-08-23T08:37:01Z",
   "figsize": [
     10.5,
     4.4
@@ -143,7 +159,7 @@
       "_group": 2
     },
     {
-      "category": "user doc format",
+      "category": "user document format",
       "paired 2AFC accuracy": 0.5694444444444444,
       "error": 0.041666666666666685,
       "_kind": "bar",
@@ -157,7 +173,7 @@
       "_group": 2
     },
     {
-      "category": "user sentiment \u2020",
+      "category": "review sentiment \u2020",
       "paired 2AFC accuracy": 0.9722222222222222,
       "error": 0.03472222222222221,
       "_kind": "bar",
@@ -171,7 +187,7 @@
       "_group": 2
     },
     {
-      "category": "refusal request \u2020",
+      "category": "refusal-inducing request \u2020",
       "paired 2AFC accuracy": 1.0,
       "error": 0.0,
       "_kind": "bar",
@@ -775,24 +791,24 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "New-battery discrimination per type (L19, tail, cosine; \u2020 = benchmark cell; gray band = shuffled-pair null)",
+        "title_left": "New-battery discrimination per type (layer 19, cosine; \u2020 = benchmark cell; gray band = shuffled-pair null)",
         "ylabel": "paired 2AFC accuracy",
         "legend_labels": [
-          "ctx-end map (#779 fit)",
-          "prefix-end map (#1738 fit)",
-          "ctx-end map, matched fit (#1738)",
-          "identity+bias (ctx-end)",
-          "identity+bias (prefix-end)"
+          "single-turn map, context-end",
+          "multi-turn map, prefix-end",
+          "multi-turn map, context-end",
+          "identity + bias baseline, context-end",
+          "identity + bias baseline, prefix-end"
         ],
         "xticklabels": [
           "style register",
           "code vs prose",
           "user role identity",
-          "user doc format",
+          "user document format",
           "conversation topic",
-          "user sentiment \u2020",
+          "review sentiment \u2020",
           "conversation language",
-          "refusal request \u2020"
+          "refusal-inducing request \u2020"
         ],
         "yticklabels": [
           "0.0",
@@ -806,11 +822,11 @@
       }
     ],
     "series": [
-      "ctx-end map (#779 fit)",
-      "prefix-end map (#1738 fit)",
-      "ctx-end map, matched fit (#1738)",
-      "identity+bias (ctx-end)",
-      "identity+bias (prefix-end)"
+      "single-turn map, context-end",
+      "multi-turn map, prefix-end",
+      "multi-turn map, context-end",
+      "identity + bias baseline, context-end",
+      "identity + bias baseline, prefix-end"
     ]
   },
   "formats_written": [

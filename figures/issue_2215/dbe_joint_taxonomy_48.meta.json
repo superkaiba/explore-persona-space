@@ -1,955 +1,1007 @@
 {
-  "commit": "0ae62170",
-  "render_id": "faf7a549f99a46a3",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "488b3e3c+dirty",
+  "render_id": "bf4cb649a33a4839",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2215/dbe_2afc_vs_retrieval.meta.json",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.pdf",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.png",
+    "figures/issue_2215/dbe_carrier_transfer.meta.json",
+    "figures/issue_2215/dbe_carrier_transfer.pdf",
+    "figures/issue_2215/dbe_carrier_transfer.png",
+    "figures/issue_2215/dbe_cjk_recount.meta.json",
+    "figures/issue_2215/dbe_cjk_recount.pdf",
+    "figures/issue_2215/dbe_cjk_recount.png",
+    "figures/issue_2215/dbe_did_slot_gains.meta.json",
+    "figures/issue_2215/dbe_did_slot_gains.pdf",
+    "figures/issue_2215/dbe_did_slot_gains.png",
+    "figures/issue_2215/dbe_dv12_geometry.meta.json",
+    "figures/issue_2215/dbe_dv12_geometry.pdf",
+    "figures/issue_2215/dbe_dv12_geometry.png",
+    "figures/issue_2215/dbe_h3_dissociation.meta.json",
+    "figures/issue_2215/dbe_h3_dissociation.pdf",
+    "figures/issue_2215/dbe_h3_dissociation.png",
+    "figures/issue_2215/dbe_hero_pertype_2afc.meta.json",
+    "figures/issue_2215/dbe_hero_pertype_2afc.pdf",
+    "figures/issue_2215/dbe_hero_pertype_2afc.png",
+    "figures/issue_2215/dbe_joint_taxonomy.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy.png",
+    "figures/issue_2215/dbe_joint_taxonomy_48.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy_48.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy_48.png",
+    "figures/issue_2215/dbe_length_covariate.meta.json",
+    "figures/issue_2215/dbe_length_covariate.pdf",
+    "figures/issue_2215/dbe_length_covariate.png",
+    "figures/issue_2215/dbe_parent_fit_offset.meta.json",
+    "figures/issue_2215/dbe_parent_fit_offset.pdf",
+    "figures/issue_2215/dbe_parent_fit_offset.png",
+    "figures/issue_2215/dbe_percell_2afc.meta.json",
+    "figures/issue_2215/dbe_percell_2afc.pdf",
+    "figures/issue_2215/dbe_percell_2afc.png",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.meta.json",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.pdf",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.png",
+    "figures/issue_2215/dbe_pooling_twins.meta.json",
+    "figures/issue_2215/dbe_pooling_twins.pdf",
+    "figures/issue_2215/dbe_pooling_twins.png",
+    "figures/issue_2215/dbe_slot_gains_did.meta.json",
+    "figures/issue_2215/dbe_slot_gains_did.pdf",
+    "figures/issue_2215/dbe_slot_gains_did.png",
+    "figures/issue_2215/dbe_union_pool_retrieval.meta.json",
+    "figures/issue_2215/dbe_union_pool_retrieval.pdf",
+    "figures/issue_2215/dbe_union_pool_retrieval.png",
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2215_dbe_figures.py",
-  "created": "2026-08-23T07:14:20Z",
+  "created": "2026-08-23T08:44:49Z",
   "figsize": [
     13.5,
     4.6
   ],
   "points": [
     {
-      "category": "recency prior topic d5",
-      "paired 2AFC accuracy (#779 fit)": 0.4861111111111111,
+      "category": "prior topic, 5 turns back",
+      "paired 2AFC accuracy": 0.4861111111111111,
       "error": 0.020833333333333343,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "style register",
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "error": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "demo format",
-      "paired 2AFC accuracy (#779 fit)": 0.5138888888888888,
+      "category": "demonstrated format",
+      "paired 2AFC accuracy": 0.5138888888888888,
       "error": 0.020833333333333315,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "recency fact user name d5",
-      "paired 2AFC accuracy (#779 fit)": 0.5138888888888888,
+      "category": "user name, 5 turns back",
+      "paired 2AFC accuracy": 0.5138888888888888,
       "error": 0.020833333333333315,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "recency fact user name d3",
-      "paired 2AFC accuracy (#779 fit)": 0.5277777777777778,
+      "category": "user name, 3 turns back",
+      "paired 2AFC accuracy": 0.5277777777777778,
       "error": 0.041666666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "code vs prose",
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy": 0.5416666666666666,
       "error": 0.055555555555555525,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "load fact user name l5",
-      "paired 2AFC accuracy (#779 fit)": 0.5555555555555556,
+      "category": "user name, 5-item load",
+      "paired 2AFC accuracy": 0.5555555555555556,
       "error": 0.0625,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "filler swap",
-      "paired 2AFC accuracy (#779 fit)": 0.5694444444444444,
+      "paired 2AFC accuracy": 0.5694444444444444,
       "error": 0.0625,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "user role identity",
-      "paired 2AFC accuracy (#779 fit)": 0.5694444444444444,
+      "paired 2AFC accuracy": 0.5694444444444444,
       "error": 0.06250000000000006,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "fact novel queried",
-      "paired 2AFC accuracy (#779 fit)": 0.5833333333333334,
+      "category": "novel queried fact",
+      "paired 2AFC accuracy": 0.5833333333333334,
       "error": 0.0625,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "fact user name",
-      "paired 2AFC accuracy (#779 fit)": 0.5833333333333334,
+      "category": "user name",
+      "paired 2AFC accuracy": 0.5833333333333334,
       "error": 0.04166666666666674,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "load fact user name l3",
-      "paired 2AFC accuracy (#779 fit)": 0.5833333333333334,
+      "category": "user name, 3-item load",
+      "paired 2AFC accuracy": 0.5833333333333334,
       "error": 0.041666666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "list numeric detail",
-      "paired 2AFC accuracy (#779 fit)": 0.5972222222222222,
+      "category": "numeric list detail",
+      "paired 2AFC accuracy": 0.5972222222222222,
       "error": 0.09027777777777768,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "user emotion",
-      "paired 2AFC accuracy (#779 fit)": 0.5972222222222222,
+      "paired 2AFC accuracy": 0.5972222222222222,
       "error": 0.05555555555555558,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "user doc format",
-      "paired 2AFC accuracy (#779 fit)": 0.6111111111111112,
+      "category": "user document format",
+      "paired 2AFC accuracy": 0.6111111111111112,
       "error": 0.041666666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "fact assistant animal",
-      "paired 2AFC accuracy (#779 fit)": 0.6666666666666666,
+      "category": "assistant fact",
+      "paired 2AFC accuracy": 0.6666666666666666,
       "error": 0.09027777777777779,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "persona role header",
-      "paired 2AFC accuracy (#779 fit)": 0.6805555555555556,
+      "category": "role-header persona",
+      "paired 2AFC accuracy": 0.6805555555555556,
       "error": 0.09722222222222221,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "constraint knowledge",
-      "paired 2AFC accuracy (#779 fit)": 0.7083333333333334,
+      "category": "knowledge constraint",
+      "paired 2AFC accuracy": 0.7083333333333334,
       "error": 0.0763888888888889,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "demo persona",
-      "paired 2AFC accuracy (#779 fit)": 0.7083333333333334,
+      "category": "demonstrated persona",
+      "paired 2AFC accuracy": 0.7083333333333334,
       "error": 0.11111111111111116,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "load instr format l3",
-      "paired 2AFC accuracy (#779 fit)": 0.7083333333333334,
+      "category": "format instruction, 3-item load",
+      "paired 2AFC accuracy": 0.7083333333333334,
       "error": 0.08333333333333331,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "load fact assistant animal l3",
-      "paired 2AFC accuracy (#779 fit)": 0.75,
+      "category": "assistant fact, 3-item load",
+      "paired 2AFC accuracy": 0.75,
       "error": 0.09027777777777779,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "load fact assistant animal l5",
-      "paired 2AFC accuracy (#779 fit)": 0.7777777777777778,
+      "category": "assistant fact, 5-item load",
+      "paired 2AFC accuracy": 0.7777777777777778,
       "error": 0.09722222222222227,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "conflict format fwd",
-      "paired 2AFC accuracy (#779 fit)": 0.7916666666666666,
+      "category": "format conflict, forward",
+      "paired 2AFC accuracy": 0.7916666666666666,
       "error": 0.041666666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "conflict format rev",
-      "paired 2AFC accuracy (#779 fit)": 0.7916666666666666,
+      "category": "format conflict, reverse",
+      "paired 2AFC accuracy": 0.7916666666666666,
       "error": 0.041666666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "icl task mapping",
-      "paired 2AFC accuracy (#779 fit)": 0.7916666666666666,
+      "category": "in-context-learning mapping",
+      "paired 2AFC accuracy": 0.7916666666666666,
       "error": 0.05555555555555558,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "recency instr format d5",
-      "paired 2AFC accuracy (#779 fit)": 0.7916666666666666,
+      "category": "format instruction, 5 turns back",
+      "paired 2AFC accuracy": 0.7916666666666666,
       "error": 0.05555555555555558,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "load instr format l5",
-      "paired 2AFC accuracy (#779 fit)": 0.8055555555555556,
+      "category": "format instruction, 5-item load",
+      "paired 2AFC accuracy": 0.8055555555555556,
       "error": 0.07638888888888884,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "recency instr format d3",
-      "paired 2AFC accuracy (#779 fit)": 0.8055555555555556,
+      "category": "format instruction, 3 turns back",
+      "paired 2AFC accuracy": 0.8055555555555556,
       "error": 0.034722222222222265,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "instr format",
-      "paired 2AFC accuracy (#779 fit)": 0.8472222222222222,
+      "category": "format instruction",
+      "paired 2AFC accuracy": 0.8472222222222222,
       "error": 0.04166666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "recency prior topic d3",
-      "paired 2AFC accuracy (#779 fit)": 0.8611111111111112,
+      "category": "prior topic, 3 turns back",
+      "paired 2AFC accuracy": 0.8611111111111112,
       "error": 0.09027777777777785,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "refusal boundary",
-      "paired 2AFC accuracy (#779 fit)": 0.8611111111111112,
+      "paired 2AFC accuracy": 0.8611111111111112,
       "error": 0.06944444444444442,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "user expertise",
-      "paired 2AFC accuracy (#779 fit)": 0.8611111111111112,
+      "paired 2AFC accuracy": 0.8611111111111112,
       "error": 0.09027777777777768,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "reasoning style",
-      "paired 2AFC accuracy (#779 fit)": 0.875,
+      "paired 2AFC accuracy": 0.875,
       "error": 0.05555555555555547,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "verbosity",
-      "paired 2AFC accuracy (#779 fit)": 0.9305555555555556,
+      "paired 2AFC accuracy": 0.9305555555555556,
       "error": 0.04166666666666674,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "recency persona prompted d5",
-      "paired 2AFC accuracy (#779 fit)": 0.9444444444444444,
+      "category": "prompted persona, 5 turns back",
+      "paired 2AFC accuracy": 0.9444444444444444,
       "error": 0.0625,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "language implied",
-      "paired 2AFC accuracy (#779 fit)": 0.9583333333333334,
+      "category": "implied language",
+      "paired 2AFC accuracy": 0.9583333333333334,
       "error": 0.041666666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "conflict persona fwd",
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "category": "persona conflict, forward",
+      "paired 2AFC accuracy": 0.9722222222222222,
       "error": 0.034722222222222154,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "conflict persona rev",
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "category": "persona conflict, reverse",
+      "paired 2AFC accuracy": 0.9722222222222222,
       "error": 0.034722222222222154,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "query content",
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "category": "changed question (control)",
+      "paired 2AFC accuracy": 0.9722222222222222,
       "error": 0.034722222222222154,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "recency persona prompted d3",
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "category": "prompted persona, 3 turns back",
+      "paired 2AFC accuracy": 0.9722222222222222,
       "error": 0.041666666666666685,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "conversation topic",
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "paired 2AFC accuracy": 0.9722222222222222,
       "error": 0.034722222222222154,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "user sentiment \u2020",
-      "paired 2AFC accuracy (#779 fit)": 0.9861111111111112,
+      "category": "review sentiment \u2020",
+      "paired 2AFC accuracy": 0.9861111111111112,
       "error": 0.020833333333333315,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "instr language",
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "category": "language instruction",
+      "paired 2AFC accuracy": 1.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "persona prompted",
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "category": "prompted persona",
+      "paired 2AFC accuracy": 1.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "prior topic",
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "conversation language",
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "refusal request \u2020",
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "category": "refusal-inducing request \u2020",
+      "paired 2AFC accuracy": 1.0,
       "error": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.0,
-      "paired 2AFC accuracy (#779 fit)": 0.55,
-      "series": "hot spot (verdict \u2260 discriminates)",
+      "paired 2AFC accuracy": 0.55,
+      "series": "not individually above chance",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.0,
-      "paired 2AFC accuracy (#779 fit)": 0.55,
-      "series": "hot spot (verdict \u2260 discriminates)",
+      "paired 2AFC accuracy": 0.55,
+      "series": "not individually above chance",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 2.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5916666666666667,
-      "series": "hot spot (verdict \u2260 discriminates)",
+      "paired 2AFC accuracy": 0.5916666666666667,
+      "series": "not individually above chance",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 3.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5916666666666667,
-      "series": "hot spot (verdict \u2260 discriminates)",
+      "paired 2AFC accuracy": 0.5916666666666667,
+      "series": "not individually above chance",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 4.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6333333333333334,
-      "series": "hot spot (verdict \u2260 discriminates)",
+      "paired 2AFC accuracy": 0.6333333333333334,
+      "series": "not individually above chance",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 5.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6611111111111111,
-      "series": "hot spot (verdict \u2260 discriminates)",
+      "paired 2AFC accuracy": 0.6611111111111111,
+      "series": "not individually above chance",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 6.0,
-      "paired 2AFC accuracy (#779 fit)": 0.675,
-      "series": "hot spot (verdict \u2260 discriminates)",
+      "paired 2AFC accuracy": 0.675,
+      "series": "not individually above chance",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.0,
-      "paired 2AFC accuracy (#779 fit)": 0.4583333333333333,
+      "paired 2AFC accuracy": 0.4583333333333333,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 4.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 5.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 6.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 7.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5138888888888888,
+      "paired 2AFC accuracy": 0.5138888888888888,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 8.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5138888888888888,
+      "paired 2AFC accuracy": 0.5138888888888888,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 9.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5277777777777778,
+      "paired 2AFC accuracy": 0.5277777777777778,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 10.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy": 0.5416666666666666,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 11.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy": 0.5416666666666666,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 12.0,
-      "paired 2AFC accuracy (#779 fit)": 0.513888888888889,
+      "paired 2AFC accuracy": 0.513888888888889,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 13.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy": 0.5416666666666666,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 14.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5694444444444444,
+      "paired 2AFC accuracy": 0.5694444444444444,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 15.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5833333333333333,
+      "paired 2AFC accuracy": 0.5833333333333333,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 16.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5833333333333334,
+      "paired 2AFC accuracy": 0.5833333333333334,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 17.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6388888888888888,
+      "paired 2AFC accuracy": 0.6388888888888888,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 18.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5972222222222222,
+      "paired 2AFC accuracy": 0.5972222222222222,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 19.0,
-      "paired 2AFC accuracy (#779 fit)": 0.625,
+      "paired 2AFC accuracy": 0.625,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 20.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6666666666666666,
+      "paired 2AFC accuracy": 0.6666666666666666,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 21.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6805555555555555,
+      "paired 2AFC accuracy": 0.6805555555555555,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 22.0,
-      "paired 2AFC accuracy (#779 fit)": 0.75,
+      "paired 2AFC accuracy": 0.75,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 23.0,
-      "paired 2AFC accuracy (#779 fit)": 0.75,
+      "paired 2AFC accuracy": 0.75,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 24.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7361111111111112,
+      "paired 2AFC accuracy": 0.7361111111111112,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 25.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7222222222222223,
+      "paired 2AFC accuracy": 0.7222222222222223,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 26.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7222222222222223,
+      "paired 2AFC accuracy": 0.7222222222222223,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 27.0,
-      "paired 2AFC accuracy (#779 fit)": 0.763888888888889,
+      "paired 2AFC accuracy": 0.763888888888889,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 28.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8055555555555555,
+      "paired 2AFC accuracy": 0.8055555555555555,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 29.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7638888888888888,
+      "paired 2AFC accuracy": 0.7638888888888888,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 30.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7916666666666666,
+      "paired 2AFC accuracy": 0.7916666666666666,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 31.0,
-      "paired 2AFC accuracy (#779 fit)": 0.763888888888889,
+      "paired 2AFC accuracy": 0.763888888888889,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 32.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8194444444444445,
+      "paired 2AFC accuracy": 0.8194444444444445,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 33.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8888888888888888,
+      "paired 2AFC accuracy": 0.8888888888888888,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 34.0,
-      "paired 2AFC accuracy (#779 fit)": 0.875,
+      "paired 2AFC accuracy": 0.875,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 35.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9166666666666666,
+      "paired 2AFC accuracy": 0.9166666666666666,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 36.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9305555555555557,
+      "paired 2AFC accuracy": 0.9305555555555557,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 37.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9305555555555557,
+      "paired 2AFC accuracy": 0.9305555555555557,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 38.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9305555555555557,
+      "paired 2AFC accuracy": 0.9305555555555557,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 39.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9166666666666666,
+      "paired 2AFC accuracy": 0.9166666666666666,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 40.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9305555555555557,
+      "paired 2AFC accuracy": 0.9305555555555557,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 41.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9583333333333334,
+      "paired 2AFC accuracy": 0.9583333333333334,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 42.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 43.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 44.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 45.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 46.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 1.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "paired 2AFC accuracy": 0.5,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy": 0.5416666666666666,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy": 0.5416666666666666,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 4.0,
-      "paired 2AFC accuracy (#779 fit)": 0.5833333333333334,
+      "paired 2AFC accuracy": 0.5833333333333334,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 5.0,
-      "paired 2AFC accuracy (#779 fit)": 0.611111111111111,
+      "paired 2AFC accuracy": 0.611111111111111,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 6.0,
-      "paired 2AFC accuracy (#779 fit)": 0.625,
+      "paired 2AFC accuracy": 0.625,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 7.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6388888888888888,
+      "paired 2AFC accuracy": 0.6388888888888888,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 8.0,
-      "paired 2AFC accuracy (#779 fit)": 0.638888888888889,
+      "paired 2AFC accuracy": 0.638888888888889,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 9.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6527777777777778,
+      "paired 2AFC accuracy": 0.6527777777777778,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 10.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6250000000000001,
+      "paired 2AFC accuracy": 0.6250000000000001,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 11.0,
-      "paired 2AFC accuracy (#779 fit)": 0.625,
+      "paired 2AFC accuracy": 0.625,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 12.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6944444444444443,
+      "paired 2AFC accuracy": 0.6944444444444443,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 13.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6527777777777778,
+      "paired 2AFC accuracy": 0.6527777777777778,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 14.0,
-      "paired 2AFC accuracy (#779 fit)": 0.6527777777777778,
+      "paired 2AFC accuracy": 0.6527777777777778,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 15.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7638888888888888,
+      "paired 2AFC accuracy": 0.7638888888888888,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 16.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7777777777777778,
+      "paired 2AFC accuracy": 0.7777777777777778,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 17.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7916666666666666,
+      "paired 2AFC accuracy": 0.7916666666666666,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 18.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8194444444444445,
+      "paired 2AFC accuracy": 0.8194444444444445,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 19.0,
-      "paired 2AFC accuracy (#779 fit)": 0.7916666666666666,
+      "paired 2AFC accuracy": 0.7916666666666666,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 20.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8472222222222222,
+      "paired 2AFC accuracy": 0.8472222222222222,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 21.0,
-      "paired 2AFC accuracy (#779 fit)": 0.875,
+      "paired 2AFC accuracy": 0.875,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 22.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8333333333333334,
+      "paired 2AFC accuracy": 0.8333333333333334,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 23.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8333333333333334,
+      "paired 2AFC accuracy": 0.8333333333333334,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 24.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8472222222222223,
+      "paired 2AFC accuracy": 0.8472222222222223,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 25.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8333333333333335,
+      "paired 2AFC accuracy": 0.8333333333333335,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 26.0,
-      "paired 2AFC accuracy (#779 fit)": 0.875,
+      "paired 2AFC accuracy": 0.875,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 27.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8333333333333335,
+      "paired 2AFC accuracy": 0.8333333333333335,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 28.0,
-      "paired 2AFC accuracy (#779 fit)": 0.8888888888888892,
+      "paired 2AFC accuracy": 0.8888888888888892,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 29.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9444444444444445,
+      "paired 2AFC accuracy": 0.9444444444444445,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 30.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9305555555555555,
+      "paired 2AFC accuracy": 0.9305555555555555,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 31.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9444444444444443,
+      "paired 2AFC accuracy": 0.9444444444444443,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 32.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9305555555555555,
+      "paired 2AFC accuracy": 0.9305555555555555,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 33.0,
-      "paired 2AFC accuracy (#779 fit)": 0.9722222222222223,
+      "paired 2AFC accuracy": 0.9722222222222223,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 34.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 35.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 36.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 37.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 38.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 39.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 40.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 41.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 42.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 43.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 44.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 45.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 46.0,
-      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "paired 2AFC accuracy": 1.0,
       "_kind": "line",
       "_group": 3
     }
@@ -961,61 +1013,61 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Joint taxonomy: parent battery (gray, banked) + new types (color), L19",
-        "ylabel": "paired 2AFC accuracy (#779 fit)",
+        "title_left": "Joint taxonomy: parent battery (gray, banked) + new types (color)\n(single-turn map, context-end, layer 19)",
+        "ylabel": "paired 2AFC accuracy",
         "legend_labels": [
           "parent battery (banked)",
           "new battery (this round)",
-          "hot spot (verdict \u2260 discriminates)"
+          "not individually above chance"
         ],
         "xticklabels": [
-          "recency prior topic d5",
+          "prior topic, 5 turns back",
           "style register",
-          "demo format",
-          "recency fact user name d5",
-          "recency fact user name d3",
+          "demonstrated format",
+          "user name, 5 turns back",
+          "user name, 3 turns back",
           "code vs prose",
-          "load fact user name l5",
+          "user name, 5-item load",
           "filler swap",
           "user role identity",
-          "fact novel queried",
-          "fact user name",
-          "load fact user name l3",
-          "list numeric detail",
+          "novel queried fact",
+          "user name",
+          "user name, 3-item load",
+          "numeric list detail",
           "user emotion",
-          "user doc format",
-          "fact assistant animal",
-          "persona role header",
-          "constraint knowledge",
-          "demo persona",
-          "load instr format l3",
-          "load fact assistant animal l3",
-          "load fact assistant animal l5",
-          "conflict format fwd",
-          "conflict format rev",
-          "icl task mapping",
-          "recency instr format d5",
-          "load instr format l5",
-          "recency instr format d3",
-          "instr format",
-          "recency prior topic d3",
+          "user document format",
+          "assistant fact",
+          "role-header persona",
+          "knowledge constraint",
+          "demonstrated persona",
+          "format instruction, 3-item load",
+          "assistant fact, 3-item load",
+          "assistant fact, 5-item load",
+          "format conflict, forward",
+          "format conflict, reverse",
+          "in-context-learning mapping",
+          "format instruction, 5 turns back",
+          "format instruction, 5-item load",
+          "format instruction, 3 turns back",
+          "format instruction",
+          "prior topic, 3 turns back",
           "refusal boundary",
           "user expertise",
           "reasoning style",
           "verbosity",
-          "recency persona prompted d5",
-          "language implied",
-          "conflict persona fwd",
-          "conflict persona rev",
-          "query content",
-          "recency persona prompted d3",
+          "prompted persona, 5 turns back",
+          "implied language",
+          "persona conflict, forward",
+          "persona conflict, reverse",
+          "changed question (control)",
+          "prompted persona, 3 turns back",
           "conversation topic",
-          "user sentiment \u2020",
-          "instr language",
-          "persona prompted",
+          "review sentiment \u2020",
+          "language instruction",
+          "prompted persona",
           "prior topic",
           "conversation language",
-          "refusal request \u2020"
+          "refusal-inducing request \u2020"
         ],
         "yticklabels": [
           "0.0",
@@ -1029,7 +1081,7 @@
       }
     ],
     "series": [
-      "hot spot (verdict \u2260 discriminates)"
+      "not individually above chance"
     ]
   },
   "formats_written": [

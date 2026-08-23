@@ -1,11 +1,33 @@
 {
-  "commit": "0ae62170",
-  "render_id": "3bbd4f1c6de245c1",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "488b3e3c+dirty",
+  "render_id": "7cbc223cef8c4b7d",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2215/dbe_did_slot_gains.meta.json",
+    "figures/issue_2215/dbe_did_slot_gains.pdf",
+    "figures/issue_2215/dbe_did_slot_gains.png",
+    "figures/issue_2215/dbe_h3_dissociation.meta.json",
+    "figures/issue_2215/dbe_h3_dissociation.pdf",
+    "figures/issue_2215/dbe_h3_dissociation.png",
+    "figures/issue_2215/dbe_hero_pertype_2afc.meta.json",
+    "figures/issue_2215/dbe_hero_pertype_2afc.pdf",
+    "figures/issue_2215/dbe_hero_pertype_2afc.png",
+    "figures/issue_2215/dbe_joint_taxonomy.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy.png",
+    "figures/issue_2215/dbe_joint_taxonomy_48.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy_48.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy_48.png",
+    "figures/issue_2215/dbe_percell_2afc.meta.json",
+    "figures/issue_2215/dbe_percell_2afc.pdf",
+    "figures/issue_2215/dbe_percell_2afc.png",
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2215_dbe_figures.py",
-  "created": "2026-08-23T07:14:23Z",
+  "created": "2026-08-23T08:37:18Z",
   "figsize": [
     10.5,
     9.5
@@ -1655,7 +1677,7 @@
       "_group": 32
     },
     {
-      "category": "user doc format",
+      "category": "user document format",
       "retrieval acc@1 (cosine)": 0.3333333333333333,
       "error": 0.0,
       "_kind": "bar",
@@ -1669,7 +1691,7 @@
       "_group": 32
     },
     {
-      "category": "user sentiment \u2020",
+      "category": "review sentiment \u2020",
       "retrieval acc@1 (cosine)": 0.2916666666666667,
       "error": 0.0,
       "_kind": "bar",
@@ -1683,7 +1705,7 @@
       "_group": 32
     },
     {
-      "category": "refusal request \u2020",
+      "category": "refusal-inducing request \u2020",
       "retrieval acc@1 (cosine)": 0.9722222222222222,
       "error": 0.0,
       "_kind": "bar",
@@ -2287,14 +2309,14 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Registered per-(type \u00d7 arm) rows (L19, tail; dashed = retrieval chance 1/pool)",
+        "title_left": "Per-type fit and retrieval per arm (layer 19; dashed = retrieval chance, one over the pool size)",
         "ylabel": "transfer R\u00b2",
         "legend_labels": [
-          "ctx-end map (#779 fit)",
-          "prefix-end map (#1738 fit)",
-          "ctx-end map, matched fit (#1738)",
-          "identity+bias (ctx-end)",
-          "identity+bias (prefix-end)"
+          "single-turn map, context-end",
+          "multi-turn map, prefix-end",
+          "multi-turn map, context-end",
+          "identity + bias baseline, context-end",
+          "identity + bias baseline, prefix-end"
         ],
         "yticklabels": [
           "\u221210",
@@ -2324,11 +2346,11 @@
           "style register",
           "code vs prose",
           "user role identity",
-          "user doc format",
+          "user document format",
           "conversation topic",
-          "user sentiment \u2020",
+          "review sentiment \u2020",
           "conversation language",
-          "refusal request \u2020"
+          "refusal-inducing request \u2020"
         ],
         "yticklabels": [
           "0.0",
@@ -2342,11 +2364,11 @@
       }
     ],
     "series": [
-      "ctx-end map (#779 fit)",
-      "prefix-end map (#1738 fit)",
-      "ctx-end map, matched fit (#1738)",
-      "identity+bias (ctx-end)",
-      "identity+bias (prefix-end)"
+      "single-turn map, context-end",
+      "multi-turn map, prefix-end",
+      "multi-turn map, context-end",
+      "identity + bias baseline, context-end",
+      "identity + bias baseline, prefix-end"
     ]
   },
   "formats_written": [

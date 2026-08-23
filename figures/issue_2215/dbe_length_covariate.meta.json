@@ -1,11 +1,45 @@
 {
-  "commit": "0ae62170",
-  "render_id": "0119011ed7af4ba4",
-  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "488b3e3c+dirty",
+  "render_id": "2743b1d1b4804599",
+  "git_commit": "488b3e3cee4629427d484c35d8674f63a3bdf41a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2215/dbe_2afc_vs_retrieval.meta.json",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.pdf",
+    "figures/issue_2215/dbe_2afc_vs_retrieval.png",
+    "figures/issue_2215/dbe_carrier_transfer.meta.json",
+    "figures/issue_2215/dbe_carrier_transfer.pdf",
+    "figures/issue_2215/dbe_carrier_transfer.png",
+    "figures/issue_2215/dbe_did_slot_gains.meta.json",
+    "figures/issue_2215/dbe_did_slot_gains.pdf",
+    "figures/issue_2215/dbe_did_slot_gains.png",
+    "figures/issue_2215/dbe_h3_dissociation.meta.json",
+    "figures/issue_2215/dbe_h3_dissociation.pdf",
+    "figures/issue_2215/dbe_h3_dissociation.png",
+    "figures/issue_2215/dbe_hero_pertype_2afc.meta.json",
+    "figures/issue_2215/dbe_hero_pertype_2afc.pdf",
+    "figures/issue_2215/dbe_hero_pertype_2afc.png",
+    "figures/issue_2215/dbe_joint_taxonomy.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy.png",
+    "figures/issue_2215/dbe_joint_taxonomy_48.meta.json",
+    "figures/issue_2215/dbe_joint_taxonomy_48.pdf",
+    "figures/issue_2215/dbe_joint_taxonomy_48.png",
+    "figures/issue_2215/dbe_percell_2afc.meta.json",
+    "figures/issue_2215/dbe_percell_2afc.pdf",
+    "figures/issue_2215/dbe_percell_2afc.png",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.meta.json",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.pdf",
+    "figures/issue_2215/dbe_pertype_r2_retrieval.png",
+    "figures/issue_2215/dbe_slot_gains_did.meta.json",
+    "figures/issue_2215/dbe_slot_gains_did.pdf",
+    "figures/issue_2215/dbe_slot_gains_did.png",
+    "scripts/issue2215_dbe_analysis.py",
+    "scripts/issue2215_dbe_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2215_dbe_figures.py",
-  "created": "2026-08-23T07:14:27Z",
+  "created": "2026-08-23T08:37:40Z",
   "figsize": [
     6.4,
     4.8
@@ -13,57 +47,57 @@
   "points": [
     {
       "mean |\u0394 context length| within pair (tokens)": 20.555555555555557,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.5416666666666666,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5416666666666666,
       "label": "code vs prose",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "mean |\u0394 context length| within pair (tokens)": 37.72222222222222,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 1.0,
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
       "label": "conversation language",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "mean |\u0394 context length| within pair (tokens)": 16.333333333333332,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.9722222222222222,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9722222222222222,
       "label": "conversation topic",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "mean |\u0394 context length| within pair (tokens)": 1.3611111111111112,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 1.0,
-      "label": "refusal request \u2020",
+      "paired 2AFC accuracy (single-turn map, context-end)": 1.0,
+      "label": "refusal-inducing request \u2020",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "mean |\u0394 context length| within pair (tokens)": 8.833333333333334,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.5,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5,
       "label": "style register",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "mean |\u0394 context length| within pair (tokens)": 85.55555555555556,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.6111111111111112,
-      "label": "user doc format",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.6111111111111112,
+      "label": "user document format",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "mean |\u0394 context length| within pair (tokens)": 0.0,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.5694444444444444,
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.5694444444444444,
       "label": "user role identity",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "mean |\u0394 context length| within pair (tokens)": 4.722222222222222,
-      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.9861111111111112,
-      "label": "user sentiment \u2020",
+      "paired 2AFC accuracy (single-turn map, context-end)": 0.9861111111111112,
+      "label": "review sentiment \u2020",
       "_kind": "scatter",
       "_group": 7
     }
@@ -77,16 +111,16 @@
       {
         "title_left": "Length-delta covariate per type; Spearman \u03c1 = -0.01",
         "xlabel": "mean |\u0394 context length| within pair (tokens)",
-        "ylabel": "paired 2AFC accuracy (ctx-end map, #779 fit)",
+        "ylabel": "paired 2AFC accuracy (single-turn map, context-end)",
         "annotations": [
           "code vs prose",
           "conversation language",
           "conversation topic",
-          "refusal request \u2020",
+          "refusal-inducing request \u2020",
           "style register",
-          "user doc format",
+          "user document format",
           "user role identity",
-          "user sentiment \u2020"
+          "review sentiment \u2020"
         ],
         "xticklabels": [
           "\u221220",

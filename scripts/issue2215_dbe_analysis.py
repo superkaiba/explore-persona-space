@@ -1394,6 +1394,14 @@ def render_figures(
         set_paper_style,
     )
 
+    # Plain-English reader labels, shared with the canonical figure suite
+    # (scripts/issue2215_dbe_figures.py) so the two suites cannot drift.
+    # Deferred sibling import: in script mode sys.path[0] is scripts/.
+    _scripts_dir = str(Path(__file__).resolve().parent)
+    if _scripts_dir not in sys.path:
+        sys.path.insert(0, _scripts_dir)
+    from issue2215_dbe_figures import ARM_LABELS, plain_cell_label
+
     set_paper_style("blog")
     figures_dir.mkdir(parents=True, exist_ok=True)
     written: list[str] = []
@@ -1429,7 +1437,7 @@ def render_figures(
             yerr=[los, his],
             capsize=2,
             color=colors[ai],
-            label=arm,
+            label=ARM_LABELS.get(arm, arm),
         )
     for i, c in enumerate(cells):
         band = per_config[reg_key]["per_type"].get(c, {}).get("cosine", {}).get("null_band")
@@ -1438,12 +1446,12 @@ def render_figures(
     ax.axhline(0.5, color="0.4", lw=0.8, ls="--")
     ax.set_xticks(xs)
     ax.set_xticklabels(
-        [c.replace("_", " ") + (" †" if c in benchmark else "") for c in cells],
+        [plain_cell_label(c) + (" †" if c in benchmark else "") for c in cells],
         rotation=30,
         ha="right",
     )
     ax.set_ylabel("paired 2AFC accuracy")
-    ax.set_title(f"New-battery discrimination per type (L{primary_layer}, tail, cosine)")
+    ax.set_title(f"New-battery discrimination per type (layer {primary_layer}, cosine)")
     ax.legend()
     savefig_paper(fig, "dbe_percell_2afc", dir=str(figures_dir))
     plt.close(fig)
@@ -1464,12 +1472,12 @@ def render_figures(
                 s=60 if is_ref else 30,
                 zorder=3 if is_ref else 2,
             )
-            ax.annotate(c.replace("_", " "), (acc_by[c], ret_by[c]), fontsize=7, alpha=0.8)
+            ax.annotate(plain_cell_label(c), (acc_by[c], ret_by[c]), fontsize=7, alpha=0.8)
         ax.axvline(h3["median_2afc"], color="0.6", lw=0.8, ls=":")
         ax.axhline(h3["median_retrieval_at1"], color="0.6", lw=0.8, ls=":")
-        ax.set_xlabel("paired 2AFC accuracy (779ce)")
+        ax.set_xlabel("paired 2AFC accuracy (single-turn map, context-end)")
         ax.set_ylabel("retrieval acc@1 (cosine, full pool)")
-        ax.set_title("H3: pairwise separability vs exact retrieval per type")
+        ax.set_title("Pairwise separability vs exact retrieval per type")
         savefig_paper(fig, "dbe_h3_dissociation", dir=str(figures_dir))
         plt.close(fig)
         written.append("dbe_h3_dissociation")
@@ -1478,7 +1486,11 @@ def render_figures(
     did = hyps.get("h2b", {}).get("registered")
     if did:
         fig, ax = plt.subplots(figsize=(6.0, 4.0))
-        names = ["pe gain\n(1738pe − idbias)", "ce gain\n(1738ce − idbias)", "DiD (pe − ce)"]
+        names = [
+            "prefix-end gain\n(fitted − baseline)",
+            "context-end gain\n(fitted − baseline)",
+            "slot contrast\n(prefix − context)",
+        ]
         vals = [did["leg_pe_gain"], did["leg_ce_gain"], did["did"]]
         cis = [did["leg_pe_ci95"], did["leg_ce_ci95"], did["did_ci95"]]
         err = [
@@ -1487,8 +1499,10 @@ def render_figures(
         ]
         ax.bar(names, vals, yerr=err, capsize=3, color=[colors[2], colors[0], colors[1]])
         ax.axhline(0.0, color="0.4", lw=0.8)
-        ax.set_ylabel("Δ 2AFC accuracy (fitted − identity+bias)")
-        ax.set_title("H2(b): slot difference-in-differences (matched-fit #1738 arms)")
+        ax.set_ylabel("Δ 2AFC accuracy (fitted − identity + bias)")
+        ax.set_title(
+            "Slot contrast: fitted-minus-baseline gain by read slot\n(matched-fit multi-turn map)"
+        )
         savefig_paper(fig, "dbe_did_slot_gains", dir=str(figures_dir))
         plt.close(fig)
         written.append("dbe_did_slot_gains")
@@ -1520,10 +1534,10 @@ def render_figures(
             ax.bar(np.arange(len(allc)), vals, color=cols)
             ax.axhline(0.5, color="0.4", lw=0.8, ls="--")
             ax.set_xticks(np.arange(len(allc)))
-            ax.set_xticklabels([c.replace("_", " ") for c in allc], rotation=90, fontsize=6)
-            ax.set_ylabel("paired 2AFC accuracy (779ce)")
+            ax.set_xticklabels([plain_cell_label(c) for c in allc], rotation=90, fontsize=6)
+            ax.set_ylabel("paired 2AFC accuracy (single-turn map, context-end)")
             ax.set_title(
-                f"Joint taxonomy: parent battery (gray) + new types (color), L{primary_layer}"
+                f"Joint taxonomy: parent battery (gray) + new types (color), layer {primary_layer}"
             )
             savefig_paper(fig, "dbe_joint_taxonomy", dir=str(figures_dir))
             plt.close(fig)
