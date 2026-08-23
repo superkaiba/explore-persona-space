@@ -1,5 +1,6 @@
 # code-reviewer-lean memory index
 
+- [Substitution dial outside production predicate](substitution_dial_outside_production_predicate.md) — enumerate EVERY smoke dial vs _production() + regime; one guarded sibling proves intent (#2476 R1 g3)
 - [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a stricter adjacent proxy still re-routes registered spend (#2254 R1 g3)
 - [Gate mean nanmean denominator](gate_mean_nanmean_denominator.md) — a gate's np.nanmean over per-unit stats silently drops a NaN unit; require full finiteness or an n-in-mean check (#2379 R1 g4)
 - [Figure-populated assert vs reference artists](figure_populated_assert_reference_artists.md) — an empty-figure assert scanning ax.lines is defeated by axhline/axvline; probe with all-NaN data + zero-line (#2379 R1 g4)
