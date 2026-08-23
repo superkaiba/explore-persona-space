@@ -49,6 +49,7 @@ key checks, and the B1 pilot (real pass-B bundle) respectively.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -132,6 +133,13 @@ GEOMETRY_FAMS = (
     "ceiling_trainref",
 )
 TEXT_FAMS = ("bge_cos", "jaccard", "seqmatcher", "tfidf_cos")
+# B3 scoring-recipe identity (r2 Codex Major 2: score checkpoints keyed on file
+# stats + manual `v` ints alone silently survive a scoring-semantics change).
+# BUMP this tag whenever _score_layer_batched / _score_layer_serial_reference
+# semantics change (centering, NaN masking, the +1e-12 cosine guard, rollout
+# reduction) — it rides BOTH the setting-grain and layer-grain fingerprints, so
+# a recipe change invalidates every scores_partial checkpoint mechanically.
+SCORE_RECIPE_TAG = "b3-cos-fp64-nanmean-eps1e12-v1"
 _PHASE_SLUG_DENYLIST = {"done", "failed", "running", "pending", "queued", "started"}
 
 
@@ -259,28 +267,37 @@ def _phase_completed(path: Path, fp: dict, force: bool, phase: str) -> dict | No
     return None
 
 
+def _sentinel_dest(args, cfg: dict) -> tuple[Path | None, str]:
+    """Resolve the done-sentinel (dir, filename). Synthetic runs route to the
+    SMOKE tree (``<smoke_root>/logs/``) — NEVER ``/workspace/logs`` (r1 Major 1:
+    a smoke must never plant a false production P-B completion sentinel)."""
+    if cfg["synthetic"]:
+        return Path(cfg["data_root"]) / "logs", "issue-2474-fit-smoke.done.json"
+    log_dir = Path(args.log_dir) if args.log_dir else None
+    if log_dir is None:
+        default = Path("/workspace/logs")
+        log_dir = default if default.is_dir() else None
+    return log_dir, "issue-2474-fit.done.json"
+
+
 def _write_done_sentinel(args, cfg: dict, outputs: list[str]) -> None:
     """Pod-contract done sentinel (issue-2474-fit.done.json; plan §9 phase_outputs).
 
     Written ONLY by phase_upload AFTER the B5 HF mirror verifies (plan §4 B5:
     "done sentinel written last"; r1 Codex: pb-analysis-upload-missing).
     Envelope carries poll_pipeline's ``_SENTINEL_REQUIRED_KEYS``
-    (sentinel_schema_version/kind/version; version=None so the drain derives
-    max+1) so ``_parse_sentinel`` accepts it (r1 g3 concern 4).
-
-    Synthetic runs write ``issue-2474-fit-smoke.done.json`` under the SMOKE
-    tree (``<smoke_root>/logs/``) — NEVER ``/workspace/logs`` (r1 Major 1: a
-    smoke must never plant a false production P-B completion sentinel).
+    (sentinel_schema_version/kind/version) with the INTEGER ``version: 1`` —
+    the documented pod-side hardcode convention. ``version: null`` is
+    NON-conforming: ``_post_drained_sentinel`` runs ``int(data["version"])``
+    whenever the KEY is present, so a null crashes EVERY drain tick with a
+    TypeError before the rename-to-.processed — a permanent poller wedge on
+    the completion signal (r2 Critical, both reviewers; poll_pipeline #975
+    keeps that TypeError loud by design; max+1 derivation happens ONLY when
+    the key is ABSENT, a shape ``_parse_sentinel`` rejects for real
+    sentinels). An ``epm:progress`` sentinel at explicit v1 posts verbatim
+    (the #1095 max+1 rewrite applies only to ``epm:results``).
     """
-    if cfg["synthetic"]:
-        log_dir = Path(cfg["data_root"]) / "logs"
-        name = "issue-2474-fit-smoke.done.json"
-    else:
-        log_dir = Path(args.log_dir) if args.log_dir else None
-        if log_dir is None:
-            default = Path("/workspace/logs")
-            log_dir = default if default.is_dir() else None
-        name = "issue-2474-fit.done.json"
+    log_dir, name = _sentinel_dest(args, cfg)
     if log_dir is None:
         logger.info("[sentinel] no log dir resolves on this host — sentinel skipped")
         return
@@ -290,7 +307,7 @@ def _write_done_sentinel(args, cfg: dict, outputs: list[str]) -> None:
         {
             "sentinel_schema_version": 1,
             "kind": "epm:progress",
-            "version": None,
+            "version": 1,
             "issue": ISSUE,
             "phase": "done",
             "rc": 0,
@@ -445,6 +462,108 @@ def _expected_bundle_rels(cfg: dict) -> list[str]:
     return rels
 
 
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _git_blob_sha1(path: Path) -> str:
+    """git blob oid of a local file (``sha1('blob <len>\\0' + bytes)``) — the
+    identity the Hub reports as ``blob_id`` for non-LFS files."""
+    data = path.read_bytes()
+    return hashlib.sha1(b"blob %d\x00" % len(data) + data).hexdigest()
+
+
+def _remote_capture_identity(cfg: dict) -> dict:
+    """Per-file remote CONTENT identity for the 24 expected capture paths
+    (12 bundles + 12 fingerprint sidecars): size + git blob oid + LFS sha256.
+
+    ONE retried ``get_paths_info`` call (r2 Codex Major 4: the harvest
+    completion fingerprint must bind the content it certified — a contingency
+    re-upload/replacement under the SAME paths must defeat the completion
+    skip). ``get_paths_info`` silently omits missing paths (hub 0.36
+    contract), so membership is asserted explicitly.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    expected = _expected_bundle_rels(cfg)
+    paths = [*expected, *[f"{r}.meta.json" for r in expected]]
+    api = HfApi()
+    infos = hub.retry_transient(
+        lambda: api.get_paths_info(hub.DEFAULT_DATASET_REPO, paths, repo_type="dataset"),
+        what="get_paths_info(capture identity)",
+    )
+    ident: dict = {}
+    for info in infos:
+        lfs = getattr(info, "lfs", None)
+        ident[info.path] = {
+            "size": int(info.size),
+            "blob_id": info.blob_id,
+            "lfs_sha256": getattr(lfs, "sha256", None) if lfs is not None else None,
+        }
+    missing = [p for p in paths if p not in ident]
+    if missing:
+        raise RuntimeError(
+            f"harvest-verify FAIL: {len(missing)} expected capture file(s) unresolved by "
+            f"get_paths_info (capture incomplete or moved): {missing[:6]}"
+        )
+    return dict(sorted(ident.items()))
+
+
+def _harvest_completion_fp(args, cfg: dict, remote_identity: dict) -> dict:
+    """Harvest completion fingerprint BOUND to the certified remote content
+    (r2 Codex Major 4: the r2 fp carried only static paths + pins, so a
+    re-upload under the same twelve paths was invisible and every later
+    ``all`` run skipped P-A against a changed capture)."""
+    return {
+        "phase": "harvest-verify",
+        "parent_sha": args.parent_sha,
+        "ultrachat_rev": ULTRACHAT_REV,
+        "expected_bundles": _expected_bundle_rels(cfg),
+        "remote_identity": remote_identity,
+        "v": 2,
+    }
+
+
+def _stage_identity_verified(rel: str, cfg: dict, remote_identity: dict) -> Path:
+    """Stage one capture file and verify the LOCAL bytes match the remote
+    content identity: a pre-existing staged copy is REUSED only when size +
+    content hash match (LFS sha256 for LFS files, git blob sha1 otherwise);
+    any mismatch unlinks + restages ONCE, then fails loud. Presence alone is
+    never trusted (a stale pre-fix staged copy would otherwise be validated
+    in place of the certified remote bytes)."""
+    from explore_persona_space.orchestrate import hub
+
+    ident = remote_identity[rel]
+    target = cfg["data_root"] / rel
+    for attempt in ("reuse", "restaged"):
+        if not target.is_file():
+            hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, rel, target)
+        if target.stat().st_size == int(ident["size"]):
+            if ident.get("lfs_sha256"):
+                hash_ok = _sha256_file(target) == ident["lfs_sha256"]
+            else:
+                hash_ok = _git_blob_sha1(target) == ident["blob_id"]
+        else:
+            hash_ok = False
+        if hash_ok:
+            return target
+        if attempt == "reuse":
+            logger.warning(
+                "[harvest] staged copy of %s does not match its remote identity — restaging", rel
+            )
+            target.unlink()
+    raise RuntimeError(
+        f"harvest-verify FAIL: staged {rel} does not match its remote content identity "
+        f"(local size {target.stat().st_size} vs remote {ident['size']}) even after restage"
+    )
+
+
 def _validate_pinned_map(path: Path) -> None:
     """Schema/shape check on one staged maps_pinned component bundle, run right
     after staging and BEFORE any fit dispatch (r1 Codex:
@@ -556,7 +675,7 @@ def _ceiling_cell_accounting(
     }
 
 
-def _resolve_prep_output(args, cfg: dict) -> tuple[Path, str]:
+def _resolve_prep_output(args, cfg: dict) -> tuple[Path, str, str]:
     """Locate + pin-check round-2's prep_output.json (r1 Codex:
     prep-output-not-portable — the pod-side original is not on fresh machines).
 
@@ -567,7 +686,9 @@ def _resolve_prep_output(args, cfg: dict) -> tuple[Path, str]:
     staging helper. Every resolved copy must pass the UltraChat revision pin;
     a pin-FAILED or missing local default falls through to the HF copy (a
     stale staged copy is re-staged once); explicit paths and the HF copy fail
-    loud on mismatch. Returns (path, revision).
+    loud on mismatch. Returns (path, revision, source_label) — the
+    machine-portable ``source_label`` rides the harvest report beside the
+    workstation-specific absolute path (r2 Codex Minor 2).
     """
 
     def _revision(path: Path) -> str | None:
@@ -585,14 +706,14 @@ def _resolve_prep_output(args, cfg: dict) -> tuple[Path, str]:
                 f"pinned {ULTRACHAT_REV!r} — the banks were drawn from a different "
                 "UltraChat snapshot."
             )
-        return p, got
+        return p, got, "explicit-cli"
 
     local = REPO_ROOT / "data" / "issue_2474" / "prep_output.json"
     reason = "local default missing"
     if local.is_file():
         got = _revision(local)
         if got == ULTRACHAT_REV:
-            return local, got
+            return local, got, "repo-local:data/issue_2474/prep_output.json"
         reason = f"local default revision {got!r} != pin"
         logger.warning("[harvest] prep_output %s at %s — falling through to HF", reason, local)
 
@@ -612,7 +733,7 @@ def _resolve_prep_output(args, cfg: dict) -> tuple[Path, str]:
             hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, HF_PREP_OUTPUT_PATH, staged)
         got = _revision(staged)
         if got == ULTRACHAT_REV:
-            return staged, got
+            return staged, got, f"hf:{hub.DEFAULT_DATASET_REPO}/{HF_PREP_OUTPUT_PATH}"
     raise RuntimeError(
         f"harvest-verify FAIL: no prep_output source passes the pin — local: {reason}; "
         f"HF mirror {HF_PREP_OUTPUT_PATH} revision {got!r} != {ULTRACHAT_REV!r}"
@@ -623,9 +744,13 @@ def _resolve_prep_output(args, cfg: dict) -> tuple[Path, str]:
 # Phase: harvest-verify (P-A; VM read-only)
 # ---------------------------------------------------------------------------
 def phase_harvest_verify(args, cfg: dict) -> dict:
-    """Scoped listing + exact 12-bundle set + per-class realized-keys checks +
-    row-count reconciliation + the bank-content (UltraChat revision) assert."""
+    """Scoped listing + exact 12-bundle set + FULL per-bundle schema/shape
+    validation (all twelve payloads, r2 Codex Critical 2 — never exemplars) +
+    row-count reconciliation + the bank-content (UltraChat revision) assert.
+    The completion skip is bound to the remote CONTENT identity (r2 Codex
+    Major 4), evaluated fresh on every invocation."""
     import issue2379_capture as cap
+    import issue2379_mapfit as mf
     from huggingface_hub import HfApi
     from huggingface_hub.utils import EntryNotFoundError
 
@@ -633,18 +758,6 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
     assert_out_root_headroom(cfg["data_root"], need_gb=3.0, phase="harvest-verify")
-
-    out = cfg["out_dir"] / "harvest_verified.json"
-    completion_fp = {
-        "phase": "harvest-verify",
-        "parent_sha": args.parent_sha,
-        "ultrachat_rev": ULTRACHAT_REV,
-        "expected_bundles": _expected_bundle_rels(cfg),
-        "v": 1,
-    }
-    done = _phase_completed(out, completion_fp, args.force, "harvest")
-    if done is not None:
-        return done
 
     prefix = HF_CAPTURE_PREFIX
     api = HfApi()
@@ -679,55 +792,21 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
             "[harvest] %d unexpected extra file(s) under %s: %s", len(extras), prefix, extras[:8]
         )
 
-    # Per-class realized-keys verification (one exemplar per bundle class).
-    # NOTE — plan-§4 divergence, realized-schema-grounded: the FINAL ceiling bundle
-    # nests n_capture_dropped inside `drop_stats` (issue2379_capture.py:911-913;
-    # mapfit's own consumer contract _BUNDLE_REQUIRED_KEYS agrees), so the ceiling
-    # class is verified with keys v_a,row_meta,drop_stats — never the plan's literal
-    # top-level n_capture_dropped, which no realized bundle carries.
-    exemplar_cond = cfg["conds"][cfg["settings"][0]][0]
-    class_checks = [
-        (f"{prefix}/predictor_captures/base_{cfg['settings'][0]}/grid.pt", "v_c,row_meta"),
-        (
-            f"{prefix}/predictor_captures/base_mu_{exemplar_cond}/mu.pt",
-            "mu_train,mu_a_train,n_c,n_a",
-        ),
-        (
-            f"{prefix}/predictor_captures/base_{cfg['settings'][0]}/ceiling.pt",
-            "v_a,row_meta,drop_stats",
-        ),
-    ]
-    key_check_results = []
-    for hf_path, keys in class_checks:
-        cmd = [
-            sys.executable,
-            str(REPO_ROOT / "scripts" / "verify_reused_artifact_keys.py"),
-            "--hf-repo",
-            hub.DEFAULT_DATASET_REPO,
-            "--hf-path",
-            hf_path,
-            "--keys",
-            keys,
-        ]
-        proc = subprocess.run(cmd, capture_output=True, text=True, env={**os.environ})
-        line = (proc.stdout.strip().splitlines() or [""])[-1]
-        key_check_results.append(
-            {"hf_path": hf_path, "keys": keys, "rc": proc.returncode, "line": line}
-        )
-        print(f"[harvest] key-check {hf_path} rc={proc.returncode}: {line}", flush=True)
-        if proc.returncode != 0:
-            raise RuntimeError(
-                f"harvest-verify FAIL: realized-keys check failed for {hf_path} "
-                f"(rc={proc.returncode}): {proc.stdout.strip()} {proc.stderr.strip()}"
-            )
+    # Remote content identity + identity-bound completion skip (r2 Codex Major 4:
+    # a fingerprint of static paths + pins cannot see a re-upload under the same
+    # paths). The identity fetch runs on EVERY invocation — the skip is only ever
+    # accepted against the LIVE remote state, never a cached one.
+    remote_identity = _remote_capture_identity(cfg)
+    completion_fp = _harvest_completion_fp(args, cfg, remote_identity)
+    out = cfg["out_dir"] / "harvest_verified.json"
+    done = _phase_completed(out, completion_fp, args.force, "harvest")
+    if done is not None:
+        return done
 
-    # Row-count reconciliation: sidecar fingerprints (12 tiny meta reads) + the mu
-    # bundles' realized n_c/n_a + both ceilings' realized kept rows / drop stats.
+    # Sidecar staging (identity-verified) + fingerprint reconciliation.
     recon: dict = {}
     for rel in expected_sidecars:
-        target = cfg["data_root"] / rel
-        if not target.is_file():
-            hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, rel, target)
+        target = _stage_identity_verified(rel, cfg, remote_identity)
         payload = json.loads(target.read_text())
         # Staged-sidecar schema validation immediately after staging (r1 Codex:
         # cached-artifact-schema-unverified) — contextual errors, never bare KeyError.
@@ -750,40 +829,65 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
                 f"harvest-verify FAIL: ceiling base_{setting} fingerprint cells/rollouts "
                 f"{cfp.get('n_cells')}/{cfp.get('n_rollouts')} != {want}/{cap.CEILING_N_ROLLOUTS}"
             )
-    from issue2379_mapfit import _torch_load_constrained
 
+    # FULL 12-payload validation (r2 Codex Critical 2: the r2 gate checked one
+    # exemplar per class, so 9 of 12 payloads could reach B1/B2 unvalidated and
+    # crash AFTER the fits were spent). EVERY bundle is staged identity-verified,
+    # loaded through the mapfit consumer contract (_load_bundle: required keys +
+    # FULL row-meta schema for grid/ceiling), and shape-checked; one schema
+    # record per bundle rides the report. Realized-keys note (plan-§4 divergence,
+    # realized-schema-grounded): the ceiling class nests n_capture_dropped inside
+    # `drop_stats` (issue2379_capture.py:911-913) — never the plan's literal
+    # top-level key, which no realized bundle carries.
+    schema_records: list[dict] = []
     mu_counts: dict = {}
-    for setting in cfg["settings"]:
-        for cond in cfg["conds"][setting]:
-            rel = f"{prefix}/predictor_captures/base_mu_{cond}/mu.pt"
-            target = cfg["data_root"] / rel
-            if not target.is_file():
-                hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, rel, target)
-            tb = _torch_load_constrained(target)
-            n_c, n_a = int(tb["n_c"]), int(tb["n_a"])
-            want = cfg["expected_mu_n_c"][cond]
-            if n_c != want or n_a != want:
-                raise RuntimeError(
-                    f"harvest-verify FAIL: mu {cond} n_c/n_a = {n_c}/{n_a} != mix size {want}"
-                )
-            mu_counts[cond] = {"n_c": n_c, "n_a": n_a}
     ceiling_stats: dict = {}
+    shape_ident: dict[str, tuple[int, int]] = {}  # rel -> (n_layers, hidden)
     for setting in cfg["settings"]:
-        rel = f"{prefix}/predictor_captures/base_{setting}/ceiling.pt"
-        target = cfg["data_root"] / rel
-        if not target.is_file():
-            hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, rel, target)
-        tb = _torch_load_constrained(target)
-        _require_keys(tb, ("v_a", "row_meta", "drop_stats"), f"ceiling bundle {rel}")
-        n_kept_rows = int(tb["v_a"].shape[0])
-        if n_kept_rows != len(tb["row_meta"]):
+        want_rows = cfg["expected_grid_rows"][setting]
+        rel = f"{prefix}/predictor_captures/base_{setting}/grid.pt"
+        tb = _load_bundle(_stage_identity_verified(rel, cfg, remote_identity), "grid")
+        v_c = tb["v_c"]
+        if getattr(v_c, "ndim", None) != 3:
             raise RuntimeError(
-                f"harvest-verify FAIL: ceiling base_{setting} v_a rows {n_kept_rows} != "
+                f"harvest-verify FAIL: grid base_{setting} v_c is not a 3-D tensor "
+                f"(shape {getattr(v_c, 'shape', None)})"
+            )
+        if int(v_c.shape[0]) != want_rows or len(tb["row_meta"]) != want_rows:
+            raise RuntimeError(
+                f"harvest-verify FAIL: grid base_{setting} rows v_c={int(v_c.shape[0])} / "
+                f"row_meta={len(tb['row_meta'])} != expected {want_rows}"
+            )
+        shape_ident[rel] = (int(v_c.shape[1]), int(v_c.shape[2]))
+        schema_records.append(
+            {
+                "rel": rel,
+                "class": "grid",
+                "keys_verified": sorted(mf._BUNDLE_REQUIRED_KEYS["grid"]),
+                "row_meta": "validated-full",
+                "shape": {"v_c": [int(s) for s in v_c.shape]},
+                "ok": True,
+            }
+        )
+        del tb, v_c
+
+        rel = f"{prefix}/predictor_captures/base_{setting}/ceiling.pt"
+        tb = _load_bundle(_stage_identity_verified(rel, cfg, remote_identity), "ceiling")
+        v_a = tb["v_a"]
+        if getattr(v_a, "ndim", None) != 3:
+            raise RuntimeError(
+                f"harvest-verify FAIL: ceiling base_{setting} v_a is not a 3-D tensor "
+                f"(shape {getattr(v_a, 'shape', None)})"
+            )
+        if int(v_a.shape[0]) != len(tb["row_meta"]):
+            raise RuntimeError(
+                f"harvest-verify FAIL: ceiling base_{setting} v_a rows {int(v_a.shape[0])} != "
                 f"row_meta length {len(tb['row_meta'])}"
             )
+        shape_ident[rel] = (int(v_a.shape[1]), int(v_a.shape[2]))
         ceiling_stats[setting] = _ceiling_cell_accounting(
             tb["row_meta"],
-            n_cells_expected=cfg["expected_grid_rows"][setting],
+            n_cells_expected=want_rows,
             n_rollouts_expected=cap.CEILING_N_ROLLOUTS,
             drop_stats=tb["drop_stats"],
             max_rows=cfg["ceiling_max_rows"][setting],
@@ -798,10 +902,71 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
             f"{ceiling_stats[setting]['n_absent_cells']} absent cells",
             flush=True,
         )
+        schema_records.append(
+            {
+                "rel": rel,
+                "class": "ceiling",
+                "keys_verified": sorted(mf._BUNDLE_REQUIRED_KEYS["ceiling"]),
+                "row_meta": "validated-full",
+                "drop_stats": "reconciled",
+                "shape": {"v_a": [int(s) for s in v_a.shape]},
+                "ok": True,
+            }
+        )
+        del tb, v_a
+
+        for cond in cfg["conds"][setting]:
+            rel = f"{prefix}/predictor_captures/base_mu_{cond}/mu.pt"
+            tb = _load_bundle(_stage_identity_verified(rel, cfg, remote_identity), "mu")
+            mu_t, mu_a = tb["mu_train"], tb["mu_a_train"]
+            for nm, t in (("mu_train", mu_t), ("mu_a_train", mu_a)):
+                if getattr(t, "ndim", None) != 2:
+                    raise RuntimeError(
+                        f"harvest-verify FAIL: mu {cond} {nm} is not a 2-D tensor "
+                        f"(shape {getattr(t, 'shape', None)})"
+                    )
+            if tuple(mu_t.shape) != tuple(mu_a.shape):
+                raise RuntimeError(
+                    f"harvest-verify FAIL: mu {cond} mu_train {tuple(mu_t.shape)} != "
+                    f"mu_a_train {tuple(mu_a.shape)}"
+                )
+            n_c, n_a = int(tb["n_c"]), int(tb["n_a"])
+            want = cfg["expected_mu_n_c"][cond]
+            if n_c != want or n_a != want:
+                raise RuntimeError(
+                    f"harvest-verify FAIL: mu {cond} n_c/n_a = {n_c}/{n_a} != mix size {want}"
+                )
+            mu_counts[cond] = {"n_c": n_c, "n_a": n_a}
+            shape_ident[rel] = (int(mu_t.shape[0]), int(mu_t.shape[1]))
+            schema_records.append(
+                {
+                    "rel": rel,
+                    "class": "mu",
+                    "keys_verified": sorted(mf._BUNDLE_REQUIRED_KEYS["mu"]),
+                    "row_meta": "n/a",
+                    "shape": {"mu_train": [int(s) for s in mu_t.shape]},
+                    "ok": True,
+                }
+            )
+            del tb, mu_t, mu_a
+        print(f"[harvest] key-check base_{setting}: all bundles validated", flush=True)
+
+    # Cross-bundle (n_layers, hidden) coherence: every payload came off ONE base
+    # model capture, so a divergent shape is a mixed/partial upload.
+    if len(set(shape_ident.values())) != 1:
+        raise RuntimeError(
+            "harvest-verify FAIL: inconsistent (n_layers, hidden) across bundles: "
+            + "; ".join(f"{r.rsplit('/', 2)[-2]}={v}" for r, v in sorted(shape_ident.items()))
+        )
+    if len(schema_records) != len(expected_bundles):
+        raise RuntimeError(
+            f"harvest-verify FAIL: {len(schema_records)} schema records != "
+            f"{len(expected_bundles)} expected bundles — validation loop incomplete"
+        )
 
     # Bank-content pin: round-2 prep_output.json .ultrachat.revision (plan §4 P-A step 3;
     # portable resolution local -> HF mirror per r1 Codex prep-output-not-portable).
-    prep_path, got_rev = _resolve_prep_output(args, cfg)
+    prep_path, got_rev, prep_source = _resolve_prep_output(args, cfg)
 
     report = {
         "issue": ISSUE,
@@ -813,17 +978,18 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
         "n_files_listed": len(realized),
         "expected_bundles": expected_bundles,
         "extras": extras,
-        "key_checks": key_check_results,
+        "schema_records": schema_records,
+        "layers_hidden": list(next(iter(set(shape_ident.values())))),
         "mu_counts": mu_counts,
         "ceiling_stats": ceiling_stats,
         "ultrachat_revision": got_rev,
         "prep_output_path": str(prep_path),
+        "prep_output_source": prep_source,
         "parent_sha": args.parent_sha,
         "completion_fingerprint": completion_fp,
     }
-    out = cfg["out_dir"] / "harvest_verified.json"
     _atomic_write_json(out, report)
-    print(f"[harvest] PASS — wrote {out}", flush=True)
+    print(f"[harvest] PASS — wrote {out} ({len(schema_records)} schema records)", flush=True)
     return report
 
 
@@ -1049,21 +1215,27 @@ def _scores_fingerprint(cfg: dict, setting: str, args) -> dict:
     return {
         "setting": setting,
         "parent_sha": args.parent_sha,
+        # Scoring-recipe identity (r2 Codex Major 2): a semantics change to the
+        # scorer bumps SCORE_RECIPE_TAG and invalidates the setting-grain resume.
+        "score_recipe": SCORE_RECIPE_TAG,
         "bundles": parts,
         "components": comps,
-        "v": 2,
+        "v": 3,
     }
 
 
 def _layer_fingerprint(setting_fp: dict, ly: int, comp_file: Path) -> dict:
     """Per-layer scores checkpoint key: the setting fingerprint + layer + the
-    layer's refit-component identity (generating params + file stats only)."""
+    layer's refit-component identity (generating params + file stats only).
+    Carries its OWN ``score_recipe`` binding too (r2 Codex Major 2): the layer
+    grain must invalidate on a recipe change even against a stale setting_fp."""
     st = comp_file.stat()
     return {
         "setting_fp": setting_fp,
         "layer": int(ly),
+        "score_recipe": SCORE_RECIPE_TAG,
         "comp": {"name": comp_file.name, "size": st.st_size, "mtime_ns": st.st_mtime_ns},
-        "v": 1,
+        "v": 2,
     }
 
 
@@ -1669,6 +1841,48 @@ def _round1_recompute_assert(cfg: dict, rates_level: dict) -> dict:
     return out
 
 
+def _validate_stats_schema(stats: dict) -> None:
+    """Registered-schema completeness walk over the composed prefit_stats dict
+    (r2 Codex Major 1): EVERY (setting, variant, family, condition, DV) must
+    carry per-layer ``rho_by_layer`` + ``pearson_by_layer`` twin curves of
+    length ``n_layers`` plus the pinned keys, and every pooled DV entry the
+    same-length curves — the plan-§4 B4 registration made persistable.
+    RuntimeError names the first offending path. Runs on the production write
+    path (phase_stats, before serialization) and is unit-pinned in
+    tests/test_issue2474_fit_pins.py."""
+    dv_names = ("level", "change")
+    for setting, sblock in stats["settings"].items():
+        n_l = int(sblock["n_layers"])
+        conds = list(sblock["conditions"])
+        for variant, vb in sblock["variants"].items():
+            for fam, fe in vb["families"].items():
+                ctx = f"stats schema {setting}/{variant}/{fam}"
+                for dv in dv_names:
+                    pooled = fe["pooled"].get(dv)
+                    if pooled is None:
+                        raise RuntimeError(f"{ctx}: pooled {dv} entry missing")
+                    for key in ("rho_by_layer", "pearson_by_layer", "ci95_by_layer"):
+                        if len(pooled.get(key) or []) != n_l:
+                            raise RuntimeError(f"{ctx}: pooled {dv}.{key} length != n_layers {n_l}")
+                missing_conds = [c for c in conds if c not in fe["per_condition"]]
+                if missing_conds:
+                    raise RuntimeError(f"{ctx}: per_condition missing {missing_conds}")
+                for c in conds:
+                    pc = fe["per_condition"][c]
+                    for dv in dv_names:
+                        entry = pc.get(dv)
+                        if entry is None:
+                            raise RuntimeError(f"{ctx}/{c}: {dv} entry missing")
+                        for key in ("rho_by_layer", "pearson_by_layer"):
+                            if len(entry.get(key) or []) != n_l:
+                                raise RuntimeError(
+                                    f"{ctx}/{c}: {dv}.{key} length != n_layers {n_l}"
+                                )
+                        for key in ("pinned_rho", "pinned_pearson", "pinned_ci95"):
+                            if key not in entry:
+                                raise RuntimeError(f"{ctx}/{c}: {dv}.{key} missing")
+
+
 def phase_stats(args, cfg: dict) -> dict:
     import numpy as np
 
@@ -1763,7 +1977,12 @@ def phase_stats(args, cfg: dict) -> dict:
                 if f in pcond["families_layered"]
             }
 
-        setting_block: dict = {"pinned_layer": pin, "conditions": conds, "variants": {}}
+        setting_block: dict = {
+            "pinned_layer": pin,
+            "conditions": conds,
+            "n_layers": n_l,
+            "variants": {},
+        }
         for variant in ("full", "loo"):
             sel = [i for i in range(len(labels)) if not (variant == "loo" and i == p_idx)]
             n_sel = len(sel)
@@ -1889,36 +2108,44 @@ def phase_stats(args, cfg: dict) -> dict:
             dv_names = ("level", "change")
             for f in all_fams:
                 fam_entry: dict = {"pooled": {}, "per_condition": {}}
+                # Per-condition per-layer twin curves FIRST (r2 Codex Major 1 /
+                # r1 stats-schema-incomplete: plan §4 B4 registers "Spearman ρ
+                # (Pearson twin persisted)" per (arm, condition, layer) × variant
+                # × DV — pinned-only per-condition rows cannot reconstruct that
+                # grain from the committed JSON). The pooled curves below are the
+                # condition means of these same values (numerics unchanged).
+                cond_curves = {
+                    c: {
+                        dv: {
+                            "rho_by_layer": [
+                                _point_corr(
+                                    fam_mats[c][f][ly, sel],
+                                    (lvl if dv == "level" else chg)[c][sel],
+                                    spearman=True,
+                                )
+                                for ly in range(n_l)
+                            ],
+                            "pearson_by_layer": [
+                                _point_corr(
+                                    fam_mats[c][f][ly, sel],
+                                    (lvl if dv == "level" else chg)[c][sel],
+                                    spearman=False,
+                                )
+                                for ly in range(n_l)
+                            ],
+                        }
+                        for dv in dv_names
+                    }
+                    for c in conds
+                }
                 for di, dv in enumerate(dv_names):
                     pooled_draws = boot[f][:, :, di, :].mean(axis=1)[:, valid]  # (n_l, V)
                     point_curve = [
-                        float(
-                            np.mean(
-                                [
-                                    _point_corr(
-                                        fam_mats[c][f][ly, sel],
-                                        (lvl if dv == "level" else chg)[c][sel],
-                                        spearman=True,
-                                    )
-                                    for c in conds
-                                ]
-                            )
-                        )
+                        float(np.mean([cond_curves[c][dv]["rho_by_layer"][ly] for c in conds]))
                         for ly in range(n_l)
                     ]
                     pearson_curve = [
-                        float(
-                            np.mean(
-                                [
-                                    _point_corr(
-                                        fam_mats[c][f][ly, sel],
-                                        (lvl if dv == "level" else chg)[c][sel],
-                                        spearman=False,
-                                    )
-                                    for c in conds
-                                ]
-                            )
-                        )
+                        float(np.mean([cond_curves[c][dv]["pearson_by_layer"][ly] for c in conds]))
                         for ly in range(n_l)
                     ]
                     fam_entry["pooled"][dv] = {
@@ -1935,12 +2162,12 @@ def phase_stats(args, cfg: dict) -> dict:
                 for ci, c in enumerate(conds):
                     per_dv = {}
                     for di, dv in enumerate(dv_names):
-                        y = (lvl if dv == "level" else chg)[c][sel]
+                        curves = cond_curves[c][dv]
                         per_dv[dv] = {
-                            "pinned_rho": _point_corr(fam_mats[c][f][pin, sel], y, spearman=True),
-                            "pinned_pearson": _point_corr(
-                                fam_mats[c][f][pin, sel], y, spearman=False
-                            ),
+                            "rho_by_layer": curves["rho_by_layer"],
+                            "pearson_by_layer": curves["pearson_by_layer"],
+                            "pinned_rho": curves["rho_by_layer"][pin],
+                            "pinned_pearson": curves["pearson_by_layer"][pin],
                             "pinned_ci95": _ci95(boot[f][pin, ci, di, valid]),
                         }
                     per_dv["cont_pinned_rho"] = _point_corr(
@@ -2109,6 +2336,11 @@ def phase_stats(args, cfg: dict) -> dict:
         "completion_fingerprint": completion_fp,
         **stats_out,
     }
+    # Registered-schema completeness gate BEFORE serialization (r2 Codex
+    # Major 1): a schema regression fails the run loud, never ships a
+    # prefit_stats.json the (arm, condition, layer, variant, DV) grain cannot
+    # be reconstructed from.
+    _validate_stats_schema(out)
     # NaN -> null before serialization (r1 g1 Minor: bare NaN tokens are not
     # strict JSON and break strict downstream parsers).
     out = _nan_to_none(out)
@@ -2143,6 +2375,14 @@ def phase_upload(args, cfg: dict) -> dict:
     ``--upload-dry-run`` runs make NO Hub writes; only the synthetic path
     writes its (smoke-tree) sentinel — a production dry-run skips the
     sentinel LOUDLY because uploads did not verify.
+
+    Completion skip (r2 Minors, both reviewers): a re-run after a verified
+    upload was idempotent-by-construction but created redundant remote
+    commits — the phase now skips when the LOCAL artifact set (relative paths
+    + size/mtime stats) matches the verified report's fingerprint; ``--force``
+    re-uploads. On skip, the done sentinel is re-written ONLY when neither the
+    sentinel nor its drained ``.processed`` twin exists (heals a crash between
+    report write and sentinel write without double-posting a marker).
     """
     out_dir = cfg["out_dir"]
     tdir = cfg["tensors_out"]
@@ -2191,6 +2431,36 @@ def phase_upload(args, cfg: dict) -> dict:
             "n_tensors": len(expected_tensors),
         }
 
+    def _stat_map(files: list[Path], root: Path) -> dict:
+        return {
+            str(p.relative_to(root)): {"size": p.stat().st_size, "mtime_ns": p.stat().st_mtime_ns}
+            for p in files
+        }
+
+    completion_fp = {
+        "phase": "upload",
+        "analysis": _stat_map(json_files, out_dir),
+        "tensors": _stat_map(tensor_files, tdir),
+        "v": 1,
+    }
+    report_path = out_dir / "upload_report_2474.json"
+    done = _phase_completed(report_path, completion_fp, args.force, "upload")
+    if done is not None:
+        log_dir, name = _sentinel_dest(args, cfg)
+        if (
+            log_dir is not None
+            and not (log_dir / name).exists()
+            and not (log_dir / f"{name}.processed").exists()
+        ):
+            repo_id = done.get("repo_id", "")
+            _write_done_sentinel(
+                args,
+                cfg,
+                sentinel_outputs
+                + [f"hf://{repo_id}/{HF_ANALYSIS_PREFIX}", f"hf://{repo_id}/{HF_TENSORS_PREFIX}"],
+            )
+        return done
+
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
@@ -2224,8 +2494,9 @@ def phase_upload(args, cfg: dict) -> dict:
         "repo_id": repo_id,
         "analysis_paths": expected_analysis,
         "tensor_paths": expected_tensors,
+        "completion_fingerprint": completion_fp,
     }
-    _atomic_write_json(out_dir / "upload_report_2474.json", report)
+    _atomic_write_json(report_path, report)
     _write_done_sentinel(
         args,
         cfg,
