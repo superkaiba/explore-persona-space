@@ -10112,8 +10112,8 @@
     "2309": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2309",
-      "status": "approved",
+      "path": "tasks/running/2309",
+      "status": "running",
       "title": "workflow-fix: implementer marker four-H3 completion-report contract is judgment-caught, not mechanically checked"
     },
     "231": {
