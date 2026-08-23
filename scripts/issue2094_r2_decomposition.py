@@ -883,11 +883,129 @@ def phase_cosine_figure(args: argparse.Namespace) -> int:
     return 0
 
 
+def phase_paper_figure(args: argparse.Namespace) -> int:
+    """Condensed context-answer-map paper variant (figures/paper/c2_map_vs_shift):
+    context-end slot only — the banked map's shift-prediction cosine on UNPATCHED
+    answer-state deviations (prediction of answers) vs PATCH-INDUCED shifts
+    (prediction of intervention outcomes), per read layer, with the
+    spectrum-matched random-map references and per-row points behind the means.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis import paper_plots
+
+    paper_plots.set_paper_style("iclr")
+    blue = paper_plots.paper_color("instruct")
+    gray = paper_plots.paper_color("null")
+    recs = json.loads((OUT_DIR / "r2_decomposition.json").read_text())["records"]
+    cos_rows = json.loads((OUT_DIR / "cosine_rows.json").read_text())["rows"]
+    layers = list(A.TRANSPORT_LAYERS["ce"])
+
+    def rec_cos(layer: int, setting: str, arm: str) -> float:
+        m = [
+            r
+            for r in recs
+            if r["slot"] == "ce"
+            and r["layer"] == layer
+            and r["setting"] == setting
+            and r["arm"] == arm
+        ]
+        assert len(m) == 1, (layer, setting, arm, len(m))
+        return float(m[0]["mean_cosine"])
+
+    # Sanity pins for the paper claims: the map predicts unpatched answer-state
+    # deviations well and the realized patching shift essentially not at all.
+    unpatched = [rec_cos(lyr, "matched_query", "real_unpatched") for lyr in layers]
+    patched = [rec_cos(lyr, s, "real_patched") for lyr in layers for s in SETTINGS]
+    rand_all = [
+        rec_cos(lyr, s, arm)
+        for lyr in layers
+        for s in SETTINGS
+        for arm in ("rand_patched", "rand_unpatched")
+    ]
+    assert min(unpatched) > 0.65, unpatched
+    assert max(patched) < 0.16, patched
+    assert max(abs(v) for v in rand_all) < 0.02, rand_all
+
+    fig, ax = plt.subplots(figsize=paper_plots.figsize_iclr_full(0.44), layout="constrained")
+    rng = np.random.default_rng(COS_POINT_SEED)
+    for i, lyr in enumerate(layers):
+        # per-row values behind the means (real arms only; capped for legibility)
+        for arm, dx in (("real_unpatched", -0.22), ("real_patched", +0.10)):
+            pts: list[float] = []
+            for s in SETTINGS:
+                pts.extend(cos_rows.get(_cos_key("ce", lyr, s, arm), []))
+                if arm == "real_unpatched":
+                    break  # unpatched rows are setting-invariant; one copy
+            pts = _subsample(pts, 300, COS_POINT_SEED + i)
+            jit = rng.uniform(-0.05, 0.05, size=len(pts))
+            ax.scatter(
+                np.full(len(pts), i + dx) + jit,
+                pts,
+                s=1.8,
+                color="#C8C8C8",
+                alpha=0.35,
+                linewidths=0,
+                rasterized=True,
+                zorder=1,
+            )
+        ax.scatter(
+            [i - 0.22],
+            [rec_cos(lyr, "matched_query", "real_unpatched")],
+            s=26,
+            color=blue,
+            zorder=3,
+            label="map on unpatched answer states" if i == 0 else None,
+        )
+        for j, s in enumerate(SETTINGS):
+            ax.scatter(
+                [i + 0.02 + 0.08 * j],
+                [rec_cos(lyr, s, "real_patched")],
+                s=22,
+                facecolors="white",
+                edgecolors=blue,
+                linewidths=1.0,
+                zorder=3,
+                label="map on patch-induced shifts (3 settings)" if i == 0 and j == 0 else None,
+            )
+            for arm in ("rand_patched", "rand_unpatched"):
+                ax.scatter(
+                    [i + 0.30 + 0.05 * j],
+                    [rec_cos(lyr, s, arm)],
+                    s=12,
+                    marker="x",
+                    color=gray,
+                    linewidths=0.9,
+                    zorder=2,
+                    label="spectrum-matched random map"
+                    if i == 0 and j == 0 and arm == "rand_patched"
+                    else None,
+                )
+    ax.axhline(0.0, color="#AAAAAA", linewidth=0.6)
+    ax.set_xticks(range(len(layers)))
+    ax.set_xticklabels([f"layer {lyr}" for lyr in layers])
+    ax.set_xlim(-0.55, len(layers) - 0.35)
+    ax.set_ylim(-1.02, 1.02)
+    ax.set_ylabel("cos(map-predicted shift,\nrealized shift)")
+    ax.legend(loc="lower left", handletextpad=0.3)
+    paths = paper_plots.savefig_paper(
+        fig, "c2_map_vs_shift", dir=REPO_ROOT / "figures" / "paper"
+    )
+    plt.close(fig)
+    print(f"[figure] wrote {paths['png']}", flush=True)
+    return 0
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
-        "--phase", required=True, choices=("stage", "analyze", "figure", "cosine-figure")
+        "--phase",
+        required=True,
+        choices=("stage", "analyze", "figure", "cosine-figure", "paper-figure"),
     )
     args = ap.parse_args()
     return {
@@ -895,6 +1013,7 @@ def main() -> int:
         "analyze": phase_analyze,
         "figure": phase_figure,
         "cosine-figure": phase_cosine_figure,
+        "paper-figure": phase_paper_figure,
     }[args.phase](args)
 
 

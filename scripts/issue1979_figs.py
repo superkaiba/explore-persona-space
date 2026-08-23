@@ -689,6 +689,87 @@ def dump_heatmap(dump: dict, out_dir: Path) -> None:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
+def hero_change_pair_iclr(arms: dict[str, dict], out_dir: Path) -> None:
+    """--style iclr: Overleaf-paper variant of the change-DV champion contrast.
+
+    Dumbbell per content arm on the leakage-CHANGE DV (within-arm Spearman
+    rho, trained minus base): raw real-answer similarity (p2) vs through-map
+    predicted-answer similarity (p3b) — the paper's featured contrast. A
+    filled through-map marker = that arm's p3b clears its selection-corrected
+    permutation band (perm_band.p975_max_selected); open = it does not.
+    """
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_full,
+        paper_color,
+        set_paper_style,
+    )
+
+    set_paper_style("iclr")
+    content = sorted(
+        [a for a, pl in arms.items() if pl["kind"] == "content"],
+        key=lambda a: (a.split("-")[0], -(arms[a]["observed_rho"]["dv_change"].get("p3b") or 0)),
+    )
+    blue = paper_color("instruct")
+    purple = paper_color("oracle_answer")
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.62))
+    ys = list(range(len(content)))[::-1]
+    for y, a in zip(ys, content, strict=True):
+        obs = arms[a]["observed_rho"]["dv_change"]
+        v2, v3b = obs.get("p2"), obs.get("p3b")
+        band = arms[a]["perm_band"]["p975_max_selected"]
+        if v2 is not None and v3b is not None:
+            ax.plot([v2, v3b], [y, y], "-", color="#BBBBBB", lw=0.8, zorder=2)
+        if v2 is not None:
+            ax.plot([v2], [y], "o", ms=3.6, color=purple, markeredgewidth=0, zorder=3)
+        if v3b is not None:
+            clears = v3b > band
+            ax.plot(
+                [v3b],
+                [y],
+                "o",
+                ms=4.2,
+                markerfacecolor=blue if clears else "white",
+                markeredgecolor=blue,
+                markeredgewidth=0.9,
+                zorder=4,
+            )
+    ax.axvline(0.0, color=paper_color("reference"), lw=0.6, zorder=1)
+    ax.set_yticks(ys)
+    ax.set_yticklabels([_arm_label(a) for a in content])
+    ax.set_ylim(-0.6, len(content) - 0.4)
+    ax.set_xlabel("Within-arm Spearman $\\rho$, fine-tuning-induced leakage change")
+    handles = [
+        plt.Line2D([], [], marker="o", ls="", color=purple, ms=3.6, label="raw answer similarity"),
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            ls="",
+            markerfacecolor=blue,
+            markeredgecolor=blue,
+            ms=4.2,
+            label="through-map predicted-answer similarity",
+        ),
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            ls="",
+            markerfacecolor="white",
+            markeredgecolor=blue,
+            markeredgewidth=0.9,
+            ms=4.2,
+            label="open: below permutation band",
+        ),
+    ]
+    ax.legend(handles=handles, frameon=False, loc="upper left", fontsize=6.5)
+    fig.tight_layout()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c5_ft_change_race", dir=out_dir)
+    plt.close(fig)
+    print(f"wrote {out_dir / 'c5_ft_change_race'}.png/.pdf (iclr)")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--race-dir", type=Path, default=RACE_DIR)
@@ -699,7 +780,19 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="comma-separated figure stems to render (default: all)",
     )
+    ap.add_argument(
+        "--style",
+        choices=("blog", "iclr"),
+        default="blog",
+        help=(
+            "iclr: render ONLY the paper change-DV dumbbell into figures/paper/ and "
+            "exit; the committed figures are untouched"
+        ),
+    )
     args = ap.parse_args(argv)
+    if args.style == "iclr":
+        hero_change_pair_iclr(_arm_jsons(args.race_dir), args.race_dir.parents[2] / "figures/paper")
+        return 0
     only = {s.strip() for s in args.only.split(",") if s.strip()}
 
     def want(stem: str) -> bool:
