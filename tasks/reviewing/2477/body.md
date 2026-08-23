@@ -480,9 +480,9 @@ What is plotted: every judged item as one point — per-item distinct 3-gram rat
 
 ![Per-item scatter of distinct 3-gram rate against item-mean judge coherence for all five conditions](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f07e928c1eff39ae7fe90d1004d5f3258024596/figures/issue_2477/distinct3gram_vs_score.png)
 
-> **Figure.** *Lexical diversity separates repetition from drift.* Instruct points concentrate top-right; the base chat-template condition supplies most low-score points across the whole diversity range; base raw multi-turn points cluster near a distinct 3-gram rate of 1.0 while spanning the full score range — diverse text that still scores low.
+> **Figure.** *High lexical diversity rules out repetition loops behind the low base multi-turn scores.* Instruct points concentrate top-right; the base chat-template condition supplies most low-score points across the whole diversity range; base raw multi-turn points cluster near a distinct 3-gram rate of 1.0 while spanning the full score range — diverse text that still scores low.
 
-The distinct 3-gram companion separates failure modes: it correlates positively with judge score in the single-turn and instruct multi-turn conditions (rank correlation 0.14-0.38, p at most 0.05, n 125-200) but not in the base multi-turn condition (−0.06, p 0.49, n 125), where texts are lexically diverse (highest distinct 3-gram mean, 0.965) yet drift off-topic — so low base multi-turn scores reflect drift and inconsistency, not repetition loops.
+The distinct 3-gram companion separates failure modes: it correlates positively with judge score in the single-turn and instruct multi-turn conditions (rank correlation 0.14-0.38, p at most 0.05, n 125-200) but not in the base multi-turn condition (−0.06, p 0.49, n 125), where texts are lexically diverse (highest distinct 3-gram mean, 0.965) yet score low — so repetition loops are not what drives the low scores. The scatter does not itself identify the residual failure mode; the drift-and-inconsistency label comes from the judge rubric's low-score anchors (random topic jumps) and the sampled raw completions in Methodology, which show off-topic, self-inconsistent continuations.
 
 ### Which render each existing base-row artifact actually used
 
