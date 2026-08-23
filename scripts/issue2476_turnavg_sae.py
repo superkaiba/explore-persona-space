@@ -26,8 +26,10 @@ Plan: tasks/<status>/2476/plans/plan.md (v4). Phases (plan §4):
              layers 19 AND 20 (plain mean primary + token_inlier_mask masked
              twin); stream-reduce, per-group consolidated shards. Gates:
              G2b (hook-alignment: lmsys-dict token FVE L20-maximal vs L19/L21
-             on a pilot slice, BEFORE the main loop), G2a (recaptured c20 vs
-             banked dense_l20 c20, row-matched cos >= 0.999 flat bar), D2c
+             on a pilot slice, BEFORE the main loop), G2a v2 (recaptured c20
+             vs banked dense_l20 c20, row-matched cosine quantile ladder:
+             flat min >= 0.995 + p0.1% >= 0.999 + median >= 0.9995 — see the
+             G2A_* constants block for calibration sources), D2c
              (diagnostic: recaptured vbar19 vs banked v_x@19 cos distribution;
              median < 0.99 halt-investigate).
   upload1    P3 recapture store + assembled-split metadata -> HF
@@ -138,10 +140,39 @@ COMMITTED_M_SPLIT = (
     PROJECT_ROOT / "eval_results" / "issue_1482" / "matryoshka_tier" / "m_split.json"
 )
 
-# G2a bar (plan §7): flat span/single-position bf16 identity bar — calibration source:
-# gotchas.md bf16 entries (#779, #1005) + the m-round's committed same-surface reference
-# g2m_row_cos_min = 0.999881 (eval_results/issue_1482/matryoshka_tier/m_pilot.json).
-G2A_COS_MIN = 0.999
+# ── G2a v2: identity gate over recaptured-c20 vs banked-c20 row cosines ─────────
+# (gate-side recalibration, crash-fix round 4 — 2026-08-23 epm:failure rc=22 on a
+# HEALTHY capture.) The gated quantity is a SINGLE-POSITION deep-layer state
+# (c20 = h20[context_end], L20 of 28) compared row-matched CROSS-MACHINE (bank:
+# GCE per m_pilot metadata; recapture: RunPod H100; different batch composition)
+# at n = 30,000. v1 applied ONE flat min >= 0.999 — the SPAN-MEAN-class bar
+# (gotchas.md #1005 bf16 entry) grounded on g2m_row_cos_min = 0.999881, which
+# m_pilot.json records at n = 8 SAME-machine — to a min-statistic ~3.5 orders of
+# magnitude deeper into the bf16 jitter tail than its calibration source. Per the
+# #779 two-bar discipline (gotchas.md bf16 single-position entry) single-position
+# deep-layer bf16 jitter legitimately breaches 0.999 on healthy captures; real
+# row-mapping/pad bugs read 0.39-0.84 (#779) and real failures < 0.99 (#1005).
+# v2 splits the gate (artifact-reuse.md § Reuse-validation gate calibration —
+# every bar tied to a committed same-surface reference, never a bare constant):
+#   flat min >= 0.995  — real-bug catcher: #779's calibrated single-position
+#                        flattened bar (worst healthy single-position deviation
+#                        measured 0.998770; >= 0.15 above the real-bug regime).
+#   p0.1%    >= 0.999  — the span-mean-class 0.999 bar applied at an n-ROBUST
+#                        quantile (~30th order statistic at n = 30k) instead of
+#                        the n-dependent min.
+#   median   >= 0.9995 — bulk-identity floor (m-round same-surface reference
+#                        g2m_row_cos_min = 0.999881 at n = 8 ~ a bulk statistic;
+#                        #928 parity 0.999; #1005 F3 0.9999).
+# Healthy measured distribution (2026-08-23 production run, n = 30,000; committed
+# calibration evidence: eval_results/issue_2476/g2a_recalibration/): min 0.995397
+# | p0.01% 0.998946 | p0.1% 0.999561 | p1% 0.999781 | median 0.999933. A recorded
+# g2a whose gate_version != G2A_GATE_VERSION is RECOMPUTED from the persisted
+# store on resume, never re-applied verbatim (_recheck_p2_gates).
+G2A_GATE_VERSION = 2
+G2A_COS_MIN_FLAT = 0.995
+G2A_COS_P001_MIN = 0.999  # bar on the p0.1% quantile
+G2A_COS_MEDIAN_MIN = 0.9995
+G2A_QUANTILES = (("p0.01%", 1e-4), ("p0.1%", 1e-3), ("p1%", 1e-2), ("p5%", 5e-2))
 # D2c halt-investigate floor (plan §7 D2c: DIAGNOSTIC, not a validity gate — the m-round
 # token-id convention differs from #779's full-template convention at seam tokens).
 D2C_MEDIAN_FLOOR = 0.99
@@ -321,6 +352,25 @@ def _enter_phase_regime(out_dir: Path, args, phase: str, stale_paths=()) -> tupl
                 "use a fresh --out-root (never silently mix regimes)"
             )
         if prev.get("code_sha") != regime["code_sha"]:
+            if args.resume_across_code_sha:
+                # Crash-fix relaunch escape (r4): the dispatcher asserts the code
+                # delta does not affect completed outputs (gate-side-only fix), so
+                # outputs are RETAINED and re-attested under the new code SHA.
+                # Gate re-evaluation is NOT skippable through this flag — a
+                # recorded gate_version older than the code's still forces the
+                # _recheck_p2_gates recompute; config/split-sha mismatches still
+                # raise above.
+                logger.warning(
+                    "[%s] code SHA changed (%s -> %s) but --resume-across-code-sha is set: "
+                    "completed outputs under %s RETAINED (dispatcher-asserted gate-side-only "
+                    "delta); regime re-attested at the new SHA",
+                    phase,
+                    str(prev.get("code_sha"))[:12],
+                    regime["code_sha"][:12],
+                    out_dir,
+                )
+                _write_json(path, regime, phase=phase)
+                return regime, True
             logger.warning(
                 "[%s] code SHA changed (%s -> %s): completed outputs under %s are "
                 "RECOMPUTED, never skipped (plan §10 resume provenance)",
@@ -927,6 +977,307 @@ def _reapply_recorded_gate_verdicts(gates: dict, production: bool, phase: str) -
             sys.exit(rc)
 
 
+def _eval_g2a(cos: np.ndarray, *, production: bool, tiny_model: bool) -> dict:
+    """G2a v2 quantile-ladder identity gate (see the G2A_* constants block for the
+    full calibration rationale + sources). Evaluates the row-matched
+    recaptured-c20 vs banked-c20 cosine distribution and returns the complete
+    gates_p2.json ``g2a`` record: gate_version, quantile set
+    (min/p0.01%/p0.1%/p1%/p5%/median), per-bar n_below counts, verdict. Verdict
+    semantics unchanged from v1: PASS | FAIL (production) |
+    INFORMATIONAL-smoke (non-production) | SKIPPED-tiny-model (no bank compare).
+    ONE evaluation code path for the consolidate AND gate_version-recompute
+    callers, so the two can never drift."""
+    cos = np.asarray(cos, dtype=np.float64)
+    finite = np.isfinite(cos)
+    if tiny_model or int(finite.sum()) == 0:
+        return {"verdict": "SKIPPED-tiny-model", "n": 0, "gate_version": G2A_GATE_VERSION}
+    c = cos[finite]
+    q = {
+        "min": float(c.min()),
+        **{lbl: float(np.quantile(c, p)) for lbl, p in G2A_QUANTILES},
+        "median": float(np.median(c)),
+    }
+    bars = {
+        "min_flat": G2A_COS_MIN_FLAT,
+        "p0.1%": G2A_COS_P001_MIN,
+        "median": G2A_COS_MEDIAN_MIN,
+    }
+    ok = (
+        q["min"] >= G2A_COS_MIN_FLAT
+        and q["p0.1%"] >= G2A_COS_P001_MIN
+        and q["median"] >= G2A_COS_MEDIAN_MIN
+    )
+    rec = {
+        "gate_version": G2A_GATE_VERSION,
+        "n": int(finite.sum()),
+        "row_cos_min": q["min"],  # v1 field names kept for log/report continuity
+        "row_cos_median": q["median"],
+        "quantiles": q,
+        "bars": bars,
+        "n_below": {
+            "min_flat": int((c < G2A_COS_MIN_FLAT).sum()),
+            "p0.1%": int((c < G2A_COS_P001_MIN).sum()),
+            "median": int((c < G2A_COS_MEDIAN_MIN).sum()),
+        },
+        "verdict": "PASS" if ok else ("FAIL" if production else "INFORMATIONAL-smoke"),
+    }
+    logger.info(
+        "[recapture] G2a v%d eval: n=%d min=%.6f p0.01%%=%.6f p0.1%%=%.6f p1%%=%.6f "
+        "p5%%=%.6f median=%.6f bars(min>=%.3f p0.1%%>=%.3f median>=%.4f) -> %s",
+        G2A_GATE_VERSION,
+        rec["n"],
+        q["min"],
+        q["p0.01%"],
+        q["p0.1%"],
+        q["p1%"],
+        q["p5%"],
+        q["median"],
+        G2A_COS_MIN_FLAT,
+        G2A_COS_P001_MIN,
+        G2A_COS_MEDIAN_MIN,
+        rec["verdict"],
+    )
+    return rec
+
+
+def _eval_d2c(args, arr: dict, production: bool) -> dict:
+    """D2c: recaptured vbar19 vs banked v_x@19 diagnostic distribution. Logic
+    UNCHANGED from unit-1 (crash-fix r4 only factored it out of
+    _consolidate_and_gate so the gate_version-recompute path evaluates the SAME
+    code). Needs the P1 assemble outputs on disk; no model load."""
+    a_dir = _assemble_dir(args)
+    assert (a_dir / "split_meta.json").exists(), "D2c needs the P1 assemble outputs — run assemble"
+    rows_present = np.load(a_dir / "rows_present.npy")
+    y19 = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
+    pos = np.searchsorted(rows_present, arr["row_idx"])
+    ok = (pos < len(rows_present)) & (
+        rows_present[np.minimum(pos, len(rows_present) - 1)] == arr["row_idx"]
+    )
+    if production:  # g1 r1 Minor 3: partial overlap must never silently shrink D2c
+        assert bool(ok.all()), (
+            f"D2c: {int((~ok).sum())} recaptured rows absent from the assembled outputs "
+            "(production requires FULL overlap — stale/smoke assemble dir?)"
+        )
+    if int(ok.sum()) == 0:
+        logger.warning("[recapture] D2c: 0 rows overlap the assembled slice (smoke)")
+        return {"verdict": "SKIPPED-no-overlap", "n": 0}
+    d_cos = _cos_rows(arr["vbar19"][ok], np.asarray(y19[pos[ok]]))
+    med = float(np.median(d_cos))
+    return {
+        "n": int(ok.sum()),
+        "median": med,
+        "p05": float(np.quantile(d_cos, 0.05)),
+        "p25": float(np.quantile(d_cos, 0.25)),
+        "p75": float(np.quantile(d_cos, 0.75)),
+        "min": float(d_cos.min()),
+        "floor": D2C_MEDIAN_FLOOR,
+        "verdict": (
+            "PASS"
+            if med >= D2C_MEDIAN_FLOOR
+            else ("INFORMATIONAL-smoke" if not production else "HALT-INVESTIGATE")
+        ),
+    }
+
+
+def _recheck_p2_gates(args, store_path: Path, gates_path: Path, recorded: dict) -> dict:
+    """gate_version recompute (crash-fix r4, relaunch mechanism C): a gates_p2.json
+    whose g2a was recorded under an OLDER gate version is never re-applied
+    verbatim — G2a + D2c are re-evaluated from the persisted vbar_store.npz
+    arrays (no model load; the capture state is regime-matched and RETAINED) and
+    gates_p2.json is REWRITTEN at the current gate version. The recorded G2b
+    verdict is REUSED verbatim: G2b's logic + constants are untouched by the
+    gate-version bump, its inputs (model checkpoint + raw pilot chunks) are
+    unchanged under the matching regime, and re-evaluating it would cost a
+    ~10-min model load to re-confirm an unchanged computation on unchanged
+    inputs. Returns the rewritten gates dict (caller re-applies verdicts)."""
+    assert "g2b" in recorded, f"corrupt gates_p2.json: missing g2b ({sorted(recorded)})"
+    production = _production(args)
+    logger.info(
+        "[recapture] gates_p2.json recorded at gate_version=%s != code gate_version=%d: "
+        "recomputing G2a+D2c from %s (recorded G2b %r reused)",
+        recorded.get("g2a", {}).get("gate_version"),
+        G2A_GATE_VERSION,
+        store_path.name,
+        recorded["g2b"].get("verdict"),
+    )
+    with np.load(store_path) as z:
+        arr = {k: np.asarray(z[k]) for k in ("row_idx", "c20_cos", "vbar19")}
+    gates: dict = {"g2b": recorded["g2b"]}
+    gates["g2a"] = _eval_g2a(
+        arr["c20_cos"], production=production, tiny_model=bool(args.tiny_model)
+    )
+    gates["d2c"] = _eval_d2c(args, arr, production)
+    _write_json(gates_path, gates, phase="recapture")
+    _sentinel(
+        "recapture",
+        f"P2 gates recomputed at gate_version={G2A_GATE_VERSION} "
+        f"(g2a={gates['g2a']['verdict']} g2b={gates['g2b'].get('verdict')} "
+        f"d2c={gates['d2c']['verdict']})",
+    )
+    return gates
+
+
+def _probe_load_model(args, dtype_tag: str):
+    """Fresh model+tok for the G2a attribution probe. ``bf16`` = the production
+    capture loader VERBATIM (EA._load_model_tok: bf16 on cuda / fp32 on cpu);
+    ``fp32`` = the #779 re-probe dtype override on the SAME path (same model id,
+    same retry wrapper, same device placement — only torch_dtype differs)."""
+    assert dtype_tag in ("bf16", "fp32"), dtype_tag
+    assert not args.tiny_model, "[g2a-probe] refuses --tiny-model (no bank compare exists)"
+    if dtype_tag == "bf16":
+        return EA._load_model_tok(args)
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from explore_persona_space.orchestrate import hub
+
+    model_id = "Qwen/Qwen2.5-7B-Instruct"
+    tok = hub.retry_transient(
+        lambda: AutoTokenizer.from_pretrained(model_id), what=f"tokenizer fetch ({model_id})"
+    )
+    model = hub.retry_transient(
+        lambda: AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float32),
+        what=f"model fetch ({model_id})",
+    )
+    model.to(args.device if args.device == "cuda" else "cpu")
+    model.eval()
+    return model, tok
+
+
+def _g2a_attribution_probe(args) -> None:
+    """#779 attribution discipline: re-probe the worst-K G2a rows with a
+    real-model fp32 re-capture BEFORE the loosened bar ships. Selects the K
+    worst rows by the PERSISTED c20_cos in vbar_store.npz, re-runs them through
+    the EXISTING tokenize/capture path twice — (i) bf16 fresh load (the
+    production dtype), (ii) fp32 override on the same path — and writes
+    recapture/g2a_probe.json with per-row attribution cosines:
+      cos_bf16_vs_bank / cos_fp32_vs_bank  (recaptured c20 vs banked m-store c20)
+      cos_bf16_vs_fp32                     (dtype-jitter magnitude, this machine)
+      cos_bf16_vs_store_vbar20             (same-pod span-mean reproducibility)
+      stored_c20_cos + delta_rerun_vs_stored (the production run's recorded value)
+    READ-ONLY vs resume state: no regime write, no gates_p2.json write, no shard
+    writes. Expected under the bf16-numerics hypothesis: same-pod vbar20
+    reproducibility ~>= 0.9999; vs-bank cosines reproduce the stored values to
+    same-machine bf16 batch-composition jitter; fp32-vs-bank materially closer
+    to 1 than bf16-vs-bank would instead implicate recapture-side bf16 alone."""
+    k = int(args.g2a_probe_rows)
+    out = _recapture_dir(args)
+    store_path = out / "vbar_store.npz"
+    assert store_path.exists(), f"[g2a-probe] production store missing: {store_path}"
+    with np.load(store_path) as z:
+        row_idx = np.asarray(z["row_idx"], np.int64)
+        c20_cos = np.asarray(z["c20_cos"], np.float64)
+        vbar20 = np.asarray(z["vbar20"])
+        n_ans_store = np.asarray(z["n_ans"], np.int64)
+    finite = np.isfinite(c20_cos)
+    assert int(finite.sum()) >= k, (int(finite.sum()), k)
+    fin_pos = np.flatnonzero(finite)
+    worst = fin_pos[np.argsort(c20_cos[fin_pos], kind="stable")[:k]]
+    rows_worst = [int(r) for r in row_idx[worst]]
+    stored = {r: float(c20_cos[i]) for i, r in zip(worst, rows_worst, strict=True)}
+    stored_vb20 = {r: vbar20[i] for i, r in zip(worst, rows_worst, strict=True)}
+    stored_nans = {r: int(n_ans_store[i]) for i, r in zip(worst, rows_worst, strict=True)}
+    logger.info(
+        "[g2a-probe] worst-%d rows (row_idx, stored_cos): %s",
+        k,
+        [(r, round(stored[r], 6)) for r in rows_worst],
+    )
+    banked = _stage_banked_c20(args, np.asarray(rows_worst, np.int64))
+    missing_bank = set(rows_worst) - set(banked)
+    assert not missing_bank, f"[g2a-probe] banked c20 missing rows {sorted(missing_bank)}"
+
+    stage = _stage_dir(args)
+    row_ci = np.load(stage / "row_ci.npy")
+    needed_ci = {int(row_ci[r]): r for r in rows_worst}
+    assert -1 not in needed_ci and len(needed_ci) == len(rows_worst), "ci mapping degenerate"
+    dns = SimpleNamespace(max_chunks=args.max_chunks, scratch=stage)
+    names = EA._raw_chunk_names(dns)
+    # Collect the K rows' text ONCE (early-exit scan; digest-only handling — row
+    # text is never logged), then run both dtype passes from the cached rows.
+    txt: dict[int, tuple[str, str]] = {}
+    for _name, keep in EA._iter_needed_rows(dns, names, needed_ci):
+        for r_idx, _ci, prompt, response in keep:
+            txt[int(r_idx)] = (prompt, response)
+        if len(txt) == len(rows_worst):
+            break
+    missing_txt = set(rows_worst) - set(txt)
+    assert not missing_txt, f"[g2a-probe] raw text missing for rows {sorted(missing_txt)}"
+
+    cap_by_dtype: dict[str, dict[int, dict[str, np.ndarray]]] = {}
+    for dtype_tag in ("bf16", "fp32"):
+        t0 = time.time()
+        model, tok = _probe_load_model(args, dtype_tag)
+        prefix_chars = EA._prefix_char_len(tok)
+        rows = []
+        for r in rows_worst:
+            tk = EA._tokenize_row(tok, txt[r][0], txt[r][1], prefix_chars)
+            assert tk is not None, f"[g2a-probe] row {r} no longer tokenizes"
+            rows.append((r, int(row_ci[r]), *tk))
+        rows.sort(key=lambda t: len(t[2]))
+        got: dict[int, dict[str, np.ndarray]] = {}
+        for s0 in range(0, len(rows), args.gen_batch):
+            batch = rows[s0 : s0 + args.gen_batch]
+            caps = EA._batched_capture(model, tok, batch, LAYERS_B, args.device)
+            for (r_idx, _ci, full_ids, _pe, context_end, n_ans, _seam), cap in zip(
+                batch, caps, strict=True
+            ):
+                h19, h20 = cap[LAYERS_B[0]], cap[LAYERS_B[1]]
+                assert h20.shape[0] == len(full_ids) == context_end + 1 + n_ans, (
+                    tuple(h20.shape),
+                    len(full_ids),
+                    context_end,
+                    n_ans,
+                )
+                vb = _row_vbars(h19, h20, context_end)
+                got[int(r_idx)] = {
+                    "c20": h20[context_end].numpy(),
+                    "vbar20": vb["vbar20"].numpy(),
+                }
+        assert set(got) == set(rows_worst), (sorted(got), sorted(rows_worst))
+        cap_by_dtype[dtype_tag] = got
+        del model
+        if args.device == "cuda":
+            torch.cuda.empty_cache()
+        logger.info("[g2a-probe] %s pass done (%.0fs)", dtype_tag, time.time() - t0)
+
+    def _cos1(a, b) -> float:
+        a64 = np.asarray(a, np.float64).ravel()
+        b64 = np.asarray(b, np.float64).ravel()
+        return float(a64 @ b64 / max(np.linalg.norm(a64) * np.linalg.norm(b64), 1e-30))
+
+    per_row = []
+    for r in rows_worst:
+        bk = np.asarray(banked[r], np.float64)
+        c_bf = cap_by_dtype["bf16"][r]["c20"]
+        c_fp = cap_by_dtype["fp32"][r]["c20"]
+        per_row.append(
+            {
+                "row_idx": r,
+                "n_ans": stored_nans[r],
+                "stored_c20_cos": stored[r],
+                "cos_bf16_vs_bank": _cos1(c_bf, bk),
+                "cos_fp32_vs_bank": _cos1(c_fp, bk),
+                "cos_bf16_vs_fp32": _cos1(c_bf, c_fp),
+                "cos_bf16_vs_store_vbar20": _cos1(
+                    cap_by_dtype["bf16"][r]["vbar20"], stored_vb20[r]
+                ),
+                "delta_rerun_vs_stored": _cos1(c_bf, bk) - stored[r],
+            }
+        )
+    doc = {
+        "k": k,
+        "device": str(args.device),
+        "gen_batch": int(args.gen_batch),
+        "note": (
+            "G2a v2 attribution probe (#779 fp32 re-probe discipline; crash-fix r4). "
+            "bf16 = production capture dtype rerun; fp32 = dtype override on the same "
+            "tokenize/capture path. See _g2a_attribution_probe docstring."
+        ),
+        "rows": per_row,
+    }
+    _write_json(out / "g2a_probe.json", doc, phase="recapture-g2a-probe")
+    logger.info("[g2a-probe] written: %s", out / "g2a_probe.json")
+
+
 def _p2_input_contract(args) -> None:
     """Early P1-producer contract check — BEFORE model construction (Codex r1
     Critical `consumer-contract-post-init`): D2c consumes the P1 outputs, so a
@@ -947,6 +1298,9 @@ def phase_recapture(args) -> None:
     """P2: teacher-forced recapture of the m-round's 30k rows at layers 19+20;
     per-group shards + consolidation + gates (G2b pre-loop, G2a/D2c post)."""
     C.phase("recapture")
+    if args.g2a_probe_rows > 0:  # attribution-probe mode: read-only vs resume state
+        _g2a_attribution_probe(args)
+        return
     out = _recapture_dir(args)
     out.mkdir(parents=True, exist_ok=True)
     store_path = out / "vbar_store.npz"
@@ -963,9 +1317,12 @@ def phase_recapture(args) -> None:
         ],
     )
     if resume_ok and store_path.exists() and gates_path.exists():
-        _reapply_recorded_gate_verdicts(
-            json.loads(gates_path.read_text()), _production(args), "recapture"
-        )
+        gates = json.loads(gates_path.read_text())
+        if gates.get("g2a", {}).get("gate_version") != G2A_GATE_VERSION:
+            # Stale-version gates are RECOMPUTED from the persisted store (never
+            # re-applied verbatim) — the crash-fix r4 relaunch mechanism.
+            gates = _recheck_p2_gates(args, store_path, gates_path, gates)
+        _reapply_recorded_gate_verdicts(gates, _production(args), "recapture")
         logger.info("[recapture] resume: store + gates present under matching regime; skip")
         return
     _p2_input_contract(args)
@@ -1131,58 +1488,12 @@ def _consolidate_and_gate(args, out, rows_all, set_tag, gates, gates_path, store
     np.savez(tmp, **arr)
     tmp.replace(store_path)
 
-    # ── G2a: recaptured c20 vs banked dense_l20 c20 (row-matched, flat bar) ──
-    cos = arr["c20_cos"]
-    finite = np.isfinite(cos)
-    if args.tiny_model or int(finite.sum()) == 0:
-        gates["g2a"] = {"verdict": "SKIPPED-tiny-model", "n": 0}
-    else:
-        cvals = cos[finite]
-        g2a_pass = bool(cvals.min() >= G2A_COS_MIN)
-        gates["g2a"] = {
-            "n": int(finite.sum()),
-            "row_cos_min": float(cvals.min()),
-            "row_cos_median": float(np.median(cvals)),
-            "bar": G2A_COS_MIN,
-            "verdict": (
-                "PASS" if g2a_pass else ("INFORMATIONAL-smoke" if not production else "FAIL")
-            ),
-        }
-
-    # ── D2c: recaptured vbar19 vs banked v_x@19 (diagnostic distribution) ──
-    a_dir = _assemble_dir(args)
-    assert (a_dir / "split_meta.json").exists(), "D2c needs the P1 assemble outputs — run assemble"
-    rows_present = np.load(a_dir / "rows_present.npy")
-    y19 = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
-    pos = np.searchsorted(rows_present, arr["row_idx"])
-    ok = (pos < len(rows_present)) & (
-        rows_present[np.minimum(pos, len(rows_present) - 1)] == arr["row_idx"]
+    # ── G2a (v2 quantile ladder) + D2c — the SHARED evaluation code path the
+    # gate_version recompute (_recheck_p2_gates) also calls ──
+    gates["g2a"] = _eval_g2a(
+        arr["c20_cos"], production=production, tiny_model=bool(args.tiny_model)
     )
-    if production:  # g1 r1 Minor 3: partial overlap must never silently shrink D2c
-        assert bool(ok.all()), (
-            f"D2c: {int((~ok).sum())} recaptured rows absent from the assembled outputs "
-            "(production requires FULL overlap — stale/smoke assemble dir?)"
-        )
-    if int(ok.sum()) == 0:
-        gates["d2c"] = {"verdict": "SKIPPED-no-overlap", "n": 0}
-        logger.warning("[recapture] D2c: 0 rows overlap the assembled slice (smoke)")
-    else:
-        d_cos = _cos_rows(arr["vbar19"][ok], np.asarray(y19[pos[ok]]))
-        med = float(np.median(d_cos))
-        gates["d2c"] = {
-            "n": int(ok.sum()),
-            "median": med,
-            "p05": float(np.quantile(d_cos, 0.05)),
-            "p25": float(np.quantile(d_cos, 0.25)),
-            "p75": float(np.quantile(d_cos, 0.75)),
-            "min": float(d_cos.min()),
-            "floor": D2C_MEDIAN_FLOOR,
-            "verdict": (
-                "PASS"
-                if med >= D2C_MEDIAN_FLOOR
-                else ("INFORMATIONAL-smoke" if not production else "HALT-INVESTIGATE")
-            ),
-        }
+    gates["d2c"] = _eval_d2c(args, arr, production)
 
     _write_json(gates_path, gates, phase="recapture")
     n_rows = int(len(arr["row_idx"]))
@@ -4370,6 +4681,22 @@ def _parse_args(argv=None):
     ap.add_argument("--n-perm", type=int, default=10_000, help="P6 tier-permutation draws")
     ap.add_argument("--n-boot", type=int, default=10_000, help="P6 feature-bootstrap draws")
     ap.add_argument("--fit-n", type=int, default=0, help="EA refit train subsample (0 = all rows)")
+    ap.add_argument(
+        "--g2a-probe-rows",
+        type=int,
+        default=0,
+        help="P2 attribution-probe mode: recapture the worst-K rows (by persisted c20_cos) "
+        "at bf16 AND fp32, write recapture/g2a_probe.json, exit (read-only vs resume "
+        "state; #779 fp32 re-probe discipline)",
+    )
+    ap.add_argument(
+        "--resume-across-code-sha",
+        action="store_true",
+        help="retain completed outputs on a code-SHA-ONLY regime mismatch instead of the "
+        "default wipe+recompute (crash-fix relaunch escape: use ONLY when the code delta "
+        "provably does not affect completed outputs; a stale recorded gate_version still "
+        "forces gate re-evaluation, and config/split-sha mismatches still refuse)",
+    )
     ap.add_argument(
         "--import-check",
         action="store_true",

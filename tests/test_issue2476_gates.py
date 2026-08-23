@@ -79,6 +79,8 @@ def _args(tmp_path: Path, **over) -> SimpleNamespace:
         fit_n=0,
         import_check=False,
         sae_dict=0,
+        g2a_probe_rows=0,
+        resume_across_code_sha=False,
     )
     for k, v in over.items():
         setattr(ns, k, v)
@@ -298,14 +300,18 @@ def test_reapply_recorded_gate_verdicts_table(phase, key, bad, rc):
 
 
 def test_p2_resume_reapplies_recorded_gate_fail(tmp_path, monkeypatch, quiet_sentinels):
-    """Two-pass P2: a recorded production G2a FAIL exits with the ORIGINAL rc on
-    a same-regime relaunch, BEFORE any heavy init (g2 MAJOR-1 class)."""
+    """Two-pass P2: a recorded CURRENT-gate-version production G2a FAIL exits
+    with the ORIGINAL rc on a same-regime relaunch, BEFORE any heavy init
+    (g2 MAJOR-1 class). Crash-fix r4: a STALE-version FAIL instead routes to
+    the _recheck_p2_gates recompute (tests below)."""
     args = _args(tmp_path)
     out = D._recapture_dir(args)
     out.mkdir(parents=True, exist_ok=True)
     (out / "regime.json").write_text(json.dumps(D._regime(args)))
     np.savez(out / "vbar_store.npz", row_idx=np.arange(4))
-    (out / "gates_p2.json").write_text(json.dumps({"g2a": {"verdict": "FAIL"}}))
+    (out / "gates_p2.json").write_text(
+        json.dumps({"g2a": {"verdict": "FAIL", "gate_version": D.G2A_GATE_VERSION}})
+    )
 
     def boom(args):
         raise AssertionError("P2 heavy path reached on a failed-gate resume")
@@ -314,6 +320,177 @@ def test_p2_resume_reapplies_recorded_gate_fail(tmp_path, monkeypatch, quiet_sen
     with pytest.raises(SystemExit) as ei:
         D.phase_recapture(args)
     assert ei.value.code == D.RC_G2A == 22
+
+
+# ── G2a v2 (crash-fix r4): quantile-ladder gate + gate_version recompute ────────
+
+
+def _healthy_cos(n: int = 30_000) -> np.ndarray:
+    """Synthetic cosine distribution matching the SHAPE of the 2026-08-23 healthy
+    production run (the committed calibration evidence): bulk at the measured
+    median, worst-8 tail set to the measured worst-row values."""
+    cos = np.full(n, 0.999933, dtype=np.float64)
+    worst = [0.995397, 0.998816, 0.998900, 0.998946, 0.999112, 0.999136, 0.999205, 0.999257]
+    cos[: len(worst)] = worst
+    return cos
+
+
+def test_eval_g2a_pass_on_measured_healthy_distribution():
+    rec = D._eval_g2a(_healthy_cos(), production=True, tiny_model=False)
+    assert rec["verdict"] == "PASS"
+    assert rec["gate_version"] == D.G2A_GATE_VERSION == 2
+    assert rec["n"] == 30_000
+    assert rec["row_cos_min"] == pytest.approx(0.995397)
+    assert set(rec["quantiles"]) == {"min", "p0.01%", "p0.1%", "p1%", "p5%", "median"}
+    assert set(rec["n_below"]) == {"min_flat", "p0.1%", "median"}
+    assert rec["n_below"]["min_flat"] == 0
+    assert rec["n_below"]["p0.1%"] == 4  # the 4 sub-0.999 rows of the measured run
+    assert rec["bars"] == {"min_flat": 0.995, "p0.1%": 0.999, "median": 0.9995}
+
+
+def test_eval_g2a_flat_min_bar_trips_on_real_bug_row():
+    """One row in the real-bug regime (#779: mapping/pad bugs read 0.39-0.84)
+    trips the flat 0.995 catcher even with a pristine bulk."""
+    cos = _healthy_cos()
+    cos[0] = 0.85
+    rec = D._eval_g2a(cos, production=True, tiny_model=False)
+    assert rec["verdict"] == "FAIL"
+    assert rec["n_below"]["min_flat"] == 1
+    smoke = D._eval_g2a(cos, production=False, tiny_model=False)
+    assert smoke["verdict"] == "INFORMATIONAL-smoke"
+
+
+def test_eval_g2a_quantile_bars_trip_on_bulk_shift():
+    """A bulk drift (every row 0.998) clears the flat min bar but trips BOTH
+    n-robust bars — the identity-degradation class the v1 min-only gate could
+    conflate with tail jitter."""
+    rec = D._eval_g2a(np.full(30_000, 0.998), production=True, tiny_model=False)
+    assert rec["verdict"] == "FAIL"
+    assert rec["quantiles"]["min"] >= D.G2A_COS_MIN_FLAT  # min bar alone would PASS
+    assert rec["quantiles"]["p0.1%"] < D.G2A_COS_P001_MIN
+    assert rec["quantiles"]["median"] < D.G2A_COS_MEDIAN_MIN
+
+
+def test_eval_g2a_tiny_or_empty_skips():
+    assert D._eval_g2a(np.full(8, np.nan), production=True, tiny_model=False) == {
+        "verdict": "SKIPPED-tiny-model",
+        "n": 0,
+        "gate_version": D.G2A_GATE_VERSION,
+    }
+    rec = D._eval_g2a(_healthy_cos(64), production=True, tiny_model=True)
+    assert rec["verdict"] == "SKIPPED-tiny-model"
+
+
+def _fake_recompute_state(args, cos: np.ndarray) -> Path:
+    """Store + v1-era gates + assemble outputs for the gate_version recompute
+    path (vbar19 == Y19 rows -> D2c cosine exactly 1.0)."""
+    out = D._recapture_dir(args)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "regime.json").write_text(json.dumps(D._regime(args)))
+    n = len(cos)
+    rng = np.random.default_rng(0)
+    vb19 = rng.normal(size=(n, 8)).astype(np.float16)
+    row_idx = np.arange(n, dtype=np.int64)
+    np.savez(
+        out / "vbar_store.npz",
+        row_idx=row_idx,
+        c20_cos=cos.astype(np.float32),
+        vbar19=vb19,
+    )
+    # v1-era gates: recorded under the OLD flat bar, no gate_version field
+    (out / "gates_p2.json").write_text(
+        json.dumps(
+            {
+                "g2b": {"verdict": "PASS", "n_pilot": 24},
+                "g2a": {"verdict": "FAIL", "row_cos_min": float(cos.min()), "bar": 0.999},
+                "d2c": {"verdict": "PASS"},
+            }
+        )
+    )
+    a_dir = D._assemble_dir(args)
+    a_dir.mkdir(parents=True, exist_ok=True)
+    (a_dir / "split_meta.json").write_text("{}")
+    np.save(a_dir / "rows_present.npy", row_idx)
+    np.save(a_dir / "Y19.fp16.npy", vb19)
+    return out
+
+
+def test_p2_resume_stale_gate_version_recomputes_to_pass(tmp_path, monkeypatch, quiet_sentinels):
+    """Crash-fix r4 relaunch mechanism: a recorded STALE-version G2a FAIL over a
+    healthy persisted store is RECOMPUTED (not re-applied) — G2a+D2c re-evaluated
+    from vbar_store.npz, recorded G2b reused verbatim, gates_p2.json rewritten at
+    the current gate_version, phase returns rc=0 with the heavy path unreached."""
+    args = _args(tmp_path)
+    # production n (the quantile bars are calibrated at n = 30k; at tiny n the
+    # p0.1% quantile degenerates to the min — production always runs n = 30k,
+    # smoke verdicts are INFORMATIONAL, tiny-model is SKIPPED)
+    cos = _healthy_cos()
+    out = _fake_recompute_state(args, cos)
+
+    def boom(args):
+        raise AssertionError("P2 heavy path reached on a gate_version recompute resume")
+
+    monkeypatch.setattr(D, "_p2_input_contract", boom)
+    D.phase_recapture(args)  # returns cleanly — no SystemExit
+    gates = json.loads((out / "gates_p2.json").read_text())
+    assert gates["g2a"]["verdict"] == "PASS"
+    assert gates["g2a"]["gate_version"] == D.G2A_GATE_VERSION
+    assert gates["g2a"]["row_cos_min"] == pytest.approx(0.995397, abs=1e-6)
+    assert gates["g2b"] == {"verdict": "PASS", "n_pilot": 24}  # reused verbatim
+    assert gates["d2c"]["verdict"] == "PASS" and gates["d2c"]["n"] == 30_000
+    assert gates["d2c"]["median"] == pytest.approx(1.0)
+
+
+def test_p2_resume_stale_gate_version_recompute_real_bug_still_halts(
+    tmp_path, monkeypatch, quiet_sentinels
+):
+    """The recompute path is NOT a laundering channel: a real-bug store (one row
+    at 0.85) recomputes to FAIL and re-halts with the original rc."""
+    args = _args(tmp_path)
+    cos = _healthy_cos()
+    cos[0] = 0.85
+    out = _fake_recompute_state(args, cos)
+    monkeypatch.setattr(
+        D, "_p2_input_contract", lambda a: (_ for _ in ()).throw(AssertionError("heavy path"))
+    )
+    with pytest.raises(SystemExit) as ei:
+        D.phase_recapture(args)
+    assert ei.value.code == D.RC_G2A == 22
+    gates = json.loads((out / "gates_p2.json").read_text())
+    assert gates["g2a"]["verdict"] == "FAIL"
+    assert gates["g2a"]["gate_version"] == D.G2A_GATE_VERSION
+
+
+def test_recheck_p2_gates_requires_g2b(tmp_path):
+    args = _args(tmp_path)
+    with pytest.raises(AssertionError, match="missing g2b"):
+        D._recheck_p2_gates(args, tmp_path / "s.npz", tmp_path / "g.json", {"g2a": {}})
+
+
+def test_enter_phase_regime_resume_across_code_sha_retains_outputs(tmp_path):
+    """--resume-across-code-sha: a code-SHA-ONLY mismatch RETAINS completed
+    outputs, re-attests regime.json at the new SHA, and returns resume_ok=True
+    (the default wipe branch is pinned by
+    test_enter_phase_regime_code_sha_mismatch_wipes_stale_before_manifest)."""
+    args = _args(tmp_path, resume_across_code_sha=True)
+    out = tmp_path / "phase"
+    out.mkdir()
+    (out / "regime.json").write_text(json.dumps({**D._regime(args), "code_sha": "deadbeef"}))
+    stale = out / "vbar_g0000.npz"
+    stale.write_text("x")
+    regime, resume_ok = D._enter_phase_regime(out, args, "recapture", stale_paths=[stale])
+    assert resume_ok is True
+    assert stale.exists(), "completed outputs must be RETAINED under the flag"
+    assert json.loads((out / "regime.json").read_text())["code_sha"] == regime["code_sha"]
+
+
+def test_resume_across_code_sha_never_bypasses_config_mismatch(tmp_path):
+    args = _args(tmp_path, resume_across_code_sha=True)
+    out = tmp_path / "phase"
+    out.mkdir()
+    (out / "regime.json").write_text(json.dumps({**D._regime(args), "config_hash": "0" * 16}))
+    with pytest.raises(RuntimeError, match="DIFFERENT regime"):
+        D._enter_phase_regime(out, args, "recapture")
 
 
 # ── G1: production reconciliation miss -> rc=26, artifact-first ─────────────────
