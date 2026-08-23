@@ -41,3 +41,14 @@ authenticated `list_repo_tree` at the exact revision (the sandbox has no
 network; without the attestation a wrong-pin check degrades to advisory).
 Scope the attestation narrowly ("treat liveness as established; your job
 is the CONSISTENCY adjudication") so Codex still owns the judgment.
+(5) DELTA-CONFINEMENT MIRRORS carry capture artifacts — run the diff
+yourself at compose time and attest the expected hunk set (#2477 r3,
+2026-08-23): a /tmp round-N body mirror may have been captured WITHOUT the
+YAML frontmatter block (marker/file dumps often strip it), so a naive
+body-vs-mirror diff shows a spurious leading `---` hunk the twin would
+misread as an out-of-delta change. Also extract any brief-pinned
+ground-truth artifact (`git -C <worktree> show <sha>:<path>` to /tmp) at
+compose time and pass the /tmp path with a blob-identity attestation —
+the sandbox may deny git, and a delta commit that is ancestor-of-worktree
++ on origin/issue-<N> but NOT yet on origin/main is the NORMAL pre-merge
+state: attest it so the twin doesn't FAIL footer-link liveness on it.
