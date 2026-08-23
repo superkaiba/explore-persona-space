@@ -855,7 +855,7 @@ def test_a2fix_parity_partial_coverage_is_loud_never_map_beats():
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),  # no parity
     ]
-    v = fold.a2fix_lattice(rows, sanity, resolution=res)
+    v = fold.a2fix_lattice(rows, sanity, resolution=res, registered=reg)
     assert v["verdict"] == "WEAK-MIXED"
     assert v["parity_read"]["coverage_complete"] is False
     assert v["parity_read"]["n_rungs"] == 1 and v["parity_read"]["n_rungs_expected"] == 2
@@ -867,9 +867,52 @@ def test_a2fix_parity_partial_coverage_is_loud_never_map_beats():
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08], d_parity=0.03),
     ]
-    v2 = fold.a2fix_lattice(rows_full, sanity, resolution=res)
+    v2 = fold.a2fix_lattice(rows_full, sanity, resolution=res, registered=reg)
     assert v2["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
     assert v2["parity_read"]["coverage_complete"] is True
+
+
+def test_a2fix_parity_registered_universe_covers_omitted_rungs():
+    """codex r3 BLOCKER arm2fix-parity-universe-undercoverage regression: the
+    coverage universe is every restricted passing behavior's REGISTERED rungs
+    — a rung record ENTIRELY absent from per_rung (or present without a D
+    read) is UNCOVERED, never silently outside its own denominator. Fails
+    pre-fix: positive parity on the surviving strict subset + a clear
+    flagship minted MAP-BEATS with n_rungs_expected derived from realized
+    rows."""
+    sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
+    res = {
+        "evil": _res("arm2q_ctx_native", restricted=True, parity=True),
+        "sycophancy": _res("arm2_ctx_native", restricted=True, parity=True),
+    }
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
+    # sycophancy's registered rung record is ENTIRELY ABSENT from per_rung;
+    # evil's flagship is both-CIs-clear with positive parity
+    rows_omitted = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
+    ]
+    v = fold.a2fix_lattice(rows_omitted, sanity, resolution=res, registered=reg)
+    assert v["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v["parity_read"]["coverage_complete"] is False
+    assert v["parity_read"]["n_rungs_expected"] == 2  # from the REGISTERED universe
+    assert ["sycophancy", "sycomwe"] in v["parity_read"]["uncovered_rungs"]
+    assert v["parity_read"]["positive"] is False
+    # present-but-D-less variant (the row survives per_rung but carries no D
+    # read, so the :1336 filter drops it) is the SAME undercoverage — caught
+    e_nod = {
+        "behavior": "sycophancy",
+        "eval_rung": "sycomwe",
+        "flagship": True,
+        "excluded_by_sanity": False,
+        "seeds_used": [],
+        "complete": False,
+        "D": {"mean": None, "tci": None},
+        "D_ctx_ci": None,
+    }
+    v2 = fold.a2fix_lattice([*rows_omitted, e_nod], sanity, resolution=res, registered=reg)
+    assert v2["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v2["parity_read"]["coverage_complete"] is False
+    assert ["sycophancy", "sycomwe"] in v2["parity_read"]["uncovered_rungs"]
 
 
 def test_a2fix_per_rung_d_read_and_parity_hash():
@@ -989,8 +1032,9 @@ def test_a2fix_lattice_map_beats_requires_parity_when_restricted():
         "evil": _res(restricted=True, parity=True),
         "sycophancy": _res(restricted=True, parity=True),
     }
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
     # restricted + positive parity read -> MAP-BEATS
-    v = fold.a2fix_lattice(rows, sanity, resolution=res_all)
+    v = fold.a2fix_lattice(rows, sanity, resolution=res_all, registered=reg)
     assert v["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
     assert v["parity_read"]["positive"] is True
     # restricted + NEGATIVE parity read -> WEAK-MIXED naming the parity duty
@@ -998,11 +1042,11 @@ def test_a2fix_lattice_map_beats_requires_parity_when_restricted():
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=-0.02),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08], d_parity=-0.01),
     ]
-    v2 = fold.a2fix_lattice(rows_neg, sanity, resolution=res_all)
+    v2 = fold.a2fix_lattice(rows_neg, sanity, resolution=res_all, registered=reg)
     assert v2["verdict"] == "WEAK-MIXED" and "parity" in v2["reason"]
     # unrestricted (v1 repair was a no-op) needs no parity read
     res_v1 = {"evil": _res(), "sycophancy": _res()}
-    v3 = fold.a2fix_lattice(rows, sanity, resolution=res_v1)
+    v3 = fold.a2fix_lattice(rows, sanity, resolution=res_v1, registered=reg)
     assert v3["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
     assert "parity_read" not in v3
     # positive median but NO flagship with both CIs clear -> WEAK-MIXED
@@ -1010,8 +1054,15 @@ def test_a2fix_lattice_map_beats_requires_parity_when_restricted():
         _entry("evil", "evil_pair", 0.06, [-0.01, 0.13], [0.01, 0.11]),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [-0.005, 0.08]),
     ]
-    v4 = fold.a2fix_lattice(rows_noflag, sanity, resolution=res_v1)
+    v4 = fold.a2fix_lattice(rows_noflag, sanity, resolution=res_v1, registered=reg)
     assert v4["verdict"] == "WEAK-MIXED" and "flagship" in v4["reason"]
+    # the REGISTERED universe binds under the default too: with the real
+    # REGISTERED_PRIMARY_RUNGS, evil_pair+sycomwe alone cover 2 of 11
+    # registered restricted rungs -> coverage incomplete -> not MAP-BEATS
+    v5 = fold.a2fix_lattice(rows, sanity, resolution=res_all)
+    assert v5["verdict"] == "WEAK-MIXED"
+    assert v5["parity_read"]["coverage_complete"] is False
+    assert v5["parity_read"]["n_rungs_expected"] == 11
 
 
 def test_a2fix_lattice_mixed_parity_scoped_to_restricted_behaviors():
@@ -1021,11 +1072,12 @@ def test_a2fix_lattice_mixed_parity_scoped_to_restricted_behaviors():
     parity median."""
     sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
     res = {"evil": _res("arm2q_ctx_native", restricted=True, parity=True), "sycophancy": _res()}
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
     rows = [
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),  # no parity
     ]
-    v = fold.a2fix_lattice(rows, sanity, resolution=res)
+    v = fold.a2fix_lattice(rows, sanity, resolution=res, registered=reg)
     assert v["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
     assert v["rows_restricted_behaviors"] == ["evil"]
     assert v["parity_read"]["behaviors"] == ["evil"] and v["parity_read"]["n_rungs"] == 1
@@ -1034,7 +1086,7 @@ def test_a2fix_lattice_mixed_parity_scoped_to_restricted_behaviors():
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=-0.02),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),
     ]
-    v2 = fold.a2fix_lattice(rows_neg, sanity, resolution=res)
+    v2 = fold.a2fix_lattice(rows_neg, sanity, resolution=res, registered=reg)
     assert v2["verdict"] == "WEAK-MIXED" and "parity" in v2["reason"]
 
 

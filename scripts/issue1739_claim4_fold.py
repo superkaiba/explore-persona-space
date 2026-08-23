@@ -1289,6 +1289,7 @@ def a2fix_lattice(
     sanity: dict,
     *,
     resolution: dict[str, dict],
+    registered: dict[str, frozenset[str]] = REGISTERED_PRIMARY_RUNGS,
     flagships=FLAGSHIPS,
 ) -> dict:
     """The amended §3 leg-2 lattice — DISJOINT + exhaustive, evaluated over
@@ -1371,29 +1372,35 @@ def a2fix_lattice(
             for r in restricted_rows
             if r.get("D_parity", {}).get("mean") is not None
         ]
-        # COVERAGE condition (r2 blocker arm2fix-parity-partial-coverage,
-        # defense-in-depth behind the hard join demand): EVERY rung of EVERY
-        # rows-restricted passing behavior must carry its D_parity — a
-        # partial pool must never mint MAP-BEATS on an n_rungs undercount.
-        uncovered = sorted(
-            {
-                (r["behavior"], r["eval_rung"])
-                for r in restricted_rows
-                if r.get("D_parity", {}).get("mean") is None
-            }
-        )
+        # COVERAGE condition (r2 blocker arm2fix-parity-partial-coverage;
+        # universe fixed per codex r3 blocker
+        # arm2fix-parity-universe-undercoverage): the expected universe is
+        # every rows-restricted passing behavior's REGISTERED rungs — the
+        # SAME source the production join uses — never the realized rows
+        # themselves (a wholly-omitted rung record would otherwise be neither
+        # expected nor uncovered, and positive parity on the remaining strict
+        # subset could mint MAP-BEATS). Every registered key must carry a
+        # finite D_parity for the read to count as covered.
+        expected_keys = {(b, rung) for b in restricted_passing for rung in registered[b]}
+        covered_keys = {
+            (r["behavior"], r["eval_rung"])
+            for r in restricted_rows
+            if r.get("D_parity", {}).get("mean") is not None
+        }
+        uncovered = sorted(expected_keys - covered_keys)
         parity_read = {
             "behaviors": restricted_passing,
             "n_rungs": len(dp),
-            "n_rungs_expected": len(restricted_rows),
+            "n_rungs_expected": len(expected_keys),
             "coverage_complete": not uncovered,
             "uncovered_rungs": [list(u) for u in uncovered],
             "median_D_parity": float(np.median(dp)) if dp else None,
             "positive": bool(not uncovered and dp and float(np.median(dp)) > 0),
             "note": "estimand-parity read: arm7 refit on the IDENTICAL training-row ids "
             "as the repaired arm2, over exactly the rows-restricted passing behaviors' "
-            "rungs (plan §4 matched-budget parity duty; per-behavior resolution; "
-            "positive requires COMPLETE parity coverage of those rungs)",
+            "REGISTERED rungs (plan §4 matched-budget parity duty; per-behavior "
+            "resolution; positive requires COMPLETE parity coverage of the registered "
+            "universe — realized rows never define their own denominator)",
         }
         out["parity_read"] = parity_read
     if med is None:
@@ -1493,7 +1500,9 @@ def build_arm2fix_table(args) -> dict:
     a2fix_ctx_gap_assert(per_rung, skipped=bool(args.skip_ctx_bootstrap))
     a2fix_assert_finite(per_rung)
 
-    verdict = a2fix_lattice(per_rung, sanity, resolution=resolution)
+    verdict = a2fix_lattice(
+        per_rung, sanity, resolution=resolution, registered=REGISTERED_PRIMARY_RUNGS
+    )
 
     # P4 direction-stability cosines ride NEXT TO any MAP-BEATS output
     p4 = None

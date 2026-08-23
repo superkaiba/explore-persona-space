@@ -1589,6 +1589,12 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     per_layer_all: list[dict] = []
     fit_reports: list[dict] = []
     pools_record: list[dict] = []
+    # writer-side preds-file log (codex r3 minor arm2fix-preds-manifest-
+    # universe): the resume manifest must be the set of files the run
+    # INTENDED and wrote — recorded at each write site — never a directory
+    # glob at summary time (a glob makes any surviving strict subset define
+    # its own universe and read as resume-complete).
+    preds_files_written: list[str] = []
     kwargs = {"n_boot": args.n_boot} if args.n_boot else {}
 
     def _fit_and_score(
@@ -1743,6 +1749,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             # across variant passes by design); `group` rides along so the P2
             # context bootstrap can resample by group-hash group.
             preds_name = f"{fit_label}.{preds_tag}.jsonl" if preds_tag else f"{fit_label}.jsonl"
+            preds_files_written.append(preds_name)
             preds_labels = {"rung": [str(x) for x in rungs_ev]}
             if map_variant is not None:
                 preds_labels["group"] = grp_order_ev
@@ -1877,6 +1884,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             # The P-A in-distribution anchor rung — same contract as the
             # _fit_and_score sidecar above; its contexts are the eliciting
             # cell's own rows, in the order scores_el was sliced to.
+            preds_files_written.append("P-A-train-oof.jsonl")
             arms.write_preds_jsonl(
                 _behavior_out_dir(args, behavior) / "transfer_preds" / "P-A-train-oof.jsonl",
                 arms.transfer_preds_rows(
@@ -2232,6 +2240,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         "per_layer": per_layer_all,
         "fit_reports": fit_reports,
         "pools": pools_record,
+        "preds_files_written": sorted(set(preds_files_written)),
         "map_diagnostics": {
             f"{variant}|add|linear|{u_label}": map_diags["linear"],
             **(
@@ -2721,19 +2730,14 @@ def main(argv: list[str] | None = None) -> int:
                                 if getattr(args, "arm2_adapter", None) is not None
                                 else {}
                             ),
-                            # realized preds-sidecar MANIFEST (codex r2 minor):
-                            # the resume predicate verifies every listed file
-                            # exists — one stale/empty sidecar can no longer
-                            # satisfy a preds-writing invocation's resume.
+                            # preds-sidecar MANIFEST from the WRITER'S OWN log
+                            # (codex r2 minor + r3 arm2fix-preds-manifest-
+                            # universe): the run's intended file set, recorded
+                            # at each write site — never a directory glob,
+                            # which would let any surviving strict subset
+                            # define its own universe and read resume-complete.
                             **(
-                                {
-                                    "transfer_preds_files": sorted(
-                                        p.name
-                                        for p in (out_path.parent / "transfer_preds").glob(
-                                            "*.jsonl"
-                                        )
-                                    )
-                                }
+                                {"transfer_preds_files": list(res.get("preds_files_written", []))}
                                 if getattr(args, "transfer_preds", False)
                                 else {}
                             ),
