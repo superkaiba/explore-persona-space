@@ -63,6 +63,8 @@ pushes, the failure-lesson memory persist, Step 9a-ter re-analysis commits,
 the Step 9b auto-merge trigger) point here:
 
 ```bash
+# wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+# extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 # (1) Worktree branch push, rebase-retry on reject (the safe-case form).
 #     DESCENDANCY-GUARDED (#2312): the guard fires only on MUTUAL
 #     non-ancestry (the Step-4a root-divergence probe's own two-leg shape).
@@ -265,6 +267,8 @@ rebase-merged. Five guards:
    accordingly:
 
    ```bash
+   # wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+   # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
    # Foreign tasks/* paths this branch touches (everything under tasks/ that
    # is NOT this task's own folder). Anchored so tasks/.../<N>/… is excluded.
    # MATERIALIZE the diff FIRST and check its OWN exit code: piped into grep
@@ -433,6 +437,8 @@ rebase-merged. Five guards:
 3. **Branch-content / non-`main`-base guard.** Compute:
 
    ```bash
+   # wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+   # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
    # MB probe runs FIRST: on an unfetched origin/main the BEHIND count would
    # itself die rc=128 before the hard-stop message could print.
    MB=$(git -C "$WT" merge-base HEAD origin/main) || MB=""
@@ -482,6 +488,8 @@ rebase-merged. Five guards:
    unconditional own-commit content check:
 
    ```bash
+   # wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+   # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
    # The branch's OWN commits (merge-base..HEAD) — when this diff passes the
    # content check, it is exactly what `gh pr merge --rebase` will replay
    # onto main
@@ -516,6 +524,8 @@ rebase-merged. Five guards:
    do not quote it in commit subjects.
 
    ```bash
+   # wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+   # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
    # For each workflow-surface path $f in the own-diff: does it have any
    # branch-side commit whose SUBJECT does NOT contain the prescribed
    # sync-subject anchor "sync workflow-surface specs from"?
@@ -691,6 +701,8 @@ rebase-merged. Five guards:
      needed; `-p` writes the merged result to stdout, inputs untouched):
 
      ```bash
+     # wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+     # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
      MB=$(git -C "$WT" merge-base HEAD origin/main)
      git -C "$WT" show "$MB:<file>"          > /tmp/issue-<N>-mh-base   # any show failing
      git -C "$WT" show "HEAD:<file>"         > /tmp/issue-<N>-mh-ours   # (added/deleted/renamed
@@ -738,6 +750,8 @@ neither Guard 4 (line-revert refusal) nor the reactive recovery (textual
 conflicts) would surface it.
 
 ```bash
+# wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+# extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 DIVOUT=/tmp/issue-<N>-divergence-merge.txt
 NEWLIST=/tmp/issue-<N>-divergence-new.txt
 rm -f "$DIVOUT" "$NEWLIST"   # stale-output hygiene: a failed invocation must
@@ -869,6 +883,8 @@ recovery sub-procedure. (This is exactly why #787 itself — which MODIFIES
 `SKILL.md` — is not fast-path-eligible.)
 
 ```bash
+# wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+# extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 # Fast-path predicate — ALL of:
 #  (a) task is kind:infra AND tagged wf-fix (a workflow-fix branch), AND
 #  (b) BEHIND > 1000 (branch predates significant main churn), AND
@@ -1039,6 +1055,10 @@ tests BEFORE anything lands:
   anyway with the `[gate-fleet]` cap-expired line (fail-open).
 
   ```bash
+  # wt-binding: caller — the workload receives $WT/$REPO_ROOT via the STEP 2
+  # launcher's `env WT= REPO_ROOT=` pass-through; the launcher body binds them
+  # first (#2306 D1 lines at STEP 2). Extracting standalone? prepend:
+  # eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
   # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
   # DETACHED launcher — the whole gate workload below (baseline lint legs,
   # payload overlay, gated lint legs, TG mapped-invariant legs, subtract,
@@ -1081,6 +1101,11 @@ tests BEFORE anything lands:
   #       echo $? > /tmp/step9c-lint-rc-issue-<N>
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
+  #   # Fence-local binding (#2306): bind before `env` — git -C "" / cd ""
+  #   # are silent no-ops that retarget the SHARED repo root.
+  #   REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  #   WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+  #   [ -n "$WT" ] && [ -d "$WT" ] || { echo "FATAL: WT unbound or missing ($WT)" >&2; exit 1; }
   #   chmod +x "$LINT_GATE_SCRIPT"
   #   # trailing "$WT": unused by the script; rides the detached workload's argv
   #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
@@ -2119,6 +2144,11 @@ tests BEFORE anything lands:
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
+# Fence-local binding (#2306): fenced blocks are separate shells; git -C ""
+# and cd "" are silent no-ops that retarget the SHARED repo root.
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+[ -n "$WT" ] && [ -d "$WT" ] || { echo "FATAL: WT unbound or missing ($WT) — refusing; git -C \"\" / cd \"\" silently retarget the SHARED repo root" >&2; exit 1; }
 # PR-object liveness probe (#1768 round-2 / #1897): a follow-up round's
 # branch outlives its round-1 PR — a MERGED/CLOSED PR is a TERMINAL
 # GitHub object (new branch commits never attach), and `gh pr merge` on
@@ -2370,10 +2400,9 @@ else
   # on the clean path, and the 07-12→07-17 conflicted-experiment record is
   # shape-2-dominated (method-independent — see the merge-form paragraph
   # below, #1493): squash-first buys nothing there. An unreadable kind falls
-  # to --rebase (fail-open to today's behavior). REPO_ROOT is re-derived
-  # inline — fenced blocks are separate shells, and the guards block's
-  # derivation is not in scope here:
-  REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  # to --rebase (fail-open to today's behavior). REPO_ROOT is bound ONCE at
+  # the fence top (the #2306 fence-local binding block) — one derivation per
+  # fence; the guards block's derivation is still not in scope here:
   MERGE_FORM=--rebase
   TASK_KIND=$(uv run python "$REPO_ROOT/scripts/task.py" view <N> --json \
     | uv run python -c 'import sys,json; print(json.load(sys.stdin).get("frontmatter",{}).get("kind",""))' \
@@ -2759,7 +2788,9 @@ same long-phase-heartbeat family recognized by
 ```bash
 uv run python scripts/task.py post-marker <N> epm:progress \
   --note "[long-phase-heartbeat] step10d-merge attempt=<k> shape=0"
-``` Before #1288
+```
+
+Before #1288
 this shape fell through to the "anything else" catch-all (now class
 (4) after #1657) and burned a full scratch-worktree recovery on a
 transient.
@@ -2809,6 +2840,8 @@ uv run python scripts/task.py post-marker <N> epm:progress \
 ```
 
 ```bash
+# wt-binding: caller — runs in the safe-case shell ($WT/$REPO_ROOT bound by its
+# fence-top #2306 block); extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 # Re-snapshot-and-retry (ONCE per Step 10d invocation) — fires ONLY on
 # the mergeability-conflict shape above.
 # STEP 1 (own Bash call): persist the pre-resnapshot tip to a FILE —
@@ -3055,6 +3088,11 @@ in the shared repo root and do NOT force-push. Recover IN THE WORKTREE
 retry):
 
 ```bash
+# Fence-local binding (#2306): fenced blocks are separate shells; git -C ""
+# and cd "" are silent no-ops that retarget the SHARED repo root.
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+[ -n "$WT" ] && [ -d "$WT" ] || { echo "FATAL: WT unbound or missing ($WT) — refusing; git -C \"\" / cd \"\" silently retarget the SHARED repo root" >&2; exit 1; }
 git -C "$WT" fetch origin main --quiet
 # Capture the snapshot ONCE, immediately after the fetch, and merge THAT
 # SHA — origin/main is a shared ref a concurrent session's fetch can
@@ -3411,6 +3449,11 @@ guard's `push HEAD:main`). Exclusive-arm shape (#1184) — a failed stage
 takes the echo+false arm and the next stage is structurally unreachable:
 
 ```bash
+# Fence-local binding (#2306): fenced blocks are separate shells; git -C ""
+# and cd "" are silent no-ops that retarget the SHARED repo root.
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+[ -n "$WT" ] && [ -d "$WT" ] || { echo "FATAL: WT unbound or missing ($WT) — refusing; git -C \"\" / cd \"\" silently retarget the SHARED repo root" >&2; exit 1; }
 # Own Bash call. LOCAL_TIP is the gate-certified tip; every command is
 # git -C-scoped (repo-root guards stay out of the way; never a repo-root
 # checkout/merge). NO global `worktree prune` here — a GLOBAL prune
@@ -3506,6 +3549,8 @@ reuses the harness then breaks its import path on a clean `main`
 checkout (#595). Scan for it FIRST:
 
 ```bash
+# wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+# extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 # Files this branch ADDED (status A) vs origin/main under shared src/.
 git -C "$WT" diff --name-only --diff-filter=A origin/main HEAD -- \
   "src/explore_persona_space/" > /tmp/issue-<N>-new-src.txt
@@ -3535,6 +3580,8 @@ is ADDED-only over an in-scope pathspec that excludes shared `src/` /
 `scripts/`):
 
 ```bash
+# wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+# extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 # MODIFIED / RENAMED / DELETED (not ADDED) shared infra this branch carries —
 # the A-only surgical checkout structurally cannot land it (#1144). Not a
 # refusal: land the artifacts, but never let the stranding be silent.
@@ -3633,6 +3680,8 @@ Decision tree:
   `ood_eval_results/issue_<N>/`). Compute:
 
   ```bash
+  # wt-binding: caller — $WT/$REPO_ROOT must already be bound in this shell;
+  # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
   # Files this branch ADDED (status A ONLY) vs origin/main, restricted to
   # this task's own paths PLUS the workflow surface (a workflow-fix branch's
   # ADDED deliverable can be .claude/** / CLAUDE.md / .gitattributes). Never
@@ -3712,6 +3761,11 @@ Decision tree:
   ONLY this task's files and ignores every other staged entry:
 
   ```bash
+  # Fence-local binding (#2306): fenced blocks are separate shells; git -C ""
+  # and cd "" are silent no-ops that retarget the SHARED repo root.
+  REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
+  [ -n "$WT" ] && [ -d "$WT" ] || { echo "FATAL: WT unbound or missing ($WT) — refusing; git -C \"\" / cd \"\" silently retarget the SHARED repo root" >&2; exit 1; }
   cd "$REPO_ROOT"
   # earlyoom-protect the gate — form (iii) (#1045 recipe, #1211; FAIL-OPEN,
   # see the shared gate block above): the preamble sits BEFORE the BASELINE

@@ -953,6 +953,21 @@ Behaviours:
   fence-scoped: prose inline-code recipes, ``#``-commented instruction
   lines inside fences, untagged fences, and the placeholder-substitution
   false-PASS direction are NAMED residuals (see the check docstring).
+* ``--check-issue-skill-fence-wt-binding`` (also bundled into the no-flags
+  default run): scan every ``bash``/``sh``/``shell``-tagged OR UNTAGGED
+  fenced block in ``.claude/skills/issue/SKILL.md`` +
+  ``.claude/skills/issue/steps/*.md`` and FAIL any fence referencing
+  ``$WT`` (``"$WT"`` / ``${WT}`` / bare ``$WT``) that neither (a) binds
+  in-fence (a ``WT=`` assignment line, or a non-comment ``eval "$(bash
+  scripts/step10d_guards.sh <N> --guard prelude)"`` line) nor (b) carries
+  the literal ``wt-binding:`` annotation token (the #2306 D2
+  caller/prelude-dependent convention). ``git -C ""`` and ``cd ""`` are
+  SILENT NO-OPS (rc=0), so an extracted fence with unbound ``$WT``
+  retargets every worktree op at the SHARED repo root (#2293: the Step 10d
+  safe-case merge fence destroyed a valid lint-gate verdict this way). A
+  bare ``cd "$WT" ||`` guard is deliberately NOT accepted (``cd ""``
+  succeeds, so the guard passes with ``WT`` unbound). FAIL names file,
+  fence start line, and the remedy pair.
 * ``--check-bare-commit-pathspec`` (also bundled into the no-flags default
   run): scan every ``bash``/``sh``/``shell``-tagged fenced block in
   ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` +
@@ -12562,9 +12577,14 @@ def _build_root_guard_fixture(tmp: Path) -> None:
     )
 
 
-def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
+def _iter_bash_fences(
+    text: str, *, tags: frozenset[str] = _ROOT_GUARD_BASH_TAGS
+) -> Iterator[tuple[int, str, str]]:
     """Yield ``(opener_lineno_1based, preceding_nonblank_line, block_text)``
-    for every ``bash``/``sh``/``shell``-tagged fenced block in ``text``.
+    for every ``bash``/``sh``/``shell``-tagged fenced block in ``text``
+    (override *tags* to widen the tag set — e.g. include ``""`` so untagged
+    fences are yielded too, the ``check_issue_skill_fence_wt_binding``
+    scope, #2306).
 
     PARITY-TOGGLE PARSER RULE (#1176 acceptance criterion 8): outside a
     fence, ANY fence line (tagged or bare, ``` or ~~~) OPENS one; inside a
@@ -12606,7 +12626,7 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
                 continue
             if token == fence_token:
                 # Same-token fence line closes (tag ignored on close).
-                if fence_tag in _ROOT_GUARD_BASH_TAGS:
+                if fence_tag in tags:
                     yield opener_lineno, preceding, "\n".join(block_lines)
                 in_fence = False
                 prev_nonblank = line
@@ -12618,7 +12638,7 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
             block_lines.append(line)
         elif line.strip():
             prev_nonblank = line
-    if in_fence and fence_tag in _ROOT_GUARD_BASH_TAGS:
+    if in_fence and fence_tag in tags:
         # Unterminated trailing fence: yield what was collected.
         yield opener_lineno, preceding, "\n".join(block_lines)
 
@@ -12902,6 +12922,98 @@ def check_git_recipes_root_guard(  # noqa: C901 -- flat fail-loud ladder + per-f
                     f"error, not a verdict — #1610) ({first!r})."
                 )
         return errors
+
+
+# --check-issue-skill-fence-wt-binding (#2306): git -C "" AND cd "" are both
+# SILENT NO-OPS (rc=0 — verified at plan time), so a /issue-skill fence using
+# `git -C "$WT"` / `cd "$WT"` with $WT unbound silently retargets every
+# worktree op at the SHARED repo root when extracted as a standalone script —
+# the shape the Step 10d recipes themselves prescribe (#2293: the safe-case
+# merge fence compared a certified sha against root `main` HEAD and destroyed
+# a valid lint-gate verdict). Python string data only: this check scans
+# .claude/skills/issue/**.md, never scripts/**, so these constants cannot
+# self-flag.
+_WT_FENCE_TAGS = frozenset({"bash", "sh", "shell", ""})
+_WT_REF_RE = re.compile(r"\$(\{WT\}|WT\b)")
+_WT_BIND_RE = re.compile(r"^\s*WT=")
+_WT_PRELUDE_TOKEN = "--guard prelude"
+_WT_ANNOTATION_TOKEN = "wt-binding:"
+
+
+def _issue_skill_fence_files(root: Path) -> list[Path]:
+    """The ``check_issue_skill_fence_wt_binding`` scan set: the /issue skill
+    router + its step bodies (the #2306 fence surface)."""
+    files: list[Path] = []
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if skill.is_file():
+        files.append(skill)
+    steps = root / ".claude" / "skills" / "issue" / "steps"
+    if steps.is_dir():
+        files.extend(p for p in sorted(steps.glob("*.md")) if p.is_file())
+    return files
+
+
+def _wt_fence_is_covered(block: str) -> bool:
+    """True when a ``$WT``-referencing fence body either binds in-fence or
+    carries the ``wt-binding:`` annotation token (the #2306 D1/D2 pair).
+
+    A binding is (a) a ``WT=`` assignment at line start, or (b) a NON-comment
+    ``eval`` line invoking ``step10d_guards.sh <N> --guard prelude``. A bare
+    ``cd "$WT" ||`` guard is deliberately NOT accepted: ``cd ""`` succeeds
+    (rc=0, cwd unchanged), so that guard passes with ``WT`` unbound.
+    """
+    for line in block.split("\n"):
+        if _WT_BIND_RE.match(line):
+            return True
+        stripped = line.lstrip()
+        if not stripped.startswith("#") and "eval" in line and _WT_PRELUDE_TOKEN in line:
+            return True
+        if _WT_ANNOTATION_TOKEN in line:
+            return True
+    return False
+
+
+def check_issue_skill_fence_wt_binding(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any ``bash``/``sh``/``shell``-tagged OR UNTAGGED fenced block in
+    ``.claude/skills/issue/SKILL.md`` + ``.claude/skills/issue/steps/*.md``
+    that references ``$WT`` (``"$WT"`` / ``${WT}`` / bare ``$WT``) without
+    either (a) an in-fence binding — a ``WT=`` assignment line, or a
+    non-comment ``eval "$(bash scripts/step10d_guards.sh <N> --guard
+    prelude)"`` line — or (b) the literal ``wt-binding:`` annotation token
+    (the #2306 D2 convention declaring the fence caller/prelude-dependent,
+    with the standalone-extraction prepend named in the same comment).
+
+    Untagged fences are in scope so a future shell fence added without a
+    language tag cannot escape silently (zero such ``$WT`` fences exist at
+    HEAD). FAIL names file, fence start line, and the remedy pair.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for path in _issue_skill_fence_files(root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:  # unreadable file: note + skip, never silent-pass
+            print(
+                f"NOTE: check_issue_skill_fence_wt_binding: unreadable {path}: {exc}",
+                file=sys.stderr,
+            )
+            continue
+        rel = path.relative_to(root).as_posix()
+        for opener_lineno, _preceding, block in _iter_bash_fences(text, tags=_WT_FENCE_TAGS):
+            if not _WT_REF_RE.search(block):
+                continue
+            if _wt_fence_is_covered(block):
+                continue
+            errors.append(
+                f"{rel}:{opener_lineno}: fence references $WT with no in-fence binding and "
+                f'no \'wt-binding:\' annotation — git -C "" / cd "" are silent no-ops that '
+                f"retarget the SHARED repo root when the fence is extracted standalone "
+                f"(#2306/#2293). Remedy: insert the fence-local binding block (REPO_ROOT=...; "
+                f'WT="$REPO_ROOT/.claude/worktrees/issue-<N>"; [ -n "$WT" ] && '
+                f'[ -d "$WT" ] || exit 1), or annotate the fence\'s first comment line(s) '
+                f"with 'wt-binding: caller — ...' naming the binding shell."
+            )
+    return errors
 
 
 # --check-bare-commit-pathspec (#1648): a fenced `git commit` recipe with no
@@ -17211,15 +17323,22 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
-    "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
-    # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
-    # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =
-    # 297_000, headroom 2,791 — clears guard_skill_doc_headroom.sh's 2,000 B
-    # warn floor. Re-measure + re-set at Step 10d against the MERGED tree
-    # (concurrent sessions edit this file).
-    # Prior: 292_100 (#2246 post-rebase, 289,354 B) / 290_900 (#2428).
-    "issue/steps/18-step-10d.md": 297_000,
+    # measured 244,047 B @ #2306 2026-08-23 (Step 9c gate fences: wt-binding
+    # annotations + strengthened [ -n/-d ] cd guards, +1,526 B); corridor-max
+    # ((measured+2_800)//100)*100 = 246_800, headroom 2,753.
+    # Prior: 245_300 (242,521 B).
+    "issue/steps/13-step-9.md": 246_800,
+    # measured 299,213 B @ #2306 2026-08-23 (fence-local $WT/$REPO_ROOT D1
+    # bindings on the 4 extraction-prescribed fences + wt-binding annotations
+    # on 12 caller-dependent fences + the line-2791 malformed-fence-close
+    # split, +5,004 B); corridor-max
+    # ((measured+2_800)//100)*100 = 302_000, headroom 2,787 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Re-measure + re-set
+    # at Step 10d against the MERGED tree (concurrent sessions edit this
+    # file).
+    # Prior: 297_000 (#2260, 294,209 B) / 292_100 (#2246 post-rebase,
+    # 289,354 B) / 290_900 (#2428).
+    "issue/steps/18-step-10d.md": 302_000,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
@@ -19680,6 +19799,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_scripts_import_guard": lambda wf: check_scripts_import_guard(),
     "check_upload_or_true": lambda wf: check_upload_or_true(),
     "check_git_recipes_root_guard": lambda wf: check_git_recipes_root_guard(),
+    "check_issue_skill_fence_wt_binding": (lambda wf: check_issue_skill_fence_wt_binding()),
     "check_bare_commit_pathspec": lambda wf: check_bare_commit_pathspec(),
     "check_asw_docstring_pass_count": lambda wf: check_asw_docstring_pass_count(),
     "check_skill_bang_backtick": lambda wf: check_skill_bang_backtick(),
@@ -19825,6 +19945,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_lens_coverage": CheckScope("global", (".claude/rules/",)),
     "check_section_reference_pointers": CheckScope("global", (".claude/",)),
     "check_git_recipes_root_guard": CheckScope("global", (".claude/", "CLAUDE.md")),
+    "check_issue_skill_fence_wt_binding": CheckScope("global", (".claude/skills/issue/",)),
     "check_bare_commit_pathspec": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_skill_bang_backtick": CheckScope("global", (".claude/skills/",)),
     "check_agents_note_argv_verdict": CheckScope("global", (".claude/agents/",)),
@@ -21091,6 +21212,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "run.",
     )
     parser.add_argument(
+        "--check-issue-skill-fence-wt-binding",
+        action="store_true",
+        help="Scan every bash/sh/shell-tagged OR untagged fenced block in "
+        ".claude/skills/issue/SKILL.md + .claude/skills/issue/steps/*.md "
+        "and FAIL any fence referencing $WT that neither binds in-fence "
+        "(a WT= assignment, or a non-comment eval of "
+        "'step10d_guards.sh <N> --guard prelude') nor carries the literal "
+        '\'wt-binding:\' annotation token. git -C "" and cd "" are '
+        "silent no-ops, so an extracted fence with unbound $WT retargets "
+        "the SHARED repo root (#2306/#2293). A bare 'cd \"$WT\" ||' guard "
+        "is NOT accepted. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-bare-commit-pathspec",
         action="store_true",
         help="Verify no bash/sh/shell-tagged fenced block in the workflow "
@@ -21380,6 +21514,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_scripts_import_guard
         or args.check_upload_or_true
         or args.check_git_recipes_root_guard
+        or args.check_issue_skill_fence_wt_binding
         or args.check_bare_commit_pathspec
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
@@ -21584,6 +21719,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_or_true())
     if args.check_git_recipes_root_guard or no_flags:
         errors.extend(check_git_recipes_root_guard())
+    if args.check_issue_skill_fence_wt_binding or no_flags:
+        errors.extend(check_issue_skill_fence_wt_binding())
     if args.check_bare_commit_pathspec or no_flags:
         errors.extend(check_bare_commit_pathspec())
     if args.check_asw_docstring_pass_count or no_flags:

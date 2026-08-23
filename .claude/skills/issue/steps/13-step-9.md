@@ -3246,10 +3246,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
       probe / `rm -f` wrapper argv can transiently over-count — at worst
       one extra 60 s wait, the fail-safe direction.
       ```bash
+      # wt-binding: caller — $WT is bound by the composing orchestrator turn;
+      # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
       # Shell state does NOT persist across Bash calls — hard-guard the cd
       # INSIDE this same background call (never rely on a prior call's cwd;
-      # a silent cd failure must never run the gate in the wrong dir):
-      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # a silent cd failure must never run the gate in the wrong dir — and
+      # cd "" is a silent no-op (#2306), so guard unbound $WT too):
+      [ -n "$WT" ] && [ -d "$WT" ] && cd "$WT" || { echo "FATAL: WT unbound/missing or cd failed ($WT) — cd \"\" is a silent no-op; gate must never run at the shared root" >&2; exit 1; }
       # earlyoom-protect the gate (#1045; FAIL-OPEN — never block the gate on a choom failure):
       # pytest is in this VM's earlyoom --prefer regex (+300 badness), so a gate run is the
       # designated victim under fleet memory pressure (#906 killed twice; #995 at ~42%).
@@ -3458,7 +3461,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       (the self-excluding helper, `--issue <N>` form) — (a 60m run is 6x
       the foreground tool cap):
       ```bash
-      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # wt-binding: caller — $WT is bound by the composing orchestrator turn;
+      # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
+      [ -n "$WT" ] && [ -d "$WT" ] && cd "$WT" || { echo "FATAL: WT unbound/missing or cd failed ($WT) — cd \"\" is a silent no-op; gate must never run at the shared root" >&2; exit 1; }
       # Route gate fixture temp writes onto the data disk (#1408; #1363: / at 100% killed the
       # gate). Short --basetemp keeps AF_UNIX socket paths under the 108-byte cap. Falls back
       # silently (no TMPDIR export) on pods/GCE with no data disk.
@@ -3582,7 +3587,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       — exit 3 ⇒ bounded queue (sleep 60, elapsed cap 2700 s), then launch
       anyway with the `[gate-fleet]` cap-expired line (fail-open).
       ```bash
-      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # wt-binding: caller — $WT is bound by the composing orchestrator turn;
+      # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
+      [ -n "$WT" ] && [ -d "$WT" ] && cd "$WT" || { echo "FATAL: WT unbound/missing or cd failed ($WT) — cd \"\" is a silent no-op; gate must never run at the shared root" >&2; exit 1; }
       # MANDATORY stale-file rm — the compare triplet ONLY (NEVER 1b's
       # junit/rc/log files: compare consumes them):
       rm -f /tmp/step9c-compare-issue-<N>.json /tmp/step9c-compare-issue-<N>.rc \

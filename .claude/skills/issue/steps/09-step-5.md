@@ -921,6 +921,8 @@ cheap and mechanical — the trigger-dense hunks only, with file/line
 anchors:
 
 ```bash
+# wt-binding: caller — $WT must already be bound in this shell; extracting
+# standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 # Scope the pathspec to the trigger-dense paths actually touched
 # (`git -C "$WT" diff --name-only origin/main...HEAD` first):
 git -C "$WT" diff origin/main...HEAD -- .claude/hooks/ 'scripts/guard_*.sh' \
