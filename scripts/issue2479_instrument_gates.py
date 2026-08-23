@@ -6,11 +6,15 @@ judge_legs.run_leg` with the byte-identical ai_likeness rubric, judge model,
 5 draws, max_tokens 1024, forced-Batch routing — never a re-implementation.
 
   --step flatness   Gate 3 (VERBATIM-FLATNESS): for the 8 INSERTED cells,
-                    judge the embedded reference answers (identical across
-                    characters by construction — asserted on conv_id overlap)
-                    on a seed-0 subsample of 100 reservation-conversation
-                    items per character. spread = max - min of per-character
-                    mean scores; PASS iff spread <= 0.5 x realized axis range.
+                    judge the embedded reference answers on ONE common seed-0
+                    subsample of 100 reservation-conversation items drawn from
+                    the CROSS-CHARACTER INTERSECTION of eligible ids (answer
+                    identity asserted on the complete intersection), reused
+                    verbatim — same ordered id set — for every character's
+                    leg, so the spread of per-character means cannot be
+                    confounded by per-character item mixes. spread = max - min
+                    of per-character mean scores; PASS iff spread <= 0.5 x
+                    realized axis range.
   --step namemask   Gate 4 (NAME-MASK): for the 8 band-A/D characters, a
                     seed-0 subsample of 40 axis items per character is
                     re-judged with the character's name masked to the neutral
@@ -196,6 +200,60 @@ def extreme_rows(panel: list[dict]) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Dispatch steps (dry-run by default; --execute + spend ack env for real calls)
 # ---------------------------------------------------------------------------
+def flatness_common_draw(pools: dict[str, dict[str, dict]]) -> tuple[list[str], dict]:
+    """ONE common ordered conv_id draw shared by every flatness leg.
+
+    ``pools``: character name -> {conv_id -> prepared row} (reservation-
+    restricted). Intersects eligible conv_ids across ALL characters, verifies
+    the judged answer text is identical across characters on the COMPLETE
+    intersection (fail loud, listing mismatched conv_ids), then draws the
+    first FLAT_N ids of a seed-0 permutation of the sorted intersection
+    (take-all when the intersection is smaller). Returns (ordered ids, base
+    design dict). Round-2 fix for codex `instrument-controls-unpaired`:
+    per-character `stratified_sample` calls seed on (seed, tag), so each
+    character's leg drew a DIFFERENT item set and the spread confounded
+    item mix with character identity.
+    """
+    import numpy as np
+
+    assert pools, "flatness_common_draw needs >=1 character pool"
+    names = sorted(pools)
+    common = sorted(set.intersection(*(set(p) for p in pools.values())))
+    assert common, (
+        f"empty conv_id intersection across {len(names)} inserted characters — "
+        "the flatness gate needs one shared item set"
+    )
+    # Cross-character identity on the COMPLETE intersection: the judged text
+    # is the embedded reference answer, IDENTICAL across characters by
+    # construction — a mismatch means the extraction broke; fail loud.
+    ref_name = names[0]
+    mismatches = []
+    for cid in common:
+        ref_ans = str(pools[ref_name][cid]["answer"]).strip()
+        for name in names[1:]:
+            if str(pools[name][cid]["answer"]).strip() != ref_ans:
+                mismatches.append(f"{cid} ({ref_name} vs {name})")
+    assert not mismatches, (
+        f"verbatim-flatness identity violated on {len(mismatches)} conv_id(s): "
+        f"{mismatches[:10]} — the embedded reference answer differs across characters"
+    )
+    perm = np.random.default_rng(SUBSAMPLE_SEED).permutation(len(common))
+    take_all = len(common) <= FLAT_N
+    idx = perm if take_all else perm[:FLAT_N]
+    ids = [str(common[i]) for i in idx]
+    design = {
+        "seed": SUBSAMPLE_SEED,
+        "n_target": FLAT_N,
+        "common_draw": True,
+        "characters": names,
+        "pool_intersection": len(common),
+        "conv_ids": ids,
+        "realized_n": len(ids),
+        "take_all": take_all,
+    }
+    return ids, design
+
+
 def step_flatness(
     panel: list[dict],
     reservation: set[str],
@@ -205,8 +263,18 @@ def step_flatness(
     *,
     execute: bool,
 ) -> None:
-    """Build + dispatch the verbatim-flatness leg for the 8 inserted cells."""
-    seen: dict[str, tuple[str, str]] = {}  # conv_id -> (first char name, stripped answer)
+    """Build + dispatch the verbatim-flatness leg for the 8 inserted cells.
+
+    Every character's leg judges the SAME ordered conv_id set — one seed-0
+    draw from the cross-character intersection (`flatness_common_draw`) —
+    never a per-character draw (codex round-1 `instrument-controls-unpaired`).
+    The draw is NOT capped-stratified: the judged text is the shared
+    reference answer, and a joint stratification across characters whose
+    capped flags differ is unsatisfiable; realized per-character capped
+    counts are recorded in each leg's design instead.
+    """
+    pools: dict[str, dict[str, dict]] = {}
+    variants: dict[str, str] = {}
     for r in inserted_rows(panel):
         name, variant = r["name"], r["variant_inserted"]
         kept_path = Path(kept_glob.format(variant=variant, name=name))
@@ -220,23 +288,28 @@ def step_flatness(
                 Path(raw_glob.format(variant=variant, name=name))
             )
         prepared, _stats = prep_mod.prepare(rows, capped_index, cell=variant)
-        pool = [x for x in prepared if str(x["conv_id"]) in reservation]
+        pool = {str(x["conv_id"]): x for x in prepared if str(x["conv_id"]) in reservation}
         assert pool, f"{name}: zero prepared inserted rows in the axis reservation"
-        # Cross-character identity: the judged text is the embedded reference
-        # answer, IDENTICAL across characters by construction — a mismatch on
-        # an overlapping conv_id means the extraction broke; fail loud.
-        mismatches = []
-        for x in pool:
-            cid, ans = str(x["conv_id"]), str(x["answer"]).strip()
-            if cid in seen and seen[cid][1] != ans:
-                mismatches.append(f"{cid} ({seen[cid][0]} vs {name})")
-            seen.setdefault(cid, (name, ans))
-        assert not mismatches, (
-            f"verbatim-flatness identity violated on {len(mismatches)} conv_id(s): "
-            f"{mismatches[:10]} — the embedded reference answer differs across characters"
+        n_in_reservation = sum(1 for x in prepared if str(x["conv_id"]) in reservation)
+        assert len(pool) == n_in_reservation, (
+            f"{name}: duplicate conv_ids among prepared reservation rows "
+            f"({n_in_reservation} rows, {len(pool)} distinct)"
         )
+        pools[name] = pool
+        variants[name] = variant
+    conv_ids, base_design = flatness_common_draw(pools)
+    for name in sorted(pools):
         tag = f"flat_{name}"
-        sampled, design = jl.stratified_sample(pool, FLAT_N, SUBSAMPLE_SEED, tag)
+        sampled = [pools[name][cid] for cid in conv_ids]
+        n_capped = sum(1 for x in sampled if jl.capped_of(x))
+        design = {
+            **base_design,
+            "tag": tag,
+            "character": name,
+            "variant": variants[name],
+            "realized_capped": n_capped,
+            "realized_natural": len(sampled) - n_capped,
+        }
         items = jl.build_ai_likeness_items(sampled, tag)
         jl.run_leg(
             jl.LEG_AI_LIKENESS,
@@ -366,20 +439,46 @@ def step_gates(
         raw_path = legs_dir / f"judge_raw_{jl.LEG_SLUG[jl.LEG_AI_LIKENESS]}_{tag}.json"
         masked_pi = per_item_means(raw_path, tag, conv_ids)
         unmasked_pi = per_item_means(Path(axis_raw_glob.format(name=name)), name, conv_ids)
-        masked_vals = [v for v in masked_pi.values() if v is not None]
-        unmasked_vals = [v for v in unmasked_pi.values() if v is not None]
-        assert masked_vals, f"{name}: every masked item dropped all draws"
-        assert unmasked_vals, f"{name}: no sampled item has a valid unmasked mean"
-        masked_means[name] = float(sum(masked_vals) / len(masked_vals))
-        unmasked_means[name] = float(sum(unmasked_vals) / len(unmasked_vals))
+        # Round-2 fix for codex `instrument-controls-unpaired`: both means are
+        # restricted to the PAIRED intersection — conv_ids with a valid mean
+        # in BOTH arms. Independently-filtered means let an item that dropped
+        # in ONE arm keep its (possibly extreme) counterpart in the other,
+        # turning a drop asymmetry into a fake shift.
+        paired_ids = [
+            cid
+            for cid in conv_ids
+            if masked_pi.get(cid) is not None and unmasked_pi.get(cid) is not None
+        ]
+        assert paired_ids, (
+            f"{name}: no sampled item has a valid per-item mean in BOTH the masked "
+            "and unmasked arms"
+        )
+        masked_means[name] = float(sum(masked_pi[cid] for cid in paired_ids) / len(paired_ids))
+        unmasked_means[name] = float(sum(unmasked_pi[cid] for cid in paired_ids) / len(paired_ids))
         mask_meta[name] = {
             "n_sampled": len(conv_ids),
-            "n_masked_scored": len(masked_vals),
+            "n_paired": len(paired_ids),
+            # Asymmetric drop accounting, each side reported separately.
+            "n_dropped_masked_arm_only": sum(
+                1
+                for cid in conv_ids
+                if masked_pi.get(cid) is None and unmasked_pi.get(cid) is not None
+            ),
+            "n_dropped_unmasked_arm_only": sum(
+                1
+                for cid in conv_ids
+                if masked_pi.get(cid) is not None and unmasked_pi.get(cid) is None
+            ),
+            "n_dropped_both_arms": sum(
+                1 for cid in conv_ids if masked_pi.get(cid) is None and unmasked_pi.get(cid) is None
+            ),
+            "n_masked_scored": sum(1 for v in masked_pi.values() if v is not None),
             "n_masked_all_draws_dropped": sum(1 for v in masked_pi.values() if v is None),
-            "n_unmasked_scored": len(unmasked_vals),
+            "n_unmasked_scored": sum(1 for v in unmasked_pi.values() if v is not None),
             "n_unmasked_missing": sum(1 for v in unmasked_pi.values() if v is None),
             "drops": _drops_of(report),
             "conv_ids": conv_ids,
+            "paired_conv_ids": paired_ids,
         }
     mask_block = name_mask_gate(masked_means, unmasked_means)
     mask_block["per_char"] = mask_meta

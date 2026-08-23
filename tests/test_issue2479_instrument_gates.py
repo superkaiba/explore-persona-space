@@ -233,9 +233,17 @@ def gates_fixture(tmp_path: Path) -> dict:
         (legs / f"judge_raw_ail_mask_{name}.json").write_text(
             json.dumps(_raw(f"mask_{name}", masked_scores))
         )
-        # Unmasked axis raw: base for every sampled item.
+        # Unmasked axis raw: base for every sampled item — EXCEPT helios s3,
+        # which carries a deliberately EXTREME unmasked score (20.0 vs 90.0).
+        # s3 dropped every MASKED draw, so under paired-intersection means the
+        # extreme value must be excluded; independently-filtered means (the
+        # pre-fix codex `instrument-controls-unpaired` behavior) would pull
+        # helios's unmasked mean to (90+90+20)/3 ~= 66.7 and fake a shift.
+        unmasked_scores: dict[str, float | None] = {cid: base for cid in conv_ids}
+        if name == "helios":
+            unmasked_scores["s3"] = 20.0
         (axis_raw_dir / f"judge_raw_ail_{name}.json").write_text(
-            json.dumps(_raw(name, {cid: base for cid in conv_ids}))
+            json.dumps(_raw(name, unmasked_scores))
         )
 
     return {
@@ -272,15 +280,27 @@ def test_step_gates_end_to_end_and_drop_propagation(gates_fixture: dict) -> None
     assert mask["mean_abs_shift"] == pytest.approx(2.0)
     assert mask["rank_corr"] == pytest.approx(1.0)
     assert mask["name_mask_pass"] is True
-    # helios s3 dropped ALL masked draws: excluded from the masked mean,
-    # counted in the per-item accounting, while its unmasked mean survives.
+    # helios s3 dropped ALL masked draws: PAIRED-intersection means exclude it
+    # from BOTH arms — its extreme unmasked score (20.0) must not enter the
+    # unmasked mean (independent filtering would give (90+90+20)/3 ~= 66.7).
     h = mask["per_char"]["helios"]
     assert h["n_sampled"] == 3
+    assert h["n_paired"] == 2
+    assert h["paired_conv_ids"] == ["s1", "s2"]
+    assert h["n_dropped_masked_arm_only"] == 1  # s3: masked dropped, unmasked valid
+    assert h["n_dropped_unmasked_arm_only"] == 0
+    assert h["n_dropped_both_arms"] == 0
     assert h["n_masked_scored"] == 2
     assert h["n_masked_all_draws_dropped"] == 1
     assert h["n_unmasked_scored"] == 3
     assert mask["per_char_masked_mean"]["helios"] == pytest.approx(88.0)
     assert mask["per_char_unmasked_mean"]["helios"] == pytest.approx(90.0)
+    # Every non-helios extreme character has no drops: fully paired.
+    for r in EXTREMES:
+        if r["name"] == "helios":
+            continue
+        m = mask["per_char"][r["name"]]
+        assert m["n_paired"] == m["n_sampled"] == 2, r["name"]
 
 
 def test_step_gates_fails_loud_on_dry_run_report(gates_fixture: dict) -> None:
@@ -298,6 +318,99 @@ def test_step_gates_fails_loud_on_dry_run_report(gates_fixture: dict) -> None:
             gates_fixture["axis_raw_glob"],
             gates_fixture["out"],
         )
+
+
+# ---------------------------------------------------------------------------
+# (d) verbatim-flatness common draw — ONE ordered id set for EVERY leg
+# ---------------------------------------------------------------------------
+SHARED_FLAT_IDS = [f"r{i}" for i in range(12)]
+
+
+def _flat_answer(cid: str) -> str:
+    return f"Shared reference answer body for {cid} - long enough to clear the floor."
+
+
+def _kept_rows(name: str) -> list[dict]:
+    rows = [
+        {
+            "conv_id": cid,
+            "question": "What happens next?",
+            "answer": _flat_answer(cid),
+            "capped": False,
+        }
+        for cid in SHARED_FLAT_IDS
+    ]
+    # A per-character UNIQUE eligible id: the pools deliberately DIFFER across
+    # characters, so any per-character draw would produce different item sets.
+    rows.append(
+        {
+            "conv_id": f"only{name}",
+            "question": "What happens next?",
+            "answer": f"Character-unique filler answer text for {name} only.",
+            "capped": False,
+        }
+    )
+    return rows
+
+
+def test_flatness_common_draw_sampled_and_deterministic() -> None:
+    import numpy as np
+
+    pool_a = {f"r{i}": {"answer": f"answer text number {i} shared"} for i in range(120)}
+    pool_b = dict(pool_a)  # same eligible ids + identical answers
+    ids, design = ig.flatness_common_draw({"a": pool_a, "b": pool_b})
+    assert len(ids) == ig.FLAT_N
+    assert design["take_all"] is False and design["realized_n"] == ig.FLAT_N
+    assert set(ids) <= set(pool_a)
+    ids2, _ = ig.flatness_common_draw({"a": pool_a, "b": pool_b})
+    assert ids2 == ids  # seed-0 deterministic, ORDER included
+    common = sorted(pool_a)
+    perm = np.random.default_rng(ig.SUBSAMPLE_SEED).permutation(len(common))
+    assert ids == [common[i] for i in perm[: ig.FLAT_N]]
+
+
+def test_flatness_common_draw_identity_violation_fails_loud() -> None:
+    pool_a = {"r1": {"answer": "the shared reference answer"}}
+    pool_b = {"r1": {"answer": "a DIFFERENT answer entirely"}}
+    with pytest.raises(AssertionError, match="identity violated"):
+        ig.flatness_common_draw({"a": pool_a, "b": pool_b})
+
+
+def test_flatness_common_draw_empty_intersection_fails_loud() -> None:
+    with pytest.raises(AssertionError, match="empty conv_id intersection"):
+        ig.flatness_common_draw(
+            {"a": {"r1": {"answer": "long answer text"}}, "b": {"r2": {"answer": "other text"}}}
+        )
+
+
+def test_step_flatness_every_leg_receives_identical_ordered_ids(tmp_path: Path) -> None:
+    # Codex `instrument-controls-unpaired` mechanization (i): per-character
+    # pools deliberately DIFFER (one unique extra eligible id per character);
+    # every leg must still be dispatched on the SAME ordered conv_id set.
+    # REAL dry-run through step_flatness -> jl.run_leg (judge_graded dry_run:
+    # zero API calls); the persisted judge_sample designs are the evidence.
+    import numpy as np
+
+    kept_glob = str(tmp_path / "kept_{variant}.jsonl")
+    reservation = set(SHARED_FLAT_IDS)
+    for r in INSERTED:
+        rows = _kept_rows(r["name"])
+        reservation.add(f"only{r['name']}")
+        p = Path(kept_glob.format(variant=r["variant_inserted"]))
+        p.write_text("\n".join(json.dumps(x) for x in rows) + "\n")
+    legs = tmp_path / "legs"
+    ig.step_flatness(PANEL, reservation, kept_glob, None, legs, execute=False)
+
+    common = sorted(SHARED_FLAT_IDS)
+    perm = np.random.default_rng(ig.SUBSAMPLE_SEED).permutation(len(common))
+    expected = [common[i] for i in perm]  # take-all: 12 <= FLAT_N
+    assert len(INSERTED) == 8
+    for r in INSERTED:
+        design = json.loads((legs / f"judge_sample_ail_flat_{r['name']}.json").read_text())
+        assert design["conv_ids"] == expected, r["name"]
+        assert design["common_draw"] is True
+        assert design["take_all"] is True and design["realized_n"] == len(common)
+        assert f"only{r['name']}" not in design["conv_ids"]
 
 
 def test_load_leg_report_missing_file_fails_loud(tmp_path: Path) -> None:
