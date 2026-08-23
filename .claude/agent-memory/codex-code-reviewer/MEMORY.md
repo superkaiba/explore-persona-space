@@ -26,3 +26,4 @@
 - [new helpers ≠ new file (#1805)](feedback_new_helpers_not_new_file_1805.md) — `--name-status` M-vs-A decides the round-new-script duty, never marker prose or +K/−0 numstat (#2378 r4)
 - [deferred event: two semantics](feedback_deferred_event_two_semantics.md) — read deferral_rationale: reconciler downgrade-with-recommended-fix arms full closure duties; rejected-binding does not (#2198 r2 vs #2332 r4)
 - [settled plan → descoped-ABSENT rows](feedback_settled_plan_descoped_absent_rows.md) — reconciler-descoped items become ABSENCE-verification rows (present = scope creep); settled decisions listed as never-object items (#2201 r1)
+- [v2 scoped-round panel format](feedback_v2_scoped_round_panel_format.md) — brief's custom verdict format verbatim (no marker envelope); inline the impl-claim CORRECTION note with a not-dishonesty instruction; compose-verified interaction anchors (#2389 r6)
