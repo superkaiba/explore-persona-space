@@ -1,0 +1,1 @@
+{"ts": "2026-08-23T07:40:48Z", "event": "raised", "concern_id": "empty-reclaim-not-exclusive", "severity": "BLOCKER", "summary": "Both claim-queue forks let two timed-out empty-claim reclaimers independently replace/read back and both return True.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
