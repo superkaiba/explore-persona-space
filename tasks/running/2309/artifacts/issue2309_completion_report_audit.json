@@ -1,0 +1,1815 @@
+{
+  "tasks_root": "/home/thomasjiralerspong/explore-persona-space/tasks",
+  "kinds": {
+    "epm:results": {
+      "total_rows": 2633,
+      "signature_rows": 1527,
+      "form_counts": {
+        "completion": 1498,
+        "implementation": 29,
+        "both": 0
+      },
+      "header_variants": {
+        "## Completion Report": 1496,
+        "## Implementation report": 15,
+        "## Implementation Report": 14,
+        "## Completion report": 2
+      },
+      "by_histogram": {
+        "unknown": 1745,
+        "implementer": 225,
+        "issue490_run_cell.py": 116,
+        "system": 92,
+        "pod-sentinel": 92,
+        "issue405_run_cell.py": 45,
+        "experiment-implementer": 16,
+        "dispatch_leakage_dynamics_597": 12,
+        "orchestrator": 10,
+        "issue658_extract_base_store": 10,
+        "dispatch_neg_geometry_477": 9,
+        "issue-orchestrator": 8,
+        "issue-session": 7,
+        "issue1336_dispatch": 7,
+        "experimenter": 7,
+        "issue545_sweep": 7,
+        "issue779": 6,
+        "issue1345-dispatch": 5,
+        "issue641_dose_curves": 5,
+        "issue715_dispatch": 5,
+        "run_issue543_ratio": 5,
+        "issue1335_run.sh": 4,
+        "issue1481-i1481syc-dispatch": 4,
+        "issue2061_dispatch": 4,
+        "dispatch_marker_480": 4,
+        "titration_svd_597": 4,
+        "issue1074_generator_compare": 3,
+        "issue1112_dispatch": 3,
+        "issue1315_dispatch": 3,
+        "issue1415_dispatch": 3
+      },
+      "drain_rows": 182,
+      "drain_rows_with_signature": 0,
+      "drain_signature_examples": [],
+      "part_token_rows_with_signature": 0,
+      "would_fire_count": 29,
+      "would_fire": [
+        {
+          "task": "275",
+          "ts": "2026-05-06T08:19:10.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "282",
+          "ts": "2026-05-06T10:28:28.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "320",
+          "ts": "2026-05-07T23:48:03.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "176",
+          "ts": "2026-05-01T21:08:46.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "2012",
+          "ts": "2026-08-07T08:45:36Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 11030
+        },
+        {
+          "task": "2016",
+          "ts": "2026-08-08T09:45:50Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 13890
+        },
+        {
+          "task": "2019",
+          "ts": "2026-08-08T12:28:40Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 22016
+        },
+        {
+          "task": "2056",
+          "ts": "2026-08-10T01:11:08Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 7006
+        },
+        {
+          "task": "2064",
+          "ts": "2026-08-10T08:05:21Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 13293
+        },
+        {
+          "task": "2069",
+          "ts": "2026-08-10T11:29:17Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 9681
+        },
+        {
+          "task": "2075",
+          "ts": "2026-08-10T14:18:19Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 16829
+        },
+        {
+          "task": "2088",
+          "ts": "2026-08-10T23:15:58Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 9842
+        },
+        {
+          "task": "2090",
+          "ts": "2026-08-10T22:56:27Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 3936
+        },
+        {
+          "task": "2101",
+          "ts": "2026-08-11T09:41:08Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 13729
+        },
+        {
+          "task": "2125",
+          "ts": "2026-08-12T11:21:28Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 13926
+        },
+        {
+          "task": "2139",
+          "ts": "2026-08-15T13:52:26Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 11212
+        },
+        {
+          "task": "2187",
+          "ts": "2026-08-08T03:22:56Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 9696
+        },
+        {
+          "task": "2208",
+          "ts": "2026-08-09T13:29:57Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 13194
+        },
+        {
+          "task": "2218",
+          "ts": "2026-08-10T11:07:26Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 13632
+        },
+        {
+          "task": "2232",
+          "ts": "2026-08-11T14:53:58Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 15613
+        },
+        {
+          "task": "2232",
+          "ts": "2026-08-11T15:17:23Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 17742
+        },
+        {
+          "task": "2243",
+          "ts": "2026-08-12T18:46:35Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 7614
+        },
+        {
+          "task": "226",
+          "ts": "2026-05-05T05:05:30.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "2274",
+          "ts": "2026-08-13T10:34:31Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 10258
+        },
+        {
+          "task": "2302",
+          "ts": "2026-08-15T00:23:01Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 16457
+        },
+        {
+          "task": "2332",
+          "ts": "2026-08-17T02:30:56Z",
+          "version": 4,
+          "by": "unknown",
+          "missing": [
+            "a"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 15009
+        },
+        {
+          "task": "2345",
+          "ts": "2026-08-17T12:39:12Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 5005
+        },
+        {
+          "task": "2348",
+          "ts": "2026-08-17T19:28:23Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 3155
+        },
+        {
+          "task": "759",
+          "ts": "2026-06-30T07:56:16Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "d"
+          ],
+          "header": "## Completion Report",
+          "n_chars": 7610
+        }
+      ],
+      "section_bearing_rows": 1739,
+      "section_bearing_with_signature": 1505,
+      "signature_coverage_among_section_bearing": 0.8654,
+      "arming_condition_a_zero_drain_signature": true
+    },
+    "epm:experiment-implementation": {
+      "total_rows": 1936,
+      "signature_rows": 1793,
+      "form_counts": {
+        "completion": 39,
+        "implementation": 1754,
+        "both": 0
+      },
+      "header_variants": {
+        "## Implementation Report": 1743,
+        "## Completion Report": 39,
+        "## Implementation report": 11
+      },
+      "by_histogram": {
+        "unknown": 1696,
+        "experiment-implementer": 147,
+        "system": 68,
+        "agent": 9,
+        "issue-orchestrator": 5,
+        "implementer": 4,
+        "issue-1774-orchestrator": 3,
+        "wsA-1739": 2,
+        "orchestrator": 1,
+        "detfix-1739": 1
+      },
+      "drain_rows": 0,
+      "drain_rows_with_signature": 0,
+      "drain_signature_examples": [],
+      "part_token_rows_with_signature": 0,
+      "would_fire_count": 98,
+      "would_fire": [
+        {
+          "task": "188",
+          "ts": "2026-05-04T20:15:51.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 2064
+        },
+        {
+          "task": "228",
+          "ts": "2026-05-05T18:22:43.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "228",
+          "ts": "2026-05-05T05:29:44.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "228",
+          "ts": "2026-05-05T04:46:09.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "228",
+          "ts": "2026-05-05T01:37:45.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "228",
+          "ts": "2026-05-04T21:59:07.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "238",
+          "ts": "2026-05-06T03:27:38.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "238",
+          "ts": "2026-05-06T03:03:18.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "238",
+          "ts": "2026-05-04T21:55:46.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "247",
+          "ts": "2026-05-06T23:39:13.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "257",
+          "ts": "2026-05-05T23:28:39.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "257",
+          "ts": "2026-05-05T18:49:36.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "260",
+          "ts": "2026-05-05T23:09:13.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "261",
+          "ts": "2026-05-05T19:12:40.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 1706
+        },
+        {
+          "task": "261",
+          "ts": "2026-05-05T18:28:30.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 4000
+        },
+        {
+          "task": "262",
+          "ts": "2026-05-06T22:30:15.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "263",
+          "ts": "2026-05-09T05:14:46.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "263",
+          "ts": "2026-05-07T00:40:17.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "263",
+          "ts": "2026-05-07T00:07:54.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "263",
+          "ts": "2026-05-06T23:26:32.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "267",
+          "ts": "2026-05-07T06:14:13.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "267",
+          "ts": "2026-05-07T05:39:34.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "267",
+          "ts": "2026-05-06T22:32:27.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "269",
+          "ts": "2026-05-11T05:50:04.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "269",
+          "ts": "2026-05-11T05:14:45.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "274",
+          "ts": "2026-05-05T21:51:56.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "274",
+          "ts": "2026-05-05T21:36:34.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-07T06:46:29.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3567
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-07T06:25:09.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-06T11:06:13.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3778
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-06T10:15:18.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-06T09:46:38.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-06T09:33:16.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-06T08:56:49.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "280",
+          "ts": "2026-05-06T08:43:29.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "296",
+          "ts": "2026-05-07T00:12:32.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "331",
+          "ts": "2026-05-11T08:32:08.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "331",
+          "ts": "2026-05-11T06:24:02.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "331",
+          "ts": "2026-05-11T05:56:43.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "331",
+          "ts": "2026-05-11T05:20:19.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "344",
+          "ts": "2026-05-11T23:35:12.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "344",
+          "ts": "2026-05-11T22:00:46.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "344",
+          "ts": "2026-05-11T21:01:41.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "344",
+          "ts": "2026-05-11T20:33:35.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "460",
+          "ts": "2026-06-01T07:16:14Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4834
+        },
+        {
+          "task": "460",
+          "ts": "2026-06-01T07:32:50Z",
+          "version": 3,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 6866
+        },
+        {
+          "task": "1336",
+          "ts": "2026-08-12T21:51:46Z",
+          "version": 22,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 17029
+        },
+        {
+          "task": "1586",
+          "ts": "2026-07-22T23:58:31Z",
+          "version": 7,
+          "by": "unknown",
+          "missing": [
+            "b"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 8499
+        },
+        {
+          "task": "2162",
+          "ts": "2026-08-07T13:04:12Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "a"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 11369
+        },
+        {
+          "task": "2162",
+          "ts": "2026-08-12T20:28:16Z",
+          "version": 7,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 13302
+        },
+        {
+          "task": "2203",
+          "ts": "2026-08-09T14:04:40Z",
+          "version": 4,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3003
+        },
+        {
+          "task": "2225",
+          "ts": "2026-08-13T22:39:03Z",
+          "version": 5,
+          "by": "unknown",
+          "missing": [
+            "a"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 7092
+        },
+        {
+          "task": "2329",
+          "ts": "2026-08-20T05:36:55Z",
+          "version": 14,
+          "by": "unknown",
+          "missing": [
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 19715
+        },
+        {
+          "task": "2329",
+          "ts": "2026-08-20T12:28:16Z",
+          "version": 17,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 9011
+        },
+        {
+          "task": "504",
+          "ts": "2026-06-08T07:56:29Z",
+          "version": 18,
+          "by": "experiment-implementer",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 18925
+        },
+        {
+          "task": "658",
+          "ts": "2026-06-24T10:56:37Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 14607
+        },
+        {
+          "task": "2389",
+          "ts": "2026-08-20T05:29:28Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 9638
+        },
+        {
+          "task": "2389",
+          "ts": "2026-08-20T09:24:17Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "a"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 18640
+        },
+        {
+          "task": "150",
+          "ts": "2026-05-01T21:19:52.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "186",
+          "ts": "2026-05-02T17:53:18.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 4000
+        },
+        {
+          "task": "201",
+          "ts": "2026-05-03T05:02:46.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "203",
+          "ts": "2026-05-02T19:14:43.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "205",
+          "ts": "2026-05-03T09:54:06.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3399
+        },
+        {
+          "task": "205",
+          "ts": "2026-05-03T09:41:05.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "213",
+          "ts": "2026-05-03T09:18:53.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "2146",
+          "ts": "2026-08-16T06:45:57Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4624
+        },
+        {
+          "task": "2146",
+          "ts": "2026-08-16T07:36:23Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3156
+        },
+        {
+          "task": "2146",
+          "ts": "2026-08-16T08:17:11Z",
+          "version": 3,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3173
+        },
+        {
+          "task": "2156",
+          "ts": "2026-08-06T19:43:14Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 13206
+        },
+        {
+          "task": "224",
+          "ts": "2026-05-04T21:32:33.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "224",
+          "ts": "2026-05-04T21:05:49.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "2256",
+          "ts": "2026-08-12T23:36:23Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 9889
+        },
+        {
+          "task": "2348",
+          "ts": "2026-08-17T16:35:07Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 6674
+        },
+        {
+          "task": "311",
+          "ts": "2026-05-11T20:40:06.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "311",
+          "ts": "2026-05-11T20:14:24.000Z",
+          "version": 1,
+          "by": "system",
+          "missing": [
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 4000
+        },
+        {
+          "task": "355",
+          "ts": "2026-05-17T02:00:38Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3159
+        },
+        {
+          "task": "355",
+          "ts": "2026-05-17T02:24:49Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 2551
+        },
+        {
+          "task": "377",
+          "ts": "2026-05-22T09:45:08Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 11132
+        },
+        {
+          "task": "382",
+          "ts": "2026-05-24T23:44:31Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 16650
+        },
+        {
+          "task": "382",
+          "ts": "2026-05-26T06:07:38Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 12370
+        },
+        {
+          "task": "389",
+          "ts": "2026-05-26T08:34:27Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 10658
+        },
+        {
+          "task": "389",
+          "ts": "2026-05-26T08:37:33Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 10658
+        },
+        {
+          "task": "391",
+          "ts": "2026-05-26T08:58:56Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 2729
+        },
+        {
+          "task": "391",
+          "ts": "2026-05-26T09:43:39Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 2924
+        },
+        {
+          "task": "391",
+          "ts": "2026-05-26T10:15:24Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 2562
+        },
+        {
+          "task": "398",
+          "ts": "2026-05-27T00:51:01Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 2584
+        },
+        {
+          "task": "398",
+          "ts": "2026-05-27T00:51:30Z",
+          "version": 3,
+          "by": "experiment-implementer",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation report",
+          "n_chars": 2952
+        },
+        {
+          "task": "398",
+          "ts": "2026-05-27T08:23:52Z",
+          "version": 4,
+          "by": "experiment-implementer",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 6377
+        },
+        {
+          "task": "406",
+          "ts": "2026-05-28T07:20:39Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 8494
+        },
+        {
+          "task": "407",
+          "ts": "2026-05-27T23:43:23Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 3187
+        },
+        {
+          "task": "448",
+          "ts": "2026-05-30T03:23:32Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 13031
+        },
+        {
+          "task": "448",
+          "ts": "2026-05-30T04:21:36Z",
+          "version": 1,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 9242
+        },
+        {
+          "task": "465",
+          "ts": "2026-06-02T09:50:23Z",
+          "version": 3,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 9667
+        },
+        {
+          "task": "488",
+          "ts": "2026-06-08T02:28:35Z",
+          "version": 8,
+          "by": "unknown",
+          "missing": [
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 14034
+        },
+        {
+          "task": "488",
+          "ts": "2026-06-09T00:39:09Z",
+          "version": 13,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 12711
+        },
+        {
+          "task": "493",
+          "ts": "2026-06-05T10:19:53Z",
+          "version": 2,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 14963
+        },
+        {
+          "task": "493",
+          "ts": "2026-06-05T10:33:32Z",
+          "version": 3,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 9860
+        },
+        {
+          "task": "500",
+          "ts": "2026-06-05T11:21:14Z",
+          "version": 3,
+          "by": "unknown",
+          "missing": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "header": "## Implementation Report",
+          "n_chars": 6808
+        }
+      ],
+      "section_bearing_rows": 1774,
+      "section_bearing_with_signature": 1702,
+      "signature_coverage_among_section_bearing": 0.9594,
+      "arming_condition_a_zero_drain_signature": true
+    }
+  }
+}
