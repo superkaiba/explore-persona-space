@@ -19,7 +19,15 @@ Pinned behaviors:
     the export lacks its provenance block;
 (c) the ``--emit-eligible-ids`` JSON schema (keys, str ids, per-regime counts,
     provenance block), produced by the REAL emit body over tmp staged inputs;
-    plus the emit mode's standalone-flag guard firing BEFORE the variant asserts.
+    plus the emit mode's standalone-flag guard firing BEFORE the variant asserts;
+(d) concern round r9: the K-row panel-invariance gate (probes the K min-margin
+    kept rows per regime; per-regime ``binding_prompt_sha256`` template hash),
+    the fail-loud emit git provenance (dirty checkout refused unless
+    ``--allow-dirty-emit``; full 40-hex HEAD required), the fail-loud
+    production tokenizer-revision pin (null never written), and the sampler's
+    panel-sha binding (live ``panel.json`` sha must equal the export's recorded
+    ``provenance.panel_invariance.panel_sha256`` — a panel-only edit forces a
+    re-emit).
 
 Hermetic: tmp-path staged files; fakes ONLY at the hub/tokenizer boundary (the
 fake tokenizer mirrors the two consumed methods' signatures; hf downloads are
@@ -30,6 +38,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 import types
 from pathlib import Path
@@ -97,12 +106,37 @@ def _write_panel(tmp_path: Path, desc: str = "a benign panel description") -> Pa
     return panel
 
 
-def _stage_emit_inputs(monkeypatch, tmp_path: Path) -> Path:
+STUB_GIT_SHA = "e" * 40
+
+
+def _stub_git(monkeypatch) -> None:
+    """Hermetic stand-in for the r9 fail-loud emit git-provenance helper.
+
+    Keeps the emit tests independent of the LIVE checkout's dirty state; the
+    real helper body is covered by test_emit_git_provenance_* below.
+    """
+    monkeypatch.setattr(
+        gp,
+        "_emit_git_provenance",
+        lambda *, allow_dirty=False: {
+            "git_commit": STUB_GIT_SHA,
+            "git_dirty": False,
+            "git_argv0_state": "tracked",
+        },
+    )
+
+
+def _stage_emit_inputs(
+    monkeypatch, tmp_path: Path, *, stub_git: bool = True, extra_rows: list[dict] | None = None
+) -> Path:
     """Tmp matched allowlist + track_s rows; stage_pinned_file faked to tmp."""
+    if stub_git:
+        _stub_git(monkeypatch)
     matched_dir = tmp_path / "matched"
     matched_dir.mkdir()
+    extra = list(extra_rows or [])
     (matched_dir / "matched_subsets_parent.json").write_text(
-        json.dumps({"shared_r1r2_convs": ["c1", "c2", "c3", "c4"]})
+        json.dumps({"shared_r1r2_convs": ["c1", "c2", "c3", "c4", *(r["conv_id"] for r in extra)]})
     )
     track = tmp_path / "track_s.jsonl"
     rows = [
@@ -118,6 +152,7 @@ def _stage_emit_inputs(monkeypatch, tmp_path: Path) -> Path:
         },
         # not in the shared allowlist — never joins
         {"conv_id": "unshared", "prompt": "q", "response": "z" * 25},
+        *extra,
     ]
     track.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
 
@@ -163,8 +198,14 @@ def test_emit_eligible_ids_schema(monkeypatch, tmp_path):
         "persona_desc": gp.PERSONA_DESC,
         "variant": gp.c.VARIANT,
     }
-    assert prov["tokenizer_revision"] is None
+    # r9: a null tokenizer_revision is never written; the injected branch
+    # records the explicit sentinel string.
+    assert prov["tokenizer_revision"] == "injected"
     assert prov["tokenizer_revision_source"] == "injected"
+    # r9: the recorded git_commit is the fail-loud helper's verified emit-
+    # checkout HEAD — it OVERRIDES c.metadata's cwd-based value.
+    assert prov["git_commit"] == STUB_GIT_SHA
+    assert prov["git_dirty"] is False
     matched = prov["inputs"]["matched_allowlist"]
     assert matched["path"].endswith("matched_subsets_parent.json")
     expected_sha = hashlib.sha256(
@@ -183,6 +224,12 @@ def test_emit_eligible_ids_schema(monkeypatch, tmp_path):
         assert reg["min_margin_tokens"] == gp.g.PROMPT_TOKEN_BUDGET
         assert reg["max_panel_delta_tokens"] == 0
         assert reg["min_margin_conv_id"] in ("c1", "c3")
+        # r9 K-row gate schema: probe-row count + the per-regime template hash
+        # binding the recorded margins to the exact rendered binding-row bytes.
+        assert reg["n_probe_rows"] == (1 if regime == "paired" else 2)
+        assert re.fullmatch(r"[0-9a-f]{64}", reg["binding_prompt_sha256"])
+        assert reg["worst_row_gap_tokens"] == gp.g.PROMPT_TOKEN_BUDGET
+        assert reg["worst_row_gap_conv_id"] in ("c1", "c3")
 
 
 def test_panel_template_replicas_match_module_constants():
@@ -239,6 +286,125 @@ def test_emit_fails_loud_on_missing_panel(monkeypatch, tmp_path):
         )
 
 
+# --- r9: emit-checkout git provenance (fail-loud) ------------------------------
+
+
+def _fake_git_provenance(monkeypatch, **kw):
+    """Patch the provenance-module boundary with a REAL GitProvenance instance."""
+    from explore_persona_space.orchestrate import provenance as pv
+
+    defaults = dict(
+        commit_sha="a" * 8,
+        dirty=False,
+        dirty_paths=[],
+        argv0_path=None,
+        argv0_state=None,
+        commit_sha_full="a" * 40,
+    )
+    defaults.update(kw)
+    prov = pv.GitProvenance(**defaults)
+    monkeypatch.setattr(pv, "git_provenance", lambda cwd=None, argv0=None: prov)
+    return prov
+
+
+def test_emit_git_provenance_clean_returns_full_sha(monkeypatch):
+    """Real helper body: clean checkout -> full 40-hex git_commit + git_dirty False."""
+    _fake_git_provenance(monkeypatch)
+    meta = gp._emit_git_provenance()
+    assert meta["git_commit"] == "a" * 40
+    assert meta["git_dirty"] is False
+
+
+@pytest.mark.parametrize("dirty", [True, None])
+def test_emit_git_provenance_refuses_dirty_or_unknown(monkeypatch, dirty):
+    _fake_git_provenance(monkeypatch, dirty=dirty, dirty_paths=["scripts/x.py"] if dirty else [])
+    with pytest.raises(RuntimeError, match="emitting checkout is dirty"):
+        gp._emit_git_provenance()
+
+
+def test_emit_git_provenance_allow_dirty_records_state(monkeypatch):
+    _fake_git_provenance(monkeypatch, dirty=True, dirty_paths=["scripts/x.py"])
+    meta = gp._emit_git_provenance(allow_dirty=True)
+    assert meta["git_dirty"] is True
+    assert meta["git_dirty_paths"] == ["scripts/x.py"]
+
+
+def test_emit_git_provenance_refuses_unresolved_head(monkeypatch):
+    """A HEAD that cannot resolve to 40-hex refuses even under --allow-dirty-emit."""
+    _fake_git_provenance(monkeypatch, commit_sha="unknown", commit_sha_full=None)
+    with pytest.raises(RuntimeError, match="40-hex HEAD"):
+        gp._emit_git_provenance(allow_dirty=True)
+
+
+def test_emit_refuses_dirty_checkout_before_writing(monkeypatch, tmp_path):
+    """The real emit body routes through the real helper: dirty -> no export written."""
+    matched_dir = _stage_emit_inputs(monkeypatch, tmp_path, stub_git=False)
+    _fake_git_provenance(monkeypatch, dirty=True, dirty_paths=["scripts/y.py"])
+    panel = _write_panel(tmp_path)
+    out = tmp_path / "eligible_conv_ids.json"
+    with pytest.raises(RuntimeError, match="emitting checkout is dirty"):
+        gp.emit_eligible_ids(
+            out, matched_dir, tmp_path / "dl", tokenizer=FakeTok(), panel_path=panel
+        )
+    assert not out.exists(), "provenance refusal must fire BEFORE the export is written"
+
+
+def test_emit_fails_loud_on_unresolved_tokenizer_revision(monkeypatch, tmp_path):
+    """r9: the production tokenizer branch refuses a null / non-sha revision."""
+    matched_dir = _stage_emit_inputs(monkeypatch, tmp_path)
+    panel = _write_panel(tmp_path)
+    out = tmp_path / "eligible_conv_ids.json"
+    import transformers
+
+    monkeypatch.setattr(
+        transformers.AutoTokenizer, "from_pretrained", lambda model_id, **kw: FakeTok()
+    )
+    monkeypatch.setattr(gp, "_resolve_tokenizer_revision", lambda tok, model: (None, "unresolved"))
+    with pytest.raises(RuntimeError, match="tokenizer revision unresolved"):
+        gp.emit_eligible_ids(out, matched_dir, tmp_path / "dl", tokenizer=None, panel_path=panel)
+    assert not out.exists(), "tokenizer-revision refusal must fire BEFORE the export is written"
+
+
+# --- r9: K-row panel-invariance gate --------------------------------------------
+
+
+def test_panel_invariance_gate_probes_k_min_margin_rows(monkeypatch, tmp_path):
+    """The gate probes the K minimum-margin kept rows, not one arbitrary row."""
+    extra = [
+        # LOWEST margin in both regimes (7 '§' tokens in the question)
+        {"conv_id": "c4", "prompt": "q4" + "§" * 7, "response": "w" * 25},
+        # second-lowest margin
+        {"conv_id": "c5", "prompt": "q5" + "§" * 3, "response": "v" * 25},
+    ]
+    matched_dir = _stage_emit_inputs(monkeypatch, tmp_path, extra_rows=extra)
+    panel = _write_panel(tmp_path)
+    out = tmp_path / "eligible_conv_ids.json"
+    gp.emit_eligible_ids(out, matched_dir, tmp_path / "dl", tokenizer=FakeTok(), panel_path=panel)
+    payload = json.loads(out.read_text())
+    assert payload["eligible_paired"] == ["c1", "c4", "c5"]
+    assert payload["eligible_op"] == ["c1", "c3", "c4", "c5"]
+    budget = gp.g.PROMPT_TOKEN_BUDGET
+    pi = payload["provenance"]["panel_invariance"]
+    for regime, n_kept in (("paired", 3), ("op", 4)):
+        reg = pi["regimes"][regime]
+        # all kept rows probed (kept < PANEL_GATE_PROBE_ROWS caps at the pool)
+        assert reg["n_probe_rows"] == n_kept
+        assert reg["min_margin_conv_id"] == "c4"
+        assert reg["min_margin_tokens"] == budget - 7
+        # benign panel -> zero delta on every probed row; the worst per-row gap
+        # is therefore the binding row's own margin
+        assert reg["max_panel_delta_tokens"] == 0
+        assert reg["worst_row_gap_tokens"] == budget - 7
+        assert reg["worst_row_gap_conv_id"] == "c4"
+    # the per-regime template hash is the sha256 of the rendered binding-row
+    # prompt — recomputed here through the SAME production render path
+    row_c4 = {"conv_id": "c4", "question": "q4" + "§" * 7, "answer": "w" * 25}
+    for regime, op in (("paired", False), ("op", True)):
+        rendered = gp.build_paired_prompt(row_c4, FakeTok(), op_companion=op)
+        expected = hashlib.sha256(rendered.encode("utf-8")).hexdigest()
+        assert pi["regimes"][regime]["binding_prompt_sha256"] == expected
+
+
 def test_emit_mode_refuses_combined_flags(monkeypatch, tmp_path):
     """The standalone-flag guard fires BEFORE the variant/mode asserts."""
     monkeypatch.setattr(
@@ -258,7 +424,14 @@ def test_emit_mode_refuses_combined_flags(monkeypatch, tmp_path):
 # --- (b) sampler --eligible-ids binding ---------------------------------------
 
 
-def _write_elig(path: Path, paired: list[str], op: list[str], *, provenance=True) -> Path:
+def _write_elig(
+    path: Path,
+    paired: list[str],
+    op: list[str],
+    *,
+    provenance=True,
+    panel_sha: str | None = None,
+) -> Path:
     payload: dict = {
         "eligible_paired": paired,
         "eligible_op": op,
@@ -266,8 +439,16 @@ def _write_elig(path: Path, paired: list[str], op: list[str], *, provenance=True
     }
     if provenance:
         payload["provenance"] = {"git_commit": "deadbeef", "mode": "emit-eligible-ids"}
+        if panel_sha is not None:
+            payload["provenance"]["panel_invariance"] = {"panel_sha256": panel_sha}
     path.write_text(json.dumps(payload))
     return path
+
+
+def _live_panel(tmp_path: Path) -> tuple[Path, str]:
+    """Tmp live panel.json + its sha256 (the r9 panel-sha binding fixture)."""
+    panel = _write_panel(tmp_path)
+    return panel, hashlib.sha256(panel.read_bytes()).hexdigest()
 
 
 def _setup_builder(monkeypatch, tmp_path: Path, shared: list[str], r4op: list[str], r4: list[str]):
@@ -304,7 +485,13 @@ def _setup_builder(monkeypatch, tmp_path: Path, shared: list[str], r4op: list[st
     )
 
 
-def _builder_argv(tmp_path: Path, eligf: Path, n_sample: int, n_reservation: int = 2) -> list[str]:
+def _builder_argv(
+    tmp_path: Path,
+    eligf: Path,
+    n_sample: int,
+    n_reservation: int = 2,
+    panel: Path | None = None,
+) -> list[str]:
     return [
         "--out",
         str(tmp_path / "panel_manifest.json"),
@@ -316,19 +503,23 @@ def _builder_argv(tmp_path: Path, eligf: Path, n_sample: int, n_reservation: int
         str(n_reservation),
         "--eligible-ids",
         str(eligf),
+        "--panel-json",
+        str(panel if panel is not None else tmp_path / "panel.json"),
     ]
 
 
 def test_builder_excludes_non_eligible_ids_and_records_export(monkeypatch, tmp_path):
     shared = ["c1", "c2", "c3", "c4", "c5", "c6"]
     _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
+    panel, panel_sha = _live_panel(tmp_path)
     # c5 fails op-eligibility, c6 fails paired-eligibility -> intersection c1..c4.
     eligf = _write_elig(
         tmp_path / "elig.json",
         paired=["c1", "c2", "c3", "c4", "c5"],
         op=["c1", "c2", "c3", "c4", "c6"],
+        panel_sha=panel_sha,
     )
-    rc = ps.main(_builder_argv(tmp_path, eligf, n_sample=4))
+    rc = ps.main(_builder_argv(tmp_path, eligf, n_sample=4, panel=panel))
     assert rc == 0
     m = json.loads((tmp_path / "panel_manifest.json").read_text())
     assert sorted(m["sample_conv_ids"]) == ["c1", "c2", "c3", "c4"]
@@ -340,26 +531,71 @@ def test_builder_excludes_non_eligible_ids_and_records_export(monkeypatch, tmp_p
     assert rec["provenance"]["git_commit"] == "deadbeef"
     assert rec["n_shared_before_restrict"] == 6
     assert rec["n_paired_eligible_after_restrict"] == 4
+    # r9: the manifest records the live panel it validated the export against
+    assert m["inputs"]["panel_json"] == {"path": str(panel), "sha256": panel_sha}
 
 
 def test_builder_hard_fails_when_intersection_cannot_fill(monkeypatch, tmp_path):
     shared = ["c1", "c2", "c3", "c4", "c5", "c6"]
     _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
+    panel, panel_sha = _live_panel(tmp_path)
     eligf = _write_elig(
         tmp_path / "elig.json",
         paired=["c1", "c2", "c3", "c4", "c5"],
         op=["c1", "c2", "c3", "c4", "c6"],
+        panel_sha=panel_sha,
     )
     with pytest.raises(RuntimeError, match="cannot fill the 5-conversation sample"):
-        ps.main(_builder_argv(tmp_path, eligf, n_sample=5))
+        ps.main(_builder_argv(tmp_path, eligf, n_sample=5, panel=panel))
 
 
 def test_builder_hard_fails_on_empty_restricted_intersection(monkeypatch, tmp_path):
     shared = ["c1", "c2"]
     _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
-    eligf = _write_elig(tmp_path / "elig.json", paired=["zz"], op=["zz"])
+    panel, panel_sha = _live_panel(tmp_path)
+    eligf = _write_elig(tmp_path / "elig.json", paired=["zz"], op=["zz"], panel_sha=panel_sha)
     with pytest.raises(RuntimeError, match="EMPTY after the gen-feasibility restriction"):
-        ps.main(_builder_argv(tmp_path, eligf, n_sample=1))
+        ps.main(_builder_argv(tmp_path, eligf, n_sample=1, panel=panel))
+
+
+# --- r9: panel-sha binding (a panel-only edit forces a re-emit) -----------------
+
+
+def test_builder_rejects_panel_sha_mismatch(monkeypatch, tmp_path):
+    shared = ["c1", "c2"]
+    _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
+    panel, _ = _live_panel(tmp_path)
+    # export recorded against a DIFFERENT panel (e.g. panel.json edited after emit)
+    eligf = _write_elig(
+        tmp_path / "elig.json", paired=["c1", "c2"], op=["c1", "c2"], panel_sha="0" * 64
+    )
+    with pytest.raises(ValueError, match="panel sha mismatch"):
+        ps.main(_builder_argv(tmp_path, eligf, n_sample=1, n_reservation=1, panel=panel))
+    assert not (tmp_path / "panel_manifest.json").exists(), "no manifest on a rejected export"
+
+
+def test_builder_rejects_export_missing_panel_sha(monkeypatch, tmp_path):
+    """An export predating the panel-invariance gate is rejected loud."""
+    shared = ["c1", "c2"]
+    _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
+    panel, _ = _live_panel(tmp_path)
+    eligf = _write_elig(tmp_path / "elig.json", paired=["c1"], op=["c1"])  # no panel_sha
+    with pytest.raises(KeyError, match="panel_invariance"):
+        ps.main(_builder_argv(tmp_path, eligf, n_sample=1, n_reservation=1, panel=panel))
+    assert not (tmp_path / "panel_manifest.json").exists()
+
+
+def test_builder_rejects_missing_live_panel(monkeypatch, tmp_path):
+    shared = ["c1", "c2"]
+    _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
+    eligf = _write_elig(tmp_path / "elig.json", paired=["c1"], op=["c1"], panel_sha="0" * 64)
+    with pytest.raises(FileNotFoundError, match="panel-json"):
+        ps.main(
+            _builder_argv(
+                tmp_path, eligf, n_sample=1, n_reservation=1, panel=tmp_path / "absent.json"
+            )
+        )
+    assert not (tmp_path / "panel_manifest.json").exists()
 
 
 def test_builder_requires_eligible_ids_flag(monkeypatch, tmp_path):
@@ -430,10 +666,13 @@ def test_builder_rejects_malformed_export(monkeypatch, tmp_path, mutate, exc, ma
     """Each C2 rejection fires loud — never a silent dedup / silent default."""
     shared = ["c1", "c2"]
     _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
-    eligf = _write_elig(tmp_path / "elig.json", paired=["c1", "c2"], op=["c1", "c2"])
+    panel, panel_sha = _live_panel(tmp_path)
+    eligf = _write_elig(
+        tmp_path / "elig.json", paired=["c1", "c2"], op=["c1", "c2"], panel_sha=panel_sha
+    )
     payload = json.loads(eligf.read_text())
     mutate(payload)
     eligf.write_text(json.dumps(payload))
     with pytest.raises(exc, match=match):
-        ps.main(_builder_argv(tmp_path, eligf, n_sample=1, n_reservation=1))
+        ps.main(_builder_argv(tmp_path, eligf, n_sample=1, n_reservation=1, panel=panel))
     assert not (tmp_path / "panel_manifest.json").exists(), "no manifest on a rejected export"

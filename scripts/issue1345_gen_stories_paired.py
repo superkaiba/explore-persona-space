@@ -45,6 +45,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -1385,6 +1386,12 @@ def apply_manifest_fp_suffix(fp: str, manifest_meta: dict | None) -> str:
 # reconciler r7 measured min margin 790 / max delta +16).
 I2479_PANEL_JSON_ENV = "EPM_I2479_CHAR_PANEL_JSON"  # same env the p1p4 launcher exports
 PANEL_MARGIN_SLACK_TOKENS = 64  # ≥4x the measured max per-config delta (+16, Barnaby)
+# Concern round r9 (panel-invariance-proof-remains-heuristic): the gate probes
+# the K MINIMUM-MARGIN kept rows per regime (not one arbitrary binding row) —
+# BPE deltas are row-dependent at token seams, so the worst-case delta must be
+# measured over the rows with the least headroom. 32 x 16 configs x 2 regimes
+# is ~1k CPU tokenizations — cheap.
+PANEL_GATE_PROBE_ROWS = 32
 
 
 def _i2479_panel_path() -> Path:
@@ -1465,11 +1472,20 @@ def _panel_invariance_gate(
 ) -> dict:
     """Assert min kept-row margin >= max panel-config delta + slack, per regime.
 
-    Renders each regime's BINDING (min-margin) row under every committed panel
-    (display_name, desc) config and compares formatted-prompt token counts
-    against the emit config's. Fails loud with both numbers; returns the
-    provenance block recorded in the export. Replica-drift self-checks run
-    first so a template edit can never silently hollow the gate.
+    Concern round r9: renders each regime's ``PANEL_GATE_PROBE_ROWS`` (32)
+    MINIMUM-margin kept rows — not one arbitrary binding row — under every
+    committed panel (display_name, desc) config and compares formatted-prompt
+    token counts against the emit config's. The margin condition is asserted
+    against the MAX delta observed across (probed rows x all configs):
+    ``min_margin >= max_delta + slack`` implies ``margin_i - max_delta_i >=
+    slack`` for every probed row. Each probed row's recomputed base token
+    count is cross-checked against the margin the feasibility filter recorded
+    (the gate and the filter must agree on the same counts), and the BINDING
+    (min-margin) row's rendered base prompt is sha256-hashed per regime —
+    ``binding_prompt_sha256`` binds the recorded margins to exact source
+    bytes. Fails loud with both numbers; returns the provenance block
+    recorded in the export. Replica-drift self-checks run first so a template
+    edit can never silently hollow the gate.
     """
     if not panel_path.is_file():
         raise FileNotFoundError(
@@ -1501,43 +1517,69 @@ def _panel_invariance_gate(
         "regimes": {},
     }
     for regime, op in (("paired", False), ("op", True)):
-        min_cid, min_margin = min(margins[regime], key=lambda t: t[1])
-        row = pool_by_id[min_cid]
-        base_prompt = build_paired_prompt(row, tokenizer, op_companion=op)
-        assert (
-            _panel_prompt_probe(
-                row, tokenizer, op_companion=op, name=c.STORY_CHARACTER_NAME, desc=PERSONA_DESC
+        assert margins[regime], f"panel-invariance probe: no kept-row margins for {regime}"
+        # Deterministic (margin, conv_id) ordering — the binding row is probe[0].
+        probe = sorted(margins[regime], key=lambda t: (t[1], t[0]))[:PANEL_GATE_PROBE_ROWS]
+        min_cid, min_margin = probe[0]
+        binding_prompt_sha256 = None
+        max_delta, max_cfg, max_cid = 0, None, None
+        worst_gap, worst_gap_cid = None, None
+        for cid, margin in probe:
+            row = pool_by_id[cid]
+            base_prompt = build_paired_prompt(row, tokenizer, op_companion=op)
+            assert (
+                _panel_prompt_probe(
+                    row, tokenizer, op_companion=op, name=c.STORY_CHARACTER_NAME, desc=PERSONA_DESC
+                )
+                == base_prompt
+            ), f"panel-invariance probe: prompt replica drifted from build_paired_prompt ({regime})"
+            n_base = len(tokenizer(base_prompt, add_special_tokens=False)["input_ids"])
+            assert g.PROMPT_TOKEN_BUDGET - n_base == margin, (
+                f"panel-invariance probe ({regime}, conv_id={cid}): gate-recomputed base "
+                f"token count {n_base} disagrees with the feasibility filter's recorded "
+                f"margin {margin} (budget {g.PROMPT_TOKEN_BUDGET}) — the gate must consume "
+                "the SAME counts the filter decided on"
             )
-            == base_prompt
-        ), f"panel-invariance probe: prompt replica drifted from build_paired_prompt ({regime})"
-        n_base = len(tokenizer(base_prompt, add_special_tokens=False)["input_ids"])
-        max_delta, max_cfg = 0, None
-        for cfg in panel:
-            alt = _panel_prompt_probe(
-                row, tokenizer, op_companion=op, name=cfg["display_name"], desc=cfg["desc"]
-            )
-            delta = len(tokenizer(alt, add_special_tokens=False)["input_ids"]) - n_base
-            if delta > max_delta:
-                max_delta, max_cfg = delta, cfg["display_name"]
+            if cid == min_cid:
+                binding_prompt_sha256 = hashlib.sha256(base_prompt.encode("utf-8")).hexdigest()
+            row_max_delta = 0
+            for cfg in panel:
+                alt = _panel_prompt_probe(
+                    row, tokenizer, op_companion=op, name=cfg["display_name"], desc=cfg["desc"]
+                )
+                delta = len(tokenizer(alt, add_special_tokens=False)["input_ids"]) - n_base
+                row_max_delta = max(row_max_delta, delta)
+                if delta > max_delta:
+                    max_delta, max_cfg, max_cid = delta, cfg["display_name"], cid
+            gap = margin - row_max_delta
+            if worst_gap is None or gap < worst_gap:
+                worst_gap, worst_gap_cid = gap, cid
         required = max_delta + PANEL_MARGIN_SLACK_TOKENS
         assert min_margin >= required, (
             f"panel-invariance margin gate FAILED ({regime}): min kept-row margin "
             f"{min_margin} tokens (conv_id={min_cid}) < max panel-config delta "
-            f"{max_delta} (config={max_cfg!r}) + slack {PANEL_MARGIN_SLACK_TOKENS} "
+            f"{max_delta} (config={max_cfg!r}, conv_id={max_cid}) over the "
+            f"{len(probe)} min-margin probe rows + slack {PANEL_MARGIN_SLACK_TOKENS} "
             f"= {required} — an exported-eligible id could leave a panel cell's "
             "post-filter pool (the restrict_pool_to_manifest crash class)"
         )
         record["regimes"][regime] = {
+            "n_probe_rows": len(probe),
             "min_margin_tokens": min_margin,
             "min_margin_conv_id": min_cid,
             "max_panel_delta_tokens": max_delta,
             "max_delta_config": max_cfg,
+            "max_delta_conv_id": max_cid,
+            "worst_row_gap_tokens": worst_gap,
+            "worst_row_gap_conv_id": worst_gap_cid,
             "required_min_margin": required,
+            "binding_prompt_sha256": binding_prompt_sha256,
         }
         print(
             f"[emit-eligible] panel-invariance ({regime}): min_margin={min_margin} "
-            f"(conv_id={min_cid}) >= max_delta={max_delta} ({max_cfg}) + "
-            f"slack={PANEL_MARGIN_SLACK_TOKENS}",
+            f"(conv_id={min_cid}) >= max_delta={max_delta} ({max_cfg}, conv_id={max_cid}) + "
+            f"slack={PANEL_MARGIN_SLACK_TOKENS} over {len(probe)} probe rows; "
+            f"worst_row_gap={worst_gap} (conv_id={worst_gap_cid})",
             flush=True,
         )
     return record
@@ -1548,8 +1590,11 @@ def _resolve_tokenizer_revision(tokenizer, model_name: str) -> tuple[str | None,
 
     transformers 5.x can leave ``_commit_hash`` unpopulated (None) — fall back
     to parsing the hub-cache ``snapshots/<sha>/`` path of the file actually
-    loaded (the pin-engagement convention), else record None (provenance-only,
-    logged; the export itself never fails on an unresolved revision).
+    loaded (the pin-engagement convention), else return ``(None,
+    "unresolved")``. Concern round r9: ``emit_eligible_ids`` FAILS LOUD on the
+    production branch when the resolved revision is not a 40-hex sha — a null
+    revision is never written into the export (the helper itself still just
+    reports; the refusal lives at the emit call site).
     """
     rev = getattr(tokenizer, "_commit_hash", None)
     if rev:
@@ -1560,9 +1605,46 @@ def _resolve_tokenizer_revision(tokenizer, model_name: str) -> tuple[str | None,
         parts = Path(cached_file(model_name, "tokenizer_config.json")).parts
         if "snapshots" in parts:
             return parts[parts.index("snapshots") + 1], "hf-cache snapshots path"
-    except Exception as exc:  # provenance-only field: record unresolved, never crash the export
+    except Exception as exc:  # reporting helper: the emit call site owns the fail-loud
         print(f"[emit-eligible] tokenizer revision unresolved: {exc!r}", flush=True)
     return None, "unresolved"
+
+
+def _emit_git_provenance(*, allow_dirty: bool = False) -> dict:
+    """Fail-loud emit-checkout git identity for the eligibility export (r9).
+
+    Root cause of the eligibility-provenance-pins-not-enforced concern: the r8
+    regeneration ran the emit BEFORE committing the fix code, so the cwd-based
+    ``git rev-parse HEAD`` truthfully recorded the pre-fix parent commit
+    (552fb63e28) while the emitting scripts were dirty — the committed export
+    claimed provenance from a commit that does not contain the code that
+    produced it, and nothing refused. This helper (a) resolves HEAD from the
+    SCRIPT's own checkout (``git -C {_REPO_ROOT}``, never process cwd), (b)
+    requires a full 40-hex sha, and (c) REFUSES a dirty / unknown-dirty tree
+    unless ``--allow-dirty-emit`` was passed (the override records
+    ``git_dirty=True`` + the dirty paths instead of failing). Returns the
+    ``as_metadata_dict`` fields, spliced into the export provenance AFTER
+    ``c.metadata`` so ``git_commit`` is the verified emit-checkout HEAD.
+    """
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    prov = git_provenance(cwd=_REPO_ROOT)
+    meta = as_metadata_dict(prov)
+    sha = meta.get("git_commit")
+    if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise RuntimeError(
+            f"emit-eligible-ids: cannot resolve a full 40-hex HEAD for {_REPO_ROOT} "
+            f"(got {sha!r}) — the export's provenance must pin the emitting checkout"
+        )
+    if prov.dirty is not False and not allow_dirty:
+        raise RuntimeError(
+            "emit-eligible-ids: emitting checkout is dirty (or of unknown dirty state): "
+            f"git_dirty={prov.dirty!r}, paths={prov.dirty_paths[:10]} — commit first so the "
+            "recorded git_commit contains the emitting code (the r8 export recorded the "
+            "pre-fix parent SHA from a dirty tree), or pass --allow-dirty-emit to record "
+            "the dirty state explicitly"
+        )
+    return meta
 
 
 def emit_eligible_ids(
@@ -1571,6 +1653,7 @@ def emit_eligible_ids(
     dl_dir: Path,
     tokenizer=None,
     panel_path: Path | None = None,
+    allow_dirty: bool = False,
 ) -> None:
     """#2479 crash-fix r8: single-source dual-regime gen-feasibility export.
 
@@ -1606,6 +1689,9 @@ def emit_eligible_ids(
     production tokenizer; tests inject a signature-conformant fake at the hub
     boundary only.
     """
+    # Provenance pins FIRST (concern round r9): fail loud on a dirty / HEAD-
+    # unresolvable emitting checkout BEFORE any input staging or tokenization.
+    emit_git = _emit_git_provenance(allow_dirty=allow_dirty)
     if tokenizer is None:
         from transformers import AutoTokenizer
 
@@ -1614,9 +1700,18 @@ def emit_eligible_ids(
         tok_name = MODEL_INSTRUCT
         tokenizer = AutoTokenizer.from_pretrained(MODEL_INSTRUCT)
         tok_rev, tok_rev_src = _resolve_tokenizer_revision(tokenizer, MODEL_INSTRUCT)
+        if not isinstance(tok_rev, str) or not re.fullmatch(r"[0-9a-f]{40}", tok_rev):
+            raise RuntimeError(
+                f"emit-eligible-ids: tokenizer revision unresolved (rev={tok_rev!r}, "
+                f"source={tok_rev_src!r}) — the export's margins are bound to exact "
+                "tokenizer bytes; refusing to write a null / non-sha revision "
+                "(concern round r9)"
+            )
     else:
+        # Test-injected tokenizer: no hub revision exists; record the explicit
+        # sentinel string — a null tokenizer_revision is never written (r9).
         tok_name = f"injected:{type(tokenizer).__name__}"
-        tok_rev, tok_rev_src = None, "injected"
+        tok_rev, tok_rev_src = "injected", "injected"
     pool, pool_counts = load_paired_pool(matched_dir, dl_dir)
     matched_path = matched_dir / "matched_subsets_parent.json"
     matched_sha = hashlib.sha256(matched_path.read_bytes()).hexdigest()
@@ -1652,6 +1747,9 @@ def emit_eligible_ids(
         },
         "provenance": {
             **c.metadata(c.GEN_SEED, len(pool), "scripts/issue1345_gen_stories_paired.py"),
+            # r9: the verified emit-checkout HEAD OVERRIDES c.metadata's cwd-based
+            # git_commit (splice order is load-bearing) + records git_dirty state.
+            **emit_git,
             "mode": "emit-eligible-ids",
             "emit_config": {
                 "character_name": c.STORY_CHARACTER_NAME,
@@ -1742,6 +1840,13 @@ def main() -> None:
         "scripts/issue2479_panel_sample.py --eligible-ids (single-source eligibility).",
     )
     ap.add_argument(
+        "--allow-dirty-emit",
+        action="store_true",
+        help="--emit-eligible-ids only (concern round r9): record git_dirty=true + the "
+        "dirty paths instead of REFUSING to emit from a dirty checkout. Default off — "
+        "the export's git_commit must name a commit containing the emitting code.",
+    )
+    ap.add_argument(
         "--verify-pool",
         action="store_true",
         help="CPU preflight: run main through the pool stage (incl. "
@@ -1766,7 +1871,12 @@ def main() -> None:
             "--emit-eligible-ids is a standalone CPU export mode — do not combine with "
             "--op-companion/--op-powered/--smoke/--verify-pool"
         )
-        emit_eligible_ids(args.emit_eligible_ids, args.matched_dir, args.dl_dir)
+        emit_eligible_ids(
+            args.emit_eligible_ids,
+            args.matched_dir,
+            args.dl_dir,
+            allow_dirty=args.allow_dirty_emit,
+        )
         return
     if args.op_companion:
         assert not c.VARIANT.startswith(I2479_PANEL_PREFIX), (

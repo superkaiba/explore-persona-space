@@ -39,6 +39,12 @@ the sampler registered ids the gen script drops, and every non-op panel cell
 fail-louded at restrict_pool_to_manifest (P0 gen-smoke gate, 2026-08-23). The
 manifest records the export's path + sha256 + embedded provenance.
 
+Concern round r9: the sampler additionally asserts the export's recorded
+``provenance.panel_invariance.panel_sha256`` equals the sha256 of the LIVE
+committed ``panel.json`` (``--panel-json``) — a panel-only edit after the
+export exists invalidates the export's margin-gate measurement and forces a
+re-emit instead of sampling under an unvalidated roster.
+
 Writes ``eval_results/issue_2479/panel_manifest.json`` (sample ids,
 reservation ids, per-tier counts, intersection table, resolved input
 revisions, seeds, git provenance) — committed BEFORE any generation.
@@ -148,6 +154,15 @@ def main(argv: list[str] | None = None) -> int:
         "no registered id can fall in the gen script's answer_too_short / "
         "answer_over_budget dropped set (the P0 gen-smoke gate failure, 2026-08-23).",
     )
+    ap.add_argument(
+        "--panel-json",
+        type=Path,
+        default=_REPO_ROOT / "eval_results" / "issue_2479" / "panel.json",
+        help="live committed #2479 character panel (concern round r9): its sha256 must "
+        "equal the export's recorded provenance.panel_invariance.panel_sha256 — a "
+        "panel-only edit after the export exists therefore forces a re-emit (the "
+        "export's margin gate was measured against THAT panel's configs).",
+    )
     args = ap.parse_args(argv)
     args.staging_dir.mkdir(parents=True, exist_ok=True)
 
@@ -211,6 +226,35 @@ def main(argv: list[str] | None = None) -> int:
             f"{args.eligible_ids}: counts must be a dict (got {type(elig['counts']).__name__})"
         )
 
+    # --- panel-sha binding (concern round r9) --------------------------------
+    # The export's panel-invariance margin gate was measured against ONE
+    # specific panel.json (its sha256 is recorded in the export provenance).
+    # A panel edited AFTER the export exists silently invalidates that
+    # measurement — assert the LIVE committed panel matches the recorded sha,
+    # so a panel-only edit forces a re-emit instead of sampling under an
+    # unvalidated roster.
+    pi = elig["provenance"].get("panel_invariance")
+    if not isinstance(pi, dict) or not pi.get("panel_sha256"):
+        raise KeyError(
+            f"{args.eligible_ids}: provenance.panel_invariance.panel_sha256 missing — the "
+            "export predates the panel-invariance margin gate; regenerate via "
+            "issue1345_gen_stories_paired.py --emit-eligible-ids"
+        )
+    if not args.panel_json.is_file():
+        raise FileNotFoundError(
+            f"--panel-json {args.panel_json} not found — the sampler must validate the "
+            "export's recorded panel sha against the LIVE committed panel.json"
+        )
+    panel_live_sha = hashlib.sha256(args.panel_json.read_bytes()).hexdigest()
+    if panel_live_sha != pi["panel_sha256"]:
+        raise ValueError(
+            f"panel sha mismatch: live {args.panel_json} sha256={panel_live_sha} != "
+            f"export-recorded panel_sha256={pi['panel_sha256']} — panel.json changed since "
+            "the eligibility export was emitted (its margin gate no longer covers the live "
+            "roster); re-run issue1345_gen_stories_paired.py --emit-eligible-ids first"
+        )
+    print(f"[panel-sample] panel-sha binding OK: {args.panel_json} sha256={panel_live_sha}")
+
     def _id_set(key: str) -> set[str]:
         ids = elig[key]
         if not isinstance(ids, list) or not ids or not all(isinstance(x, str) and x for x in ids):
@@ -256,6 +300,10 @@ def main(argv: list[str] | None = None) -> int:
             "top_level_keys": sorted(matched.keys()),
             "n_shared_r1r2_convs": len(matched["shared_r1r2_convs"]),
             "n_unique": n_shared_before,
+        },
+        "panel_json": {
+            "path": str(args.panel_json),
+            "sha256": panel_live_sha,
         },
         "eligible_ids": {
             "path": str(args.eligible_ids),
