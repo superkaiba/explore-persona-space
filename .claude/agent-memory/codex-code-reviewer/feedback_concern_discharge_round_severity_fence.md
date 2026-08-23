@@ -45,3 +45,16 @@ loosely, lets a false "addressed" row ship unverified.
 [[revision-round-compose-recipe]] (upheld-bounce = the BLOCKER-severity
 sibling), [[close-condition-on-next-touch-arming]] (the severity-fence
 origin), [[whole-round-unsplit-compose]].
+
+**MIXED punch list (#823 ext-ladder r3, 2026-08-23):** a reconcile can
+UPHOLD one blocker and DOWNGRADE the rest in the same FAIL — apply the
+fences PER ITEM in one closure ledger (item 1: NOT-ADDRESSED = substantive
+FAIL, the upheld-bounce form; downgraded items: NOT-ADDRESSED = CONCERN-
+grade status line). And when the brief bars re-emission of ALL persisted
+ids as `CONCERN:: ` rows (the #2326 blind-forwarder duplication), the
+discharge fence's "same-id CONCERN:: row" re-raise route is OVERRIDDEN:
+the NOT-ADDRESSED status line alone carries the re-raise (say so in the
+prompt — "a NOT-ADDRESSED downgraded item is re-raised BY its status
+line, not by a row"). Also watch for stale ledger severities: rows
+forwarded at BLOCKER that the reconcile downgraded still read BLOCKER —
+attest the stale fields at compose time or the twin re-escalates them.
