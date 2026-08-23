@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2503,
+  "highest_id": 2504,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11613,6 +11613,14 @@
       "path": "tasks/proposed/2503",
       "status": "proposed",
       "title": "verify_task_body check 15: resolve '<path> at git pin <sha>' prose citations against the pinned tree"
+    },
+    "2504": {
+      "goal": "Replicate the inoculated-FT -> re-elicitation -> base-geometry-predictor pipeline on Llama-3.1-8B-Instruct: does the misalignment positive (Qwen pooled rho +0.708) and the capitalization sign flip (-0.747) transfer beyond the Qwen family, or are they family-specific representation quirks?",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2504",
+      "status": "proposed",
+      "title": "Cross-model transfer: does base-geometry prediction of post-inoculation re-elicitation replicate on Llama-3.1-8B-Instruct?"
     },
     "251": {
       "has_clean_result": false,
