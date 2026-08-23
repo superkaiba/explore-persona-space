@@ -1,12 +1,18 @@
 """P-Analysis-ext figures + ``ladder_ext_summary.json`` for #823 origin-ladder extension.
 
-Consumes the P-Fit-ext eval artifacts (all under ONE ``--results-dir``, the fits
-driver's eval_dir == out_root; schemas from ``scripts/issue823_ladder_ext_fits.py``):
+Consumes the P-Fit-ext PORTABLE eval set (all under ONE ``--results-dir`` — on the
+consuming VM this is the committed/fetched eval set, never a pod-local out_root;
+schemas from ``scripts/issue823_ladder_ext_fits.py``):
 
 - ``ladder_ext_r2.json``          per-rung estimator-hygiene blocks (``primary`` /
                                   ``companion`` -> label -> cells keyed ``{arm}:L{layer}``
                                   with fold_lambdas/fold_dofs/n_train_per_fold/pooled_r2/
-                                  identity_bias_pooled_r2), gates, estimator fingerprint.
+                                  identity_bias_pooled_r2), knn_read_out, gates,
+                                  contingency_fired/read_out_solver, the compact
+                                  ``correlated_offset_floor`` cells (keys ``L{layer}``;
+                                  computed pod-side from the mixture diffs, which stay
+                                  POD-LOCAL — r1 blocker fits-analysis-handoff), and the
+                                  estimator fingerprint.
 - ``shared_persona_paired_{rung|rand_rung}{label}.json``
                                   paired reads: ``arms.k16.per_layer.L{layer}`` with
                                   mean_paired_diff(+ci95), full_ratio.rho_point,
@@ -16,10 +22,8 @@ driver's eval_dir == out_root; schemas from ``scripts/issue823_ladder_ext_fits.p
                                   p1_ss_res, p1_ss_tot, ...identity...) at 28 layers.
 - ``p2_ext_boundary.json``        boundary ladder cells ``L{layer}:n{n}:seed{s}``.
 - ``mask_ext.json``               rung masks + bridge ids + per-(arm x persona) refusal.
-- ``rung_{label}/mixture_diffs.npz`` (+ ``rand_rung_{label}/``)
-                                  per-context k16 difference vectors at the read-out
-                                  layers (keys: layers, k16_diffs, k16_personas,
-                                  k16_n_persona0) -> correlated-offset floor.
+- ``parent_refusal_by_persona.json`` (optional overlay input for fig_ext7; written by
+                                  P0-ext into the eval set).
 
 Produces (plan section 6, deliverable stems reconciled to the section 9/10 committed
 glob ``figures/issue_823/ladder_ext_*.png``):
@@ -167,43 +171,27 @@ def shared_paired_diff(pc: dict, layer: int) -> tuple[np.ndarray, np.ndarray]:
     return ids[pos], diff
 
 
-def correlated_offset_floor(mix_path: pathlib.Path) -> dict[int, dict]:
-    """floor_r = ||weighted mean over personas p != 0 of per-persona mean-shift
-    vectors||^2 / E_r, per read-out layer (plan section 6 registered diagnostic).
-
-    Weighted mean uses weights n_p / sum(n_p) over personas p != 0; E_r is the
-    registered mixture energy sum_p n_p ||m_p||^2 / n_tot (issue823_ladder_common
-    formula), recomputed here from the SAME persisted difference matrices.
-    """
-    with np.load(mix_path, allow_pickle=False) as z:
-        layers = [int(v) for v in z["layers"]]
-        diffs = np.asarray(z["k16_diffs"], dtype=np.float64)
-        personas = np.asarray(z["k16_personas"], dtype=np.int64)
-        n_persona0 = int(z["k16_n_persona0"])
-    if diffs.shape[0] != personas.shape[0]:
-        raise RuntimeError(f"{mix_path}: k16_diffs rows != k16_personas rows")
+def floor_from_rung_block(block: dict, where: str) -> dict[int, dict]:
+    """The compact correlated-offset-floor cells persisted PER RUNG BLOCK in
+    ``ladder_ext_r2.json`` (fits driver ``write_rung_dir`` →
+    ``correlated_offset_floor``, keys ``"L{layer}"``,
+    ``issue823_ladder_common.correlated_floor_from_groups`` schema), re-keyed
+    to int layers. Fail-loud: a missing block / read-out layer names the
+    artifact — the floor rides the PORTABLE eval schema now; the pod-local
+    ``mixture_diffs.npz`` sidecars are no longer consumed here (r1 blocker
+    fits-analysis-handoff)."""
+    cells = block.get("correlated_offset_floor")
+    if not isinstance(cells, dict):
+        raise RuntimeError(
+            f"{where}: rung block carries no correlated_offset_floor "
+            "(fits run predates the compact-floor schema — re-run P-Fit-ext)"
+        )
     out: dict[int, dict] = {}
-    for j, layer in enumerate(layers):
-        n_tot = n_persona0
-        n_nonzero = 0
-        wsum = np.zeros(diffs.shape[2], dtype=np.float64)
-        between = 0.0
-        for p in np.unique(personas):
-            rows = diffs[personas == p, j, :]
-            n_p = rows.shape[0]
-            m_p = rows.mean(axis=0)
-            between += n_p * float(m_p @ m_p)
-            wsum += n_p * m_p
-            n_tot += n_p
-            n_nonzero += n_p
-        e_point = between / max(n_tot, 1)
-        w = wsum / max(n_nonzero, 1)
-        floor_raw = float(w @ w)
-        out[layer] = {
-            "floor_raw": floor_raw,
-            "e_point_from_diffs": e_point,
-            "floor_ratio": (floor_raw / e_point) if e_point > 0.0 else None,
-        }
+    for layer in READ_OUT_LAYERS:
+        cell = cells.get(f"L{layer}")
+        if not isinstance(cell, dict) or "floor_ratio" not in cell:
+            raise RuntimeError(f"{where}: correlated_offset_floor missing/invalid at L{layer}")
+        out[layer] = cell
     return out
 
 
@@ -229,7 +217,7 @@ def load_all(results_dir: pathlib.Path) -> dict:
     paired: dict[str, dict[str, dict[int, dict]]] = {}
     pc: dict[str, dict[str, dict]] = {}
     floor: dict[str, dict[str, dict[int, dict]]] = {}
-    for tag, suffix, dirprefix in LADDERS:
+    for tag, suffix, _dirprefix in LADDERS:
         nd[tag] = {lab: float(r2[tag][lab]["n_over_d_ratio"]) for lab in labels}
         paired[tag] = {}
         pc[tag] = {}
@@ -241,9 +229,7 @@ def load_all(results_dir: pathlib.Path) -> dict:
                 layer: _paired_cell(pobj, layer, ppath) for layer in READ_OUT_LAYERS
             }
             pc[tag][lab] = _load_percontext(track(results_dir / f"percontext_{suffix}{lab}.npz"))
-            floor[tag][lab] = correlated_offset_floor(
-                track(results_dir / f"{dirprefix}{lab}" / "mixture_diffs.npz")
-            )
+            floor[tag][lab] = floor_from_rung_block(r2[tag][lab], f"ladder_ext_r2.json:{tag}/{lab}")
     banked_shared = sorted(int(i) for i in mask["bridge"]["ids"] if int(i) % POOLED_K == 0)
     if not banked_shared:
         raise RuntimeError("mask_ext.json: bridge ids contain no shared-persona contexts")
@@ -727,6 +713,37 @@ def fixed_banked_subset(data: dict) -> dict:
     return out
 
 
+def knn_echo(block: dict) -> dict:
+    """Per-arm × read-out-layer kNN echo (fold-mean acc@{1,5}, BOTH metrics —
+    euclidean + cosine — plus mean n_pool) from the rung block's knn_read_out.
+
+    Primary blocks carry per-fold keys ``{arm}:L{layer}:fold{f}``; companion
+    blocks carry one fold-mean-prediction key ``{arm}:L{layer}`` — both shapes
+    are consumed (the identity+kNN standing rule's summary echo)."""
+    knn = block["knn_read_out"]
+    out: dict = {}
+    for arm in (REF_ARM, POOLED_ARM):
+        out[arm] = {}
+        for layer in READ_OUT_LAYERS:
+            fold_vals = [v for k, v in knn.items() if k.startswith(f"{arm}:L{layer}:")]
+            if not fold_vals:
+                single = knn.get(f"{arm}:L{layer}")
+                if single is None:
+                    raise RuntimeError(f"knn_read_out: no cells for {arm}:L{layer}")
+                fold_vals = [single]
+            cell: dict = {"n_folds": len(fold_vals)}
+            for metric in ("euclidean", "cosine"):
+                cell[metric] = {
+                    f"acc_at_{kk}": float(np.mean([fv[metric]["acc_at_k"][kk] for fv in fold_vals]))
+                    for kk in ("1", "5")
+                }
+                cell[metric]["n_pool_mean"] = float(
+                    np.mean([fv[metric]["n_pool"] for fv in fold_vals])
+                )
+            out[arm][f"L{layer}"] = cell
+    return out
+
+
 def build_summary(data: dict, fig_paths: dict[str, str], results_dir: pathlib.Path) -> dict:
     """ladder_ext_summary.json: headline table + estimator hygiene + gates +
     lattice label/guard atoms + registered diagnostics (plan P-Analysis-ext)."""
@@ -767,11 +784,14 @@ def build_summary(data: dict, fig_paths: dict[str, str], results_dir: pathlib.Pa
                 "n_eval": block["n_eval"],
                 "n_over_d": block["n_over_d_ratio"],
                 "solver": block["solver"],
+                "contingency_fired": block.get("contingency_fired"),
+                "read_out_solver": block.get("read_out_solver"),
                 "g2_verdict": block["g2_verdict"],
                 "estimator_degenerate": block["estimator_degenerate"],
                 "lambda_edge_fraction": block["lambda_edge_fraction"],
                 "lambda_median": float(np.median(lams)),
                 "dof_over_ntrain_median": float(np.median(ratios)),
+                "knn_read_out_mean": knn_echo(block),
                 "per_layer": per_layer,
             }
     prov = as_metadata_dict(git_provenance(), phase="panalysis-ext")
@@ -852,8 +872,16 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     formats = tuple(f.strip() for f in args.formats.split(",") if f.strip())
     parent_refusal = None
-    if args.parent_refusal_json:
-        parent_refusal = _read_json(pathlib.Path(args.parent_refusal_json))
+    refusal_path = (
+        pathlib.Path(args.parent_refusal_json)
+        if args.parent_refusal_json
+        else results_dir / "parent_refusal_by_persona.json"
+    )
+    if args.parent_refusal_json or refusal_path.exists():
+        obj = _read_json(refusal_path)
+        # P0-ext wraps the fractions under refusal_fraction_by_persona (with a
+        # metadata sibling); a bare {persona: fraction} map is accepted too.
+        parent_refusal = obj.get("refusal_fraction_by_persona", obj)
 
     set_paper_style()
     t0 = time.monotonic()

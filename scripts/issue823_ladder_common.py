@@ -49,6 +49,51 @@ def mixture_energy_from_group_diffs(
     return between / max(n_tot, 1)
 
 
+def correlated_floor_from_groups(
+    groups: Iterable[tuple[int, np.ndarray]],
+    n_persona0: int,
+) -> dict:
+    """Compact correlated-offset-floor summary from per-persona difference matrices.
+
+    Same ``groups`` convention as :func:`mixture_energy_from_group_diffs` —
+    ordered ``(n_p, D_p)`` for personas p != 0, ``D_p`` the ``(n_p, d)``
+    float64 per-context difference matrix ``v_p(i) - v_0(i)``; ``n_persona0``
+    enters only the ``n_tot`` normalizations. Registered plan-§6 diagnostic
+    (single-pass over the same streams as E):
+
+        floor_raw = || sum_p (n_p/n_nonzero) * m_p ||^2      (m_p = D_p.mean(0))
+        E         = sum_p n_p * ||m_p||^2 / n_tot            (n_tot incl. persona 0)
+        floor_ratio = floor_raw / E   (None when E <= 0)
+
+    Returns the portable per-layer dict the eval schema carries
+    (``{"floor_raw", "e_point_from_diffs", "floor_ratio", "n_nonzero",
+    "n_persona0"}``) so figures/summary consume compact JSON instead of the
+    pod-local ``mixture_diffs.npz`` sidecars (r1 blocker fits-analysis-handoff).
+    """
+    wsum: np.ndarray | None = None
+    between = 0.0
+    n_nonzero = 0
+    for n_p, dmat in groups:
+        m_p = dmat.mean(axis=0)
+        between += n_p * float(m_p @ m_p)
+        wsum = n_p * m_p if wsum is None else wsum + n_p * m_p
+        n_nonzero += int(n_p)
+    n_tot = n_nonzero + int(n_persona0)
+    e_point = between / max(n_tot, 1)
+    if wsum is None or n_nonzero == 0:
+        floor_raw = 0.0
+    else:
+        mbar = wsum / n_nonzero
+        floor_raw = float(mbar @ mbar)
+    return {
+        "floor_raw": floor_raw,
+        "e_point_from_diffs": e_point,
+        "floor_ratio": (floor_raw / e_point) if e_point > 0.0 else None,
+        "n_nonzero": n_nonzero,
+        "n_persona0": int(n_persona0),
+    }
+
+
 def implied_mixture_energy(
     gather: list[tuple[int, np.ndarray, np.ndarray]],
     layer: int,

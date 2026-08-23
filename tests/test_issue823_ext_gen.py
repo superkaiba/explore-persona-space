@@ -61,6 +61,12 @@ def _banked4() -> list[str]:
     return [CTX0, "banked q1", "banked q2", "banked q3"]
 
 
+def _assert_no_gen_sentinel(root: pathlib.Path) -> None:
+    """A designed halt must never leave the gen completion sentinel (the
+    fits-side staging gate accepts it as 'gen complete')."""
+    assert not list(root.rglob(xg.SENTINEL_FILENAME))
+
+
 def _ok(item_id: str, text: str = "an answer", stop: str = "end_turn") -> DispatchResult:
     return DispatchResult(
         item_id=item_id, result=text, error=False, category="ok", stop_reason=stop
@@ -197,6 +203,7 @@ class TestSelection:
         assert report["n_stream_only"] == 1 and report["n_banked_only"] == 1
         # Real-corpus hygiene: sha digests only, never raw prompt text.
         assert "NOVEL drift row" not in json.dumps(report)
+        _assert_no_gen_sentinel(tmp_path)
 
     def test_ctx0_mismatch_halts_rc6(self, tmp_path):
         stream = _stream(["not the expected ctx0", "banked q1"])
@@ -207,6 +214,7 @@ class TestSelection:
         assert ei.value.code == xg.EXIT_STREAM_DRIFT
         report = json.loads((tmp_path / "ext_selection_drift_report.json").read_text())
         assert report["reason"] == "ctx0_mismatch"
+        _assert_no_gen_sentinel(tmp_path)
 
     def test_depth_bound_halts_rc7(self, tmp_path):
         banked = _banked4()
@@ -220,6 +228,7 @@ class TestSelection:
         report = json.loads((tmp_path / "ext_stream_exhausted_report.json").read_text())
         assert report["reason"] == "max_stream_pos_bound_hit"
         assert report["n_ext_collected"] < 4
+        _assert_no_gen_sentinel(tmp_path)
 
     def test_stream_exhaustion_halts_rc7(self, tmp_path):
         banked = _banked4()
@@ -232,6 +241,7 @@ class TestSelection:
         report = json.loads((tmp_path / "ext_stream_exhausted_report.json").read_text())
         assert report["reason"] == "stream_exhausted"
         assert report["n_ext_collected"] == 1
+        _assert_no_gen_sentinel(tmp_path)
 
 
 # ── Sampling manifest: persistence + fingerprint-gated resume ────────────────
@@ -287,6 +297,154 @@ class TestManifestResume:
         assert ei.value.code == xg.EXIT_MANIFEST_MISMATCH
         report = json.loads((tmp_path / "ext_manifest_mismatch_report.json").read_text())
         assert report["reason"] == "prompts_file_sha_mismatch"
+
+    def test_resume_reader_survives_raw_unicode_line_separators(self, tmp_path):
+        """#950 reader class (r1 finding unicode-jsonl-resume): the manifest
+        writer is ensure_ascii=False, so a kept real-corpus prompt carrying a
+        raw U+2028 lands RAW in the prompts file; a splitlines() reader shreds
+        that row — the split('\\n') reader must round-trip it intact."""
+        ls = chr(0x2028)  # U+2028 LINE SEPARATOR (built via chr — never a raw literal)
+        weird = f"ext{ls}alpha"
+        banked = _banked4()
+        stream = _stream([*banked, weird, "ext b"])
+        sel = xg.select_extension_contexts(
+            banked, 2, max_stream_pos=100, eval_dir=tmp_path, stream_iter=stream
+        )
+        assert sel["ext_prompts"] == [weird, "ext b"]
+        stage = tmp_path / "stage"
+        fields = xg.selection_fingerprint_fields(2, 100)
+        xg.write_sampling_manifest(stage, sel, fields, {})
+        raw = (stage / xg.PROMPTS_FILENAME).read_bytes()
+        assert b"\xe2\x80\xa8" in raw  # the separator really is RAW on disk
+        loaded = xg.load_selection_if_persisted(stage, fields, tmp_path)
+        assert loaded is not None
+        assert loaded["ext_prompts"] == [weird, "ext b"]
+        assert loaded["ext_positions"] == sel["ext_positions"]
+
+
+# ── Mid-stream progress checkpoints (#1092 external-stream contract) ─────────
+
+
+def _crashing_stream(prompts: list[str | None], crash_at: int):
+    """Yields _row(prompts[n]) and raises at absolute position crash_at."""
+
+    def gen():
+        for n, p in enumerate(prompts):
+            if n == crash_at:
+                raise RuntimeError("simulated stream transport crash")
+            yield _row(p)
+
+    return gen()
+
+
+class TestStreamProgressResume:
+    FIELDS_ARGS = (3, 100)
+
+    def _fields(self) -> dict:
+        return xg.selection_fingerprint_fields(*self.FIELDS_ARGS)
+
+    def test_crash_midstream_then_resume_skips_prefix_and_completes(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(xg, "PROGRESS_CHUNK", 1)  # flush per kept prompt
+        banked = _banked4()
+        stage = tmp_path / "stage"
+        fields = self._fields()
+
+        # Run 1: crash after "ext a" (pos 4) + "ext b" (pos 5) were kept+flushed.
+        stream = _crashing_stream([*banked, "ext a", "ext b", "ext c"], crash_at=6)
+        with pytest.raises(RuntimeError, match="simulated stream"):
+            xg.select_extension_contexts(
+                banked,
+                3,
+                max_stream_pos=100,
+                eval_dir=tmp_path,
+                stream_iter=stream,
+                stage_dir=stage,
+                fingerprint_fields=fields,
+            )
+        meta = json.loads((stage / xg.PROGRESS_META_FILENAME).read_text())
+        assert meta["n_kept"] == 2 and meta["next_stream_pos"] == 6
+        _assert_no_gen_sentinel(tmp_path)
+
+        # Simulate a torn tail from a mid-append crash: the loader truncates it.
+        with (stage / xg.PROGRESS_FILENAME).open("a", encoding="utf-8") as fh:
+            fh.write('{"ext_idx": 2, "context')
+
+        # Run 2: the first 6 stream positions are GARBAGE — the resume must
+        # fast-forward past them WITHOUT re-running prefix verification (a
+        # re-verify would rc-6 halt on these rows).
+        resume_stream = _stream([f"JUNK{n}" for n in range(6)] + ["ext c"])
+        sel = xg.select_extension_contexts(
+            banked,
+            3,
+            max_stream_pos=100,
+            eval_dir=tmp_path,
+            stream_iter=resume_stream,
+            stage_dir=stage,
+            fingerprint_fields=fields,
+        )
+        assert sel["ext_prompts"] == ["ext a", "ext b", "ext c"]
+        assert sel["ext_positions"] == [4, 5, 6]
+        assert sel["last_stream_pos"] == 6
+        assert sel["prefix_report"]["ordered_equal"] is True
+
+        # The resumed selection is IDENTICAL to an uninterrupted run.
+        ref = xg.select_extension_contexts(
+            banked,
+            3,
+            max_stream_pos=100,
+            eval_dir=tmp_path,
+            stream_iter=_stream([*banked, "ext a", "ext b", "ext c"]),
+        )
+        assert sel == ref
+
+        # Progress file was rewritten to validated rows (torn tail gone) and the
+        # final tail flush appended "ext c": 3 clean rows.
+        rows = [
+            json.loads(line)
+            for line in (stage / xg.PROGRESS_FILENAME).read_text(encoding="utf-8").split("\n")
+            if line.strip()
+        ]
+        assert [r["prompt"] for r in rows] == ["ext a", "ext b", "ext c"]
+        assert [r["ext_idx"] for r in rows] == [0, 1, 2]
+
+    def test_fingerprint_drift_discards_progress_and_restreams(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(xg, "PROGRESS_CHUNK", 1)
+        banked = _banked4()
+        stage = tmp_path / "stage"
+        stream = _crashing_stream([*banked, "ext a", "ext b"], crash_at=5)
+        with pytest.raises(RuntimeError):
+            xg.select_extension_contexts(
+                banked,
+                3,
+                max_stream_pos=100,
+                eval_dir=tmp_path,
+                stream_iter=stream,
+                stage_dir=stage,
+                fingerprint_fields=self._fields(),
+            )
+        # A regime change across the resume (n_ext 3 -> 2) DISCARDS the scratch
+        # (warn + full restream) — never a silent reuse of wrong-regime rows.
+        live = xg.selection_fingerprint_fields(2, 100)
+        sel = xg.select_extension_contexts(
+            banked,
+            2,
+            max_stream_pos=100,
+            eval_dir=tmp_path,
+            stream_iter=_stream([*banked, "ext P", "ext Q"]),
+            stage_dir=stage,
+            fingerprint_fields=live,
+        )
+        assert sel["ext_prompts"] == ["ext P", "ext Q"]
+        # The discarded stale file was cleared, never appended onto: the
+        # progress surface carries exactly the fresh rows (positional idx 0..1).
+        rows = [
+            json.loads(line)
+            for line in (stage / xg.PROGRESS_FILENAME).read_text(encoding="utf-8").split("\n")
+            if line.strip()
+        ]
+        assert [(r["ext_idx"], r["prompt"]) for r in rows] == [(0, "ext P"), (1, "ext Q")]
+        meta = json.loads((stage / xg.PROGRESS_META_FILENAME).read_text())
+        assert meta["fingerprint_fields"] == live and meta["n_kept"] == 2
 
 
 # ── Assignment + banked parity ───────────────────────────────────────────────
@@ -698,6 +856,38 @@ class TestShardLargeJsonl:
         src = tmp_path / "small.jsonl"
         src.write_text('{"i": 0}\n')
         assert xg.shard_large_jsonl_for_upload([src]) == [src]
+
+    def test_regenerated_source_unlinks_stale_manifest_and_shards(self, tmp_path, monkeypatch):
+        """r1 concern stale-manifest-precedence-regen: manifest-first readers
+        PREFER a stale manifest over fresh source bytes, so every in-place
+        regeneration path clears the prior sharding."""
+        monkeypatch.setattr(xg, "UPLOAD_SHARD_LIMIT_BYTES", 200)
+        monkeypatch.setattr(xg, "UPLOAD_SHARD_TARGET_BYTES", 150)
+        src = tmp_path / "rows.jsonl"
+        src.write_text("\n".join(json.dumps({"i": i, "text": "x" * 40}) for i in range(20)) + "\n")
+        first = xg.shard_large_jsonl_for_upload([src])
+        old_shards = sorted(p.name for p in first if ".shard" in p.name)
+        assert len(old_shards) > 2
+
+        # (a) _write_jsonl regeneration (now small): manifest + shards gone
+        # BEFORE the new bytes land, so a mid-write crash can never leave
+        # (new source, stale manifest).
+        xg._write_jsonl(src, [{"i": 0, "text": "fresh"}])
+        assert not (tmp_path / "rows.manifest.json").exists()
+        assert not list(tmp_path.glob("rows.shard*.jsonl"))
+        # ...and the small-branch pass-through has nothing stale to prefer.
+        assert xg.shard_large_jsonl_for_upload([src]) == [src]
+
+        # (b) re-shard of a CHANGED oversized source: no stale higher-numbered
+        # shard survives from the earlier (wider) sharding.
+        src.write_text("\n".join(json.dumps({"i": i, "text": "y" * 90}) for i in range(20)) + "\n")
+        second = xg.shard_large_jsonl_for_upload([src])
+        manifest = json.loads((tmp_path / "rows.manifest.json").read_text())
+        on_disk = sorted(p.name for p in tmp_path.glob("rows.shard*.jsonl"))
+        assert on_disk == sorted(manifest["parts"])  # exact set: no orphans
+        reassembled = "".join((tmp_path / part).read_text() for part in manifest["parts"])
+        assert reassembled == src.read_text()
+        assert all(p.exists() for p in second)
 
 
 # ── Regen dispatch plumbing ──────────────────────────────────────────────────

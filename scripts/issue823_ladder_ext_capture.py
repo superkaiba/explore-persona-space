@@ -45,7 +45,7 @@ running P-OwnGen's engine in the same process as the HF capture model):
                    silent skip and never bare file existence). Gate B in-run
                    pilot: first 2 timed batches at production shape; projected
                    wall > 2x the section-9 row => designed abort (report JSON +
-                   rc 4). Completed blocks upload CONCURRENTLY (one bulk
+                   rc 23). Completed blocks upload CONCURRENTLY (one bulk
                    upload_folder commit per block; fail-loud).
   --phase storeext Final NAME-SET diff (scoped list_repo_tree vs the local
                    shard list) must PASS, then writes the `_store_verified.json`
@@ -55,8 +55,10 @@ running P-OwnGen's engine in the same process as the HF capture model):
 Designed-abort exit codes (canonical enumeration; `--list-rcs` prints it):
 
   rc 0   complete
-  rc 4   Gate B capture-wall abort (projected > 2x plan section-9 row; report
-         gate_b_abort_report.json) -- mirrors the parent RC_CAPTURE_WALL_ABORT
+  rc 23  Gate B capture-wall abort (projected > 2x plan section-9 row; report
+         gate_b_abort_report.json) -- the SEMANTIC mirror of the parent
+         RC_CAPTURE_WALL_ABORT (4), renumbered because the ext-gen driver
+         inherits the parent's rc 4/5 and cross-driver rcs must be disjoint
   rc 12  gate (a) prompt-integrity mismatch (halt BEFORE mask construction)
   rc 13  gate (b) assignment arithmetic / banked 5,000-row prefix mismatch
   rc 14  gate (c) requested-max_tokens / gen_wave / regen inconsistency
@@ -203,7 +205,11 @@ CAPTURE_WALL_ABORT_FACTOR = 2.0
 MEASURED_PILOT_BASIS_S_PER_ROW = 0.0284  # parent capture_digest.json .pilot (documentation)
 
 # Designed-abort exit codes (docstring table is the canonical enumeration).
-RC_GATE_B_WALL = 4
+# rc 23 (NOT the parent's rc 4): the ext-gen driver inherits the parent's rc 4/5
+# (payload-shape / roster-integrity), so this driver's Gate B wall abort takes a
+# disjoint code — cross-driver rc disjointness is test-pinned (r1 concern
+# round-rc4-collision).
+RC_GATE_B_WALL = 23
 RC_PROMPT_INTEGRITY = 12
 RC_ASSIGNMENT_PARITY = 13
 RC_MAX_TOKENS_WAVE = 14
@@ -214,7 +220,7 @@ RC_STAGING_INTEGRITY = 18
 
 RC_TABLE = {
     "0": "complete",
-    "4": "Gate B capture-wall abort (projected > 2x plan section-9 row)",
+    "23": "Gate B capture-wall abort (projected > 2x plan section-9 row)",
     "12": "gate (a) prompt-integrity mismatch (before mask construction)",
     "13": "gate (b) assignment arithmetic / banked prefix mismatch",
     "14": "gate (c) requested-max_tokens / gen_wave / regen inconsistency",
@@ -832,13 +838,17 @@ def build_masks(
 def gate_e_duplicates(questions_by_id: dict[int, str], layout: Layout) -> dict:
     """(e) duplicate-content fraction at the FULL consumed-corpus grain
     (raw-string sha256; > 2% flags the dedup-mask sensitivity refit — flag +
-    report only; the refit itself lives in the fits driver)."""
-    shas: dict[str, int] = {}
-    for _i, q in sorted(questions_by_id.items()):
-        h = _sha256_text(q)
-        shas[h] = shas.get(h, 0) + 1
+    report only; the refit itself lives in the fits driver).
+
+    Persists the duplicate GROUPS (sorted context ids + min-id representative)
+    so the fits driver's `sens_dedup` consumer can build the deduped masks
+    without re-reading question text (r1 concern dedup-sensitivity-detached).
+    """
+    by_sha: dict[str, list[int]] = {}
+    for i, q in sorted(questions_by_id.items()):
+        by_sha.setdefault(_sha256_text(q), []).append(int(i))
     n = len(questions_by_id)
-    n_unique = len(shas)
+    n_unique = len(by_sha)
     frac = 1.0 - (n_unique / n) if n else 0.0
     flag = frac > DUP_CONTENT_FLAG_FRACTION
     if flag:
@@ -848,11 +858,18 @@ def gate_e_duplicates(questions_by_id: dict[int, str], layout: Layout) -> dict:
             frac,
             DUP_CONTENT_FLAG_FRACTION,
         )
+    groups = [
+        {"context_ids": sorted(ids), "representative": min(ids)}
+        for ids in by_sha.values()
+        if len(ids) > 1
+    ]
+    groups.sort(key=lambda g: g["representative"])
     return {
         "n_contexts": n,
         "n_unique": n_unique,
         "duplicate_fraction": frac,
-        "n_duplicate_groups": sum(1 for c in shas.values() if c > 1),
+        "n_duplicate_groups": len(groups),
+        "duplicate_groups": groups,
         "dedup_sensitivity_refit_required": flag,
     }
 
@@ -1293,6 +1310,28 @@ def phase_p0ext(args, layout: Layout) -> None:
     ext_base, ext_sentinel, ext_rev = stage_ext_gen_inputs(
         layout, args.ext_prefix, args.ext_revision, args.ext_local_dir
     )
+
+    # Entry idempotency (r1 concern phase-entry-idempotency): a completed P0-ext
+    # at the SAME staged input revisions returns before any gate recompute /
+    # tokenizer / 7B model load — an all-done retry costs staging checks only.
+    report_path = layout.eval_dir / P0_REPORT
+    if not args.pre_gpu_check and report_path.exists():
+        prior = json.loads(report_path.read_text())
+        prior_meta = prior.get("metadata", {})
+        if (
+            prior.get("pass")
+            and prior_meta.get("ext_gen_revision") == ext_rev
+            and prior_meta.get("banked_gen_revision") == banked["gen_rev"]
+        ):
+            log_phase("p0ext_resume_complete")
+            logger.info(
+                "P0-ext already complete at ext_gen rev %s (%s) — nothing to do",
+                ext_rev,
+                report_path,
+            )
+            return
+        logger.warning("[p0ext] prior report stale (revision/pass mismatch) — rerunning gates")
+
     ext_by_persona = load_ext_pair_rows(ext_base, N_PREFIX, layout.n_total)
     staged_assignment_obj = json.loads((ext_base / "assignment_ext.json").read_text())
     banked_by_persona = CAP.load_pair_rows(banked["gen_paths"], N_CONTEXTS_FULL)
@@ -1315,6 +1354,20 @@ def phase_p0ext(args, layout: Layout) -> None:
         for r in rows:
             questions_by_id[r["context_id"]] = r["question"]
     gate_e = gate_e_duplicates(questions_by_id, layout)
+
+    # Parent per-persona refusal reference (fig_ext7 overlay input): measured on
+    # the banked parent rows this phase already parsed — persisted so P-Analysis
+    # consumes an artifact instead of re-deriving from raw completions.
+    parent_refusal = {
+        str(p): (
+            sum(1 for r in rows if r.get("validity") == "refusal") / len(rows) if rows else 0.0
+        )
+        for p, rows in sorted(banked_by_persona.items())
+    }
+    write_json(
+        layout.eval_dir / "parent_refusal_by_persona.json",
+        {"metadata": metadata, "refusal_fraction_by_persona": parent_refusal},
+    )
 
     from transformers import AutoTokenizer
 
@@ -1377,6 +1430,7 @@ def phase_p0ext(args, layout: Layout) -> None:
             "note": "P0-ext gates (a)-(g) PASS (origin-ladder-more-contexts)",
             "phase": "p0ext",
             "complete": True,
+            "smoke": layout.smoke,
             "report": str(layout.eval_dir / P0_REPORT),
             "ts": time.time(),
         },
@@ -1491,6 +1545,7 @@ def phase_owngen(args, layout: Layout) -> None:
                 llm.generate([ch[j][2] for j in gen_idx], sp, use_tqdm=False) if gen_idx else []
             )
             rows = []
+            assert len(outputs) == len(gen_idx), (len(outputs), len(gen_idx))
             out_by_pos = dict(zip(gen_idx, outputs))
             for j, (i, q, _t, plen) in enumerate(ch):
                 if j in out_by_pos:
@@ -1592,14 +1647,13 @@ def phase_owngen(args, layout: Layout) -> None:
     own_sentinel = {
         "phase": "owngen",
         "complete": True,
+        "smoke": layout.smoke,
         "metadata": metadata,
         "n_contexts": n_rows,
         "n_zero_own_len": n_zero,
         "cap_hit_fraction": cap_hit_fraction,
         "files_sha256": {rel: _sha256_file(layout.own_dir / rel) for rel in upload_rel},
     }
-    write_json(layout.own_dir / OWNGEN_SENTINEL, own_sentinel)
-    upload_rel.append(OWNGEN_SENTINEL)
     path_in_repo = layout.hf_path(layout.own_subpath)
     url = _upload_folder_filtered(
         local_dir=layout.own_dir,
@@ -1615,6 +1669,22 @@ def phase_owngen(args, layout: Layout) -> None:
             "refusing to report owngen complete (capture must not consume unpersisted lengths)"
         )
     _require_canonical_upload(url, f"{DATA_REPO}/{path_in_repo}")
+    # Local complete=True sentinel is written ONLY after the data upload
+    # verified (r1 concern sentinel-before-upload; storeext ordering pattern):
+    # a failed upload must not leave a sentinel _require_own_complete accepts.
+    write_json(layout.own_dir / OWNGEN_SENTINEL, own_sentinel)
+    sent_url = _upload_folder_filtered(
+        local_dir=layout.own_dir,
+        repo_id=DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=path_in_repo,
+        allow_patterns=[OWNGEN_SENTINEL],
+        expected_repo_paths=[f"{path_in_repo}/{OWNGEN_SENTINEL}"],
+    )
+    if not sent_url:
+        raise RuntimeError(
+            f"owngen sentinel upload to {DATA_REPO}/{path_in_repo} failed or verified incomplete"
+        )
     write_sentinel(
         layout.sentinel_dir() / "issue-823-extladder-owngen-done.json",
         {
@@ -1623,6 +1693,7 @@ def phase_owngen(args, layout: Layout) -> None:
             "note": "P-OwnGen complete: own rollouts + own_len_ext persisted",
             "phase": "owngen",
             "complete": True,
+            "smoke": layout.smoke,
             "n_contexts": n_rows,
             "cap_hit_fraction": cap_hit_fraction,
             "hf_path_in_repo": path_in_repo,
@@ -1711,7 +1782,7 @@ def run_gate_b(
     eval_dir: pathlib.Path,
 ) -> dict:
     """Gate B in-run pilot: warmup 1 batch + time 2 batches at production
-    shape; projected wall > 2x the section-9 row => designed abort (rc 4)."""
+    shape; projected wall > 2x the section-9 row => designed abort (rc 23)."""
     pair_units = [u for u in pending_units if u["kind"] == "pairs"]
     unit = pair_units[0] if pair_units else pending_units[0]
     n_need = 3 * batch_size
@@ -1784,8 +1855,6 @@ def phase_capext(args, layout: Layout) -> None:
     own_source_sha = _sha256_file(layout.own_dir / "own_len_ext.json")
     metadata["own_len_source_sha256"] = own_source_sha
 
-    if not torch.cuda.is_available():
-        raise RuntimeError("P-Cap-ext requires CUDA (126k bf16 7B forwards)")
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL, trust_remote_code=True)
@@ -1808,13 +1877,22 @@ def phase_capext(args, layout: Layout) -> None:
     pending = [u for u in units if not unit_done(layout.store_dir, u["name"], u["fingerprint"])]
     logger.info("[capext] %d units total, %d pending", len(units), len(pending))
 
-    log_phase("capext_model_load")
-    model = AutoModelForCausalLM.from_pretrained(
-        DEFAULT_MODEL, torch_dtype=torch.bfloat16, device_map="cuda", trust_remote_code=True
-    )
-    model.eval()
-    assert model.config.hidden_size == EXPECTED_HIDDEN
-    assert model.config.num_hidden_layers == EXPECTED_LAYERS
+    # Entry idempotency (r1 concern phase-entry-idempotency): the 7B model load
+    # + CUDA requirement are gated on there being any pending capture unit — an
+    # all-done retry runs upload/verify only, on any host.
+    model = None
+    if pending:
+        if not torch.cuda.is_available():
+            raise RuntimeError("P-Cap-ext requires CUDA (126k bf16 7B forwards)")
+        log_phase("capext_model_load")
+        model = AutoModelForCausalLM.from_pretrained(
+            DEFAULT_MODEL, torch_dtype=torch.bfloat16, device_map="cuda", trust_remote_code=True
+        )
+        model.eval()
+        assert model.config.hidden_size == EXPECTED_HIDDEN
+        assert model.config.num_hidden_layers == EXPECTED_LAYERS
+    else:
+        logger.info("[capext] all units checkpointed — skipping 7B model load")
 
     uploader = BlockUploader(layout.store_dir, layout.hf_path(layout.store_subpath))
     try:
@@ -1912,13 +1990,24 @@ def phase_capext(args, layout: Layout) -> None:
         )
         uploader.submit(index_names)
     finally:
-        uploader.close()  # fail-loud: any block-upload failure raises here at the latest
+        # Fail-loud close (any block-upload failure raises here at the latest),
+        # but never MASK an in-flight exception with the teardown's own raise —
+        # the finally-raise guard (#1947; gotchas.md).
+        inner_live = sys.exc_info()[0] is not None
+        if inner_live:
+            try:
+                uploader.close()
+            except Exception:
+                logger.exception("[capext] uploader.close() failed during unwind (original wins)")
+        else:
+            uploader.close()
 
     write_json(
         layout.store_dir / CAPTURE_SENTINEL,
         {
             "phase": "capext",
             "complete": True,
+            "smoke": layout.smoke,
             "metadata": metadata,
             "n_units": len(units),
             "unit_names": sorted(u["name"] for u in units),
@@ -1932,6 +2021,7 @@ def phase_capext(args, layout: Layout) -> None:
             "note": "P-Cap-ext complete (blocks uploaded interleaved)",
             "phase": "capext",
             "complete": True,
+            "smoke": layout.smoke,
             "n_units": len(units),
             "ts": time.time(),
         },
@@ -2052,6 +2142,7 @@ def phase_storeext(args, layout: Layout) -> None:
     store_sentinel = {
         "phase": "storeext",
         "complete": True,
+        "smoke": layout.smoke,
         "metadata": metadata,
         "n_files": len(local_names),
         "name_set_sha256": _sha256_json(local_names),
@@ -2078,6 +2169,7 @@ def phase_storeext(args, layout: Layout) -> None:
             "note": "P-Store-ext verified: NAME-SET diff PASS + _store_verified.json written",
             "phase": "storeext",
             "complete": True,
+            "smoke": layout.smoke,
             "n_files": len(local_names),
             "hf_path_in_repo": prefix,
             "ts": time.time(),
@@ -2202,7 +2294,7 @@ def build_argparser() -> argparse.ArgumentParser:
         "--planned-wall-hours",
         type=float,
         default=PLANNED_CAPTURE_WALL_H_EXT,
-        help="plan section-9 P-Cap-ext wall row; Gate B aborts past 2x this (rc 4)",
+        help="plan section-9 P-Cap-ext wall row; Gate B aborts past 2x this (rc 23)",
     )
     parser.add_argument(
         "--own-chunk-size",

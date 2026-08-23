@@ -2,15 +2,19 @@
 
 Fixture-driven end-to-end render: a tmp_path results-dir is synthesized to the
 REALIZED producer schemas of scripts/issue823_ladder_ext_fits.py (ladder_ext_r2
-rung blocks + cells keyed ``{arm}:L{layer}``, shared_persona_paired per-layer
-cells with the full_ratio block, percontext npz arrays, p2_ext_boundary cells,
-mask_ext refusal attribution, per-rung mixture_diffs.npz sidecars), then
-``main()`` runs the REAL figure functions through ``savefig_paper`` and writes
-``ladder_ext_summary.json``. One paired cell carries a deliberately INVERTED
-``mean_paired_diff_ci95`` (the gotchas xerr/yerr rule: the clamp is exercised
-through the real figure function to savefig), and one cell is degenerate
-(``rho_point``/``rho_ci95`` None + ``rho_ci95_unstable``) to exercise the
-nan-gap and 'neither'-by-fiat paths.
+rung blocks + cells keyed ``{arm}:L{layer}``, per-rung compact
+``correlated_offset_floor`` cells built through the REAL producer function
+``issue823_ladder_common.correlated_floor_from_groups`` (r1 blocker
+fits-analysis-handoff — the pod-local mixture_diffs.npz sidecars are no longer
+consumed), contingency_fired/read_out_solver labels, both-metric knn_read_out
+cells, shared_persona_paired per-layer cells with the full_ratio block,
+percontext npz arrays, p2_ext_boundary cells, mask_ext refusal attribution),
+then ``main()`` runs the REAL figure functions through ``savefig_paper`` and
+writes ``ladder_ext_summary.json``. One paired cell carries a deliberately
+INVERTED ``mean_paired_diff_ci95`` (the gotchas xerr/yerr rule: the clamp is
+exercised through the real figure function to savefig), and one cell is
+degenerate (``rho_point``/``rho_ci95`` None + ``rho_ci95_unstable``) to
+exercise the nan-gap and 'neither'-by-fiat paths.
 
 Fully synthetic fixtures in tmp_path — no network, no GPU, no committed
 eval_results reads (no sparse_cones entry needed), no real-corpus text.
@@ -24,12 +28,12 @@ import pathlib
 import numpy as np
 import pytest
 
+from scripts import issue823_ladder_common as LC
 from scripts import issue823_ladder_ext_figures as FIGS
 
 LABELS = ("48", "96")
 ARMS = ("k1", "k16")
 N_LAYERS = 28
-D_MIX = 24  # mixture-diff hidden dim, distinct from every row count (transpose canary)
 POOL = np.arange(48, dtype=np.int64)  # fixed companion eval pool
 
 
@@ -73,6 +77,15 @@ def _rung_block(rng: np.random.Generator, tag: str, n_mask: int, n_eval: int) ->
                     }
             else:
                 knn[f"{arm}:L{layer}"] = {m: _knn_val(rng) for m in ("euclidean", "cosine")}
+    # Compact correlated-offset floor through the REAL producer function
+    # (issue823_ladder_common.correlated_floor_from_groups) so the fixture
+    # carries the fits driver's realized 5-key schema, never a hand-typed copy.
+    floor = {
+        f"L{layer}": LC.correlated_floor_from_groups(
+            [(2, rng.normal(size=(2, 6))), (3, rng.normal(size=(3, 6)))], n_persona0=2
+        )
+        for layer in FIGS.READ_OUT_LAYERS
+    }
     return {
         "n_mask": n_mask,
         "n_eval": n_eval,
@@ -84,6 +97,9 @@ def _rung_block(rng: np.random.Generator, tag: str, n_mask: int, n_eval: int) ->
         "lambda_edge_fraction": 0.0,
         "cells": cells,
         "knn_read_out": knn,
+        "correlated_offset_floor": floor,
+        "contingency_fired": False,
+        "read_out_solver": "dual",
         "estimator_degenerate": True,
     }
 
@@ -168,18 +184,6 @@ def _percontext_npz(rng: np.random.Generator, path: pathlib.Path, ids: np.ndarra
     )
 
 
-def _mixture_npz(rng: np.random.Generator, path: pathlib.Path, ids: np.ndarray) -> None:
-    nz = ids[ids % 16 != 0]
-    np.savez(
-        path,
-        layers=np.array(FIGS.READ_OUT_LAYERS, dtype=np.int64),
-        k16_diffs=rng.normal(size=(nz.size, 3, D_MIX)).astype(np.float32),
-        k16_personas=(nz % 16).astype(np.int64),
-        k16_n_persona0=np.int64((ids % 16 == 0).sum()),
-        k16_context_ids=nz,
-    )
-
-
 def build_results_dir(root: pathlib.Path) -> pathlib.Path:
     rng = np.random.default_rng(0)
     rd = root / "results"
@@ -213,9 +217,6 @@ def build_results_dir(root: pathlib.Path) -> pathlib.Path:
                 json.dumps(_paired_json(rng, tag, label))
             )
             _percontext_npz(rng, rd / f"percontext_{suffix}.npz", ids_t)
-        for dirname, ids_t in ((f"rung_{label}", ids), (f"rand_rung_{label}", POOL)):
-            (rd / dirname).mkdir()
-            _mixture_npz(rng, rd / dirname / "mixture_diffs.npz", ids_t)
     (rd / "ladder_ext_r2.json").write_text(json.dumps(r2))
 
     seeds = [0, 1]
@@ -308,26 +309,93 @@ def test_load_all_fails_loud_on_missing_artifact(tmp_path):
         FIGS.load_all(rd)
 
 
+def test_floor_from_rung_block_fails_loud_on_pre_schema_block():
+    """The compact floor rides the rung block (fits-analysis-handoff): a
+    pre-schema block (no correlated_offset_floor) and a shallow cell both
+    fail loud naming the artifact — never a silent npz fallback."""
+    with pytest.raises(RuntimeError, match="correlated_offset_floor"):
+        FIGS.floor_from_rung_block({"cells": {}}, "ladder_ext_r2.json:primary/48")
+
+    ok = {
+        "correlated_offset_floor": {
+            f"L{ly}": LC.correlated_floor_from_groups([(2, np.ones((2, 4)))], 1)
+            for ly in FIGS.READ_OUT_LAYERS
+        }
+    }
+    out = FIGS.floor_from_rung_block(ok, "x")
+    assert set(out) == set(FIGS.READ_OUT_LAYERS)
+    assert all("floor_ratio" in cell for cell in out.values())
+
+    bad = {"correlated_offset_floor": {f"L{FIGS.READ_OUT_LAYERS[0]}": {"floor_raw": 1.0}}}
+    with pytest.raises(RuntimeError, match="missing/invalid"):
+        FIGS.floor_from_rung_block(bad, "x")
+
+
+# ── Lattice verdict branches (r1 concern lattice-verdict-branches-untested) ──
+
+_CI = {"artifact": [0.01, 0.05], "real": [0.6, 0.9], "neither": [0.2, 0.4]}
+
+
+def _lat_data(spec: dict) -> dict:
+    """Minimal lattice input: per-(tag, label, layer) band class, default neither."""
+    paired: dict = {}
+    for tag in ("primary", "companion"):
+        paired[tag] = {}
+        for lab in LABELS:
+            paired[tag][lab] = {}
+            for layer in FIGS.READ_OUT_LAYERS:
+                cls = spec.get((tag, lab, layer), "neither")
+                paired[tag][lab][layer] = {"rho_ci95": _CI[cls], "rho_ci95_unstable": False}
+    return {"labels": list(LABELS), "paired": paired}
+
+
+def test_lattice_verdict_decisive_and_disagree_branches():
+    # Interpolation-artifact: >=2 top-rung primary artifact layers, 0 real, no disagree.
+    art = {("primary", "96", ly): "artifact" for ly in FIGS.READ_OUT_LAYERS}
+    v = FIGS.lattice_verdict(_lat_data(art))
+    assert v["label"] == "Interpolation-artifact"
+    assert v["n_artifact_layers"] == 3 and v["n_real_layers"] == 0
+    assert v["n_ladder_disagree_layers"] == 0
+
+    # Origin-effect-real: >=2 top-rung primary real layers, 0 artifact.
+    real = {("primary", "96", ly): "real" for ly in FIGS.READ_OUT_LAYERS[:2]}
+    v = FIGS.lattice_verdict(_lat_data(real))
+    assert v["label"] == "Origin-effect-real"
+    assert v["n_real_layers"] == 2 and v["n_artifact_layers"] == 0
+
+    # Ladder DISAGREEMENT forces mixed even with a decisive artifact count:
+    # primary artifact vs companion real at the SAME layer (any rung).
+    l0 = FIGS.READ_OUT_LAYERS[0]
+    dis = dict(art)
+    dis[("companion", "96", l0)] = "real"
+    v = FIGS.lattice_verdict(_lat_data(dis))
+    assert v["label"] == "Partial-attenuation/mixed"
+    assert v["n_ladder_disagree_layers"] == 1 and v["n_artifact_layers"] == 3
+    assert v["band_class"]["companion"]["96"][f"L{l0}"] == "decisively-real"
+
+    # Exactly ONE decisive layer is not enough for either decisive label.
+    one = {("primary", "96", l0): "artifact"}
+    assert FIGS.lattice_verdict(_lat_data(one))["label"] == "Partial-attenuation/mixed"
+
+
 # ── End-to-end render + summary ──────────────────────────────────────────────
 
 
 def test_end_to_end_renders_and_summary(tmp_path):
     rd = build_results_dir(tmp_path)
     out_dir = tmp_path / "figs"
-    parent = tmp_path / "parent_refusal.json"
-    parent.write_text(json.dumps({str(p): 0.02 for p in range(16)}))
-    rc = FIGS.main(
-        [
-            "--results-dir",
-            str(rd),
-            "--out-dir",
-            str(out_dir),
-            "--formats",
-            "png",
-            "--parent-refusal-json",
-            str(parent),
-        ]
+    # NO --parent-refusal-json flag: the default path (the p0ext-persisted
+    # parent_refusal_by_persona.json in the results dir, WRAPPED producer
+    # shape) is discovered + unwrapped by main().
+    (rd / "parent_refusal_by_persona.json").write_text(
+        json.dumps(
+            {
+                "metadata": {"script": "fixture"},
+                "refusal_fraction_by_persona": {str(p): 0.02 for p in range(16)},
+            }
+        )
     )
+    rc = FIGS.main(["--results-dir", str(rd), "--out-dir", str(out_dir), "--formats", "png"])
     assert rc == 0
 
     stems = [stem for stem, _fn in FIGS.FIGURES]
@@ -369,6 +437,18 @@ def test_end_to_end_renders_and_summary(tmp_path):
     assert row["g2_verdict"] == "PASS"
     assert isinstance(row["lambda_median"], float)
     assert isinstance(row["dof_over_ntrain_median"], float)
+    # Gate-D contingency labels ride the summary rows (r1 blocker
+    # gate-d-contingency-incoherent: the realized solver is visible downstream).
+    assert row["contingency_fired"] is False and row["read_out_solver"] == "dual"
+    # kNN echo: fold-mean acc@{1,5} for BOTH metrics per arm x read-out layer.
+    echo = row["knn_read_out_mean"]
+    assert echo["k1"]["L14"]["n_folds"] == 5  # primary carries per-fold cells
+    for metric in ("euclidean", "cosine"):
+        m = echo["k16"]["L14"][metric]
+        assert 0.0 <= m["acc_at_1"] <= 1.0 and 0.0 <= m["acc_at_5"] <= 1.0
+        assert m["n_pool_mean"] == 8.0
+    comp = summary["rungs"]["96"]["companion"]
+    assert comp["knn_read_out_mean"]["k1"]["L14"]["n_folds"] == 1  # single fold-mean cell
     l14 = row["per_layer"]["L14"]
     assert l14["rho_ci95"] == [0.01, 0.05]
     assert "k1" in l14["pooled_r2"] and "k16" in l14["pooled_r2"]
@@ -383,3 +463,4 @@ def test_end_to_end_renders_and_summary(tmp_path):
     floor = diag["correlated_offset_floor"]["primary"]["96"]["L14"]
     assert floor["floor_ratio"] is None or floor["floor_ratio"] >= 0.0
     assert floor["e_point_from_diffs"] > 0.0
+    assert floor["n_nonzero"] == 5 and floor["n_persona0"] == 2  # producer-schema fields

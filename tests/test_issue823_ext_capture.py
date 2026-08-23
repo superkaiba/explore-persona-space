@@ -259,6 +259,9 @@ def test_gate_e_duplicates_flags_without_halt(tmp_path):
     dup[9] = dup[0]  # 10% duplicates > 2% -> flag, still no raise
     rep = EXTCAP.gate_e_duplicates(dup, layout)
     assert rep["dedup_sensitivity_refit_required"] and rep["n_duplicate_groups"] == 1
+    # Persisted GROUPS are what the fits driver's sens_dedup consumer reads
+    # (r1 concern dedup-sensitivity-detached): sorted ids + min-id representative.
+    assert rep["duplicate_groups"] == [{"context_ids": [0, 9], "representative": 0}]
     _assert_no_sentinels(layout)
 
 
@@ -290,6 +293,37 @@ def test_probe_g_pass_and_halt_rc17(tmp_path):
         EXTCAP.probe_g_span_unit(tok, records, span_d, layout.eval_dir)
     assert exc.value.code == EXTCAP.RC_SPAN_UNIT == 17
     assert (layout.eval_dir / "ext_span_unit_report.json").exists()
+    _assert_no_sentinels(layout)
+
+
+# ── Probe (f): capture-convention parity (behavioral rc-16 halt) ─────────────
+
+
+def test_probe_f_capture_parity_pass_and_halt_rc16(tmp_path, monkeypatch):
+    """probe_f's REAL body (cosine + max-rel math, report write, halt routing)
+    with fakes only at the GPU boundary (capture_cx) and the 6-GB banked-bundle
+    boundary (load_pass_b_cx_last)."""
+    import numpy as np
+
+    layout = _tiny_layout(tmp_path, 0, 1)
+    rng = np.random.default_rng(0)
+    ref = torch.from_numpy(rng.standard_normal((EXTCAP.PROBE_N_CONTEXTS, 2, 3)).astype("float32"))
+    monkeypatch.setattr(EXTCAP, "load_pass_b_cx_last", lambda _path: ref)
+
+    # PASS arm: extension-rig capture reproduces the banked rows exactly.
+    monkeypatch.setattr(EXTCAP, "capture_cx", lambda _m, _t, qs, _bs: ref[: len(qs)].numpy().copy())
+    qs = [f"q{i}" for i in range(EXTCAP.PROBE_N_CONTEXTS)]
+    report = EXTCAP.probe_f_capture_parity(None, None, qs, tmp_path / "b.pt", layout.eval_dir, 8)
+    assert report["pass"] and report["cosine_min"] >= EXTCAP.PROBE_F_COSINE_FLOOR
+
+    # HALT arm: parallel but scaled rows keep cosine == 1 while max-rel ~ 1
+    # exceeds the 1e-2 median cap -> rc 16 + report + no sentinels.
+    monkeypatch.setattr(EXTCAP, "capture_cx", lambda _m, _t, qs, _bs: 2.0 * ref[: len(qs)].numpy())
+    with pytest.raises(SystemExit) as exc:
+        EXTCAP.probe_f_capture_parity(None, None, qs, tmp_path / "b.pt", layout.eval_dir, 8)
+    assert exc.value.code == EXTCAP.RC_CAPTURE_PARITY == 16
+    halt = json.loads((layout.eval_dir / "ext_capture_parity_report.json").read_text())
+    assert halt["rc"] == 16 and halt["max_rel_median"] > EXTCAP.PROBE_F_MAXREL_MEDIAN_CAP
     _assert_no_sentinels(layout)
 
 
@@ -418,6 +452,139 @@ def test_compute_capture_projection_thresholds():
     assert edge["projected_wall_h"] == pytest.approx(4.0) and not edge["abort"]
 
 
+def test_run_gate_b_wall_abort_rc23(tmp_path, monkeypatch):
+    """Behavioral Gate B halt: the REAL run_gate_b + compute_capture_projection
+    bodies (pilot timing, projection arithmetic, abort report, DesignedHalt
+    routing) with the GPU capture faked at the capture_cx boundary."""
+    import time as _time
+
+    layout = _tiny_layout(tmp_path, 0, 2)
+    monkeypatch.setattr(EXTCAP, "capture_cx", lambda _m, _t, qs, _bs: _time.sleep(0.005))
+    unit = {
+        "name": "cx_ext_block0",
+        "kind": "cx",
+        "context_ids": [0, 1],
+        "questions": [f"q{i}" for i in range(6)],
+        "fingerprint": {},
+    }
+
+    # PASS arm: generous planned wall -> no abort, report returned.
+    ok = EXTCAP.run_gate_b(None, FakeTokenizer(), [unit], 2, 100.0, layout.eval_dir)
+    assert not ok["abort"] and ok["n_timed_rows"] == 4
+
+    # HALT arm: planned_wall_h = 0 -> any positive projection > 2*0 -> rc 23.
+    with pytest.raises(SystemExit) as exc:
+        EXTCAP.run_gate_b(None, FakeTokenizer(), [unit], 2, 0.0, layout.eval_dir)
+    assert exc.value.code == EXTCAP.RC_GATE_B_WALL == 23
+    abort = json.loads((layout.eval_dir / "gate_b_abort_report.json").read_text())
+    assert abort["rc"] == 23 and abort["verdict"] == "DESIGNED-ABORT"
+    assert abort["pilot"]["abort"]
+    _assert_no_sentinels(layout)
+
+
+# ── P-OwnGen: sentinel is written ONLY after the data upload verifies ─────────
+
+
+def _owngen_env(tmp_path, monkeypatch, upload_results: list):
+    """Drive the REAL phase_owngen body (staging seams + GPU + Hub faked):
+    pre-written chunks make `pending` empty so no vLLM engine is needed."""
+    import types
+
+    import transformers
+
+    # phase_owngen loads via the module-level N_PREFIX, so the tiny fixture
+    # must live at the REAL prefix grain: 4 ext contexts at N_PREFIX..N_PREFIX+3.
+    n_lo, n_hi = EXTCAP.N_PREFIX, EXTCAP.N_PREFIX + 4
+    layout = _tiny_layout(tmp_path, n_lo, n_hi)
+    layout.eval_dir.mkdir(parents=True, exist_ok=True)
+    EXTCAP.write_json(layout.eval_dir / EXTCAP.P0_REPORT, {"pass": True})
+
+    ext_base = tmp_path / "ext_local"
+    _write_ext_files(ext_base, _tiny_ext_by_persona(n_lo, n_hi))
+    monkeypatch.setattr(
+        EXTCAP,
+        "stage_ext_gen_inputs",
+        lambda _layout, _p, _r, _l: (ext_base, {"complete": True}, "local:test"),
+    )
+    monkeypatch.setattr(EXTCAP, "assert_out_root_headroom", lambda *a, **k: None)
+    monkeypatch.setattr(
+        transformers.AutoTokenizer, "from_pretrained", staticmethod(lambda *a, **k: FakeTokenizer())
+    )
+
+    # Pre-complete both chunks (chunk_size=2 over 4 ext contexts) so the
+    # generate branch (vLLM) is skipped and the upload tail runs for real.
+    tok = FakeTokenizer()
+    layout.own_dir.mkdir(parents=True, exist_ok=True)
+    ctx_q = [(r["context_id"], r["question"]) for r in _tiny_ext_by_persona(n_lo, n_hi)[0]]
+    for c, chunk in enumerate([ctx_q[:2], ctx_q[2:]]):
+        rows = [
+            {
+                "context_id": i,
+                "question": q,
+                "own_text": "alpha beta gamma delta",
+                "finish_reason": "stop",
+                "skipped_reason": None,
+            }
+            for i, q in chunk
+        ]
+        EXTGEN._write_jsonl(layout.own_dir / f"own_chunk{c:03d}.jsonl", rows)
+        fp = EXTCAP.own_chunk_fingerprint([i for i, _q in chunk], [q for _i, q in chunk])
+        EXTCAP.write_json(
+            layout.own_dir / f"own_chunk{c:03d}.meta.json", {"fingerprint": fp, "n_rows": 2}
+        )
+    del tok
+
+    sentinel_path = layout.own_dir / EXTCAP.OWNGEN_SENTINEL
+    calls: list[dict] = []
+
+    def fake_upload(**kwargs):
+        calls.append(
+            {
+                "path_in_repo": kwargs["path_in_repo"],
+                "allow_patterns": list(kwargs["allow_patterns"]),
+                "sentinel_exists": sentinel_path.exists(),
+            }
+        )
+        return upload_results[len(calls) - 1]
+
+    monkeypatch.setattr(EXTCAP, "_upload_folder_filtered", fake_upload)
+    args = types.SimpleNamespace(
+        ext_prefix="unused", ext_revision=None, ext_local_dir=None, own_chunk_size=2
+    )
+    return layout, args, calls, sentinel_path
+
+
+def test_phase_owngen_sentinel_only_after_verified_upload(tmp_path, monkeypatch):
+    path_in_repo = f"{EXTCAP.HF_PREFIX}/raw_completions/ladder_ext_own"
+    canonical = f"{EXTCAP.DATA_REPO}/{path_in_repo}"
+    layout, args, calls, sentinel_path = _owngen_env(
+        tmp_path, monkeypatch, upload_results=[canonical, canonical]
+    )
+    EXTCAP.phase_owngen(args, layout)
+    # Call 1 = data upload BEFORE any sentinel exists; call 2 = sentinel-only.
+    assert len(calls) == 2
+    assert not calls[0]["sentinel_exists"]
+    assert calls[1]["sentinel_exists"]
+    assert calls[1]["allow_patterns"] == [EXTCAP.OWNGEN_SENTINEL]
+    assert EXTCAP.OWNGEN_SENTINEL not in calls[0]["allow_patterns"]
+    sentinel = json.loads(sentinel_path.read_text())
+    assert sentinel["complete"] and sentinel["phase"] == "owngen"
+    assert sentinel["smoke"] is False
+    assert EXTCAP._require_own_complete(layout)  # downstream loader accepts
+
+
+def test_phase_owngen_failed_upload_leaves_no_sentinel(tmp_path, monkeypatch):
+    layout, args, calls, sentinel_path = _owngen_env(
+        tmp_path, monkeypatch, upload_results=[None, None]
+    )
+    with pytest.raises(RuntimeError, match="own-rollout upload"):
+        EXTCAP.phase_owngen(args, layout)
+    assert len(calls) == 1  # sentinel-only upload never attempted
+    assert not sentinel_path.exists()
+    with pytest.raises(RuntimeError, match="missing"):
+        EXTCAP._require_own_complete(layout)
+
+
 # ── precompute_ext_rows: skip_mask + truncation semantics ────────────────────
 
 
@@ -532,7 +699,12 @@ def test_layout_smoke_isolation_and_rc_table():
     assert smoke.store_subpath == "analysis_tensors/ext_smoke"
     assert smoke.own_subpath == "raw_completions/ladder_ext_own_smoke"
 
-    assert set(EXTCAP.RC_TABLE) == {"0", "4", "12", "13", "14", "15", "16", "17", "18"}
+    # rc 23 (NOT 4): the ext-gen driver inherits the parent's rc 4/5, so the
+    # capture driver's Gate B wall rc was renumbered off the collision (r1
+    # concern round-rc4-collision; disjointness pinned cross-driver in
+    # tests/test_issue823_ext_fits.py).
+    assert set(EXTCAP.RC_TABLE) == {"0", "23", "12", "13", "14", "15", "16", "17", "18"}
+    assert EXTCAP.RC_GATE_B_WALL == 23
     assert set(EXTCAP.PHASES) == set(EXTCAP.PHASE_NAMES)
 
 

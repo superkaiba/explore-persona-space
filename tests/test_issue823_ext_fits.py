@@ -130,6 +130,35 @@ def test_rc_table_distinct_and_disjoint_from_siblings():
     assert min(FITS.RC_TABLE) > 18
 
 
+def test_cross_driver_rc_disjointness_from_module_constants():
+    """r1 fix round-rc4-collision: the three ext drivers' NONZERO designed rcs —
+    including the ext-gen driver's parent-INHERITED 4/5 (GEN reuse paths) —
+    are pairwise disjoint, derived from module constants (never literals)."""
+    from scripts import issue823_ladder_ext_gen as EXTGEN
+    from scripts import issue823_ladder_gen as LG
+
+    gen_rcs = {
+        EXTGEN.EXIT_TRANSPORT_RESIDUE,
+        EXTGEN.EXIT_STREAM_DRIFT,
+        EXTGEN.EXIT_STREAM_EXHAUSTED,
+        EXTGEN.EXIT_GATE_A_SURVIVAL,
+        EXTGEN.EXIT_GATE_A_CAP_HIT,
+        EXTGEN.EXIT_BANKED_PARITY,
+        EXTGEN.EXIT_MANIFEST_MISMATCH,
+        # parent-inherited (GEN dispatch/staging reuse can propagate these):
+        LG.EXIT_CONFIG_MISMATCH,
+        LG.EXIT_P0_INTEGRITY,
+    }
+    cap_rcs = {int(k) for k in EXTCAP.RC_TABLE if int(k) != 0}
+    fits_rcs = set(FITS.RC_TABLE)
+    assert EXTCAP.RC_GATE_B_WALL == 23  # renumbered off the parent's 4
+    assert EXTCAP.RC_GATE_B_WALL in cap_rcs
+    assert {LG.EXIT_CONFIG_MISMATCH, LG.EXIT_P0_INTEGRITY} == {4, 5}
+    assert not (gen_rcs & cap_rcs)
+    assert not (gen_rcs & fits_rcs)
+    assert not (cap_rcs & fits_rcs)
+
+
 # ── solver core ──────────────────────────────────────────────────────────────
 
 
@@ -242,9 +271,33 @@ def test_g2_slice_record_pass_and_fail():
 
 def test_contingency_parity_check_passes_on_toy():
     x, y = _toy_xy(25, seed=17)
-    x_ev = _toy_xy(5, seed=18)[0]
-    rec = FITS.contingency_parity_check(x, y, x_ev, CPU)
+    x_ev, y_ev = _toy_xy(5, seed=18)
+    rec = FITS.contingency_parity_check(x, y, x_ev, y_ev, CPU, layer=14, fold=0, arm="k1")
     assert rec["pass"] and rec["max_rel"] < 1e-8
+    # r1 fix gate-d-contingency-incoherent: the check now carries the parent's
+    # MEASURED G2 failure statistic (delta R2) + slice labels on every record.
+    assert rec["delta_r2"] < 1e-8
+    assert (rec["layer"], rec["fold"], rec["arm"]) == (14, 0, "k1")
+    assert {"r2_canonical", "r2_primal", "dof_canonical", "dof_primal"} <= set(rec)
+
+
+def test_contingency_parity_check_fails_on_perturbed_canonical(monkeypatch):
+    """The parent's MEASURED G2 failure was a dR2-class disagreement (plan
+    section 4.4) — perturb ONE backend and assert the record FAILS via the
+    delta_r2 leg (not only max_rel), pinning the strengthened conjunction."""
+    x, y = _toy_xy(25, seed=17)
+    x_ev, y_ev = _toy_xy(5, seed=18)
+    real = FITS.canonical_capped_fit
+
+    def _perturbed(x_tr, y_tr, xe, lambdas, cap_frac):
+        pred, lam, dof = real(x_tr, y_tr, xe, lambdas, cap_frac)
+        return pred + 0.05 * np.abs(pred).max(), lam, dof
+
+    monkeypatch.setattr(FITS, "canonical_capped_fit", _perturbed)
+    rec = FITS.contingency_parity_check(x, y, x_ev, y_ev, CPU, layer=26, fold=1, arm="k16")
+    assert not rec["pass"]
+    assert rec["delta_r2"] > FITS.G2_DELTA_R2_TOL
+    assert rec["max_rel"] > FITS.G2_MAX_REL_TOL
 
 
 def test_contingency_parity_fail_halts_rc20(tmp_path):
@@ -402,8 +455,10 @@ def test_fit_rung_primary_dof_cap_g2_resume_and_mutation(tmp_path, monkeypatch):
     assert rf.g2_slices and all(s["pass"] for s in rf.g2_slices)
     assert rf.sens_pure  # rung-1 pure-GCV sensitivity populated at read-out layer
     assert any(k.startswith("k1:L14") for k in rf.knn)
-    # resume: a second call must load the chunk without refitting
+    # resume: a second call must load the chunk without refitting (BOTH the
+    # serial and the r2 batched factorization entrypoints are fenced).
     monkeypatch.setattr(FITS, "rung_factorize", _raise_if_called)
+    monkeypatch.setattr(FITS, "batched_rung_factorize", _raise_if_called)
     rf2 = FITS.fit_rung(
         "primary",
         "25",
@@ -459,14 +514,15 @@ def _write_toy_rung_dir(tmp_path: pathlib.Path):
     train_ids = np.arange(n_total, dtype=np.int64)
     rf = _make_rungfit("primary", "320", train_ids, train_ids)
     rung_dir = tmp_path / "rung_320"
-    implied = FITS.write_rung_dir(
+    out = FITS.write_rung_dir(
         rung_dir, rf, FakePairSources(), n_total, {"phase": "test"}, diff_train_ids=train_ids
     )
-    return rung_dir, rf, implied
+    return rung_dir, rf, out
 
 
 def test_write_rung_dir_matches_load_mixture_diffs_and_energy(tmp_path):
-    rung_dir, _rf, implied = _write_toy_rung_dir(tmp_path)
+    rung_dir, _rf, out = _write_toy_rung_dir(tmp_path)
+    implied, floor = out["implied"], out["floor"]
     md = SPP.load_mixture_diffs(
         rung_dir / "mixture_diffs.npz", (FITS.POOLED_K,), tuple(FITS.READ_OUT_LAYERS)
     )
@@ -474,7 +530,10 @@ def test_write_rung_dir_matches_load_mixture_diffs_and_energy(tmp_path):
     assert [p for p, _ in groups] == list(range(1, 16))  # ascending personas, no p0
     n0 = md.n_persona0(FITS.POOLED_K, -1)
     assert n0 == 20  # 320/16 shared-persona rows in the denominator population
-    from scripts.issue823_ladder_common import mixture_energy_from_group_diffs
+    from scripts.issue823_ladder_common import (
+        correlated_floor_from_groups,
+        mixture_energy_from_group_diffs,
+    )
 
     # md.groups yields (PERSONA id, D_p); the energy helper takes (COUNT, D_p).
     groups_nd = [(d.shape[0], d) for _p, d in groups]
@@ -482,6 +541,17 @@ def test_write_rung_dir_matches_load_mixture_diffs_and_energy(tmp_path):
     e_summary = implied[f"k{FITS.POOLED_K}:L14"]["between_persona_mean_shift_energy"]
     assert e_direct == pytest.approx(e_summary, rel=1e-12)
     assert e_direct > 0
+    # r1 blocker fits-analysis-handoff: the compact per-layer floor rides the
+    # return (=> the eval schema); it must MATCH the shared helper recomputed
+    # from the SAME persisted difference matrices — the REAL producer schema
+    # the figures fixture mirrors.
+    groups_nd = [(d.shape[0], d) for _p, d in md.groups(FITS.POOLED_K, 14)]
+    want = correlated_floor_from_groups(iter(groups_nd), n0)
+    assert set(floor) == {f"L{ly}" for ly in FITS.READ_OUT_LAYERS}
+    got = floor["L14"]
+    assert got["floor_raw"] == pytest.approx(want["floor_raw"], rel=1e-12)
+    assert got["e_point_from_diffs"] == pytest.approx(e_direct, rel=1e-12)
+    assert got["n_nonzero"] == want["n_nonzero"] and got["n_persona0"] == n0
     z = np.load(rung_dir / "percontext_ladder.npz")
     assert list(z["arm_names"]) == ["k1", "k16"]
     assert z["p1_ss_res"].shape == (2, FITS.EXPECTED_LAYERS, 320)
@@ -516,11 +586,158 @@ def test_p2_rung_grid_clamps_and_appends_realized_max():
     assert full[-1] == 40_000 and 28_672 in full
 
 
-def test_p2_boundary_ladder_smoke_toy():
+def test_p2_boundary_ladder_smoke_toy(tmp_path):
     src = FakeFitSources(60, seed=29)
-    out = FITS.p2_boundary_ladder(src, np.arange(60), CPU, smoke=True)
+    out = FITS.p2_boundary_ladder(src, np.arange(60), CPU, tmp_path / "p2ckpt", smoke=True)
     assert out["holdout_n"] == 20 and out["pool_n"] == 40
     assert out["cells"]
     for cell in out["cells"].values():
         assert cell["dof"] <= FITS.DOF_CAP * cell["n_train"] + 1e-9
         assert "identity_bias_r2" in cell and "knn" in cell
+
+
+def test_p2_boundary_ladder_resume_skips_refit(tmp_path, monkeypatch):
+    """r1 concern p2-not-resumable: per-(layer, n_train) atomic checkpoints —
+    a second run reloads every cell with the factorization entrypoint fenced."""
+    src = FakeFitSources(60, seed=29)
+    ckpt = tmp_path / "p2ckpt"
+    out1 = FITS.p2_boundary_ladder(src, np.arange(60), CPU, ckpt, smoke=True)
+    monkeypatch.setattr(FITS, "batched_rung_factorize", _raise_if_called)
+    out2 = FITS.p2_boundary_ladder(src, np.arange(60), CPU, ckpt, smoke=True)
+    # compare through the JSON round-trip the checkpoint (and the persisted
+    # p2_ext_boundary.json every consumer reads) applies — int knn keys
+    # normalize to strings there.
+    assert out2["cells"] == json.loads(json.dumps(out1["cells"]))
+
+
+def test_p2_checkpoint_fp_extra_mutation_fails_loud(tmp_path):
+    """A changed store identity (fp_extra) against existing P2 checkpoints is a
+    DIFFERENT-fingerprint refusal, never a silent reuse (LF.chunk_done law)."""
+    src = FakeFitSources(60, seed=29)
+    ckpt = tmp_path / "p2ckpt"
+    FITS.p2_boundary_ladder(
+        src, np.arange(60), CPU, ckpt, smoke=True, fp_extra={"store_name_set_sha256": "aaa"}
+    )
+    with pytest.raises(RuntimeError, match="DIFFERENT fingerprint"):
+        FITS.p2_boundary_ladder(
+            src, np.arange(60), CPU, ckpt, smoke=True, fp_extra={"store_name_set_sha256": "bbb"}
+        )
+
+
+# ── Batched factorization equivalence (r1 concern serial-fit-battery) ────────
+
+
+def test_batched_factorize_matches_serial_predictions(monkeypatch):
+    """Batched eigh stacks reproduce the serial per-slice factorization's
+    dof-capped GCV fits to float tolerance on BOTH branches (dual + primal)."""
+    monkeypatch.setattr(FITS, "DUAL_N_MAX", 30)
+    x_ev = np.random.default_rng(31).normal(size=(6, 8))
+    for n, kind in ((20, "dual"), (40, "primal")):
+        slices = [_toy_xy(n, d=8, seed=100 + 10 * j) for j in range(3)]
+        facts_b = FITS.batched_rung_factorize([x for x, _y in slices], CPU)
+        assert len(facts_b) == 3 and all(f["kind"] == kind for f in facts_b)
+        for (x, y), fb in zip(slices, facts_b, strict=True):
+            fs = FITS.rung_factorize(x, CPU)
+            assert fs["kind"] == kind
+            lam_b, proj_b, ymu_b, dof_b = FITS.solve_capped(fb, y, FITS.LAMBDAS, FITS.DOF_CAP)
+            lam_s, proj_s, ymu_s, dof_s = FITS.solve_capped(fs, y, FITS.LAMBDAS, FITS.DOF_CAP)
+            assert lam_b == pytest.approx(lam_s)
+            assert dof_b == pytest.approx(dof_s, rel=1e-8)
+            pred_b = FITS.apply_fit(fb, lam_b, proj_b, ymu_b, FITS.eval_kernel(fb, x_ev))
+            pred_s = FITS.apply_fit(fs, lam_s, proj_s, ymu_s, FITS.eval_kernel(fs, x_ev))
+            assert np.allclose(pred_b, pred_s, atol=1e-8)
+
+
+def test_batched_factorize_single_slice_delegates():
+    x, _ = _toy_xy(20, seed=41)
+    facts = FITS.batched_rung_factorize([x], CPU)
+    ref = FITS.rung_factorize(x, CPU)
+    assert len(facts) == 1 and facts[0]["kind"] == ref["kind"]
+
+
+# ── Store-identity validation + resume output validation (r1 findings) ───────
+
+
+def _toy_layout(tmp_path: pathlib.Path) -> EXTCAP.Layout:
+    layout = EXTCAP.Layout(tmp_path, smoke=True, n_ext=64)
+    layout.store_dir.mkdir(parents=True, exist_ok=True)
+    return layout
+
+
+def _write_store_sentinel(layout, **overrides) -> None:
+    names = EXTCAP.expected_store_files(layout.store_dir)
+    payload = {
+        "phase": "storeext",
+        "complete": True,
+        "name_set_sha256": EXTCAP._sha256_json(names),
+        "hf_prefix": layout.hf_path(layout.store_subpath),
+        "n_files": len(names),
+        **overrides,
+    }
+    (layout.store_dir / EXTCAP.STORE_SENTINEL).write_text(json.dumps(payload))
+
+
+def test_validated_store_identity_roundtrip_and_refusals(tmp_path):
+    """r1 concerns sentinel-before-upload (fits side) + stale-checkpoint-
+    fingerprints: the fits entry PARSES the store sentinel — completeness, own
+    HF prefix, and a name-set sha recomputed over the LOCAL store."""
+    layout = _toy_layout(tmp_path)
+    (layout.store_dir / "cx_ext_block0.pt").write_bytes(b"x")
+    (layout.store_dir / "cx_ext_block0.done.json").write_text("{}")
+    with pytest.raises(RuntimeError, match="missing"):
+        FITS._validated_store_identity(layout)
+    _write_store_sentinel(layout)
+    d = FITS._validated_store_identity(layout)
+    assert d["name_set_sha256"] == EXTCAP._sha256_json(
+        EXTCAP.expected_store_files(layout.store_dir)
+    )
+    _write_store_sentinel(layout, complete=False)
+    with pytest.raises(RuntimeError, match="complete"):
+        FITS._validated_store_identity(layout)
+    _write_store_sentinel(layout, hf_prefix="wrong/prefix")
+    with pytest.raises(RuntimeError, match="prefix"):
+        FITS._validated_store_identity(layout)
+    _write_store_sentinel(layout)
+    (layout.store_dir / "cx_ext_block1.pt").write_bytes(b"y")  # store drifts after verify
+    with pytest.raises(RuntimeError, match="name_set_sha256"):
+        FITS._validated_store_identity(layout)
+
+
+def test_validate_fits_outputs_names_missing_and_shallow_artifacts(tmp_path):
+    """r1 finding: the fits-complete resume must validate REQUIRED_OUTPUT_KEYS,
+    not sentinel existence — missing/short artifacts are NAMED problems."""
+    problems = FITS.validate_fits_outputs(tmp_path, ["25"])
+    assert any("ladder_ext_r2.json" in p for p in problems)
+    assert any("percontext_rung25.npz" in p for p in problems)
+    # Write conforming minimal artifacts and re-validate to empty.
+    (tmp_path / "ladder_ext_r2.json").write_text(
+        json.dumps({"primary": {}, "companion": {}, "gates": {}, "estimator": {}})
+    )
+    (tmp_path / "p2_ext_boundary.json").write_text(
+        json.dumps({"cells": {}, "holdout_sha256": "s", "n_train_grid": []})
+    )
+    (tmp_path / "g2_ext_report.json").write_text(json.dumps({"rungs": {}, "tolerances": {}}))
+    paired = {
+        "arms": {
+            "k16": {
+                "per_layer": {
+                    "L14": {
+                        "offset_bias_control": {"ratio_measured_over_full_energy": 0.1},
+                        "rho_ci95": [0.0, 1.0],
+                        "n_negligible_E_draws": 0,
+                        "mean_paired_diff_ci95": [0.0, 1.0],
+                    }
+                }
+            }
+        }
+    }
+    for suffix in ("rung25", "rand_rung25"):
+        (tmp_path / f"shared_persona_paired_{suffix}.json").write_text(json.dumps(paired))
+        np.savez(
+            tmp_path / f"percontext_{suffix}.npz",
+            arm_names=np.array(["k1", "k16"]),
+            context_ids=np.arange(4),
+            p1_ss_res=np.zeros((2, 2, 4)),
+            p1_ss_tot=np.ones((2, 2, 4)),
+        )
+    assert FITS.validate_fits_outputs(tmp_path, ["25"]) == []

@@ -169,6 +169,13 @@ EXIT_MANIFEST_MISMATCH = 11
 MANIFEST_FILENAME = "sampling_manifest_ext.json"
 PROMPTS_FILENAME = "sampling_prompts_ext.jsonl"
 SENTINEL_FILENAME = "_gen_ext_complete.json"
+# Mid-stream selection checkpoints (r1 concern external-stream-not-resumable;
+# the #1092 _stream_with_cache pattern: durable kept-pool chunks + a meta
+# sidecar written LAST, exact-fingerprint resume). LOCAL-ONLY scratch — the
+# durable record stays the sampling manifest; these never upload.
+PROGRESS_FILENAME = "sampling_progress_ext.jsonl"
+PROGRESS_META_FILENAME = "sampling_progress_ext.meta.json"
+PROGRESS_CHUNK = 2_000  # kept prompts per durable flush
 
 
 class DesignedHalt(SystemExit):
@@ -212,12 +219,80 @@ def _first_user_turn(row) -> str | None:
     return None
 
 
-def stream_lmsys_rows():
-    """The real LMSYS stream (deferred datasets import; tests inject stream_iter)."""
+def stream_lmsys_rows(skip: int = 0):
+    """The real LMSYS stream (deferred datasets import; tests inject stream_iter).
+
+    ``skip`` fast-forwards the stream to position ``skip`` (the mid-stream
+    resume path) via ``IterableDataset.skip`` — the resumed iterator's first
+    row is stream position ``skip``.
+    """
     from datasets import load_dataset
 
     ds = load_dataset(LMSYS_REPO, split="train", streaming=True)
+    if skip:
+        ds = ds.skip(skip)
     return iter(ds)
+
+
+def _append_stream_progress(stage_dir: pathlib.Path, new_rows: list[dict], meta: dict) -> None:
+    """Durable mid-stream checkpoint: append the newly-kept rows, fsync, THEN
+    atomically rewrite the meta sidecar (sidecar-last ordering: a crash between
+    the two leaves extra tail rows the loader truncates to ``meta.n_kept``)."""
+    pp = stage_dir / PROGRESS_FILENAME
+    pp.parent.mkdir(parents=True, exist_ok=True)
+    payload = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in new_rows)
+    with pp.open("a", encoding="utf-8") as fh:
+        fh.write(payload)
+        fh.flush()
+        os.fsync(fh.fileno())
+    GEN.write_json(stage_dir / PROGRESS_META_FILENAME, meta)
+
+
+def load_stream_progress(stage_dir: pathlib.Path, fields: dict) -> dict | None:
+    """Fingerprint-gated mid-stream resume state, or None.
+
+    Returns {rows, prefix_report, next_stream_pos} when the meta sidecar
+    matches ``fields`` and the kept rows validate; DISCARDS (warn + None) on
+    any mismatch/corruption — partial progress is re-derivable scratch, so
+    discard-and-restream is safe here (the rc-11 designed halt governs the
+    COMPLETED manifest, not this scratch)."""
+    meta_path = stage_dir / PROGRESS_META_FILENAME
+    pp = stage_dir / PROGRESS_FILENAME
+    if not meta_path.exists() or not pp.exists():
+        return None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        logger.warning("stream-progress meta unreadable — discarding partial progress")
+        return None
+    if meta.get("fingerprint_fields") != fields:
+        logger.warning("stream-progress fingerprint mismatch — discarding partial progress")
+        return None
+    rows: list[dict] = []
+    # split("\n"), never splitlines(): real-corpus prompt text (#950).
+    for line in pp.read_text(encoding="utf-8").split("\n"):
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            break  # torn tail from a mid-append crash: the intact head suffices
+    n_kept = int(meta["n_kept"])
+    if len(rows) < n_kept:
+        logger.warning(
+            "stream-progress rows short (%d < meta n_kept %d) — discarding", len(rows), n_kept
+        )
+        return None
+    rows = rows[:n_kept]
+    for j, r in enumerate(rows):
+        if r.get("ext_idx") != j or _sha256_text(r["prompt"]) != r.get("sha256"):
+            logger.warning("stream-progress row %d fails validation — discarding", j)
+            return None
+    return {
+        "rows": rows,
+        "prefix_report": meta["prefix_report"],
+        "next_stream_pos": int(meta["next_stream_pos"]),
+    }
 
 
 def select_extension_contexts(
@@ -227,6 +302,8 @@ def select_extension_contexts(
     max_stream_pos: int,
     eval_dir: pathlib.Path,
     stream_iter=None,
+    stage_dir: pathlib.Path | None = None,
+    fingerprint_fields: dict | None = None,
 ) -> dict:
     """Registered selection rule (plan section 4.2), fail-loud at every seam.
 
@@ -239,13 +316,45 @@ def select_extension_contexts(
 
     Prompt text NEVER enters halt reports (real-world-corpus hygiene) —
     reports carry positions + sha256 digests only.
+
+    With ``stage_dir`` + ``fingerprint_fields`` set, phase 2 checkpoints every
+    ``PROGRESS_CHUNK`` kept prompts to a local-only progress file + meta
+    sidecar and RESUMES from it (fingerprint-gated; stream fast-forwarded to
+    the persisted position) — the #1092 external-stream checkpoint contract.
     """
     n_prefix = len(banked_questions)
-    it = stream_iter if stream_iter is not None else stream_lmsys_rows()
+    resumed = (
+        load_stream_progress(stage_dir, fingerprint_fields)
+        if stage_dir is not None and fingerprint_fields is not None
+        else None
+    )
+    start_pos = resumed["next_stream_pos"] if resumed is not None else 0
+    if stream_iter is not None:
+        it = stream_iter
+        for _ in range(start_pos):
+            try:
+                next(it)  # injected iterators fast-forward by consumption
+            except StopIteration:
+                break  # phase-2 _next_row halts rc 7 with the full report
+    else:
+        it = stream_lmsys_rows(skip=start_pos)
     prefix: list[str] = []
     ext: list[str] = []
     ext_positions: list[int] = []
-    pos = -1
+    pos = start_pos - 1
+    if resumed is not None:
+        ext = [r["prompt"] for r in resumed["rows"]]
+        ext_positions = [int(r["stream_pos"]) for r in resumed["rows"]]
+        assert stage_dir is not None
+        # Truncate any torn tail beyond meta.n_kept so later appends can never
+        # be shadowed by stale same-ext_idx rows earlier in the file.
+        pp = stage_dir / PROGRESS_FILENAME
+        tmp = pp.with_suffix(".jsonl.tmp")
+        tmp.write_text(
+            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in resumed["rows"]),
+            encoding="utf-8",
+        )
+        os.replace(tmp, pp)
 
     def _next_row():
         nonlocal pos
@@ -281,85 +390,141 @@ def select_extension_contexts(
                 f"{len(ext)}/{n_ext} extension prompts collected",
             )
 
-    # Phase 1: first n_prefix non-empty first-turns (round-1 derivation — no
-    # within-phase dedup, mirroring issue779_ffc_n10k sample_disjoint phase 1).
-    while len(prefix) < n_prefix:
-        p = _first_user_turn(_next_row())
-        if p:
-            if not prefix and p != EXPECTED_CTX0_PROMPT:
-                _halt(
-                    EXIT_STREAM_DRIFT,
-                    eval_dir / "ext_selection_drift_report.json",
-                    {
-                        "reason": "ctx0_mismatch",
-                        "expected_ctx0_sha256": _sha256_text(EXPECTED_CTX0_PROMPT),
-                        "got_ctx0_sha256": _sha256_text(p),
-                        "stream_pos": pos,
-                    },
-                    "normalized ctx0 != EXPECTED_CTX0_PROMPT (stream-ordering drift)",
-                )
-            prefix.append(p)
+    if resumed is None:
+        # Phase 1: first n_prefix non-empty first-turns (round-1 derivation — no
+        # within-phase dedup, mirroring issue779_ffc_n10k sample_disjoint phase 1).
+        while len(prefix) < n_prefix:
+            p = _first_user_turn(_next_row())
+            if p:
+                if not prefix and p != EXPECTED_CTX0_PROMPT:
+                    _halt(
+                        EXIT_STREAM_DRIFT,
+                        eval_dir / "ext_selection_drift_report.json",
+                        {
+                            "reason": "ctx0_mismatch",
+                            "expected_ctx0_sha256": _sha256_text(EXPECTED_CTX0_PROMPT),
+                            "got_ctx0_sha256": _sha256_text(p),
+                            "stream_pos": pos,
+                        },
+                        "normalized ctx0 != EXPECTED_CTX0_PROMPT (stream-ordering drift)",
+                    )
+                prefix.append(p)
 
-    # Prefix reproduction: ordered expected; set equality the registered
-    # fallback (report the permutation and proceed); neither -> rc 6.
-    ordered_equal = prefix == banked_questions
-    set_equal = set(prefix) == set(banked_questions)
-    mismatch_positions = (
-        []
-        if ordered_equal
-        else [i for i, (a, b) in enumerate(zip(prefix, banked_questions)) if a != b]
-    )
-    if not ordered_equal and not set_equal:
-        stream_only = set(prefix) - set(banked_questions)
-        banked_only = set(banked_questions) - set(prefix)
-        _halt(
-            EXIT_STREAM_DRIFT,
-            eval_dir / "ext_selection_drift_report.json",
-            {
-                "reason": "prefix_reproduction_failed",
-                "ordered_equal": False,
-                "set_equal": False,
-                "n_position_mismatches": len(mismatch_positions),
-                "n_stream_only": len(stream_only),
-                "n_banked_only": len(banked_only),
-                "stream_only_sha256_first5": sorted(_sha256_text(s) for s in stream_only)[:5],
-                "banked_only_sha256_first5": sorted(_sha256_text(s) for s in banked_only)[:5],
-            },
-            "banked 5,000-prefix reproduction failed BOTH ordered and set equality",
+        # Prefix reproduction: ordered expected; set equality the registered
+        # fallback (report the permutation and proceed); neither -> rc 6.
+        ordered_equal = prefix == banked_questions
+        set_equal = set(prefix) == set(banked_questions)
+        mismatch_positions = (
+            []
+            if ordered_equal
+            else [i for i, (a, b) in enumerate(zip(prefix, banked_questions)) if a != b]
         )
-    if not ordered_equal:
-        logger.warning(
-            "Prefix reproduction: ORDER mismatch at %d positions but SET equality holds — "
-            "registered fallback engaged (extension needs only disjointness + a frozen "
-            "extension order); permutation recorded in sampling_manifest_ext.json",
-            len(mismatch_positions),
+        if not ordered_equal and not set_equal:
+            stream_only = set(prefix) - set(banked_questions)
+            banked_only = set(banked_questions) - set(prefix)
+            _halt(
+                EXIT_STREAM_DRIFT,
+                eval_dir / "ext_selection_drift_report.json",
+                {
+                    "reason": "prefix_reproduction_failed",
+                    "ordered_equal": False,
+                    "set_equal": False,
+                    "n_position_mismatches": len(mismatch_positions),
+                    "n_stream_only": len(stream_only),
+                    "n_banked_only": len(banked_only),
+                    "stream_only_sha256_first5": sorted(_sha256_text(s) for s in stream_only)[:5],
+                    "banked_only_sha256_first5": sorted(_sha256_text(s) for s in banked_only)[:5],
+                },
+                "banked 5,000-prefix reproduction failed BOTH ordered and set equality",
+            )
+        if not ordered_equal:
+            logger.warning(
+                "Prefix reproduction: ORDER mismatch at %d positions but SET equality holds — "
+                "registered fallback engaged (extension needs only disjointness + a frozen "
+                "extension order); permutation recorded in sampling_manifest_ext.json",
+                len(mismatch_positions),
+            )
+        prefix_report = {
+            "ordered_equal": ordered_equal,
+            "set_equal": set_equal,
+            "n_position_mismatches": len(mismatch_positions),
+            "mismatch_positions_first20": mismatch_positions[:20],
+            "n_prefix": n_prefix,
+        }
+        # Phase 2 exclusion: the banked set AND the re-derived prefix set
+        # (equal in both accepted branches; the union is the belt for the
+        # permutation case).
+        excluded = set(banked_questions) | set(prefix)
+    else:
+        prefix_report = resumed["prefix_report"]
+        # Past phase 1 both accepted branches guarantee set(prefix) ==
+        # set(banked_questions), so the exclusion set reconstructs exactly.
+        excluded = set(banked_questions)
+        logger.info(
+            "Stream progress resumed: %d/%d extension prompts kept (next stream pos %d)",
+            len(ext),
+            n_ext,
+            start_pos,
         )
-    prefix_report = {
-        "ordered_equal": ordered_equal,
-        "set_equal": set_equal,
-        "n_position_mismatches": len(mismatch_positions),
-        "mismatch_positions_first20": mismatch_positions[:20],
-        "n_prefix": n_prefix,
-    }
+
+    if resumed is None and stage_dir is not None:
+        # A discarded/mismatched prior progress file must never be appended
+        # onto: stale rows ahead of fresh ones would trip the loader's
+        # positional validation on the NEXT resume (discard + full restream).
+        # A fresh phase 2 starts from a clean progress surface.
+        for name in (PROGRESS_FILENAME, PROGRESS_META_FILENAME):
+            (stage_dir / name).unlink(missing_ok=True)
 
     # Phase 2: next n_ext DISTINCT raw-string prompts, disjoint from the
-    # banked set AND the re-derived prefix set (equal in both accepted
-    # branches; the union is the belt for the permutation case).
-    excluded = set(banked_questions) | set(prefix)
-    taken: set[str] = set()
+    # exclusion set; kept pool checkpointed every PROGRESS_CHUNK (#1092).
+    taken: set[str] = set(ext)
+    n_flushed = len(ext)
+
+    def _flush_progress() -> None:
+        nonlocal n_flushed
+        if stage_dir is None or fingerprint_fields is None or len(ext) == n_flushed:
+            return
+        new_rows = [
+            {
+                "ext_idx": j,
+                "context_id": N_PREFIX + j,
+                "stream_pos": ext_positions[j],
+                "sha256": _sha256_text(ext[j]),
+                "prompt": ext[j],
+            }
+            for j in range(n_flushed, len(ext))
+        ]
+        _append_stream_progress(
+            stage_dir,
+            new_rows,
+            {
+                "fingerprint_fields": fingerprint_fields,
+                "prefix_report": prefix_report,
+                "n_kept": len(ext),
+                "next_stream_pos": pos + 1,
+            },
+        )
+        n_flushed = len(ext)
+        logger.info("[gen_ext] stream progress %d/%d kept (pos %d)", len(ext), n_ext, pos)
+
     while len(ext) < n_ext:
         p = _first_user_turn(_next_row())
         if p and p not in excluded and p not in taken:
             ext.append(p)
             ext_positions.append(pos)
             taken.add(p)
+            if len(ext) - n_flushed >= PROGRESS_CHUNK:
+                _flush_progress()
+    # Final tail flush: the whole kept pool is durable BEFORE the caller's
+    # manifest write (a crash between the two resumes from here for free).
+    _flush_progress()
     assert set(ext).isdisjoint(excluded), "extension prompts overlap the prefix set"
     assert len(set(ext)) == len(ext), "extension prompts are not distinct"
     logger.info(
         "Selection complete: %d prefix (ordered_equal=%s) + %d extension prompts "
         "(last stream pos %d)",
         n_prefix,
-        ordered_equal,
+        prefix_report["ordered_equal"],
         len(ext),
         pos,
     )
@@ -459,7 +624,14 @@ def load_selection_if_persisted(
             {"reason": "prompts_file_missing", "expected": str(prompts_path)},
             "sampling manifest present but its prompts file is missing",
         )
-    rows = [json.loads(line) for line in prompts_path.read_text().splitlines() if line.strip()]
+    # split("\n"), NEVER splitlines(): real-corpus prompt text carries raw
+    # U+2028/U+2029/NEL inside JSON strings and splitlines() shreds those rows
+    # (#950 reader class; r1 finding unicode-jsonl-resume).
+    rows = [
+        json.loads(line)
+        for line in prompts_path.read_text(encoding="utf-8").split("\n")
+        if line.strip()
+    ]
     prompts = [r["prompt"] for r in rows]
     positions = [r["stream_pos"] for r in rows]
     ok = (
@@ -1083,6 +1255,23 @@ def build_ext_digest(
 # ── Upload (>9.5 MB text line-split; canonical-repo gate) ────────────────────
 
 
+def _unlink_stale_shards(f: pathlib.Path) -> None:
+    """Remove a PRIOR sharding's manifest + shard files for source ``f``.
+
+    An in-place regeneration of a source jsonl otherwise leaves a stale
+    `<stem>.manifest.json` + `<stem>.shardNN.jsonl` set that manifest-first
+    readers and upload name-sets PREFER over the fresh bytes (r1 concern
+    stale-manifest-precedence-regen).
+    """
+    manifest = f.with_name(f"{f.stem}.manifest.json")
+    if manifest.exists():
+        manifest.unlink()
+        logger.info("unlinked stale shard manifest %s", manifest)
+    for sp in sorted(f.parent.glob(f"{f.stem}.shard*.jsonl")):
+        sp.unlink()
+        logger.info("unlinked stale shard %s", sp)
+
+
 def shard_large_jsonl_for_upload(files: list[pathlib.Path]) -> list[pathlib.Path]:
     """Replace any >9.5 MB .jsonl with <9 MB line-shards + a manifest.
 
@@ -1091,7 +1280,9 @@ def shard_large_jsonl_for_upload(files: list[pathlib.Path]) -> list[pathlib.Path
     IDENTICAL manifest schema {source, parts, line_counts, sha256} — pinned by
     ``orchestrate.hub._parse_shard_manifest`` so hub-side readers reassemble.
     upload-policy.md: text >9.5 MB line-splits, NEVER gzip (>10 MB blobs
-    force-route to LFS; *.gz is LFS-matched).
+    force-route to LFS; *.gz is LFS-matched). Any prior sharding of a source
+    is unlinked FIRST (both branches) so a regenerated file can never be
+    shadowed by a stale manifest/shard set.
     """
     out: list[pathlib.Path] = []
     for f in files:
@@ -1099,12 +1290,15 @@ def shard_large_jsonl_for_upload(files: list[pathlib.Path]) -> list[pathlib.Path
             continue
         size = f.stat().st_size
         if size <= UPLOAD_SHARD_LIMIT_BYTES:
+            if f.suffix == ".jsonl":
+                _unlink_stale_shards(f)  # regenerated-now-small source
             out.append(f)
             continue
         if f.suffix != ".jsonl":
             logger.warning("oversized non-jsonl upload rides LFS: %s (%d B)", f, size)
             out.append(f)
             continue
+        _unlink_stale_shards(f)  # re-shard from the CURRENT bytes only
         shards: list[pathlib.Path] = []
         line_counts: list[int] = []
         shard_lines: list[str] = []
@@ -1148,6 +1342,11 @@ def shard_large_jsonl_for_upload(files: list[pathlib.Path]) -> list[pathlib.Path
 
 def _write_jsonl(path: pathlib.Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix == ".jsonl":
+        # Rewriting a source jsonl invalidates any prior sharding of it —
+        # unlink FIRST so a mid-write crash leaves the (old source, no
+        # manifest) consistent pair, never (new source, stale manifest).
+        _unlink_stale_shards(path)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(
         "\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8"
@@ -1285,6 +1484,8 @@ def main(argv: list[str] | None = None) -> None:
             n_ext,
             max_stream_pos=args.max_stream_pos,
             eval_dir=eval_dir,
+            stage_dir=stage_dir,
+            fingerprint_fields=fields,
         )
         write_sampling_manifest(stage_dir, selection, fields, metadata)
 
@@ -1494,6 +1695,13 @@ def main(argv: list[str] | None = None) -> None:
         digest["redrive_rounds_used"],
         sorted(triggered_cells),
     )
+    # Explicit success terminal AFTER all durables landed: a `datasets`
+    # streaming iterator surviving to implicit interpreter finalization can
+    # SIGABRT (rc=134, pyarrow thread-teardown class — gotchas.md); the
+    # explicit exit fires before finalize-time teardown can rewrite the rc.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -113,7 +113,10 @@ from explore_persona_space.orchestrate.provenance import (  # noqa: E402
 from scripts import issue779_fitter_fair_comparison as FFC  # noqa: E402
 from scripts import issue823_ladder_ext_capture as EXTCAP  # noqa: E402
 from scripts import issue823_ladder_fits as LF  # noqa: E402
-from scripts.issue823_ladder_common import mixture_energy_from_group_diffs  # noqa: E402
+from scripts.issue823_ladder_common import (  # noqa: E402
+    correlated_floor_from_groups,
+    mixture_energy_from_group_diffs,
+)
 from explore_persona_space.experiments.issue_823.run_823 import write_sentinel  # noqa: E402
 from scripts.issue823_ladder_gen import write_json  # noqa: E402
 
@@ -131,6 +134,7 @@ N_FOLDS = 5
 FOLD_SEED = 0  # KFold(5, shuffle=True, random_state=0) — parent parity
 DOF_CAP = 0.9
 DUAL_N_MAX = 6_000  # n_train <= this -> dual (Gram) path; above -> primal (d x d)
+LAYER_CHUNK = 4  # layers per batched eigh stack (plan v17: chunks of 4-8, peak <~25 GB HBM)
 LAMBDAS = FFC.LAMBDAS  # logspace(-2, 4, 13) — the parent primary grid
 LAMBDA_GRID_PARAMS = ("logspace", -2, 4, 13)
 LAMBDAS_WIDE = np.logspace(-2, 8, 21)  # parent P2 grid — labeled sensitivity only
@@ -254,6 +258,85 @@ def rung_factorize(x_tr_np: np.ndarray, dev: torch.device) -> dict:
         fact["kind"] = "dual"
         return fact
     return _factorize_primal(x_tr_np, dev)
+
+
+def _factorize_dual_batched(x_list: list[np.ndarray], dev: torch.device) -> list[dict]:
+    """Batched dual factorization: ONE (C, n, n) Gram eigh across a layer chunk.
+
+    Per-slice dicts mirror FFC._factorize's dual schema EXACTLY (torch sample
+    std + 1e-9, clamped eigenvalues) so `solve_capped`/`eval_kernel`/`apply_fit`
+    consume each slice unchanged. cuSOLVER non-convergence falls back to a
+    whole-stack CPU eigh (exact backend swap — gotchas.md; never jitter).
+    """
+    xs = torch.stack([torch.as_tensor(np.asarray(x), dtype=torch.float64) for x in x_list]).to(dev)
+    xmu = xs.mean(1, keepdim=True)
+    xsd = xs.std(1, keepdim=True) + 1e-9  # correction=1 == per-slice .std(0)
+    xn = (xs - xmu) / xsd
+    gram = xn @ xn.transpose(1, 2)
+    try:
+        w, v = torch.linalg.eigh(gram)
+    except torch.linalg.LinAlgError:
+        logger.warning("[dual-batched] eigh failed on %s — whole-stack CPU fallback", dev)
+        w, v = torch.linalg.eigh(gram.cpu())
+        w, v = w.to(dev), v.to(dev)
+    w = torch.clamp(w, min=0.0)
+    return [
+        {
+            "kind": "dual",
+            "xmu": xmu[i, 0],
+            "xsd": xsd[i, 0],
+            "Xtr_n": xn[i],
+            "w": w[i],
+            "V": v[i],
+            "ntr": int(xs.shape[1]),
+            "dev": dev,
+        }
+        for i in range(len(x_list))
+    ]
+
+
+def _factorize_primal_batched(x_list: list[np.ndarray], dev: torch.device) -> list[dict]:
+    """Batched primal factorization: ONE (C, d, d) covariance eigh across a chunk.
+
+    Per-slice dicts mirror `_factorize_primal`'s schema exactly; same
+    whole-stack CPU fallback discipline as the dual twin.
+    """
+    xs = torch.stack([torch.as_tensor(np.asarray(x), dtype=torch.float64) for x in x_list]).to(dev)
+    xmu = xs.mean(1, keepdim=True)
+    xsd = xs.std(1, keepdim=True) + 1e-9
+    xn = (xs - xmu) / xsd
+    cov = xn.transpose(1, 2) @ xn
+    try:
+        w, v = torch.linalg.eigh(cov)
+    except torch.linalg.LinAlgError:
+        logger.warning("[primal-batched] eigh failed on %s — whole-stack CPU fallback", dev)
+        w, v = torch.linalg.eigh(cov.cpu())
+        w, v = w.to(dev), v.to(dev)
+    w = torch.clamp(w, min=0.0)
+    return [
+        {
+            "kind": "primal",
+            "xmu": xmu[i, 0],
+            "xsd": xsd[i, 0],
+            "Xn": xn[i],
+            "w": w[i],
+            "V": v[i],
+            "ntr": int(xs.shape[1]),
+            "dev": dev,
+        }
+        for i in range(len(x_list))
+    ]
+
+
+def batched_rung_factorize(x_list: list[np.ndarray], dev: torch.device) -> list[dict]:
+    """Route a same-n layer-chunk stack by n_train (plan v17 layer-chunk design:
+    ONE batched eigh per (chunk, fold) — no serial per-cell factorization loop)."""
+    n = int(np.asarray(x_list[0]).shape[0])
+    if len(x_list) == 1:
+        return [rung_factorize(x_list[0], dev)]
+    if n <= DUAL_N_MAX:
+        return _factorize_dual_batched(x_list, dev)
+    return _factorize_primal_batched(x_list, dev)
 
 
 def eval_kernel(fact: dict, x_ev_np: np.ndarray) -> torch.Tensor:
@@ -470,16 +553,23 @@ def contingency_parity_check(
     x_tr: np.ndarray,
     y_tr: np.ndarray,
     x_ev: np.ndarray,
+    y_score: np.ndarray,
     dev: torch.device,
     lambdas: np.ndarray = LAMBDAS,
     cap_frac: float = DOF_CAP,
+    layer: int = -1,
+    fold: int = -1,
+    arm: str = "",
 ) -> dict:
     """Independent-numerics check of the contingency solver (kill path 5 terminal).
 
     Canonical numpy-SVD fit vs the torch fp64 primal-eigh fit on the SAME
-    slice — two independent factorization backends of the same criterion. A
-    parity-class disagreement here means the canonical contingency itself is
-    unverifiable => the caller halts rc 20.
+    slice — two independent factorization backends of the same criterion,
+    checked on max-rel, lambda agreement AND per-slice |dR2| (the parent's
+    MEASURED G2 failure statistic, plan section 4.4 — a contingency check
+    weaker than the gate it replaces would miss the demonstrated failure
+    class). A parity-class disagreement here means the canonical contingency
+    itself is unverifiable => the caller halts rc 20.
     """
     pred_c, lam_c, dof_c = canonical_capped_fit(x_tr, y_tr, x_ev, lambdas, cap_frac)
     fact = _factorize_primal(x_tr, dev)
@@ -487,13 +577,28 @@ def contingency_parity_check(
     pred_p = apply_fit(fact, lam_p, proj, ymu, eval_kernel(fact, x_ev))
     scale = max(float(np.abs(pred_c).max()), 1e-9)
     max_rel = float(np.abs(pred_p - pred_c).max()) / scale
+    y = np.asarray(y_score, dtype=np.float64)
+    tot = float(((y - y.mean(0)) ** 2).sum()) + 1e-12
+    r2_c = 1.0 - float(((y - pred_c) ** 2).sum()) / tot
+    r2_p = 1.0 - float(((y - pred_p) ** 2).sum()) / tot
+    d_r2 = abs(r2_p - r2_c)
     return {
+        "layer": layer,
+        "fold": fold,
+        "arm": arm,
         "max_rel": max_rel,
+        "delta_r2": d_r2,
+        "r2_canonical": r2_c,
+        "r2_primal": r2_p,
         "lambda_canonical": lam_c,
         "lambda_primal": lam_p,
         "dof_canonical": dof_c,
         "dof_primal": dof_p,
-        "pass": bool(max_rel <= G2_MAX_REL_TOL and abs(lam_c - lam_p) <= 1e-12 * max(lam_c, 1.0)),
+        "pass": bool(
+            max_rel <= G2_MAX_REL_TOL
+            and d_r2 <= G2_DELTA_R2_TOL
+            and abs(lam_c - lam_p) <= 1e-12 * max(lam_c, 1.0)
+        ),
     }
 
 
@@ -966,15 +1071,19 @@ def fit_rung(
     g2_slices: tuple[tuple[int, int], ...] = G2_SLICES,
     sens_pure: bool = False,
     read_out_layers: tuple[int, ...] = READ_OUT_LAYERS,
+    fp_extra: dict | None = None,
+    layer_chunk: int = LAYER_CHUNK,
 ) -> RungFit:
-    """Fit ONE rung: both arms, all `layers`, 5 folds, one shared factorization
-    per (layer, fold) across both arms' targets and the lambda grid.
+    """Fit ONE rung: both arms, all `layers`, 5 folds, ONE BATCHED factorization
+    per (layer-chunk, fold) across both arms' targets and the lambda grid
+    (plan v17 layer-chunk design — no serial per-cell factorization loop).
 
     Primary ladder (`eval_ids is None`): out-of-fold scoring at test positions.
     Companion ladder (`eval_ids` given): every fold-fit additionally predicts
     the FIXED eval population; per-context ss_res = mean over the 5 fold-fits
     (registered aggregation), ss_tot centered on the eval population's own
-    mean (fold-independent by construction).
+    mean (fold-independent by construction). `fp_extra` threads run-identity
+    keys (verified capture-store name-set sha) into the chunk fingerprints.
     """
     train_ids = np.asarray(train_ids, dtype=np.int64)
     is_companion = eval_ids is not None
@@ -983,7 +1092,7 @@ def fit_rung(
     folds = make_folds(len(train_ids))
     fold_ns = [int(len(tr)) for tr, _ in folds]
     solver = "dual" if max(fold_ns) <= DUAL_N_MAX else "primal"
-    fp = _chunk_fp(tag, train_ids, ev_ids)
+    fp = _chunk_fp(tag, train_ids, ev_ids, extra=fp_extra)
 
     n_arms = len(ARM_NAMES)
     sres = np.full((n_arms, EXPECTED_LAYERS, n_eval), np.nan)
@@ -996,10 +1105,11 @@ def fit_rung(
     knn: dict = {}
     sens: dict = {}
 
+    pending: list[int] = []
     for layer in layers:
         name = f"{tag}_{label}_L{layer:02d}"
         if LF.chunk_done(ckpt_dir, name, fp):
-            z = np.load(ckpt_dir / f"{name}.npz", allow_pickle=True)
+            z = np.load(ckpt_dir / f"{name}.npz")
             sres[:, layer, :] = z["sres"]
             stot[:, layer, :] = z["stot"]
             id_sres[:, layer, :] = z["id_sres"]
@@ -1011,167 +1121,207 @@ def fit_rung(
             sens.update(json.loads(str(z["sens"])))
             logger.info("[%s %s] resume: layer %d loaded from checkpoint", tag, label, layer)
             continue
-        t_layer = time.monotonic()
-        x_full = src.cx_col(layer, train_ids)
-        y_full = {arm: src.arm_col(arm, layer, train_ids) for arm in ARM_NAMES}
+        pending.append(layer)
+
+    for c0 in range(0, len(pending), max(layer_chunk, 1)):
+        chunk = pending[c0 : c0 + max(layer_chunk, 1)]
+        t_chunk = time.monotonic()
+        xf = {layer: src.cx_col(layer, train_ids) for layer in chunk}
+        yf = {
+            layer: {arm: src.arm_col(arm, layer, train_ids) for arm in ARM_NAMES} for layer in chunk
+        }
+        xe: dict = {}
+        ye: dict = {}
         if is_companion:
-            x_ev = src.cx_col(layer, ev_ids)
-            y_ev = {arm: src.arm_col(arm, layer, ev_ids) for arm in ARM_NAMES}
-            sres_acc = {arm: np.zeros(n_eval) for arm in ARM_NAMES}
-            id_acc = {arm: np.zeros(n_eval) for arm in ARM_NAMES}
-            pred_acc = (
-                {arm: np.zeros_like(y_ev[arm]) for arm in ARM_NAMES}
-                if layer in read_out_layers
-                else None
-            )
-        layer_cells: dict = {}
-        layer_knn: dict = {}
-        layer_sens: dict = {}
-        layer_records: list[dict] = []
-        layer_g2: list[dict] = []
-        acc: dict[str, list] = {arm: [] for arm in ARM_NAMES}
-        for f_idx, (tr, te) in enumerate(folds):
-            x_tr = x_full[tr]
-            fact = rung_factorize(x_tr, dev)
-            kev_te = eval_kernel(fact, x_full[te])
-            kev_ev = eval_kernel(fact, x_ev) if is_companion else None
-            for a_idx, arm in enumerate(ARM_NAMES):
-                y_tr = y_full[arm][tr]
-                lam, proj, ymu, dof = solve_capped(fact, y_tr, LAMBDAS, DOF_CAP)
-                if is_companion:
-                    pred_ev = apply_fit(fact, lam, proj, ymu, kev_ev)
-                    s_ev, _ = LF.per_context_ss(pred_ev, y_ev[arm])
-                    sres_acc[arm] += s_ev
-                    if pred_acc is not None:
-                        pred_acc[arm] += pred_ev
-                    id_pred = identity_bias_predict(x_tr, y_tr, x_ev)
-                    s_id, _ = LF.per_context_ss(id_pred, y_ev[arm])
-                    id_acc[arm] += s_id
-                    score_r2 = 1.0 - float(s_ev.sum()) / (
-                        float(((y_ev[arm] - y_ev[arm].mean(0)) ** 2).sum(1).sum()) + 1e-12
-                    )
-                    scored_pred, scored_x = pred_ev, x_ev
-                else:
-                    pred = apply_fit(fact, lam, proj, ymu, kev_te)
-                    s_te, t_te = LF.per_context_ss(pred, y_full[arm][te])
-                    sres[a_idx, layer, te] = s_te
-                    stot[a_idx, layer, te] = t_te
-                    id_pred = identity_bias_predict(x_tr, y_tr, x_full[te])
-                    s_id, t_id = LF.per_context_ss(id_pred, y_full[arm][te])
-                    id_sres[a_idx, layer, te] = s_id
-                    id_stot[a_idx, layer, te] = t_id
-                    score_r2 = 1.0 - float(s_te.sum()) / (float(t_te.sum()) + 1e-12)
-                    scored_pred, scored_x = pred, x_full[te]
-                rec = {
-                    "tag": tag,
-                    "rung": label,
-                    "layer": layer,
-                    "fold": f_idx,
-                    "arm": arm,
-                    "lambda": lam,
-                    "dof": dof,
-                    "lambda_top_edge": lambda_is_top_edge(lam),
-                    "n_train": int(len(tr)),
-                    "solver": fact.get("kind", "dual"),
-                    "r2": score_r2,
-                }
-                if not is_companion:
-                    rec["ss_res"] = float(sres[a_idx, layer, te].sum())
-                    rec["ss_tot"] = float(stot[a_idx, layer, te].sum())
-                layer_records.append(rec)
-                acc[arm].append(rec)
-                if (layer, f_idx) in g2_slices:
-                    y_score = y_ev[arm] if is_companion else y_full[arm][te]
-                    pred_ref, lam_ref, _dof_ref = canonical_capped_fit(
-                        x_tr, y_tr, scored_x, LAMBDAS, DOF_CAP
-                    )
-                    s_ref, t_ref = LF.per_context_ss(pred_ref, y_score)
-                    r2_ref = 1.0 - float(s_ref.sum()) / (float(t_ref.sum()) + 1e-12)
-                    layer_g2.append(
-                        g2_slice_record(
-                            scored_pred, pred_ref, lam, lam_ref, score_r2, r2_ref, layer, f_idx, arm
-                        )
-                    )
-                if layer in read_out_layers and not is_companion:
-                    layer_knn[f"{arm}:L{layer}:fold{f_idx}"] = {
-                        m: knn_retrieval(scored_pred, y_full[arm][te], ks=(1, 5), metric=m)
-                        for m in ("euclidean", "cosine")
-                    }
-                if sens_pure and layer in read_out_layers:
-                    lam_p, proj_p, ymu_p, dof_p = solve_capped(fact, y_tr, LAMBDAS, math.inf)
-                    pred_pure = apply_fit(fact, lam_p, proj_p, ymu_p, kev_te)
-                    s_p, t_p = LF.per_context_ss(pred_pure, y_full[arm][te])
-                    layer_sens[f"{arm}:L{layer}:fold{f_idx}"] = {
-                        "lambda_pure": lam_p,
-                        "dof_pure": dof_p,
-                        "lambda_capped": lam,
-                        "dof_capped": dof,
-                        "ss_res_pure": float(s_p.sum()),
-                        "ss_tot_pure": float(t_p.sum()),
-                        "r2_pure": 1.0 - float(s_p.sum()) / (float(t_p.sum()) + 1e-12),
-                    }
-            del fact, kev_te, kev_ev
-        if is_companion:
-            for a_idx, arm in enumerate(ARM_NAMES):
-                sres[a_idx, layer, :] = sres_acc[arm] / N_FOLDS
-                _, t_ev = LF.per_context_ss(np.zeros_like(y_ev[arm]), y_ev[arm])
-                stot[a_idx, layer, :] = t_ev
-                id_sres[a_idx, layer, :] = id_acc[arm] / N_FOLDS
-                id_stot[a_idx, layer, :] = t_ev
-            if pred_acc is not None:
-                # Companion retrieval read: fold-MEAN prediction on E_eval vs the
-                # E_eval pool (chance = k / |E_eval|), per arm at read-out layers.
-                for arm in ARM_NAMES:
-                    layer_knn[f"{arm}:L{layer}"] = {
-                        m: knn_retrieval(pred_acc[arm] / N_FOLDS, y_ev[arm], ks=(1, 5), metric=m)
-                        for m in ("euclidean", "cosine")
-                    }
-        for arm in ARM_NAMES:
-            comps = [(c.get("ss_res", np.nan), c.get("ss_tot", np.nan)) for c in acc[arm]]
-            a_idx = ARM_NAMES.index(arm)
-            cell = {
-                "fold_lambdas": [c["lambda"] for c in acc[arm]],
-                "fold_dofs": [c["dof"] for c in acc[arm]],
-                "fold_r2s": [c["r2"] for c in acc[arm]],
-                "n_train_per_fold": [c["n_train"] for c in acc[arm]],
-                "solver": solver,
-                "identity_bias_pooled_r2": 1.0
-                - float(np.nansum(id_sres[a_idx, layer]))
-                / (float(np.nansum(id_stot[a_idx, layer])) + 1e-12),
+            xe = {layer: src.cx_col(layer, ev_ids) for layer in chunk}
+            ye = {
+                layer: {arm: src.arm_col(arm, layer, ev_ids) for arm in ARM_NAMES}
+                for layer in chunk
             }
+        st: dict[int, dict] = {
+            layer: {
+                "cells": {},
+                "knn": {},
+                "sens": {},
+                "records": [],
+                "g2": [],
+                "acc": {arm: [] for arm in ARM_NAMES},
+                "sres_acc": (
+                    {arm: np.zeros(n_eval) for arm in ARM_NAMES} if is_companion else None
+                ),
+                "id_acc": ({arm: np.zeros(n_eval) for arm in ARM_NAMES} if is_companion else None),
+                "pred_acc": (
+                    {arm: np.zeros_like(ye[layer][arm]) for arm in ARM_NAMES}
+                    if is_companion and layer in read_out_layers
+                    else None
+                ),
+            }
+            for layer in chunk
+        }
+        for f_idx, (tr, te) in enumerate(folds):
+            facts = batched_rung_factorize([xf[layer][tr] for layer in chunk], dev)
+            for ci, layer in enumerate(chunk):
+                fact = facts[ci]
+                s_l = st[layer]
+                x_full, y_full = xf[layer], yf[layer]
+                x_tr = x_full[tr]
+                kev_te = eval_kernel(fact, x_full[te])
+                kev_ev = eval_kernel(fact, xe[layer]) if is_companion else None
+                for a_idx, arm in enumerate(ARM_NAMES):
+                    y_tr = y_full[arm][tr]
+                    lam, proj, ymu, dof = solve_capped(fact, y_tr, LAMBDAS, DOF_CAP)
+                    if is_companion:
+                        y_ev_arm = ye[layer][arm]
+                        pred_ev = apply_fit(fact, lam, proj, ymu, kev_ev)
+                        s_ev, _ = LF.per_context_ss(pred_ev, y_ev_arm)
+                        s_l["sres_acc"][arm] += s_ev
+                        if s_l["pred_acc"] is not None:
+                            s_l["pred_acc"][arm] += pred_ev
+                        id_pred = identity_bias_predict(x_tr, y_tr, xe[layer])
+                        s_id, _ = LF.per_context_ss(id_pred, y_ev_arm)
+                        s_l["id_acc"][arm] += s_id
+                        score_r2 = 1.0 - float(s_ev.sum()) / (
+                            float(((y_ev_arm - y_ev_arm.mean(0)) ** 2).sum(1).sum()) + 1e-12
+                        )
+                        scored_pred, scored_x = pred_ev, xe[layer]
+                    else:
+                        pred = apply_fit(fact, lam, proj, ymu, kev_te)
+                        s_te, t_te = LF.per_context_ss(pred, y_full[arm][te])
+                        sres[a_idx, layer, te] = s_te
+                        stot[a_idx, layer, te] = t_te
+                        id_pred = identity_bias_predict(x_tr, y_tr, x_full[te])
+                        s_id, t_id = LF.per_context_ss(id_pred, y_full[arm][te])
+                        id_sres[a_idx, layer, te] = s_id
+                        id_stot[a_idx, layer, te] = t_id
+                        score_r2 = 1.0 - float(s_te.sum()) / (float(t_te.sum()) + 1e-12)
+                        scored_pred, scored_x = pred, x_full[te]
+                    rec = {
+                        "tag": tag,
+                        "rung": label,
+                        "layer": layer,
+                        "fold": f_idx,
+                        "arm": arm,
+                        "lambda": lam,
+                        "dof": dof,
+                        "lambda_top_edge": lambda_is_top_edge(lam),
+                        "n_train": int(len(tr)),
+                        "solver": fact.get("kind", "dual"),
+                        "r2": score_r2,
+                    }
+                    if not is_companion:
+                        rec["ss_res"] = float(sres[a_idx, layer, te].sum())
+                        rec["ss_tot"] = float(stot[a_idx, layer, te].sum())
+                    s_l["records"].append(rec)
+                    s_l["acc"][arm].append(rec)
+                    if (layer, f_idx) in g2_slices:
+                        y_score = ye[layer][arm] if is_companion else y_full[arm][te]
+                        pred_ref, lam_ref, _dof_ref = canonical_capped_fit(
+                            x_tr, y_tr, scored_x, LAMBDAS, DOF_CAP
+                        )
+                        s_ref, t_ref = LF.per_context_ss(pred_ref, y_score)
+                        r2_ref = 1.0 - float(s_ref.sum()) / (float(t_ref.sum()) + 1e-12)
+                        s_l["g2"].append(
+                            g2_slice_record(
+                                scored_pred,
+                                pred_ref,
+                                lam,
+                                lam_ref,
+                                score_r2,
+                                r2_ref,
+                                layer,
+                                f_idx,
+                                arm,
+                            )
+                        )
+                    if layer in read_out_layers and not is_companion:
+                        s_l["knn"][f"{arm}:L{layer}:fold{f_idx}"] = {
+                            m: knn_retrieval(scored_pred, y_full[arm][te], ks=(1, 5), metric=m)
+                            for m in ("euclidean", "cosine")
+                        }
+                    if sens_pure and layer in read_out_layers:
+                        lam_p, proj_p, ymu_p, dof_p = solve_capped(fact, y_tr, LAMBDAS, math.inf)
+                        pred_pure = apply_fit(fact, lam_p, proj_p, ymu_p, kev_te)
+                        s_p, t_p = LF.per_context_ss(pred_pure, y_full[arm][te])
+                        s_l["sens"][f"{arm}:L{layer}:fold{f_idx}"] = {
+                            "lambda_pure": lam_p,
+                            "dof_pure": dof_p,
+                            "lambda_capped": lam,
+                            "dof_capped": dof,
+                            "ss_res_pure": float(s_p.sum()),
+                            "ss_tot_pure": float(t_p.sum()),
+                            "r2_pure": 1.0 - float(s_p.sum()) / (float(t_p.sum()) + 1e-12),
+                        }
+                del fact, kev_te, kev_ev
+            del facts
+        for layer in chunk:
+            s_l = st[layer]
             if is_companion:
-                cell["pooled_r2_eval"] = 1.0 - float(np.nansum(sres[a_idx, layer])) / (
-                    float(np.nansum(stot[a_idx, layer])) + 1e-12
-                )
-            else:
-                cell["pooled_r2"] = LF.pooled_r2_from_components(comps)
-                cell["fold_mean_r2"] = LF.fold_mean_r2(comps)
-            layer_cells[f"{arm}:L{layer}"] = cell
-        cells.update(layer_cells)
-        fit_records.extend(layer_records)
-        g2_records.extend(layer_g2)
-        knn.update(layer_knn)
-        sens.update(layer_sens)
-        LF.save_chunk(
-            ckpt_dir,
-            name,
-            {
-                "sres": sres[:, layer, :],
-                "stot": stot[:, layer, :],
-                "id_sres": id_sres[:, layer, :],
-                "id_stot": id_stot[:, layer, :],
-                "cells": np.array(json.dumps(layer_cells)),
-                "records": np.array(json.dumps(layer_records)),
-                "g2": np.array(json.dumps(layer_g2)),
-                "knn": np.array(json.dumps(layer_knn)),
-                "sens": np.array(json.dumps(layer_sens)),
-            },
-            fp,
-        )
-        print(
-            f"[fits] unit {tag}/{label} L={layer} elapsed={time.monotonic() - t_layer:.1f}s",
-            flush=True,
-        )
+                for a_idx, arm in enumerate(ARM_NAMES):
+                    y_ev_arm = ye[layer][arm]
+                    sres[a_idx, layer, :] = s_l["sres_acc"][arm] / N_FOLDS
+                    _, t_ev = LF.per_context_ss(np.zeros_like(y_ev_arm), y_ev_arm)
+                    stot[a_idx, layer, :] = t_ev
+                    id_sres[a_idx, layer, :] = s_l["id_acc"][arm] / N_FOLDS
+                    id_stot[a_idx, layer, :] = t_ev
+                if s_l["pred_acc"] is not None:
+                    # Companion retrieval read: fold-MEAN prediction on E_eval vs the
+                    # E_eval pool (chance = k / |E_eval|), per arm at read-out layers.
+                    for arm in ARM_NAMES:
+                        s_l["knn"][f"{arm}:L{layer}"] = {
+                            m: knn_retrieval(
+                                s_l["pred_acc"][arm] / N_FOLDS, ye[layer][arm], ks=(1, 5), metric=m
+                            )
+                            for m in ("euclidean", "cosine")
+                        }
+            for arm in ARM_NAMES:
+                comps = [
+                    (c.get("ss_res", np.nan), c.get("ss_tot", np.nan)) for c in s_l["acc"][arm]
+                ]
+                a_idx = ARM_NAMES.index(arm)
+                cell = {
+                    "fold_lambdas": [c["lambda"] for c in s_l["acc"][arm]],
+                    "fold_dofs": [c["dof"] for c in s_l["acc"][arm]],
+                    "fold_r2s": [c["r2"] for c in s_l["acc"][arm]],
+                    "n_train_per_fold": [c["n_train"] for c in s_l["acc"][arm]],
+                    "solver": solver,
+                    "identity_bias_pooled_r2": 1.0
+                    - float(np.nansum(id_sres[a_idx, layer]))
+                    / (float(np.nansum(id_stot[a_idx, layer])) + 1e-12),
+                }
+                if is_companion:
+                    cell["pooled_r2_eval"] = 1.0 - float(np.nansum(sres[a_idx, layer])) / (
+                        float(np.nansum(stot[a_idx, layer])) + 1e-12
+                    )
+                else:
+                    cell["pooled_r2"] = LF.pooled_r2_from_components(comps)
+                    cell["fold_mean_r2"] = LF.fold_mean_r2(comps)
+                s_l["cells"][f"{arm}:L{layer}"] = cell
+            cells.update(s_l["cells"])
+            fit_records.extend(s_l["records"])
+            g2_records.extend(s_l["g2"])
+            knn.update(s_l["knn"])
+            sens.update(s_l["sens"])
+            LF.save_chunk(
+                ckpt_dir,
+                f"{tag}_{label}_L{layer:02d}",
+                {
+                    "sres": sres[:, layer, :],
+                    "stot": stot[:, layer, :],
+                    "id_sres": id_sres[:, layer, :],
+                    "id_stot": id_stot[:, layer, :],
+                    "cells": np.array(json.dumps(s_l["cells"])),
+                    "records": np.array(json.dumps(s_l["records"])),
+                    "g2": np.array(json.dumps(s_l["g2"])),
+                    "knn": np.array(json.dumps(s_l["knn"])),
+                    "sens": np.array(json.dumps(s_l["sens"])),
+                },
+                fp,
+            )
+            print(
+                f"[fits] unit {tag}/{label} L={layer} "
+                f"elapsed={time.monotonic() - t_chunk:.1f}s (chunk of {len(chunk)})",
+                flush=True,
+            )
     return RungFit(
         tag=tag,
         label=label,
@@ -1229,13 +1379,20 @@ def wide_grid_sensitivity(
 def contingency_refit(rf: RungFit, src: FitSources, read_out_layers=READ_OUT_LAYERS) -> list[dict]:
     """Gate D contingency: canonical per-fit solver at the read-out layers.
 
-    Overwrites the rung's arrays at those layers; returns the refit records.
-    The primary-path fits at NON-read-out layers are retained but every paired
-    statistic consumes read-out layers only.
+    Rebuilds EVERY read-out-layer read from the canonical solver — sres/stot,
+    fit_records, cells (lambda/dof/R2), knn — so no downstream consumer
+    (rung_block, lambda-edge trigger, figures, summary) silently mixes the
+    parity-FAILED production estimator with canonical predictions (r1 blocker
+    gate-d-contingency-incoherent). Fits at NON-read-out layers are retained
+    (labeled by the caller via `read_out_solver`/`contingency_fired`); the
+    identity-bias reads are solver-independent and kept. Small battery
+    (|read_out_layers| x 5 folds x 2 arms canonical numpy fits) — serial by
+    design; returns the refit records.
     """
     folds = make_folds(len(rf.train_ids))
     is_companion = not np.array_equal(rf.eval_ids, rf.train_ids)
     records: list[dict] = []
+    kept_records = [r for r in rf.fit_records if r["layer"] not in read_out_layers]
     for layer in read_out_layers:
         x_full = src.cx_col(layer, rf.train_ids)
         y_full = {arm: src.arm_col(arm, layer, rf.train_ids) for arm in ARM_NAMES}
@@ -1243,6 +1400,8 @@ def contingency_refit(rf: RungFit, src: FitSources, read_out_layers=READ_OUT_LAY
             x_ev = src.cx_col(layer, rf.eval_ids)
             y_ev = {arm: src.arm_col(arm, layer, rf.eval_ids) for arm in ARM_NAMES}
             sres_acc = {arm: np.zeros(len(rf.eval_ids)) for arm in ARM_NAMES}
+            pred_acc = {arm: np.zeros_like(y_ev[arm]) for arm in ARM_NAMES}
+        acc: dict[str, list] = {arm: [] for arm in ARM_NAMES}
         for f_idx, (tr, te) in enumerate(folds):
             for a_idx, arm in enumerate(ARM_NAMES):
                 x_score = x_ev if is_companion else x_full[te]
@@ -1252,16 +1411,64 @@ def contingency_refit(rf: RungFit, src: FitSources, read_out_layers=READ_OUT_LAY
                 if is_companion:
                     s, _ = LF.per_context_ss(pred, y_ev[arm])
                     sres_acc[arm] += s
+                    pred_acc[arm] += pred
+                    score_r2 = 1.0 - float(s.sum()) / (
+                        float(((y_ev[arm] - y_ev[arm].mean(0)) ** 2).sum(1).sum()) + 1e-12
+                    )
                 else:
                     s, t = LF.per_context_ss(pred, y_full[arm][te])
                     rf.sres[a_idx, layer, te] = s
                     rf.stot[a_idx, layer, te] = t
-                records.append(
-                    {"layer": layer, "fold": f_idx, "arm": arm, "lambda": lam, "dof": dof}
-                )
+                    score_r2 = 1.0 - float(s.sum()) / (float(t.sum()) + 1e-12)
+                    rf.knn[f"{arm}:L{layer}:fold{f_idx}"] = {
+                        m: knn_retrieval(pred, y_full[arm][te], ks=(1, 5), metric=m)
+                        for m in ("euclidean", "cosine")
+                    }
+                rec = {
+                    "tag": rf.tag,
+                    "rung": rf.label,
+                    "layer": layer,
+                    "fold": f_idx,
+                    "arm": arm,
+                    "lambda": lam,
+                    "dof": dof,
+                    "lambda_top_edge": lambda_is_top_edge(lam),
+                    "n_train": int(len(tr)),
+                    "solver": "canonical",
+                    "r2": score_r2,
+                }
+                if not is_companion:
+                    rec["ss_res"] = float(s.sum())
+                    rec["ss_tot"] = float(t.sum())
+                records.append(rec)
+                acc[arm].append(rec)
         if is_companion:
             for a_idx, arm in enumerate(ARM_NAMES):
                 rf.sres[a_idx, layer, :] = sres_acc[arm] / len(folds)
+                rf.knn[f"{arm}:L{layer}"] = {
+                    m: knn_retrieval(pred_acc[arm] / len(folds), y_ev[arm], ks=(1, 5), metric=m)
+                    for m in ("euclidean", "cosine")
+                }
+        for arm in ARM_NAMES:
+            a_idx = ARM_NAMES.index(arm)
+            cell = {
+                "fold_lambdas": [c["lambda"] for c in acc[arm]],
+                "fold_dofs": [c["dof"] for c in acc[arm]],
+                "fold_r2s": [c["r2"] for c in acc[arm]],
+                "n_train_per_fold": [c["n_train"] for c in acc[arm]],
+                "solver": "canonical",
+                "identity_bias_pooled_r2": rf.cells[f"{arm}:L{layer}"]["identity_bias_pooled_r2"],
+            }
+            if is_companion:
+                cell["pooled_r2_eval"] = 1.0 - float(np.nansum(rf.sres[a_idx, layer])) / (
+                    float(np.nansum(rf.stot[a_idx, layer])) + 1e-12
+                )
+            else:
+                comps = [(c["ss_res"], c["ss_tot"]) for c in acc[arm]]
+                cell["pooled_r2"] = LF.pooled_r2_from_components(comps)
+                cell["fold_mean_r2"] = LF.fold_mean_r2(comps)
+            rf.cells[f"{arm}:L{layer}"] = cell
+    rf.fit_records[:] = kept_records + records
     return records
 
 
@@ -1300,6 +1507,13 @@ def write_rung_dir(
     --full-ratio-ci sidecar; schema owned by `load_mixture_diffs`).
     `diff_train_ids` selects the DENOMINATOR group population (companion: T_r;
     primary: the rung mask itself).
+
+    mixture_diffs.npz stays POD-LOCAL (only the paired script's --full-ratio-ci
+    leg reads it, on the same pod); the plan-§6 correlated-offset floor is
+    computed HERE from the same groups and returned compact
+    (``{"implied", "floor"}``) so `phase_fits` threads it into the portable
+    ladder_ext_r2.json rung blocks — the figures/summary phase on the VM never
+    reads the npz sidecars (r1 blocker fits-analysis-handoff).
     """
     rung_dir.mkdir(parents=True, exist_ok=True)
     np.savez(
@@ -1338,6 +1552,7 @@ def write_rung_dir(
     n_p0 = int(sum(1 for i in group_ids if int(i) % POOLED_K == 0))
     diffs = np.empty((len(ctx_arr), len(READ_OUT_LAYERS), HIDDEN), dtype=np.float32)
     implied: dict[str, dict] = {}
+    floor: dict[str, dict] = {}
     for li, layer in enumerate(READ_OUT_LAYERS):
         v0 = src.pair_col(0, layer, ctx_arr)
         for p in sorted(set(personas_arr.tolist())):
@@ -1350,6 +1565,7 @@ def write_rung_dir(
         ]
         e_val = mixture_energy_from_group_diffs(iter(groups), n_p0)
         implied[f"k{POOLED_K}:L{layer}"] = {"between_persona_mean_shift_energy": float(e_val)}
+        floor[f"L{layer}"] = correlated_floor_from_groups(iter(groups), n_p0)
     np.savez(
         rung_dir / "mixture_diffs.npz",
         layers=np.asarray(list(READ_OUT_LAYERS), dtype=np.int64),
@@ -1364,7 +1580,7 @@ def write_rung_dir(
         rung_dir / "ladder_analysis_summary.json",
         {"mixture_floor": {"implied_mixture_penalty": implied}, "metadata": metadata},
     )
-    return implied
+    return {"implied": implied, "floor": floor}
 
 
 _PAIRED_SHIM = (
@@ -1423,12 +1639,22 @@ def p2_boundary_ladder(
     src: FitSources,
     k1_valid_ids: np.ndarray,
     dev: torch.device,
+    ckpt_dir: pathlib.Path,
     holdout_n: int = P2_HOLDOUT_N,
     smoke: bool = False,
+    fp_extra: dict | None = None,
 ) -> dict:
     """P2-ext (plan 4.3 step 10): k=1 arm, read-out layers, fixed holdout =
     the LAST `holdout_n` contexts of the realized top-rung k1-valid mask;
-    5 seeded draws per n_train rung across the d boundary; same dof-capped GCV."""
+    5 seeded draws per n_train rung across the d boundary; same dof-capped GCV.
+
+    The 5 seed draws of a (layer, n_train) cell share ONE batched eigh stack
+    (same-n slices — the plan v17 layer-chunk design applied to the seed axis),
+    and each (layer, n_train) cell checkpoints atomically via LF.save_chunk
+    with a machine-stable fingerprint (id shas + generating params + store
+    identity), so a crashed P2 resumes instead of refitting (r1 concern
+    p2-not-resumable).
+    """
     ids = np.asarray(sorted(int(i) for i in k1_valid_ids), dtype=np.int64)
     if smoke:
         holdout_n = max(4, min(holdout_n, len(ids) // 3))
@@ -1452,23 +1678,46 @@ def p2_boundary_ladder(
         "estimator": f"gcv-dof-capped-{DOF_CAP}",
         "cells": {},
     }
+    base_fp = {
+        "phase": "p2_ext",
+        "holdout_sha": _ids_sha(holdout),
+        "pool_sha": _ids_sha(pool),
+        "seeds": list(P2_DRAW_SEEDS),
+        "estimator": "gcv-dof-capped",
+        "cap_frac": DOF_CAP,
+        "grid": list(LAMBDA_GRID_PARAMS),
+        **(fp_extra or {}),
+    }
     for layer in READ_OUT_LAYERS:
-        x_pool = src.cx_col(layer, pool)
-        y_pool = src.arm_col("k1", layer, pool)
-        x_hold = src.cx_col(layer, holdout)
-        y_hold = src.arm_col("k1", layer, holdout)
+        x_pool = y_pool = x_hold = y_hold = None
         for n_train in grid:
+            name = f"p2_L{layer:02d}_n{n_train}"
+            cell_fp = {**base_fp, "layer": int(layer), "n_train": int(n_train)}
+            if LF.chunk_done(ckpt_dir, name, cell_fp):
+                z = np.load(ckpt_dir / f"{name}.npz")
+                out["cells"].update(json.loads(str(z["cells"])))
+                logger.info("[p2] resume: L%d n%d loaded from checkpoint", layer, n_train)
+                continue
+            t_cell = time.monotonic()
+            if x_pool is None:
+                x_pool = src.cx_col(layer, pool)
+                y_pool = src.arm_col("k1", layer, pool)
+                x_hold = src.cx_col(layer, holdout)
+                y_hold = src.arm_col("k1", layer, holdout)
+            sels = []
             for seed in P2_DRAW_SEEDS:
                 rng = np.random.default_rng(seed)
-                sel = np.sort(rng.choice(len(pool), size=n_train, replace=False))
+                sels.append(np.sort(rng.choice(len(pool), size=n_train, replace=False)))
+            facts = batched_rung_factorize([x_pool[sel] for sel in sels], dev)
+            cell_out: dict = {}
+            for seed, sel, fact in zip(P2_DRAW_SEEDS, sels, facts):
                 x_tr, y_tr = x_pool[sel], y_pool[sel]
-                fact = rung_factorize(x_tr, dev)
                 lam, proj, ymu, dof = solve_capped(fact, y_tr, LAMBDAS, DOF_CAP)
                 pred = apply_fit(fact, lam, proj, ymu, eval_kernel(fact, x_hold))
                 s, t = LF.per_context_ss(pred, y_hold)
                 id_pred = identity_bias_predict(x_tr, y_tr, x_hold)
                 s_id, t_id = LF.per_context_ss(id_pred, y_hold)
-                out["cells"][f"L{layer}:n{n_train}:seed{seed}"] = {
+                cell_out[f"L{layer}:n{n_train}:seed{seed}"] = {
                     "r2": 1.0 - float(s.sum()) / (float(t.sum()) + 1e-12),
                     "lambda": lam,
                     "dof": dof,
@@ -1482,7 +1731,14 @@ def p2_boundary_ladder(
                         for m in ("euclidean", "cosine")
                     },
                 }
-                print(f"[fits] unit p2/L{layer}/n{n_train}/s{seed} elapsed=n/a", flush=True)
+            del facts
+            out["cells"].update(cell_out)
+            LF.save_chunk(ckpt_dir, name, {"cells": np.array(json.dumps(cell_out))}, cell_fp)
+            print(
+                f"[fits] unit p2/L{layer}/n{n_train} "
+                f"elapsed={time.monotonic() - t_cell:.1f}s ({len(P2_DRAW_SEEDS)} seeds batched)",
+                flush=True,
+            )
     return out
 
 
@@ -1506,10 +1762,12 @@ def fits_fingerprint(
     rung_mask_shas: dict[str, str],
     rand_manifest_sha: str,
     gate_states: dict,
+    store_name_set_sha256: str | None = None,
 ) -> dict:
     return {
         "rung_mask_shas": dict(sorted(rung_mask_shas.items())),
         "rand_manifest_sha": rand_manifest_sha,
+        "store_name_set_sha256": store_name_set_sha256,
         "code_sha": as_metadata_dict(git_provenance())["git_commit"],
         "estimator": {
             "primary": f"gcv-dof-capped-{DOF_CAP}",
@@ -1551,6 +1809,103 @@ def fits_done(eval_dir: pathlib.Path, fingerprint: dict) -> bool:
         logger.warning("[fits] sentinel fingerprint mismatch — routing to refit")
         return False
     return True
+
+
+def _validated_store_identity(layout) -> dict:
+    """Parse + VALIDATE the P-Store-ext sentinel before any fit (r1 concern
+    sentinel-before-upload, fits side): existence alone proves nothing — the
+    sentinel must be complete, name the layout's own HF prefix, and its
+    name-set sha must equal the sha recomputed over the LOCAL store's expected
+    file set (manifest-first enumeration), else the store the fits would
+    consume is not the store P-Store-ext verified.
+    """
+    path = layout.store_dir / EXTCAP.STORE_SENTINEL
+    want_prefix = layout.hf_path(layout.store_subpath)
+    if not path.exists():
+        raise RuntimeError(
+            f"{path} missing — P-Store-ext must verify the store before fits "
+            f"(HF prefix: {want_prefix})"
+        )
+    d = json.loads(path.read_text())
+    if not d.get("complete"):
+        raise RuntimeError(f"{path}: store sentinel is not complete=True — rerun P-Store-ext")
+    if d.get("hf_prefix") != want_prefix:
+        raise RuntimeError(
+            f"{path}: sentinel hf_prefix {d.get('hf_prefix')!r} != layout prefix "
+            f"{want_prefix!r} — wrong store for this layout"
+        )
+    local_names = EXTCAP.expected_store_files(layout.store_dir)
+    local_sha = EXTCAP._sha256_json(local_names)
+    if d.get("name_set_sha256") != local_sha:
+        raise RuntimeError(
+            f"{path}: sentinel name_set_sha256 does not match the LOCAL store's expected-file "
+            f"set ({len(local_names)} files) — the store drifted since P-Store-ext verified "
+            "it; rerun the storeext phase"
+        )
+    return d
+
+
+def _json_key_set(obj) -> set[str]:
+    """All dict keys at any nesting depth (REQUIRED_OUTPUT_KEYS validation helper)."""
+    keys: set[str] = set()
+    stack = [obj]
+    while stack:
+        cur = stack.pop()
+        if isinstance(cur, dict):
+            keys.update(cur.keys())
+            stack.extend(cur.values())
+        elif isinstance(cur, list):
+            stack.extend(cur)
+    return keys
+
+
+def validate_fits_outputs(eval_dir: pathlib.Path, rung_labels: list[str]) -> list[str]:
+    """Resume-time output validation (r1 finding fits-complete: the early-return
+    honored the sentinel alone): every REQUIRED_OUTPUT_KEYS artifact must exist
+    and carry its required keys, else the resume refits instead of skipping.
+    Returns the problem list (empty == valid).
+    """
+    problems: list[str] = []
+    json_specs: dict[str, list[str]] = {
+        "ladder_ext_r2.json": REQUIRED_OUTPUT_KEYS["ladder_ext_r2"],
+        "p2_ext_boundary.json": REQUIRED_OUTPUT_KEYS["p2_ext_boundary"],
+        "g2_ext_report.json": REQUIRED_OUTPUT_KEYS["g2_ext_report"],
+    }
+    for label in rung_labels:
+        for suffix in (f"rung{label}", f"rand_rung{label}"):
+            json_specs[f"shared_persona_paired_{suffix}.json"] = REQUIRED_OUTPUT_KEYS[
+                "shared_persona_paired"
+            ]
+    for name, req in json_specs.items():
+        p = eval_dir / name
+        if not p.exists():
+            problems.append(f"missing {name}")
+            continue
+        try:
+            keys = _json_key_set(json.loads(p.read_text()))
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+            problems.append(f"unreadable {name}: {exc}")
+            continue
+        missing = [k for k in req if k not in keys]
+        if missing:
+            problems.append(f"{name}: missing keys {missing}")
+    for label in rung_labels:
+        for suffix in (f"rung{label}", f"rand_rung{label}"):
+            p = eval_dir / f"percontext_{suffix}.npz"
+            if not p.exists():
+                problems.append(f"missing percontext_{suffix}.npz")
+                continue
+            try:
+                with np.load(p) as z:
+                    absent = [
+                        k for k in REQUIRED_OUTPUT_KEYS["percontext_rung"] if k not in z.files
+                    ]
+            except (OSError, ValueError) as exc:
+                problems.append(f"unreadable percontext_{suffix}.npz: {exc}")
+                continue
+            if absent:
+                problems.append(f"percontext_{suffix}.npz: missing arrays {absent}")
+    return problems
 
 
 # ── Phase: fits ───────────────────────────────────────────────────────────────
@@ -1626,12 +1981,8 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
     if not mask_path.exists():
         raise RuntimeError(f"{mask_path} missing — run the capture driver's p0ext phase first")
     mask_obj = json.loads(mask_path.read_text())
-    store_sentinel = layout.store_dir / EXTCAP.STORE_SENTINEL
-    if not store_sentinel.exists():
-        raise RuntimeError(
-            f"{store_sentinel} missing — P-Store-ext must verify the store before fits "
-            f"(HF prefix: {layout.hf_path(layout.store_subpath)})"
-        )
+    store_id = _validated_store_identity(layout)
+    fp_extra = {"store_name_set_sha256": store_id["name_set_sha256"]}
     metadata = EXTCAP.build_metadata(layout, "fits")
     metadata["script"] = "scripts/issue823_ladder_ext_fits.py"
     logger.info("[fits] staging banked pins (idempotent)")
@@ -1657,28 +2008,40 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
     write_json(eval_dir / "rand_ladder_manifest.json", manifest)
     manifest_sha = _sha_json(manifest)
 
-    # ── resume predicate (fingerprint equality) ──
+    # ── resume predicate (fingerprint equality + output validation) ──
     fingerprint = fits_fingerprint(
         {label: _ids_sha(ids) for label, ids in rung_masks.items()},
         manifest_sha,
         gate_states={"pending": True},
+        store_name_set_sha256=store_id["name_set_sha256"],
     )
+    _resume_keys = ("rung_mask_shas", "rand_manifest_sha", "store_name_set_sha256", "estimator")
     sentinel_path = eval_dir / FITS_SENTINEL
     if sentinel_path.exists():
         prior = json.loads(sentinel_path.read_text())
         prior_fp = prior.get("fingerprint", {})
-        same_inputs = {
-            k: prior_fp.get(k) for k in ("rung_mask_shas", "rand_manifest_sha", "estimator")
-        } == {k: fingerprint[k] for k in ("rung_mask_shas", "rand_manifest_sha", "estimator")}
+        same_inputs = {k: prior_fp.get(k) for k in _resume_keys} == {
+            k: fingerprint[k] for k in _resume_keys
+        }
         if (
             prior.get("complete")
             and same_inputs
             and prior_fp.get("code_sha") == fingerprint["code_sha"]
         ):
-            logger.info("[fits] complete sentinel with matching fingerprint — nothing to do")
-            print("[phase=done]", flush=True)
-            return
-        logger.warning("[fits] stale/mismatched sentinel — refitting (fingerprint inequality)")
+            problems = validate_fits_outputs(eval_dir, rung_labels)
+            if not problems:
+                logger.info(
+                    "[fits] complete sentinel + matching fingerprint + validated outputs "
+                    "— nothing to do"
+                )
+                print("[phase=done]", flush=True)
+                return
+            logger.warning(
+                "[fits] sentinel matches but outputs FAILED validation (%s) — refitting",
+                "; ".join(problems[:10]),
+            )
+        else:
+            logger.warning("[fits] stale/mismatched sentinel — refitting (fingerprint inequality)")
 
     # ── Gate C: pilot FIRST at production shapes ──
     top_ids = rung_masks[top_label]
@@ -1785,6 +2148,7 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
                 ckpt_dir,
                 eval_ids=ev_ids,
                 sens_pure=sens_flag,
+                fp_extra=fp_extra,
             )
             # Gate D verdict + contingency routing
             slices_pass = all(s["pass"] for s in rf.g2_slices) and (
@@ -1800,11 +2164,26 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
                 for layer, f_idx in G2_SLICES:
                     tr, te = folds[f_idx]
                     x_full = src.cx_col(layer, rf.train_ids)
-                    y_full = src.arm_col("k1", layer, rf.train_ids)
                     x_score = src.cx_col(layer, rf.eval_ids) if tag == "companion" else x_full[te]
-                    cont_checks.append(
-                        contingency_parity_check(x_full[tr], y_full[tr], x_score, dev)
-                    )
+                    for arm in ARM_NAMES:
+                        y_full = src.arm_col(arm, layer, rf.train_ids)
+                        y_score = (
+                            src.arm_col(arm, layer, rf.eval_ids)
+                            if tag == "companion"
+                            else y_full[te]
+                        )
+                        cont_checks.append(
+                            contingency_parity_check(
+                                x_full[tr],
+                                y_full[tr],
+                                x_score,
+                                y_score,
+                                dev,
+                                layer=layer,
+                                fold=f_idx,
+                                arm=arm,
+                            )
+                        )
                 enforce_contingency_parity(cont_checks, eval_dir, f"{tag}/{label}")
                 verdict = "CONTINGENCY-PASS"
                 g2_report["rungs"][f"{tag}/{label}"] = {
@@ -1826,7 +2205,9 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
                     "verdict": verdict,
                 }
 
-            # lambda-edge trigger (per rung per ladder)
+            # lambda-edge trigger (per rung per ladder) — computed AFTER contingency
+            # routing, so a fired contingency's canonical records (not the stale
+            # parity-FAILED read-out-layer fits) feed the trigger.
             edge_frac = float(np.mean([r["lambda_top_edge"] for r in rf.fit_records]))
             wide_block = None
             if edge_frac > LAMBDA_EDGE_FRACTION:
@@ -1854,7 +2235,7 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
             # rung dir + paired read
             dir_name = f"rung_{label}" if tag == "primary" else f"rand_rung_{label}"
             rung_dir = layout.out_root / dir_name
-            write_rung_dir(
+            rung_outputs = write_rung_dir(
                 rung_dir,
                 rf,
                 src,
@@ -1887,6 +2268,9 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
                 "cells": rf.cells,
                 "knn_read_out": knn_block,
                 "estimator_degenerate": bool(min(rf.fold_ns) < HIDDEN),
+                "contingency_fired": bool(contingency_records),
+                "read_out_solver": "canonical" if contingency_records else rf.solver,
+                "correlated_offset_floor": rung_outputs["floor"],
             }
             if wide_block is not None:
                 rung_block["wide_grid_sensitivity"] = wide_block
@@ -1894,6 +2278,58 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
                 rung_block["sens_estimator"] = rf.sens_pure
             r2_agg[tag][label] = rung_block
             print(f"[phase=fits_{tag}_{label}]", flush=True)
+
+    # ── dedup-mask sensitivity refit (consumes the P0 gate-(e) flag; r1 concern
+    # dedup-sensitivity-detached — a fired flag with no consumer blocked here) ──
+    p0_report_path = eval_dir / EXTCAP.P0_REPORT
+    p0_report = json.loads(p0_report_path.read_text()) if p0_report_path.exists() else {}
+    gate_e_dup = p0_report.get("gate_e_duplicates", {})
+    dedup_required = bool(gate_e_dup.get("dedup_sensitivity_refit_required"))
+    if dedup_required:
+        groups = gate_e_dup.get("duplicate_groups") or []
+        if not groups:
+            raise RuntimeError(
+                "gate (e) flagged the dedup sensitivity refit but the P0 report carries no "
+                "duplicate_groups — regenerate the P0 report (p0ext) before fits"
+            )
+        dup_drop = {
+            int(i) for g in groups for i in g["context_ids"] if int(i) != int(g["representative"])
+        }
+        sens_block: dict = {
+            "n_dropped_duplicates": len(dup_drop),
+            "read_out_layers": list(READ_OUT_LAYERS),
+            "rungs": {},
+        }
+        for label in rung_labels:
+            keep = np.asarray(
+                [int(i) for i in rung_masks[label] if int(i) not in dup_drop],
+                dtype=np.int64,
+            )
+            rf_d = fit_rung(
+                "sens_dedup",
+                label,
+                keep,
+                src,
+                dev,
+                ckpt_dir,
+                layers=READ_OUT_LAYERS,
+                g2_slices=(),
+                fp_extra=fp_extra,
+            )
+            sens_block["rungs"][label] = {
+                "n_mask": int(len(keep)),
+                "n_dropped_from_rung": int(len(rung_masks[label]) - len(keep)),
+                "cells": {
+                    k: {
+                        "pooled_r2": v.get("pooled_r2"),
+                        "fold_lambdas": v["fold_lambdas"],
+                        "solver": v["solver"],
+                    }
+                    for k, v in rf_d.cells.items()
+                },
+            }
+        r2_agg["sens_dedup"] = sens_block
+        print("[phase=fits_sens_dedup]", flush=True)
 
     # ── Gate E: banked bridge (production only; smoke = enumerated blind spot) ──
     if args.smoke:
@@ -1928,7 +2364,7 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
     )
     if args.smoke:
         k1_valid = smoke_cap_mask(k1_valid, SMOKE_MASK_CAP)
-    p2 = p2_boundary_ladder(src, k1_valid, dev, smoke=args.smoke)
+    p2 = p2_boundary_ladder(src, k1_valid, dev, ckpt_dir, smoke=args.smoke, fp_extra=fp_extra)
     write_json(eval_dir / "p2_ext_boundary.json", p2)
     print("[phase=fits_p2]", flush=True)
 
@@ -1949,7 +2385,13 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
         {label: _ids_sha(ids) for label, ids in rung_masks.items()},
         manifest_sha,
         gate_states=gate_states,
+        store_name_set_sha256=store_id["name_set_sha256"],
     )
+    if dedup_required and "sens_dedup" not in r2_agg:
+        raise RuntimeError(
+            "gate (e) dedup flag fired but no sens_dedup block was produced — refusing to "
+            "write the fits completion sentinel"
+        )
     write_fits_sentinel(eval_dir, fingerprint, {"metadata": metadata, "smoke": args.smoke})
     write_sentinel(
         layout.sentinel_dir() / "issue-823-extladder-fits-done.json",
@@ -1979,7 +2421,7 @@ def run_import_check() -> None:
     assert np.allclose(LAMBDAS, np.logspace(-2, 4, 13)), "primary grid drifted from FFC.LAMBDAS"
     assert callable(LF.gcv_solve_dof_capped) and callable(LF.factorize_robust)
     assert callable(FFC._cross_kernel) and callable(FFC._apply)
-    assert callable(mixture_energy_from_group_diffs)
+    assert callable(mixture_energy_from_group_diffs) and callable(correlated_floor_from_groups)
     assert (_REPO_ROOT / PAIRED_SCRIPT_RELPATH).exists()
     print("import-check OK")
 
