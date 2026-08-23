@@ -315,6 +315,181 @@ def store_pins() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# #2479 axis-freeze guard (plan §4 Step 3): panel fits cannot run pre-freeze
+# ---------------------------------------------------------------------------
+I2479_FREEZE_REL = "eval_results/issue_2479/axis_freeze.json"
+I2479_PROD_OUT_REL = "eval_results/issue_2479/story_char_gradient"
+I2479_PANEL_PREFIX = "char_2479_"
+_I2479_FREEZE_REMEDY = (
+    "remedy: run `uv run python scripts/issue2479_freeze_axis.py --legs-dir <judge-legs dir> "
+    "--commit` (writes + commits + pushes eval_results/issue_2479/axis_freeze.json on the "
+    "issue branch), then pull that commit into this checkout and relaunch"
+)
+
+
+def _git_out(repo: Path, *argv: str) -> str:
+    """Stdout of a git plumbing call in ``repo`` (fail-loud on non-zero rc)."""
+    r = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"[freeze-guard] git {' '.join(argv)} failed in {repo}: {r.stderr!r}")
+    return r.stdout.strip()
+
+
+def assert_axis_freeze_guard(repo_root: Path, prod_out_dir: Path | None = None) -> str:
+    """REFUSE panel-cell fits unless the AI-likeness axis is frozen in git.
+
+    Plan §4 Step 3 (the pre-registration mechanism): before ANY
+    ``char_2479_*`` cell is fit, (a) ``axis_freeze.json`` must exist, be
+    working-tree CLEAN, and be committed at a commit that is an ancestor of
+    HEAD; (b) the PRODUCTION out-dir (``story_char_gradient/``, and ONLY it —
+    pilot trees are out of scope by design) must contain no ladder/cell JSONs
+    whose last commit (tracked) or mtime (untracked) predates the freeze
+    commit. Returns the freeze commit sha. Raises RuntimeError with the exact
+    remedy otherwise — never a silent skip.
+    """
+    freeze = repo_root / I2479_FREEZE_REL
+    if not freeze.is_file():
+        raise RuntimeError(
+            f"[freeze-guard] REFUSED: {freeze} does not exist — the AI-likeness axis is not "
+            f"frozen, so no char_2479_* panel cell may be fit; {_I2479_FREEZE_REMEDY}"
+        )
+    freeze_commit = _git_out(
+        repo_root, "log", "-n", "1", "--format=%H", "HEAD", "--", I2479_FREEZE_REL
+    )
+    if not freeze_commit:
+        raise RuntimeError(
+            f"[freeze-guard] REFUSED: {I2479_FREEZE_REL} exists but is not committed on any "
+            f"ancestor of HEAD (untracked or committed only elsewhere); {_I2479_FREEZE_REMEDY}"
+        )
+    anc = subprocess.run(
+        ["git", "-C", str(repo_root), "merge-base", "--is-ancestor", freeze_commit, "HEAD"]
+    )
+    if anc.returncode != 0:
+        raise RuntimeError(
+            f"[freeze-guard] REFUSED: freeze commit {freeze_commit} is not an ancestor of "
+            f"HEAD; {_I2479_FREEZE_REMEDY}"
+        )
+    dirty = _git_out(repo_root, "status", "--porcelain", "--", I2479_FREEZE_REL)
+    if dirty:
+        raise RuntimeError(
+            f"[freeze-guard] REFUSED: {I2479_FREEZE_REL} has uncommitted modifications "
+            f"({dirty!r}) — the on-disk axis is not the committed frozen axis; commit it "
+            f"(or `git checkout -- {I2479_FREEZE_REL}`) and relaunch"
+        )
+    freeze_ts = int(_git_out(repo_root, "show", "-s", "--format=%ct", freeze_commit))
+    prod = prod_out_dir if prod_out_dir is not None else repo_root / I2479_PROD_OUT_REL
+    stale: list[str] = []
+    if prod.is_dir():
+        for j in sorted(prod.rglob("*.json")):
+            try:
+                rel = str(j.resolve().relative_to(repo_root.resolve()))
+            except ValueError:
+                rel = ""
+            file_commit = (
+                _git_out(repo_root, "log", "-n", "1", "--format=%H", "HEAD", "--", rel)
+                if rel
+                else ""
+            )
+            if file_commit:
+                t, src = (
+                    int(_git_out(repo_root, "show", "-s", "--format=%ct", file_commit)),
+                    "commit",
+                )
+            else:
+                t, src = int(j.stat().st_mtime), "mtime"
+            if t < freeze_ts:
+                stale.append(f"{j} ({src} ts {t} < freeze ts {freeze_ts})")
+    if stale:
+        raise RuntimeError(
+            f"[freeze-guard] REFUSED: {len(stale)} JSON(s) in the production out-dir {prod} "
+            f"predate the freeze commit {freeze_commit}: " + "; ".join(stale) + " — quarantine "
+            "them OUT of the production out-dir (they were produced before the axis was "
+            "frozen) and relaunch"
+        )
+    return freeze_commit
+
+
+def _guard_selftest() -> int:
+    """Exercise the freeze-guard branches in THROWAWAY git repos (no fits).
+
+    Never touches this checkout: each branch runs against a ``git init`` repo
+    under a tempdir (the fixture freeze is committed THERE — the selftest may
+    not commit to the real branch). One machine-readable line per branch —
+    ``[guard-selftest] branch=<id> result=PASS|FAIL`` (the P0 wrapper captures
+    these as guard-branch telemetry). Returns 0 iff every branch PASSes.
+    """
+    import tempfile
+
+    def _mk_repo(base: Path) -> Path:
+        base.mkdir(parents=True)
+        subprocess.run(["git", "init", "-q"], cwd=base, check=True)
+        for k, v in (("user.email", "selftest@example.invalid"), ("user.name", "guard-selftest")):
+            subprocess.run(["git", "-C", str(base), "config", k, v], check=True)
+        (base / "README.md").write_text("freeze-guard selftest fixture\n")
+        subprocess.run(["git", "-C", str(base), "add", "--", "README.md"], check=True)
+        subprocess.run(
+            ["git", "-C", str(base), "commit", "-q", "-m", "init", "--", "README.md"], check=True
+        )
+        return base
+
+    def _commit_fixture_freeze(repo: Path) -> None:
+        freeze = repo / I2479_FREEZE_REL
+        freeze.parent.mkdir(parents=True, exist_ok=True)
+        freeze.write_text(json.dumps({"issue": 2479, "fixture": "guard-selftest"}) + "\n")
+        subprocess.run(["git", "-C", str(repo), "add", "--", I2479_FREEZE_REL], check=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo),
+                "commit",
+                "-q",
+                "-m",
+                "fixture freeze",
+                "--",
+                I2479_FREEZE_REL,
+            ],
+            check=True,
+        )
+
+    results: dict[str, bool] = {}
+    with tempfile.TemporaryDirectory(prefix="i2479-guard-selftest-") as td:
+        tmp = Path(td)
+        # (i) a panel-cell invocation with NO freeze file must REFUSE.
+        repo1 = _mk_repo(tmp / "missing-freeze")
+        try:
+            assert_axis_freeze_guard(repo1)
+            results["refuse-missing-freeze"] = False
+        except RuntimeError:
+            results["refuse-missing-freeze"] = True
+        # (ii) a committed fixture freeze must PASS the ancestry assert.
+        repo2 = _mk_repo(tmp / "committed-freeze")
+        _commit_fixture_freeze(repo2)
+        try:
+            sha = assert_axis_freeze_guard(repo2)
+            results["pass-committed-freeze"] = bool(sha)
+        except RuntimeError:
+            results["pass-committed-freeze"] = False
+        # (iii) a production-out-dir JSON predating the freeze must REFUSE.
+        repo3 = _mk_repo(tmp / "stale-ladder")
+        _commit_fixture_freeze(repo3)
+        prod = repo3 / I2479_PROD_OUT_REL
+        prod.mkdir(parents=True)
+        stale_json = prod / "ladder_stale.json"
+        stale_json.write_text("{}\n")
+        freeze_ts = int(_git_out(repo3, "show", "-s", "--format=%ct", "HEAD"))
+        os.utime(stale_json, (freeze_ts - 1000, freeze_ts - 1000))
+        try:
+            assert_axis_freeze_guard(repo3)
+            results["refuse-stale-ladder"] = False
+        except RuntimeError:
+            results["refuse-stale-ladder"] = True
+    for branch, ok in results.items():
+        print(f"[guard-selftest] branch={branch} result={'PASS' if ok else 'FAIL'}", flush=True)
+    return 0 if all(results.values()) else 1
+
+
+# ---------------------------------------------------------------------------
 # Store loading -> layer-sliced cache
 # ---------------------------------------------------------------------------
 def load_regime_xy(
@@ -1138,7 +1313,51 @@ def main() -> None:
         "for cells); capped outputs carry a _rowsN filename suffix so they can "
         "never be resumed as production results",
     )
+    ap.add_argument(
+        "--pilot-outdir",
+        type=Path,
+        default=None,
+        help="#2479 P0 pilot mode: route ALL outputs here and SKIP the axis-freeze "
+        "guard; REFUSED in combination with any char_2479_* cell (pilot mode is "
+        "for the PARENT cell only — it must never become a panel-cell bypass)",
+    )
+    ap.add_argument(
+        "--guard-selftest",
+        action="store_true",
+        help="exercise the #2479 axis-freeze guard branches in throwaway git repos "
+        "and exit (machine-readable PASS/FAIL lines; fits nothing)",
+    )
     args = ap.parse_args()
+    if args.guard_selftest:
+        raise SystemExit(_guard_selftest())
+    if args.pilot_outdir is not None:
+        args.out_dir = args.pilot_outdir
+    # #2479 axis-freeze guard (plan §4 Step 3). Hoist the effective within-cell
+    # list so the guard sees the --cells DEFAULT too, then refuse/guard BEFORE
+    # any dir creation or store loading.
+    effective_cells = args.cells or [
+        v for v in CHAR_VARIANTS if REGIME_SPECS[v].get("model") == args.model
+    ]
+    requested: set[str] = set()
+    if "ladders" in args.stage:
+        for p in args.pairs:
+            requested.update(p.split(":"))
+    if "cells" in args.stage:
+        requested.update(effective_cells)
+    panel_cells = sorted(x for x in requested if x.startswith(I2479_PANEL_PREFIX))
+    if args.pilot_outdir is not None and panel_cells:
+        ap.error(
+            f"--pilot-outdir must not be combined with panel cells {panel_cells}: pilot "
+            "mode skips the axis-freeze guard and is for the parent cell only (plan §4 "
+            "Step 3 — P0 coexistence, guard un-weakened)"
+        )
+    if panel_cells:
+        freeze_commit = assert_axis_freeze_guard(_REPO_ROOT)
+        print(
+            f"[freeze-guard] OK: axis frozen at commit {freeze_commit} "
+            f"({len(panel_cells)} panel cell(s) requested)",
+            flush=True,
+        )
     args.out_dir.mkdir(parents=True, exist_ok=True)
     args.cache_dir.mkdir(parents=True, exist_ok=True)
     bases = ("reduced", "ambient") if args.basis == "both" else (args.basis,)
@@ -1211,9 +1430,7 @@ def main() -> None:
             del xy, xa, xb
 
     if "cells" in args.stage:
-        cells = args.cells or [
-            v for v in CHAR_VARIANTS if REGIME_SPECS[v].get("model") == args.model
-        ]
+        cells = effective_cells
         for regime in cells:
             assert regime in REGIME_SPECS, f"unknown regime {regime}"
             out_path = args.out_dir / (
