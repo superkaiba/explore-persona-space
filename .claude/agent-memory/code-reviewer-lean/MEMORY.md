@@ -73,3 +73,4 @@
 - [Plan identifier renamed consistently](plan_identifier_renamed_consistently.md) — grep the round for BOTH names; zero old-name hits = disclosed Minor, mixed use = split-brain seam; substring bans can be load-bearing for `in`-keyed classifiers (#2479 R1 g3)
 - [Greedy-digits suffix-tag regex backtrack](greedy_digits_suffix_tag_regex_backtrack.md) — `_nd\d+(.+)` misreads `_nd10` as tag "0"; probe multi-digit untagged case; anchor tag to `_` (#2479 r1 g6)
 - [Cross-arm invariance gate per-arm sampling](crossarm_invariance_gate_perarm_sampling.md) — arm-tag seed material ⇒ different item subsets per arm; identity assert + survivor-wedge check (#2479 R1 g5)
+- [Hardcoded GPU floor vs plan GPU class](hardcoded_gpu_floor_vs_plan_gpu_class.md) — a free-MiB floor above the pinned GPU class's TOTAL MiB kills the wrapper on its own planned pod; dry-runs never expose it (#2479 R1 g8)
