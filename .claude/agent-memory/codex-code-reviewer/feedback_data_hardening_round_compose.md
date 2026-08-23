@@ -70,6 +70,20 @@ claims-not-evidence — three sanctioned uses (shape gate, recorded-run
 proof, fix-site index), every closure verdict derived from diff + own
 checks. Flag both interpretive calls in the return.
 
+**Regenerated-fingerprinted-file delta (#2477 r2, 2026-08-22):** when a
+fix round REGENERATES a committed data file that a `.gitleaksignore`
+fingerprint pins by LINE NUMBER (`path:rule:LINE`), even a metadata-only
+top-of-file diff (net ±k lines) shifts the pinned line — the fingerprint
+goes stale silently (`.gitleaksignore` itself absent from the round diff).
+Compose a bounded spot-check fact: sed-window the region at HEAD to confirm
+the flagged text is still non-credential, grade staleness at most Minor
+(operational: future edits to that file re-trip the scanner). Also: a
+reconciler fix-round closure ledger composes three-tier per #2480-r3 —
+binding items (R1-R5, NOT-ADDRESSED = substantive FAIL) / opportunistic
+standing recs + addressed CONCERN rows (claims-honesty severity) /
+STANDING-OPEN fence for the reconciler-downgraded scoped-out id (no re-FAIL
+on severity, no re-emitted row, review-on-merits only if touched).
+
 **r3 deltas (#2480 r3, 2026-08-22):** (a) the reconciler marker KIND
 drifted across rounds on the SAME task — r1 posted
 `epm:code-review-reconcile`, r2 posted `epm:review-reconcile` — so fetch
