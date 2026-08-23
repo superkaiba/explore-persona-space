@@ -403,12 +403,42 @@ def _coverage_gate(cfg: DbeConfig, values: dict, bank: dict) -> dict:
     production = not (
         cfg.smoke or cfg.tiny or cfg.cells or values.get("smoke") or values.get("dry_run")
     )
+    dropped: list[str] = []
     if production:
-        assert (n_ctx, n_pairs) == (EXPECTED_FULL_CONTEXTS, EXPECTED_FULL_PAIRS), (
-            n_ctx,
-            n_pairs,
-            "below the plan §4.3 396/324 coverage gate — datagen shortfall, halt",
+        # The production expectation is LICENSED by the frozen gate-1 record,
+        # not the pre-drop plan constants: gate 1's registered disposition
+        # (plan §4.4) drops a below-floor type and revises denominators
+        # everywhere, so the gate certifies "bank == exactly what the frozen
+        # gate-1 record licensed" (catching datagen/bank drift), and the full
+        # 396/324 constants bind only for a zero-drop bank.
+        assert DATAGEN_MANIFEST_SRC.exists(), (
+            f"{DATAGEN_MANIFEST_SRC} missing — production coverage gate requires the "
+            "committed datagen manifest (open the eval_results/issue_2215 sparse cone)"
         )
+        per_type = json.loads(DATAGEN_MANIFEST_SRC.read_text())["gate1_pair_validity"]["per_type"]
+        licensed = sorted(t for t, r in per_type.items() if r["kept"])
+        dropped = sorted(t for t, r in per_type.items() if not r["kept"])
+        assert sorted(bank["kept_types"]) == licensed, (
+            sorted(bank["kept_types"]),
+            licensed,
+            "bank kept-type set != frozen gate-1 licensed set — datagen/bank drift, halt",
+        )
+        if not dropped:
+            assert (n_ctx, n_pairs) == (EXPECTED_FULL_CONTEXTS, EXPECTED_FULL_PAIRS), (
+                n_ctx,
+                n_pairs,
+                "below the plan §4.3 396/324 coverage gate — datagen shortfall, halt",
+            )
+        else:
+            logger.warning(
+                "[coverage] production bank at %d/%d types after gate-1 drops (%s): "
+                "%d contexts / %d pairs — denominators revised per plan §4.4",
+                len(licensed),
+                len(per_type),
+                ",".join(dropped),
+                n_ctx,
+                n_pairs,
+            )
     # registered expectation coherence (7 eligible / 2 degenerate, restricted to kept)
     reg = DBE.expected_pe_eligibility()
     for cell in bank["kept_types"]:
@@ -426,6 +456,7 @@ def _coverage_gate(cfg: DbeConfig, values: dict, bank: dict) -> dict:
         "n_two_value_cells": n2,
         "n_views": len(views),
         "production_gate": production,
+        "gate1_dropped_types": dropped,
         "judge_pass_pairs": {c: m["kept_pairs"] for c, m in bank["cells"].items()},
     }
     logger.info("[coverage] %s", json.dumps(report, sort_keys=True))
