@@ -65,3 +65,5 @@
 - [Upload-batch resume never re-enqueues](upload_batch_resume_never_reenqueues.md) — per-K-batch uploads + local-sidecar resume strand done-but-unuploaded units; exact-set verify then wedges every re-run (#1901 R1 g2)
 - [Position-calibrated gate under subset remap](position_calibrated_gate_under_subset_remap.md) — an index-subset kwarg re-binds "first-k" calibrated bars onto wrong units; check VALUE vs POSITION semantics (#1901 R1 g1)
 - [Figure-series extension neutrality probes](figure_series_extension_neutrality_probes.md) — PNG byte-compare invalid (pnginfo render id): pixel-array + parent-blob module; err-by-x last-wins contaminates the NEW series (#1901 R1 g3)
+- [Eligibility-export call-chain identity](eligibility_export_call_chain_identity.md) — certify "single-source" exports by diffing each consumer regime's production branch chain; probe unpinned tokenizer inputs (#2479 R7 g1)
+- [Template-replica gate certification](template_replica_gate_certification.md) — byte-identity at realized config + structural diff + sibling-constant exclusion + coverage superset (#2479 R8)
