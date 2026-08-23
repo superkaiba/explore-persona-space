@@ -790,12 +790,15 @@ def a2fix_resolve_repairs(
             "adapters": adapters,
             "rows_restricted": rows_restricted,
             "parity_present": parity_present,
-            # the §4 parity duty binds where the repair restricted THIS
-            # behavior's fit rows; the join demands the rows only where they
-            # were actually emitted (a restricted behavior with NO parity rows
-            # degrades MAP-BEATS -> WEAK-MIXED at the lattice, never a crash
-            # on the plan-forbidden refit of unrestricted behaviors)
-            "parity_required": bool(rows_restricted and parity_present),
+            # HARD form (r2 blocker arm2fix-parity-partial-coverage): the §4
+            # matched-budget parity duty makes the row-matched arm7 refit
+            # MANDATORY for every row-restricting repair — the scoring stage
+            # emits parity rows unconditionally on restricted lanes
+            # (--parity-refit-arm7 + train_row_ids_sha256), so ABSENT parity
+            # rows for a restricted behavior is upstream infra-incompleteness
+            # and must fail the join LOUD, never degrade quietly. Unrestricted
+            # behaviors are never asked for the plan-forbidden refit.
+            "parity_required": bool(rows_restricted),
         }
     return out
 
@@ -926,11 +929,12 @@ def a2fix_join_assert(
 
     Every (behavior ∈ passing set, registered rung, seed) must carry the
     arm2_new + arm7_true + arm7_shufpair series, PLUS arm7_parity for exactly
-    the behaviors whose OWN repair restricted rows and emitted parity rows
-    (per-behavior resolution — a global parity demand would SystemExit on
-    unrestricted behaviors whose parity refit the plan forbids); ANY gap is a
-    loud SystemExit naming the first offenders — never a shrunken-denominator
-    verdict."""
+    the behaviors whose OWN repair restricted rows (HARD form, r2 blocker
+    arm2fix-parity-partial-coverage: the §4 parity duty is mandatory for
+    row-restricting repairs, so a restricted behavior missing its parity rows
+    is a loud join failure — while unrestricted behaviors are never asked for
+    the plan-forbidden refit); ANY gap is a loud SystemExit naming the first
+    offenders — never a shrunken-denominator verdict."""
     base = ["arm2_new", "arm7_true", "arm7_shufpair"]
     need_by_b = {
         b: base + (["arm7_parity"] if (resolution or {}).get(b, {}).get("parity_required") else [])
@@ -1305,19 +1309,35 @@ def a2fix_lattice(
     out["flagships_in_passing_set"] = flag_ok
     parity_read = None
     if restricted_passing:
+        restricted_rows = [r for r in rows if r["behavior"] in restricted_passing]
         dp = [
             r["D_parity"]["mean"]
-            for r in rows
-            if r["behavior"] in restricted_passing and r.get("D_parity", {}).get("mean") is not None
+            for r in restricted_rows
+            if r.get("D_parity", {}).get("mean") is not None
         ]
+        # COVERAGE condition (r2 blocker arm2fix-parity-partial-coverage,
+        # defense-in-depth behind the hard join demand): EVERY rung of EVERY
+        # rows-restricted passing behavior must carry its D_parity — a
+        # partial pool must never mint MAP-BEATS on an n_rungs undercount.
+        uncovered = sorted(
+            {
+                (r["behavior"], r["eval_rung"])
+                for r in restricted_rows
+                if r.get("D_parity", {}).get("mean") is None
+            }
+        )
         parity_read = {
             "behaviors": restricted_passing,
             "n_rungs": len(dp),
+            "n_rungs_expected": len(restricted_rows),
+            "coverage_complete": not uncovered,
+            "uncovered_rungs": [list(u) for u in uncovered],
             "median_D_parity": float(np.median(dp)) if dp else None,
-            "positive": bool(dp and float(np.median(dp)) > 0),
+            "positive": bool(not uncovered and dp and float(np.median(dp)) > 0),
             "note": "estimand-parity read: arm7 refit on the IDENTICAL training-row ids "
             "as the repaired arm2, over exactly the rows-restricted passing behaviors' "
-            "rungs (plan §4 matched-budget parity duty; per-behavior resolution)",
+            "rungs (plan §4 matched-budget parity duty; per-behavior resolution; "
+            "positive requires COMPLETE parity coverage of those rungs)",
         }
         out["parity_read"] = parity_read
     if med is None:
@@ -1330,13 +1350,21 @@ def a2fix_lattice(
             out["verdict"] = "MAP-BEATS-CONTEXT-DIRECTION"
             return out
         out["verdict"] = "WEAK-MIXED"
-        out["reason"] = "median D > 0 but " + (
-            "no passing-set flagship holds BOTH CIs clear of 0"
-            if not any(f["both_clear"] for f in flag_ok)
-            else "the row-matched parity read does not show D > 0 over the "
-            f"rows-restricted passing behaviors {restricted_passing} "
-            "(required when a repair restricted arm2's fit rows)"
-        )
+        if not any(f["both_clear"] for f in flag_ok):
+            parity_why = "no passing-set flagship holds BOTH CIs clear of 0"
+        elif parity_read and not parity_read["coverage_complete"]:
+            parity_why = (
+                "the row-matched parity read is INCOMPLETE over the rows-restricted "
+                f"passing behaviors (uncovered rungs: {parity_read['uncovered_rungs']}) "
+                "— required when a repair restricted arm2's fit rows"
+            )
+        else:
+            parity_why = (
+                "the row-matched parity read does not show D > 0 over the "
+                f"rows-restricted passing behaviors {restricted_passing} "
+                "(required when a repair restricted arm2's fit rows)"
+            )
+        out["reason"] = "median D > 0 but " + parity_why
         return out
     out["verdict"] = "MAP-ADVANTAGE-NOT-SHOWN"
     out["reason"] = (

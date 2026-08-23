@@ -544,7 +544,9 @@ def _res(arm="arm2_ctx_native", *, restricted=False, parity=False, adapters=None
         "adapters": adapters or (["v1"] if not restricted else ["v2-quantile"]),
         "rows_restricted": restricted,
         "parity_present": parity,
-        "parity_required": bool(restricted and parity),
+        # HARD form (r2 blocker arm2fix-parity-partial-coverage): the §4
+        # parity duty is mandatory wherever the repair restricted rows.
+        "parity_required": bool(restricted),
     }
 
 
@@ -619,6 +621,12 @@ def test_a2fix_resolve_repairs_mixed_topology_and_overrides():
     assert res["evil"]["parity_required"]
     assert res["sycophancy"]["repaired_arm"] == "arm2_ctx_native"
     assert not res["sycophancy"]["rows_restricted"] and not res["sycophancy"]["parity_required"]
+    # HARD form: a restricted behavior with NO emitted parity rows still
+    # REQUIRES them (the join fails loud downstream) — never a quiet degrade
+    new_noparity = [r for r in new if r.get("adapter") != "parity-row-matched"]
+    res_np = fold.a2fix_resolve_repairs(new_noparity, ["evil"])
+    assert res_np["evil"]["rows_restricted"] and not res_np["evil"]["parity_present"]
+    assert res_np["evil"]["parity_required"] is True
     # per-behavior override honored; an override naming an absent arm exits loud
     res_ov = fold.a2fix_resolve_repairs(new, ["evil"], {"evil": "arm2_ctx_native"})
     assert res_ov["evil"]["repaired_arm"] == "arm2_ctx_native"
@@ -728,6 +736,63 @@ def test_a2fix_join_mixed_parity_demand_is_per_behavior():
     }
     with pytest.raises(SystemExit, match="join INCOMPLETE"):
         fold.a2fix_join_assert(cells, ["evil", "sycophancy"], seeds, REG2, resolution=res_global)
+
+
+def test_a2fix_parity_partial_coverage_is_loud_never_map_beats():
+    """r2 BLOCKER arm2fix-parity-partial-coverage regression: with >=2
+    rows-restricted passing behaviors and ONE missing ALL its parity rows,
+    (a) the HARD join demand fails LOUD (parity_required = rows_restricted),
+    and (b) even on a direct lattice call the parity coverage condition
+    refuses MAP-BEATS — never a silent n_rungs undercount. Fails pre-fix:
+    the r2 code minted MAP-BEATS with parity_read.n_rungs=1 of 2."""
+    seeds = [0, 1]
+    pairs = [("evil", "evil_pair"), ("sycophancy", "sycomwe")]
+    new, banked = _series_rows(pairs, seeds)
+    # BOTH behaviors restricted; parity rows emitted for evil ONLY
+    for s in seeds:
+        new.append(
+            _prow(
+                "evil",
+                "evil_pair",
+                s,
+                fold.ARM_MAP,
+                0.4,
+                adapter="parity-row-matched",
+                sha="h" * 8,
+                n_rows=50,
+            )
+        )
+    res = {
+        "evil": _res("arm2q_ctx_native", restricted=True, parity=True),
+        "sycophancy": _res("arm2_ctx_native", restricted=True, parity=False),
+    }
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
+    cells = fold.a2fix_index_cells(new, banked, res)
+    with pytest.raises(SystemExit, match="join INCOMPLETE"):
+        fold.a2fix_join_assert(cells, ["evil", "sycophancy"], seeds, reg, resolution=res)
+    # defense-in-depth: a DIRECT lattice call on the same topology (both CIs
+    # clear, positive parity median on the emitted half) must NOT mint
+    # MAP-BEATS — coverage_complete is False and the reason names the gap
+    sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
+    rows = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
+        _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),  # no parity
+    ]
+    v = fold.a2fix_lattice(rows, sanity, resolution=res)
+    assert v["verdict"] == "WEAK-MIXED"
+    assert v["parity_read"]["coverage_complete"] is False
+    assert v["parity_read"]["n_rungs"] == 1 and v["parity_read"]["n_rungs_expected"] == 2
+    assert v["parity_read"]["uncovered_rungs"] == [["sycophancy", "sycomwe"]]
+    assert v["parity_read"]["positive"] is False
+    assert "INCOMPLETE" in v["reason"]
+    # complete coverage on the same topology DOES mint MAP-BEATS
+    rows_full = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
+        _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08], d_parity=0.03),
+    ]
+    v2 = fold.a2fix_lattice(rows_full, sanity, resolution=res)
+    assert v2["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v2["parity_read"]["coverage_complete"] is True
 
 
 def test_a2fix_per_rung_d_read_and_parity_hash():
