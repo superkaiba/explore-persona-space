@@ -1277,6 +1277,7 @@ def _upload_gen_outputs(paths: list[Path], dest_prefix: str) -> None:
 
     failed: list[str] = []
     for p in paths:
+        # UPLOAD_LOOP_EXEMPT: bounded plan-declared shape, max 5 files (plan v5 C4 unrolled)
         url = hub._upload(
             p,
             hub.DEFAULT_DATASET_REPO,
