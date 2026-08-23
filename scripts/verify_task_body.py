@@ -275,7 +275,15 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     `[#K](...)`/bare `#K`, `fresh direction (no parent)`/`fresh (no
     parent)`, or a same-issue-follow-up-round clause — scanned on
     fence-stripped + blockquote-stripped text (missing → hard FAIL);
-    v3/v2 keep label-presence-only. Spec:
+    v3/v2 keep label-presence-only. When `origin_prompt` is absent, the
+    row's quote is additionally verified against the original-body
+    `## Provenance` verbatim prompt (#2291, incident #2254):
+    mismatch/truncation is a hard v4 FAIL (v3/v2: WARN — grandfathered),
+    and a v4 row blockquoting >=20 chars with NO verifiable source WARNs
+    (`warn-unverifiable-quote`); measured retro-scan 2026-08-22: 0 FAIL
+    hits / 1 WARN hit (#1072). Frontmatter `origin_prompt`, when
+    present, stays authoritative (verdicts unchanged; its warn-mismatch
+    detail gains an alternate-source note). Spec:
     `.claude/skills/clean-results/SPEC.md` § `**Context:**` row.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
@@ -555,7 +563,16 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `under-4-token`, `best-of-28-layers`) and dated ids
   (`claude-sonnet-4-5-20250929`) never flag; a slug named verbatim in
   THAT figure's blockquote caption is suppressed — the caption decodes
-  it — with NO caption suppression for the other six classes, #1988).
+  it — with NO caption suppression for classes (a)-(f), #1988), or
+  role@span slugs (`pre@context`/`ctxext@context`/`rb@answer` —
+  lowercase letter-initial LHS `@` lowercase letter-initial RHS with an
+  email-excluding `(?![.-][a-zA-Z0-9])` domain-continuation lookahead,
+  so `user@example.com` / `user@example-domain.com` / `user@example.COM`
+  and class (a)'s uppercase-`L` `@L12` pins never match; CHECK-28-LOCAL by
+  design — never merged into `_opaque_code_tokens`, whose second
+  consumer check 57 Leg A is a hard FAIL that stays byte-stable;
+  caption-decode suppressible like arm slugs; #2292, incident #2254 —
+  `per_question_dots.png` tick labels).
   Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
@@ -1407,6 +1424,32 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   OVERALL PASS with neither a per-unit view nor an exemption line —
   the only 1 of 10 result sections without the conventions — caught
   only by the LM critic in round 3.
+
+- **check 60** (`check_figure_sidecar_text_coverage`, WARN,
+  generation-agnostic, #2292; incident #2254): a same-repo sha-pinned
+  embedded figure whose sibling `.meta.json` sidecar EXISTS at the cited
+  sha but carries NO rendered-text block — `meta["text"]` absent, or
+  empty of label strings (`_iter_meta_label_values` on the text block
+  ALONE) — gets zero opaque-code coverage from check 28 while checks 41
+  and 57 stay silent (both probe sidecar EXISTENCE only, and a sidecar
+  IS present): #2254's `per_question_dots.png` shipped opaque code-slug
+  tick labels through every mechanical gate behind 11 provenance-only
+  sidecars (`scripts/issue2254_figures.py::_save` hand-rolls
+  `fig.savefig` + a `{figure, git_commit, git_dirty, inputs}` sidecar).
+  Predicate keyed on the `text` BLOCK, never the whole sidecar:
+  `inputs` / `git_dirty_paths` are NOT in `_META_PROVENANCE_KEYS`, so a
+  whole-sidecar walk reads the incident set as text-bearing and goes
+  silent on it. Deference: sidecar ABSENT ('fail') → checks 41/57 own
+  it; INDETERMINATE probe ('skip') → the siblings' fail-soft residual;
+  present-but-MALFORMED ('pass' probe, tri-state read 'malformed':
+  JSON parse failure or a non-dict document) → reported HERE as
+  text-less (no other check reports that state); a TRANSIENT
+  content-read failure ('pass' probe, tri-state 'indeterminate') →
+  skipped, never a WARN (#2292 r2). ONE WARN per body (basenames first 3 + count); remedy names
+  `savefig_paper` (`embed_text` defaults True). WARN never FAIL —
+  2,169 of 3,560 tracked sidecars (60.9%) are text-less, so a
+  retroactive FAIL would block promote-time re-verifies wholesale;
+  NO-OP PASS offline / no figures / no sidecar-bearing figures.
 
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
@@ -5828,6 +5871,13 @@ _CONTEXT_LABEL_RE = re.compile(r"\*\*\s*Context\s*:?\s*\*\*")
 # curly forms (escapes dodge the ambiguous-unicode lint).
 _INLINE_QUOTE_SPAN_RE = re.compile('["\u201c]([^"\u201c\u201d]{20,})["\u201d]', re.S)
 
+# `## Provenance` H2 in original-body.md -- `\b.*` tolerates the observed
+# `## Provenance (verbatim)` variant (#2220); shared by the missing-row
+# branch and the Provenance-leg extractor (#2291). Measured widening
+# effect (2026-08-22 corpus): exactly one file gained (#2220), zero
+# verdict changes anywhere.
+_PROVENANCE_H2_RE = re.compile(r"^##\s+Provenance\b.*$", re.MULTILINE)
+
 
 def _normalize_prompt_text(s: str) -> str:
     """Whitespace-collapse + unicode-punctuation fold for the check-17
@@ -5933,34 +5983,10 @@ def _origin_prompt_quote_verdict(repro: str, fm: dict) -> tuple[str, str]:
         _unescape_markdown(stripped)
     ):
         return "pass", ""
-    # Containment failed — classify. Candidates: blockquote segments
-    # (contiguous `>` runs, lazy-continuation lines joined) + inline
-    # quote-mark-delimited spans (>= 20 chars) in the stripped region.
-    candidates = _context_quote_candidates(region)
-    best_lcp, truncated = 0, None
-    for cand in candidates:
-        ncand = _normalize_prompt_text(_unescape_markdown(cand))
-        ncand_p = ncand.rstrip(".,;:!?\u2026 ")  # a truncating editor appends `.`/ellipsis (#742)
-        best_lcp = max(best_lcp, _common_prefix_len(ncand_p, nop))
-        # FAIL guard (plan D10): a strict-prefix candidate must ALSO cover
-        # >= 50% of the normalized origin_prompt. Rationale: the incident
-        # class (silent tail truncation — #742 at 85%, the #813-r1-shaped
-        # fixture at ~60%) characteristically preserves most of the
-        # prompt, while the false-positive scenario (an innocent SHORT
-        # elided pointer quoting the fm opener alongside a full
-        # alternate-source quote — the #825+ shape) characteristically
-        # quotes a small head fraction (~10%). Below the floor the case
-        # routes to WARN, whose message names the alternate-source
-        # escape. Per-candidate + fraction semantics deliberately do NOT
-        # suppress on the presence of a longer non-prefix candidate —
-        # that variant would false-NEGATIVE the multi-round true positive
-        # (truncated creation quote + a longer full round-2 quote).
-        if (
-            20 <= len(ncand_p) < len(nop)
-            and len(ncand_p) >= 0.5 * len(nop)
-            and nop.startswith(ncand_p)
-        ):
-            truncated = ncand_p
+    # Containment failed -- classify via the shared truncation classifier
+    # (extracted to `_truncation_candidate` for the #2291 Provenance leg;
+    # candidate set, thresholds, and rstrip set byte-identical).
+    truncated, best_lcp = _truncation_candidate(region, nop)
     if truncated is not None:
         cut = len(truncated)
         return "fail-trunc", (
@@ -5978,6 +6004,226 @@ def _origin_prompt_quote_verdict(repro: str, fm: dict) -> tuple[str, str]:
         f"alternate verbatim source (original-body `## Provenance` / an "
         f"`epm:followup-scope` marker), this is informational; otherwise re-quote "
         f"origin_prompt verbatim."
+    )
+
+
+def _truncation_candidate(region: str, ref_norm: str) -> tuple[str | None, int]:
+    """Truncation classifier over the Context region's quoted candidates
+    against a normalized reference prompt ``ref_norm`` -- shared by the
+    #1068 origin-prompt sub-check and the #2291 Provenance leg (extracted
+    from ``_origin_prompt_quote_verdict``; candidate set, thresholds, and
+    rstrip set byte-identical). Candidates: blockquote segments
+    (contiguous ``>`` runs, lazy-continuation lines joined) + inline
+    quote-mark-delimited spans (>= 20 chars) in the stripped region.
+    Returns ``(truncated_candidate_or_None, best_common_prefix_len)``."""
+    best_lcp, truncated = 0, None
+    for cand in _context_quote_candidates(region):
+        ncand = _normalize_prompt_text(_unescape_markdown(cand))
+        ncand_p = ncand.rstrip(".,;:!?\u2026 ")  # a truncating editor appends `.`/ellipsis (#742)
+        best_lcp = max(best_lcp, _common_prefix_len(ncand_p, ref_norm))
+        # FAIL guard (plan D10): a strict-prefix candidate must ALSO cover
+        # >= 50% of the normalized reference prompt. Rationale: the
+        # incident class (silent tail truncation -- #742 at 85%, the
+        # #813-r1-shaped fixture at ~60%) characteristically preserves
+        # most of the prompt, while the false-positive scenario (an
+        # innocent SHORT elided pointer quoting the fm opener alongside a
+        # full alternate-source quote -- the #825+ shape)
+        # characteristically quotes a small head fraction (~10%). Below
+        # the floor the case routes to the non-FAIL class, whose message
+        # names the alternate-source escape. Per-candidate + fraction
+        # semantics deliberately do NOT suppress on the presence of a
+        # longer non-prefix candidate -- that variant would false-NEGATIVE
+        # the multi-round true positive (truncated creation quote + a
+        # longer full round-2 quote).
+        if (
+            20 <= len(ncand_p) < len(ref_norm)
+            and len(ncand_p) >= 0.5 * len(ref_norm)
+            and ref_norm.startswith(ncand_p)
+        ):
+            truncated = ncand_p
+    return truncated, best_lcp
+
+
+def _provenance_blockquote_segments(text: str) -> list[str]:
+    """Blockquote segments of ``text`` -- contiguous ``>`` runs with
+    markdown lazy-continuation lines joined (the same segment rule as
+    ``_context_quote_candidates``, WITHOUT the label-line-remainder
+    candidate: a Provenance section's first line is preamble prose, not
+    quoted material). #2291."""
+    segments: list[str] = []
+    current: list[str] = []
+    for ln in text.splitlines():
+        if ln.lstrip().startswith(">"):
+            current.append(_BLOCKQUOTE_MARKER_RE.sub("", ln))
+        elif ln.strip() and current:
+            current.append(ln)  # markdown lazy continuation joins the quote
+        elif current:
+            segments.append("\n".join(current))
+            current = []
+    if current:
+        segments.append("\n".join(current))
+    return segments
+
+
+def _provenance_verbatim_prompt(original_body_path: Path | None) -> str | None:
+    """Extract the NORMALIZED verbatim originating prompt from the
+    sibling ``original-body.md``'s ``## Provenance`` section (#2291).
+
+    Returns ``None`` when: the path is ``None`` / missing; no
+    ``_PROVENANCE_H2_RE`` match; no extractable candidate. The section
+    spans the H2 match end to the next ``^##`` heading (or EOF). Primary
+    extraction: the FIRST blockquote segment with >= 20 normalized chars
+    (the canonical "Originating prompt ... verbatim:" shape, verified on
+    #2254 -- later clarifying-answer blockquotes are deliberately not
+    consulted). Fallback: the LONGEST inline quote-mark-delimited span
+    with >= 20 normalized chars. Normalization =
+    ``_normalize_prompt_text(_unescape_markdown(...))`` -- the same fold
+    the containment test applies to the body side. Read idiom mirrors the
+    missing-row branch (``.exists()`` + ``read_text(errors="replace")``,
+    no try/except: a task-state read follows the file's
+    fail-soft-by-shape convention, and the raising failure modes
+    (PermissionError etc.) are unchanged)."""
+    if original_body_path is None or not original_body_path.exists():
+        return None
+    text = original_body_path.read_text(errors="replace")
+    m = _PROVENANCE_H2_RE.search(text)
+    if m is None:
+        return None
+    section = text[m.end() :]
+    nxt = re.search(r"^##\s+", section, re.MULTILINE)
+    if nxt is not None:
+        section = section[: nxt.start()]
+    for seg in _provenance_blockquote_segments(section):
+        norm = _normalize_prompt_text(_unescape_markdown(seg))
+        if len(norm) >= 20:
+            return norm
+    best = ""
+    for span in _INLINE_QUOTE_SPAN_RE.findall(section):
+        norm = _normalize_prompt_text(_unescape_markdown(span))
+        if len(norm) > len(best):
+            best = norm
+    return best if len(best) >= 20 else None
+
+
+def _has_min20_blockquote(region: str) -> bool:
+    """True when the Context REGION (text after the ``**Context:**``
+    label) carries >= 1 blockquote segment with >= 20 normalized chars --
+    the arming condition of the #2291 ``warn-unverifiable-quote`` arm.
+    Blockquote segments ONLY: the label-line remainder (the region's
+    first line) and inline quote spans are deliberately excluded, so
+    "origin prompt not recorded" / lineage-only rows never trip it."""
+    rest = "\n".join(region.splitlines()[1:])
+    return any(
+        len(_normalize_prompt_text(_unescape_markdown(seg))) >= 20
+        for seg in _provenance_blockquote_segments(rest)
+    )
+
+
+_UNVERIFIABLE_QUOTE_DETAIL = (
+    "warn-unverifiable-quote: the `**Context:**` row blockquotes >=20 chars but neither "
+    "frontmatter `origin_prompt` nor an extractable original-body `## Provenance` prompt "
+    "exists to verify the quote against. If the quote is the refined goal, replace it with "
+    "the verbatim originating prompt; if it was legitimately sourced from an "
+    "`epm:followup-scope` marker (a SPEC-sanctioned third source this check does not "
+    "mechanically read), keep it and name the source in the row; if the prompt is genuinely "
+    "unrecorded, state `origin prompt not recorded`."
+)
+
+
+def _alternate_source_note(repro: str, prov_norm: str, fm: dict) -> str:
+    """Verified/not-verified enrichment for the op-present
+    ``warn-mismatch`` detail (#2291; message-only, never
+    verdict-affecting): says whether the Context row DOES quote the
+    original-body ``## Provenance`` verbatim prompt. The
+    ``context-origin-prompt-mismatch`` detail prefix is preserved (the
+    note is appended, so substring consumers are unaffected)."""
+    if _provenance_prompt_quote_verdict(repro, prov_norm, fm)[0] == "pass":
+        return (
+            " [alternate-source check: the row DOES quote the original-body "
+            "`## Provenance` verbatim prompt]"
+        )
+    return (
+        " [alternate-source check: the row does NOT quote the original-body "
+        "`## Provenance` verbatim prompt either]"
+    )
+
+
+def _provenance_prompt_quote_verdict(repro: str, prov_norm: str, fm: dict) -> tuple[str, str]:
+    """Classify the Context row's originating-prompt quote against the
+    extracted original-body ``## Provenance`` verbatim prompt (#2291,
+    incident #2254) -- the reference-swapped mirror of
+    ``_origin_prompt_quote_verdict``, consulted by the caller exactly
+    where that check noops for lack of frontmatter ``origin_prompt``.
+
+    ``prov_norm`` is the ALREADY-NORMALIZED extracted prompt
+    (``_provenance_verbatim_prompt``). Returns ``(status, detail)``:
+
+    - ``"pass"`` -- ``prov_norm`` appears as a substring of the
+      normalized, blockquote-marker-stripped Context-region text (raw
+      AND markdown-unescaped; same containment direction as the #1068
+      check -- containment is what catches truncation);
+    - ``"fail-trunc"`` -- a quoted candidate is a >=20-char strict
+      normalized PREFIX of ``prov_norm`` covering >=50% of it (the
+      shared ``_truncation_candidate`` classifier);
+    - ``"fail-mismatch"`` -- containment fails with no truncation
+      signature (the #2254 incident shape: the row quotes the refined
+      goal instead of the recorded verbatim prompt).
+
+    Both FAIL details print the head of the extracted Provenance span
+    (a spurious FAIL blocks a real promotion, so a wrong-span extraction
+    must be diagnosable in ONE read) and name the `epm:followup-scope`
+    third source -- a SPEC-sanctioned source this check does NOT
+    mechanically read; the remediation is ADDING the recorded
+    originating prompt to the row, and the severity deliberately stays
+    FAIL (a Provenance-recorded originating prompt absent from the row
+    violates the SPEC contract regardless of what else the row quotes).
+    Goal-quoting enrichment (message-only, never verdict-affecting):
+    when a >=20-char Context quote candidate matches the normalized
+    ``goal:`` frontmatter (containment either direction), the detail
+    says so -- traced to fire on the real #2254 pre-fix artifact."""
+    m = _CONTEXT_LABEL_RE.search(repro)
+    if m is None:
+        return "pass", ""  # caller's label branch makes this unreachable
+    region = repro[m.end() :]
+    stripped = _strip_blockquote_markers(region)
+    if prov_norm in _normalize_prompt_text(stripped) or prov_norm in _normalize_prompt_text(
+        _unescape_markdown(stripped)
+    ):
+        return "pass", ""
+    truncated, best_lcp = _truncation_candidate(region, prov_norm)
+    head = prov_norm[:60]
+    goal_note = ""
+    ngoal = _normalize_prompt_text(str(fm.get("goal") or "").strip())
+    if len(ngoal) >= 20:
+        for cand in _context_quote_candidates(region):
+            ncand = _normalize_prompt_text(_unescape_markdown(cand))
+            if len(ncand) >= 20 and (ncand in ngoal or ngoal in ncand):
+                goal_note = (
+                    " The quoted text matches the refined `goal:` frontmatter \u2014 quote "
+                    "the ORIGINATING prompt, not the refined goal."
+                )
+                break
+    third_source = (
+        " If the row's quote was sourced from an `epm:followup-scope` marker (a "
+        "SPEC-sanctioned source this check does not mechanically read), ADD the recorded "
+        "originating prompt to the row alongside it."
+    )
+    if truncated is not None:
+        cut = len(truncated)
+        return "fail-trunc", (
+            f"context-provenance-prompt-mismatch: the quoted originating prompt is a strict "
+            f"PREFIX of the original-body `## Provenance` verbatim prompt \u2014 truncated at "
+            f"normalized offset {cut}/{len(prov_norm)} (quote ends '...{truncated[-40:]}'; "
+            f"the Provenance prompt continues '{prov_norm[cut : cut + 60]}...'; extracted "
+            f"Provenance head '{head}'). Quote the FULL recorded verbatim prompt "
+            f"(SPEC.md \u00a7 `**Context:**` row).{third_source}{goal_note}"
+        )
+    return "fail-mismatch", (
+        f"context-provenance-prompt-mismatch: the original-body `## Provenance` verbatim "
+        f"prompt does not appear (whitespace-normalized) in the `**Context:**` row \u2014 "
+        f"first divergence at normalized offset {best_lcp}/{len(prov_norm)} (extracted "
+        f"Provenance head '{head}'). Quote the recorded verbatim prompt "
+        f"(SPEC.md \u00a7 `**Context:**` row).{third_source}{goal_note}"
     )
 
 
@@ -6054,7 +6300,9 @@ def _context_scan_region(repro: str) -> str:
     return scan_src[m.end() :] if m else scan_src
 
 
-def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
+def _context_row_result_v3(
+    name: str, repro: str, fm: dict, original_body_path: Path | None = None
+) -> CheckResult:
     """v3/v2 (pre-v4-sentinel) verdict for a label-present Context row —
     the grandfathered WARN-only forms of check 17's sub-checks (#1068
     origin-prompt for BOTH its classes; #1418/#2249 parent-lineage for
@@ -6063,19 +6311,101 @@ def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
     binds below the v4 sentinel; see `check_repro_context_provenance`).
     Note the fail-denied-named class is NEWLY VISIBLE on v3/v2 as of
     #2249 (was silent) — forward-only convention: a WARN never blocks,
-    and the retro-scan found zero corpus hits in any version class."""
+    and the retro-scan found zero corpus hits in any version class.
+    #2291: BOTH Provenance-leg fail classes (prov-fail-mismatch /
+    prov-fail-trunc) degrade to WARN here, and the v4-only
+    `warn-unverifiable-quote` arm deliberately never fires below the
+    sentinel — QUIETER on v3/v2 than #2249, which made its contradiction
+    class newly visible as WARN there: an unverifiable quote is not an
+    internal contradiction."""
     p_status, p_detail = _parent_lineage_verdict(_context_scan_region(repro), fm)
     status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+    prov_norm = _provenance_verbatim_prompt(original_body_path)
     warn_bits = []
     if p_status in ("fail-denied", "fail-denied-named"):
         warn_bits.append(p_detail)  # grandfathered: WARN below the v4 sentinel
+    if status == "noop" and prov_norm is not None:
+        pv_status, pv_detail = _provenance_prompt_quote_verdict(repro, prov_norm, fm)
+        if pv_status in ("fail-trunc", "fail-mismatch"):
+            warn_bits.append(pv_detail)  # #2291 grandfathered: WARN below the v4 sentinel
     if status in ("fail-trunc", "warn-mismatch"):
+        if status == "warn-mismatch" and prov_norm is not None:
+            sub_detail += _alternate_source_note(repro, prov_norm, fm)
         warn_bits.append(sub_detail)
     if warn_bits:
         return CheckResult(
             name, True, "**Context:** row present; " + "; ".join(warn_bits), is_warn=True
         )
     return CheckResult(name, True, "**Context:** row present")
+
+
+def _context_row_result_v4(
+    name: str, repro: str, ctx_scan: str, fm: dict, original_body_path: Path | None
+) -> CheckResult:
+    """v4 verdict for a label-present Context row WITH a lineage token --
+    the hard-FAIL tier of check 17's sub-checks, extracted verbatim from
+    `check_repro_context_provenance` (C901 full-ruleset budget; behavior
+    byte-identical): the #1418/#2249 parent-lineage contradiction FAILs,
+    the #1068 origin-prompt truncation FAIL, the #2291 Provenance-leg
+    FAILs, and the WARN accumulation (unnamed-parent lineage,
+    unverifiable-quote, warn-mismatch + alternate-source note)."""
+    # #1418 parent-lineage cross-check (incident #1345 r1) — runs
+    # FIRST (lineage correctness before prompt verbatim-ness; one
+    # failure at a time, the file's convention).
+    p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
+    if p_status in ("fail-denied", "fail-denied-named"):
+        return CheckResult(name, False, p_detail)
+    # #1068 origin-prompt verbatim sub-check — runs AFTER the
+    # lineage sub-checks (a body failing both surfaces the
+    # truncation on the next verifier run after the lineage fix).
+    status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+    if status == "fail-trunc":
+        return CheckResult(name, False, sub_detail)
+    # #2291 Provenance leg (incident #2254) -- fires exactly where
+    # the #1068 sub-check noops for lack of frontmatter
+    # `origin_prompt`. Precedence: `origin_prompt` stays
+    # authoritative -- an op-pass never consults the Provenance
+    # prompt for the verdict (27 corpus rows are op-pass with the
+    # Provenance prompt NOT contained; pinned by
+    # test_v4_context_origin_prompt_pass_shadows_provenance).
+    prov_norm = _provenance_verbatim_prompt(original_body_path)
+    warn_bits = []
+    if p_status == "warn-unnamed":
+        warn_bits.append(p_detail)
+    if status == "noop" and prov_norm is not None:
+        pv_status, pv_detail = _provenance_prompt_quote_verdict(repro, prov_norm, fm)
+        if pv_status in ("fail-trunc", "fail-mismatch"):
+            return CheckResult(name, False, pv_detail)  # NEW hard v4 FAIL (#2291)
+        # pv_status == "pass": fall through -- today's pass detail,
+        # byte-identical (a verified pass is indistinguishable from
+        # a noop pass by design; observable only via the #2291
+        # measurement script's NEW-pass row class).
+    elif status == "noop":
+        # No extractable Provenance prompt either -- fail-soft.
+        # A v4 row that still BLOCKQUOTES >=20 chars gets the
+        # unverifiable-quote WARN (measured 2026-08-22: exactly 1
+        # corpus hit, #1072); plain absence stays silent (the 27
+        # absent-both bodies never gain a standing WARN).
+        m_label = _CONTEXT_LABEL_RE.search(repro)
+        region = repro[m_label.end() :]
+        if (
+            original_body_path is not None
+            and original_body_path.exists()
+            and _has_min20_blockquote(region)
+        ):
+            warn_bits.append(_UNVERIFIABLE_QUOTE_DETAIL)
+    elif status == "warn-mismatch":
+        if prov_norm is not None:
+            sub_detail += _alternate_source_note(repro, prov_norm, fm)
+        warn_bits.append(sub_detail)
+    if warn_bits:
+        return CheckResult(
+            name,
+            True,
+            "**Context:** row present with lineage token; " + "; ".join(warn_bits),
+            is_warn=True,
+        )
+    return CheckResult(name, True, "**Context:** row present with lineage token")
 
 
 def check_repro_context_provenance(
@@ -6116,6 +6446,45 @@ def check_repro_context_provenance(
     bodies get the WARN-only form for BOTH classes (grandfathering —
     never a new hard FAIL below the v4 sentinel). No ``origin_prompt``
     or no ``**Context:**`` label: NO-OP (pre-#1068 behavior verbatim).
+
+    **Provenance-leg sub-check (#2291, incident #2254).** When
+    frontmatter ``origin_prompt`` is ABSENT (the pre-#2291 noop escape —
+    #2254's footer blockquoted the refined ``goal:`` frontmatter and the
+    check passed on label presence alone), the verbatim originating
+    prompt is extracted from the sibling ``original-body.md``'s
+    ``## Provenance`` section (``_provenance_verbatim_prompt``: FIRST
+    blockquote segment >= 20 normalized chars, else the longest
+    >= 20-char inline-quoted span; header regex widened to tolerate
+    ``## Provenance (verbatim)``, #2220) and required — normalized — to
+    appear in the Context region (``_provenance_prompt_quote_verdict``:
+    same containment direction + truncation classifier as the #1068
+    check). Verdict lattice (disjoint, exhaustive): prov-pass
+    (contained; pass detail byte-identical to the plain pass);
+    prov-fail-trunc / prov-fail-mismatch (hard v4 FAIL, degraded to WARN
+    on v3/v2 — the #1068/#2249 grandfathering shape);
+    warn-unverifiable-quote (op absent + resolved-and-existing
+    original-body + NO extractable Provenance prompt + a >= 20-char
+    blockquote in the Context region — v4 WARN only; plain absence stays
+    silent). Measured retro-scan (2026-08-22 corpus: 283
+    original-body.md, 96 Provenance-bearing under the widened regex):
+    0 new FAIL hits, exactly 1 new WARN (#1072) — severity staged per
+    the #2249 measure-first convention. When ``origin_prompt`` IS
+    present it stays authoritative: verdicts are unchanged (27 corpus
+    rows are op-pass with the Provenance prompt not contained), and only
+    the op-present ``warn-mismatch`` detail gains a
+    verified/not-verified alternate-source note.
+    WHERE THE LEG FIRES (wiring, verified 2026-08-22): the analyzer's
+    draft gate runs ``verify_task_body.py --file`` against
+    ``.claude/cache/experiment-<N>-clean-result.md``, so
+    ``original_body_path`` resolves to
+    ``.claude/cache/original-body.md``, which never exists — the
+    Provenance leg is STRUCTURALLY INERT at that gate for a first
+    promotion. The blocking mechanical catch lands one round later at
+    the clean-result-critic's pre-pass, which runs ``--issue <N>``
+    against the in-place body AFTER ``set-body --snapshot``
+    (analyzer.md:502), where the sibling exists. Threading the task-dir
+    sibling into ``--file`` draft verifies is explicitly out of scope
+    (a separate future enhancement).
 
     **Parent-lineage cross-check (#1418, incident #1345 r1).** When
     frontmatter ``parent_id`` is set, the lineage clause (scanned on the
@@ -6197,7 +6566,7 @@ def check_repro_context_provenance(
             # the SAME stripped region as the v4 branch, never raw `repro`
             # (a denied claim inside the blockquoted verbatim prompt must
             # not false-fire; #959 precedent). See `_context_row_result_v3`.
-            return _context_row_result_v3(name, repro, fm)
+            return _context_row_result_v3(name, repro, fm, original_body_path)
         # v4 lineage-token sub-check, on the shared strip-then-slice scan
         # region (`_context_scan_region` — #763 / #959 strip-order + the
         # degenerate whole-footer fallback, which fails toward PASS, the
@@ -6213,31 +6582,9 @@ def check_repro_context_provenance(
         # `_strip_blockquote_lines`).
         ctx_scan = _context_scan_region(repro)
         if _V4_CONTEXT_LINEAGE_TOKEN_RE.search(ctx_scan):
-            # #1418 parent-lineage cross-check (incident #1345 r1) — runs
-            # FIRST (lineage correctness before prompt verbatim-ness; one
-            # failure at a time, the file's convention).
-            p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
-            if p_status in ("fail-denied", "fail-denied-named"):
-                return CheckResult(name, False, p_detail)
-            # #1068 origin-prompt verbatim sub-check — runs AFTER the
-            # lineage sub-checks (a body failing both surfaces the
-            # truncation on the next verifier run after the lineage fix).
-            status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
-            if status == "fail-trunc":
-                return CheckResult(name, False, sub_detail)
-            warn_bits = []
-            if p_status == "warn-unnamed":
-                warn_bits.append(p_detail)
-            if status == "warn-mismatch":
-                warn_bits.append(sub_detail)
-            if warn_bits:
-                return CheckResult(
-                    name,
-                    True,
-                    "**Context:** row present with lineage token; " + "; ".join(warn_bits),
-                    is_warn=True,
-                )
-            return CheckResult(name, True, "**Context:** row present with lineage token")
+            # Hard-FAIL tier + WARN accumulation extracted to
+            # `_context_row_result_v4` (C901 budget; behavior identical).
+            return _context_row_result_v4(name, repro, ctx_scan, fm, original_body_path)
         return CheckResult(
             name,
             False,
@@ -6253,11 +6600,7 @@ def check_repro_context_provenance(
     has_provenance_section = False
     if original_body_path is not None and original_body_path.exists():
         has_provenance_section = bool(
-            re.search(
-                r"^##\s+Provenance\s*$",
-                original_body_path.read_text(errors="replace"),
-                re.MULTILINE,
-            )
+            _PROVENANCE_H2_RE.search(original_body_path.read_text(errors="replace"))
         )
     if has_origin_prompt or has_provenance_section:
         source = (
@@ -9719,15 +10062,25 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
 # Sibling of check 24's `_read_figure_meta_text`, but returns the PARSED dict
 # (not flattened text) so check 26 can read the per-point `_kind` / `_group`
 # fields. Same `git show <sha>:<meta_path>` envelope, same fail-soft contract.
-def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
-    """Return the PARSED sibling ``.meta.json`` of ``fig_path`` (extension
-    swapped to ``.meta.json``) read out of the git tree at ``sha`` via
-    ``git show``, or None when there is no sidecar at that sha / the sha is
-    unresolvable / the JSON does not parse / it is not a dict.
+def _read_figure_meta_json_tristate(repo: Path, sha: str, fig_path: str) -> tuple[str, dict | None]:
+    """Tri-state sidecar read for callers that must distinguish a MALFORMED
+    sidecar from a TRANSIENT content-read failure (#2292 round 2, concern
+    `sidecar-read-indeterminate-warns`). Returns one of:
 
-    Sibling of ``_read_figure_meta_text`` (check 24), which flattens to text
-    and so cannot expose the per-point ``_kind`` / ``_group`` fields check 26
-    needs. FAIL-SOFT throughout (subprocess / decode / JSON error → None).
+    - ``("parsed", meta)`` — the sidecar read and parsed to a dict;
+    - ``("malformed", None)`` — bytes were served but are not a JSON dict
+      (JSON parse failure, or a non-dict document);
+    - ``("indeterminate", None)`` — the content read itself failed
+      (``git show`` raised OSError/SubprocessError incl. timeout, or
+      exited non-zero: no sidecar at that sha, sha unresolvable, or a
+      transient git fault) — nothing can be said about the content.
+
+    ``_read_figure_meta_json`` below is the dict-or-None wrapper every
+    pre-existing caller (checks 24/26/28/33/34) keeps using — its return
+    contract is unchanged BY CONSTRUCTION (both non-"parsed" states
+    collapse to None). Only check 60 consumes the tri-state: it WARNs on
+    "malformed" and SKIPs "indeterminate" instead of mis-reporting a
+    transient read failure as a text-less sidecar.
     """
     base, _, ext = fig_path.rpartition(".")
     meta_path = (base if ext else fig_path) + ".meta.json"
@@ -9740,14 +10093,34 @@ def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
             timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
-        return None
+        return "indeterminate", None
     if proc.returncode != 0:
-        return None  # no sidecar at that sha, or sha unresolvable
+        # No sidecar at that sha, sha unresolvable, or a transient git
+        # fault — indistinguishable here; the caller's existence probe
+        # (`_git_object_exists`) is what disambiguates ABSENT.
+        return "indeterminate", None
     try:
         meta = json.loads(proc.stdout)
     except (ValueError, json.JSONDecodeError):
-        return None
-    return meta if isinstance(meta, dict) else None
+        return "malformed", None
+    return ("parsed", meta) if isinstance(meta, dict) else ("malformed", None)
+
+
+def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
+    """Return the PARSED sibling ``.meta.json`` of ``fig_path`` (extension
+    swapped to ``.meta.json``) read out of the git tree at ``sha`` via
+    ``git show``, or None when there is no sidecar at that sha / the sha is
+    unresolvable / the JSON does not parse / it is not a dict.
+
+    Sibling of ``_read_figure_meta_text`` (check 24), which flattens to text
+    and so cannot expose the per-point ``_kind`` / ``_group`` fields check 26
+    needs. FAIL-SOFT throughout (subprocess / decode / JSON error → None).
+    Thin wrapper over ``_read_figure_meta_json_tristate`` — collapses its
+    "malformed" and "indeterminate" states to None, byte-identical to the
+    pre-#2292-round-2 behavior for checks 24/26/28/33/34.
+    """
+    _status, meta = _read_figure_meta_json_tristate(repo, sha, fig_path)
+    return meta
 
 
 def _sidecar_kind_group_aggregate(meta: dict) -> tuple[Counter, set] | None:
@@ -10115,16 +10488,84 @@ def _arm_slug_hits(text: str) -> list[str]:
     return [m.group(0) for m in _ARM_SLUG_RE.finditer(text) if _is_arm_slug_token(m.group(0))]
 
 
+# (h) `role@span` slugs (#2292; incident #2254) — lowercase role/leg
+#     shorthand joined by `@` to a lowercase span/slot name (`pre@context`,
+#     `ctxext@context`, `rb@answer` — #2254's `per_question_dots.png` tick
+#     labels; none of the seven prior classes matched them: `@L\d+` needs an
+#     uppercase-`L` digit RHS, snake needs `_`, H/P/M codes are
+#     uppercase-initial, `[fl]16` is fixed, the arrow class needs `A→B_x`,
+#     arm slugs need >=3 hyphen segments). Shape: letter-initial
+#     lowercase-alnum LHS (2-12 chars), `@`, letter-initial lowercase-alnum
+#     RHS (2-16 chars). The `(?![.-][a-zA-Z0-9])` domain-continuation
+#     lookahead is what excludes email-shaped `user@example.com`,
+#     `user@example-domain.com`, and `user@example.COM` — any dotted- or
+#     hyphenated-domain continuation, case-insensitive (#2292 r2,
+#     `role-at-span-email-prefix`: the original `(?!\.[a-z])` form missed
+#     the hyphenated-domain + uppercase-TLD shapes; the tightening is
+#     MONOTONE — it can only remove matches) — `_is_path_like_word` does
+#     NOT (it returns False for any slash-free word, so its extension-tail
+#     arm is unreachable on an email). Class-(a) `@L12` layer pins never
+#     double-report: their RHS is uppercase-initial and this regex requires
+#     lowercase-initial. CHECK-28-LOCAL BY DESIGN (#2292 AC3/AC5): invoked
+#     from check 28's loop only, NEVER from `_opaque_code_tokens`, whose
+#     SECOND consumer — check 57 Leg A — is a hard promote-time FAIL
+#     calibrated at "measured 0 corpus hits" under the seven shared
+#     classes; joining the shared tuple would turn an unbackticked
+#     `rb@answer` in a sidecar-less Results caption into a NEW FAIL path.
+#     Corpus-calibrated 2026-08-22 over all tracked
+#     `figures/**/*.meta.json`: 3 firing figures (`kernel@k90`, `tb@d1`,
+#     `stats@scipy`), each an in-spirit-opaque true positive or accepted
+#     named residual (`stats@scipy` the expected borderline).
+_ROLE_AT_SPAN_RE = re.compile(r"\b[a-z][a-z0-9]{1,11}@[a-z][a-z0-9]{1,15}\b(?![.-][a-zA-Z0-9])")
+
+
+def _is_role_at_span_token(tok: str) -> bool:
+    """True iff ``tok`` is a class-(h) role@span hit: a FULL
+    ``_ROLE_AT_SPAN_RE`` match. Shared by check 28's class-(h) scan and its
+    caption-decode suppression; membership is re-derivable from the token
+    text alone because no other class emits a lowercase-initial
+    ``@``-joined token (class (a) layer pins carry an uppercase-``L`` digit
+    RHS; every other class is ``@``-free)."""
+    return _ROLE_AT_SPAN_RE.fullmatch(tok) is not None
+
+
+def _role_at_span_hits(text: str) -> list[str]:
+    """Class-(h) role@span matches in ONE sidecar string, under the SAME
+    whole-string + per-word path-exemption discipline as
+    ``_opaque_code_tokens``'s seven classes — but deliberately NOT part of
+    that shared classifier (see the class-(h) comment above: check 57
+    Leg A is its second consumer and must stay byte-stable). Check 28's
+    loop is the ONLY caller. De-duped, order kept (all-lowercase by
+    construction, so case-insensitive dedup is the identity here)."""
+    words = text.split()
+    if len(words) == 1 and _is_path_like_word(words[0]):
+        return []
+    hits: list[str] = []
+    for m in _ROLE_AT_SPAN_RE.finditer(text):
+        tok = m.group(0)
+        ws_words = [w for w in words if tok in w]
+        if ws_words and all(_is_path_like_word(w) for w in ws_words):
+            continue  # provenance path word, not rendered text
+        if tok not in hits:
+            hits.append(tok)
+    return hits
+
+
 def _suppress_caption_decoded_slugs(toks: list[str], caption: str) -> list[str]:
-    """Check 28's slug-class-scoped caption-decode suppression (#1988): drop
-    class-(g) arm-slug tokens named VERBATIM (case-insensitive substring) in
-    ``caption`` — the figure's blockquote caption decodes them for the
-    reader. Non-slug classes (a)-(f) pass through untouched; an empty
-    caption suppresses nothing."""
+    """Check 28's slug-class-scoped caption-decode suppression (#1988;
+    extended to class-(h) role@span slugs, #2292 — the identical rationale:
+    a caption spelling out ``rb@answer`` has decoded it for the reader):
+    drop class-(g) arm-slug and class-(h) role@span tokens named VERBATIM
+    (case-insensitive substring) in ``caption``. Classes (a)-(f) pass
+    through untouched; an empty caption suppresses nothing."""
     caption_cf = caption.casefold()
     if not caption_cf:
         return toks
-    return [t for t in toks if not (_is_arm_slug_token(t) and t.casefold() in caption_cf)]
+    return [
+        t
+        for t in toks
+        if not ((_is_arm_slug_token(t) or _is_role_at_span_token(t)) and t.casefold() in caption_cf)
+    ]
 
 
 # Path-LIKE word predicate (#2258) — supersedes and FOLDS IN the former
@@ -10334,9 +10775,11 @@ def _opaque_code_tokens(text: str) -> list[str]:
 
 def _iter_meta_label_values(obj: object) -> list[str]:
     """Collect the rendered-text-bearing strings of a parsed sidecar for
-    check 28: string VALUES (provenance-keyed subtrees pruned via
-    ``_META_PROVENANCE_KEYS``) plus dict KEYS containing internal whitespace
-    (axis-label-keyed data rows, e.g. ``{"1/30 chance accuracy": 0.41}``).
+    check 28 — and, passed the sidecar's ``text`` block ALONE, for
+    check 60's text-coverage predicate (#2292): string VALUES
+    (provenance-keyed subtrees pruned via ``_META_PROVENANCE_KEYS``) plus
+    dict KEYS containing internal whitespace (axis-label-keyed data rows,
+    e.g. ``{"1/30 chance accuracy": 0.41}``).
     Identifier-shaped keys (``_kind``, ``cell_slugs``, translation-map slug
     keys) are structural provenance and are NOT collected — the deliberate
     divergence from check 24's ``_flatten_meta_strings``, which collects all
@@ -10427,19 +10870,36 @@ def check_figure_label_codes(body: str) -> CheckResult:
     residual, mitigated at figure granularity (the #2221 arm roster
     co-renders >=3-segment siblings — ``a_rb_ctx`` / ``c_map_ctx`` /
     ``c_map_pfx`` — that flag the figure anyway under per-figure WARN
-    semantics).
+    semantics). Incident #2254 (#2292): ``per_question_dots.png``'s four
+    tick-label slugs ``a0`` / ``pre@context`` / ``ctxext@context`` /
+    ``rb@answer`` matched NONE of the seven classes — the ``@``-joined
+    three are mechanized as the CHECK-28-LOCAL class (h)
+    (``_role_at_span_hits``: lowercase letter-initial LHS ``@`` lowercase
+    letter-initial RHS, an email-excluding ``(?![.-][a-zA-Z0-9])``
+    domain-continuation lookahead — #2292 r2 tightened it from
+    ``(?!\.[a-z])``, which missed hyphenated-domain and uppercase-TLD
+    emails (`user@example-domain.com`, `user@example.COM`);
+    deliberately NOT merged into ``_opaque_code_tokens``, whose second
+    consumer — check 57 Leg A — is a hard promote-time FAIL that must
+    stay byte-stable), while short arm codes like ``a0`` stay an
+    accepted residual: the proposed ``[a-z]{1,3}\d[a-z]?`` class
+    measured 98 false-positive figures across 9 issue dirs
+    (``f1..f6`` / ``dec1..dec8`` fold/decile index ticks) against the
+    ONE incident figure, so #2292's pre-registered kill criterion K1
+    dropped it.
 
-    SLUG-CLASS caption-decode suppression (#1988): an arm-slug token
-    that appears VERBATIM (case-insensitive substring) in THIS figure's
-    CAPTION window — the contiguous ``>``-blockquote lines immediately
-    after the image line in the scanned section
-    (``_figure_caption_after``) — is suppressed for that figure: the
-    caption decodes the slug for the reader, which is the acceptable
-    remediation short of regenerating the figure. Non-slug classes
-    (a)-(f) get NO caption suppression (byte-stable grandfathered
-    behavior). URL de-duplication (``dict.fromkeys(urls)``) means a
-    figure embedded TWICE uses the FIRST occurrence's caption window —
-    conservative (an extra WARN at worst, never a lost one).
+    SLUG-CLASS caption-decode suppression (#1988; extended to
+    class-(h) role@span tokens, #2292 — the identical rationale): an
+    arm-slug or role@span token that appears VERBATIM (case-insensitive
+    substring) in THIS figure's CAPTION window — the contiguous
+    ``>``-blockquote lines immediately after the image line in the
+    scanned section (``_figure_caption_after``) — is suppressed for
+    that figure: the caption decodes the slug for the reader, which is
+    the acceptable remediation short of regenerating the figure.
+    Classes (a)-(f) get NO caption suppression (byte-stable
+    grandfathered behavior). URL de-duplication (``dict.fromkeys(urls)``)
+    means a figure embedded TWICE uses the FIRST occurrence's caption
+    window — conservative (an extra WARN at worst, never a lost one).
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
     subtrees pruned) plus whitespace-bearing dict keys. The current
@@ -10460,8 +10920,10 @@ def check_figure_label_codes(body: str) -> CheckResult:
     key names — including a whitespace-free letter-arrow token used as a
     DataFrame column KEY, the #1902 residual gap); (iii) a token inside a
     path-LIKE word (or a whole path-like single-word string,
-    ``_is_path_like_word``, #2258) is exempt — the exemption covers ALL
-    SEVEN token classes, and its named residuals are: an HF ``owner/repo``
+    ``_is_path_like_word``, #2258) is exempt — the exemption covers the
+    seven shared token classes AND the check-28-local class (h)
+    (``_role_at_span_hits`` applies the same discipline itself), and its
+    named residuals are: an HF ``owner/repo``
     id in caption prose (``EleutherAI/sae-llama-3.1-8b-64x`` -> arm-slug
     token ``sae-llama-3``) is indistinguishable from a slash-joined label
     without an open vocabulary allowlist — accepted FALSE POSITIVE
@@ -10480,7 +10942,7 @@ def check_figure_label_codes(body: str) -> CheckResult:
     label = (
         "figure text opaque config codes "
         "(slug / @L-pin / H-code / slot-family / P-M candidate / "
-        "letter-arrow / arm-slug tokens)"
+        "letter-arrow / arm-slug / role@span tokens)"
     )
     section = _figure_scan_section(body)
     text = section_text(body, section)
@@ -10522,6 +10984,11 @@ def check_figure_label_codes(body: str) -> CheckResult:
         toks: list[str] = []
         for s in _iter_meta_label_values(meta):
             toks.extend(_opaque_code_tokens(s))
+            # Class (h) role@span (#2292) is CHECK-28-LOCAL: appended here,
+            # never inside `_opaque_code_tokens` — its second consumer
+            # (check 57 Leg A, a hard FAIL) stays byte-stable by design
+            # (see the class-(h) comment block).
+            toks.extend(_role_at_span_hits(s))
         toks = list(dict.fromkeys(toks))
         # Slug-class-scoped caption-decode suppression (#1988): an arm slug
         # named verbatim (case-insensitively) in THIS figure's blockquote
@@ -14088,6 +14555,126 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
         return CheckResult(label, True, "no same-repo sha-pinned figures to check")
     return CheckResult(
         label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
+
+
+def check_figure_sidecar_text_coverage(body: str) -> CheckResult:
+    """Check 60 (WARN, generation-agnostic; #2292; incident #2254): every
+    same-repo sha-pinned embedded figure whose sibling ``.meta.json``
+    sidecar EXISTS at the cited sha should carry a rendered-text block —
+    ``meta["text"]`` non-empty of label strings
+    (``_iter_meta_label_values`` on the text block ALONE) — because
+    check 28's opaque-code scan reads the sidecar's strings and a
+    text-less sidecar gives it nothing rendered to scan, while checks 41
+    and 57 probe sidecar EXISTENCE only and stay silent when one is
+    present. #2254's ``per_question_dots.png`` shipped opaque code-slug
+    tick labels through every mechanical gate behind exactly this shape:
+    ``scripts/issue2254_figures.py::_save`` hand-rolls ``fig.savefig``
+    plus a provenance-only ``{figure, git_commit, git_dirty, inputs}``
+    sidecar, so a sidecar WAS present and nothing reported the missing
+    text channel.
+
+    Predicate (deliberate — #2292 Must-Fix 1): keyed on the ``text``
+    BLOCK, never ``_iter_meta_label_values(meta)`` over the WHOLE
+    sidecar — ``inputs`` / ``git_dirty_paths`` are NOT in
+    ``_META_PROVENANCE_KEYS``, so a whole-sidecar walk yields the
+    input-path strings, reads #2254's provenance-only sidecars as
+    text-bearing, and goes silent on the exact incident set. Keying on
+    ``text`` also makes this check and the 60.9%-textless corpus posture
+    measurement the SAME instrument.
+
+    Deference branches (no double-reporting): sidecar ABSENT
+    (``_git_object_exists`` == 'fail') -> checks 41 (WARN) / 57 (FAIL)
+    own it — skip; INDETERMINATE sidecar probe ('skip') -> the siblings'
+    fail-soft residual — skip; present-but-MALFORMED (existence probe
+    'pass', ``_read_figure_meta_json_tristate`` -> 'malformed': JSON
+    parse failure, or a non-dict document) -> treated as TEXT-LESS and
+    reported HERE — no other check reports present-but-malformed, so
+    deferring would preserve the zero-coverage/zero-report property this
+    check exists to remove; TRANSIENT content-read failure (existence
+    probe 'pass', tri-state 'indeterminate': ``git show`` exception /
+    non-zero rc) -> skipped, never a WARN — a read fault says nothing
+    about the sidecar's content (#2292 r2,
+    `sidecar-read-indeterminate-warns`). Scope gates mirror check 41's: same-repo
+    sha-pinned raw-GitHub URLs only; the PNG must itself resolve at the
+    cited sha (else check 22's domain, no double-report). WARN, never
+    FAIL: 2,169 of 3,560 tracked sidecars (60.9%) carry no ``text``
+    block (2026-08 corpus), so a retroactive FAIL would block
+    promote-time re-verifies wholesale. NO-OP PASS when: no scan
+    section, no inline figures, the repo cannot be resolved (offline /
+    ``--body-stdin``), or no figure passes the scope gates.
+    """
+    label = "figure sidecar text coverage (text-less sidecars)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    textless: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        base, _sep, ext = fig_path.rpartition(".")
+        meta_path = (base if ext else fig_path) + ".meta.json"
+        meta_status, _ = _git_object_exists(repo, sha, meta_path)
+        if meta_status != "pass":
+            # ABSENT ('fail') -> checks 41/57 own it; INDETERMINATE ('skip')
+            # -> the siblings' fail-soft residual. Either way out of
+            # check 60's scope — it covers PRESENT sidecars only.
+            continue
+        read_status, meta = _read_figure_meta_json_tristate(repo, sha, fig_path)
+        if read_status == "indeterminate":
+            # Existence probe PASSed but the content read itself failed
+            # (`git show` exception / non-zero rc): a TRANSIENT read
+            # fault, not a malformed sidecar — out of scope, the same
+            # fail-soft residual as the siblings' 'skip' branch; never a
+            # WARN (#2292 r2, `sidecar-read-indeterminate-warns`).
+            continue
+        checked += 1
+        # "malformed" HERE means present-but-unparsable (the existence
+        # probe passed; JSON parse failure or a non-dict document) —
+        # text-less by construction; "parsed" keys on the text block.
+        text_block = meta.get("text") if isinstance(meta, dict) else None
+        if not text_block or not _iter_meta_label_values(text_block):
+            textless.append(fig_path.rsplit("/", 1)[-1])
+    if textless:
+        textless = list(dict.fromkeys(textless))
+        preview = ", ".join(f"`{b}`" for b in textless[:3]) + (" …" if len(textless) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"check 28's opaque-code scan has no rendered text to read on {len(textless)} "
+            f"text-less sidecar(s) of {checked} sidecar-bearing figure(s): {preview} — "
+            "regenerate via savefig_paper (embed_text defaults True: serializes titles, "
+            "axis/tick labels, and legend entries into the sidecar), or acknowledge in body",
+            is_warn=True,
+        )
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned sidecar-bearing figures to check")
+    return CheckResult(
+        label,
+        True,
+        f"{checked} sidecar-bearing figure(s) all carry rendered-text blocks at their cited shas",
     )
 
 
@@ -19225,6 +19812,12 @@ CHECKS = [
     # check 41 (WARN, generation-agnostic) — sidecar-less embedded figures:
     # names the figures checks 24/28/33/34 silently skipped (#1478; incident #1434):
     check_figure_sidecar_coverage,
+    # check 60 (WARN, generation-agnostic) — TEXT-LESS sidecars: a PRESENT
+    # sidecar with no rendered-text block gives check 28 nothing to scan
+    # while the existence-only probes (41/57) stay silent (#2292; incident
+    # #2254 — 11 provenance-only `{figure, git_commit, git_dirty, inputs}`
+    # sidecars):
+    check_figure_sidecar_text_coverage,
     # check 42 (FAIL on v4, WARN grandfathered — forward-only) — body-wide same-repo
     # blob/tree URL existence; footer stays check 8b's (#1507; incident #1072 r2):
     check_body_artifact_urls_exist,

@@ -171,7 +171,9 @@ materialization ref is known to differ (RunPod `BOOTSTRAP_BRANCH` defaults to
 names an rsync-materialized SLURM lane — every member of
 `router._PER_CLUSTER_LANES` (`nibi` / `fir` / `mila` / `fellows`) plus the
 legacy `cluster` alias — OR is absent/`auto` (the auto chain is
-fellows-FIRST, an rsync lane), run the gate in rsync mode: set
+runpod-first, but a RunPod capacity miss falls through to fellows — an
+rsync lane — so `auto` must satisfy the rsync-lane bar too), run the gate
+in rsync mode: set
 `EXTRA_SYNC_ARGS=(--extra-sync-path eval_results/issue_<M>/ladder)` to any
 plan-named values (omit when none), then replace the fence's default
 `LANE_ARGS=()` with `LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}")` —

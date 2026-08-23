@@ -40,6 +40,15 @@ Adding a new check to `scripts/verify_plan.py` fans out to:
 5. If mirrored as a critic-lens item: critic-lens-reference.md (full text) +
    critic.md (item-name run) + statistics-critic.md ("items I own") +
    lens-coverage-map.md § table row (`v2-owner: ...`).
+6. C901 on a branch-rich check: verify_plan.py is in the
+   `tests/test_ruff_policy.py` LIVE_WORKFLOW_HELPERS full-ruleset pin, and a
+   many-SKIP-branch check body trips `C901 (>15)` there even though bare
+   `ruff check` passes (per-file-ignores relax scripts/). The file's house
+   remedy is HELPER EXTRACTION (`check_battery_multiplier` precedent — zero
+   `noqa: C901` in verify_plan.py; workflow_lint.py uses annotated noqa
+   instead): extract the budget/harvest ladder into a `_cNN_*` helper
+   returning result-or-skip-reason (#2299: `_c70_resolve_budget`, 21 -> under
+   15). Run the ruff-policy pin BEFORE the final commit, not only bare ruff.
 
 **How to apply:** grep `len(results) ==`, `n_skip`, `len(payload` in the test
 file before claiming the pin list is complete. Corpus-replay probes live at

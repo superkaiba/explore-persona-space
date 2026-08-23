@@ -1,0 +1,79 @@
+{
+  "commit": "40fef8ec+dirty",
+  "render_id": "6012af19b1a849c0",
+  "git_commit": "40fef8ec5bb6b1879de494575f305c6e8a3cd5c9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2477/coherence_by_arm.meta.json",
+    "figures/issue_2477/coherence_by_arm.pdf",
+    "figures/issue_2477/coherence_by_arm.png",
+    "figures/issue_2477/item_mean_hist_by_arm.meta.json",
+    "figures/issue_2477/item_mean_hist_by_arm.pdf",
+    "figures/issue_2477/item_mean_hist_by_arm.png",
+    "figures/issue_2477/per_depth_lines_rawmt.meta.json",
+    "figures/issue_2477/per_depth_lines_rawmt.pdf",
+    "figures/issue_2477/per_depth_lines_rawmt.png",
+    "scripts/issue2477_base_coherence.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T03:25:29Z",
+  "figsize": [
+    5.6,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "Base, chat template (fresh)",
+      "Cap-hit fraction": 0.305,
+      "_kind": "bar"
+    },
+    {
+      "category": "Base, bare text (fresh)",
+      "Cap-hit fraction": 0.1,
+      "_kind": "bar"
+    },
+    {
+      "category": "Base, raw multi-turn (banked)",
+      "Cap-hit fraction": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "Instruct, raw multi-turn (banked)",
+      "Cap-hit fraction": 0.168,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Fraction ending at the 1,024-token cap",
+        "ylabel": "Cap-hit fraction",
+        "xticklabels": [
+          "Base, chat template (fresh)",
+          "Base, bare text (fresh)",
+          "Base, raw multi-turn (banked)",
+          "Instruct, raw multi-turn (banked)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
