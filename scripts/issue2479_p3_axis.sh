@@ -24,7 +24,12 @@
 #              --census --execute on the emitted item list, with
 #              EPM_I2479_REQUIRE_AXIS_PILOT_PASS exported so run_leg itself
 #              refuses real spend without the pilot PASS (defense in depth).
-#   p3_freeze  freeze_axis --legs-dir ... --commit (explicit-path git commit +
+#   p3_upload  bulk upload_folder of the legs dir (raw draws + reports +
+#              caches) to issue2479_ai_likeness_gradient/judge_legs + a scoped
+#              raising verify (plan §10; the dual-prefix verification's
+#              judge_legs leg — scripts/issue2479_verify_uploads.py)
+#   p3_freeze  freeze_axis --legs-dir ... --commit (explicit-path git commit
+#              of axis_freeze.json + the axis_draws.json per-draw sidecar +
 #              bare rc-checked push + the axis-frozen marker via main task.py)
 #
 # Spend: requires EPM_I1345_JUDGE_SPEND_OK=1 (checked at entry; the axis wave
@@ -87,7 +92,8 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "[dry-run] p3_pilot: uv run python scripts/issue2479_judge_pilots.py --family axis --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --report ${PILOT_REPORT} --work-dir ${PILOT_WORK} --execute   # skipped when a PASS report exists"
   echo "[dry-run] p3_gate:  uv run python scripts/issue2479_judge_pilots.py --require-pass --family axis --report ${PILOT_REPORT}   # rc=48 on miss/FAIL"
   echo "[dry-run] p3_legs:  per character: EPM_I2479_REQUIRE_AXIS_PILOT_PASS=${PILOT_REPORT} uv run python scripts/issue1345_onpolicy_judge_legs.py --leg ai_likeness --rows ${ITEMS_DIR}/axis_items_<name>.jsonl --character <name> --census --out-dir ${LEGS_DIR} --execute"
-  echo "[dry-run] p3_freeze: uv run python scripts/issue2479_freeze_axis.py --legs-dir ${LEGS_DIR} --commit"
+  echo "[dry-run] p3_upload: upload_folder ${LEGS_DIR} -> issue2479_ai_likeness_gradient/judge_legs + scoped raising verify"
+  echo "[dry-run] p3_freeze: uv run python scripts/issue2479_freeze_axis.py --legs-dir ${LEGS_DIR} --commit   # commits axis_freeze.json + axis_draws.json"
   exit 0
 fi
 
@@ -137,6 +143,41 @@ for i in "${!NAMES[@]}"; do
   uv run python scripts/issue1345_onpolicy_judge_legs.py --leg ai_likeness \
     --rows "$items" --character "$name" --census --out-dir "$LEGS_DIR" --execute
 done
+
+echo "[phase=p3_upload]"
+# Persist the judge legs (raw draws + reports + caches) to the plan-§10
+# declared prefix BEFORE the freeze commit — one bulk upload_folder + a
+# scoped raising verify (the dual-prefix verification's judge_legs leg).
+uv run python - "$LEGS_DIR" <<'PY'
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "src")
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+from huggingface_hub import HfApi
+
+from explore_persona_space.orchestrate import hub
+
+legs = Path(sys.argv[1])
+assert legs.is_dir(), f"legs dir missing: {legs}"
+repo = "superkaiba1/explore-persona-space-data"
+prefix = "issue2479_ai_likeness_gradient/judge_legs"
+api = HfApi()
+hub.retry_transient(
+    lambda: api.upload_folder(
+        repo_id=repo,
+        repo_type="dataset",
+        folder_path=str(legs),
+        path_in_repo=prefix,
+        commit_message="issue-2479 P3: axis judge legs (raw draws + reports + caches)",
+    ),
+    what="upload_folder(judge_legs)",
+)
+n = hub.assert_hf_prefix_exists(api, repo, prefix, repo_type="dataset")
+print(f"[i2479-p3] judge_legs uploaded + verified ({n} files at {prefix})", flush=True)
+PY
 
 echo "[phase=p3_freeze]"
 uv run python scripts/issue2479_freeze_axis.py --legs-dir "$LEGS_DIR" --commit

@@ -268,16 +268,100 @@ def freeze_axis(panel: list[dict], legs_dir: Path, manifest_path: Path, panel_pa
     }
 
 
-def commit_and_post(freeze_path: Path, repo_root: Path, issue: int = ISSUE) -> str:
+def leg_draws(save_raw: Path, tag: str) -> dict[str, list[float]]:
+    """conv_id -> KEPT per-draw scores from one leg's save_raw file.
+
+    Kept = a parseable in-range score that is not a refusal — mirroring the
+    production drop-never-coerce reduce. SELF-VALIDATING: the per-item mean of
+    every returned list is asserted equal to `judge_result_from_save_raw`'s
+    (the production reduce), so the per-draw sidecar can never drift from the
+    frozen per-item means it decomposes.
+    """
+    from explore_persona_space.eval.graded_judge import (
+        _is_refusal_parsed,
+        _score_from_parsed,
+        judge_result_from_save_raw,
+    )
+
+    all_scores = json.loads(save_raw.read_text())["all_scores"]
+    slug = jl.LEG_SLUG[jl.LEG_AI_LIKENESS]
+    prefix = f"{slug}_{tag}_"
+    out: dict[str, list[float]] = {}
+    for custom_id, parsed in all_scores.items():
+        iid = str(custom_id).rsplit("__", 2)[0]
+        if not iid.startswith(prefix):
+            continue
+        cid = iid[len(prefix) :]
+        out.setdefault(cid, [])
+        if _is_refusal_parsed(parsed):
+            continue
+        score = _score_from_parsed(parsed)
+        if score is None:
+            continue
+        out[cid].append(float(score))
+    assert out, f"{save_raw}: no draws under item-id prefix {prefix!r}"
+    items = [(jl.item_id(jl.LEG_AI_LIKENESS, tag, cid), "", "") for cid in sorted(out)]
+    res = judge_result_from_save_raw(save_raw, items)
+    for cid, draws in out.items():
+        prod = res.scores.get(jl.item_id(jl.LEG_AI_LIKENESS, tag, cid))
+        mine = (sum(draws) / len(draws)) if draws else None
+        if prod is None:
+            assert mine is None, f"{tag}/{cid}: sidecar kept draws where production dropped all"
+        else:
+            assert mine is not None and abs(mine - prod) < 1e-9, (
+                f"{tag}/{cid}: per-draw mean {mine} != production reduce {prod}"
+            )
+    return out
+
+
+def collect_axis_draws(panel: list[dict], legs_dir: Path) -> dict:
+    """Per-character KEPT per-draw score lists — the axis violin's data.
+
+    Round-2 addition (the axis-distribution figure previously skipped with
+    'frozen axis payload carries MEAN scores only'): decomposes each frozen
+    per-item mean into its kept draws, read from the legs' own save_raw files.
+    """
+    per_char: dict[str, dict] = {}
+    for row in panel:
+        name = row["name"]
+        load_leg_report(legs_dir, name)  # fail-loud presence + shape check
+        raw_path = legs_dir / f"judge_raw_{jl.LEG_SLUG[jl.LEG_AI_LIKENESS]}_{name}.json"
+        if not raw_path.is_file():
+            raise FileNotFoundError(f"{name}: axis save_raw missing: {raw_path}")
+        draws = leg_draws(raw_path, name)
+        per_char[name] = {
+            "conv_id_draws": draws,
+            "n_items": len(draws),
+            "n_draws_kept": sum(len(v) for v in draws.values()),
+        }
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    return {
+        "issue": ISSUE,
+        "rubric_sha256": rubric_fingerprint(),
+        "per_character": per_char,
+        "metadata": {
+            "script": "scripts/issue2479_freeze_axis.py",
+            "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            **as_metadata_dict(git_provenance()),
+        },
+    }
+
+
+def commit_and_post(
+    freeze_path: Path, repo_root: Path, issue: int = ISSUE, extra_paths: tuple[Path, ...] = ()
+) -> str:
     """Commit + push the freeze BY EXPLICIT PATH; post the axis-frozen marker.
 
     The marker posts via the MAIN-checkout task.py (resolved through the git
     common dir): task.py branch-guards to main, so it must run from the
     canonical checkout, not this (issue-branch) worktree. Returns the freeze
-    commit sha (pasted verbatim from `git rev-parse HEAD`).
+    commit sha (pasted verbatim from `git rev-parse HEAD`). ``extra_paths``
+    (e.g. the axis_draws.json per-draw sidecar) ride the SAME explicit-path
+    commit.
     """
-    rel = str(freeze_path.resolve().relative_to(repo_root.resolve()))
-    subprocess.run(["git", "-C", str(repo_root), "add", "--", rel], check=True)
+    rels = [str(p.resolve().relative_to(repo_root.resolve())) for p in (freeze_path, *extra_paths)]
+    subprocess.run(["git", "-C", str(repo_root), "add", "--", *rels], check=True)
     subprocess.run(
         [
             "git",
@@ -287,7 +371,7 @@ def commit_and_post(freeze_path: Path, repo_root: Path, issue: int = ISSUE) -> s
             "-m",
             f"task #{issue}: axis freeze — pre-registered AI-likeness axis",
             "--",
-            rel,
+            *rels,
         ],
         check=True,
     )
@@ -454,16 +538,24 @@ def main() -> None:
     payload = freeze_axis(panel, args.legs_dir, args.manifest, args.panel)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     c.write_json(args.out, payload)
+    # Per-draw sidecar beside the freeze: the axis-violin figure's underlying
+    # data (gradient_verdict reads it; self-validated against the frozen means).
+    draws_out = args.out.parent / "axis_draws.json"
+    draws_payload = collect_axis_draws(panel, args.legs_dir)
+    c.write_json(draws_out, draws_payload)
     g = payload["gates"]
     print(
         f"[freeze] {len(payload['characters'])} characters -> {args.out}\n"
+        f"[freeze] per-draw sidecar: "
+        f"{sum(v['n_draws_kept'] for v in draws_payload['per_character'].values())} kept draws "
+        f"-> {draws_out}\n"
         f"[freeze] band_agreement rho={g['band_agreement_rho']:.3f} "
         f"pass={g['band_agreement_pass']}  axis_range={g['axis_range']:.2f} "
         f"pass={g['axis_range_pass']}",
         flush=True,
     )
     if args.commit:
-        sha = commit_and_post(args.out, _REPO_ROOT)
+        sha = commit_and_post(args.out, _REPO_ROOT, extra_paths=(draws_out,))
         print(f"[freeze] axis-frozen commit={sha}", flush=True)
     else:
         print(

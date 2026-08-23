@@ -149,7 +149,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
     user = os.environ.get("USER", "thomasjiralerspong")
     ap.add_argument("--cells", nargs="+", default=list(CHAR_VARIANTS), choices=CHAR_VARIANTS)
-    ap.add_argument("--revision", default=stager.STORIES_PIN)
+    ap.add_argument(
+        "--revision",
+        default=None,
+        help="stories revision override; default = per-cell policy (parent cells at "
+        "stager.STORIES_PIN, panel char_2479_* cells at their recorded generation upload "
+        "revision — staging a panel cell at the parent pin 404s: the cell postdates the pin)",
+    )
     ap.add_argument("--dest-root", type=Path, default=Path("data/issue_1345"))
     ap.add_argument(
         "--stage-root",
@@ -242,7 +248,8 @@ def main() -> None:
             "script": "scripts/issue1345_char_capture_pre_probe.py",
             "git_commit": _git_commit(),
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "stories_revision": args.revision,
+            "stories_revision": args.revision
+            or "per-cell policy (parent: STORIES_PIN; panel: recorded upload revision)",
             "stage_root": str(args.stage_root),
             "thresholds": {
                 "pass_floor": INTERSECTION_PASS,

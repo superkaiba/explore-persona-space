@@ -780,8 +780,13 @@ def _hero_scatter(pp, plt, rows: list[dict], ylabel: str, stem: str, fig_dir: Pa
     return paths["png"]
 
 
-def make_figures(per_char: dict[str, dict], fig_dir: Path) -> dict:
-    """The plan-SS6 figure set; data-driven and tolerant of missing optional reads."""
+def make_figures(per_char: dict[str, dict], fig_dir: Path, axis_draws: dict | None = None) -> dict:
+    """The plan-SS6 figure set; data-driven and tolerant of missing optional reads.
+
+    ``axis_draws`` is the freeze step's per-draw sidecar payload
+    (``axis_draws.json`` — per character, conv_id -> kept draw scores); when
+    present the axis-score violins render from it, else the skip is recorded.
+    """
     import matplotlib
 
     matplotlib.use("Agg")
@@ -988,11 +993,42 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path) -> dict:
     else:
         skipped["kept_drop_accounting"] = "no surviving characters"
 
-    skipped["axis_score_violins"] = (
-        "frozen axis payload carries per-character MEAN scores only (no per-draw "
-        "score lists); violins need leg-report per-draw data — deferred to a "
-        "leg-report-consuming analyzer pass"
-    )
+    # Axis-score violins: per-draw judge scores per character, from the freeze
+    # step's axis_draws.json sidecar (kept draws, production-reduce-validated).
+    draw_recs: list[tuple[str, list[float]]] = []
+    if axis_draws:
+        for name, rec in (axis_draws.get("per_character") or {}).items():
+            if name not in per_char:
+                continue  # ceiling-excluded / non-surviving characters stay out
+            vals = [float(s) for draws in rec["conv_id_draws"].values() for s in draws]
+            if vals:
+                draw_recs.append((name, vals))
+    if draw_recs:
+        draw_recs.sort(key=lambda t: -float(per_char[t[0]]["axis_score"]))
+        fig, ax = plt.subplots(figsize=(8.0, 4.0))
+        ax.violinplot(
+            [v for _, v in draw_recs],
+            positions=np.arange(len(draw_recs)),
+            showmedians=True,
+            widths=0.8,
+        )
+        ax.set_xticks(np.arange(len(draw_recs)))
+        ax.set_xticklabels(
+            [per_char[n]["display_name"] for n, _ in draw_recs], rotation=60, ha="right"
+        )
+        ax.set_ylabel("AI-likeness judge score (per draw, 0-100)")
+        paths = pp.savefig_paper(fig, "axis_score_violins", dir=fig_dir)
+        plt.close(fig)
+        written["axis_score_violins"] = str(paths["png"])
+    elif axis_draws:
+        skipped["axis_score_violins"] = (
+            "axis_draws.json present but no surviving character carries kept draw rows"
+        )
+    else:
+        skipped["axis_score_violins"] = (
+            "axis_draws.json absent (freeze_axis emits it beside axis_freeze.json from the "
+            "legs' save_raw draws) — violins need the per-draw sidecar"
+        )
 
     return {"written": written, "skipped": skipped}
 
@@ -1131,6 +1167,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--grad-dir", type=Path, default=None)
     ap.add_argument("--panel", type=Path, default=None)
     ap.add_argument("--axis-freeze", type=Path, default=None)
+    ap.add_argument(
+        "--axis-draws",
+        type=Path,
+        default=None,
+        help="freeze-step per-draw sidecar (default: <eval-dir>/axis_draws.json; absent => "
+        "the axis-violin figure records its skip reason)",
+    )
     ap.add_argument("--instrument-gates", type=Path, default=None)
     ap.add_argument(
         "--axis-items-stats-dir",
@@ -1157,7 +1200,11 @@ def main(argv: list[str] | None = None) -> int:
         items_stats_dir=args.axis_items_stats_dir or eval_dir / "axis_items",
     )
     if not args.no_figures:
-        payload["figures"] = make_figures(payload["per_character"], args.fig_dir)
+        draws_path = args.axis_draws or eval_dir / "axis_draws.json"
+        axis_draws = json.loads(draws_path.read_text()) if draws_path.is_file() else None
+        payload["figures"] = make_figures(
+            payload["per_character"], args.fig_dir, axis_draws=axis_draws
+        )
 
     out = args.out or eval_dir / "gradient_verdict.json"
     _atomic_write_json(out, payload)

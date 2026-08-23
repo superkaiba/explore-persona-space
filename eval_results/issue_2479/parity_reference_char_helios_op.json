@@ -4,6 +4,7 @@
   "source_branch": "origin/issue-1345",
   "source_blobs": {
     "cell_context": "c6a8d9d1ce501960232d79e1d027a9476a6fd01c",
+    "cell_prefix": "8f38f6bfae8fe8c4422da1e8953835f67207a0cc",
     "ladder": "758d958261bdeae02b3646efbb569e315c46b7b2"
   },
   "tolerance": 0.02,

@@ -422,3 +422,72 @@ def test_freeze_rubric_fingerprint_matches_parent_instrument() -> None:
     import hashlib
 
     assert fz.rubric_fingerprint() == hashlib.sha256(jl.AI_LIKENESS_RUBRIC.encode()).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# (d) per-draw sidecar extraction (fz.leg_draws / fz.collect_axis_draws) —
+#     the axis-violin data path added in round 2 (G4)
+# ---------------------------------------------------------------------------
+def test_leg_draws_kept_dropped_mixed_and_refusal(tmp_path: Path) -> None:
+    raw = _raw("helios", {"s1": 90.0, "s2": 88.0, "s3": None}, n_draws=3)
+    # Mixed item: overwrite ONE of s1's three draws with an out-of-range score
+    # (DROP) and append a bare-string REFUSAL draw to s2 — kept lists shrink;
+    # leg_draws SELF-VALIDATES every per-item mean against the production
+    # reduce (judge_result_from_save_raw), so a pass here is also check (c).
+    iid1 = jl.item_id(jl.LEG_AI_LIKENESS, "helios", "s1")
+    iid2 = jl.item_id(jl.LEG_AI_LIKENESS, "helios", "s2")
+    raw["all_scores"][f"{iid1}__00002__00"] = {
+        "reasoning": "x",
+        "score": 105,
+        "stop_reason": "end_turn",
+    }
+    raw["all_scores"][f"{iid2}__00003__00"] = "REFUSAL"
+    p = tmp_path / "judge_raw_ail_helios.json"
+    p.write_text(json.dumps(raw))
+    draws = fz.leg_draws(p, "helios")
+    assert draws == {"s1": [90.0, 90.0], "s2": [88.0, 88.0, 88.0], "s3": []}
+
+
+def test_leg_draws_scopes_to_tag_prefix(tmp_path: Path) -> None:
+    # A save_raw carrying BOTH an axis tag and its mask_ sibling: leg_draws on
+    # the axis tag must not absorb the mask rows (different item-id prefix).
+    raw = _raw("iris", {"s1": 70.0})
+    raw["all_scores"].update(_raw("mask_iris", {"s1": 40.0})["all_scores"])
+    p = tmp_path / "raw.json"
+    p.write_text(json.dumps(raw))
+    assert fz.leg_draws(p, "iris") == {"s1": [70.0, 70.0]}
+    assert fz.leg_draws(p, "mask_iris") == {"s1": [40.0, 40.0]}
+
+
+def test_leg_draws_no_rows_under_prefix_fails_loud(tmp_path: Path) -> None:
+    p = tmp_path / "raw.json"
+    p.write_text(json.dumps(_raw("iris", {"s1": 70.0})))
+    with pytest.raises(AssertionError, match="no draws under item-id prefix"):
+        fz.leg_draws(p, "vera")
+
+
+def test_collect_axis_draws_shape_and_missing_raw_fails_loud(tmp_path: Path) -> None:
+    mini_panel = [{"name": "helios"}, {"name": "iris"}]
+    legs = tmp_path / "legs"
+    legs.mkdir()
+    per_item = {"helios": {"s1": 90.0, "s2": None}, "iris": {"s1": 80.0}}
+    for name, scores in per_item.items():
+        (legs / f"judge_report_ail_{name}.json").write_text(
+            json.dumps(_report(name, 85.0, len(scores)))
+        )
+        (legs / f"judge_raw_ail_{name}.json").write_text(json.dumps(_raw(name, scores)))
+
+    payload = fz.collect_axis_draws(mini_panel, legs)
+    assert payload["issue"] == 2479
+    assert payload["rubric_sha256"] == fz.rubric_fingerprint()
+    pc = payload["per_character"]
+    assert set(pc) == {"helios", "iris"}
+    assert pc["helios"]["conv_id_draws"] == {"s1": [90.0, 90.0], "s2": []}
+    assert pc["helios"]["n_items"] == 2 and pc["helios"]["n_draws_kept"] == 2
+    assert pc["iris"]["conv_id_draws"] == {"s1": [80.0, 80.0]}
+    assert pc["iris"]["n_draws_kept"] == 2
+    assert payload["metadata"]["git_commit"]
+
+    (legs / "judge_raw_ail_iris.json").unlink()
+    with pytest.raises(FileNotFoundError, match="axis save_raw missing"):
+        fz.collect_axis_draws(mini_panel, legs)
