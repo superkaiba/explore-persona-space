@@ -127,6 +127,7 @@ tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
 tests/test_workflow_lint_agent_spec_caps.py
 tests/test_workflow_lint_agent_spec_size.py
+tests/test_workflow_lint_codex_composer_memory_commit.py
 tests/test_workflow_lint_codex_concerns_persistence.py
 tests/test_workflow_lint_cvd_scoped_gpu_verdict.py
 tests/test_workflow_lint_dotenv_check.py
