@@ -11405,8 +11405,8 @@
     "2477": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/awaiting_promotion/2477",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2477",
+      "status": "followups_running",
       "title": "Base-model generation under the chat template is mostly incoherent, so the paper's base rows re-state on the bare-text render (HIGH confidence)"
     },
     "2478": {
