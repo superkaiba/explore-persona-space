@@ -181,6 +181,20 @@ PILOT_WALL_CEIL_H = 3.0  # plan §7 gate 2 (basis 1.20 s/rollout -> 1.32 h proje
 HEADROOM_A_GB = 9.0  # plan §9 floors
 HEADROOM_B2_GB = 5.0
 PARITY_COS_MIN = 0.9999  # plan §7 gate 4 (span-mean class; #1005 precedent)
+# Gate-4 single-position context keys (v_ce/v_pe): B1 captures contexts at
+# batch-16 while gate 4 re-captures batch-1, and bf16 batch-composition
+# numerics land ~2e-4 below 1.0 on a flattened 28-layer single-position read
+# (measured attribution probe, pod-2215-dbe 2026-08-23: batch-1 repeat
+# cos = 1.0; batch-1 vs batch-16 = 0.99979-0.99984, equal to the
+# stored-vs-recapture miss to the last digit; off-by-one control 0.44-0.64).
+# Two-bar calibration per #779: early layers carry the sharp bug-catcher bar
+# (bf16 jitter there ~1e-6; mask/pad/position bugs corrupt layer 0), the
+# all-layer flattened bar keeps >=20x headroom over the measured deviation
+# while staying ~0.35 above the real-bug regime. Same mechanism + values as
+# DEGEN_PE_COS_MIN below. Span-mean keys keep PARITY_COS_MIN unchanged.
+PARITY_COS_MIN_SINGLEPOS_FLAT = 0.995
+PARITY_COS_MIN_SINGLEPOS_EARLY = 0.999
+PARITY_EARLY_LAYERS = (0, 1, 2, 3)
 # M2 (iii) degenerate-cell dv_pe sanity: identical prefix TOKENS by construction,
 # so v_pe differs only by bf16 batch-composition jitter (a real pe-index bug
 # reads cosine ~0.4-0.8; #779 calibration) — per-layer cosine + relative norm.
@@ -1298,8 +1312,13 @@ def _gate4_parity(cfg: DbeConfig, model, tok, bank: dict, eot: list[int]) -> Non
     BOTH independently-emitted records — the GENERATION-side jsonl record and
     the CAPTURE-side store index record (dbe-gate4-metadata-independence) —
     and the tail-slice token ids.
-    (ii) 3 sampled contexts re-rendered + re-captured: v_ce AND v_pe cosine >=
-    PARITY_COS_MIN each; prefix_end re-asserted against the B1 store.
+    (ii) 3 sampled contexts re-rendered + re-captured: v_ce AND v_pe under the
+    single-position two-bar calibration (early-layer flattened cosine >=
+    PARITY_COS_MIN_SINGLEPOS_EARLY over PARITY_EARLY_LAYERS + all-layer
+    flattened >= PARITY_COS_MIN_SINGLEPOS_FLAT — bf16 batch-composition
+    numerics make the span-mean bar headroom-free on single positions; see
+    the constants' attribution-probe comment); prefix_end re-asserted against
+    the B1 store.
     Any miss: parity_gate_report.json + rc=RC_PARITY_GATE (stop-and-diagnose)."""
     rng = random.Random(cfg.seed_base + 4)
     checks: list[dict] = []
@@ -1371,20 +1390,35 @@ def _gate4_parity(cfg: DbeConfig, model, tok, bank: dict, eot: list[int]) -> Non
         cap = extract_layer_activations(model, t, cfg.layers, attention_mask=mask)
         v_ce = torch.stack([cap[lay][0, len(ids) - 1] for lay in cfg.layers]).float().cpu()
         v_pe = torch.stack([cap[lay][0, pe - 1] for lay in cfg.layers]).float().cpu()
+        early = [i for i, lay in enumerate(cfg.layers) if lay in PARITY_EARLY_LAYERS] or [0]
         checks.append(
             {
                 "kind": "context",
                 "context_id": cid,
                 "cos_ce": _flat_cos(v_ce, rec["v_ce"]),
                 "cos_pe": _flat_cos(v_pe, rec["v_pe"]),
+                "cos_ce_early": _flat_cos(v_ce[early], rec["v_ce"][early]),
+                "cos_pe_early": _flat_cos(v_pe[early], rec["v_pe"][early]),
             }
         )
 
-    cos_keys = ("cos_span", "cos_tail_incl", "cos_ce", "cos_pe")
-    failures = [c for c in checks if any(c.get(k, 1.0) < PARITY_COS_MIN for k in cos_keys)]
+    def _check_fails(c: dict) -> bool:
+        if c["kind"] == "answer_row":  # span-mean class — tight bar
+            return c["cos_span"] < PARITY_COS_MIN or c["cos_tail_incl"] < PARITY_COS_MIN
+        return (  # single-position class — two-bar bf16 calibration
+            c["cos_ce"] < PARITY_COS_MIN_SINGLEPOS_FLAT
+            or c["cos_pe"] < PARITY_COS_MIN_SINGLEPOS_FLAT
+            or c["cos_ce_early"] < PARITY_COS_MIN_SINGLEPOS_EARLY
+            or c["cos_pe_early"] < PARITY_COS_MIN_SINGLEPOS_EARLY
+        )
+
+    failures = [c for c in checks if _check_fails(c)]
     report = {
         "phase": "anchors-parity",
         "cos_min": PARITY_COS_MIN,
+        "cos_min_singlepos_flat": PARITY_COS_MIN_SINGLEPOS_FLAT,
+        "cos_min_singlepos_early": PARITY_COS_MIN_SINGLEPOS_EARLY,
+        "early_layers": list(PARITY_EARLY_LAYERS),
         "checks": checks,
         "n_failures": len(failures),
         "verdict": "PASS" if not failures else "FAIL",
