@@ -228,6 +228,26 @@ PILOT_FENCE_MULT = 2.0
 # >= 10 GiB HBM headroom; exact tie -> 16 (the smaller B).
 PILOT_GEN_BATCH_CANDIDATES: tuple[int, ...] = (16, 32)
 PILOT_HBM_HEADROOM_GIB = 10.0
+# Crash-fix r3 (epm:failure grid_gen_batch_adoption_oom_death_spiral): the
+# READ-time adoption rule is smallest-within-tolerance, NOT the recorded
+# argmin. The pilot's argmin selection bought ~1.4% throughput (16 ->
+# 15.785 s/rollout vs 32 -> 15.558) while the pilot shape never covered the
+# worst-case cell (per-cell max_new_tokens=4096; the qwen3_5
+# linear-attention chunk state scales with sequence length, so the heavy
+# grid block at B=32 needs >80 GB) and the headroom read was a byte-identical
+# proxy that missed the per-batch peak. Consumers adopt the SMALLEST measured
+# B whose s_per_rollout is within this fraction of the best row's
+# (_rederive_gen_batch_from_rows); the report's raw rows + recorded argmin
+# are unchanged.
+GEN_BATCH_ADOPT_TOL = 0.05
+# Crash-fix r3, prong (ii): bounded OOM-backoff for the HF batched-generation
+# paths (grid / stage2 / anchors — _generate_with_oom_backoff). On
+# torch.OutOfMemoryError the chunk retries at HALF the effective batch
+# (floor 1), at most this many halvings, then re-raises — fail loud, never an
+# unbounded loop (five grid workers died serially on ONE >80 GB block; the
+# claim queue kept re-feeding it). vLLM legs are excluded by design (the
+# engine manages its own memory).
+OOM_BACKOFF_MAX_HALVINGS = 3
 
 # Claim-file queue (plan §4.6): stale = dead pid (same host; a same-host LIVE
 # pid is NEVER stolen — r1 M1) or claim age (the cross-host-only fallback;
@@ -2950,6 +2970,62 @@ def _cell_bucketed_chunks(
     return out
 
 
+def _generate_with_oom_backoff(chunk: list, gen_fn, log_id: str) -> list:
+    """Bounded torch.OutOfMemoryError backoff around ONE batched-generation
+    chunk (crash-fix r3 — five grid workers died serially in
+    torch_chunk_gated_delta_rule on the same >80 GB block, 698 MiB failing at
+    ~75 GiB allocated on H100-80GB, while the claim queue re-fed the block).
+
+    ``gen_fn(sub_chunk)`` generates a CONTIGUOUS sub-list of ``chunk`` —
+    arming/removing its OWN hook for exactly that sub-list (hook row state is
+    batch-geometry-bound, so the hook must be rebuilt per sub-list) — and
+    returns one output entry per element. On torch.OutOfMemoryError:
+    ``torch.cuda.empty_cache()``, HALVE the effective batch (floor 1), and
+    regenerate the WHOLE chunk at the new width (every returned output was
+    produced at ONE effective batch); at most OOM_BACKOFF_MAX_HALVINGS
+    halvings, then re-raise — fail loud, never an unbounded loop, never
+    silent data loss (outputs of an OOM'd pass are discarded, so no rollout
+    is dropped or duplicated; order is preserved by contiguous slicing).
+
+    HF paths only (grid / stage2 / anchors) — the vLLM legs manage their own
+    memory and never route through here; the pilot's r1/r2/r3 measurement
+    legs are deliberately excluded (a silent mid-leg halving would corrupt
+    the per-batch throughput rows the adoption rule reads).
+
+    Determinism: generate_batch re-seeds per DRAW (torch.manual_seed(
+    seed_base + i) before EACH generate call — issue1415/steering.py), so a
+    retried sub-chunk is deterministic given (sub-chunk composition, seed)
+    and every row keeps its recorded ``seed = seed_base + draw``. Outputs at
+    a halved width are DISTRIBUTIONALLY — not bit- — identical to the
+    full-width draws that OOM'd (batched sampling consumes RNG jointly per
+    chunk; the full-width outputs never existed to diverge from).
+    """
+    eff = len(chunk)
+    for halving in range(OOM_BACKOFF_MAX_HALVINGS + 1):
+        try:
+            outs: list = []
+            for s in range(0, len(chunk), eff):
+                outs.extend(gen_fn(chunk[s : s + eff]))
+            assert len(outs) == len(chunk), (len(outs), len(chunk))
+            return outs
+        except torch.OutOfMemoryError:
+            if halving >= OOM_BACKOFF_MAX_HALVINGS or eff <= 1:
+                raise
+            torch.cuda.empty_cache()
+            new_eff = max(1, eff // 2)
+            logger.warning(
+                "[oom-backoff] %s: torch.OutOfMemoryError at effective gen batch %d — "
+                "empty_cache + retrying the chunk at %d (halving %d/%d)",
+                log_id,
+                eff,
+                new_eff,
+                halving + 1,
+                OOM_BACKOFF_MAX_HALVINGS,
+            )
+            eff = new_eff
+    raise AssertionError("unreachable — the loop returns or re-raises")
+
+
 def _generate_anchor_rows(
     cfg: RunConfig,
     model,
@@ -2977,19 +3053,24 @@ def _generate_anchor_rows(
     n_done = 0
     for cell, chunk in _cell_bucketed_chunks(contexts, order, cfg.gen_batch):
         cap = _resolve_cap(cfg, cell, recalibrated)
-        outs = generate_batch(
-            model,
-            tok,
-            [contexts[c] for c in chunk],
-            n=draws,
-            hook=None,
-            max_new_tokens=cap,
-            temperature=ANCHOR_TEMPERATURE,
-            seed_base=cfg.seed_base,
-            render_fn=BANK29.render_context_2389,
-            ids_fn=BANK29.context_token_ids_2389,
-            share_prefill=cfg.share_prefill_armed,
-        )
+
+        def gen_sub(sub: list[str], _cap: int = cap) -> list[list[str]]:
+            # crash-fix r3: _cap bound per iteration (per-cell caps).
+            return generate_batch(
+                model,
+                tok,
+                [contexts[c] for c in sub],
+                n=draws,
+                hook=None,
+                max_new_tokens=_cap,
+                temperature=ANCHOR_TEMPERATURE,
+                seed_base=cfg.seed_base,
+                render_fn=BANK29.render_context_2389,
+                ids_fn=BANK29.context_token_ids_2389,
+                share_prefill=cfg.share_prefill_armed,
+            )
+
+        outs = _generate_with_oom_backoff(chunk, gen_sub, log_id=f"anchors {batch} cell {cell}")
         for b, cid in enumerate(chunk):
             ctx = contexts[cid]
             for i, text in enumerate(outs[b]):
@@ -3124,6 +3205,35 @@ def _run_anchor_batch(
     )
 
 
+def _rederive_gen_batch_from_rows(rec: dict) -> int | None:
+    """READ-time smallest-within-tolerance gen_batch from the pilot report's
+    r2 per-batch rows (crash-fix r3 — see GEN_BATCH_ADOPT_TOL).
+
+    Returns the SMALLEST measured B whose ``s_per_rollout`` is within
+    ``GEN_BATCH_ADOPT_TOL`` of the best row's; ``None`` when the report
+    carries no ``regimes.r2_hooked_grid`` rows (older/partial report — the
+    caller falls back to the recorded selection, loudly). Rows PRESENT but
+    malformed RAISE (fail loud, never a silent adopt). Only ever moves the
+    selection DOWN from the recorded argmin (the argmin row is itself within
+    tolerance), so the re-derived B can never worsen the memory footprint.
+    """
+    rows = (rec.get("regimes") or {}).get("r2_hooked_grid") or {}
+    if not rows:
+        return None
+    spr_by_batch: dict[int, float] = {}
+    for key, m in rows.items():
+        try:
+            spr_by_batch[int(key)] = float(m["s_per_rollout"])
+        except (KeyError, TypeError, ValueError) as e:
+            raise RuntimeError(
+                f"pilot_gate_report.json r2 row {key!r} is malformed ({e!r}) — cannot "
+                "re-derive the gen_batch adoption; re-run the pilot (or pass an "
+                "explicit --gen-batch)"
+            ) from e
+    cut = min(spr_by_batch.values()) * (1.0 + GEN_BATCH_ADOPT_TOL)
+    return min(b for b, spr in spr_by_batch.items() if spr <= cut)
+
+
 def _pilot_selected_gen_batch(cfg: RunConfig) -> int | None:
     """The r2-selected gen_batch from the three-regime pilot gate (§4.7 item 3),
     VALIDATED before adoption (B9 r1 review): a stale / refused / foreign /
@@ -3144,10 +3254,38 @@ def _pilot_selected_gen_batch(cfg: RunConfig) -> int | None:
     rec = _reusable_pilot_report(cfg)  # round-5 J: raises on a FOREIGN report
     if rec is None:
         return None
-    sel = rec.get("gen_batch_selected")
-    if sel is None:
+    recorded = rec.get("gen_batch_selected")
+    if recorded is None:
+        # A report without the recorded selection is not adoption-grade
+        # (the writer emits it unconditionally; phase_grid raises on it).
         return None
-    sel = int(sel)
+    recorded = int(recorded)
+    # Crash-fix r3 (grid_gen_batch_adoption_oom_death_spiral): the value
+    # CONSUMED at adoption is re-derived AT READ TIME from the report's raw
+    # r2 rows — smallest-within-tolerance, never the recorded argmin. The
+    # writer's gen_batch_selected keeps its argmin semantics (it also shapes
+    # the pilot's own r1/r3 legs); the reader is authoritative for every
+    # consumer (anchors / grid / capregen / stage2 / the vLLM legs).
+    derived = _rederive_gen_batch_from_rows(rec)
+    if derived is None:
+        logger.warning(
+            "[gen-batch] pilot report carries no r2 per-batch rows — falling back to "
+            "the recorded gen_batch_selected=%d (older/partial report; the "
+            "smallest-within-tolerance re-derivation needs regimes.r2_hooked_grid)",
+            recorded,
+        )
+        sel = recorded
+    else:
+        sel = derived
+        if sel != recorded:
+            logger.info(
+                "[gen-batch] read-time smallest-within-tolerance re-derivation: "
+                "gen_batch=%d (report recorded argmin %d; tol=%.0f%% of best "
+                "s/rollout — crash-fix r3, grid OOM death spiral)",
+                sel,
+                recorded,
+                GEN_BATCH_ADOPT_TOL * 100.0,
+            )
     problems: list[str] = []
     verdict = rec.get("verdict")
     if verdict not in ("ACCEPT", "SPLIT"):
@@ -3338,7 +3476,13 @@ def _adopt_pilot_gen_batch(cfg: RunConfig) -> RunConfig:
         return cfg
     sel = _pilot_selected_gen_batch(cfg)
     if sel is not None and sel != cfg.gen_batch:
-        logger.info("[gen-batch] adopting pilot-selected gen_batch=%d (was %d)", sel, cfg.gen_batch)
+        logger.info(
+            "[gen-batch] adopting pilot-selected gen_batch=%d (was %d; smallest-within-"
+            "tolerance read-time rule, tol=%.0f%% — crash-fix r3)",
+            sel,
+            cfg.gen_batch,
+            GEN_BATCH_ADOPT_TOL * 100.0,
+        )
         return replace(cfg, gen_batch=sel)
     return cfg
 
@@ -4090,9 +4234,17 @@ def run_block(
     write_done: bool = True,
     done_extra: dict | None = None,
     recalibrated: dict[str, int] | None = None,
+    oom_backoff: bool = True,
 ) -> dict:
     """One block: K hooked temp-1.0 draws per pair, the hooked V_a pass, and
     (pools present) the margin TF pass — pipelined on the same GPU.
+
+    ``oom_backoff=False`` (the pilot r2 MEASUREMENT leg — crash-fix r3): a
+    silent mid-leg halving would corrupt the per-batch s/rollout row the
+    smallest-within-tolerance adoption rule reads, so the pilot leg keeps
+    the pre-fix fail-loud OOM (an OOM at a candidate B is a loud early
+    disqualification, never a mislabeled throughput row). Grid queue +
+    capregen keep the default (True).
 
     ``write_done=False`` (the PILOT leg) suppresses BOTH resume done-files —
     the block done-file AND the margin_blocks twin — so a pilot run on
@@ -4117,37 +4269,48 @@ def run_block(
     hooked_gt1_unequal = False  # plan §12 pad-into-recurrence smoke seam
     for start in range(0, len(cells), cfg.gen_batch):
         chunk = cells[start : start + cfg.gen_batch]
-        ctx_list = [contexts[c["context_a"]] for c in chunk]
-        rows = [ids_for(c["context_a"]) for c in chunk]
-        row_lengths = [len(r) for r in rows]
-        t_pad = max(row_lengths)
-        if len(rows) > 1 and len(set(row_lengths)) > 1:
-            hooked_gt1_unequal = True
-        stack = _arm_hook_all_layers(
-            model,
-            cfg,
-            row_lengths,
-            [(c["position"],) for c in chunk],
-            [c["payload"] for c in chunk],
-            t_pad,
-        )
-        try:
-            outs = generate_batch(
+
+        def gen_sub(sub: list[dict]) -> list[list[str]]:
+            # crash-fix r3: the hook is re-armed PER SUB-LIST (row state is
+            # batch-geometry-bound), so an OOM-backoff retry at a halved
+            # effective batch keeps hook rows aligned with generate rows.
+            nonlocal hooked_gt1_unequal
+            sub_lengths = [len(ids_for(c["context_a"])) for c in sub]
+            stack = _arm_hook_all_layers(
                 model,
-                tok,
-                ctx_list,
-                n=draws,
-                hook=stack,
-                max_new_tokens=cap,
-                temperature=GRID_TEMPERATURE,
-                seed_base=cfg.seed_base,
-                render_fn=BANK29.render_context_2389,
-                ids_fn=BANK29.context_token_ids_2389,
-                share_prefill=cfg.share_prefill_armed,
+                cfg,
+                sub_lengths,
+                [(c["position"],) for c in sub],
+                [c["payload"] for c in sub],
+                max(sub_lengths),
             )
-        finally:
-            stack.remove()
-        assert len(outs) == len(chunk), (len(outs), len(chunk))
+            try:
+                out = generate_batch(
+                    model,
+                    tok,
+                    [contexts[c["context_a"]] for c in sub],
+                    n=draws,
+                    hook=stack,
+                    max_new_tokens=cap,
+                    temperature=GRID_TEMPERATURE,
+                    seed_base=cfg.seed_base,
+                    render_fn=BANK29.render_context_2389,
+                    ids_fn=BANK29.context_token_ids_2389,
+                    share_prefill=cfg.share_prefill_armed,
+                )
+            finally:
+                stack.remove()
+            # Plan §12 pad-into-recurrence seam: recorded per EXECUTED batch
+            # (a backoff-halved width that no longer mixes lengths must not
+            # claim the coverage).
+            if len(sub) > 1 and len(set(sub_lengths)) > 1:
+                hooked_gt1_unequal = True
+            return out
+
+        if oom_backoff:
+            outs = _generate_with_oom_backoff(chunk, gen_sub, log_id=f"grid block {block.key}")
+        else:
+            outs = gen_sub(chunk)  # pilot r2 measurement leg: fail-loud OOM
         texts_per_cell.extend(list(o) for o in outs)
     assert len(texts_per_cell) == len(cells)
 
@@ -4573,6 +4736,7 @@ def _run_three_regime_pilot(
             pools,
             draws,
             write_done=False,
+            oom_backoff=False,  # crash-fix r3: measurement purity (see run_block)
         )
         wall = time.monotonic() - t0
         assert rec["n_rows"] > 0, "pilot r2 leg ran no rollouts"
@@ -7216,35 +7380,36 @@ def run_stage2_block(
     texts_per_cell: list[list[str]] = []
     for start in range(0, len(cells), cfg.gen_batch):
         chunk = cells[start : start + cfg.gen_batch]
-        ctx_list = [contexts[c["context_a"]] for c in chunk]
-        rows = [ids_for(c["context_a"]) for c in chunk]
-        row_lengths = [len(r) for r in rows]
-        t_pad = max(row_lengths)
-        stack = _arm_hook_add_single_layer(
-            model,
-            block.layer,
-            block.dose,
-            row_lengths,
-            [(c["position"],) for c in chunk],
-            [c["delta"] for c in chunk],
-            t_pad,
-        )
-        try:
-            outs = generate_batch(
+
+        def gen_sub(sub: list[dict]) -> list[list[str]]:
+            # crash-fix r3: hook re-armed per sub-list (see run_block).
+            sub_lengths = [len(ids_for(c["context_a"])) for c in sub]
+            stack = _arm_hook_add_single_layer(
                 model,
-                tok,
-                ctx_list,
-                n=STAGE2_DRAWS,
-                hook=stack,
-                max_new_tokens=cap,
-                temperature=STAGE2_TEMPERATURE,
-                seed_base=cfg.seed_base,
-                render_fn=BANK29.render_context_2389,
-                ids_fn=BANK29.context_token_ids_2389,
+                block.layer,
+                block.dose,
+                sub_lengths,
+                [(c["position"],) for c in sub],
+                [c["delta"] for c in sub],
+                max(sub_lengths),
             )
-        finally:
-            stack.remove()
-        assert len(outs) == len(chunk), (len(outs), len(chunk))
+            try:
+                return generate_batch(
+                    model,
+                    tok,
+                    [contexts[c["context_a"]] for c in sub],
+                    n=STAGE2_DRAWS,
+                    hook=stack,
+                    max_new_tokens=cap,
+                    temperature=STAGE2_TEMPERATURE,
+                    seed_base=cfg.seed_base,
+                    render_fn=BANK29.render_context_2389,
+                    ids_fn=BANK29.context_token_ids_2389,
+                )
+            finally:
+                stack.remove()
+
+        outs = _generate_with_oom_backoff(chunk, gen_sub, log_id=f"stage2 block {block.key}")
         texts_per_cell.extend(list(o) for o in outs)
     assert len(texts_per_cell) == len(cells)
 

@@ -1285,3 +1285,212 @@ def test_r6_dispatch_capregen_anchors_arms_thread_worker_width():
         assert '--num-workers "$NUM_WORKERS"' in m.group("body"), (
             f'{arm} does not thread --num-workers "$NUM_WORKERS"'
         )
+
+
+# ---- Crash-fix r3 (grid_gen_batch_adoption_oom_death_spiral): adoption rule
+
+
+# The RETAINED smoke out-root's REAL pilot r2 rows (pod-2389, 22:51Z
+# 2026-08-23): batch 32 bought ~1.4% throughput while its worst-case-cell
+# footprint OOM'd five grid workers. The load-bearing relaunch constraint:
+# these rows must yield 16 under the read-time rule WITHOUT re-running the
+# pilot.
+_REAL_R2_ROWS = {
+    "16": {
+        "gen_batch": 16,
+        "rollouts": 40,
+        "wall_s": 631.4,
+        "s_per_rollout": 15.785,
+        "hbm_headroom_gib": 25.05,
+    },
+    "32": {
+        "gen_batch": 32,
+        "rollouts": 40,
+        "wall_s": 622.32,
+        "s_per_rollout": 15.558,
+        "hbm_headroom_gib": 25.05,
+    },
+}
+
+
+def test_r3fix_rederive_smallest_within_tolerance_real_rows():
+    """FAILED at HEAD~ (function absent): the reader adopted the recorded
+    argmin (32) whose heavy-block footprint exceeds 80 GB at cap 4096."""
+    assert R._rederive_gen_batch_from_rows({"regimes": {"r2_hooked_grid": _REAL_R2_ROWS}}) == 16
+
+
+def test_r3fix_rederive_boundary_is_inclusive():
+    # 16 sits EXACTLY at best * (1 + tol) -> within (<=), smallest wins.
+    rows = {
+        "16": {"s_per_rollout": 15.0 * (1.0 + R.GEN_BATCH_ADOPT_TOL)},
+        "32": {"s_per_rollout": 15.0},
+    }
+    assert R._rederive_gen_batch_from_rows({"regimes": {"r2_hooked_grid": rows}}) == 16
+
+
+def test_r3fix_rederive_keeps_faster_batch_beyond_tolerance():
+    # 32 is >5% faster than 16 -> the tolerance does NOT reach 16.
+    rows = {"16": {"s_per_rollout": 20.0}, "32": {"s_per_rollout": 15.0}}
+    assert R._rederive_gen_batch_from_rows({"regimes": {"r2_hooked_grid": rows}}) == 32
+
+
+def test_r3fix_rederive_rows_absent_returns_none():
+    assert R._rederive_gen_batch_from_rows({}) is None
+    assert R._rederive_gen_batch_from_rows({"regimes": {}}) is None
+    assert R._rederive_gen_batch_from_rows({"regimes": {"r2_hooked_grid": {}}}) is None
+
+
+def test_r3fix_rederive_malformed_rows_fail_loud():
+    for bad in ({"16": {}}, {"16": {"s_per_rollout": "fast"}}, {"x": {"s_per_rollout": 1.0}}):
+        with pytest.raises(RuntimeError, match="malformed"):
+            R._rederive_gen_batch_from_rows({"regimes": {"r2_hooked_grid": bad}})
+
+
+def test_r3fix_adoption_rederives_16_from_retained_report(tmp_path, caplog):
+    """The full adoption path (_adopt_pilot_gen_batch, the route grid /
+    anchors / capregen / stage2 / the vLLM legs take) consumes the READ-time
+    smallest-within-tolerance value, not the recorded argmin. FAILED at
+    HEAD~: adopted.gen_batch == 32 (the OOM'd width)."""
+    cfg = _mk_cfg(tmp_path, pilot=False, gen_batch=4)
+    _pilot_report(cfg, sel=32, report_over={"regimes": {"r2_hooked_grid": _REAL_R2_ROWS}})
+    with caplog.at_level(logging.INFO, logger="issue2389.run"):
+        adopted = R._adopt_pilot_gen_batch(cfg)
+    assert adopted.gen_batch == 16
+    assert any(
+        "smallest-within-tolerance re-derivation" in r.message and "gen_batch=16" in r.getMessage()
+        for r in caplog.records
+    )
+    assert any("adopting pilot-selected gen_batch=16" in r.getMessage() for r in caplog.records)
+
+
+def test_r3fix_adoption_beyond_tolerance_keeps_recorded_argmin(tmp_path):
+    """With a genuinely >5%-faster 32 the reader agrees with the writer."""
+    rows = {
+        "16": {"s_per_rollout": 20.0, "hbm_headroom_gib": 25.0},
+        "32": {"s_per_rollout": 15.0, "hbm_headroom_gib": 25.0},
+    }
+    cfg = _mk_cfg(tmp_path, pilot=False, gen_batch=4)
+    _pilot_report(cfg, sel=32, report_over={"regimes": {"r2_hooked_grid": rows}})
+    assert R._adopt_pilot_gen_batch(cfg).gen_batch == 32
+
+
+def test_r3fix_adoption_rows_absent_falls_back_to_recorded_loudly(tmp_path, caplog):
+    """Older/partial report (no regimes.r2_hooked_grid): the recorded
+    selection is adopted with a LOUD fallback log, never silently."""
+    cfg = _mk_cfg(tmp_path, pilot=False, gen_batch=4)
+    _pilot_report(cfg, sel=32)  # the pre-rows fixture shape
+    with caplog.at_level(logging.WARNING, logger="issue2389.run"):
+        adopted = R._adopt_pilot_gen_batch(cfg)
+    assert adopted.gen_batch == 32
+    assert any("no r2 per-batch rows" in r.getMessage() for r in caplog.records)
+
+
+def test_r3fix_rederived_value_still_band_validated(tmp_path):
+    """The adoption-specific validation binds the DERIVED value: rows whose
+    fastest batch sits outside the registered candidate band fail loud."""
+    rows = {"8": {"s_per_rollout": 1.0}, "32": {"s_per_rollout": 15.0}}
+    cfg = _mk_cfg(tmp_path, pilot=False, gen_batch=4)
+    _pilot_report(cfg, sel=32, report_over={"regimes": {"r2_hooked_grid": rows}})
+    with pytest.raises(RuntimeError, match="cannot drive gen_batch adoption"):
+        R._adopt_pilot_gen_batch(cfg)
+
+
+def test_r3fix_writer_argmin_semantics_unchanged():
+    """The pilot-time writer keeps its argmin selection (the reader is the
+    authoritative consumer-side rule) — the REAL rows still argmin to 32."""
+    r2 = {int(k): dict(v) for k, v in _REAL_R2_ROWS.items()}
+    assert R._select_gen_batch(r2, [16, 32]) == (32, True)
+
+
+# ---------------- Crash-fix r3 prong (ii): bounded OOM-backoff (HF paths)
+
+
+def test_r3fix_oom_backoff_first_oom_halves_and_produces_all(caplog):
+    """A first-call OOM retries the WHOLE chunk at half width: every rollout
+    produced, order preserved, and the WARNING names old -> new width (the
+    fix-engaged signal). FAILED at HEAD~ (function absent): the worker died
+    with the traceback."""
+    chunk = list(range(7))
+    calls: list[list[int]] = []
+    armed = {"oom": True}
+
+    def gen_fn(sub: list[int]) -> list[str]:
+        calls.append(list(sub))
+        if armed["oom"]:
+            armed["oom"] = False
+            raise torch.OutOfMemoryError("CUDA out of memory (synthetic)")
+        return [f"out-{c}" for c in sub]
+
+    with caplog.at_level(logging.WARNING, logger="issue2389.run"):
+        outs = R._generate_with_oom_backoff(chunk, gen_fn, log_id="test chunk")
+    assert outs == [f"out-{c}" for c in chunk]  # every rollout produced, in order
+    assert calls[0] == chunk  # first attempt at full width
+    assert all(len(c) <= 3 for c in calls[1:])  # retried at the halved width (7 -> 3)
+    assert [c for call in calls[1:] for c in call] == chunk  # SAME work, order preserved
+    assert any(
+        "[oom-backoff]" in r.getMessage()
+        and "effective gen batch 7" in r.getMessage()
+        and "retrying the chunk at 3" in r.getMessage()
+        for r in caplog.records
+    )
+
+
+def test_r3fix_oom_backoff_persistent_reraises_after_three_halvings():
+    """Persistent OOM re-raises after exactly OOM_BACKOFF_MAX_HALVINGS
+    halvings — fail loud, never an unbounded loop."""
+    calls: list[list[int]] = []
+
+    def gen_fn(sub: list[int]) -> list[str]:
+        calls.append(list(sub))
+        raise torch.OutOfMemoryError("CUDA out of memory (synthetic)")
+
+    with pytest.raises(torch.OutOfMemoryError):
+        R._generate_with_oom_backoff(list(range(16)), gen_fn, log_id="t")
+    assert [len(c) for c in calls] == [16, 8, 4, 2]  # 3 halvings, then re-raise
+
+
+def test_r3fix_oom_backoff_floor_one_reraises():
+    """The effective batch never halves below 1: an OOM at width 1 re-raises
+    immediately (no zero-width loop)."""
+    calls: list[list[int]] = []
+
+    def gen_fn(sub: list[int]) -> list[str]:
+        calls.append(list(sub))
+        raise torch.OutOfMemoryError("CUDA out of memory (synthetic)")
+
+    with pytest.raises(torch.OutOfMemoryError):
+        R._generate_with_oom_backoff([1, 2], gen_fn, log_id="t")
+    assert [len(c) for c in calls] == [2, 1]
+
+
+def test_r3fix_oom_backoff_non_oom_errors_propagate_unretried():
+    """Only torch.OutOfMemoryError backs off — any other failure propagates
+    on the first attempt (no retry masking)."""
+    calls: list[list[int]] = []
+
+    def gen_fn(sub: list[int]) -> list[str]:
+        calls.append(list(sub))
+        raise ValueError("not an OOM")
+
+    with pytest.raises(ValueError, match="not an OOM"):
+        R._generate_with_oom_backoff([1, 2, 3, 4], gen_fn, log_id="t")
+    assert len(calls) == 1
+
+
+def test_r3fix_backoff_wired_into_grid_stage2_anchors_hf_paths():
+    """The three HF batched-generation consumers route through the backoff;
+    the pilot's measurement legs and the vLLM legs deliberately do NOT (a
+    silent mid-leg halving would corrupt the per-batch throughput rows the
+    adoption rule reads; vLLM manages its own memory). Also pins the
+    determinism basis: generate_batch seeds per DRAW, so a halved retry
+    re-seeds identically (seed = seed_base + draw on every row)."""
+    for fn in (R.run_block, R.run_stage2_block, R._generate_anchor_rows):
+        assert "_generate_with_oom_backoff(" in inspect.getsource(fn), fn.__name__
+    src_pilot = inspect.getsource(R._run_three_regime_pilot)
+    assert "_generate_with_oom_backoff" not in src_pilot
+    # The r2 leg routes through run_block TRANSITIVELY — measurement purity
+    # is threaded, not assumed: the pilot call disables the backoff and the
+    # grid/capregen callers keep the default (True).
+    assert "oom_backoff=False" in src_pilot
+    assert inspect.signature(R.run_block).parameters["oom_backoff"].default is True
+    assert "torch.manual_seed(seed_base + i)" in inspect.getsource(R.generate_batch)
