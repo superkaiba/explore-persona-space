@@ -424,3 +424,4 @@
 {"ts": "2026-08-24T17:36:05Z", "kind": "phase-assemble", "version": 1, "by": "issue779", "note": "P1 done (964844 rows @ layer 19)", "sentinel_fp": "904a2c506d306c4c", "sentinel_path": "/workspace/logs/issue-2476-phase-assemble-1787592853.json"}
 {"ts": "2026-08-24T17:36:12Z", "kind": "phase-k200-stage-banked", "version": 1, "by": "issue779", "note": "R2 done (3 staged inputs; G-S/G-A PASS)", "sentinel_fp": "438eb30645a2b5d5", "sentinel_path": "/workspace/logs/issue-2476-phase-k200-stage-banked-1787592864.json"}
 {"ts": "2026-08-24T17:36:19Z", "kind": "epm:progress", "version": 66, "by": "poll_pipeline", "note": "phase transition: unknown -> sae_train", "phase": "sae_train", "pod": "pod-2476"}
+{"ts": "2026-08-24T17:56:46Z", "kind": "phase-k200-densein", "version": 1, "by": "issue779", "note": "R4 done (n_union=2659; densein dropped=False)", "sentinel_fp": "6dffee5664ff9581", "sentinel_path": "/workspace/logs/issue-2476-phase-k200-densein-1787593479.json"}
