@@ -252,7 +252,9 @@ What is plotted: the seed-mean held-out Spearman-rho difference, mapped-answer p
 
 > **Figure.** *Seeds agree on sign for 10 of 13 true-map rungs; near-zero rungs vary.* The low-level companion to the forest: per-seed true-map advantage (left half of the figure) and shuffled-map advantage (right half) on all 13 rungs, 5 seeds each; the forest whiskers summarize these values.
 
-The true-map delta is positive on 10 of 13 rungs and the margin over the shuffled map on 12 of 13, both medians +0.03 — the plan's weak-form outcome. The sycophancy model-written-evals flagship holds both reads clear of zero (margin +0.14, t-interval +0.07 to +0.20); the evil optimizer-attack flagship's margin interval crosses zero (-0.006 to +0.085). The shuffle destroys retrieval (top-1 0.0008 versus 0.16-0.57 true) yet shuffled maps still gain on several rungs: roughly half the edge is a generic-transform effect the margin removes. Four open hardening concerns bound this read: `claim4-seed-rerun-idempotency`, `claim4-lattice-rung-identity`, `claim4-pushdown-production-bitidentity`, `claim4-chunk-turnover-rss`. The comparator returned inconclusive here; its repair is reported below.
+The true-map delta is positive on 10 of 13 rungs and the margin over the shuffled map on 12 of 13, both medians +0.03 — the plan's weak-form outcome. The sycophancy model-written-evals flagship holds both reads clear of zero (margin +0.14, t-interval +0.07 to +0.20); the evil optimizer-attack flagship's margin interval crosses zero (-0.006 to +0.085). The shuffle destroys retrieval (top-1 0.0008 versus 0.16-0.57 true) yet shuffled maps still gain on several rungs: roughly half the edge is a generic-transform effect the margin removes.
+
+Four open hardening concerns bound this read: `claim4-seed-rerun-idempotency`, `claim4-lattice-rung-identity`, `claim4-pushdown-production-bitidentity`, `claim4-chunk-turnover-rss`. The comparator returned inconclusive here; its repair is reported below.
 
 ### The repaired context-direction comparator confirms the mapped-answer edge for sycophancy and hallucination
 
