@@ -885,6 +885,12 @@ def stage_source(
     - The gated-read fallback catches ACCESS-class errors only (g1 m6); the
       kept==0 fail-loud and genuine code bugs propagate. Once a config falls
       back, later configs of the same source read the fallback dataset too.
+    - A fallback-LESS source whose primary read fails an ACCESS-class error is
+      SKIPPED loud (per-config ``skipped_gated_no_access`` counter, surfaced in
+      ``build_report``'s ``skipped_sources``) — one gated dataset must never
+      crash the whole 150k build. Non-access errors still propagate, and
+      ``run_pipeline`` fails loud when the whole corpus / a whole regime-class
+      family collapses to zero staged rows.
     """
     if spec.cross_query_bank is not None:
         return _stage_crossed_source(spec, out_dir, token_filter, stream_cap=stream_cap, seed=seed)
@@ -915,7 +921,20 @@ def stage_source(
                 )
             except _access_error_types() as exc:
                 if spec.fallback_dataset_id is None:
-                    raise
+                    logger.warning(
+                        "[stage] %s:%s: %s gated/inaccessible, no fallback — SKIPPING "
+                        "this source (%s)",
+                        spec.source_tag,
+                        config or "default",
+                        spec.dataset_id,
+                        repr(exc)[:300],
+                    )
+                    counters[config or "default"] = {
+                        "skipped_gated_no_access": 1,
+                        "dataset_id": spec.dataset_id,
+                        "reason": repr(exc)[:300],
+                    }
+                    continue
                 logger.warning(
                     "[stage] %s:%s: primary access failed (%s); falling back to %s",
                     spec.source_tag,
@@ -1350,6 +1369,7 @@ def build_report(
     regime_table: dict[str, str],
     stream_counters: dict[str, dict],
     budget: int,
+    skipped_sources: list[dict] | None = None,
 ) -> dict:
     split_counts: dict[str, int] = defaultdict(int)
     regime_counts: dict[str, int] = defaultdict(int)
@@ -1377,6 +1397,7 @@ def build_report(
         "realism_tier_counts": {str(k): v for k, v in tier_counts.items()},
         "dedup": dedup_report,
         "stream_counters": stream_counters,
+        "skipped_sources": list(skipped_sources or []),
         "source_regime_table": regime_table,
         "weight_pct": {
             "weird_ood": round(
@@ -1428,10 +1449,13 @@ def run_pipeline(args: argparse.Namespace) -> dict:
             budget_tokens,
         )
 
-    # 1. Stage every source (streaming, checkpointed, fail-loud on kept==0).
+    # 1. Stage every source (streaming, checkpointed, fail-loud on kept==0 for
+    # ACCESSIBLE sources; a gated fallback-less source is SKIPPED loud and
+    # recorded — see stage_source + the aggregate guards below).
     all_rows: list[dict] = []
     pre_dedup_per_source: dict[str, int] = defaultdict(int)
     stream_counters: dict[str, dict] = {}
+    skipped_sources: list[dict] = []
     for spec in sources:
         rows, ctr = stage_source(
             spec,
@@ -1444,8 +1468,43 @@ def run_pipeline(args: argparse.Namespace) -> dict:
         for r in rows:
             pre_dedup_per_source[r["source_tag"]] += 1
         stream_counters[spec.source_tag] = ctr
+        for cfg_name, cfg_ctr in ctr.items():
+            if cfg_ctr.get("skipped_gated_no_access"):
+                skipped_sources.append(
+                    {
+                        "source_tag": spec.source_tag,
+                        "dataset_id": cfg_ctr.get("dataset_id", spec.dataset_id),
+                        "config": cfg_name,
+                        "reason": cfg_ctr.get("reason", "gated/inaccessible, no fallback"),
+                    }
+                )
         all_rows.extend(rows)
     logger.info("[corpus] staged %d rows across %d sources", len(all_rows), len(sources))
+    if skipped_sources:
+        logger.warning(
+            "[corpus] %d source config(s) SKIPPED (gated/inaccessible, no fallback): %s",
+            len(skipped_sources),
+            "; ".join(
+                f"{s['source_tag']}:{s['config']} ({s['dataset_id']})" for s in skipped_sources
+            ),
+        )
+    # Aggregate fail-loud guards: a per-source skip is tolerable; a corpus with
+    # NOTHING staged, or a whole regime-class family collapsing to zero rows,
+    # is a real problem worth halting on (never a silently thin build).
+    if not all_rows:
+        raise RuntimeError(
+            f"corpus staging kept 0 rows across all {len(sources)} selected sources "
+            f"(skipped gated/no-fallback: {sorted({s['source_tag'] for s in skipped_sources})}) "
+            "— fail loud"
+        )
+    staged_regimes = {r["regime_class"] for r in all_rows}
+    missing_regimes = sorted({spec.regime_class for spec in sources} - staged_regimes)
+    if missing_regimes:
+        raise RuntimeError(
+            f"regime class(es) {missing_regimes} kept 0 staged rows "
+            f"(skipped gated/no-fallback: {sorted({s['source_tag'] for s in skipped_sources})}) "
+            "— a whole regime family collapsing to nothing is a real problem; fail loud"
+        )
 
     # 2. Two-stage dedup WITHIN+ACROSS sources, BEFORE split (MF-K).
     deduped, dedup_report = dedup_contexts(all_rows)
@@ -1513,6 +1572,7 @@ def run_pipeline(args: argparse.Namespace) -> dict:
             regime_table=regime_table,
             stream_counters=stream_counters,
             budget=args.budget,
+            skipped_sources=skipped_sources,
         )
         report["mode"] = "probe"
         report["note"] = "post-dedup yields + re-scaled budget allocation (no full write)"
@@ -1560,6 +1620,7 @@ def run_pipeline(args: argparse.Namespace) -> dict:
         regime_table=regime_table,
         stream_counters=stream_counters,
         budget=args.budget,
+        skipped_sources=skipped_sources,
     )
     report["mode"] = "build"
     report["corpus_path"] = str(corpus_path)
