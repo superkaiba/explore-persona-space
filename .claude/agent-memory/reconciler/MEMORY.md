@@ -1,5 +1,7 @@
 # Reconciler memory index — open the file when a hook matches the disagreement.
 
+- [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — probe gaps yourself; bounded disclosure = NIT, unbounded gloss = false claim; verify attributions by direct containment (#2263 r6/r7)
+
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — recoverability never rescues a defective gate/kill/lattice; 35+ incidents
@@ -28,6 +30,7 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Concern closure graded against the LEDGER row, not the fix-sentence](feedback_concern_closure_graded_against_ledger_row_not_fix_sentence.md) — multi-part concern closed on the paraphrased half; diff round-added invariant prose vs the adjacent command (#2263 r3)
 - [Security sweep misses data-into-shell splices](feedback_claude_security_sweep_misses_data_into_shell_splice.md) — re-scan added fenced Bash yourself (#2241 r1)
 - [Masked-rc fallback vs fail-loud consumer](feedback_masked_rc_fallback_vs_downstream_fail_loud_consumer.md) — trace the fallback's FIRST consumer (#2241 r4)
 - [Convention defense unverified: $VAR fences](feedback_claude_convention_defense_unverified_env_var_fence.md) — verify INITIALIZING sites, not use sites (#2241 r3)

@@ -28,6 +28,23 @@ was already CONCERN-grade — the narrower residual cannot out-rank it. PASS
 + persisted CONCERN carrying Codex's 3-line fix (reject both ancestry
 directions + fake-repo-under-tmp regression test).
 
+**Second datapoint (#2479 r9, `panel-sha-binding-builder-only`):** Codex
+BLOCKER'd that the r9 panel-sha binding lives only in the manifest BUILDER
+while P1 generation never revalidates the panel it loads — factually TRUE,
+but the r8 parent (`panel-invariance-proof-remains-heuristic`, CONCERN) had
+itself accepted "P0 remains the fail-loud backstop", and the verified chain
+(live `_filter_pool_feasible` with launcher-env live-panel config →
+`restrict_pool_to_manifest` containment assert :1356 → engine init :2053)
+fails loud pre-GPU on any eligibility-changing edit; an eligibility-
+preserving edit is an audit-pin gap, not corruption (sample membership is
+what the manifest pins; eligibility recomputes live). Residual = strictly
+more misconfiguration (edit + no builder re-run) than the r8 state (no sha
+check anywhere). PASS + re-raise at CONCERN + defer, fix prescription
+(consumer-side sha compare) in the evidence. Key trace for this shape: read
+the launcher to confirm the consumer gets LIVE inputs, then order the
+filter/assert/engine-init lines — "recomputed live + asserted pre-spend"
+is what demotes a missing-revalidation BLOCKER.
+
 **How to apply:** (1) verify the code property yourself (here: ancestor not
 relative-to descendant ⇒ falls through to the allowlist branch); (2) list
 the residual's trigger preconditions vs the parent's — count required
