@@ -4,6 +4,8 @@
 
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
+- [Twin brief excluded the disputed question](feedback_twin_brief_excluded_disputed_question.md) — PASS = non-coverage, not rebuttal; grep plan for post-spawn BINDING body addenda (#2546 r1)
+
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — recoverability never rescues a defective gate/kill/lattice; 35+ incidents
 - [Gate object-identity unchecked](feedback_claude_gate_object_identity_unchecked.md) — read the NAMED function; wrong object/phase inputs (#2329 r2)
 - [Gate-design flaw vs recoverable robustness read](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on misfire / barred amendment / capture loss
