@@ -97,7 +97,12 @@ Smoke blind-spot enumeration:
     smoke draw count (min(100, n_boot // 2)) — gate-calibration parity;
   * the production vhat sha-256 pins (``VHAT_SHA256``) are not exercised —
     the smoke pins the synthetic vhat's own sha (plumbing only); the
-    discriminating perturbation check is a committed pytest.
+    discriminating perturbation check is a committed pytest;
+  * the pass-B fingerprint identity is SUBSTITUTED under smoke —
+    ``_passb_ident`` stats the local synthetic pass-B file instead of
+    composing the production pinned-HF identity string (repo + revision +
+    path), so the production identity-composition branch never runs under
+    smoke; it is import- and constant-checked only.
 
 Run (pod, GPU phase — all 8 conditions, layer 27 only):
     uv run python scripts/issue2474_postnorm.py --phase trainref-gpu
@@ -321,11 +326,12 @@ def rms_norm_rows(x, w, eps: float):
     the normalized states BACK to the input dtype -> multiply by the
     (input-dtype) weight. Input-dtype policy: bfloat16 for EVERY consumer — the
     production hidden-state dtype. Live GPU states arrive bf16 (round-trip
-    exact through the fp32/fp64 numpy hop); fp16-persisted artifacts are
-    bf16-representable over the states' range (fp16 mantissa strictly wider),
-    so the cast recovers the production value; synthetic fp32/fp64 smoke
-    inputs take one bf16 rounding, identically on both sides of any pre/post
-    comparison. ``x`` is (..., H); ``w`` is (H,). Returns fp64 (of the bf16
+    exact through the fp32/fp64 numpy hop); fp16-persisted artifacts (vhat)
+    are NOT exactly bf16-representable in general — fp16 carries a wider
+    mantissa than bf16, so the cast takes one bf16 rounding of the fitted
+    values, applied identically wherever the artifact is consumed; synthetic
+    fp32/fp64 smoke inputs likewise take one bf16 rounding, identically on
+    both sides of any pre/post comparison. ``x`` is (..., H); ``w`` is (H,). Returns fp64 (of the bf16
     values) for the downstream cosine math. This is the module's single
     post-norm operator — the GPU phase and the offline re-read share it.
     """
