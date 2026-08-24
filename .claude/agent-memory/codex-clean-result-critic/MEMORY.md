@@ -5,3 +5,4 @@
 - [Prior-round prompt reuse](feedback_prior_round_prompt_reuse.md) — r2+: compose from /tmp crc<r-1> prompt via span replacement + per-lens live-file currency asserts; frozen-list rule discharged mechanically.
 - [Fold-round context-file briefs](feedback_fold_round_context_file_briefs.md) — fold reviews: /tmp context brief → REVIEW CONTEXT block; extract brief-named markers to /tmp files; npz→composer-digest envelope; full-ledger envelope for self-discharged concerns; explicit brief round beats own-kind history.
 - [SPEC-inline `{{` false positive](feedback_spec_inline_brace_false_positive.md) — scope the Step-4 placeholder guard to envelope spans + composer-written parts; inlined SPEC.md carries literal `{{` rule text by design.
+- [Shape-complete scope sweeps](feedback_shape_complete_scope_sweeps.md) — recurring scope-defect sweeps enumerate all six quantity shapes (incl. sameness claims); interval-only sweep false-PASSed #823 r7.
