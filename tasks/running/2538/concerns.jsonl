@@ -1,0 +1,1 @@
+{"ts": "2026-08-24T16:47:38Z", "event": "raised", "concern_id": "recovery-draft-arm-pin", "severity": "CONCERN", "summary": "Pin the full draft classification arm, including its gh pr ready action, and include its unique fragment in the gate-scope sweep.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
