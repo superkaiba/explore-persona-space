@@ -247,6 +247,17 @@ else:
     CHAR_VARIANTS = tuple(
         v for r in _CHAR_PANEL for v in (r["variant_op"], r["variant_inserted"]) if v
     )
+    # r10 reconciler addendum: a panel variant id that collides with a legacy
+    # parent cell would silently pass the clobber assert (spec is a pure
+    # function of the key) and widen the default sweep — refuse at load, before
+    # registry construction. Panel-branch ONLY: env-unset CHAR_VARIANTS ==
+    # LEGACY_CHAR_VARIANTS by design.
+    overlap = set(CHAR_VARIANTS) & set(LEGACY_CHAR_VARIANTS)
+    if overlap:
+        raise ValueError(
+            f"{CHAR_PANEL_ENV}: panel variant ids collide with legacy parent cells: "
+            f"{sorted(overlap)}"
+        )
 
 
 def _char_specs(variants: tuple[str, ...]) -> dict[str, dict]:
@@ -278,9 +289,10 @@ def _register_char_variants(variants: tuple[str, ...]) -> None:
     Additive-only: re-registering an existing key with the SAME spec is an
     idempotent no-op (the env-unset case, where CHAR_VARIANTS ==
     LEGACY_CHAR_VARIANTS); a key that would CHANGE an existing spec raises.
-    Prefix disjointness (``char_2479_*`` registry ids vs the legacy ``char_*``
-    names, enforced by ``_load_char_panel``) makes a cross-namespace collision
-    impossible by construction — asserted anyway.
+    Cross-namespace disjointness (panel registry ids vs the legacy ``char_*``
+    names) is enforced by the explicit panel-branch overlap check at module
+    load — NOT by ``_load_char_panel``, whose prefix/suffix conventions a
+    legacy-shaped id satisfies — and the per-key assert below backstops it.
     """
     for key, spec in _char_specs(variants).items():
         prev = REGIME_SPECS.get(key)
@@ -298,6 +310,11 @@ def _register_char_variants(variants: tuple[str, ...]) -> None:
 # --cells/--pairs, as the #2479 wrapper's P0 legs 5-8 do).
 _register_char_variants(LEGACY_CHAR_VARIANTS)
 _register_char_variants(CHAR_VARIANTS)
+
+
+def _default_cells(model: str) -> list[str]:
+    """The --cells DEFAULT sweep: CHAR_VARIANTS (panel-only under the env) filtered by capture model."""
+    return [v for v in CHAR_VARIANTS if REGIME_SPECS[v].get("model") == model]
 
 
 def char_pair_specs() -> tuple[dict, ...]:
@@ -1443,9 +1460,7 @@ def main() -> None:
     # #2479 axis-freeze guard (plan §4 Step 3). Hoist the effective within-cell
     # list so the guard sees the --cells DEFAULT too, then refuse/guard BEFORE
     # any dir creation or store loading.
-    effective_cells = args.cells or [
-        v for v in CHAR_VARIANTS if REGIME_SPECS[v].get("model") == args.model
-    ]
+    effective_cells = args.cells or _default_cells(args.model)
     requested: set[str] = set()
     if "ladders" in args.stage:
         for p in args.pairs:

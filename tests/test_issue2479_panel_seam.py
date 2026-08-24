@@ -115,9 +115,7 @@ print("PANEL_SEAM_JSON::" + json.dumps({{
     "ladder_legacy_specs": {{v: lf.REGIME_SPECS.get(v) for v in legacy}},
     "ladder_panel_ns_specs": {{v: lf.REGIME_SPECS.get(v) for v in lf.CHAR_VARIANTS}},
     "ladder_legacy_labels": [v for v in legacy if lf.REGIME_LABEL.get(v) == v],
-    "ladder_default_cells_instruct": [
-        v for v in lf.CHAR_VARIANTS if lf.REGIME_SPECS[v].get("model") == "instruct"
-    ],
+    "ladder_default_cells_instruct": lf._default_cells("instruct"),
 }}))
 """
 
@@ -257,10 +255,41 @@ def test_env_set_char_variants_panel_only(env_set):
 
 
 def test_env_set_default_cells_sweep_panel_only(env_set, panel_rows):
-    # (c) the effective --cells DEFAULT sweep (main(): CHAR_VARIANTS filtered
-    # by model) is unchanged panel-only, in registry order.
+    # (c) the effective --cells DEFAULT sweep (main() routes through the
+    # production resolver lf._default_cells — probed directly, r10 addendum)
+    # is unchanged panel-only, in registry order.
     expected = [v for r in panel_rows for v in (r["variant_op"], r["variant_inserted"]) if v]
     assert env_set["ladder_default_cells_instruct"] == expected
+
+
+def test_env_set_legacy_collision_rejected(tmp_path):
+    # r10 reconciler addendum: a panel row naming a legacy parent variant id
+    # must fail loud at IMPORT, before registry construction — the loader's
+    # prefix/suffix conventions alone accept it (the r10 Codex finding).
+    committed = json.loads(PANEL_JSON.read_text())
+    row = dict(committed[0])
+    row["variant_op"] = "char_helios_op"
+    bad = tmp_path / "panel_bad.json"
+    bad.write_text(json.dumps([row]))
+    env = os.environ.copy()
+    for k in (
+        "EPM_I2479_CHAR_PANEL_JSON",
+        "EPM_I1345_VARIANT",
+        "EPM_STORY_CHARACTER_NAME",
+        "EPM_I1345_PERSONA_DESC",
+    ):
+        env.pop(k, None)
+    env["EPM_I2479_CHAR_PANEL_JSON"] = str(bad)
+    out = subprocess.run(
+        [sys.executable, "-c", _PROBE.format(scripts=str(SCRIPTS))],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(REPO),
+        timeout=600,
+    )
+    assert out.returncode != 0, "legacy-colliding panel id must refuse at import"
+    assert "collide with legacy parent cells" in out.stderr
 
 
 def test_env_absent_registration_idempotent(env_absent):
