@@ -1,6 +1,6 @@
 ---
-title: Chat-trained context→answer map transfer to story framings and characters in
-  Qwen3.6-27B with scene-native queries and template-free story generation
+title: Context→answer structure is shared across framings in Qwen3.6-27B, but the
+  chat-trained map transfers to none of them unchanged (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-19T02:35:51Z'
