@@ -11422,7 +11422,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2479",
       "status": "interpreting",
-      "title": "Assistant-operator transfer recovery rises with judged AI-likeness across 16 story characters (MODERATE confidence)"
+      "title": "Assistant-operator transfer recovery in held-out R\u00b2 rises with judged AI-likeness across 16 story characters (MODERATE confidence)"
     },
     "248": {
       "has_clean_result": false,
