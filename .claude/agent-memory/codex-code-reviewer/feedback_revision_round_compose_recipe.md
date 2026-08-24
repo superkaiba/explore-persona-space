@@ -2503,3 +2503,23 @@ windows (run_823.py :961-972 / :1158-1163 / :1259-1267). Ledger snapshot
 still pins at the crash-fix impl marker's ts; body-prose NITs and a
 reconciler-DEFERRED run-stage BLOCKER get fences (no status lines / one
 consistency line), not closure duties.
+
+**Marker-grammar closure item + composer-span-scoped stale-header asserts
+(#2502 r2, 2026-08-23):** when a round-1 blocker was a MECHANICAL marker
+grammar refusal (`arm-registry:` rejected by `task.py
+check-smoke-arch-registry`), run that checker YOURSELF at compose time and
+attest the rc + output line in the Step 0.55 patch as a SETTLED mechanical
+fact (Codex cannot run task.py; without the attestation it either re-FAILs
+the grammar or marks the half unverifiable) — while explicitly leaving the
+substantive halves (member set-equality vs live argparse choices, verdict/row
+consistency, blind-spot enumeration) to Codex. Assert-side: the inlined r1
+verdict legitimately carries its own historical `**Prior-concerns ledger:**
+empty` header — scope the stale-header zero-assert to composer spans
+(total == embed count), the same envelope-scoping rule as heading asserts.
+Also: HEAD must NOT append the `# Review protocol` heading when the rubric
+span extraction starts at that anchor (slice from `TPL.index(A)` INCLUDES
+it) — grep the final prompt for a doubled heading. Mapping table for the
+verdict's `## Round-1 closure ledger`: one line per union item PLUS one per
+ledger-only concern row (here 16 + 3 = 19), with expected-status
+pre-adjudications ONLY for by-design rows (pod-parity STILL-BINDING-BY-DESIGN),
+never for contested fixes.

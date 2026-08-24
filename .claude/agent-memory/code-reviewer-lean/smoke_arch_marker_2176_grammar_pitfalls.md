@@ -103,3 +103,12 @@ each script's `choices=(...)` + standalone flag arms (`--probe`, `--self-test`) 
 set-compare against the per-arm-resolution rows + `arms_stubbed` ↔ FALLBACK-row
 consistency; grammar-only miss with complete substance = Critical `marker-shape`
 with a one-line re-post fix, never `substantive`.
+
+R2 closure (#2502 R2 g4): the N/A-form re-post landed checker-OK (rc=0) — the
+N/A reason tolerates an embedded derivation command AND dotted per-arm row keys
+(no members= to match). Residual pitfall realized: the enumeration counted one
+standalone flag arm (corpus `--probe`) but OMITTED another (gen_capture
+`--self-test`) — inconsistent flag-arm derivation. Calibration: a DIAGNOSTIC-only
+omitted arm (pure-CPU self-test, nothing stubbed behind it) is a Minor with the
+exact one-row fix, not a FAIL; an omitted arm hiding a production/pod path would
+be substantive.
