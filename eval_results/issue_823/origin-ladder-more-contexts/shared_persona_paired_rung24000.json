@@ -1,0 +1,201 @@
+{
+  "metadata": {
+    "script": "scripts/issue823_shared_persona_paired.py",
+    "task": 823,
+    "followup_label": "inconsistent-origin-persona-ladder",
+    "round": "user-chat inline free analysis (0 GPU-h, existing artifacts)",
+    "git_commit": "042a0b9555d31560ac7748830b79a2062b8e3dd3",
+    "inputs": {
+      "percontext_ladder_npz": "/workspace/eps/out/issue823_ladder_ext/rung_24000/percontext_ladder.npz",
+      "assignment_json": "/workspace/eps/out/issue823_ladder_ext/rung_24000/assignment.json"
+    },
+    "registered_assignment_rule": "persona(i, k) = i mod k",
+    "held_out": "p1_ss_res is out-of-fold: KFold(5, shuffle=True, random_state=0), written at test indices only (scripts/issue823_ladder_fits.py:1903). Fold split depends only on n, so both arms score each shared context in the same fold.",
+    "n_mask_contexts": 22730,
+    "n_boot": 10000,
+    "boot_seed": 823,
+    "read_out_layers": {
+      "14": "evil",
+      "26": "sycophancy",
+      "17": "hallucination"
+    },
+    "sign_convention": "diff = pooled_ss_res - reference_ss_res; > 0 = pooled worse",
+    "full_ratio_ci": {
+      "mixture_diffs": "/workspace/eps/out/issue823_ladder_ext/rung_24000/mixture_diffs.npz",
+      "negligible_e_rel_threshold": 1e-09,
+      "unstable_excluded_frac_threshold": 0.01,
+      "resample": "stratified within persona groups (sizes preserved); the persona-0 resample is the paired-diff index draw itself (same rng stream, seed = boot_seed + layer), then one multinomial per persona group in ascending-persona order",
+      "secondary_ci": "mean_paired_diff_ci95 stays the numerator-only SECONDARY band (E fixed)"
+    }
+  },
+  "arms": {
+    "k16": {
+      "n_shared_contexts_pre_mask": 3000,
+      "n_shared_contexts_post_mask": 1477,
+      "per_layer": {
+        "L14": {
+          "behavior": "evil",
+          "n_shared_contexts": 1477,
+          "ref_ss_res_sum": 281523.40235953673,
+          "pooled_ss_res_sum": 355567.36630964855,
+          "ss_res_ratio_pooled_over_ref": 1.2630117543675798,
+          "mean_paired_diff": 50.13132291815289,
+          "mean_paired_diff_ci95": [
+            46.93739215941882,
+            53.44724588099012
+          ],
+          "median_paired_diff": 39.764701716453004,
+          "frac_contexts_pooled_worse": 0.8984427894380501,
+          "wilcoxon_statistic": 65175.0,
+          "wilcoxon_p": 7.0589471657215474e-189,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.500083111532557,
+            "pooled": 0.40637356223327725
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.500083111532557,
+            "pooled": 0.3685990936587531
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0636334000160692,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 190.60487634362676,
+            "ref_mean_ss_res_all_mask": 196.17476877771168,
+            "ratio_shared_over_all": 0.9716074984118053
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 79.74565044907884,
+            "predicted_excess_if_shared_map_offset_only": 4.984103153067427,
+            "measured_excess": 50.13132291815289,
+            "ratio_measured_over_offset_only_prediction": 10.058243454953367,
+            "ratio_measured_over_full_energy": 0.6286402159345854,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          },
+          "rho_ci95": [
+            0.5863412821144114,
+            0.6691438770721535
+          ],
+          "n_negligible_E_draws": 0,
+          "rho_ci95_unstable": false,
+          "full_ratio": {
+            "rho_point": 0.6286402159345854,
+            "mean_excess_point": 50.13132291815289,
+            "e_point_from_diffs": 79.74565044907884,
+            "n_persona0": 1477,
+            "n_boot": 10000,
+            "n_draws_retained": 10000,
+            "seed": 837,
+            "note": "primary ratio CI; mean_paired_diff_ci95 remains the numerator-only SECONDARY band (E fixed at its point value)"
+          }
+        },
+        "L26": {
+          "behavior": "sycophancy",
+          "n_shared_contexts": 1477,
+          "ref_ss_res_sum": 10189020.840907078,
+          "pooled_ss_res_sum": 13468110.17341219,
+          "ss_res_ratio_pooled_over_ref": 1.3218257557527178,
+          "mean_paired_diff": 2220.101105284435,
+          "mean_paired_diff_ci95": [
+            2050.403011365689,
+            2394.0759208108566
+          ],
+          "median_paired_diff": 1738.8984846273906,
+          "frac_contexts_pooled_worse": 0.8984427894380501,
+          "wilcoxon_statistic": 78987.0,
+          "wilcoxon_p": 2.706286777963924e-178,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5411306096076067,
+            "pooled": 0.4269647318030285
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5411306096076067,
+            "pooled": 0.39345462125278585
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0584782689827812,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 6898.456899733973,
+            "ref_mean_ss_res_all_mask": 7161.321021032451,
+            "ratio_shared_over_all": 0.9632939061764639
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 3324.3834891150045,
+            "predicted_excess_if_shared_map_offset_only": 207.77396806968778,
+            "measured_excess": 2220.101105284435,
+            "ratio_measured_over_offset_only_prediction": 10.685174499530225,
+            "ratio_measured_over_full_energy": 0.6678234062206391,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          },
+          "rho_ci95": [
+            0.6147808864996253,
+            0.719459152328048
+          ],
+          "n_negligible_E_draws": 0,
+          "rho_ci95_unstable": false,
+          "full_ratio": {
+            "rho_point": 0.6678234062206391,
+            "mean_excess_point": 2220.101105284435,
+            "e_point_from_diffs": 3324.3834891150045,
+            "n_persona0": 1477,
+            "n_boot": 10000,
+            "n_draws_retained": 10000,
+            "seed": 849,
+            "note": "primary ratio CI; mean_paired_diff_ci95 remains the numerator-only SECONDARY band (E fixed at its point value)"
+          }
+        },
+        "L17": {
+          "behavior": "hallucination",
+          "n_shared_contexts": 1477,
+          "ref_ss_res_sum": 390879.04494505713,
+          "pooled_ss_res_sum": 492917.8313359747,
+          "ss_res_ratio_pooled_over_ref": 1.261049518285792,
+          "mean_paired_diff": 69.08516343325498,
+          "mean_paired_diff_ci95": [
+            64.28421614871961,
+            74.04631724022173
+          ],
+          "median_paired_diff": 55.178821711907744,
+          "frac_contexts_pooled_worse": 0.8720379146919431,
+          "wilcoxon_statistic": 82896.0,
+          "wilcoxon_p": 2.3539776751717927e-175,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5162793426434247,
+            "pooled": 0.42378571646142527
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5162793426434247,
+            "pooled": 0.3900042980556042
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0586264856163696,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 264.643903144927,
+            "ref_mean_ss_res_all_mask": 270.47251358003416,
+            "ratio_shared_over_all": 0.9784502670605659
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 106.63032670652956,
+            "predicted_excess_if_shared_map_offset_only": 6.664395419158097,
+            "measured_excess": 69.08516343325498,
+            "ratio_measured_over_offset_only_prediction": 10.366306182051604,
+            "ratio_measured_over_full_energy": 0.6478941363782252,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          },
+          "rho_ci95": [
+            0.6010285741916817,
+            0.6936929237290179
+          ],
+          "n_negligible_E_draws": 0,
+          "rho_ci95_unstable": false,
+          "full_ratio": {
+            "rho_point": 0.6478941363782252,
+            "mean_excess_point": 69.08516343325498,
+            "e_point_from_diffs": 106.63032670652956,
+            "n_persona0": 1477,
+            "n_boot": 10000,
+            "n_draws_retained": 10000,
+            "seed": 840,
+            "note": "primary ratio CI; mean_paired_diff_ci95 remains the numerator-only SECONDARY band (E fixed at its point value)"
+          }
+        }
+      }
+    }
+  }
+}
