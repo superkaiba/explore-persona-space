@@ -11695,8 +11695,8 @@
     "2514": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2514",
-      "status": "proposed",
+      "path": "tasks/planning/2514",
+      "status": "planning",
       "title": "workflow-fix: verify_plan c26/c27 routed-machine mirror is GCP-era, inverts under runpod-first auto default"
     },
     "256": {
