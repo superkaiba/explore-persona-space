@@ -1178,5 +1178,36 @@ bullet for any round-2+ re-review brief with rejected-findings guards.
   inputs + press + lensitems + plan + body + empty prior; run from repo
   root — cwd=/tmp WARN-degrades the registry leg, the #2422 gotcha).
 
+- **State-classifier helper plan (three-source marker-presence read), standard
+  methodology lens + brief five-question translation (#2328 round one): when
+  the plan ships a CLASSIFIER whose one verdict word licenses a dangerous
+  action (`absent` unlocks re-append), write the infra bar's first clause as
+  the dangerous-direction test** ("a false `absent` re-creates the founding
+  hazard with the new tool's authority behind it") and fold these earned
+  sharpeners 1:1 into the brief's questions: (i) the PRE-LEDGER TOCTOU window
+  — walk the writer's append→commit-attempt→ledger-write sequence for a
+  moment where ALL evidence sources read empty on a healthy in-flight post,
+  and ask whether the dangerous verdict's guidance carries a
+  re-read-before-acting arm; (ii) FILTER-SCOPE AMBIGUITY — an optional filter
+  (note-contains/version) defined for one source but ambiguous over a
+  TRUNCATED/blind second source is itself a finding if a reasonable
+  implementer writes the dangerous variant; (iii) replay-test STAGING
+  fidelity — a monkeypatched-commit reconstruction only reproduces the stash
+  state if the patch point leaves the row UNSTAGED (checkout reverts to
+  index), so direct the twin at WHERE staging happens relative to the patch;
+  (iv) worktree-stale-HEAD folded into the brief's fallback-chain question
+  (frozen worktree HEAD + empty ledger → `absent` for a row committed on
+  main after branching — conservative vs confidently-wrong split mandated in
+  the answer). Read discipline extends self-referentially: ban ALL mutating
+  task.py subcommands BY NAME (the plan's subject is marker posting) while
+  permitting read-only view/find/latest-marker + `git show HEAD:` probes.
+  Anchor-uniqueness question pairs each P-item with the pin TEST the plan
+  claims is compatible ("does it only presence-check the heading, or pin
+  adjacency the insert breaks?"). Numcheck PASS first try at ~148 KB (spans
+  = inputs + questions + lensitems + plan + body + empty prior; digit-free
+  scaffold — "§4.1"/"§4.3"/"§11"/":1371"/"8735"/"60 chars" confined to the
+  questions span; "P1-P6"/"T1"/"v1"/"Step 9c" atom-free under both-sides
+  guards; registry leg from repo root; version-suffixed workspace).
+
 Related: [[plan-path-missing-read-from-main]],
 [[stale-tmp-files-across-plan-versions]].
