@@ -259,10 +259,11 @@ def run_fit_unit(args, fold_map: dict, cell: str, arm: str, layer: int) -> dict:
         )
     entry = fold_map["cells"][cell]
     store_root = Path(args.store_root)
-    if cell in cm.USER_CELLS:
-        pair_diag = p6.assert_user_pair(store_root, fold_map, layer)  # §4.2b, before fitting
-    else:
-        pair_diag = None
+    # NOTE (r14): the §4.2b pair-identity assert (p6.assert_user_pair) runs
+    # ONLY before genuinely PAIRED statistics (ladder phase_h4b) — an own fit
+    # is per-arm, and asserting the pair here crashed the legal plan-§7
+    # single-surviving-user-arm topology (r13 review blocker
+    # single-user-survivor-crashes-p6).
     slot = p6.SLOT_BY_ARM[arm]
     pack = p6.load_cell_arrays(
         store_root, cell, layer, (slot, p6.ANSWER_SLOT), row_order=entry["row_ids"]
@@ -338,8 +339,11 @@ def run_fit_unit(args, fold_map: dict, cell: str, arm: str, layer: int) -> dict:
                 "null_battery": "not run — companion read; nulls/tiers are primary-fold",
             }
     if cell in cm.USER_CELLS:
-        payload["user_pair_assert"] = pair_diag
+        # Pair topology (intersection when both arms survive; single-arm
+        # labeling otherwise). The §4.2b pair-identity ASSERT lives at the
+        # paired statistic only (ladder phase_h4b), never here (r14).
         payload["intersection"] = fold_map["user_intersection"]
+        payload["single_user_arm"] = bool(entry.get("single_user_arm", False))
         if arm == "context":
             payload["full_cohort_supplementary"] = _user_full_cohort_supplementary(
                 args, store_root, cell, layer
@@ -881,7 +885,8 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         assert all(len(fd) == 8 for fd in story["null"]["per_fold_draws"])
         assert len(story["margin"]["bootstrap"]["draws"]) == 24
         ureal = json.loads((ledger / "fits" / "chat_user_real__context.json").read_text("utf-8"))
-        assert ureal["user_pair_assert"]["n_hash_mismatched"] == 0
+        assert ureal["intersection"]["n_intersection"] == n - 6  # paired topology recorded
+        assert ureal["single_user_arm"] is False
         assert "full_cohort_supplementary" in ureal
         rc = phase_ratio(ns)
         assert rc == 0

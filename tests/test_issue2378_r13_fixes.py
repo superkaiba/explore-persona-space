@@ -7,12 +7,17 @@ Three fixes pinned here (scripts/issue2378_{gen,capture,judge}.py):
    assistant turns AFTER the last user query, so the 2-turn
    ``gen._render_user_prefix`` render is NOT a prefix of the 3-turn render
    and the r12 ``startswith(prefix + u2)`` producer check failed on every
-   row. r13 anchors u2 from the content-independent template TAIL
-   (``gen._user_real_span``); the producer per-row body is the shared
-   ``gen._user_real_row`` and the capture consumer ``_assemble_user_real``
-   re-derives through the SAME helpers — the tests below run those real
-   bodies against the REAL pinned tokenizer with writer-real pool-row shapes
-   (the #906 fixture-vs-writer class has bitten this issue three times).
+   row. r13 anchored u2 from the content-independent template TAIL; r14
+   (review blockers user-pair-vc-assert-guaranteed-fail /
+   user-arm-context-identity-contract-broken) replaced the 3-turn template
+   render itself with the DIRECT JOIN ``_render_user_prefix + u2 + TURN_END``
+   (``gen._render_user_real_tf``) so both user arms share byte-identical
+   context bytes (§4.2b pair contract; declared deviation from template
+   fidelity). The producer per-row body is the shared ``gen._user_real_row``
+   and the capture consumer ``_assemble_user_real`` re-derives through the
+   SAME helpers — the tests below run those real bodies against the REAL
+   pinned tokenizer with writer-real pool-row shapes (the #906
+   fixture-vs-writer class has bitten this issue three times).
 
 2. '<think>' ban threading (the r11 SegA lever extended): the plain answer
    leg (89% wave-1 think_leak), fresh plain draws, and the sim-user legs
@@ -27,8 +32,10 @@ Three fixes pinned here (scripts/issue2378_{gen,capture,judge}.py):
    cache-served, the pending set changes, and a shared
    ``checkpoint_dir/<cache_tag>`` would kill the wave-2 re-run at state
    load. ``judge._checkpoint_partition`` keys the checkpoint dir on the
-   realized item-id set (cache partition deliberately UNCHANGED, so the
-   wave-2 kept-ledger rewrite is a union EXTEND, never a clobber).
+   realized item-id set (cache partition deliberately UNCHANGED; since r14
+   the kept-ledger union EXTEND is enforced mechanically by
+   ``judge._merge_kept_ledger`` — pinned in tests/test_issue2378_r14_fixes.py
+   — rather than assumed from cache hits).
 
 Real-template tests skip when the pinned tokenizer is unavailable
 (no network/cache in CI — the test_issue1482_kresample precedent).
@@ -80,17 +87,32 @@ def _tok():
 
 
 def test_two_turn_prefix_is_not_full_render_prefix():
-    """Root cause, pinned on the REAL template: the r12 startswith check is
-    structurally false (a1's think block renders in the 2-turn prefix and is
-    stripped in the 3-turn render). If this ever flips, the arms' render
-    consistency must be re-checked before trusting either anchor."""
+    """Root cause, pinned on the REAL template: the template's own 3-turn
+    render is structurally inconsistent with the 2-turn prefix (a1's think
+    block renders in the prefix and is stripped once u2 follows) — which is
+    why r14's real arm teacher-forces the DIRECT JOIN instead. If the
+    template fact ever flips, the declared deviation should be revisited."""
     tok = _tok()
     r = POOL_ROW
     prefix = gen._render_user_prefix(tok, r["u1"], r["a1"])
-    full = gen._render_user_real_full(tok, r["u1"], r["a1"], r["u2"])
+    template_full = tok.apply_chat_template(
+        [
+            {"role": "user", "content": r["u1"]},
+            {"role": "assistant", "content": r["a1"]},
+            {"role": "user", "content": r["u2"]},
+        ],
+        tokenize=False,
+        add_generation_prompt=False,
+        enable_thinking=False,
+    )
     assert "<think>\n\n</think>" in prefix
-    assert "<think>" not in full
-    assert not full.startswith(prefix + r["u2"])  # the r12 check: fails pre-fix
+    assert "<think>" not in template_full  # the template strips a1's block
+    assert not template_full.startswith(prefix + r["u2"])  # r13's broken pairing
+    # r14: the direct-join teacher-forced render IS prefix-consistent by
+    # construction — byte-identical context prefix across the two user arms.
+    tf = gen._render_user_real_tf(tok, r["u1"], r["a1"], r["u2"])
+    assert tf == prefix + r["u2"] + cm.TURN_END
+    assert tf.startswith(prefix + r["u2"])
 
 
 def test_user_real_row_keeps_and_span_slices_u2():
@@ -108,7 +130,7 @@ def test_user_real_row_keeps_and_span_slices_u2():
 
 def test_user_real_span_tail_mismatch_drops():
     tok = _tok()
-    full = gen._render_user_real_full(tok, POOL_ROW["u1"], POOL_ROW["a1"], POOL_ROW["u2"])
+    full = gen._render_user_real_tf(tok, POOL_ROW["u1"], POOL_ROW["a1"], POOL_ROW["u2"])
     assert gen._user_real_span(full, POOL_ROW["u2"] + "DRIFT") is None
     row = gen._user_real_row(tok, {**POOL_ROW, "u2": POOL_ROW["u2"]})
     assert row["keep"] is True  # sanity: the undrifted row still keeps
@@ -279,6 +301,8 @@ def test_checkpoint_partition_keys_on_item_set():
 def test_dispatch_checkpoint_dir_item_set_keyed_cache_dir_not():
     src = inspect.getsource(judge._dispatch)
     assert "_checkpoint_partition(cache_tag, items)" in src
-    # The CACHE partition stays cache_tag alone — wave-1 rows must be
-    # cache-served so the wave-2 kept rewrite EXTENDS (union), never clobbers.
+    # The CACHE partition stays cache_tag alone — cache hits keep a warm-cache
+    # wave-2 re-run cheap. Since r14 (B3) the kept-ledger EXTEND is enforced
+    # mechanically in judge._merge_kept_ledger, never assumed from the cache
+    # (tests/test_issue2378_r14_fixes.py pins it).
     assert "Path(args.cache_dir) / cache_tag" in src

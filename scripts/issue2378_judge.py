@@ -241,8 +241,11 @@ def _checkpoint_partition(cache_tag: str, items) -> str:
     checkpoint partition on the REALIZED item-id set instead: a same-set
     resume maps to the same dir (crash-resume preserved); a grown/changed set
     gets a fresh dir. The CACHE partition deliberately stays ``cache_tag``
-    alone — cache hits on wave-1 rows are exactly what makes the wave-2
-    kept-ledger rewrite an EXTEND (union superset), never a clobber.
+    alone — cache hits on wave-1 rows keep a warm-cache wave-2 re-run cheap.
+    NOTE (r14, B3): cache hits are an OPTIMIZATION, not the EXTEND guarantee —
+    the judge cache is VM-local and can be cold on a re-run, so the kept-ledger
+    EXTEND is enforced mechanically in ``_merge_kept_ledger`` (prior ∪ new,
+    fail-loud on instrument/corpus mismatch), never assumed from the cache.
     """
     ids_fp = hashlib.sha256(
         json.dumps(sorted(it.item_id for it in items)).encode("utf-8")
@@ -566,6 +569,72 @@ def _run_pilot(args, mined: dict[str, dict]) -> int:
     return 0
 
 
+def _merge_kept_ledger(
+    prior: dict | None,
+    new_admitted: list[dict],
+    mined_union: set[str],
+    rubric_sha: str,
+    judge_model: str,
+) -> tuple[list[dict], dict]:
+    """Monotonic-EXTEND merge of a prior kept ledger with this run's admissions (r14, B3).
+
+    The judge cache is VM-local (``data/issue_2378/judge_cache``) and is NOT harvested
+    across machines, so a wave-2 re-invocation with a cold/partial cache RE-JUDGES
+    wave-1 rows: a score flip / parse failure / transport loss on an old row must
+    NEVER silently remove a wave-1 admission — SegB selection, G2a sizing and the
+    capture-ready intersections were built on the prior kept list, and SegB rows were
+    already paid for. The merge keeps the prior admitted list as an EXACT PREFIX
+    (order + prior scores preserved — the SegB seeded selection permutes indices of
+    this list, so prefix stability is defense-in-depth) and appends new-only rows.
+
+    Returns ``(merged_admitted, extend_counts)``. Raises RuntimeError (the caller
+    writes NOTHING) when the prior ledger was judged under a different instrument
+    (judge_model / rubric_sha mismatch) or when a prior admitted id falls outside
+    this run's mined union (a prior ledger from a DIFFERENT mining run — merging
+    would silently mix corpora). The merged set is a superset of the prior set by
+    construction; a defensive guard re-checks it.
+    """
+    if prior is None:
+        return list(new_admitted), {
+            "n_prior": 0,
+            "n_new_admitted": len(new_admitted),
+            "n_new_only": len(new_admitted),
+            "n_merged": len(new_admitted),
+            "n_prior_readmitted": 0,
+            "n_prior_not_readmitted": 0,
+        }
+    if prior.get("judge_model") != judge_model or prior.get("rubric_sha") != rubric_sha:
+        raise RuntimeError(
+            "kept-ledger EXTEND refused (r14 B3): prior ledger was judged under a different "
+            f"instrument (judge_model={prior.get('judge_model')!r} vs {judge_model!r}; "
+            f"rubric_sha={prior.get('rubric_sha')!r} vs {rubric_sha!r}) — a monotonic merge "
+            "would mix instruments; use a fresh out-root or re-judge deliberately"
+        )
+    prior_admitted = list(prior.get("admitted", []))
+    prior_ids = [r["row_id"] for r in prior_admitted]
+    outside = sorted(set(prior_ids) - mined_union)
+    if outside:
+        raise RuntimeError(
+            f"kept-ledger EXTEND refused (r14 B3): {len(outside)} prior admitted id(s) are "
+            f"outside this run's mined union (first: {outside[:3]}) — the prior ledger "
+            "belongs to a different mining run; refusing to merge corpora"
+        )
+    prior_set = set(prior_ids)
+    new_only = [r for r in new_admitted if r["row_id"] not in prior_set]
+    merged = prior_admitted + new_only
+    if not prior_set <= {r["row_id"] for r in merged}:  # defensive; unreachable
+        raise RuntimeError("kept-ledger EXTEND bug: merged set is not a superset of prior")
+    new_ids = {r["row_id"] for r in new_admitted}
+    return merged, {
+        "n_prior": len(prior_admitted),
+        "n_new_admitted": len(new_admitted),
+        "n_new_only": len(new_only),
+        "n_merged": len(merged),
+        "n_prior_readmitted": len(prior_set & new_ids),
+        "n_prior_not_readmitted": len(prior_set - new_ids),
+    }
+
+
 def _run_admission(args, mined: dict[str, dict]) -> int:
     out_root = Path(args.out_root)
     _require_pilot_pass(args, out_root)
@@ -576,6 +645,7 @@ def _run_admission(args, mined: dict[str, dict]) -> int:
     classified = _dispatch(items, args, force_path=force, cache_tag=args.wave)
     _persist_raw(args, classified, items_by_id, "judge_admission")
     kept_dir = out_root / "kept"
+    rubric_sha = _rubric_sha()
     cells = sorted({it.payload["cell"] for it in items})
     for cell in cells:
         cell_ids = [iid for iid in classified if items_by_id[iid].payload["cell"] == cell]
@@ -589,22 +659,38 @@ def _run_admission(args, mined: dict[str, dict]) -> int:
                 drops["below_threshold"] = drops.get("below_threshold", 0) + 1
             else:
                 drops[c["class"]] = drops.get(c["class"], 0) + 1
+        # r14 (B3): monotonic EXTEND — read the prior ledger and merge BEFORE the
+        # atomic replace, so a cold-cache re-judge can only ever ADD admissions.
+        prior_path = kept_dir / f"{cell}.json"
+        prior = json.loads(prior_path.read_text(encoding="utf-8")) if prior_path.exists() else None
+        mined_union = {rid for rid, m in mined.items() if m["cell"] == cell}
+        merged, extend = _merge_kept_ledger(
+            prior, admitted, mined_union, rubric_sha, cm.JUDGE_MODEL
+        )
         family = cm.CELL_FAMILY[cell]
         payload = {
             "cell": cell,
             "family": family,
             "n_items": len(cell_ids),
-            "n_admitted": len(admitted),
+            "n_admitted": len(merged),
             "admit_threshold": 50,
-            "drop_counts": drops,
-            "admitted": admitted,
+            "drop_counts": drops,  # THIS invocation's drops only (prior drops not re-counted)
+            "admitted": merged,
+            "extend": extend,
             "judge_model": cm.JUDGE_MODEL,
-            "rubric_sha": _rubric_sha(),
+            "rubric_sha": rubric_sha,
             "metadata": cm.run_metadata(),
         }
         cm.atomic_write_json(kept_dir / f"{cell}.json", payload)
+        if extend["n_prior_not_readmitted"]:
+            print(
+                f"[admission] {cell}: {extend['n_prior_not_readmitted']} prior admission(s) "
+                "flipped/lost on re-judge — PRESERVED by monotonic extend (r14 B3)",
+                flush=True,
+            )
         print(
-            f"[admission] {cell}: {len(admitted)}/{len(cell_ids)} admitted "
+            f"[admission] {cell}: {len(merged)}/{len(cell_ids)} admitted "
+            f"(prior={extend['n_prior']} new_only={extend['n_new_only']}) "
             f"drops={json.dumps(drops)}",
             flush=True,
         )

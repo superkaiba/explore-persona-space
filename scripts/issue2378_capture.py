@@ -253,24 +253,22 @@ def _assemble_story(mined_row: dict, opener_text: str, answer: str | None):
 
 def _a1_anchor(tok, u1: str, a1: str) -> int | None:
     """Char index where assistant_1's reply content begins in the rendered
-    prefix (SIM arm — the 2-turn render the sim turn was sampled under)."""
+    prefix — SHARED by both user arms (r14): the sim turn was sampled under
+    this prefix, and the real arm teacher-forces the SAME prefix + u2 direct
+    join (``gen._render_user_real_tf``), so one anchor serves both and the
+    v_P slot is byte-identical across arms by construction (§4.2b)."""
     return _divergence_anchor(lambda t: gen._render_user_prefix(tok, u1, t), a1)
 
 
-def _a1_anchor_real(tok, u1: str, a1: str, u2: str) -> int | None:
-    """a1 content-start anchor in the FULL 3-turn render (REAL arm; r13).
-
-    The 2-turn prefix render carries a1's empty <think> block, which the
-    3-turn render strips (gen._user_real_span rationale) — so the sim-arm
-    anchor is offset here; anchor against the full render instead."""
-    return _divergence_anchor(lambda t: gen._render_user_real_full(tok, u1, t, u2), a1)
-
-
 def _assemble_user_real(tok, row: dict, pool_row: dict):
-    """Re-derive the full render + tail-anchored span (r13) and cross-check
-    the producer row's stored fields; truncate at u2 end (teacher-forced
-    through user_2 only)."""
-    full = gen._render_user_real_full(tok, pool_row["u1"], pool_row["a1"], pool_row["u2"])
+    """Re-derive the direct-join teacher-forced render + len(prefix) span
+    (r14; ``gen._render_user_real_tf`` carries the declared deviation) and
+    cross-check the producer row's stored fields; truncate at u2 end
+    (teacher-forced through user_2 only). A row produced by the r13
+    template-render producer fails the ``rendered_text`` cross-check here
+    (prefix_render_mismatch, fail-visible) — stale r13 renders must be
+    regenerated, never silently consumed."""
+    full = gen._render_user_real_tf(tok, pool_row["u1"], pool_row["a1"], pool_row["u2"])
     span = gen._user_real_span(full, pool_row["u2"])
     if (
         span is None
@@ -282,7 +280,7 @@ def _assemble_user_real(tok, row: dict, pool_row: dict):
     lo, hi = span
     final = row["rendered_text"][:hi]
     a1 = pool_row["a1"]
-    pos = _a1_anchor_real(tok, pool_row["u1"], a1, pool_row["u2"])
+    pos = _a1_anchor(tok, pool_row["u1"], a1)
     if pos is None or final[pos : pos + len(a1)] != a1:
         return None, "anchor_slice_mismatch"
     return {
@@ -343,8 +341,16 @@ def _user_pool(args) -> dict[str, dict]:
 
 def _capture_ready_ids(args, cell: str) -> set[str]:
     """Kept ids from the gen capture_ready gate; user cells use the pair
-    intersection (plan §4.2b). Fail-loud when absent (--skip-capture-ready
-    is the smoke escape)."""
+    intersection (plan §4.2b) when BOTH arms pass the floor. Fail-loud when
+    absent (--skip-capture-ready is the smoke escape).
+
+    Single surviving user arm (r14; r13 review blocker
+    single-user-survivor-crashes-p6): when the sibling arm fails the G2b
+    floor (plan §7: a user-cell drop is reported, never a kill), the pair
+    intersection is bounded by the DROPPED arm's kept set and would starve
+    the survivor's fold map below the n_train floor — the survivor captures
+    its FULL kept cohort instead (the §4.2b labeled full-cohort supplementary
+    topology; H4b is emitted N/A downstream)."""
     path = Path(args.ledger_root) / "capture_ready" / f"{cell}.json"
     if not path.exists():
         raise RuntimeError(
@@ -353,11 +359,27 @@ def _capture_ready_ids(args, cell: str) -> set[str]:
         )
     payload = json.loads(path.read_text(encoding="utf-8"))
     if cell in cm.USER_CELLS:
-        inter = payload.get("pair_intersection") or {}
-        ids = inter.get("intersection_ids")
-        if not ids:
-            raise RuntimeError(f"empty/missing pair_intersection.intersection_ids in {path}")
-        return set(ids)
+        sibling = next(c for c in cm.USER_CELLS if c != cell)
+        sib_path = Path(args.ledger_root) / "capture_ready" / f"{sibling}.json"
+        if not sib_path.exists():
+            raise RuntimeError(
+                f"missing sibling capture_ready gate {sib_path} — phase capture_ready "
+                "writes both user arms in one pass (fail loud)"
+            )
+        sib = json.loads(sib_path.read_text(encoding="utf-8"))
+        if payload["floor_pass"] and sib["floor_pass"]:
+            inter = payload.get("pair_intersection") or {}
+            ids = inter.get("intersection_ids")
+            if not ids:
+                raise RuntimeError(f"empty/missing pair_intersection.intersection_ids in {path}")
+            return set(ids)
+        print(
+            f"[capture_ready] {cell}: single-user-arm topology (own floor_pass="
+            f"{payload['floor_pass']}, sibling {sibling} floor_pass={sib['floor_pass']}) — "
+            "capturing this arm's OWN kept ids, not the pair intersection (plan §7 "
+            "report-never-kill; H4b will be N/A)",
+            flush=True,
+        )
     ids = payload.get("kept_ids")
     if not ids:
         raise RuntimeError(f"empty kept_ids in {path} (fail loud)")

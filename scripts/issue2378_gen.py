@@ -347,15 +347,18 @@ def _render_chat(tok, question: str) -> str:
 
 def _render_user_prefix(tok, u1: str, a1: str) -> str:
     """Rendered prefill through assistant_1's <|im_end|> + the user header
-    (plan §4.2b slot definition; the SIM-arm generation prefill).
+    (plan §4.2b slot definition; the SHARED context prefix of BOTH user arms).
 
-    NOTE (r13): a1 is the LAST message here, so the Qwen3.6 template renders
-    it WITH the empty ``<think>\\n\\n</think>`` block. In the 3-turn render
-    (u1, a1, u2) the template STRIPS that block from a1 (it attaches only to
-    assistant turns AFTER the last user query), so this prefix is NOT a
-    prefix of the full render — the real-u2 arm anchors from the template
-    TAIL instead (``_user_real_span``). Sim rows keep this prefill for
-    generation/capture consistency (wave-1 rows were sampled under it)."""
+    NOTE (r13/r14): a1 is the LAST message here, so the Qwen3.6 template
+    renders it WITH the empty ``<think>\\n\\n</think>`` block; the template's
+    own 3-turn render (u1, a1, u2) STRIPS that block from a1 (it attaches
+    only to assistant turns AFTER the last user query), so this prefix is
+    NOT a prefix of the template's 3-turn render. The sim arm SAMPLED its
+    wave-1 user turns under this prefill, and the real arm teacher-forces
+    the direct join ``prefix + u2`` (``_render_user_real_tf``) — so the two
+    arms' context bytes, hence v_C / v_P, are identical by construction
+    (§4.2b pair contract; r14 fix — r13 used the template's 3-turn render
+    for the real arm and broke the contract)."""
     body = tok.apply_chat_template(
         [{"role": "user", "content": u1}, {"role": "assistant", "content": a1}],
         tokenize=False,
@@ -365,32 +368,41 @@ def _render_user_prefix(tok, u1: str, a1: str) -> str:
     return body + cm.USER_TURN_HEADER
 
 
-def _render_user_real_full(tok, u1: str, a1: str, u2: str) -> str:
-    """Full 3-turn template render for the REAL-u2 arm (teacher-forced)."""
-    return tok.apply_chat_template(
-        [
-            {"role": "user", "content": u1},
-            {"role": "assistant", "content": a1},
-            {"role": "user", "content": u2},
-        ],
-        tokenize=False,
-        add_generation_prompt=False,
-        enable_thinking=False,
-    )
+def _user_real_tf_from_prefix(prefix: str, u2: str) -> str:
+    """The single direct-join assembly both the producer and the capture
+    consumer share: rendered prefix + raw u2 + turn end."""
+    return prefix + u2 + cm.TURN_END
+
+
+def _render_user_real_tf(tok, u1: str, a1: str, u2: str) -> str:
+    """REAL-u2 teacher-forced text (r14): the SIM arm's EXACT rendered prefix
+    (``_render_user_prefix`` — a1 WITH the empty ``<think>`` block) + the raw
+    u2 text + ``TURN_END``, joined directly.
+
+    DECLARED DEVIATION (same class as the chat/plain/sim direct joins in the
+    capture module docstring): this is NOT the template's own 3-turn render —
+    Qwen3.6 strips a1's empty ``<think>`` block once a later user turn
+    exists, so the template render's context bytes differ from the sim arm's
+    generation prefill. The §4.2b paired-context contract (identical v_C /
+    v_P across the two user arms by construction) takes precedence over
+    template fidelity for this teacher-forced arm: r13 shipped the template
+    render and ``p6_common.assert_user_pair`` would have failed
+    deterministically whenever both arms survived (r13 review blockers
+    user-pair-vc-assert-guaranteed-fail /
+    user-arm-context-identity-contract-broken; both reviewers named this
+    exact fix)."""
+    return _user_real_tf_from_prefix(_render_user_prefix(tok, u1, a1), u2)
 
 
 def _user_real_span(rendered_full: str, u2: str) -> tuple[int, int] | None:
-    """Tail-anchored u2 char span in the full 3-turn render (r13 fix).
+    """Tail-anchored u2 char span in the teacher-forced render.
 
-    The r12 producer checked ``rendered_full.startswith(prefix + u2)`` with
-    ``prefix = _render_user_prefix(...)`` — but the 2-turn prefix render
-    carries a1's empty ``<think>`` block while the 3-turn render strips it
-    (Qwen3.6 attaches the block only to assistant turns after the LAST user
-    query), so the check failed on 100% of P4 wave-1 rows (span_mismatch).
-    Anchor u2 from the content-independent template TAIL instead (#1776
-    recipe): the render ends with ``USER_TURN_HEADER + u2 + TURN_END`` by
-    template construction. Returns None when the tail does not match
-    (template drift — the row drops as span_mismatch, fail-visible)."""
+    The render ends with ``USER_TURN_HEADER + u2 + TURN_END`` by construction
+    (r14 direct join; the same content-independent tail held for r13's
+    template render — #1776 recipe), so the span is pure end-arithmetic and
+    equals ``(len(prefix), len(prefix) + len(u2))``. Returns None when the
+    tail does not match (defensive fail-visible drop — cannot fire on the
+    direct join unless the row's stored render drifted from the pool row)."""
     tail = cm.USER_TURN_HEADER + u2 + cm.TURN_END
     if not rendered_full.endswith(tail):
         return None
@@ -400,11 +412,14 @@ def _user_real_span(rendered_full: str, u2: str) -> tuple[int, int] | None:
 
 def _user_real_row(tok, r: dict) -> dict:
     """One chat_user_real render row (the phase_user_real_render per-row body;
-    shared with the r13 pin tests so fixtures cannot drift from the writer)."""
+    shared with the r13/r14 pin tests so fixtures cannot drift from the
+    writer). Spans derive from ``len(prefix)`` (r14 §4.2b pair contract),
+    cross-checked against the content-independent tail anchor."""
     u2 = r["u2"]
-    rendered_full = _render_user_real_full(tok, r["u1"], r["a1"], u2)
+    prefix = _render_user_prefix(tok, r["u1"], r["a1"])
+    rendered_full = _user_real_tf_from_prefix(prefix, u2)
     span = _user_real_span(rendered_full, u2)
-    if span is None:
+    if span != (len(prefix), len(prefix) + len(u2)):
         return {
             "cell": "chat_user_real",
             "conv_id": r["conv_id"],
@@ -1478,9 +1493,10 @@ def phase_user_fresh(args) -> None:
 
 
 def phase_user_real_render(args) -> None:
-    """Real user-turn arm (plan §4.2b): NO generation — deterministic full
-    3-turn template render + TAIL-anchored u2 span (r13; ``_user_real_span``
-    carries the rationale for why the 2-turn prefix render cannot anchor)."""
+    """Real user-turn arm (plan §4.2b): NO generation — deterministic
+    direct-join teacher-forced render (r14: the sim arm's exact prefix + u2 +
+    TURN_END, ``_render_user_real_tf`` carries the declared deviation) with
+    the span at ``len(prefix)``, tail-anchor cross-checked."""
     pools_dir = _resolve_pools_dir(args)
     tok = _get_tokenizer()
     _assert_chat_template(tok)

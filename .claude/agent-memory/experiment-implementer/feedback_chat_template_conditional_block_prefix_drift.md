@@ -23,12 +23,19 @@ shared helper (`gen._user_real_span` / `_user_real_row`). Verified
 10,000/10,000 kept on the same pool.
 
 **How to apply:** any rig that derives char/token spans in a multi-turn
-chat render must derive them from the FULL render it will teacher-force —
+chat render must derive them from the FULL text it will teacher-force —
 tail anchor for the last turn, divergence-anchor (`_divergence_anchor`)
-against the FULL render for interior turns — never from a separately
-rendered shorter prefix. Corollary: a generation PREFILL built from the
-shorter render (sim arms) legitimately differs from the full render at the
-conditional block — keep prefill-consistency for sampled arms, template
-fidelity for teacher-forced arms, and DISCLOSE the cross-arm render delta.
+against that text for interior turns — never from a separately rendered
+shorter prefix. Corollary (REVISED, #2378 r14 — the r13 corollary
+"template fidelity for teacher-forced arms" was itself a review blocker):
+when a teacher-forced arm is PAIRED with a sampled arm under a
+shared-context contract (identical v_C/v_P bytes across arms), the pair
+contract WINS over template fidelity — teacher-force the DIRECT JOIN
+`prefill-prefix + turn + TURN_END` as a declared deviation
+(`gen._render_user_real_tf`), so both arms share byte-identical context;
+using the template's own (N+1)-turn render for the teacher-forced arm
+shifts every context byte at the conditional block and deterministically
+fails the pair assert. Template fidelity remains right only for an
+UNPAIRED teacher-forced arm. Either way, DISCLOSE the render deviation.
 Sibling family: [[bpe-zero-width-span-plain-text-delimiters]] (BPE seams;
 this entry is the template-CONDITIONAL-block sibling — no BPE involved).

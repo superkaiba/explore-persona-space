@@ -55,7 +55,10 @@ a point-Unmappable target (U ≤ 0) skips its transfer rungs by the lattice rule
 Phases: ``--phase pairs`` (default; ``--pairs`` shard axis), ``--phase h3``
 (question-vs-dialogue paired contrast — TOMBSTONED at v7, refuses at entry;
 dialogue descoped per epm:progress v70), ``--phase h4b`` (real-vs-sim paired
-contrast on the intersection cohort, §4.2b asserts re-run), ``--phase probe``
+contrast on the intersection cohort — the ONLY user statistic that runs the
+§4.2b pair assert; on a single-surviving-user-arm store it writes a loud
+``status: N/A`` record instead of crashing, plan §7 report-never-kill),
+``--phase probe``
 (synthetic CPU self-verification incl. a full producer→consumer e2e through
 ``issue2378_fits.py`` outputs at tiny n/d).
 """
@@ -354,8 +357,10 @@ def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: i
                 return
             raise RuntimeError(f"regime mismatch at {prior_path} — use a fresh ledger root")
     store_root = Path(args.store_root)
-    if target in cm.USER_CELLS:
-        p6.assert_user_pair(store_root, fold_map, layer)  # §4.2b, before any paired read
+    # NOTE (r14, B2): no pair assert here — a transfer ladder onto a user cell is an
+    # ARM-SPECIFIC read (chat -> that arm's own rows), not a paired statistic. The
+    # §4.2b pair assert runs only before genuinely PAIRED reads (H4b, phase_h4b),
+    # so a single-surviving-user-arm store ladders normally (plan §7: report, never kill).
     fits, fits_rs = _fits_inputs(ledger_root, target)
     floor = float(fits["floor"])
     tier = fits["tier"]
@@ -789,6 +794,36 @@ def phase_h3(args) -> int:
 def phase_h4b(args) -> int:
     ledger_root = Path(args.ledger_root)
     fm = _fold_map(args)
+    missing = [c for c in sorted(cm.USER_CELLS) if c not in fm["cells"]]
+    if missing:
+        # r14 (B2): H4b is the ONLY genuinely paired user statistic. When one (or
+        # both) user arms dropped below floor upstream (plan §7: report, never kill),
+        # the paired contrast is undefined — emit a loud N/A record instead of
+        # crashing P6. The surviving arm's own fit / ladder ran as a labeled
+        # full-cohort supplementary unit (fits.run_fit_unit / run_pair_unit).
+        surviving = [c for c in sorted(cm.USER_CELLS) if c in fm["cells"]]
+        reason = (
+            "H4b = N/A — other user arm dropped below floor"
+            if surviving
+            else "H4b = N/A — both user arms dropped below floor"
+        )
+        out = {
+            "statistic": "paired Δ(sim − real), conversation-grouped bootstrap on the intersection",
+            "status": "N/A",
+            "reason": reason,
+            "missing_user_arms": missing,
+            "surviving_user_arms": surviving,
+            "intersection": fm.get("user_intersection"),
+            "note": (
+                "single-user-arm topology (plan §7 G2b: user-cell drop is reported, "
+                "never a kill); the paired §4.2b contrast requires BOTH arms — the "
+                "surviving arm is reported as a labeled full-cohort supplementary fit"
+            ),
+            "metadata": cm.run_metadata(),
+        }
+        cm.atomic_write_json(ledger_root / "ladder" / "h4b_real_vs_sim.json", out)
+        _log(f"[ladder] H4b N/A: missing user arm(s) {missing} — record written, no crash")
+        return 0
     layer = resolve_layer(args)
     pair_diag = p6.assert_user_pair(Path(args.store_root), fm, layer)  # §4.2b re-run
     real_fits, real_rs = _fits_inputs(ledger_root, "chat_user_real")

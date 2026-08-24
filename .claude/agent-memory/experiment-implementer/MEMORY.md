@@ -12,7 +12,7 @@
 - [Stale __pycache__ masks a signature change](feedback_stale_pycache_masks_signature_change.md) — Edit+format-hook inside 1s leaves a stale pyc; smoke runs OLD code (#1345)
 - [Lane input staging: git-clone/rsync lanes ship no data/](feedback_hf_fallback_pod_side_data_inputs.md) — local-first → HF-fetch → fail-loud; VM-produced inputs need producer upload (#779 #1773 #1689)
 - [BPE/span-alignment trap family](feedback_bpe_zero_width_span_plain_text_delimiters.md) — zero-width spans, seam merges, offset-map anchors, token-count no-roundtrip (never exact-cap asserts on stored text); GEN-time span-validate; 7 siblings in entry (#825 #1315 #1776 #1336)
-- [Chat-template conditional-block prefix drift](feedback_chat_template_conditional_block_prefix_drift.md) — think-block renders position-conditionally: N-turn render ≠ prefix of (N+1)-turn; tail-anchor spans (#2378 r13)
+- [Chat-template conditional-block prefix drift](feedback_chat_template_conditional_block_prefix_drift.md) — N-turn render ≠ prefix of (N+1)-turn; tail-anchor spans; paired arms: direct-join beats template fidelity (#2378 r13/r14)
 - [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin (#1482)
 - [TRL schema/template traps](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key; assistant_only_loss False on Qwen (#1489 #519)
 - [CPU randn serial floor in Haar nulls](feedback_cpu_randn_serial_floor_haar_nulls.md) — torch CPU randn is thread-invariant (#1417)

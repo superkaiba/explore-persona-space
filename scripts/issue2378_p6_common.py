@@ -308,10 +308,17 @@ def build_fold_map(
                 "(G2b should have dropped it upstream)"
             )
 
-    # User pair-complete intersection cohort (plan §4.2b).
+    # User pair-complete intersection cohort (plan §4.2b). A SINGLE surviving
+    # user arm (the sibling G2b-dropped below floor) is a LEGAL topology, not
+    # a staging bug (r14; r13 review blocker single-user-survivor-crashes-p6):
+    # plan §7 makes user-cell drops report-never-kill, so the survivor fits on
+    # its OWN cohort as the labeled full-cohort supplementary read and every
+    # paired statistic (H4b) is emitted N/A downstream.
     user_info = None
     user_ids: list[str] | None = None
-    have_users = all(c in cells for c in cm.USER_CELLS)
+    present_users = [c for c in cm.USER_CELLS if c in cells]
+    have_users = len(present_users) == len(cm.USER_CELLS)
+    single_user = present_users[0] if len(present_users) == 1 else None
     if have_users:
         real_ids = [r["row_id"] for r in ledgers["chat_user_real"]]
         sim_ids = [r["row_id"] for r in ledgers["chat_user_sim"]]
@@ -329,18 +336,33 @@ def build_fold_map(
                 f"user intersection {len(inter)} < {n_eq_floor}: user arms fit at their "
                 "own cohort size (labeled below_n_eq), excluded from the N_eq min"
             )
-    else:
-        for c in cm.USER_CELLS:
-            if c in cells:
-                raise RuntimeError(
-                    f"only one user arm present ({c}); the pair-complete intersection "
-                    "needs both arms (a single-arm store is a staging bug)"
-                )
+    elif single_user is not None:
+        n_single = kept_counts[single_user]
+        user_info = {
+            "single_arm": single_user,
+            "dropped_arm": next(c for c in cm.USER_CELLS if c != single_user),
+            "n_kept": n_single,
+            "n_intersection": None,
+            "note": (
+                "single surviving user arm — pair intersection undefined; the arm "
+                "fits at its own cohort (labeled), H4b is N/A (plan §7 "
+                "report-never-kill; §4.2b full-cohort supplementary topology)"
+            ),
+        }
+        if n_single < n_eq_floor:
+            excluded["__user_single_arm__"] = (
+                f"single user arm {single_user} kept={n_single} < {n_eq_floor}: fits at "
+                "its own cohort size (labeled below_n_eq), excluded from the N_eq min"
+            )
 
-    # N_eq over cohort sizes (user arms enter as ONE intersection cohort).
+    # N_eq over cohort sizes (paired user arms enter as ONE intersection
+    # cohort; a single surviving arm enters as its own cohort — mirroring the
+    # paired equalize-down behavior).
     n_eq_pool = {c: kept_counts[c] for c in cells if c not in cm.USER_CELLS}
     if have_users and "__user_neq__" not in excluded:
         n_eq_pool["user_intersection"] = len(user_ids)  # type: ignore[arg-type]
+    elif single_user is not None and "__user_single_arm__" not in excluded:
+        n_eq_pool[f"user_single_{single_user}"] = kept_counts[single_user]
     n_eq = min(n_eq_pool.values())
     if n_eq < n_eq_floor:
         raise RuntimeError(f"N_eq={n_eq} < floor {n_eq_floor} (cells: {n_eq_pool})")
@@ -350,11 +372,18 @@ def build_fold_map(
         rows = ledgers[cell]
         rng = np.random.default_rng(cm.derived_seed(seed, "foldmap", cell))
         if cell in cm.USER_CELLS:
-            assert user_ids is not None
-            # SHARED subsample + assignment across the two arms (seeded on the
-            # PAIR, not the cell, so both arms get identical cohorts/folds).
-            rng = np.random.default_rng(cm.derived_seed(seed, "foldmap", "user_pair"))
-            cohort = list(user_ids)
+            if have_users:
+                assert user_ids is not None
+                # SHARED subsample + assignment across the two arms (seeded on
+                # the PAIR, not the cell, so both arms get identical
+                # cohorts/folds).
+                rng = np.random.default_rng(cm.derived_seed(seed, "foldmap", "user_pair"))
+                cohort = list(user_ids)
+            else:
+                # Single surviving arm (r14): its OWN kept cohort, per-cell
+                # seed (no pairing to align to) — the labeled full-cohort
+                # supplementary topology.
+                cohort = sorted(r["row_id"] for r in rows)
             n_fit = min(n_eq, len(cohort))
             sel = sorted(rng.permutation(len(cohort))[:n_fit].tolist())
             row_ids = [cohort[i] for i in sel]
@@ -368,6 +397,8 @@ def build_fold_map(
                 "folds": [int(x) for x in folds],
                 "below_n_eq": bool(n_fit < n_eq),
             }
+            if not have_users:
+                entry["single_user_arm"] = True
         elif cell in cm.STORY_CELLS:
             by_id = {r["row_id"]: r for r in rows}
             all_ids = sorted(by_id)
@@ -692,6 +723,13 @@ def assert_user_pair(store_root: Path, fold_map: dict, layer: int) -> dict:
     """Fail-loud §4.2b intersection asserts: identical ordered conversation-ID
     lists, identical fold assignments, identical per-conversation v_C sha256
     (over the raw bf16-as-uint16 bytes at the read layer) across the two arms.
+
+    SCOPE (r14; r13 review blocker single-user-survivor-crashes-p6): invoked
+    ONLY before genuinely PAIRED statistics (H4b — ladder phase_h4b), which
+    check the both-arms-present topology FIRST and emit N/A when an arm was
+    G2b-dropped. Per-arm own fits and transfer ladders are NOT paired
+    statistics and never call this (a single-arm store is a legal plan-§7
+    topology, not a staging bug).
 
     Returns a diagnostic dict (persist it); on ANY mismatch raises AFTER
     computing a decoded max-abs-diff diagnostic so a production failure is
