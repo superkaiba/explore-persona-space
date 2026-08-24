@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2545,
+  "highest_id": 2546,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11916,6 +11916,14 @@
       "path": "tasks/proposed/2545",
       "status": "proposed",
       "title": "verify_task_body: HF file-count check page-cap reports 'unverified' inside a PASS line \u2014 full-pagination fallback for count claims on pinned tree links"
+    },
+    "2546": {
+      "goal": "Measure whether held-out predictive accuracy of the context\u2192answer map (v_C \u2192 v_A, Qwen-2.5-7B-Instruct, layer 19) falls as a function of a question's chain-of-thought necessity, defined as the per-question cross-model rate at which CoT prompting flips an answer from wrong to right; and determine whether any such fall is a genuine loss of answer-content predictability versus an artifact of answer length, answer-sampling noise, or domain shift.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2546",
+      "status": "proposed",
+      "title": "Does the context\u2192answer map degrade on questions where chain-of-thought is necessary?"
     },
     "256": {
       "has_clean_result": false,
