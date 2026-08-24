@@ -1504,3 +1504,27 @@ literal contains its single form as a substring (assert `{{rnd}}`==1 FIRST,
 replace, then count `{rnd}`); when envelopes embed via f-string into ONE part,
 token totals sum the four PARTS only (parts_total helper, embedded counts as
 diagnostic labels only) — summing parts AND their embeddings double-counts.
+
+**Multi-cause gate-trip fix round with an implementer SELF-RAISED concern
+(#2378 r13, 2026-08-24):** three deltas on the r10 designed-gate-trip shape.
+(a) When the diagnosis decomposes into NUMBERED causes and the impl marker's
+"Brief adherence" maps fixes 1-N onto them, the V-duty section keys one duty
+per cause-fix AND pre-adjudicates the causes that are NOT code duties (an
+orchestrator pod-ops crash in the preamble; a plan-§10 command-list omission
+whose recorded remedy is a header note) — otherwise the twin FAILs the round
+for the plan's own gap. (b) An implementer-raised CONCERN row (here the
+render-asymmetry disclosure) is BOTH a V-duty (adjudicate the disclosed
+tradeoff against the plan's by-construction contract) and a ledger status
+line with ADEQUATE-AS-PERSISTED / UNDERSTATES vocabulary — UNDERSTATES routes
+to a FRESH id, never a re-emission; pin the ledger snapshot to the impl ts as
+usual (the self-raise predates the marker, so it IS in the snapshot). (c)
+Compose-time mechanism attestation beats claim-echo for a fix whose invariant
+is EMERGENT: the impl claimed the wave-2 kept-ledger rewrite "EXTENDS, never
+clobbers"; a 3-line read showed the mechanism is full-set-recompute + shared
+cache (superset-ness contingent on cache survival + judge determinism, not an
+explicit union) — attest the located mechanism neutrally and make the
+STRUCTURAL / CONTINGENT / DEFECTIVE ruling a V-duty vocabulary. Assert traps
+hit live (all label-caught): the diff-acq block carries the parent SHA 3×
+(log + pre-image show + per-file diff); an addressed-rows pair carries the
+hot-fix SHA 2× in the slice JSON; a duties-section header that names its tail
+heading adds a 4th `## Round-N ledger status` mention.
