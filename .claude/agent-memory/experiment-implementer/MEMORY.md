@@ -11,6 +11,7 @@
 - [Null-read family: rank-space + stratified](feedback_rank_null_equals_observed_anchor_dominated.md) — MRR at its shuffled null when v̂ anchor-dominated; tail-mass + stratified siblings in entry (#1776 #825 #1482)
 - [Stale __pycache__ masks a signature change](feedback_stale_pycache_masks_signature_change.md) — Edit+format-hook inside 1s leaves a stale pyc; smoke runs OLD code (#1345)
 - [Lane input staging: git-clone/rsync lanes ship no data/](feedback_hf_fallback_pod_side_data_inputs.md) — local-first → HF-fetch → fail-loud; VM-produced inputs need producer upload (#779 #1773 #1689)
+- [Pinned parent driver: repo-root assert + branch-only core kwargs](feedback_pinned_parent_driver_repo_root_assert.md) — <tmp>/scripts + stub pyproject + REPO_ROOT repoint; rebind P.F to the pinned core; verify kwargs via inspect.signature (#2388 n1m)
 - [BPE/span-alignment trap family](feedback_bpe_zero_width_span_plain_text_delimiters.md) — zero-width spans, seam merges, offset-map anchors, token-count no-roundtrip (never exact-cap asserts on stored text); GEN-time span-validate; 7 siblings in entry (#825 #1315 #1776 #1336)
 - [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin (#1482)
 - [TRL schema/template traps](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key; assistant_only_loss False on Qwen (#1489 #519)
@@ -108,3 +109,4 @@
 - [Gate domain authority + bool-int aliasing](feedback_gate_domain_authority_and_bool_int_aliasing.md) — verifier domain comes from the CALLER, never the artifact; type-is-int for identity fields (True aliases 1 through exact-set reconciliation) (#823 r5)
 - [Unconditional per-arm empty guard](feedback_unconditional_per_arm_empty_guard.md) — any cross-arm conjunct leaves the all-empty cell dispatching; pin measured zero-dispatch, not guard source shape (#2329 r18)
 - [Model venvs pin the full accel-dep closure](feedback_model_venv_pin_full_dep_closure_flashinfer.md) — floating flashinfer 0.6.16.post3 TypeErrors past vLLM ImportError-only guard on py3.11; smoke the compile-backend import path (#2378)
+- [Shared Overleaf clone commit race](feedback_shared_overleaf_clone_commit_race.md) — verify landing by blob sha at HEAD, never own commit rc; git -C for non-EPS repos (#1894 sibling)
