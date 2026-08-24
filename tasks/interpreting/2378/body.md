@@ -136,7 +136,7 @@ Random sample (seed 42); real rows are human-written LMSYS/WildChat text, excerp
 
 ### Every surviving framing is linearly mappable, at a 2–3× lower ceiling than chat
 
-The figure shows each framing's own-map held-out R² (full-color bars, context read: the state just before the answer), the prefix read beside it (pale bars: the state before the question, or before the assistant's reply for the user framing), the shuffled-answer null 95th percentile (black dashes), and the 5 per-fold values (open points).
+The figure shows each framing's own-map held-out R² (full-color bars, context read: the state just before the answer), the prefix read beside it (pale bars: the state before the question, or before the assistant's reply for the user framing), the shuffled-answer null 95th percentile (black dashes), and each fold's value point-by-point (open points).
 
 ![Own-map held-out R-squared per framing with prefix bars, null marks, and per-fold points](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ec001f7d97845da6ba896b43cb8a7d1015122e34/figures/issue_2378/own_ceilings.png)
 
@@ -158,7 +158,7 @@ Output-side rotation does better in stories (0.62–0.69), and the output-side r
 
 ### Real user turns are weakly mappable, matching the corrected 7B band; the simulated-user cell collapsed at generation
 
-The figure compares the chat assistant turn's own-map R² with the real user turn's, under both the context read and the prefix read (bar pair), against the corrected 7B reference band (grey, 0.19–0.25) and the user framing's null (dotted); open points are the 5 folds.
+The figure compares the chat assistant turn's own-map R² with the real user turn's, under both the context read and the prefix read (bar pair), against the corrected 7B reference band (grey, 0.19–0.25) and the user framing's null (dotted); open points show each of the 5 folds point-by-point.
 
 ![Assistant versus user turn own-map R-squared with the corrected 7B reference band](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ec001f7d97845da6ba896b43cb8a7d1015122e34/figures/issue_2378/user_turn_panel.png)
 
