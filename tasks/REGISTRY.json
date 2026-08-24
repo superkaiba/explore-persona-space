@@ -11711,7 +11711,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2516",
       "status": "proposed",
-      "title": "Reclaim LESSONS.md index headroom \u2014 aggregate cap is ~60 B from blocking every new rule file"
+      "title": "workflow-fix: reclaim LESSONS.md index headroom \u2014 aggregate cap is ~60 B from blocking every new rule file"
     },
     "256": {
       "has_clean_result": false,

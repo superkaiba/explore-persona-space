@@ -1,6 +1,6 @@
 ---
-title: Reclaim LESSONS.md index headroom — aggregate cap is ~60 B from blocking every
-  new rule file
+title: 'workflow-fix: reclaim LESSONS.md index headroom — aggregate cap is ~60 B from
+  blocking every new rule file'
 kind: infra
 tags:
 - wf-fix
