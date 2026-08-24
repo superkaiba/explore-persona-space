@@ -1,7 +1,7 @@
 ---
 title: Answer correctness is predictable from the context vector before generation
   on all four surfaces, and the context-to-answer map helps only at small label budgets
-  (HIGH confidence)
+  on math and code (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-19T16:45:16Z'
