@@ -42,6 +42,13 @@ Representation conventions (recorded in every output):
     pass-B bundle train split (``issue2379_mapfit._split_indices`` +
     ``mapping_baselines.identity_bias_predict``, the fit-worker idiom); the
     post-norm read is RMSNorm(v_c + b) — shift first, model read-out second.
+  * Finite-dtype convention: the shared ``rms_norm_rows`` operator reproduces
+    ``Qwen2RMSNorm.forward`` op-for-op — fp32 variance reduce, normalized
+    states cast back to bfloat16 BEFORE the bf16 weight multiply. Every input
+    is cast to bf16 first (the production hidden-state dtype; fp16-persisted
+    states are bf16-representable over the states' range, so the cast recovers
+    the production value); the bf16 result returns as fp64 for the downstream
+    cosine math.
 
 Validity gates:
   * Gate P (trainref-gpu, per condition): the re-forward's PRE-norm running
@@ -57,6 +64,10 @@ Validity gates:
     ``eval_results/issue_2474/prefit/prefit_scores.json`` (tolerance 1e-6;
     2e-3 for the fp16-vhat ans arms). Certifies every staged input before the
     post-norm transform is applied.
+  * vhat identity pin (rescore): the staged ``base_<setting>_L27_vhat.pt``
+    bytes must sha256-match the pinned parent-producer hashes (``VHAT_SHA256``)
+    before any post-norm read consumes them (vector-level identity, not just
+    schema + the Gate R aggregate projections).
   * Stats recompute check: recomputed PRE pooled rho vs the parent
     ``prefit_stats.json`` pinned values (1e-6; warn 0.02 / fail 0.05 for the
     fp16-vhat ans arms whose rank order may flip on ties).
@@ -83,7 +94,10 @@ Smoke blind-spot enumeration:
   * the production upload leg + /workspace/logs sentinel are not exercised
     (smoke uploads nothing; sentinel routed to the smoke tree);
   * the production bootstrap validity floor (n_valid >= 100) is scaled to the
-    smoke draw count (min(100, n_boot // 2)) — gate-calibration parity.
+    smoke draw count (min(100, n_boot // 2)) — gate-calibration parity;
+  * the production vhat sha-256 pins (``VHAT_SHA256``) are not exercised —
+    the smoke pins the synthetic vhat's own sha (plumbing only); the
+    discriminating perturbation check is a committed pytest.
 
 Run (pod, GPU phase — all 8 conditions, layer 27 only):
     uv run python scripts/issue2474_postnorm.py --phase trainref-gpu
@@ -140,7 +154,17 @@ RMS_EPS_EXPECTED = 1e-6
 NORM_WEIGHT_NAME = "model.norm.weight"
 HF_TRAIN_PREFIX = "issue2379_reelicit/train"  # full training mixes (8 jsonl)
 HF_POSTNORM_PREFIX = f"{SLUG}/postnorm_l27"  # GPU-phase upload destination
-RECIPE_TAG = "postnorm-l27-v1"  # bump on ANY semantics change; rides every fingerprint
+# v2: rms_norm_rows moved to the Qwen2RMSNorm finite-dtype convention (bf16
+# in/out, fp32 variance) — every post-norm number changes vs v1 (r1 review).
+RECIPE_TAG = "postnorm-l27-v2"  # bump on ANY semantics change; rides every fingerprint
+# Parent-producer identity pins for the persisted map outputs (sha256 over the
+# staged file bytes; computed 2026-08-23 from the canonical HF artifacts the
+# parent prefit round produced and Gate R validates). A staged vhat that does
+# not match is NOT the parent map output — fail loud before any post-norm read.
+VHAT_SHA256 = {
+    "caps": "2429f0e2003f0390f0b8c3aaee0b05f51fde0d74e70c97a88479e0367c1bd552",
+    "em": "b2ae177b94f685207f06cd43303fac9c038d8200bc9254baa139ba1c8647e596",
+}
 N_BOOT_DEFAULT = 2000
 BOOT_SEED_DEFAULT = 20260822
 SAMEQ_FAMS = ("ctx_sameq", "ans_sameq_mapB", "identbias_sameq", "ceiling_sameq")
@@ -200,6 +224,11 @@ def _cfg_from_args(args) -> dict:
             "means_dir": root / "out" / "trainref_means",
             "fig_dir": root / "figs",
             "vhat_path": {"smoke": root / "vhat.pt"},
+            # Self-consistent pin: exercises the sha-check plumbing; the
+            # discriminating perturbation check is a committed pytest.
+            "vhat_sha256": {
+                "smoke": _sha256_file(root / "vhat.pt") if (root / "vhat.pt").is_file() else None
+            },
             "passb_path": root / "passb.pt",
             "prefit_scores_path": root / "prefit_scores.json",
             "prefit_stats_path": root / "prefit_stats.json",
@@ -229,6 +258,7 @@ def _cfg_from_args(args) -> dict:
             s: data_root / SLUG / "analysis_tensors" / "predicted" / f"base_{s}_L27_vhat.pt"
             for s in ("caps", "em")
         },
+        "vhat_sha256": dict(VHAT_SHA256),
         "passb_path": None,  # -> issue2379_mapfit.load_base_bundle (pinned hf download)
         "prefit_scores_path": REPO_ROOT / "eval_results/issue_2474/prefit/prefit_scores.json",
         "prefit_stats_path": REPO_ROOT / "eval_results/issue_2474/prefit/prefit_stats.json",
@@ -250,6 +280,22 @@ def _selected_conds(args, cfg: dict) -> list[str]:
     return sel
 
 
+def _selected_settings(args, cfg: dict) -> list[str]:
+    """Explicit rescore setting selection (--settings). Default = every
+    registered setting; any narrower selection is a RECORDED descope (rides
+    the rescore fingerprint + payload), never an implicit skip."""
+    raw = args.settings
+    if raw.strip().lower() == "all":
+        return list(cfg["settings"])
+    sel = {s.strip() for s in raw.split(",") if s.strip()}
+    unknown = sorted(sel - set(cfg["settings"]))
+    if unknown:
+        raise RuntimeError(f"--settings unknown: {unknown} (known: {list(cfg['settings'])})")
+    if not sel:
+        raise RuntimeError("--settings selected no settings")
+    return [s for s in cfg["settings"] if s in sel]
+
+
 def _p_inoc(cfg: dict) -> dict:
     if cfg["p_inoc"] is not None:
         return cfg["p_inoc"]
@@ -268,18 +314,43 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
 # RMSNorm (the ONE transform under test; used identically by every phase)
 # ---------------------------------------------------------------------------
 def rms_norm_rows(x, w, eps: float):
-    """Qwen2 final RMSNorm applied row-wise in fp64: w * x / sqrt(mean(x^2) + eps).
+    """Row-wise Qwen2 final RMSNorm under the module's OWN finite-dtype convention.
 
-    ``x`` is (..., H); ``w`` is (H,). Returns fp64. This is the module's single
+    Reproduces ``Qwen2RMSNorm.forward`` (transformers modeling_qwen2) op-for-op:
+    upcast to fp32 -> variance = mean(x^2) -> x * rsqrt(variance + eps) -> cast
+    the normalized states BACK to the input dtype -> multiply by the
+    (input-dtype) weight. Input-dtype policy: bfloat16 for EVERY consumer — the
+    production hidden-state dtype. Live GPU states arrive bf16 (round-trip
+    exact through the fp32/fp64 numpy hop); fp16-persisted artifacts are
+    bf16-representable over the states' range (fp16 mantissa strictly wider),
+    so the cast recovers the production value; synthetic fp32/fp64 smoke
+    inputs take one bf16 rounding, identically on both sides of any pre/post
+    comparison. ``x`` is (..., H); ``w`` is (H,). Returns fp64 (of the bf16
+    values) for the downstream cosine math. This is the module's single
     post-norm operator — the GPU phase and the offline re-read share it.
     """
     import numpy as np
+    import torch
 
-    x = np.asarray(x, dtype=np.float64)
-    w = np.asarray(w, dtype=np.float64)
+    x = np.ascontiguousarray(np.asarray(x, dtype=np.float32))
+    w = np.ascontiguousarray(np.asarray(w, dtype=np.float32))
     assert x.shape[-1] == w.shape[0], (x.shape, w.shape)
-    rms = np.sqrt(np.mean(np.square(x), axis=-1, keepdims=True) + eps)
-    return (x / rms) * w
+    xt = torch.from_numpy(x).to(torch.bfloat16)
+    wt = torch.from_numpy(w).to(torch.bfloat16)
+    hidden_states = xt.to(torch.float32)
+    variance = hidden_states.pow(2).mean(-1, keepdim=True)
+    hidden_states = hidden_states * torch.rsqrt(variance + eps)
+    out = wt * hidden_states.to(torch.bfloat16)
+    return out.to(torch.float64).numpy()
+
+
+def _sha256_file(path: Path) -> str:
+    """Chunked sha256 over a file's bytes (artifact identity pins)."""
+    h = hashlib.sha256()
+    with Path(path).open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def decode_bf16_le(raw: bytes):
@@ -512,13 +583,95 @@ def _stage_stored_mu(cfg: dict, cond: str) -> Path:
     return target
 
 
-def _count_rows(path: Path) -> int:
+def _validate_train_rows(path: Path) -> int:
+    """Validate EVERY row's schema against the exact fields the capture loop
+    dereferences (prompt[0]=system, prompt[-1]=user, completion[0].content
+    non-empty). Pre-GPU fail-loud (r1 codex: gpu-input-contract-post-work).
+    Returns the non-blank row count."""
     n = 0
     with path.open(encoding="utf-8") as f:
-        for line in f:
-            if line.strip():
-                n += 1
+        for i, line in enumerate(f):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(f"{path.name}:{i + 1}: invalid JSON ({exc})") from exc
+            prompt = row.get("prompt")
+            comp = row.get("completion")
+            if (
+                not isinstance(prompt, list)
+                or len(prompt) < 2
+                or not all(isinstance(m, dict) for m in prompt)
+                or prompt[0].get("role") != "system"
+                or prompt[-1].get("role") != "user"
+                or not isinstance(prompt[0].get("content"), str)
+                or not isinstance(prompt[-1].get("content"), str)
+            ):
+                raise RuntimeError(f"{path.name}:{i + 1}: prompt schema invalid")
+            if (
+                not isinstance(comp, list)
+                or not comp
+                or not isinstance(comp[0], dict)
+                or not isinstance(comp[0].get("content"), str)
+                or not comp[0]["content"].strip()
+            ):
+                raise RuntimeError(f"{path.name}:{i + 1}: completion schema invalid/empty")
+            n += 1
+    if n == 0:
+        raise RuntimeError(f"{path.name}: no rows")
     return n
+
+
+def _validate_stored_mu(mu_path: Path, layer: int, expect_rows: int, hidden: int | None) -> None:
+    """Stored-mu schema/shape/count/finiteness contract, checked BEFORE any
+    model load / GPU forward (r1 codex: gpu-input-contract-post-work)."""
+    import issue2379_mapfit as mf
+    import numpy as np
+
+    stored = mf._torch_load_constrained(mu_path)
+    missing = [k for k in ("mu_train", "mu_a_train", "n_c", "n_a") if k not in stored]
+    if missing:
+        raise RuntimeError(f"{mu_path}: stored mu missing keys {missing}")
+    for key in ("mu_train", "mu_a_train"):
+        t = stored[key]
+        if int(t.shape[0]) <= layer:
+            raise RuntimeError(f"{mu_path}: {key} has {int(t.shape[0])} layers — no layer {layer}")
+        vec = np.asarray(t[layer], dtype=np.float64)
+        if vec.ndim != 1 or (hidden is not None and vec.shape[0] != hidden):
+            raise RuntimeError(f"{mu_path}: {key}[{layer}] shape {vec.shape} != ({hidden},)")
+        if not np.isfinite(vec).all():
+            raise RuntimeError(f"{mu_path}: {key}[{layer}] carries NaN/Inf")
+    if int(stored["n_c"]) != expect_rows:
+        raise RuntimeError(
+            f"{mu_path}: stored mu n_c={int(stored['n_c'])} != train rows {expect_rows}"
+        )
+
+
+def _gate_p_check(mu_c_pre, mu_a_pre, stored_c, stored_a, cond: str) -> dict:
+    """Gate P: pre-norm reproduction of the stored streaming means (cos >= 0.999).
+
+    Raises on FAIL; returns the gate record dict on PASS."""
+    import numpy as np
+
+    mu_c_pre = np.asarray(mu_c_pre, dtype=np.float64)
+    mu_a_pre = np.asarray(mu_a_pre, dtype=np.float64)
+    cos_c = _cos(mu_c_pre, stored_c)
+    cos_a = _cos(mu_a_pre, stored_a)
+    rel_c = float(np.linalg.norm(mu_c_pre - stored_c) / (np.linalg.norm(stored_c) + 1e-12))
+    rel_a = float(np.linalg.norm(mu_a_pre - stored_a) / (np.linalg.norm(stored_a) + 1e-12))
+    if cos_c < 0.999 or cos_a < 0.999:
+        raise RuntimeError(
+            f"{cond}: Gate P FAIL — pre-norm mean reproduction cos_c={cos_c:.6f} "
+            f"cos_a={cos_a:.6f} (bar 0.999); recipe drift vs the stored mu.pt"
+        )
+    return {
+        "cos_c_pre_vs_stored": cos_c,
+        "cos_a_pre_vs_stored": cos_a,
+        "rel_l2_c": rel_c,
+        "rel_l2_a": rel_a,
+        "verdict": "PASS",
+    }
 
 
 def _trainref_fingerprint(cfg: dict, cond: str, train_path: Path, n_rows: int, model_ident: str):
@@ -536,7 +689,9 @@ def _trainref_fingerprint(cfg: dict, cond: str, train_path: Path, n_rows: int, m
     }
 
 
-def _save_partial(partial: Path, fp: dict, sums: dict, counts: dict, next_line_idx: int) -> None:
+def _save_partial(
+    partial: Path, fp: dict, sums: dict, counts: dict, next_line_idx: int, spot_records: list
+) -> None:
     import numpy as np
 
     tmp = partial.with_name(partial.stem + ".tmp.npz")  # suffix stays .npz (np.savez appends)
@@ -545,6 +700,7 @@ def _save_partial(partial: Path, fp: dict, sums: dict, counts: dict, next_line_i
         fingerprint=np.array(json.dumps(fp)),
         next_line_idx=np.int64(next_line_idx),
         n_rows_done=np.int64(counts["n"]),
+        spot_json=np.array(json.dumps(spot_records)),
         **{k: v for k, v in sums.items()},
     )
     os.replace(tmp, partial)
@@ -559,6 +715,10 @@ def _load_partial(partial: Path, fp: dict):
         try:
             if json.loads(str(z["fingerprint"])) != fp:
                 return None
+            # Spot-gate evidence rides the partial (a resumed condition must
+            # not finish with an empty spot_equivalence list — r1 codex NIT
+            # resumed-spot-evidence-lost). A corrupt partial -> recompute.
+            spot = json.loads(str(z["spot_json"])) if "spot_json" in z.files else []
         except Exception:
             return None
         sums = {k: np.asarray(z[k]) for k in z.files if k.startswith("sum_")}
@@ -566,6 +726,7 @@ def _load_partial(partial: Path, fp: dict):
             "sums": sums,
             "n": int(z["n_rows_done"]),
             "next_line_idx": int(z["next_line_idx"]),
+            "spot": spot,
         }
 
 
@@ -620,15 +781,31 @@ def phase_trainref_gpu(args, cfg: dict) -> dict:
             },
         )
 
-    for ci, cond in enumerate(conds):
-        out_json = cfg["means_dir"] / f"{cond}.json"
+    # ---- Preflight: stage + validate EVERY input (all rows of every train
+    # file + every stored-mu bundle) BEFORE any model load / GPU forward
+    # (r1 codex blocker gpu-input-contract-post-work).
+    staged: dict[str, dict] = {}
+    for cond in conds:
         train_path = _stage_train_jsonl(cfg, cond)
-        n_rows = _count_rows(train_path)
+        n_rows = _validate_train_rows(train_path)
         if cfg["expected_rows"] is not None and n_rows != cfg["expected_rows"][cond]:
             raise RuntimeError(
                 f"{cond}: staged train rows {n_rows} != registered {cfg['expected_rows'][cond]}"
             )
-        CAP.validate_mu_train_jsonl(train_path)
+        CAP.validate_mu_train_jsonl(train_path)  # parent first-row contract, kept for parity
+        mu_path = _stage_stored_mu(cfg, cond)
+        _validate_stored_mu(mu_path, layer, n_rows, None if cfg["synthetic"] else EXPECTED_HIDDEN)
+        staged[cond] = {"train": train_path, "n_rows": n_rows, "mu": mu_path}
+    print(
+        f"[trainref-gpu] preflight OK: {len(conds)} conds staged + validated "
+        f"(all train rows + stored-mu contracts) pre-GPU",
+        flush=True,
+    )
+
+    for ci, cond in enumerate(conds):
+        out_json = cfg["means_dir"] / f"{cond}.json"
+        train_path = staged[cond]["train"]
+        n_rows = staged[cond]["n_rows"]
         # Resume predicate BEFORE the model load: fingerprint sans model ident
         # first (cheap skip), full fingerprint re-checked after load.
         if out_json.is_file() and not args.force:
@@ -659,14 +836,15 @@ def phase_trainref_gpu(args, cfg: dict) -> dict:
         }
         n_done = 0
         next_line_idx = 0
+        spot_records: list[dict] = []
         st = _load_partial(partial, fp)
         if st is not None:
             sums = st["sums"]
             n_done = st["n"]
             next_line_idx = st["next_line_idx"]
+            spot_records = list(st["spot"])
             summary["resumed"].append({"cond": cond, "resumed_at_row": n_done})
             print(f"[trainref-gpu] {cond}: resuming at row {n_done}/{n_rows}", flush=True)
-        spot_records: list[dict] = []
         w64 = np.asarray(norm_w, dtype=np.float64)
         with train_path.open(encoding="utf-8") as f:
             for idx, line in enumerate(f):
@@ -693,38 +871,27 @@ def phase_trainref_gpu(args, cfg: dict) -> dict:
                 sums["sum_a_post_tok"] += rms_norm_rows(resp, w64, norm_eps).mean(axis=0)
                 n_done += 1
                 if n_done % args.ckpt_every == 0:
-                    _save_partial(partial, fp, sums, {"n": n_done}, idx + 1)
+                    _save_partial(partial, fp, sums, {"n": n_done}, idx + 1, spot_records)
                     print(
                         f"[trainref-gpu] unit {n_done}/{n_rows} {cond} "
                         f"elapsed={time.time() - t0:.0f}s",
                         flush=True,
                     )
                 if args.smoke_interrupt_after and n_done >= args.smoke_interrupt_after:
-                    _save_partial(partial, fp, sums, {"n": n_done}, idx + 1)
+                    _save_partial(partial, fp, sums, {"n": n_done}, idx + 1, spot_records)
                     raise _SmokeInterrupt(f"smoke interrupt hook after {n_done} rows")
         if n_done != n_rows:
             raise RuntimeError(f"{cond}: consumed {n_done} rows != expected {n_rows}")
         means = {k.replace("sum_", "mu_"): (v / n_done) for k, v in sums.items()}
         # Gate P: pre-norm reproduction of the stored streaming means at `layer`.
-        mu_path = _stage_stored_mu(cfg, cond)
-        stored = mf._torch_load_constrained(mu_path)
+        stored = mf._torch_load_constrained(staged[cond]["mu"])
         stored_c = np.asarray(stored["mu_train"][layer], dtype=np.float64)
         stored_a = np.asarray(stored["mu_a_train"][layer], dtype=np.float64)
         if int(stored["n_c"]) != n_done:
             raise RuntimeError(f"{cond}: stored mu n_c={stored['n_c']} != re-forward rows {n_done}")
-        cos_c = _cos(means["mu_c_pre"], stored_c)
-        cos_a = _cos(means["mu_a_pre"], stored_a)
-        rel_c = float(
-            np.linalg.norm(means["mu_c_pre"] - stored_c) / (np.linalg.norm(stored_c) + 1e-12)
-        )
-        rel_a = float(
-            np.linalg.norm(means["mu_a_pre"] - stored_a) / (np.linalg.norm(stored_a) + 1e-12)
-        )
-        if cos_c < 0.999 or cos_a < 0.999:
-            raise RuntimeError(
-                f"{cond}: Gate P FAIL — pre-norm mean reproduction cos_c={cos_c:.6f} "
-                f"cos_a={cos_a:.6f} (bar 0.999); recipe drift vs the stored mu.pt"
-            )
+        gate_p = _gate_p_check(means["mu_c_pre"], means["mu_a_pre"], stored_c, stored_a, cond)
+        cos_c = gate_p["cos_c_pre_vs_stored"]
+        cos_a = gate_p["cos_a_pre_vs_stored"]
         payload = {
             "fingerprint": fp,
             "cond": cond,
@@ -734,13 +901,7 @@ def phase_trainref_gpu(args, cfg: dict) -> dict:
             "model_ident": model_ident,
             "rms_norm_eps": norm_eps,
             "norm_weight_sha256": norm_sha,
-            "gate_p": {
-                "cos_c_pre_vs_stored": cos_c,
-                "cos_a_pre_vs_stored": cos_a,
-                "rel_l2_c": rel_c,
-                "rel_l2_a": rel_a,
-                "verdict": "PASS",
-            },
+            "gate_p": gate_p,
             "spot_equivalence": spot_records,
             "grain_note": (
                 "mu_a_post_rowgrain = mean over rows of RMSNorm(token-mean answer state) "
@@ -795,6 +956,11 @@ def _upload_means(cfg: dict) -> None:
         hub.DEFAULT_DATASET_REPO,
         "dataset",
         dest,
+        # Scope the commit to the verified deliverable set: never ship stale
+        # checkpoint residue from an interrupted condition (r1 codex NIT
+        # means-upload-includes-partials). The means dir's declared artifact
+        # classes are ONLY the per-cond + norm-weight JSONs.
+        ignore_patterns=["*.partial.npz", "*.tmp.npz"],
         raise_on_error=True,
     )
     if not base_url:
@@ -848,54 +1014,81 @@ def _write_sentinel(args, cfg: dict, *, phase: str, note_payload: dict) -> None:
 # ---------------------------------------------------------------------------
 # Phase: rescore (P2 — offline post-norm re-read + Gate R)
 # ---------------------------------------------------------------------------
-def _load_means(args, cfg: dict) -> dict:
-    """{setting: {cond: means dict}} — all-or-nothing per setting (fail loud on
-    a partial setting; a wholly-absent setting is skipped + recorded)."""
+def _load_means(args, cfg: dict, selected: list[str]) -> dict:
+    """{setting: {cond: means dict}} for EVERY selected setting — fail loud on
+    ANY absent/unstageable file (transport, auth and remote-absence all raise;
+    r1 codex blocker secondary-setting-stage-fail-soft). The ONLY way to run
+    fewer settings is the explicit --settings descope, which rides the rescore
+    fingerprint + output payload."""
     from explore_persona_space.orchestrate import hub
 
     out: dict = {}
-    skipped: list[str] = []
-    for setting in cfg["settings"]:
+    for setting in selected:
         got: dict = {}
         for cond in cfg["conds"][setting]:
             path = cfg["means_dir"] / f"{cond}.json"
-            if not path.is_file() and not cfg["synthetic"]:
+            if not path.is_file():
+                if cfg["synthetic"]:
+                    raise RuntimeError(f"smoke tree missing trainref means {path}")
+                path.parent.mkdir(parents=True, exist_ok=True)
                 try:
-                    path.parent.mkdir(parents=True, exist_ok=True)
                     hub.stage_hub_file(
                         hub.DEFAULT_DATASET_REPO,
                         f"{HF_POSTNORM_PREFIX}/trainref_means/{cond}.json",
                         path,
                     )
-                except Exception as exc:  # noqa: BLE001 — absence routes to the skip logic
-                    logger.info("means for %s not stageable (%s)", cond, type(exc).__name__)
-            if path.is_file():
-                got[cond] = json.loads(path.read_text())
-        if not got:
-            skipped.append(setting)
-            continue
-        missing = [c for c in cfg["conds"][setting] if c not in got]
-        if missing:
-            raise RuntimeError(
-                f"{setting}: partial trainref means — missing {missing}; run trainref-gpu "
-                f"for the full condition set or none of it"
-            )
-        for cond, m in got.items():
-            if (
-                m.get("layer") != cfg["layer"]
-                or m.get("fingerprint", {}).get("recipe") != RECIPE_TAG
-            ):
-                raise RuntimeError(f"{cond}: means layer/recipe mismatch ({m.get('layer')})")
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"{cond}: trainref means not stageable from "
+                        f"{HF_POSTNORM_PREFIX}/trainref_means — staging/transport/auth "
+                        f"failure, or the GPU phase has not produced+uploaded them yet; "
+                        f"NEVER a silent {setting!r} descope (use --settings to descope "
+                        f"explicitly)"
+                    ) from exc
+            got[cond] = json.loads(path.read_text())
+        _validate_means_setting(cfg, setting, got)
         out[setting] = got
-    primary = cfg["settings"][0]
-    if primary not in out:
-        raise RuntimeError(
-            f"trainref means absent for the primary setting {primary!r} — the GPU phase "
-            f"has not produced them yet"
-        )
-    if skipped:
-        print(f"[rescore] settings skipped (no means): {skipped}", flush=True)
     return out
+
+
+def _validate_means_setting(cfg: dict, setting: str, got: dict) -> None:
+    """Schema/identity validation of one setting's staged trainref means:
+    layer/recipe, cond/setting identity, registered n_rows, Gate P verdict,
+    required vectors present + finite + consistent hidden dim, one model
+    ident across conds."""
+    import numpy as np
+
+    vec_keys = ("mu_c_pre", "mu_a_pre", "mu_c_post", "mu_a_post_rowgrain", "mu_a_post_tokengrain")
+    idents = set()
+    for cond, m in got.items():
+        if m.get("layer") != cfg["layer"] or m.get("fingerprint", {}).get("recipe") != RECIPE_TAG:
+            raise RuntimeError(f"{cond}: means layer/recipe mismatch ({m.get('layer')})")
+        if m.get("cond") != cond or m.get("setting") != setting:
+            raise RuntimeError(
+                f"{cond}: means cond/setting mismatch ({m.get('cond')}/{m.get('setting')})"
+            )
+        if cfg["expected_rows"] is not None and m.get("n_rows") != cfg["expected_rows"][cond]:
+            raise RuntimeError(
+                f"{cond}: means n_rows {m.get('n_rows')} != registered {cfg['expected_rows'][cond]}"
+            )
+        if m.get("gate_p", {}).get("verdict") != "PASS":
+            raise RuntimeError(f"{cond}: means carry no Gate P PASS verdict")
+        dims = set()
+        for key in vec_keys:
+            v = m.get(key)
+            if not isinstance(v, list) or not v:
+                raise RuntimeError(f"{cond}: means missing/empty vector {key}")
+            arr = np.asarray(v, dtype=np.float64)
+            if not np.isfinite(arr).all():
+                raise RuntimeError(f"{cond}: means vector {key} carries NaN/Inf")
+            dims.add(arr.shape[0])
+        if len(dims) != 1:
+            raise RuntimeError(f"{cond}: means vectors disagree on hidden dim {sorted(dims)}")
+        if not cfg["synthetic"] and dims != {EXPECTED_HIDDEN}:
+            raise RuntimeError(f"{cond}: means hidden dim {sorted(dims)} != {EXPECTED_HIDDEN}")
+        idents.add(m.get("model_ident"))
+    if len(idents) != 1:
+        raise RuntimeError(f"{setting}: means disagree on model ident: {sorted(map(str, idents))}")
 
 
 def _resolve_norm_weight(args, cfg: dict, means: dict) -> dict:
@@ -940,22 +1133,24 @@ def _resolve_norm_weight(args, cfg: dict, means: dict) -> dict:
     return {"w": w, "eps": float(rec["rms_norm_eps"]), "sha": want_sha, "ident": rec["model_ident"]}
 
 
-def _stage_offline_inputs(cfg: dict) -> None:
-    """Grid/ceiling/mu bundles + per-setting vhat tensors (production only)."""
+def _stage_offline_inputs(cfg: dict, selected: list[str]) -> None:
+    """Grid/ceiling/mu bundles + per-setting vhat tensors for the SELECTED
+    settings (production only; staging failures raise — never a skip)."""
     import issue2474_fit as FIT
 
     if cfg["synthetic"]:
         return
     stage_cfg = {
         "synthetic": False,
-        "settings": tuple(cfg["settings"]),
-        "conds": {s: tuple(cfg["conds"][s]) for s in cfg["settings"]},
+        "settings": tuple(selected),
+        "conds": {s: tuple(cfg["conds"][s]) for s in selected},
         "data_root": cfg["data_root"],
     }
     FIT._stage_capture(stage_cfg)
     from explore_persona_space.orchestrate import hub
 
-    for setting, path in cfg["vhat_path"].items():
+    for setting in selected:
+        path = cfg["vhat_path"][setting]
         if not path.is_file():
             path.parent.mkdir(parents=True, exist_ok=True)
             hub.stage_hub_file(
@@ -965,11 +1160,29 @@ def _stage_offline_inputs(cfg: dict) -> None:
             )
 
 
-def _load_vhat(cfg: dict, setting: str, n_rows: int):
+def _load_vhat(cfg: dict, setting: str, n_rows: int, hidden: int):
+    """Load + identity-verify the persisted parent map output (v_hat).
+
+    Vector-level identity: the staged file's sha256 must match the pinned
+    parent-producer hash (r1 codex blocker map-vhat-vector-identity-unverified)
+    — Gate R's averaged pre-norm projections alone cannot see every component.
+    Plus schema, layer/setting, row count, hidden dim and finiteness."""
     import issue2379_mapfit as mf
     import numpy as np
 
     path = cfg["vhat_path"][setting]
+    expected_sha = cfg["vhat_sha256"].get(setting)
+    if expected_sha is None:
+        if not cfg["synthetic"]:
+            raise RuntimeError(f"no pinned parent-producer sha256 for vhat setting {setting!r}")
+        print(f"[rescore] vhat sha pin unavailable for synthetic {setting} — skipped", flush=True)
+    else:
+        got = _sha256_file(path)
+        if got != expected_sha:
+            raise RuntimeError(
+                f"{path.name}: sha256 {got[:16]} != pinned parent-producer sha "
+                f"{expected_sha[:16]} — staged vhat is not the parent map output"
+            )
     tb = mf._torch_load_constrained(path)
     for key in ("v_hat_mapB", "layer", "setting"):
         if key not in tb:
@@ -979,6 +1192,10 @@ def _load_vhat(cfg: dict, setting: str, n_rows: int):
     v_hat = np.asarray(tb["v_hat_mapB"], dtype=np.float64)
     if v_hat.shape[0] != n_rows:
         raise RuntimeError(f"{path.name}: rows {v_hat.shape[0]} != grid rows {n_rows}")
+    if v_hat.ndim != 2 or v_hat.shape[1] != hidden:
+        raise RuntimeError(f"{path.name}: shape {v_hat.shape} != ({n_rows}, {hidden})")
+    if not np.isfinite(v_hat).all():
+        raise RuntimeError(f"{path.name}: v_hat carries NaN/Inf")
     return v_hat
 
 
@@ -1049,6 +1266,58 @@ def _gate_r(setting: str, res: dict, prefit: dict, conds: list[str], layer: int)
     return {"verdict": "PASS", "max_abs_diff": realized}
 
 
+def _file_ident(path) -> dict:
+    """Stat identity for a consumed artifact file (size + mtime_ns + name).
+
+    Machine-stable by construction (never a recomputed-float-byte hash;
+    code-style.md float-last-bit rule). Conservative direction only: a
+    re-staged identical file re-runs, never wrong-skips."""
+    st = Path(path).stat()
+    return {"name": Path(path).name, "size": st.st_size, "mtime_ns": st.st_mtime_ns}
+
+
+def _passb_ident(cfg: dict) -> dict:
+    """Pass-B bundle identity WITHOUT loading it: pinned HF rev (production)
+    or the synthetic file's stat identity (smoke)."""
+    if cfg["passb_path"] is not None:
+        return _file_ident(cfg["passb_path"])
+    import issue2254_preimage as i2254
+
+    return {"pinned": f"hf:{i2254.PASS_B_FILE}@{i2254.HF_REV}"}
+
+
+def _rescore_fingerprint(cfg: dict, means: dict, norm: dict) -> dict:
+    """Completion fingerprint over EVERY artifact phase_rescore consumes:
+    per-cond means + stored mu, per-setting grid/ceiling/vhat, prefit scores,
+    pass-B identity, norm sha, selected settings/conds (r1 codex blocker
+    rescore-fingerprint-omits-inputs — a skip must be impossible when ANY
+    consumed input changed)."""
+    settings = sorted(means.keys())
+    inputs: dict = {}
+    for s in settings:
+        sdir = cfg["capture_root"] / f"base_{s}"
+        inputs[f"grid_{s}"] = _file_ident(sdir / "grid.pt")
+        inputs[f"ceiling_{s}"] = _file_ident(sdir / "ceiling.pt")
+        inputs[f"vhat_{s}"] = _file_ident(cfg["vhat_path"][s])
+        for c in cfg["conds"][s]:
+            inputs[f"means_{c}"] = _file_ident(cfg["means_dir"] / f"{c}.json")
+            inputs[f"mu_{c}"] = _file_ident(cfg["capture_root"] / f"base_mu_{c}" / "mu.pt")
+    return {
+        "phase": "rescore",
+        "recipe": RECIPE_TAG,
+        "layer": cfg["layer"],
+        "norm_sha": norm["sha"],
+        "settings": settings,
+        "conds": {s: list(cfg["conds"][s]) for s in settings},
+        "inputs": inputs,
+        "passb": _passb_ident(cfg),
+        "prefit_scores": _file_ident(cfg["prefit_scores_path"]),
+        "vhat_sha_pins": {s: cfg["vhat_sha256"].get(s) for s in settings},
+        "n_boot_irrelevant": True,
+        "v": 2,
+    }
+
+
 def phase_rescore(args, cfg: dict) -> dict:
     """Offline post-norm re-read of the stored layer-27 states (+ Gate R)."""
     import issue2474_fit as FIT
@@ -1056,28 +1325,19 @@ def phase_rescore(args, cfg: dict) -> dict:
 
     print("[phase=rescore] start", flush=True)
     out_path = cfg["out_dir"] / "postnorm_scores.json"
-    means = _load_means(args, cfg)
+    selected = _selected_settings(args, cfg)
+    deselected = [s for s in cfg["settings"] if s not in selected]
+    if deselected:
+        print(f"[rescore] EXPLICIT --settings descope: deselected {deselected}", flush=True)
+    means = _load_means(args, cfg, selected)
     norm = _resolve_norm_weight(args, cfg, means)
-    _stage_offline_inputs(cfg)
+    _stage_offline_inputs(cfg, selected)
     prefit = json.loads(Path(cfg["prefit_scores_path"]).read_text())
     p_inoc = _p_inoc(cfg)
     layer = cfg["layer"]
 
-    fp = {
-        "phase": "rescore",
-        "recipe": RECIPE_TAG,
-        "layer": layer,
-        "norm_sha": norm["sha"],
-        "settings": sorted(means.keys()),
-        "means_stats": {
-            c: {"size": (cfg["means_dir"] / f"{c}.json").stat().st_size}
-            for s in means
-            for c in cfg["conds"][s]
-        },
-        "prefit_scores_bytes": Path(cfg["prefit_scores_path"]).stat().st_size,
-        "n_boot_irrelevant": True,
-        "v": 1,
-    }
+    fp = _rescore_fingerprint(cfg, means, norm)
+    fp["settings_deselected"] = deselected
     if out_path.is_file() and not args.force:
         cached = json.loads(out_path.read_text())
         if cached.get("fingerprint") == fp:
@@ -1087,7 +1347,7 @@ def phase_rescore(args, cfg: dict) -> dict:
 
     ib_bias = _ib_bias_l(cfg)  # setting-independent; pass-B bundle loaded ONCE
     settings_out: dict = {}
-    for setting in [s for s in cfg["settings"] if s in means]:
+    for setting in selected:
         conds = list(cfg["conds"][setting])
         grid = FIT._load_bundle(cfg["capture_root"] / f"base_{setting}" / "grid.pt", "grid")
         ceil = FIT._load_bundle(cfg["capture_root"] / f"base_{setting}" / "ceiling.pt", "ceiling")
@@ -1099,7 +1359,7 @@ def phase_rescore(args, cfg: dict) -> dict:
             raise RuntimeError(f"{setting}: expected one p_inoc trigger {p_lab!r}")
         p_idx = p_hits[0]
         v_c = np.asarray(grid["v_c"][:, layer, :], dtype=np.float64)
-        v_hat = _load_vhat(cfg, setting, v_c.shape[0])
+        v_hat = _load_vhat(cfg, setting, v_c.shape[0], v_c.shape[1])
         v_ib = v_c + ib_bias
         c_meta = ceil["row_meta"]
         va_l = np.asarray(ceil["v_a"][:, layer, :], dtype=np.float64)
@@ -1125,12 +1385,15 @@ def phase_rescore(args, cfg: dict) -> dict:
             v_c, v_hat, v_ib, *base_args, mu_tr_stored, mu_a_stored, conds
         )
         gate_r = _gate_r(setting, pre_res, prefit, conds, layer)
-        # Post-norm read: row-wise RMSNorm of every comparison vector, then the
-        # SAME scoring core, against the GPU-phase post-norm means.
+        # Post-norm read: row-wise RMSNorm of every comparison vector — the
+        # CEILING rows included (r1 Claude Critical: the post calls must ride
+        # `nva`, never the pre-norm `va_l` of `base_args`) — then the SAME
+        # scoring core, against the GPU-phase post-norm means.
         nv_c = rms_norm_rows(v_c, norm["w"], norm["eps"])
         nv_hat = rms_norm_rows(v_hat, norm["w"], norm["eps"])
         nv_ib = rms_norm_rows(v_ib, norm["w"], norm["eps"])
         nva = rms_norm_rows(va_l, norm["w"], norm["eps"])
+        post_base = (row_of, p_idx, nva, c_t, c_q, c_ri, n_rollouts)
         mu_c_post = np.stack(
             [np.asarray(means[setting][c]["mu_c_post"], dtype=np.float64) for c in conds]
         )
@@ -1143,7 +1406,7 @@ def phase_rescore(args, cfg: dict) -> dict:
                 [np.asarray(means[setting][c][key], dtype=np.float64) for c in conds]
             )
             post_res[grain] = FIT._score_layer_batched(
-                nv_c, nv_hat, nv_ib, *base_args, mu_c_post, mu_a_post, conds
+                nv_c, nv_hat, nv_ib, *post_base, mu_c_post, mu_a_post, conds
             )
 
         def _pack(res: dict) -> dict:
@@ -1177,6 +1440,8 @@ def phase_rescore(args, cfg: dict) -> dict:
         "issue": ISSUE,
         "label": LABEL,
         "fingerprint": fp,
+        "settings_selected": selected,
+        "settings_deselected": deselected,  # explicit --settings descope only; never implicit
         "layer": layer,
         "norm": {"sha256_fp32le": norm["sha"], "rms_norm_eps": norm["eps"], "ident": norm["ident"]},
         "map_arm_decision": (
@@ -1214,15 +1479,21 @@ def phase_stats(args, cfg: dict) -> dict:
     if not scores_path.is_file():
         raise RuntimeError(f"{scores_path} missing — run --phase rescore first")
     scores = json.loads(scores_path.read_text())
-    sstat = scores_path.stat()
+    if cfg["rates_path"] is not None:
+        rates_ident: dict = _file_ident(cfg["rates_path"])
+    else:
+        import issue2474_free_gate as fg
+
+        rates_ident = {"pinned_parent_sha": fg.PARENT_SHA}
     fp = {
         "phase": "stats",
         "recipe": RECIPE_TAG,
         "n_boot": args.n_boot,
         "boot_seed": args.boot_seed,
-        "scores_size": sstat.st_size,
-        "scores_mtime_ns": sstat.st_mtime_ns,
-        "v": 1,
+        "scores": _file_ident(scores_path),
+        "prefit_stats": _file_ident(cfg["prefit_stats_path"]),
+        "rates": rates_ident,
+        "v": 2,
     }
     if out_path.is_file() and not args.force:
         cached = json.loads(out_path.read_text())
@@ -1475,16 +1746,21 @@ def build_comparison_figure(
 
 
 def phase_figs(args, cfg: dict) -> dict:
+    """One comparison figure PER SETTING present in the stats (the em negative
+    control included — r1 codex concern em-negative-control-figure-omitted)."""
     print("[phase=figs] start", flush=True)
     stats_path = cfg["out_dir"] / "postnorm_stats.json"
     if not stats_path.is_file():
         raise RuntimeError(f"{stats_path} missing — run --phase stats first")
     stats = json.loads(stats_path.read_text())
-    setting = cfg["settings"][0]
-    if setting not in stats["settings"]:
-        raise RuntimeError(f"stats missing primary setting {setting!r}")
-    paths = build_comparison_figure(stats, cfg["fig_dir"], setting=setting)
-    print(f"[figs] wrote {sorted(paths.values())}", flush=True)
+    primary = cfg["settings"][0]
+    if primary not in stats["settings"]:
+        raise RuntimeError(f"stats missing primary setting {primary!r}")
+    paths = {
+        setting: build_comparison_figure(stats, cfg["fig_dir"], setting=setting)
+        for setting in stats["settings"]
+    }
+    print(f"[figs] wrote {sorted(p for m in paths.values() for p in m.values())}", flush=True)
     return {"figure_paths": paths}
 
 
@@ -1677,7 +1953,6 @@ def _gen_smoke_tree(root: Path) -> None:
     (root / "rates_synth.json").write_text(json.dumps(rates))
     # Self-consistent parent targets: run the SAME scoring core on the synthetic
     # inputs (stored-mu reference) and persist in the parent schema.
-    cfg = _cfg_from_args(argparse.Namespace(synthetic_root=str(root), **_SMOKE_NS_DEFAULTS))
     import issue2379_mapfit as mf
 
     row_of = -np.ones((n_t, n_q), dtype=int)
@@ -1772,14 +2047,6 @@ def _gen_smoke_tree(root: Path) -> None:
     print(f"[smoke] synthetic tree generated under {root}", flush=True)
 
 
-_SMOKE_NS_DEFAULTS = {
-    "data_root": "",
-    "out_dir": "",
-    "figures_out": "",
-    "conditions": "all",
-}
-
-
 def _smoke_ns(args, root: Path, **over) -> argparse.Namespace:
     base = vars(args).copy()
     base.update(
@@ -1798,10 +2065,29 @@ def _smoke_ns(args, root: Path, **over) -> argparse.Namespace:
     return argparse.Namespace(**base)
 
 
+def _safe_smoke_root(raw: str) -> Path:
+    """Resolve + containment-check the smoke scratch root BEFORE any rmtree.
+
+    The root must live STRICTLY INSIDE the temp dir (tempfile.gettempdir() or
+    /tmp) — a typo'd --smoke-dir (repo root, $HOME, /) must never reach a
+    recursive delete (r1 codex blocker smoke-dir-arbitrary-recursive-delete)."""
+    import tempfile
+
+    root = Path(raw).expanduser().resolve()
+    scratch_parents = {Path(tempfile.gettempdir()).resolve(), Path("/tmp")}
+    if not any(parent in root.parents for parent in scratch_parents):
+        raise RuntimeError(
+            f"--smoke-dir {raw!r} resolves to {root} — refusing recursive delete: the smoke "
+            f"scratch root must live STRICTLY INSIDE the temp dir "
+            f"({sorted(str(p) for p in scratch_parents)})"
+        )
+    return root
+
+
 def phase_smoke(args) -> None:
     import shutil
 
-    root = Path(args.smoke_dir)
+    root = _safe_smoke_root(args.smoke_dir)
     if root.exists():
         shutil.rmtree(root)
     root.mkdir(parents=True)
@@ -1827,6 +2113,13 @@ def phase_smoke(args) -> None:
     res1 = phase_trainref_gpu(ns, cfg)
     if not res1["resumed"] or res1["resumed"][0]["resumed_at_row"] < 1:
         raise RuntimeError(f"smoke FAIL: mid-condition resume not exercised ({res1['resumed']})")
+    # Spot evidence must survive the resume (persisted in the partial npz).
+    for cond, blk in res1["conds"].items():
+        if len(blk["spot"]) != ns.spot_rows:
+            raise RuntimeError(
+                f"smoke FAIL: {cond} spot records {len(blk['spot'])} != {ns.spot_rows} "
+                f"(resume must preserve spot-gate evidence)"
+            )
     # Leg 2: completed-condition skip on replay.
     res2 = phase_trainref_gpu(ns, cfg)
     if sorted(res2["skipped"]) != sorted(_SMOKE_ROWS.keys()):
@@ -1834,6 +2127,20 @@ def phase_smoke(args) -> None:
 
     # Leg 3: offline chain (rescore -> stats -> figs), then completion replay.
     r1 = phase_rescore(ns, cfg)
+    # Post != pre for the CEILING arms — pins the nva threading (r1 Claude
+    # Critical: pre-fix, the post calls reused the pre-norm va_l, making
+    # ceiling_sameq post byte-identical to pre and ceiling_trainref a
+    # mixed-convention read).
+    sm = r1["settings"]["smoke"]
+    for fam in ("ceiling_sameq", "ceiling_sameq_centered"):
+        if sm["pre"]["shared"][fam] == sm["post_rowgrain"]["shared"][fam]:
+            raise RuntimeError(f"smoke FAIL: post {fam} == pre — ceiling rows not post-normed")
+    for c in sm["conds"]:
+        if (
+            sm["pre"]["cond"][c]["ceiling_trainref"]
+            == sm["post_rowgrain"]["cond"][c]["ceiling_trainref"]
+        ):
+            raise RuntimeError(f"smoke FAIL: post ceiling_trainref == pre for {c}")
     s1 = phase_stats(ns, cfg)
     f1 = phase_figs(ns, cfg)
     r2 = phase_rescore(ns, cfg)
@@ -1847,7 +2154,7 @@ def phase_smoke(args) -> None:
         for key in ("pre", "post_rowgrain", "post_tokengrain", "delta_rowgrain"):
             if key not in blk:
                 raise RuntimeError(f"smoke FAIL: stats block missing {fam}/{key}")
-    fig_png = [p for p in f1["figure_paths"].values() if p.endswith(".png")]
+    fig_png = [p for p in f1["figure_paths"]["smoke"].values() if p.endswith(".png")]
     if not fig_png or Path(fig_png[0]).stat().st_size < 10_000:
         raise RuntimeError("smoke FAIL: comparison figure missing/empty")
     # Gate coverage asserts (the gates RAN, not just returned).
@@ -1898,6 +2205,13 @@ def build_argparser() -> argparse.ArgumentParser:
         "--import-check", action="store_true", help="argcheck + call-arity bind, then exit 0"
     )
     ap.add_argument("--conditions", default="all", help="comma list or 'all' (8 conditions)")
+    ap.add_argument(
+        "--settings",
+        default="all",
+        help="rescore setting selection: comma list or 'all'; a narrower selection is an "
+        "EXPLICIT recorded descope (rides the fingerprint + payload) — absence/staging "
+        "failures never descope silently",
+    )
     ap.add_argument("--data-root", default=str(REPO_ROOT / "data" / "issue_2474"))
     ap.add_argument(
         "--out-dir", default=str(REPO_ROOT / "eval_results" / "issue_2474" / "postnorm_l27")
