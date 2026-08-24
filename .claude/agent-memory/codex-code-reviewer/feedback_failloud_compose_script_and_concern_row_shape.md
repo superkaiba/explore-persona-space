@@ -43,6 +43,16 @@ Two compose-mechanics lessons from #2514 r2 (2026-08-23):
    word it "frozen trees CAN serve stale plans; verified identical at
    compose time; canonical path stays authoritative".
 
+3b. **Two assert-scoping traps hit live (#2502 r4, 2026-08-24):** (a) assert
+   marker-KIND absence by TAG FORM (`<!-- epm:review-reconcile`), never the
+   bare token — the revision BRIEF legitimately names the marker kind in
+   prose ("the binding reconciler (`epm:review-reconcile` r3)"), so a bare
+   token==0 assert false-fails a valid compose; (b) when embeds are
+   f-string-interpolated INTO the head, a composer-span stale-token sweep
+   must STRIP the embeds first (`composer_head.replace(emb, "")`, asserting
+   each embed found exactly once) — the impl marker's own provenance line
+   ("the honest rv3-u2 record") otherwise trips the sweep.
+
 4. **Cached-prompt reuse re-validates TIP STATE, not just marker identity
    (#2514 r2 re-return, 2026-08-24).** A validated prompt survived in /tmp
    overnight; on the re-compose the branch tip had gained TWO Step-5a
