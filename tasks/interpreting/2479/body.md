@@ -1,6 +1,6 @@
 ---
-title: 'Dedicated AI-likeness gradient: does map transfer to a character scale with
-  closeness to the assistant? (n>=12 characters)'
+title: Assistant-operator transfer recovery rises with judged AI-likeness across 16
+  story characters (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-22T20:24:19Z'
