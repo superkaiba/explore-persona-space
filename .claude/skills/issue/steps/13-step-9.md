@@ -3246,10 +3246,13 @@ suite directly and posts an `epm:test-verdict` event with the result.
       probe / `rm -f` wrapper argv can transiently over-count — at worst
       one extra 60 s wait, the fail-safe direction.
       ```bash
+      # wt-binding: caller — $WT is bound by the composing orchestrator turn;
+      # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
       # Shell state does NOT persist across Bash calls — hard-guard the cd
       # INSIDE this same background call (never rely on a prior call's cwd;
-      # a silent cd failure must never run the gate in the wrong dir):
-      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # a silent cd failure must never run the gate in the wrong dir — and
+      # cd "" is a silent no-op (#2306), so guard unbound $WT too):
+      [ -n "$WT" ] && [ -d "$WT" ] && cd "$WT" || { echo "FATAL: WT unbound/missing or cd failed ($WT) — cd \"\" is a silent no-op; gate must never run at the shared root" >&2; exit 1; }
       # earlyoom-protect the gate (#1045; FAIL-OPEN — never block the gate on a choom failure):
       # pytest is in this VM's earlyoom --prefer regex (+300 badness), so a gate run is the
       # designated victim under fleet memory pressure (#906 killed twice; #995 at ~42%).
@@ -3289,6 +3292,38 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # as N COMMANDS, not one pytest argv (#2314: 1 of 120 files ran; the
       # trailing flags — --junitxml included — attached to the last bogus
       # line; rc=126). Both routes hit the shape + count checks below.
+      # Flag-set fidelity (#2315): when COMPOSING this launcher (either route),
+      # carry the launcher's flag set VERBATIM — `-o junit_family=xunit1` is
+      # LOAD-BEARING, not stylistic: compare resolves failing testcases via the
+      # junit per-case `file` attribute, which ONLY the xunit1 family emits
+      # (pytest's default xunit2 omits it). A composed launcher that drops the
+      # flag looks healthy (correct rc, junit present) and fails ~30 min later
+      # at compare with `has no file attribute` / `indeterminate: True` (#2312:
+      # twice, 1787.80s of gate pytest lost); the file attributes cannot be
+      # reconstructed from an existing junit — the only remedy is re-running
+      # the gate pytest. To skip hand-composition entirely, emit the canonical
+      # launcher mechanically:
+      #   uv run python scripts/select_step9c_tests.py --emit-launcher --issue <N>
+      # (pyproject.toml's `junit_family = "xunit1"` ini default (#2315 D0) is
+      # the defense-in-depth backstop; the CLI flag stays authoritative.)
+      # xunit1 pre-launch refusal (#2315 D1) — runs UNCONDITIONALLY, before the
+      # launcher below. Route (1) verbatim copies leave the placeholder
+      # argument as-is (no pytest token = out of scope, so only the guard's
+      # built-in SELF-TEST gates the launch; exit 3 = the guard's own
+      # discrimination is broken -> FATAL, do NOT launch). Route (2)
+      # self-composition REPLACES the placeholder with the composed text.
+      # INPUT CONTRACT (load-bearing, #2315 r2): pass ONLY the composed
+      # LAUNCHER COMMAND TEXT — the single detached-launcher command you are
+      # about to execute below — NEVER this whole 1b block: the flag-set-
+      # fidelity comment above contains the literal `junit_family=xunit1`, so
+      # a whole-block input satisfies the check by reading its own
+      # documentation (vacuous PASS). Composed text embeds single quotes:
+      # write it to /tmp/step9c-launcher-issue-<N>.txt with the Write tool
+      # (never a heredoc, #2115) and swap the quoted placeholder argument for
+      # `-` plus a `< /tmp/step9c-launcher-issue-<N>.txt` stdin redirect.
+      # Exit 1 = the text carries --junitxml WITHOUT junit_family=xunit1:
+      uv run python scripts/select_step9c_tests.py --assert-launcher '<composed launcher command text — inert placeholder on a verbatim route-(1) copy>' \
+        || { echo "FATAL: composed launcher violates the xunit1 contract (exit 1: --junitxml without -o junit_family=xunit1 — fix the launcher text, or emit it mechanically: select_step9c_tests.py --emit-launcher --issue <N>) or the guard self-test failed (exit 3: fix the guard — scripts/select_step9c_tests.py; emitting a launcher cannot repair a broken self-test); do NOT launch" >&2; exit 1; }
       S9C_FILES="<files>"
       # Splice-shape check (#2317) — the count check below validates
       # CARDINALITY only: unquoted word-splitting counts a newline list
@@ -3406,6 +3441,18 @@ suite directly and posts an `epm:test-verdict` event with the result.
           echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
           # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
         fi
+        # List-shape attribution (#2310; #2302/#2317 lineage): rc=126 plus
+        # per-path `bash: line K: tests/...py: Permission denied` lines is
+        # the newline-splice signature — the substituted <files> list was
+        # NEWLINE-separated, so the inner bash -c ran each path after the
+        # first as its own COMMAND (pytest ran at most 1 of N files). The
+        # pre-launch splice-shape check refuses this before launch;
+        # reaching here means that guard was bypassed (stale worktree
+        # recipe copy / hand-run launcher). Attribute the FAIL to the
+        # list shape, never to the tests:
+        if [ "${PYTEST_RC:-}" = "126" ] && grep -qE 'tests/[^[:space:]]*\.py: Permission denied' /tmp/step9c-pytest-issue-<N>.log; then
+          echo "FATAL: rc=126 + per-path Permission-denied lines — the substituted test-file list was NEWLINE-separated (each path after the first ran as its own command; the run covered at most 1 of N files). This is a LIST-SHAPE failure, not a test failure: re-source the list space-separated (| tr '\n' ' '), re-run the pre-launch splice-shape check, then relaunch ONCE. The epm:test-verdict FAIL note must name the list shape as the cause." >&2
+        fi
         # BASETEMP reap — INSIDE the rc-exists branch ONLY (the gate
         # provably exited; a premature completion-read must never rm -rf a
         # LIVE gate's basetemp out from under it):
@@ -3458,7 +3505,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       (the self-excluding helper, `--issue <N>` form) — (a 60m run is 6x
       the foreground tool cap):
       ```bash
-      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # wt-binding: caller — $WT is bound by the composing orchestrator turn;
+      # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
+      [ -n "$WT" ] && [ -d "$WT" ] && cd "$WT" || { echo "FATAL: WT unbound/missing or cd failed ($WT) — cd \"\" is a silent no-op; gate must never run at the shared root" >&2; exit 1; }
       # Route gate fixture temp writes onto the data disk (#1408; #1363: / at 100% killed the
       # gate). Short --basetemp keeps AF_UNIX socket paths under the 108-byte cap. Falls back
       # silently (no TMPDIR export) on pods/GCE with no data disk.
@@ -3582,7 +3631,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
       — exit 3 ⇒ bounded queue (sleep 60, elapsed cap 2700 s), then launch
       anyway with the `[gate-fleet]` cap-expired line (fail-open).
       ```bash
-      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # wt-binding: caller — $WT is bound by the composing orchestrator turn;
+      # extracting standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
+      [ -n "$WT" ] && [ -d "$WT" ] && cd "$WT" || { echo "FATAL: WT unbound/missing or cd failed ($WT) — cd \"\" is a silent no-op; gate must never run at the shared root" >&2; exit 1; }
       # MANDATORY stale-file rm — the compare triplet ONLY (NEVER 1b's
       # junit/rc/log files: compare consumes them):
       rm -f /tmp/step9c-compare-issue-<N>.json /tmp/step9c-compare-issue-<N>.rc \
@@ -3592,6 +3643,20 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # compare against it:
       [ -f /tmp/step9c-rc-issue-<N> ] || { echo "FATAL: 1b rc file missing — apply 1b's FAIL path; compare not run" >&2; exit 1; }
       PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
+      # Step 1d (#2315): xunit1-contract pre-check BEFORE compare launches.
+      # compare resolves failing testcases to repo paths via the junit
+      # per-case `file` attribute (xunit1 only); a launcher that ran without
+      # `-o junit_family=xunit1` yields a healthy rc + a junit compare can
+      # only abort on (`has no file attribute` -> exit 2 / indeterminate,
+      # #2312 — twice, 1787.80s of gate pytest lost). check-junit-contract
+      # exits 1 ONLY on that violation; a missing/unparseable junit exits 0
+      # (the 1b FAIL path and compare's exit-2 arms keep ownership). The
+      # junit is unrepairable — on FATAL, re-run the gate pytest with the
+      # canonical launcher (step 1a's printed command, or
+      # `select_step9c_tests.py --emit-launcher --issue <N>`):
+      uv run python scripts/step9c_baseline.py check-junit-contract \
+        --junitxml /tmp/step9c-junit-issue-<N>.xml \
+        || { echo "FATAL: xunit1 contract violated — the 1b junit's failing testcases lack per-case file attributes (the launcher ran without -o junit_family=xunit1); compare would abort indeterminate; re-run the gate pytest via the canonical launcher (select_step9c_tests.py --emit-launcher --issue <N>) — compare not run" >&2; exit 1; }
       # Wedge bound 32400s ≥ the structural ceiling of compare's own in-process
       # bounds: the 5 pristine files are DISTINCT and SLOW_TESTS has one entry,
       # so per-file ceiling = 4950s (workflow-lint derived) + 4 × 600s floor
@@ -3698,11 +3763,19 @@ suite directly and posts an `epm:test-verdict` event with the result.
         rc-0 compare is REPORTED in the `epm:test-verdict` note — name the
         nodes + the `paired_files_run` set that reproduced them — and the
         correct follow-through is a routable workflow-fix-candidate for the
-        ordering interaction itself, never a silent pass. Residual blind
-        class: collection-time contamination from files sorting AFTER the
-        candidate is present in the gate process but absent from any prefix
-        run, so that shape still classifies NEW (fail-closed) and the manual
-        provenance-override path remains the escape for it.
+        ordering interaction itself, never a silent pass. Collection-time
+        contamination from files sorting AFTER the candidate (present in the
+        gate process but absent from any prefix run) is now MECHANICALLY
+        attributed by the #2430 suffix-replay arm — a gate-faithful replay
+        collects the full context, deselects everything but the candidate,
+        and bisects the suffix for the offender (`SUFFIX-ATTRIBUTED:` lines +
+        `suffix_attributed` JSON rows; `--no-suffix-replay` restores the
+        pre-#2430 classification); its refusal residue — non-reproduction
+        shapes (flaky contamination, RUN-TIME prefix state mutated by
+        executed tests rather than imports) and every arm refusal
+        (wall-budget exhaustion, oracle distrust, over-cap, aborted
+        replay) — still classifies NEW (fail-closed), with the manual
+        provenance-override path as the escape.
       * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
         regression (the JSON names each). FAIL. This includes a
         `VIOLATION_SET_SCAN_NODES` member (a registered whole-repo scan
@@ -3713,8 +3786,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
         unparseable side degrades to today's node-grain strip plus a loud
         `SCAN-SETDIFF-UNPARSEABLE` warn (#2316).
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
-        run; missing/empty junitxml; suite crash; unusable ledger;
-        systemic main breakage; or a scratch-INELIGIBLE dirty oracle. The
+        run; missing/empty junitxml; an xunit1-CONTRACT-violating junit —
+        failing testcases lacking the per-case `file` attribute because the
+        launcher ran without `-o junit_family=xunit1` (#2312; step 1d
+        pre-catches this BEFORE compare launches); suite crash; unusable
+        ledger; systemic main breakage; or a scratch-INELIGIBLE dirty oracle. The
         pristine oracle is BY DEFAULT a detached sparse scratch worktree at
         main HEAD (#1408 — clean or dirty root alike; JSON
         "pristine_oracle": "scratch-worktree"; a scratch creation/probe
@@ -3730,6 +3806,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
         node outside the file-anchored allowlist (step9c_baseline.py
         FILE_ANCHORED_SCAN_TESTS, #1337), or scratch creation/probe failure
         on a DIRTY root). FAIL — never PASS on indeterminate.
+        xunit1-contract DISCRIMINATOR (#2315): `"pristine_oracle": null` in
+        the compare JSON plus a `has no file attribute` line in
+        /tmp/step9c-compare-issue-<N>.err means the LAUNCHER was malformed
+        (ran without `-o junit_family=xunit1`) — a launcher defect, not a
+        tool-could-not-decide state; the file attributes cannot be
+        reconstructed from the existing junit, so the remedy is re-running
+        the gate pytest with the canonical launcher
+        (`select_step9c_tests.py --emit-launcher --issue <N>`), then compare.
         On a residual-dirt exit 2, do NOT improvise multi-hour clean-root
         polls (the #1317 anti-pattern): one bounded re-check after ~10-15
         min, then treat as gate FAIL and surface per the existing FAIL path.

@@ -48,9 +48,9 @@ budgeted IN FORM:
   pre-verified digest / context file, read it FIRST and trust its
   measurements; do not re-derive what it already states.
 - **Never run bare `uv run python scripts/task.py view <N>`** — it dumps the
-  full event log (often 100s of KB). Read a task body via
-  `uv run python scripts/task.py view <N> --json | jq -r '.body'`; read a plan
-  via `Read` on `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief).
+  full event log; body via `view <N> --json | jq -r '.body'`. Read a plan at
+  `$(uv run python scripts/task.py find <N>)/plans/plan.md`, never a relative
+  `tasks/` path in the worktree (frozen at base, #2422).
 - **Read files surgically.** `Read` with `offset`/`limit` in ≤300-line chunks,
   only the sections needed (Grep for the section header first). Never pull a
   >40 KB file into context in one unchunked Read — a rule mandated "IN FULL"

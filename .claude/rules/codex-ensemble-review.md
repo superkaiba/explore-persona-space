@@ -18,6 +18,21 @@ Bash(run_in_background=true,
 
 The helper itself serializes spawn + post-spawn confirm on a repo-keyed advisory lock (`.claude/cache/codex-dispatch.lock`, #2323 — the shared codex-companion jobs index is a non-atomic lost-update surface), so dispatching N twins in ONE message stays safe — do NOT re-sequence parallel dispatches to sequential on its account. Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed`/`epm:codex-task-failed`. On marker-post failure: retry once, then drop to `tasks/_orphaned_markers/`. Orchestrator posts the verdict marker from the output file (trigger-dense rounds: grep the verdict line + extract the marker block mechanically and post via `post-marker --file` — never page the findings body into context; SKILL.md § File-only Codex verdict posting, #1275) and forwards the extracted block's machine-readable `CONCERN:: ` rows to the concerns ledger via `scripts/persist_verdict_concerns.py` (validate pre-post, persist post-post; re-run from the durable marker note at every resume row whose predicate includes an existing current-round codex marker; SKILL.md § Codex concerns persistence at verdict collection; #2326). On a hard org usage-limit failure the helper writes `.claude/cache/codex-quota-exhausted-until` and short-circuits every later dispatch until the parsed reset (exit 9, note reason `codex-quota-exhausted`); delete the sentinel to force a probe dispatch (#1126).
 
+**Composer thrash-death is NOT an instant no-show (#2472).** A `codex-*`
+composer killed by autocompact-thrash (Class-2 fixed overhead; observed
+signature: ~135k tokens, ZERO tool calls — of which the composer's own
+12–50 KB spec is the removable share, the rest being the always-on load
+the twin keeps) follows the Class-2 ladder in
+`.claude/rules/context-hygiene.md` BEFORE any no-show fallback fires:
+respawn ONCE micro-scoped on the default model, then escalate ONCE to the
+composer's lean twin (`codex-<role>-lean`, e.g. `codex-code-reviewer-lean`
+— reads the sibling spec via bounded windowed Reads instead of loading it
+as system prompt). Only when the lean respawn also returns no prompt file
+does the site's single-Claude no-show fallback fire (mechanics:
+`.claude/skills/issue/SKILL.md` Step 5b respawn recipe). The quota-outage
+skip below is DIFFERENT — a live sentinel skips composing entirely, no
+respawn ladder applies.
+
 **Pre-spawn sentinel check (#1204) — check BEFORE composing.** The exit-9 short-circuit fires at DISPATCH time, but the thin `codex-*` composers spawn BEFORE any dispatch — during an outage each round burns composer spawns whose prompts are discarded. Before spawning any `codex-*` prompt-composer in a review round, run the canonical check below. `CODEX_QUOTA_LIVE` ⇒ SKIP every `codex-*` composer spawn that round: treat each twin as an INSTANT CONFIRMED no-show (single-Claude decision per that site's no-show fallback), log ONE chat line + ONE `epm:progress` note per skipped round when a task is in scope. NEVER fabricate `epm:codex-task-failed` or a twin verdict marker. FAIL-OPEN: sentinel absent / unreadable / corrupt / expired / implausibly far-future, or `EPM_SKIP_CODEX_QUOTA_SENTINEL=1` → spawn normally (the dispatch-time short-circuit stays the arbiter). The decision keys on the TWO-SIDED window `now < until_unix <= now + 45 d` (the helper's `QUOTA_MAX_PLAUSIBLE_SECS` ceiling), so a corrupt far-future timestamp can never wedge composer spawning off permanently; a `parse_ok: false` sentinel with a plausible future `until_unix` is honored the same.
 
 ```bash

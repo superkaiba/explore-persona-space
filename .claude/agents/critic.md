@@ -51,7 +51,10 @@ budgeted IN FORM:
 - **Never run bare `uv run python scripts/task.py view <N>`** — it dumps the
   full event log (often 100s of KB). Read a task body via
   `uv run python scripts/task.py view <N> --json | jq -r '.body'`; read a plan
-  via `Read` on `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief).
+  via `Read` on the ABSOLUTE canonical main-checkout path from your brief, or
+  re-resolve it — `TASK_DIR="$(uv run python scripts/task.py find <N>)"`, then
+  `$TASK_DIR/plans/plan.md` — never read `tasks/` from inside the worktree
+  (a worktree's `plans/` folder is frozen at branch-cut; #2422).
 - **Read files surgically.** `Read` with `offset`/`limit` in ≤300-line chunks,
   only the sections needed (Grep for the section header first). Never pull a
   >40 KB file into context in one unchunked Read — a rule mandated "IN FULL"

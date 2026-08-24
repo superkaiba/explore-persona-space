@@ -789,9 +789,10 @@ wrong fix; `.claude/rules/vectorize-many-cell-fits.md`).
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
 lane the backend router will most likely route. Under the standing
-fellows-first `auto` default (#2028 — GCP provisioning disabled) that is
-the fellows H200 cluster, then the free SLURM lanes, with RunPod's H100
-intent table as the terminal rung; the GCP intent mapping
+runpod-first `auto` default (#2054/#2059; #2028: GCP provisioning
+disabled) that is RunPod's H100 intent table, then the fellows H200
+cluster, then the free DRAC/Mila SLURM lanes, with a terminal RunPod
+retry rung; the GCP intent mapping
 (`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
 `lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
 `eval`/`debug` → 1× L4) applies only under the rollback flip. A basis
@@ -800,7 +801,9 @@ measured on a different GPU must be scaled with a stated per-step rate
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
 into ~34h). Mechanically backstopped (WARN-only, heuristic) by
 `verify_plan.py` c26; the semantic adequacy of a stated scaling factor
-stays critic-owned. Then reconcile the WORST-CASE wall — base phases PLUS every
+stays critic-owned. (c26's routed-machine mirror is GCP-era and tracked
+separately — a c26 WARN on a runpod-costed bare-`auto` plan is expected
+until that mirror is updated.) Then reconcile the WORST-CASE wall — base phases PLUS every
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
 (`--instance-termination-action=DELETE` + `--max-run-duration`,

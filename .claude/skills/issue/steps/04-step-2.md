@@ -132,13 +132,34 @@ auto-continuation policy in CLAUDE.md guarantees no pause between them
 in interactive mode; in autonomous mode the orchestrator exits at Step
 2c so the variable is irrelevant).
 
-Subagent briefs always pass the symlink path (`plans/plan.md`) so they
-read the freshest version — sound because every persisted version is
-SELF-CONTAINED by contract: `new-plan-version` refuses thin
-amendment-shaped deltas (#2255). After a deliberate `--allow-amendment`
+Subagent briefs always pass the symlink path in its ABSOLUTE canonical
+main-checkout form — `$(uv run python scripts/task.py find <N>)/plans/plan.md`,
+the same `PLAN_PATH` composed above — never a relative `tasks/...` path: a
+subagent whose cwd is a worktree resolves a relative path against its
+`tasks/` tree frozen at the branch-cut base commit and reads the pre-cut
+version with no error (#2422). Self-containedness makes the SYMLINK sound
+against amendment-thinness only, NOT against worktree-freeze: every
+persisted version is SELF-CONTAINED by contract — `new-plan-version`
+refuses thin amendment-shaped deltas (#2255). After a deliberate `--allow-amendment`
 persist the symlink points at a PARTIAL document, so every brief must hand
 BOTH paths (the amendment `v<K>.md` AND its base `v<J>.md`);
 `verify_plan.py --issue` composes them automatically.
+
+**Worktree-safe task-state paths (#2422) — the full contract for every
+brief this skill family composes.** Resolve at compose time:
+`TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`
+(`REPO_ROOT="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`
+— the prefix form runs the MAIN checkout's `task.py`, never a
+possibly-stale worktree copy). Hand `$TASK_DIR/plans/plan.md` and, when
+the task has one, `$TASK_DIR/artifacts/planned_manifest.json`. STATE
+`plan_version=v<K>` in the brief — the extensionless form of
+`readlink "$TASK_DIR/plans/plan.md"` (readlink returns `v<K>.md`; strip
+`.md` exactly once at the comparison site). At read time the subagent
+re-runs the readlink and FAILS LOUD on a `plan_version=` mismatch (a
+revision landed after compose ⇒ the round grades a superseded document)
+— never proceeds silently. Degradations: a brief with no `plan_version=`
+(legacy) still binds the canonical absolute path; a 404 (status moved
+mid-round) re-runs `task.py find <N>`.
 
 Also include estimated cost prominently in the `epm:plan` note, with a
 machine-readable token (`gpu_hours_total=<number>`) the Step 2c auto-approve

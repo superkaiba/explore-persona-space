@@ -179,7 +179,10 @@ orchestrator bg-runs via `scripts/codex_task.py`:
 
 Efficiency EARNS its Codex twin here (Thomas's multi-GPU emphasis).
 Consistency-checker + the (implementation-side) plan-adherence lens are
-Claude-only. Pass each subagent the PATH to `plans/vN.md` + `planned_manifest.json`,
+Claude-only. Pass each subagent the ABSOLUTE canonical main-checkout PATH to
+`plans/vN.md` + `planned_manifest.json` (resolve via
+`$(uv run python scripts/task.py find <N>)`; never a worktree-relative
+`tasks/` path — frozen at base, #2422),
 never the bodies (429 pacing); each Codex composer reads the plan from the handed
 path at compose time and inlines the verbatim plan text into its composed Codex
 prompt — `{{plan_body}}` is a compose-time substitution, not a brief field.

@@ -39,12 +39,15 @@ _REGIONS: list[tuple[str, str, int]] = [
     ),
     # Step 9c step 1d — known-red-on-main compare. Anchor at the compare
     # prose (mentions the outer bg-Bash) and window covers the compare
-    # launcher block (7500: the #2024 paired-invocation arithmetic merged
-    # into this region puts the breadcrumb at ~6420 chars from the anchor).
+    # launcher block (8800: the #2024 paired-invocation arithmetic merged
+    # into this region put the breadcrumb at ~6420 chars from the anchor;
+    # the #2315 check-junit-contract pre-compare block (+~1.3 KB between
+    # the anchor and the compare launcher) moved it to ~7610 — 8800 keeps
+    # ~1.2 KB margin).
     (
         "step9c-1d",
         "Run compare as a DETACHED background",
-        7500,
+        8800,
     ),
     # Step 10d — form (i) safe case / (ii) recovery shared block. Anchor at
     # the executable-block comment; the recipe documentation sits inside.

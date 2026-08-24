@@ -469,7 +469,37 @@ Run the structural verifier against the plan version just persisted:
   test-retest κ demotion gate; a plan genuinely registering the gate
   instead runs the retest at the parent instrument's sampling temperature,
   or re-grounds the κ threshold for a deterministic surface; #2204,
-  incident #2202 v1).
+  incident #2202 v1), and
+  `N/A — no absolute-margin decision gate` (check 68 — declare only when
+  the plan genuinely registers no absolute-pp reduction margin: the
+  pp-margin/baseline vocabulary is incidental or quotes an
+  incident/sibling), and
+  `N/A — harvested percentage baseline is unrelated to this absolute-margin gate`
+  (check 68 — the plan DOES register an absolute-pp margin but every
+  %-stated baseline in the plan concerns a different quantity; prefer
+  stating the gate's true baseline in % form so the harvest sees it;
+  #2228, incident #2203 v12), and
+  `N/A — no armed re-gen trigger` (check 69 — the re-gen arming vocabulary
+  is incidental or quotes an incident/sibling, not this plan's own armed
+  cap-hit re-generation trigger; a plan genuinely arming the trigger
+  instead states the doubled-cap arithmetic max_model_len − 2×cap ≥ the
+  stated prompt bound and sizes the regen engine to fit; #2269, incident
+  #2221 v9), and
+  `N/A — harvested max_model_len pin is unrelated to the armed re-gen stage`
+  (check 69 — the plan DOES arm a re-gen trigger but every harvested
+  max_model_len pin belongs to a different engine/stage; prefer stating
+  the regen stage's own pin so the harvest sees it; #2269), and
+  `N/A — no judge-pilot gate` (check 70 — the pilot vocabulary is
+  incidental or quotes an incident/sibling without registering a gate; a
+  plan genuinely registering a judge-pilot gate instead sizes per-arm
+  effective draws to ≥ floor(1/parse-fail threshold) + 1 — 51 at 2% — or
+  declares `allow_subresolution_pilot` on the gate line; #2299, incident
+  #2162 v7), and
+  `N/A — harvested pilot sizing is historical or belongs to a different gate`
+  (check 70 — the harvested threshold/draws/arms pairing is a superseded
+  quote the parser guard misses, a cross-item pairing, or an aggregate
+  threshold upgraded by a neighboring per-arm token; prefer stating the
+  gate's own sizing so the harvest sees it; #2299).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
