@@ -744,11 +744,13 @@ def _write_boundary_merged(args, unit_dir: Path, order, meta, span_shards, n_tra
 
 # ── phase: figure (VM-side at harvest; two panels, four arms) ───────────────────
 
+# Legend names per Thomas's naming spec (2026-08-24): exactly these strings;
+# never print the MLP width on the figure.
 ARM_LABELS = {
-    "ridge": "Linear (ridge)",
-    "mlp_w8192": "Nonlinear (MLP w=8192)",
-    "identity_bias": "Identity + bias",
-    "boundary_ridge": "Boundary token (WikiText control)",
+    "ridge": "linear map (ridge)",
+    "mlp_w8192": "nonlinear map (MLP)",
+    "identity_bias": "copy context vector + trained bias",
+    "boundary_ridge": "boundary token",
 }
 
 
