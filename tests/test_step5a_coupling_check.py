@@ -557,3 +557,50 @@ def test_agent_caps_fail_loud_parity_with_live_loader(scratch):
     caps_bad, err_bad = helper._classify_agent_caps(malformed, "in the worktree")
     assert caps_bad is None
     assert err_bad is not None and "malformed" in err_bad
+
+
+# ---------------------------------------------------------------------------
+# 16-17: #2327 round-3 regressions — Arm B raw-byte hashing under clean/ident
+# attributes (armb-filter-normalization-risk-2327) and rev-parse rc narrowing
+# (sibling-vintage-rc-conflation-2327)
+# ---------------------------------------------------------------------------
+
+
+def test_sibling_vintage_raw_bytes_under_ident_attribute(scratch):
+    """`_sibling_vintage` hashes RAW working bytes (`hash-object
+    --no-filters`): an untracked sibling whose bytes differ from
+    origin/main's blob but whose ident-CLEANED form equals it must read
+    stale, never be filter-normalized into a false `fresh` (the dangerous
+    false-NEGATIVE direction for this detector). No filter attribute is
+    live in the real tree — the fixture synthesizes the `.gitattributes`
+    ident regime to make the docstring's raw-byte predicate testable."""
+    wt = _mini_repo(
+        scratch,
+        fork_files={".gitattributes": "scripts/issue2162_util.py ident\n"},
+        main_commits=({"scripts/issue2162_util.py": "# $Id$\nUTIL = 1\n"},),
+    )
+    rel = "scripts/issue2162_util.py"
+    # untracked working copy carrying an ident EXPANSION: raw bytes differ
+    # from origin/main's blob, but the clean filter collapses them back
+    _write(wt, {rel: "# $Id: 1111111111111111111111111111111111111111 $\nUTIL = 1\n"})
+    main_oid = _git(wt, "rev-parse", "--verify", "--quiet", f"origin/main:{rel}").strip()
+    filtered = _git(wt, "hash-object", "--", rel).strip()
+    raw = _git(wt, "hash-object", "--no-filters", "--", rel).strip()
+    # premise: the ident clean filter really does normalize this working
+    # copy to origin/main's blob (the pre-fix filtered hash read `fresh`)
+    assert filtered == main_oid and raw != main_oid
+    assert helper._sibling_vintage(wt, rel) == "content differs from origin/main"
+
+
+def test_sibling_vintage_exotic_git_failure_raises_undecidable(scratch):
+    """Only the probed silent not-found (`rev-parse --verify --quiet` rc 1
+    with empty stderr) reads as path-absent-at-origin/main; a REAL git
+    failure (rc 128, not-a-repo) raises — degrading to main()'s advisory
+    unavailable-line — instead of being mislabeled as a stale REASON
+    (pre-fix this returned 'present on the branch while origin/main
+    deleted it')."""
+    non_repo = scratch / "not-a-repo"
+    (non_repo / "scripts").mkdir(parents=True)
+    (non_repo / "scripts" / "issue2162_run.py").write_text("VALUE = 1\n")
+    with pytest.raises(RuntimeError, match="undecidable"):
+        helper._sibling_vintage(non_repo, "scripts/issue2162_run.py")

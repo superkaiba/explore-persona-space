@@ -67,6 +67,13 @@ as stale, manufacturing sibling-splits on byte-coherent trees).
 |                    | import), so that side's gate CRASHES; agents-regime  |
 |                    | verdicts are undecidable, never reported clean       |
 
+The three cap labels (cap-skew / cap-red-on-main / cap-source-invalid) all
+sit behind Arm A's engagement gate: a CAP_SOURCE_PATHS member must be in
+divergence_set. A cap surface byte-identical to origin/main carries no
+vintage mismatch and stays silent — including over a caps file identically
+invalid on both sides (main-side red, not a half-sync; see
+check_cap_coherence for why that cell is a decision, not an oversight).
+
 rc semantics (advisory / fail-open contract): 0 = verdicts delivered (with
 or without WARNs); nonzero = the helper itself was undecidable — the caller
 prints a loud unavailable-line to stderr and CONTINUES (never blocks the
@@ -250,7 +257,8 @@ class _Side:
     # Set iff the agent-caps file is WHOLE-FILE absent or malformed on this
     # side (#2327 r2). The live lint loads that file with NO fallback
     # (workflow_lint._load_agent_spec_caps raises at import), so this state
-    # means the side's lint gate CRASHES — it must surface as a dedicated
+    # means the side's lint gate CRASHES — within an ENGAGED Arm A (see
+    # check_cap_coherence's divergence gate) it must surface as a dedicated
     # cap-source-invalid WARN, never as a silent skip (which could report
     # `clean`) and never as a fabricated AGENT_SPEC_FAIL_BYTES fallback cap.
     # The FAIL-bar fallback is reserved for a filename missing INSIDE a
@@ -342,8 +350,19 @@ def check_cap_coherence(  # noqa: C901 -- flat regime ladder (per-regime readine
 ) -> list[tuple[str, str]]:
     """Arm A: cap-skew / cap-red-on-main over the three size-cap regimes,
     plus cap-source-invalid when the agent-caps data file is whole-file
-    absent/malformed on a side (#2327 r2 — the live lint raises at import
-    there, so `clean` must never be reported over that state)."""
+    absent/malformed on a side of a DIVERGED cap surface (#2327 r2 — the
+    live lint raises at import over that state, so an ENGAGED arm must
+    never report `clean` over it).
+
+    Engagement gate (a decision, not an oversight — #2327 r3): the arm runs
+    only when a CAP_SOURCE_PATHS member is in divergence_set. With the cap
+    surface byte-identical to origin/main, an absent/malformed caps file is
+    the SAME invalid file on both sides — main-side red with no vintage
+    mismatch, not a half-sync — so this detector has nothing to diagnose:
+    the live lint already fail-louds on that state at the Step 9c gate, and
+    warning here would fire on every healthy branch whenever main is red,
+    exactly the noise that kills an advisory detector. That cell is
+    therefore deliberately silent (`clean`)."""
     if not any(p in divergence_set for p in CAP_SOURCE_PATHS):
         return []  # cap surface == origin/main => no vintage mismatch possible
     branch = _load_side_branch(wt)
@@ -460,13 +479,33 @@ def _sibling_vintage(wt: Path, rel: str) -> str:
     matching absence on both sides — else a stale-reason string naming which
     way the path genuinely differs. A one-sided absence stays stale: the
     withheld-ADD cell keeps the deliberate #1988 absent-counts-stale choice.
+    Worktree bytes are hashed with ``--no-filters`` so a clean/ident
+    attribute can never normalize genuinely different working bytes to
+    origin/main's blob OID and hide a split (#2327 r3 — false negatives are
+    the dangerous direction here; no such attribute is live in this repo,
+    the flag makes the raw-byte predicate above true by construction).
+    Probed rc grammar for ``rev-parse --verify --quiet`` (git 2.34.1):
+    0 + OID = present; 1 + silent stderr = not found (a missing REF is also
+    a silent rc 1, but main()'s earlier divergence read fail-louds when
+    origin/main cannot resolve, so rc 1 here means the PATH is absent);
+    anything else (e.g. 128 not-a-repo/fatal) is a REAL git failure and
+    raises — degrading to the caller's advisory unavailable-line rather
+    than mislabeling the failure as absence (#2327 r3).
     """
     proc = subprocess.run(
         ["git", "-C", str(wt), "rev-parse", "--verify", "--quiet", f"origin/main:{rel}"],
         capture_output=True,
         text=True,
     )
-    main_oid = proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else None
+    if proc.returncode == 0 and proc.stdout.strip():
+        main_oid: str | None = proc.stdout.strip()
+    elif proc.returncode == 1 and not proc.stderr.strip():
+        main_oid = None  # the probed silent not-found signature
+    else:
+        raise RuntimeError(
+            f"rev-parse --verify origin/main:{rel} undecidable "
+            f"rc={proc.returncode}: {proc.stderr.strip()[:300]}"
+        )
     exists = (wt / rel).is_file()
     if not exists and main_oid is None:
         return "fresh"  # matching absence: worktree == origin/main for this path
@@ -474,7 +513,7 @@ def _sibling_vintage(wt: Path, rel: str) -> str:
         return "absent from the worktree while origin/main has it (withheld ADD, #1988)"
     if main_oid is None:
         return "present on the branch while origin/main deleted it"
-    wt_oid = _git(wt, "hash-object", "--", rel).strip()
+    wt_oid = _git(wt, "hash-object", "--no-filters", "--", rel).strip()
     if wt_oid == main_oid:
         return "fresh"  # byte-identical: untracked copy, or metadata-only diff
     return "content differs from origin/main"
