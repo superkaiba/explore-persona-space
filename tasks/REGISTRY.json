@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2527,
+  "highest_id": 2528,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11789,6 +11789,13 @@
       "path": "tasks/proposed/2527",
       "status": "proposed",
       "title": "Smoke and production legs must not share one HF upload prefix (upload-policy gap)"
+    },
+    "2528": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2528",
+      "status": "proposed",
+      "title": "workflow-fix: step9c_baseline.py status reports 'fresh' on a content-stale ledger (2,134 commits behind main) \u2014 the 1d compare then classifies pre-existing main-side reds as NEW"
     },
     "256": {
       "has_clean_result": false,
