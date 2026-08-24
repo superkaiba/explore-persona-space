@@ -139,7 +139,7 @@ Disclosure: 1 of 44 verbatim-flatness items for the warm-helper character's inse
 
 On the intrusion-score interaction visible above: story-wrapper-intruded items score higher than clean items on low-axis characters (zara's 15 wrapper-intruded items average 44.7 against her 29.6 mean), which is why the exclusion recounts are reported beside the headline.
 
-Conciseness acknowledgment: this body of 8 results ships check-20 WARNs — several Takeaways bullets exceed the 30-word cap, per-result prose runs past the 120-word band in places, and total Takeaways+Goal+Results prose exceeds the 800-word budget — kept so each recount, loss count, and gate number sits beside the adjudication it supports.
+Conciseness acknowledgment: this body of 8 results ships check-20 WARNs — several Takeaways bullets exceed the 30-word cap, per-result prose runs past the 120-word band in places, and total Takeaways+Goal+Results prose exceeds the word budget — kept so each recount, loss count, and gate number sits beside the adjudication it supports. The advisory plan-conditions coverage check also WARNs: five planned conditions (the identity-plus-learned-bias baseline, the verbatim-flatness and name-mask gates, the tier-agreement gate, and the matched-capacity random-operator null) are covered above under their plain-English names rather than their plan slugs.
 
 ## Results
 
@@ -157,7 +157,7 @@ Every recount holds: equalizing all cells to 1,028 fit rows gives +0.72 (p = 0.0
 
 ### The ordering survives without the ceiling normalization
 
-What is plotted: raw held-out R² of the transferred operator (rung 4, no ceiling division) against the axis score, one labeled point per character.
+What is plotted: raw held-out R² of the transferred operator (rung 4, no ceiling division) against the axis score — labeled points, one per character.
 
 ![Raw transferred-operator R-squared versus judged AI-likeness](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fd4e118f3aa7feccb1ab994e829f5bb46069469e/figures/issue_2479/gradient_raw_rung4.png)
 
@@ -169,7 +169,7 @@ The raw numerator alone still orders with the axis (0.064–0.180 across charact
 
 ### Trivial baselines recover none of the gradient's level
 
-What is plotted: per-character own-map ceiling R² and identity-plus-learned-bias R² as paired bars, characters ordered by axis score, with the 0.05 eligibility floor drawn as a dashed line.
+What is plotted: the per-unit view behind the baseline claim — per-character own-map ceiling R² and identity-plus-learned-bias R² as paired bars, characters ordered by axis score, with the 0.05 eligibility floor drawn as a dashed line.
 
 ![Own-map ceilings versus identity-plus-bias baseline per character](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fd4e118f3aa7feccb1ab994e829f5bb46069469e/figures/issue_2479/ceilings_identity_bias_v2.png)
 
@@ -193,7 +193,7 @@ Transferred-operator retrieval can still exceed the own-map ceiling (helios: 0.1
 
 ### The designed tier orders recovery more tightly than the judged axis
 
-What is plotted: the rung-4 recovery fraction per character, grouped by designed AI-likeness tier, tier anchors in the accent color.
+What is plotted: the rung-4 recovery fraction per character — the per-unit view, grouped by designed AI-likeness tier — tier anchors in the accent color.
 
 ![Rung-4 recovery fraction per character grouped by designed AI-likeness tier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fd4e118f3aa7feccb1ab994e829f5bb46069469e/figures/issue_2479/recovery_by_tier.png)
 
@@ -219,7 +219,7 @@ Rotation is the one transform that lifts recovery while erasing the ordering —
 
 ### The axis instrument passes its gates
 
-What is plotted: the judged AI-likeness score per character, grouped by designed tier, anchors in the accent color.
+What is plotted: the per-unit view of the instrument — the judged AI-likeness score per character, grouped by designed tier, anchors in the accent color.
 
 ![Judged AI-likeness score per character grouped by designed tier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/fd4e118f3aa7feccb1ab994e829f5bb46069469e/figures/issue_2479/band_agreement_tiers.png)
 
