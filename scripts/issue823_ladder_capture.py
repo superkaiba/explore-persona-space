@@ -123,6 +123,15 @@ PILOT_WARMUP_BATCHES = 1
 PILOT_TIMED_BATCHES = 2
 GEN_LADDER_SUBPATH = "raw_completions/ladder"
 SMOKE_N_CONTEXTS = 10  # plan smoke: first 10 contexts (union pair set <= 30 pairs)
+# NOTE (#823 v18 review round): the "(parent parity)" claim below is known
+# INACCURATE on the own side — own = span_d["a_prime"][i] is the a_prime arm's
+# TEMPLATE-DIFF span (= bare + 2 end-of-turn tokens on seam-clean rows), while
+# the parent run_823 phase 3 truncated with the BARE a_prime token length
+# (probe (g) in the ext driver validates that bare rule against the banked b2
+# arm). The string VALUE stays FROZEN: it is embedded in the committed capture
+# digests + unit fingerprints of the already-produced 14,996-pair store
+# (resume/fingerprint equality) — correct the description only here, never the
+# literal. The ext driver's own convention id is TRUNC_CONVENTION_EXT.
 TRUNC_CONVENTION = "min(own_a_prime, pair); own_len==0 => no truncation (parent parity)"
 
 PERSONA_FILES = [f"persona{p:02d}_seed42.json" for p in range(N_PERSONAS)]
