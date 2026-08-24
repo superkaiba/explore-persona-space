@@ -34,3 +34,14 @@ delta-scoped PASS); (3) keep the marker version = the round number
 rounds (0, negative, >10, non-integer). Always re-check the current agent spec
 + workflow.yaml cap before quoting a number — this memory has gone stale on
 the cap twice (3 -> 5 -> 10).
+
+**Adjudicated-resolution clause (added #1739 r2, 2026-08-23):** when the brief
+records that a prior blocker from THIS twin was resolved in a DIFFERENT form
+than the twin asked for, because a project rule adjudicated against the asked
+form (e.g. r1 asked for on-canvas "N/A" cells; the fix omitted the columns +
+disclosed in the caption, since CLAUDE.md item 8-bis bans on-canvas scope
+notes), the composed delta block must carry an explicit ADJUDICATION NOTE:
+name the rule, mark the alternate form the BINDING resolution, instruct Codex
+to verify only the adjudicated form and NOT re-raise the original ask.
+Without it, the twin re-raises its own blocker verbatim and burns a
+reconciler round on a settled call.
