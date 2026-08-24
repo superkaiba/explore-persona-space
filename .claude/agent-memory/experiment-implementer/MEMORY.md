@@ -108,3 +108,4 @@
 - [Gate domain authority + bool-int aliasing](feedback_gate_domain_authority_and_bool_int_aliasing.md) — verifier domain comes from the CALLER, never the artifact; type-is-int for identity fields (True aliases 1 through exact-set reconciliation) (#823 r5)
 - [Unconditional per-arm empty guard](feedback_unconditional_per_arm_empty_guard.md) — any cross-arm conjunct leaves the all-empty cell dispatching; pin measured zero-dispatch, not guard source shape (#2329 r18)
 - [Model venvs pin the full accel-dep closure](feedback_model_venv_pin_full_dep_closure_flashinfer.md) — floating flashinfer 0.6.16.post3 TypeErrors past vLLM ImportError-only guard on py3.11; smoke the compile-backend import path (#2378)
+- [sharex invert_xaxis toggles per call](feedback_sharex_invert_xaxis_toggles.md) — per-panel invert on shared axes nets to no-op at even panel counts; invert ONCE on axes[0] (#2476 fs)
