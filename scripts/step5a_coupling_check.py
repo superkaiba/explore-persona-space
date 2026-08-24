@@ -31,27 +31,41 @@ to a demonstrated failure:
   ISSUE-KEYED sibling files co-landed by ONE main commit — the #2168 pair
   shape — where "these files land together" is a real invariant.
 
-Three labels, one divergence basis
+Four labels, one divergence basis
 ----------------------------------
 divergence_set = tracked worktree-vs-origin/main diff (`git diff
 --name-only origin/main`, which compares the origin/main commit against the
 WORKING TREE, staged + unstaged) UNION untracked files. A path NOT in
 divergence_set has worktree bytes == origin/main bytes by construction.
-The same basis drives the Arm A short-circuit, the per-doc discriminator,
-and Arm B's fresh/stale split — never a mix of HEAD-based and tree-based
-reads.
+The same basis drives the Arm A short-circuit and the per-doc
+discriminator. Arm B uses it as a PRE-FILTER only: a divergence_set member
+can still be byte-identical to origin/main (an untracked copy; a
+metadata-only mode/index diff), and a path absent on BOTH sides matches
+origin/main by definition — so Arm B refines members by blob-OID
+comparison against origin/main and decides fresh/stale on BYTES (or
+matching absence), never on set membership alone (#2327 r2: membership
+absorbed untracked + mode-only paths into stale and read matching-absence
+as stale, manufacturing sibling-splits on byte-coherent trees).
 
-| label           | predicate                                               |
-|-----------------|---------------------------------------------------------|
-| cap-skew        | doc bytes == origin/main (not in divergence_set)        |
-|                 | AND branch-effective cap REJECTS the doc's size         |
-|                 | AND origin/main-effective cap ADMITS it                 |
-| cap-red-on-main | doc bytes == origin/main AND BOTH caps reject           |
-|                 | (main itself is red — merging cannot fix it)            |
-| sibling-split   | ONE first-parent main commit in MB..origin/main touched |
-|                 | >=2 issue-keyed sibling files of the SAME issue M       |
-|                 | (M != own issue), and the branch now holds >=1 of them  |
-|                 | == origin/main (fresh) and >=1 differing (stale)        |
+| label              | predicate                                            |
+|--------------------|------------------------------------------------------|
+| cap-skew           | doc bytes == origin/main (not in divergence_set)     |
+|                    | AND branch-effective cap REJECTS the doc's size      |
+|                    | AND origin/main-effective cap ADMITS it              |
+| cap-red-on-main    | doc bytes == origin/main AND BOTH caps reject        |
+|                    | (main itself is red — merging cannot fix it)         |
+| sibling-split      | ONE first-parent main commit in MB..origin/main      |
+|                    | touched >=2 issue-keyed sibling files of the SAME    |
+|                    | issue M (M != own issue), and the branch now holds   |
+|                    | >=1 byte-identical to origin/main (fresh) and >=1    |
+|                    | genuinely differing (stale): content divergence, a   |
+|                    | withheld ADD (#1988), or a branch-only copy main     |
+|                    | deleted — matching absence on both sides is fresh    |
+| cap-source-invalid | the agent-caps data file is whole-file ABSENT or     |
+|                    | MALFORMED on a side — the live lint loads it with    |
+|                    | NO fallback (_load_agent_spec_caps raises at         |
+|                    | import), so that side's gate CRASHES; agents-regime  |
+|                    | verdicts are undecidable, never reported clean       |
 
 rc semantics (advisory / fail-open contract): 0 = verdicts delivered (with
 or without WARNs); nonzero = the helper itself was undecidable — the caller
@@ -66,6 +80,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import re
 import subprocess
 import sys
@@ -180,10 +195,9 @@ def _extract_caps(py_src: str) -> Caps:
             continue
         for name in names:
             if name in _CAP_NAMES and name not in found:
-                try:
+                # non-literal binding -> treated as missing (advisory)
+                with contextlib.suppress(ValueError, SyntaxError, TypeError):
                     found[name] = _literal_value(value)
-                except (ValueError, SyntaxError, TypeError):
-                    pass  # non-literal binding -> treated as missing (advisory)
     # Type sanity: a wrong-shaped literal degrades to missing, never a crash.
     gf = found.get("SKILL_DOC_SIZE_GRANDFATHER")
     if gf is not None and not (
@@ -233,6 +247,32 @@ class _Side:
 
     caps: Caps
     agent_caps: dict[str, int] | None  # None => agents regime undecidable
+    # Set iff the agent-caps file is WHOLE-FILE absent or malformed on this
+    # side (#2327 r2). The live lint loads that file with NO fallback
+    # (workflow_lint._load_agent_spec_caps raises at import), so this state
+    # means the side's lint gate CRASHES — it must surface as a dedicated
+    # cap-source-invalid WARN, never as a silent skip (which could report
+    # `clean`) and never as a fabricated AGENT_SPEC_FAIL_BYTES fallback cap.
+    # The FAIL-bar fallback is reserved for a filename missing INSIDE a
+    # valid caps file (the live lint's own semantics).
+    agent_caps_error: str | None = None
+
+
+def _classify_agent_caps(
+    caps_text: str | None, side_desc: str
+) -> tuple[dict[str, int] | None, str | None]:
+    """Shared agent-caps classification for both vintages (#2327 r2).
+
+    Returns (agent_caps, error): a parsed dict on success; else
+    (None, <error>) for a whole-file absent (`caps_text is None`) or
+    malformed file — mirroring the live loader's fail-loud posture.
+    """
+    if caps_text is None:
+        return None, f"absent {side_desc}"
+    try:
+        return _parse_agent_caps(caps_text), None
+    except ValueError as exc:
+        return None, f"malformed {side_desc} ({exc})"
 
 
 def _load_side_branch(wt: Path) -> _Side | None:
@@ -245,18 +285,10 @@ def _load_side_branch(wt: Path) -> _Side | None:
     except SyntaxError as exc:
         _notice(f"worktree {_LINT_REL} unparseable ({exc}) — cap-coherence arm skipped")
         return None
-    agent_caps: dict[str, int] | None
     caps_path = wt / _AGENT_CAPS_REL
-    if not caps_path.is_file():
-        _notice(f"{_AGENT_CAPS_REL} absent in worktree — agents fall back to AGENT_SPEC_FAIL_BYTES")
-        agent_caps = {}
-    else:
-        try:
-            agent_caps = _parse_agent_caps(caps_path.read_text(encoding="utf-8"))
-        except ValueError as exc:
-            _notice(f"worktree {_AGENT_CAPS_REL} malformed ({exc}) — agents regime skipped")
-            agent_caps = None
-    return _Side(caps=caps, agent_caps=agent_caps)
+    caps_text = caps_path.read_text(encoding="utf-8") if caps_path.is_file() else None
+    agent_caps, agent_caps_error = _classify_agent_caps(caps_text, "in the worktree")
+    return _Side(caps=caps, agent_caps=agent_caps, agent_caps_error=agent_caps_error)
 
 
 def _load_side_main(wt: Path) -> _Side | None:
@@ -269,20 +301,9 @@ def _load_side_main(wt: Path) -> _Side | None:
     except SyntaxError as exc:
         _notice(f"origin/main {_LINT_REL} unparseable ({exc}) — cap-coherence arm skipped")
         return None
-    agent_caps: dict[str, int] | None
     caps_text = _git_show(wt, f"origin/main:{_AGENT_CAPS_REL}")
-    if caps_text is None:
-        _notice(
-            f"{_AGENT_CAPS_REL} absent at origin/main — agents fall back to AGENT_SPEC_FAIL_BYTES"
-        )
-        agent_caps = {}
-    else:
-        try:
-            agent_caps = _parse_agent_caps(caps_text)
-        except ValueError as exc:
-            _notice(f"origin/main {_AGENT_CAPS_REL} malformed ({exc}) — agents regime skipped")
-            agent_caps = None
-    return _Side(caps=caps, agent_caps=agent_caps)
+    agent_caps, agent_caps_error = _classify_agent_caps(caps_text, "at origin/main")
+    return _Side(caps=caps, agent_caps=agent_caps, agent_caps_error=agent_caps_error)
 
 
 def _skills_regime_ready(side: _Side) -> bool:
@@ -316,16 +337,37 @@ def _agents_cap(side: _Side, name: str) -> tuple[int, str]:
     return side.caps.values["AGENT_SPEC_FAIL_BYTES"], "AGENT_SPEC_FAIL_BYTES"  # type: ignore[return-value]
 
 
-def check_cap_coherence(
+def check_cap_coherence(  # noqa: C901 -- flat regime ladder (per-regime readiness + per-doc classification, #2327); extracting a branch would just relocate it
     wt: Path, divergence_set: set[str], merge_base: str
 ) -> list[tuple[str, str]]:
-    """Arm A: cap-skew / cap-red-on-main over the three size-cap regimes."""
+    """Arm A: cap-skew / cap-red-on-main over the three size-cap regimes,
+    plus cap-source-invalid when the agent-caps data file is whole-file
+    absent/malformed on a side (#2327 r2 — the live lint raises at import
+    there, so `clean` must never be reported over that state)."""
     if not any(p in divergence_set for p in CAP_SOURCE_PATHS):
         return []  # cap surface == origin/main => no vintage mismatch possible
     branch = _load_side_branch(wt)
     main = _load_side_main(wt)
     if branch is None or main is None:
         return []
+
+    warns: list[tuple[str, str]] = []
+    for side in (branch, main):
+        if side.agent_caps_error is not None:
+            warns.append(
+                (
+                    "cap-source-invalid",
+                    f"{_AGENT_CAPS_REL} is {side.agent_caps_error} — the live lint loads "
+                    f"this file with NO fallback (workflow_lint._load_agent_spec_caps "
+                    f"raises at import), so that side's lint gate CRASHES outright; "
+                    f"agents-regime cap verdicts are undecidable this run, and the "
+                    f"AGENT_SPEC_FAIL_BYTES fallback applies only to a filename missing "
+                    f"INSIDE a valid caps file — never to the whole file. Remedy: restore "
+                    f"or repair {_AGENT_CAPS_REL} on that side (branch side: `git -C {wt} "
+                    f"checkout origin/main -- {_AGENT_CAPS_REL}` if the branch never meant "
+                    f"to touch it).",
+                )
+            )
 
     skills_ready = _skills_regime_ready(branch) and _skills_regime_ready(main)
     if not skills_ready:
@@ -361,7 +403,6 @@ def check_cap_coherence(
     if lessons_ready and lessons.is_file():
         docs.append((lessons.relative_to(wt).as_posix(), "lessons", ""))
 
-    warns: list[tuple[str, str]] = []
     for rel, regime, key in docs:
         if rel in divergence_set:
             continue  # branch-authored content: the gate red (if any) is real
@@ -410,11 +451,66 @@ def check_cap_coherence(
     return warns
 
 
+def _sibling_vintage(wt: Path, rel: str) -> str:
+    """Blob-level fresh/stale probe for ONE sibling path (#2327 r2).
+
+    Returns the literal ``"fresh"`` when the worktree STATE of `rel` equals
+    origin/main's — byte-identical content (blob-OID match, so an untracked
+    copy and a metadata-only mode/index diff both read as matching) or
+    matching absence on both sides — else a stale-reason string naming which
+    way the path genuinely differs. A one-sided absence stays stale: the
+    withheld-ADD cell keeps the deliberate #1988 absent-counts-stale choice.
+    """
+    proc = subprocess.run(
+        ["git", "-C", str(wt), "rev-parse", "--verify", "--quiet", f"origin/main:{rel}"],
+        capture_output=True,
+        text=True,
+    )
+    main_oid = proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else None
+    exists = (wt / rel).is_file()
+    if not exists and main_oid is None:
+        return "fresh"  # matching absence: worktree == origin/main for this path
+    if not exists:
+        return "absent from the worktree while origin/main has it (withheld ADD, #1988)"
+    if main_oid is None:
+        return "present on the branch while origin/main deleted it"
+    wt_oid = _git(wt, "hash-object", "--", rel).strip()
+    if wt_oid == main_oid:
+        return "fresh"  # byte-identical: untracked copy, or metadata-only diff
+    return "content differs from origin/main"
+
+
+def _classify_sibling_group(
+    wt: Path, group: set[str], divergence_set: set[str]
+) -> tuple[set[str], dict[str, str]]:
+    """Split one co-landed sibling group into (fresh, stale{path: reason}).
+
+    divergence_set is a PRE-FILTER (a non-member is byte-identical or
+    matching-absent by construction); members are refined by
+    `_sibling_vintage`'s blob comparison (#2327 r2).
+    """
+    fresh: set[str] = set()
+    stale: dict[str, str] = {}
+    for f in group:
+        if f not in divergence_set:
+            # tracked with no diff row, or absent on both sides:
+            # worktree state == origin/main by construction
+            fresh.add(f)
+            continue
+        vintage = _sibling_vintage(wt, f)
+        if vintage == "fresh":
+            fresh.add(f)
+        else:
+            stale[f] = vintage
+    return fresh, stale
+
+
 def check_sibling_split(
     wt: Path, merge_base: str, own_issue: str | None, divergence_set: set[str]
 ) -> list[tuple[str, str]]:
     """Arm B: one main commit co-landed >=2 sibling files of issue M; the
-    branch now holds mixed vintages of them."""
+    branch now holds mixed vintages of them (fresh/stale decided on BYTES
+    via `_classify_sibling_group`, never on set membership alone)."""
     out = _git(
         wt,
         "log",
@@ -451,28 +547,31 @@ def check_sibling_split(
                 continue  # the branch's own files are its deliverables, not a split
             if len(group) < 2:
                 continue
-            fresh = {f for f in group if f not in divergence_set and (wt / f).exists()}
-            stale = group - fresh
+            fresh, stale = _classify_sibling_group(wt, group, divergence_set)
             if fresh and stale:
-                entry = qualifying.setdefault(issue_m, {"shas": [], "fresh": set(), "stale": set()})
+                entry = qualifying.setdefault(issue_m, {"shas": [], "fresh": set(), "stale": {}})
                 entry["shas"].append(sha[:12])  # type: ignore[union-attr]
                 entry["fresh"] |= fresh  # type: ignore[operator]
-                entry["stale"] |= stale  # type: ignore[operator]
+                entry["stale"].update(stale)  # type: ignore[union-attr]
 
     warns: list[tuple[str, str]] = []
     for issue_m in sorted(qualifying, key=int):
         entry = qualifying[issue_m]
         shas = ", ".join(entry["shas"])  # type: ignore[arg-type]
         fresh_s = ", ".join(sorted(entry["fresh"]))  # type: ignore[arg-type]
-        stale_s = ", ".join(sorted(entry["stale"]))  # type: ignore[arg-type]
+        stale_s = ", ".join(
+            f"{f} ({reason})"
+            for f, reason in sorted(entry["stale"].items())  # type: ignore[union-attr]
+        )
         warns.append(
             (
                 "sibling-split",
                 f"issue {issue_m} — main commit(s) {shas} co-landed sibling files; the "
-                f"branch now holds {fresh_s} == origin/main while {stale_s} differs from "
-                f"origin/main (withheld by the sync or branch-edited) — mixed vintages of "
-                f"a co-landed set (#2168 INSTANCE 3). Remedy: `git -C {wt} merge "
-                f"origin/main` (#2311), or pair-revert per the Step 5a manual recovery.",
+                f"branch now holds {fresh_s} byte-identical to origin/main while "
+                f"{stale_s} genuinely differs (withheld by the sync or branch-edited) — "
+                f"mixed vintages of a co-landed set (#2168 INSTANCE 3). Remedy: `git -C "
+                f"{wt} merge origin/main` (#2311), or pair-revert per the Step 5a manual "
+                f"recovery.",
             )
         )
     return warns
@@ -505,12 +604,13 @@ def main(argv: list[str] | None = None) -> int:
     if warns:
         counts = {
             k: sum(1 for lbl, _ in warns if lbl == k)
-            for k in ("cap-skew", "sibling-split", "cap-red-on-main")
+            for k in ("cap-skew", "sibling-split", "cap-red-on-main", "cap-source-invalid")
         }
         print(
             f"[step5a] coupling check: {counts['cap-skew']} cap-skew, "
             f"{counts['sibling-split']} sibling-split, "
-            f"{counts['cap-red-on-main']} cap-red-on-main warning(s)"
+            f"{counts['cap-red-on-main']} cap-red-on-main, "
+            f"{counts['cap-source-invalid']} cap-source-invalid warning(s)"
         )
     else:
         print("[step5a] coupling check: clean")

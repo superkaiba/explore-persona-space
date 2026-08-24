@@ -125,15 +125,22 @@ def _lint_src(
 def _mini_repo(
     tmp: Path,
     fork_files: dict[str, str],
-    main_commits: tuple[dict[str, str], ...] = (),
+    main_commits: tuple[dict[str, str | None], ...] = (),
 ) -> Path:
     """origin bare + seed (fork commit, then per-dict main advances) + wt clone
-    on branch issue-9999 with origin/main fetched. wt clones at the FORK tip."""
+    on branch issue-9999 with origin/main fetched. wt clones at the FORK tip.
+
+    A valid agent-caps data file is seeded at fork unless `fork_files`
+    overrides it: since #2327 r2 a whole-file-absent caps file is a
+    cap-source-invalid WARN (the live lint crashes on such a tree), so
+    fixtures exercising OTHER regimes must carry a decidable caps file —
+    same convention as the integration `_coupling_fixture`.
+    """
     origin = tmp / "origin.git"
     _git(tmp, "init", "--bare", "-b", "main", str(origin))
     seed = tmp / "seed"
     _git(tmp, "clone", str(origin), str(seed))
-    _write(seed, fork_files)
+    _write(seed, {".claude/config/agent_spec_size_caps.txt": "unrelated.md 1_000\n", **fork_files})
     _git(seed, "add", "-A")
     _git(seed, "commit", "-m", "fork-era")
     _git(seed, "push", "origin", "main")
@@ -141,7 +148,11 @@ def _mini_repo(
     _git(tmp, "clone", str(origin), str(wt))
     _git(wt, "checkout", "-b", "issue-9999")
     for files in main_commits:
-        _write(seed, files)
+        # a None value DELETES the path in that main commit (co-landed rm)
+        _write(seed, {rel: c for rel, c in files.items() if c is not None})
+        for rel, content in files.items():
+            if content is None:
+                (seed / rel).unlink()
         _git(seed, "add", "-A")
         _git(seed, "commit", "-m", "main-side advance")
         _git(seed, "push", "origin", "main")
@@ -355,3 +366,194 @@ def test_agent_caps_fallback(scratch, capsys):
     assert "AGENT_SPEC_FAIL_BYTES" in skew_lines[0]
     assert "= 60" in skew_lines[0] and "200" in skew_lines[0]
     assert "1 cap-skew, 0 sibling-split, 0 cap-red-on-main" in out
+
+
+# ---------------------------------------------------------------------------
+# 9-15: #2327 round-2 regressions — Arm B byte-equivalence + both-deleted
+# (arm-b-byte-equivalence-2327, armb-both-deleted-false-split-2327) and the
+# agent-caps whole-file fail-loud parity (agent-cap-source-fail-loud-parity-2327)
+# ---------------------------------------------------------------------------
+
+
+def test_sibling_untracked_and_mode_only_byte_identical_silent(scratch, capsys):
+    """A co-landed triple where one sibling is UNTRACKED-but-byte-identical
+    to origin/main and one carries a MODE-ONLY change never emits a
+    sibling-split: fresh/stale is decided on blob bytes, not on
+    divergence_set membership (pre-fix, both non-members of the fresh set
+    manufactured a split against the genuinely-fresh third file)."""
+    import os as _os
+
+    wt = _mini_repo(
+        scratch,
+        fork_files={"scripts/issue2162_run.py": "VALUE = 1\n"},
+        main_commits=(
+            {
+                "scripts/issue2162_run.py": "VALUE = 3\n",
+                "scripts/issue2162_util.py": "UTIL = 1\n",
+                "tests/test_issue2162_x.py": "def test_x():\n    assert True\n",
+            },
+        ),
+    )
+    # tracked-fresh sibling: synced byte-exact from origin/main
+    _git(wt, "checkout", "origin/main", "--", "tests/test_issue2162_x.py")
+    # mode-only sibling: content synced byte-exact, then chmod +x (metadata diff)
+    _git(wt, "checkout", "origin/main", "--", "scripts/issue2162_run.py")
+    _os.chmod(wt / "scripts" / "issue2162_run.py", 0o755)
+    # untracked-but-byte-identical sibling: written to disk, never staged
+    _write(wt, {"scripts/issue2162_util.py": "UTIL = 1\n"})
+    # premise: both problem paths ARE in the divergence basis
+    diff_rows = {
+        ln.strip()
+        for ln in _git(wt, "diff", "--name-only", "origin/main").splitlines()
+        if ln.strip()
+    }
+    assert "scripts/issue2162_run.py" in diff_rows, "mode-only change must produce a diff row"
+    others = _git(wt, "ls-files", "--others", "--exclude-standard")
+    assert "scripts/issue2162_util.py" in others, "util sibling must be untracked"
+    rc, out, _ = _run_main(wt, capsys)
+    assert rc == 0
+    assert "sibling-split" not in out, out
+    assert "coupling check: clean" in out
+
+
+def test_sibling_both_deleted_silent(scratch, capsys):
+    """Main co-lands modify-X + delete-Y; the branch syncs X and deletes Y
+    too. Y matches origin/main by ABSENCE on both sides — counting it stale
+    (pre-fix) manufactured a sibling-split on a byte-coherent tree."""
+    wt = _mini_repo(
+        scratch,
+        fork_files={
+            "scripts/issue2162_run.py": "VALUE = 1\n",
+            "tests/test_issue2162_y.py": "def test_y():\n    assert True\n",
+        },
+        main_commits=(
+            {
+                "scripts/issue2162_run.py": "VALUE = 3\n",
+                "tests/test_issue2162_y.py": None,  # co-landed deletion
+            },
+        ),
+    )
+    _git(wt, "checkout", "origin/main", "--", "scripts/issue2162_run.py")
+    (wt / "tests" / "test_issue2162_y.py").unlink()  # branch deletes Y as well
+    rc, out, _ = _run_main(wt, capsys)
+    assert rc == 0
+    assert "sibling-split" not in out, out
+    assert "coupling check: clean" in out
+
+
+def test_sibling_split_annotates_absent_vs_diverged(scratch, capsys):
+    """A REAL split still fires, and the stale half now separates genuine
+    byte divergence from one-sided absence: content divergence and the
+    withheld-ADD (#1988) cell are named distinctly, so the WARN's
+    differs-from-origin/main claim is byte-accurate."""
+    wt = _mini_repo(
+        scratch,
+        fork_files={"scripts/issue2162_run.py": "VALUE = 1\n"},
+        main_commits=(
+            {
+                "scripts/issue2162_run.py": "VALUE = 3\n",  # branch stays fork-vintage
+                "scripts/issue2162_util.py": "UTIL = 1\n",  # never lands in the wt
+                "tests/test_issue2162_x.py": "def test_x():\n    assert True\n",
+            },
+        ),
+    )
+    _git(wt, "checkout", "origin/main", "--", "tests/test_issue2162_x.py")  # fresh half
+    rc, out, _ = _run_main(wt, capsys)
+    assert rc == 0
+    split = [ln for ln in out.splitlines() if "[step5a] WARN: sibling-split:" in ln]
+    assert len(split) == 1, out
+    assert "issue 2162" in split[0]
+    assert "tests/test_issue2162_x.py" in split[0]
+    assert "scripts/issue2162_run.py (content differs from origin/main)" in split[0]
+    assert (
+        "scripts/issue2162_util.py (absent from the worktree while origin/main has it "
+        "(withheld ADD, #1988))"
+    ) in split[0]
+    assert "0 cap-skew, 1 sibling-split, 0 cap-red-on-main, 0 cap-source-invalid" in out
+
+
+def test_agent_caps_file_absent_is_cap_source_invalid(scratch, capsys):
+    """A whole-file-ABSENT agent-caps source can neither report `clean` nor
+    fabricate an AGENT_SPEC_FAIL_BYTES fallback cap-skew: the live lint
+    raises at import on that tree (fail-loud parity), so the helper emits a
+    dedicated cap-source-invalid WARN and skips the agents regime."""
+    wt = _mini_repo(
+        scratch,
+        fork_files={"scripts/workflow_lint.py": _lint_src(agent_fail=60)},
+        main_commits=(
+            {
+                "scripts/workflow_lint.py": _lint_src(agent_fail=200),
+                ".claude/agents/y.md": "y" * 100,
+            },
+        ),
+    )
+    _git(wt, "checkout", "origin/main", "--", ".claude/agents/y.md")
+    (wt / ".claude" / "config" / "agent_spec_size_caps.txt").unlink()
+    rc, out, _ = _run_main(wt, capsys)
+    assert rc == 0
+    invalid = [ln for ln in out.splitlines() if "[step5a] WARN: cap-source-invalid:" in ln]
+    assert len(invalid) == 1, out
+    assert "agent_spec_size_caps.txt" in invalid[0]
+    assert "absent in the worktree" in invalid[0]
+    # pre-fix this tree fabricated a cap-skew off the {} fallback (60 rejects
+    # y.md while main's 200 admits) — the fabricated verdict must be gone
+    assert "WARN: cap-skew:" not in out, out
+    assert "coupling check: clean" not in out
+    assert "0 cap-skew, 0 sibling-split, 0 cap-red-on-main, 1 cap-source-invalid" in out
+
+
+def test_agent_caps_file_malformed_is_cap_source_invalid(scratch, capsys):
+    """A whole-file-MALFORMED agent-caps source is the same undecidable
+    state (the live lint raises at import): a dedicated WARN, never `clean`."""
+    wt = _mini_repo(
+        scratch,
+        fork_files={"scripts/workflow_lint.py": _lint_src()},
+    )
+    _write(wt, {".claude/config/agent_spec_size_caps.txt": "this is not a valid caps line\n"})
+    rc, out, _ = _run_main(wt, capsys)
+    assert rc == 0
+    invalid = [ln for ln in out.splitlines() if "[step5a] WARN: cap-source-invalid:" in ln]
+    assert len(invalid) == 1, out
+    assert "malformed in the worktree (" in invalid[0]
+    assert "coupling check: clean" not in out
+
+
+def test_agent_caps_main_side_malformed_is_cap_source_invalid(scratch, capsys):
+    """A malformed caps file AT ORIGIN/MAIN is named as the main-side state
+    (main's own lint gate crashes; merging cannot fix it this run)."""
+    wt = _mini_repo(
+        scratch,
+        fork_files={"scripts/workflow_lint.py": _lint_src()},
+        main_commits=(
+            {".claude/config/agent_spec_size_caps.txt": "garbage line with extra parts\n"},
+        ),
+    )
+    rc, out, _ = _run_main(wt, capsys)
+    assert rc == 0
+    invalid = [ln for ln in out.splitlines() if "[step5a] WARN: cap-source-invalid:" in ln]
+    assert len(invalid) == 1, out
+    assert "malformed at origin/main (" in invalid[0]
+    assert "coupling check: clean" not in out
+
+
+def test_agent_caps_fail_loud_parity_with_live_loader(scratch):
+    """The helper's whole-file classification mirrors the LIVE loader's
+    fail-loud posture (workflow_lint._load_agent_spec_caps): absent raises
+    FileNotFoundError / classifies `absent`; malformed raises ValueError /
+    classifies `malformed` — never a silent `{}` fallback on either side."""
+    wl = _import_by_path(
+        "workflow_lint_live_2327_capsrc_under_test", _REPO / "scripts" / "workflow_lint.py"
+    )
+    with pytest.raises(FileNotFoundError):
+        wl._load_agent_spec_caps(scratch / "no_such_caps.txt")
+    caps_missing, err_missing = helper._classify_agent_caps(None, "in the worktree")
+    assert caps_missing is None
+    assert err_missing is not None and "absent" in err_missing
+    malformed = "one two three\n"
+    bad = scratch / "bad_caps.txt"
+    bad.write_text(malformed)
+    with pytest.raises(ValueError):
+        wl._load_agent_spec_caps(bad)
+    caps_bad, err_bad = helper._classify_agent_caps(malformed, "in the worktree")
+    assert caps_bad is None
+    assert err_bad is not None and "malformed" in err_bad
