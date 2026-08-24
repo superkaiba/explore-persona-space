@@ -252,18 +252,37 @@ def _assemble_story(mined_row: dict, opener_text: str, answer: str | None):
 
 
 def _a1_anchor(tok, u1: str, a1: str) -> int | None:
-    """Char index where assistant_1's reply content begins in the rendered prefix."""
+    """Char index where assistant_1's reply content begins in the rendered
+    prefix (SIM arm — the 2-turn render the sim turn was sampled under)."""
     return _divergence_anchor(lambda t: gen._render_user_prefix(tok, u1, t), a1)
 
 
+def _a1_anchor_real(tok, u1: str, a1: str, u2: str) -> int | None:
+    """a1 content-start anchor in the FULL 3-turn render (REAL arm; r13).
+
+    The 2-turn prefix render carries a1's empty <think> block, which the
+    3-turn render strips (gen._user_real_span rationale) — so the sim-arm
+    anchor is offset here; anchor against the full render instead."""
+    return _divergence_anchor(lambda t: gen._render_user_real_full(tok, u1, t, u2), a1)
+
+
 def _assemble_user_real(tok, row: dict, pool_row: dict):
-    prefix = gen._render_user_prefix(tok, pool_row["u1"], pool_row["a1"])
-    if len(prefix) != row["header_end"] or not row["rendered_text"].startswith(prefix):
+    """Re-derive the full render + tail-anchored span (r13) and cross-check
+    the producer row's stored fields; truncate at u2 end (teacher-forced
+    through user_2 only)."""
+    full = gen._render_user_real_full(tok, pool_row["u1"], pool_row["a1"], pool_row["u2"])
+    span = gen._user_real_span(full, pool_row["u2"])
+    if (
+        span is None
+        or full != row["rendered_text"]
+        or list(span) != list(row["u2_span"])
+        or span[0] != row["header_end"]
+    ):
         return None, "prefix_render_mismatch"
-    lo, hi = row["u2_span"]
-    final = row["rendered_text"][:hi]  # truncate at u2 end: teacher-forced through user_2 only
+    lo, hi = span
+    final = row["rendered_text"][:hi]
     a1 = pool_row["a1"]
-    pos = _a1_anchor(tok, pool_row["u1"], a1)
+    pos = _a1_anchor_real(tok, pool_row["u1"], a1, pool_row["u2"])
     if pos is None or final[pos : pos + len(a1)] != a1:
         return None, "anchor_slice_mismatch"
     return {

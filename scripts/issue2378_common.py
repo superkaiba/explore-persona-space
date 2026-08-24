@@ -149,6 +149,9 @@ PLAIN_STOP = ["\nUser:", "\n\nUser:"]
 CHAT_STOP = ["<|im_end|>"]
 USER_SIM_STOP = ["<|im_end|>", "<|im_start|>"]
 USER_TURN_HEADER = "<|im_start|>user\n"
+# End-of-turn suffix the Qwen3.6 template appends after every message body —
+# the r13 tail anchor for the real-u2 span (gen._user_real_span).
+TURN_END = "<|im_end|>\n"
 
 # ---------------------------------------------------------------------------
 # Character panel: #1310/#1345 personas verbatim (scripts/issue1310_common.py

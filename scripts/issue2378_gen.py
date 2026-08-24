@@ -347,7 +347,15 @@ def _render_chat(tok, question: str) -> str:
 
 def _render_user_prefix(tok, u1: str, a1: str) -> str:
     """Rendered prefill through assistant_1's <|im_end|> + the user header
-    (plan §4.2b slot definition)."""
+    (plan §4.2b slot definition; the SIM-arm generation prefill).
+
+    NOTE (r13): a1 is the LAST message here, so the Qwen3.6 template renders
+    it WITH the empty ``<think>\\n\\n</think>`` block. In the 3-turn render
+    (u1, a1, u2) the template STRIPS that block from a1 (it attaches only to
+    assistant turns AFTER the last user query), so this prefix is NOT a
+    prefix of the full render — the real-u2 arm anchors from the template
+    TAIL instead (``_user_real_span``). Sim rows keep this prefill for
+    generation/capture consistency (wave-1 rows were sampled under it)."""
     body = tok.apply_chat_template(
         [{"role": "user", "content": u1}, {"role": "assistant", "content": a1}],
         tokenize=False,
@@ -355,6 +363,64 @@ def _render_user_prefix(tok, u1: str, a1: str) -> str:
         enable_thinking=False,
     )
     return body + cm.USER_TURN_HEADER
+
+
+def _render_user_real_full(tok, u1: str, a1: str, u2: str) -> str:
+    """Full 3-turn template render for the REAL-u2 arm (teacher-forced)."""
+    return tok.apply_chat_template(
+        [
+            {"role": "user", "content": u1},
+            {"role": "assistant", "content": a1},
+            {"role": "user", "content": u2},
+        ],
+        tokenize=False,
+        add_generation_prompt=False,
+        enable_thinking=False,
+    )
+
+
+def _user_real_span(rendered_full: str, u2: str) -> tuple[int, int] | None:
+    """Tail-anchored u2 char span in the full 3-turn render (r13 fix).
+
+    The r12 producer checked ``rendered_full.startswith(prefix + u2)`` with
+    ``prefix = _render_user_prefix(...)`` — but the 2-turn prefix render
+    carries a1's empty ``<think>`` block while the 3-turn render strips it
+    (Qwen3.6 attaches the block only to assistant turns after the LAST user
+    query), so the check failed on 100% of P4 wave-1 rows (span_mismatch).
+    Anchor u2 from the content-independent template TAIL instead (#1776
+    recipe): the render ends with ``USER_TURN_HEADER + u2 + TURN_END`` by
+    template construction. Returns None when the tail does not match
+    (template drift — the row drops as span_mismatch, fail-visible)."""
+    tail = cm.USER_TURN_HEADER + u2 + cm.TURN_END
+    if not rendered_full.endswith(tail):
+        return None
+    lo = len(rendered_full) - len(tail) + len(cm.USER_TURN_HEADER)
+    return lo, lo + len(u2)
+
+
+def _user_real_row(tok, r: dict) -> dict:
+    """One chat_user_real render row (the phase_user_real_render per-row body;
+    shared with the r13 pin tests so fixtures cannot drift from the writer)."""
+    u2 = r["u2"]
+    rendered_full = _render_user_real_full(tok, r["u1"], r["a1"], u2)
+    span = _user_real_span(rendered_full, u2)
+    if span is None:
+        return {
+            "cell": "chat_user_real",
+            "conv_id": r["conv_id"],
+            "keep": False,
+            "drop_reason": "span_mismatch",
+        }
+    lo, hi = span
+    return {
+        "cell": "chat_user_real",
+        "conv_id": r["conv_id"],
+        "rendered_text": rendered_full,
+        "header_end": lo,
+        "u2_span": [lo, hi],
+        "keep": True,
+        "drop_reason": None,
+    }
 
 
 def _n_tokens(tok, text: str) -> int:
@@ -407,13 +473,15 @@ def _reap_engine(llm) -> None:
 def _sampling_params(
     max_tokens: int, stop: list[str] | None, seed: int, bad_words: list[str] | None = None
 ):
-    """Shared SamplingParams builder. ``bad_words`` is passed ONLY by the SegA
-    mining call site (G1 recalibration L1 — the '<think>' reasoning-mode leak
-    hit 73-81% of pilot mining attempts); every other stage passes nothing and
-    keeps the constructor default (None). Threaded UNGUARDED: verified
-    constructible on the production model venv (vllm 0.27.1, pod-2378) — an
-    engine venv lacking the param must TypeError loudly, never
-    introspection-skip (the r9 ENGINE_KWARG_PINS lesson)."""
+    """Shared SamplingParams builder. ``bad_words`` carries the '<think>'
+    reasoning-mode ban on the RAW continuation legs — SegA mining (G1
+    recalibration L1: 73-81% of pilot attempts leaked), plain answers +
+    fresh plain draws, and sim user turns (r13 / G2b fix 1: 89% and 2.8%
+    wave-1 leaks); chat is template-path immune and segb stays deliberately
+    unbanned. Threaded UNGUARDED: verified constructible on the production
+    model venv (vllm 0.27.1, pod-2378) — an engine venv lacking the param
+    must TypeError loudly, never introspection-skip (the r9
+    ENGINE_KWARG_PINS lesson)."""
     from vllm import SamplingParams
 
     return SamplingParams(
@@ -864,9 +932,12 @@ def phase_sega(args) -> None:
                     None,
                     cm.derived_seed(cm.SEED, "sega", cell, wave, a),
                     # G1 recalibration L1: ban the '<think>' reasoning-mode leak
-                    # on the raw few-shot mining continuation ONLY (73-81% of
-                    # pilot attempts leaked); segb/chat/plain/user stages are
-                    # deliberately unbanned.
+                    # on the raw few-shot mining continuation (73-81% of pilot
+                    # attempts leaked). r13 extends the ban to the OTHER raw
+                    # continuation legs — plain answers + sim user turns (89% /
+                    # 2.8% wave-1 leaks); segb + chat stay deliberately
+                    # unbanned (chat is template-path immune; segb cells passed
+                    # their floors without it).
                     bad_words=["<think>"],
                 )
                 for a in chunk
@@ -975,7 +1046,15 @@ def _cap_hit_fraction(files: list[Path], is_hit) -> tuple[int, int]:
 
 
 def _cell_grain_regen(
-    llm, files: list[Path], decision_path: Path, *, is_hit, rebuild, update_row, tag: str
+    llm,
+    files: list[Path],
+    decision_path: Path,
+    *,
+    is_hit,
+    rebuild,
+    update_row,
+    tag: str,
+    bad_words: list[str] | None = None,
 ) -> dict:
     """Cap-hit > 2% regen at PER-SHARD grain (r1 review majors 13+15; grain
     relabeled per the r2 reconciler disposition of cap-hit-rule-wrong-grain):
@@ -991,6 +1070,9 @@ def _cell_grain_regen(
     ``is_hit(row)`` defines a cap-hit on a generated row; ``rebuild(row)``
     returns ``(prompt, cap2, stop)`` for the 2x pass; ``update_row(row, text,
     finish)`` re-classifies the row in place (keep/drop/answer fields).
+    ``bad_words`` threads the caller's decoding ban into the 2x pass so a
+    regenerated row samples under the SAME regime as its 1x pass (r13: the
+    plain/user '<think>' ban must not silently drop on regen).
     """
     files = [f for f in files if f.exists()]
     if decision_path.exists():
@@ -1023,7 +1105,11 @@ def _cell_grain_regen(
             for i in todo:
                 prompt, cap2, stop = rebuild(rows[i])
                 prompts.append(prompt)
-                sps.append(_sampling_params(cap2, stop, cm.derived_seed(rows[i]["seed"], "regen")))
+                sps.append(
+                    _sampling_params(
+                        cap2, stop, cm.derived_seed(rows[i]["seed"], "regen"), bad_words=bad_words
+                    )
+                )
             outs = _chunked_generate(llm, prompts, sps, f"{tag}/regen2x")
             for k, i in enumerate(todo):
                 text, finish = _gen_text(outs[k])
@@ -1067,6 +1153,12 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
     stop = cm.CHAT_STOP if cell == "chat" else cm.PLAIN_STOP
     budget = args.max_model_len - 2 * cap  # leave room for the 2x regen pass
     wave = args.wave
+    # r13 (G2b fix 1): the r11 '<think>' ban covered SegA only; the PLAIN raw
+    # continuation leaked <think> on 89% of P4 wave-1 rows (capture_ready:
+    # 1,235/10,000 kept). Chat is template-path immune — the render already
+    # carries the empty <think> block — and its regime dict stays byte-stable
+    # so completed wave-1 chat ledgers keep resuming.
+    ban = None if cell == "chat" else ["<think>"]
     regime = {
         "phase": stage,
         "cell": cell,
@@ -1077,6 +1169,11 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
         "cap": cap,
         "model": cm.MODEL_ID,
     }
+    if ban:
+        # Output-affecting decoding pin rides the regime (the sega L1
+        # precedent): a stale pre-r13 plain root fails loud instead of mixing
+        # banned and unbanned rows in one cell.
+        regime["bad_words"] = ban
     ledger = cm.StageLedger(
         raw_root / stage / f"ledger_{cell}_w{wave}_s{args.shard_index}.json", regime
     )
@@ -1107,7 +1204,7 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
             prompts.append(prompt)
             seeds.append(cm.derived_seed(cm.SEED, stage, wave, r["conv_id"]))
             kept_rows.append(r)
-        sps = [_sampling_params(cap, stop, s) for s in seeds]
+        sps = [_sampling_params(cap, stop, s, bad_words=ban) for s in seeds]
         outs = _chunked_generate(llm, prompts, sps, f"{stage}")
         out_rows = list(dropped_rows)
         for r, out, s in zip(kept_rows, outs, seeds):
@@ -1147,6 +1244,7 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
         rebuild=_rebuild,
         update_row=_update,
         tag=stage,
+        bad_words=ban,
     )
     counts = {
         "rows": 0,
@@ -1224,6 +1322,10 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
     cap = cm.USER_SIM_MAX_TOKENS
     budget = args.max_model_len - 2 * cap
     wave = args.wave
+    # r13 (G2b fix 1 audit): the sim-user raw continuation is a raw-completion
+    # leg like plain (277/10,000 wave-1 think_leaks) — same '<think>' ban;
+    # output-affecting, so it rides the regime (fresh roots by design).
+    ban = ["<think>"]
     regime = {
         "phase": stage,
         "wave": wave,
@@ -1232,6 +1334,7 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
         "shard": [args.shard_index, args.num_shards],
         "cap": cap,
         "model": cm.MODEL_ID,
+        "bad_words": ban,
     }
     ledger = cm.StageLedger(raw_root / stage / f"ledger_w{wave}_s{args.shard_index}.json", regime)
     pool_by_id = {r["conv_id"]: r for r in rows}
@@ -1261,7 +1364,7 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
                 prompts.append(prefix)
                 seeds.append(cm.derived_seed(draw_seed, "user_sim", wave, r["conv_id"]))
                 kept_rows.append(r)
-            sps = [_sampling_params(cap, cm.USER_SIM_STOP, s) for s in seeds]
+            sps = [_sampling_params(cap, cm.USER_SIM_STOP, s, bad_words=ban) for s in seeds]
             outs = _chunked_generate(llm, prompts, sps, stage)
             out_rows = list(dropped_rows)
             for r, prefix, out, s in zip(kept_rows, prompts, outs, seeds):
@@ -1305,6 +1408,7 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
         rebuild=_rebuild,
         update_row=_update,
         tag=stage,
+        bad_words=ban,
     )
     counts: dict[str, int] = {
         "rows": 0,
@@ -1374,8 +1478,9 @@ def phase_user_fresh(args) -> None:
 
 
 def phase_user_real_render(args) -> None:
-    """Real user-turn arm (plan §4.2b): NO generation — deterministic render +
-    span mining, cross-checked against the full template render."""
+    """Real user-turn arm (plan §4.2b): NO generation — deterministic full
+    3-turn template render + TAIL-anchored u2 span (r13; ``_user_real_span``
+    carries the rationale for why the 2-turn prefix render cannot anchor)."""
     pools_dir = _resolve_pools_dir(args)
     tok = _get_tokenizer()
     _assert_chat_template(tok)
@@ -1385,42 +1490,10 @@ def phase_user_real_render(args) -> None:
     out_rows = []
     t0 = time.time()
     for k, r in enumerate(rows):
-        prefix = _render_user_prefix(tok, r["u1"], r["a1"])
-        u2 = r["u2"]
-        rendered_full = tok.apply_chat_template(
-            [
-                {"role": "user", "content": r["u1"]},
-                {"role": "assistant", "content": r["a1"]},
-                {"role": "user", "content": u2},
-            ],
-            tokenize=False,
-            add_generation_prompt=False,
-            enable_thinking=False,
-        )
+        row = _user_real_row(tok, r)
         counts["rows"] += 1
-        if not rendered_full.startswith(prefix + u2):
-            counts["span_mismatch"] += 1
-            out_rows.append(
-                {
-                    "cell": "chat_user_real",
-                    "conv_id": r["conv_id"],
-                    "keep": False,
-                    "drop_reason": "span_mismatch",
-                }
-            )
-        else:
-            counts["kept"] += 1
-            out_rows.append(
-                {
-                    "cell": "chat_user_real",
-                    "conv_id": r["conv_id"],
-                    "rendered_text": rendered_full,
-                    "header_end": len(prefix),
-                    "u2_span": [len(prefix), len(prefix) + len(u2)],
-                    "keep": True,
-                    "drop_reason": None,
-                }
-            )
+        counts["kept" if row["keep"] else "span_mismatch"] += 1
+        out_rows.append(row)
         if len(out_rows) >= 2000 or k == len(rows) - 1:
             ci = k // 2000
             _write_chunk_jsonl(raw_root / "user_real_render" / f"c{ci:04d}.jsonl", out_rows)
@@ -1793,6 +1866,10 @@ def phase_fresh_draws(args) -> None:
             range(len(ids)), len(ids)
         )
         sel = _shard_rows([ids[i] for i in order[: args.fresh_rows]], args)
+        # r13 (G2b fix 1): fresh PLAIN draws are the same raw-completion leg
+        # as the wave-1 plain pass — same '<think>' ban (chat template-path
+        # immune; story cells stay deliberately unbanned, r11 L1 scope).
+        ban = ["<think>"] if cell == "plain_text" else None
         regime = {
             "phase": "fresh_draws",
             "cell": cell,
@@ -1801,6 +1878,8 @@ def phase_fresh_draws(args) -> None:
             "shard": [args.shard_index, args.num_shards],
             "model": cm.MODEL_ID,
         }
+        if ban:
+            regime["bad_words"] = ban
         ledger = cm.StageLedger(
             raw_root / "fresh_draws" / f"ledger_{cell}_s{args.shard_index}.json", regime
         )
@@ -1823,7 +1902,7 @@ def phase_fresh_draws(args) -> None:
                     cap, stop = cm.PLAIN_MAX_TOKENS, cm.PLAIN_STOP
                 prompts.append(prompt)
                 seeds.append(cm.derived_seed(draw_seed, "fresh", cell, rid))
-            sps = [_sampling_params(cap, stop, s) for s in seeds]
+            sps = [_sampling_params(cap, stop, s, bad_words=ban) for s in seeds]
             outs = _chunked_generate(llm, prompts, sps, f"fresh/{cell}/d{draw_seed}")
             out_rows = []
             for rid, out, s in zip(sel, outs, seeds):
@@ -1891,6 +1970,7 @@ def phase_fresh_draws(args) -> None:
             rebuild=_rebuild,
             update_row=_update,
             tag=f"fresh/{cell}",
+            bad_words=ban,
         )
         counts = {"rows": 0, "cap_hit": 0}
         for path in files:

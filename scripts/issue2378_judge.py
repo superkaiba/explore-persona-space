@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import random
 import sys
@@ -228,12 +229,36 @@ def _classify(res) -> dict:
     return {"class": "valid", "score": score, "reasoning": reasoning, "stop_reason": stop}
 
 
+def _checkpoint_partition(cache_tag: str, items) -> str:
+    """Item-set-keyed batch-CHECKPOINT partition (r13 wave-2 fix).
+
+    api_dispatch's batch ``state.json`` fingerprints the PENDING (post-cache)
+    item set and FAILS LOUD on a load mismatch (#1018). A P4 top-up GROWS the
+    admission input: on the wave-2 re-run the wave-1 rows are cache-served,
+    so the pending set shrinks to the new rows, the recomputed fingerprint
+    mismatches wave-1's persisted state.json under a shared
+    ``checkpoint_dir/<cache_tag>``, and the wave dies at state load. Key the
+    checkpoint partition on the REALIZED item-id set instead: a same-set
+    resume maps to the same dir (crash-resume preserved); a grown/changed set
+    gets a fresh dir. The CACHE partition deliberately stays ``cache_tag``
+    alone — cache hits on wave-1 rows are exactly what makes the wave-2
+    kept-ledger rewrite an EXTEND (union superset), never a clobber.
+    """
+    ids_fp = hashlib.sha256(
+        json.dumps(sorted(it.item_id for it in items)).encode("utf-8")
+    ).hexdigest()[:12]
+    return f"{cache_tag}_{ids_fp}"
+
+
 def _dispatch(items, args, force_path: str | None, cache_tag: str) -> dict:
     """One dispatch_calls pass + ONE sync re-drive of transport-class losses.
 
-    ``cache_tag`` partitions the rubric-keyed cache/checkpoint dirs: pilots
-    get their own partition (a cache-served pilot is transport-unverifiable —
-    llm-judging rule 26/#2152), production waves share theirs across resumes.
+    ``cache_tag`` partitions the rubric-keyed cache dir: pilots get their own
+    partition (a cache-served pilot is transport-unverifiable — llm-judging
+    rule 26/#2152), production waves share theirs across resumes. The batch
+    CHECKPOINT dir is additionally item-set-keyed (``_checkpoint_partition``)
+    so a topup-grown wave never trips the #1018 fingerprint fail-loud on the
+    prior wave's state.json.
     """
     from explore_persona_space.llm.api_dispatch import dispatch_calls
 
@@ -243,7 +268,7 @@ def _dispatch(items, args, force_path: str | None, cache_tag: str) -> dict:
         "build_request": build_request,
         "parse_response": _parse_judge,
         "cache_dir": Path(args.cache_dir) / cache_tag,
-        "checkpoint_dir": Path(args.checkpoint_dir) / cache_tag,
+        "checkpoint_dir": Path(args.checkpoint_dir) / _checkpoint_partition(cache_tag, items),
     }
     results = asyncio.run(dispatch_calls(items, force_path=force_path, **common))
     classified = {iid: _classify(res) for iid, res in results.items()}
