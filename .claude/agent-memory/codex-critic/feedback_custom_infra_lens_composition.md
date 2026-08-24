@@ -2628,3 +2628,30 @@ bullet for any round-2+ re-review brief with rejected-findings guards.
 
 Related: [[plan-path-missing-read-from-main]],
 [[stale-tmp-files-across-plan-versions]].
+
+- **Gate/selector META-TEST plan, standard alternatives lens + brief-DEVELOPED
+  alternatives and a circularity question (#2537 round one, Step 9c
+  constructed-path consumer mapping): when the brief hands fully DEVELOPED
+  alternatives per achievement claim (not bare press phrases) plus an explicit
+  FATAL/RECOVERABLE classification rule, the whole brief block rides verbatim
+  as the press span and the classification rule is restated in the header's
+  verdict lattice — adding NO-FINDING for design-covered worlds.** Three new
+  micro-patterns that generalize: (1) a brief circularity question ("the
+  meta-test's ground-truth arm calls the very selector it guards") gets its
+  own mandated dispositions block closing with `Oracle-independence: HOLDS |
+  FAILS | PARTIAL | UNVERIFIED`, and the read discipline points the twin at
+  the empirical discriminator (do the map-CLI leg and the gate-time selection
+  share one arm composition — read the code, don't hypothesize); (2)
+  plan-disclosed miss-lists get a sub-verdict line `disclosed-residual:
+  honest | materially-understated` so "disclosure is not auto-safe-harbor"
+  becomes a verdict word instead of prose; (3) any permitted read-only
+  reproducer that runs via `uv run python` carries a sandbox-escape hedge
+  ("if your sandbox cannot write the payload file or execute python, mark the
+  check UNVERIFIED rather than guessing") — the #1050 uv-in-Codex-sandbox
+  caveat applied to encouraged empirical probes. Also mandate a
+  brief-symmetric closing duty ("ask your own question the brief did not" +
+  the manufacture/withhold symmetry line) so developed press points do not
+  cap the twin's search. Numcheck PASS first try at ~91 KB (spans = inputs +
+  press + lensitems + plan + empty prior; unsigned both-sides-guard atoms +
+  comma-grouping first + isfinite literal-keep + collect-all + registry leg
+  from repo root; version-suffixed workspace keyed to PLAN version).
