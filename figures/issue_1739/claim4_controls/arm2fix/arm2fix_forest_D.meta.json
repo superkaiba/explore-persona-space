@@ -1,0 +1,133 @@
+{
+  "commit": "a9d4979f",
+  "render_id": "434918a7e2d240d4",
+  "git_commit": "a9d4979f",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1739_claim4_fold.py",
+  "created": "2026-08-24T02:56:37Z",
+  "figsize": [
+    7.0,
+    7.0600000000000005
+  ],
+  "points": [
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.06730607881974968,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.16801867659551298,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": -0.38133405479579024,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.040727414848404364,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.15391346791638838,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.17030714318983414,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.07395325314767966,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.46397436877507064,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": -0.12407169553230875,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.06714645335243272,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.43126731840125476,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": -0.1532893636920942,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI": 0.3547134252952181,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 12
+    }
+  ],
+  "n_series": 13,
+  "total_points": 13,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does the mapped-answer probe beat the repaired context direction?",
+        "xlabel": "mapped-answer probe minus repaired context direction (Spearman \u03c1 difference)\ndot + whisker = 5-seed mean \u00b1 t-CI; thin bar = paired group-level context CI",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ],
+        "yticklabels": [
+          "evil: multi-turn human jailbreaks [excluded]",
+          "evil: PAIR optimizer attacks \u2605 [excluded]",
+          "evil: Tom Gibbs multi-turn [excluded]",
+          "evil: HH red-team [excluded]",
+          "evil: ToxicChat [excluded]",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations \u2605"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
