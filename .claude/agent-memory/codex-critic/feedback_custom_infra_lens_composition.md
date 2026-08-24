@@ -1209,5 +1209,29 @@ bullet for any round-2+ re-review brief with rejected-findings guards.
   questions span; "P1-P6"/"T1"/"v1"/"Step 9c" atom-free under both-sides
   guards; registry leg from repo root; version-suffixed workspace).
 
+- **Hoist/migration/lint-ratchet sweep plan, standard alternatives lens +
+  brief roman press points + a fact-check JUDGE-THE-REMEDY order (#2336
+  round one): when the orchestrator says "don't re-report the fact-checker's
+  finding, judge whether the adopted remedy works", give the remedy its own
+  mandated output section** (`### Fact-check remedy verdict`, WORKS | FAILS,
+  "a FAILS here is a Must Fix") placed between press-point dispositions and
+  Must Fix, with the trace targets named in the inputs span (the delegating
+  def, the caplog scope + record-name-filter line numbers FROM THE PLAN's
+  own citations, and the plan's claim about how the sibling donor tests
+  reach the writers — "verify that claim in the test file itself"). A brief
+  census slip ("the N arm-B files" vs the plan's lines-in-fewer-files
+  census) gets the #2422 verify-and-correct move: press span stays verbatim,
+  inputs span states the corrected form ("judge against the plan's
+  numbers"). Per-point verdict-word extensions worked: (iii) COMPLETE |
+  GAP-FOUND with quote-the-grep, (iv) BREAKS | HOLDS with the concrete
+  two-process interleaving, (v) DEFENSIBLE | UNCOSTED-RISK. Read discipline:
+  ban pytest (planned tests absent + read-only mode) but ENCOURAGE bounded
+  false-negative greps over scripts/ + src/ ("an empirical miss beats a
+  hypothetical"). Numcheck PASS first try at ~88 KB (spans = inputs + press
+  + lensitems + plan + empty prior; digit-free scaffold; comma-grouping
+  self-test `75,049` as one atom; registry leg from repo root;
+  version-suffixed workspace keyed to PLAN version — no prior-round mv
+  needed).
+
 Related: [[plan-path-missing-read-from-main]],
 [[stale-tmp-files-across-plan-versions]].
