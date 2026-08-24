@@ -170,6 +170,20 @@ the twin adjudicates the fix instead of flagging scope drift. Reconcile
 `Standing recommendations on PASS` are declared non-gating (note only on
 regression).
 
+**Rider-MUST-address escalation basis + twice-raised-id severity attestation
+(#2336 r2, 2026-08-24):** the #823-r4 brief-severity override does not need
+the brief to state "NOT-ADDRESSED = substantive FAIL" verbatim — a reconcile
+whose Disposition riders say "Batch 1 MUST address (open CONCERNs)" and a
+brief framing the round as "closes three concerns" together justify the
+upheld-bounce fence, WITH a PARTIALLY-ADDRESSED carve-out (core mechanism
+landed + effective on the reconciler's named probes, honest disclosed
+residual ⇒ CONCERNS + same-id row, never FAIL). Separately: when a twin's
+BLOCKER forwards AND the reconciler's CONCERN re-raises both sit in the
+ledger as `raised` rows for the SAME id, attest "the LATEST raised row
+governs; the earlier BLOCKER severities are SUPERSEDED, not stale
+bookkeeping" — else the twin flags the double-raise as ledger inconsistency
+or re-escalates from its own old rows.
+
 **Consecutive discharge rounds + the Standing-recommendations flip (#2479 r6,
 2026-08-23):** when round n+1 discharges round n's reconciler downgrades, the
 round-n prompt is a SAME-SHAPE donor — extract the rubric between the

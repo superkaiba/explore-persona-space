@@ -120,6 +120,30 @@ third leg — CRASH-safety (a crash in the check wedges every session's gate,
 worse than over-strictness; the #2309 error-mode duty applies to lint-flag
 variants too).
 
+**#2336 r2 (2026-08-24) sharpenings — predicate-fix closure rounds on a LIVE
+fleet lint gate:** (a) a scan-identity claim ("post-fix allowlist=() scan
+per-line IDENTICAL, 208/118 both sides") composes as a bounded SHAPE-GREP
+corroboration battery the no-uv twin can run (`git -C . grep` per fixed
+shape whose live instance would falsify identity, hand-classify hits) with a
+REQUIRED header line `**Allowlist-delta claim:** CORROBORATED | REFUTED |
+UNVERIFIABLE` — REFUTED = substantive (frozen allowlist now wrong on a gate
+every session runs); UNVERIFIABLE residuals route to a CONCERN row, never
+FAIL. (b) An orchestrator-run probe TABLE (n probes vs expected, executed on
+round code) inlines as SETTLED facts with the explicit duty "hunt shapes
+NONE of them covers" + the over-correction note (which probes show the real
+waiver/true-positive still work). (c) A recorded plan-amendment note inlines
+verbatim in its own envelope with a REQUIRED `**Plan-amendment coverage:**
+COMPLETE | INCOMPLETE` header line; the twin enumerates regex-TEXT changes
+from the DIFF HUNKS itself (never the note's own list) — an uncovered
+predicate-text change is substantive. (d) Hand-rolled lexer/finditer helpers
+added to the fleet no-flags path get a named crash-safety duty (adversarial
+line shapes: unterminated string, trailing backslash, quote-in-comment,
+triple-quote, `#` inside f-string expr) — a reachable exception is Critical
+(the third stakes direction beyond FP/FN). (e) Stats hygiene: re-derive
+per-file `--numstat` at compose time; a marker whose per-file split
+disagrees while totals agree gets pre-triaged in the prompt as "at most a
+Minor report-accuracy note" so the twin doesn't build a blocker on it.
+
 **#2309 r1 (2026-08-23) sharpening — `task.py post-marker`-path gate variant
 (diff adds validation on the LIVE marker-posting path, not a lint flag):**
 hollow-gate = trace the validator is CALLED from the post-marker handler
