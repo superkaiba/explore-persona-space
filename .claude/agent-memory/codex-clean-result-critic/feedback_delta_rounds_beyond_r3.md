@@ -1,8 +1,13 @@
 ---
 name: Delta-scoped rounds beyond r3 — compose, don't hard-fail
-description: Spec fixed by #1017 — rounds 1-5 accepted, malformed (<=0, >5, non-integer) refused; this memory retains the delta-composition recipe for r4/r5 delta-scoped briefs.
+description: Round cap is now 10 (workflow.yaml round_cap_per_reviewer; spec accepts 1-10, malformed <=0/>10/non-integer refused); this memory retains the delta-composition recipe for r4+ delta-scoped briefs.
 type: feedback
 ---
+
+**Cap update (2026-08-24, #2388 r4):** the spec + workflow.yaml now accept
+rounds 1-10 (`round_cap_per_reviewer: 10`) — the "1-5 as of #1017" claim
+below is historical. Refusal is for <=0, >10, or non-integer only. The
+delta-composition recipe below is unchanged.
 
 When the orchestrator brief requests `revision_round` 4 or 5 as an explicitly
 delta-scoped re-review (e.g. #952 r4, 2026-07-04: r3 Claude PASS vs r3 Codex

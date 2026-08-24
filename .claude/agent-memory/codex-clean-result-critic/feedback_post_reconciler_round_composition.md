@@ -26,6 +26,17 @@ top of the normal full-history re-review (validated on #2388 r3,
    IT cites) before baking it into the prompt; a dead path converts to
    a data-access-blocked non-PASS (same class as #489/#550).
 
+4. (Validated #2388 r4, 2026-08-24) When a disputed finding was
+   adjudicated against GROUND TRUTH in an artifact — especially one not
+   on main (e.g. `gap_report.json` committed only on the issue branch /
+   worktree) — inline the artifact VERBATIM as an extra named envelope
+   (same `command:`/`exit code:` shape), give the absolute on-disk
+   fallback path, extend the Step 4 envelope-guard REQ list to include
+   it, and instruct Codex to verify the body's claim against the
+   envelope BEFORE re-raising. A path-only reference risks a
+   data-access-blocked non-PASS on exactly the item the round exists to
+   close.
+
 **Why:** the reconciler discards ungrounded/re-raised findings as
 non-binding, so a round-3 prompt that doesn't pin these produces waste
 verdict content; and the composer spec's Step 1b existence check only
