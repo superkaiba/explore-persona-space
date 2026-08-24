@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2558,
+  "highest_id": 2559,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12009,6 +12009,13 @@
       "path": "tasks/archived/2558",
       "status": "archived",
       "title": "workflow-fix: codex-composer-common mem-commit message file collides across parallel same-name composers"
+    },
+    "2559": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2559",
+      "status": "proposed",
+      "title": "workflow_lint files-mode: check_sha_pin_domain grandfather-stale artifact when grandfathered file is in scope"
     },
     "256": {
       "has_clean_result": false,
