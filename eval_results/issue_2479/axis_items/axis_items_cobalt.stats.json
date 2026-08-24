@@ -1,0 +1,30 @@
+{
+  "character": "cobalt",
+  "variant": "char_2479_cobalt_op",
+  "kept_path": "data/issue_1345/char_2479_cobalt_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1384,
+  "n_prepared": 1378,
+  "n_axis_items": 214,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 226.45573294629898,
+  "mean_answer_len_chars_axis": 208.4532710280374,
+  "prep_stats": {
+    "cell": "char_2479_cobalt_op",
+    "n_in": 1384,
+    "answer_sources": {
+      "parsed_turns_span": 1384
+    },
+    "capped_source": "row_field",
+    "n_capped": 1,
+    "n_no_question": 0,
+    "n_short_answer": 6,
+    "n_short_by_source": {
+      "parsed_turns_span": 6
+    },
+    "n_join_miss": 0,
+    "n_out": 1378,
+    "capped_rate": 0.000726,
+    "short_answer_drop_share": 0.004335,
+    "span_short_share": 0.004335
+  }
+}

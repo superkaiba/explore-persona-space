@@ -1,0 +1,30 @@
+{
+  "character": "tomas",
+  "variant": "char_2479_tomas_op",
+  "kept_path": "data/issue_1345/char_2479_tomas_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1434,
+  "n_prepared": 1431,
+  "n_axis_items": 219,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 246.57651991614256,
+  "mean_answer_len_chars_axis": 252.337899543379,
+  "prep_stats": {
+    "cell": "char_2479_tomas_op",
+    "n_in": 1434,
+    "answer_sources": {
+      "parsed_turns_span": 1434
+    },
+    "capped_source": "row_field",
+    "n_capped": 1,
+    "n_no_question": 0,
+    "n_short_answer": 3,
+    "n_short_by_source": {
+      "parsed_turns_span": 3
+    },
+    "n_join_miss": 0,
+    "n_out": 1431,
+    "capped_rate": 0.000699,
+    "short_answer_drop_share": 0.002092,
+    "span_short_share": 0.002092
+  }
+}

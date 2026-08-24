@@ -1,0 +1,30 @@
+{
+  "character": "mort",
+  "variant": "char_2479_mort_op",
+  "kept_path": "data/issue_1345/char_2479_mort_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1416,
+  "n_prepared": 1413,
+  "n_axis_items": 214,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 234.27459306440198,
+  "mean_answer_len_chars_axis": 236.3177570093458,
+  "prep_stats": {
+    "cell": "char_2479_mort_op",
+    "n_in": 1416,
+    "answer_sources": {
+      "parsed_turns_span": 1416
+    },
+    "capped_source": "row_field",
+    "n_capped": 0,
+    "n_no_question": 0,
+    "n_short_answer": 3,
+    "n_short_by_source": {
+      "parsed_turns_span": 3
+    },
+    "n_join_miss": 0,
+    "n_out": 1413,
+    "capped_rate": 0.0,
+    "short_answer_drop_share": 0.002119,
+    "span_short_share": 0.002119
+  }
+}

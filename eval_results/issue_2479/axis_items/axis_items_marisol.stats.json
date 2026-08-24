@@ -1,0 +1,30 @@
+{
+  "character": "marisol",
+  "variant": "char_2479_marisol_op",
+  "kept_path": "data/issue_1345/char_2479_marisol_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1343,
+  "n_prepared": 1339,
+  "n_axis_items": 203,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 245.7005227781927,
+  "mean_answer_len_chars_axis": 240.94581280788177,
+  "prep_stats": {
+    "cell": "char_2479_marisol_op",
+    "n_in": 1343,
+    "answer_sources": {
+      "parsed_turns_span": 1343
+    },
+    "capped_source": "row_field",
+    "n_capped": 1,
+    "n_no_question": 0,
+    "n_short_answer": 4,
+    "n_short_by_source": {
+      "parsed_turns_span": 4
+    },
+    "n_join_miss": 0,
+    "n_out": 1339,
+    "capped_rate": 0.000747,
+    "short_answer_drop_share": 0.002978,
+    "span_short_share": 0.002978
+  }
+}

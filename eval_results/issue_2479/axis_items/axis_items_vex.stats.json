@@ -1,0 +1,30 @@
+{
+  "character": "vex",
+  "variant": "char_2479_vex_op",
+  "kept_path": "data/issue_1345/char_2479_vex_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1452,
+  "n_prepared": 1442,
+  "n_axis_items": 227,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 269.12760055478503,
+  "mean_answer_len_chars_axis": 266.56387665198235,
+  "prep_stats": {
+    "cell": "char_2479_vex_op",
+    "n_in": 1452,
+    "answer_sources": {
+      "parsed_turns_span": 1452
+    },
+    "capped_source": "row_field",
+    "n_capped": 1,
+    "n_no_question": 0,
+    "n_short_answer": 10,
+    "n_short_by_source": {
+      "parsed_turns_span": 10
+    },
+    "n_join_miss": 0,
+    "n_out": 1442,
+    "capped_rate": 0.000693,
+    "short_answer_drop_share": 0.006887,
+    "span_short_share": 0.006887
+  }
+}

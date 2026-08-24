@@ -1,0 +1,30 @@
+{
+  "character": "barnaby",
+  "variant": "char_2479_barnaby_op",
+  "kept_path": "data/issue_1345/char_2479_barnaby_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1407,
+  "n_prepared": 1402,
+  "n_axis_items": 219,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 301.5891583452211,
+  "mean_answer_len_chars_axis": 312.5890410958904,
+  "prep_stats": {
+    "cell": "char_2479_barnaby_op",
+    "n_in": 1407,
+    "answer_sources": {
+      "parsed_turns_span": 1407
+    },
+    "capped_source": "row_field",
+    "n_capped": 1,
+    "n_no_question": 0,
+    "n_short_answer": 5,
+    "n_short_by_source": {
+      "parsed_turns_span": 5
+    },
+    "n_join_miss": 0,
+    "n_out": 1402,
+    "capped_rate": 0.000713,
+    "short_answer_drop_share": 0.003554,
+    "span_short_share": 0.003554
+  }
+}
