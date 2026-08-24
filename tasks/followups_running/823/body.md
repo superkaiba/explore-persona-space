@@ -354,7 +354,7 @@ The per-unit companion:
 
 > **Figure.** *The excess holds context-by-context.* ECDFs of the per-context paired difference (sixteen-persona minus one-persona held-out squared error, identical targets): 85–91% of shared contexts are individually worse under the mixed-origin map at every rung and read-out layer, and the curves barely move with n.
 
-All 24 rung-layer verdicts classify real; the sixteen-persona map's error on identical targets stays 26–32% above the one-persona map's. The mild decline is composition, not offset absorption: E moves −2.9% to +4.7% while the mean excess falls 9–21%, and on the fixed banked subset the ratio rises to 0.75–0.85.
+All 24 rung-layer verdicts classify real; the sixteen-persona map's error on identical targets stays 22–35% above the one-persona map's. The mild decline is composition, not offset absorption: E moves −2.9% to +4.7% while the mean excess falls 9–21%, and on the fixed banked subset the ratio rises to 0.75–0.85.
 
 Correlated persona offsets alone would cost 0.28–0.34 of E, so the 0.125 artifact band could never have fired; the measured ratio is roughly twice that floor — a beyond-offset, context-dependent effect. Layer names are nominal; rungs are nested prefixes, not independent replicates; scope: one model, one context pool, one assignment rule.
 
