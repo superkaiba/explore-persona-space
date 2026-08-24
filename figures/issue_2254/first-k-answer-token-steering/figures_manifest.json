@@ -18,7 +18,15 @@
     "expl_h3_adjacent_forest",
     "expl_h4_pre_vs_shuffled",
     "expl_rd_lattice",
-    "expl_perq_clouds"
+    "expl_perq_clouds",
+    "expl_ctxext_positions"
   ],
-  "skipped": {}
+  "skipped": {},
+  "manifest_reconciled": {
+    "ts": "2026-08-24T10:47:57Z",
+    "added": [
+      "expl_ctxext_positions"
+    ],
+    "note": "round-5 reconcile (union item 6, epm:progress v119): the round-4 revision rendered expl_ctxext_positions and re-rendered hero1_position_bars/expl_perq_clouds/expl_h4_pre_vs_shuffled via scripts/issue2254_firstk_figures.py at 09a2d70d without updating this manifest; rendered now lists the full on-disk set (8 figures)."
+  }
 }
