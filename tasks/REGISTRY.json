@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2560,
+  "highest_id": 2561,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12030,6 +12030,13 @@
       "path": "tasks/proposed/2560",
       "status": "proposed",
       "title": "Step 10d lint gate normalization keeps workflow_lint note: lines whose scan COUNT changes with the payload, so any branch adding a scanned file gets a spurious block"
+    },
+    "2561": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2561",
+      "status": "proposed",
+      "title": "Step 10d lint gate: an unset WT silently certifies the WRONG tree and emits a benign-looking skip-artifact-only instead of failing loud"
     },
     "257": {
       "has_clean_result": false,
