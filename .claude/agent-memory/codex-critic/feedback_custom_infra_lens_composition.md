@@ -1155,6 +1155,28 @@ bullet for any round-2+ re-review brief with rejected-findings guards.
   memory file concurrently in the same round — insert before the Related
   footer and commit by explicit path in the same turn.
 
+- **Guard-bypass alternatives compose (#2328 round one, marker-status
+  false-destruction plan): when the brief's translation is "alternative
+  PATHS by which the failure mode recurs anyway" over a PROSE-GUARD +
+  OPT-IN-HELPER plan, extend the #2152 shape with disposition SUB-LABELS —
+  FATAL | RESIDUAL (named in plan) | RESIDUAL (unnamed) | NO-FINDING — and
+  license at most ONE minimal disclosure-line Must Fix for an unnamed
+  residual whose silence materially overstates the protection (everything
+  else RESIDUAL → Concerns).** Rename the concerns section to "implementer /
+  code reviewer" (infra, no analyzer). Brief-supplied numbered press points
+  ride verbatim as the press span; 1:1 sharpeners in brackets inside a
+  press item (here: a TOCTOU/staleness clause on the verdict-attackability
+  question — "does anything bind verdict time to action time?") work
+  digit-free. Read-discipline additions for a helper-that-does-not-exist-yet
+  plan: ban running the PLANNED subcommand by name alongside pytest;
+  encourage the enumeration press point with bounded greps
+  (events.jsonl/list_events/latest-marker readers, exclude worktrees) +
+  quote-the-grep grounding. Settled block from the plan's own
+  orchestrator-ruled scope boundary (list_events repointing) + the priced-out
+  lesson, with the "judge the residual handling, not the cut" carve-out.
+  Numcheck PASS first try at ~69 KB, fully digit-free scaffold (spans =
+  inputs + press + lensitems + plan + body + empty prior; run from repo
+  root — cwd=/tmp WARN-degrades the registry leg, the #2422 gotcha).
 
 Related: [[plan-path-missing-read-from-main]],
 [[stale-tmp-files-across-plan-versions]].
