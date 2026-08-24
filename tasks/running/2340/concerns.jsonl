@@ -1,0 +1,1 @@
+{"ts": "2026-08-24T23:33:20Z", "event": "raised", "concern_id": "class-a-hf-skip-overreach", "severity": "BLOCKER", "summary": "A preceding HF token can silence a later genuine code SHA even when intervening prose explicitly identifies it as code provenance.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
