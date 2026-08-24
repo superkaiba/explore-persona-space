@@ -598,6 +598,42 @@ gates:
         taste/scope call the autonomous session does not make.
 
         <!-- gate: gates.related_work_positioning -->
+    - id: 18
+      name: clarify_experiment_ask
+      step: "chat ask-time (pre-routing: before task.py new / epm:followup-scope / inline dispatch / spawn-issue)"
+      condition: |
+        Fires in INTERACTIVE sessions only, on any user ask to run / try /
+        launch / rerun an experiment — NEW direction, same-issue follow-up,
+        or re-run — the moment the ask lands in chat, BEFORE any routing
+        action from CLAUDE.md § Routing experiment intent executes.
+        Exempt: autonomous sessions (EPM_AUTONOMOUS_SESSION=1 / cron-fired
+        turns — no user to ask; their routing is unchanged); pure capture
+        ("save idea: X" — nothing executes; the Step-1 clarifier, gate
+        id 3, catches it at /issue time); an explicit user waiver in the
+        ask ("skip clarify", "just run it as I said").
+      reason: |
+        Standing user directive (2026-08-24): every experiment ask gets
+        exhaustive clarification before anything routes — the skill must
+        "not make assumptions" and must surface "anything that is unclear
+        at all." The /clarify skill (.claude/skills/clarify/SKILL.md)
+        enumerates the full decision surface and raises AskUserQuestion
+        batches (≤4 questions per call, structural questions first)
+        covering EVERY choice the ask itself does not pin — established
+        project defaults included, presented as the recommended option
+        rather than silently applied. A choice is settled only when the
+        user's ask, the task record, or the parent recipe pins it; a
+        project default never settles a NEW experiment's choice.
+        Follow-ups / re-runs are questioned on their delta vs the parent
+        recipe plus anything ambiguous in the ask; the parent's settled
+        recipe is inherited, not re-litigated. The resolved decision
+        record rides into the task (--origin-prompt / ## Goal /
+        ## Provenance) so the Step-1 clarifier and planner inherit the
+        answers instead of re-asking. SUPPLEMENTS gate id 3
+        (clarifier_blocking): earlier fire point (chat ask-time vs
+        post-filing) and a stronger bar (anything unclear at all vs
+        blocking-only).
+
+        <!-- gate: gates.clarify_experiment_ask -->
 
 # ──────────────────────────────────────────────────────────────────────
 # STATE-TO-status:blocked criteria.
