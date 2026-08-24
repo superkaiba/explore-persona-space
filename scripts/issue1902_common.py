@@ -50,6 +50,40 @@ MODEL_IDS: dict[str, str] = {
     "R": "allenai/OLMo-2-1124-7B-Instruct",
 }
 
+# Per-checkpoint HF BRANCH each revision pin resolves against (None = main).
+# Only ever non-None under a ladder override (below) — #1902's four repos pin
+# their main branch, byte-identically to the pre-override behavior.
+MODEL_BRANCHES: dict[str, str | None] = {c: None for c in CKPTS}
+
+# Checkpoints whose CANONICAL generation render is the plain
+# ``User:/Assistant:`` serialization (stop sequences applied at sampling).
+# #1902 default: base only. NOTE: membership here controls the canonical
+# GEN render/stop only — chat-template AVAILABILITY (native robustness /
+# pilot native legs) is probed from the tokenizer via
+# :func:`has_chat_template`, because a ladder (e.g. #2544) can render every
+# rung plain while S/D/R still HAVE templates for the native-render legs.
+PLAIN_RENDER_CKPTS: tuple[str, ...] = ("B",)
+
+# Ladder-override source module (#2544 plan §4 item 1): when
+# EPM_ISSUE1902_LADDER_JSON points at a JSON file with
+# ``{"ckpts": [...], "model_ids": {...}, "branches": {...},
+#   "plain_render_ckpts": [...]}``, the checkpoint LADDER widens without
+# forking the module. Env unset ⇒ every constant above keeps its #1902
+# value byte-identically. The smoke model-dir remap (below) composes AFTER
+# the override, exactly as it composes over the #1902 defaults.
+_LADDER_JSON = os.environ.get("EPM_ISSUE1902_LADDER_JSON")
+if _LADDER_JSON:
+    with open(_LADDER_JSON, encoding="utf-8") as _lf:
+        _ladder = json.load(_lf)
+    CKPTS = tuple(str(c) for c in _ladder["ckpts"])
+    MODEL_IDS = {c: str(_ladder["model_ids"][c]) for c in CKPTS}
+    _branches = _ladder.get("branches", {})
+    MODEL_BRANCHES = {c: _branches.get(c) for c in CKPTS}
+    PLAIN_RENDER_CKPTS = tuple(str(c) for c in _ladder.get("plain_render_ckpts", CKPTS))
+    _unknown_plain = set(PLAIN_RENDER_CKPTS) - set(CKPTS)
+    if _unknown_plain:
+        raise ValueError(f"ladder JSON plain_render_ckpts not in ckpts: {sorted(_unknown_plain)}")
+
 # Smoke-only model remap (the tiny-real standard, #906): when set, EVERY
 # checkpoint id resolves to ONE local directory holding a tiny random-weights
 # Olmo2 model over the REAL vocab (real tokenizer). This is an env-gated
@@ -58,6 +92,23 @@ MODEL_IDS: dict[str, str] = {
 _SMOKE_MODEL_DIR = os.environ.get("EPM_ISSUE1902_SMOKE_MODEL_DIR")
 if _SMOKE_MODEL_DIR:
     MODEL_IDS = {c: _SMOKE_MODEL_DIR for c in CKPTS}
+
+
+def is_plain_render_ckpt(ckpt: str) -> bool:
+    """True when ``ckpt``'s canonical GEN render is plain ``User:/Assistant:``."""
+    _check_ckpt(ckpt)
+    return ckpt in PLAIN_RENDER_CKPTS
+
+
+def has_chat_template(tokenizer) -> bool:
+    """Tokenizer-probed chat-template availability (native-render leg gate).
+
+    #1902 semantics preserved: OLMo-2 base has NO template (A3) and S/D/R
+    do, so the probe reproduces the historical ``ckpt != "B"`` branch while
+    staying correct for ladders where every rung renders plain canonically.
+    """
+    return getattr(tokenizer, "chat_template", None) is not None
+
 
 # Name of the P1 pilot report that carries the BINDING revision pins
 # (plan §10: pinned at P1 launch; every P2/P3/robustness load passes
@@ -107,8 +158,13 @@ def resolve_revision(ckpt: str, pins: dict[str, str | None] | None) -> str | Non
 
 
 def pin_revisions_now() -> dict[str, str]:
-    """Resolve each checkpoint repo's CURRENT main sha (P1 calls this ONCE at
+    """Resolve each checkpoint's CURRENT commit sha (P1 calls this ONCE at
     launch and persists the result into ``pilot_report.json``).
+
+    Per-checkpoint BRANCH aware (#2544 ladder override): a token with a
+    non-None ``MODEL_BRANCHES`` entry pins that branch's tip sha
+    (``model_info(mid, revision=branch).sha``); branch None pins main —
+    byte-identical to the pre-override behavior for #1902's four repos.
 
     Local-directory model ids (the smoke remap) pin to a ``local:<sha16>`` of
     the directory's config.json so the pin stays content-addressed without a
@@ -125,7 +181,7 @@ def pin_revisions_now() -> dict[str, str]:
             digest = hashlib.sha256((Path(mid) / "config.json").read_bytes()).hexdigest()[:16]
             pins[c] = f"local:{digest}"
         else:
-            pins[c] = str(api.model_info(mid).sha)
+            pins[c] = str(api.model_info(mid, revision=MODEL_BRANCHES.get(c)).sha)
     return pins
 
 

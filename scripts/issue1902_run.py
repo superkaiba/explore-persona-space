@@ -757,7 +757,7 @@ def _gen_prompts(rows: list[dict], ckpt: str, tokenizer) -> list[str]:
     prompts: list[str] = []
     for r in rows:
         prefix = r.get("prefix_turns")
-        if ckpt == "B":
+        if C.is_plain_render_ckpt(ckpt):
             prompts.append(C.render_plain_prompt(r["query"], prefix))
         else:
             prompts.append(C.render_chat_prompt(tokenizer, r["query"], prefix))
@@ -769,7 +769,7 @@ def _sampling_params(seed: int, ckpt: str, smoke: bool = False):
     compute-SCALE dial — production geometry untouched; degeneracy flags are
     informational under smoke)."""
     max_tokens = C.GEN_MAX_TOKENS if not smoke else min(C.GEN_MAX_TOKENS, SMOKE_GEN_MAX_TOKENS)
-    stop = list(C.PLAIN_STOP_SEQUENCES) if ckpt == "B" else None
+    stop = list(C.PLAIN_STOP_SEQUENCES) if C.is_plain_render_ckpt(ckpt) else None
     if os.environ.get("EPM_ISSUE1902_GEN_ENGINE") == "hf":
         # smoke HF engine: a vllm import buys nothing on a CPU host.
         from types import SimpleNamespace
@@ -1101,6 +1101,22 @@ def _capture_row_entry(
         prompt_ids, prefix_len, context_len, seam_flags = plain_spans(
             tokenizer, text, q_start, q_end
         )
+        # Query-BLOCK boundary (#2544 §4 item 2b): the char where the FINAL
+        # user turn begins (= everything after the exemplar prefix turns).
+        # q_mean pools [q_block_len, n_prompt) — the final user turn incl.
+        # its "User: " label + "\nAssistant:" tail — so at k=0 the window is
+        # the FULL prompt and q_mean == u_mean BIT-EXACTLY (the #1902 X
+        # convention), while at k>0 exactly the constant exemplar block is
+        # excluded (the sole delta vs the 0-shot arm's pooled window).
+        enc_offsets = tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)[
+            "offset_mapping"
+        ]
+        q_block_start_char = q_start - len(PLAIN_USER_LABEL)
+        q_block_len, _ = token_boundary(enc_offsets, q_block_start_char, include_straddler=False)
+        if prefix_turns:
+            assert 0 < q_block_len <= prefix_len, (q_block_len, prefix_len)
+        else:
+            assert q_block_len == 0, q_block_len
         answer_ids = tokenizer.encode(" " + answer_norm, add_special_tokens=False)
     elif render == "native":
         assert not prefix_turns, "native robustness subset is single-turn only (plan §4 P3)"
@@ -1114,6 +1130,9 @@ def _capture_row_entry(
             on_seam="snap",
             seam_flags=seam_flags,
         )
+        # Native legs are single-turn 0-shot by the assert above: the query
+        # BLOCK is the whole prompt (q_mean == u_mean by construction).
+        q_block_len = 0
         answer_ids = tokenizer.encode(answer_norm, add_special_tokens=False)
     else:  # pragma: no cover - guarded by callers
         raise ValueError(f"unknown render {render!r}")
@@ -1129,6 +1148,7 @@ def _capture_row_entry(
         "answer_ids": answer_ids,
         "prefix_len": prefix_len,
         "context_len": context_len,
+        "q_block_len": q_block_len,
         "seam_prefix": seam_flags.get("prefix", False),
         "seam_context": seam_flags.get("context", False),
         "n_total": len(prompt_ids) + len(answer_ids),
@@ -1198,6 +1218,7 @@ def _pool_batch(
     ctx_mask = torch.zeros((bsz, max_t), dtype=torch.float32)
     ans_mask = torch.zeros((bsz, max_t), dtype=torch.float32)
     pre_mask = torch.zeros((bsz, max_t), dtype=torch.float32)
+    q_mask = torch.zeros((bsz, max_t), dtype=torch.float32)
     last_prompt = torch.zeros(bsz, dtype=torch.long)
     last_prefix = torch.zeros(bsz, dtype=torch.long)
     for b, e in enumerate(entries):
@@ -1208,24 +1229,37 @@ def _pool_batch(
         ctx_mask[b, :n_p] = 1.0  # context = full prompt (plan §4 P3)
         ans_mask[b, n_p:n_all] = 1.0
         pre_mask[b, : e["prefix_len"]] = 1.0
+        # Query-BLOCK window (#2544 §4 item 2b): [q_block_len, n_p) — the
+        # final user turn + generation tail; the FULL prompt at k=0 (q ≡ u).
+        qbl = e["q_block_len"]
+        assert 0 <= qbl < n_p, (qbl, n_p)
+        q_mask[b, qbl:n_p] = 1.0
+        # Mechanical q-window arithmetic assert (plan P1/A14 analog).
+        assert int(q_mask[b].sum().item()) == n_p - qbl, (b, qbl, n_p)
         last_prompt[b] = n_p - 1
         last_prefix[b] = max(e["prefix_len"] - 1, 0)
     dev = torch.device(device)
     ids, mask = ids.to(dev), mask.to(dev)
     ctx_mask, ans_mask, pre_mask = ctx_mask.to(dev), ans_mask.to(dev), pre_mask.to(dev)
+    q_mask = q_mask.to(dev)
     last_prompt, last_prefix = last_prompt.to(dev), last_prefix.to(dev)
 
     captured = extract_layer_activations(model, ids, layers, attention_mask=mask)
     store_dtype = torch.float32 if fp32 else torch.float16
     arange_b = torch.arange(bsz, device=dev)
+    # q_last ≡ u_last (asserted): the last prompt token is INSIDE the query
+    # block for every row — the alias below is exact, never approximate.
+    assert bool((q_mask[arange_b, last_prompt] == 1.0).all().item())
     out: dict[int, dict[str, Any]] = {}
     for layer in layers:
         hs = captured[layer].float()  # (B, T, H) — fp32 pooling accumulators
         pooled = {
             "u_last": hs[arange_b, last_prompt],
             "u_mean": (hs * ctx_mask[..., None]).sum(1) / ctx_mask.sum(1)[:, None],
+            "q_mean": (hs * q_mask[..., None]).sum(1) / q_mask.sum(1)[:, None],
             "w": (hs * ans_mask[..., None]).sum(1) / ans_mask.sum(1).clamp(min=1.0)[:, None],
         }
+        pooled["q_last"] = pooled["u_last"]  # exact alias (assert above)
         if want_prefix:
             pooled["p_last"] = hs[arange_b, last_prefix]
             pooled["p_mean"] = (hs * pre_mask[..., None]).sum(1) / pre_mask.sum(1).clamp(min=1.0)[
@@ -1266,6 +1300,8 @@ def capture_cell(
     device: str,
     store_subdir: str | None = None,
     keep_fp32: bool = False,
+    want_q: bool = False,
+    store_ctx: bool = True,
     unit_tag: str = "",
 ) -> dict[str, Any]:
     """Capture ONE grid cell (activation ckpt x answer source x corpus).
@@ -1292,8 +1328,11 @@ def capture_cell(
         cell_dir = store / store_subdir
         ctx_dir = cell_dir / "ctx"
     # ALL layers must exist to skip (a crash between per-layer saves must not
-    # strand a partial ctx store on resume).
-    ctx_written = all((ctx_dir / f"L{layer}.pt").exists() for layer in layers)
+    # strand a partial ctx store on resume). store_ctx=False (#2544 cross
+    # cells) skips ctx accumulation + writes entirely — the ctx summaries are
+    # byte-duplicates of the capturing rung's own diagonal ctx (causal
+    # attention; the dedup rule, per-cell-subdir form).
+    ctx_written = (not store_ctx) or all((ctx_dir / f"L{layer}.pt").exists() for layer in layers)
     n_layers_h: dict[int, list] = {layer: [] for layer in layers}
     ctx_acc: dict[int, dict[str, list]] = {layer: {} for layer in layers}
     for pos, e in enumerate(entries):
@@ -1308,7 +1347,16 @@ def capture_cell(
         for layer in layers:
             n_layers_h[layer].append(pooled[layer]["w"])
             if not ctx_written:
-                for key in ("u_last", "u_mean") + (("p_last", "p_mean") if want_prefix else ()):
+                # want_q (#2544 k-shot cells): persist the query-block mean
+                # beside u_*; q_last ≡ u_last exactly (asserted in
+                # _pool_batch), so no q_last duplicate is stored — readers
+                # take u_last. Default False keeps #1902 stores byte-identical.
+                keys = (
+                    ("u_last", "u_mean")
+                    + (("q_mean",) if want_q else ())
+                    + (("p_last", "p_mean") if want_prefix else ())
+                )
+                for key in keys:
                     ctx_acc[layer].setdefault(key, []).append(pooled[layer][key])
         if bi % 10 == 0 or bi == len(batches):
             print(
@@ -1329,6 +1377,7 @@ def capture_cell(
                 "cluster",
                 "prefix_len",
                 "context_len",
+                "q_block_len",
                 "seam_prefix",
                 "seam_context",
             )
@@ -1512,9 +1561,13 @@ def phase_capture_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[str
             }
         )
     robust_n = ROBUST_NATIVE_N if not args.smoke else len(single_rows)
-    if ckpt != "B":
-        # Base has NO chat template (plan A3): its native render IS the plain
-        # render (§4 P2), so the robustness read only differs for S/D/R.
+    tokenizer = _tokenizer(model_id, revision)
+    if C.has_chat_template(tokenizer):
+        # Native-leg eligibility is TOKENIZER-PROBED (#2544 C2), never
+        # identity-keyed: a plain-render ladder generates plain at every rung
+        # while templated rungs keep their native robustness leg. #1902
+        # semantics unchanged — OLMo-2 base has NO chat template (plan A3),
+        # so its native render IS the plain render and only S/D/R differ.
         units.append(
             {
                 "unit": f"capture_{ckpt}_robustnative_{C.CORPUS_SINGLE}",
@@ -1559,7 +1612,6 @@ def phase_capture_ckpt(args: argparse.Namespace, out_root: Path, ckpts: list[str
     headroom_gate(out_root, "capture", len(pending), CAPTURE_PER_CELL_GB)
     print(f"[phase=capture] ckpt={ckpt} units={len(pending)}/{len(units)}", flush=True)
     if pending:
-        tokenizer = _tokenizer(model_id, revision)
         model = _load_hf_model(model_id, revision, args.device)
         for k, u in enumerate(pending, start=1):
             answers = _load_answers(out_root, u["corpus"], u["src"], u["seed"])
@@ -1756,10 +1808,15 @@ def phase_pilot_ckpt(args: argparse.Namespace, out_root: Path) -> None:
         unflagged = {
             i: a for i, a in answers.items() if not (a["truncated"] or a["repetition_flag"])
         }
-        # Base has NO chat template (plan A3) — its "native" render IS the
-        # plain render (§4 P2), so a separate native capture leg for B would
-        # both crash (apply_chat_template raises) and duplicate the plain leg.
-        renders = ["plain", "native"] if corpus == C.CORPUS_SINGLE and ckpt != "B" else ["plain"]
+        # Native-leg eligibility is TOKENIZER-PROBED (#2544 C2): a rung with
+        # NO chat template has native == plain (a separate native leg would
+        # crash — apply_chat_template raises — and duplicate the plain leg;
+        # #1902 base is exactly this case, plan A3).
+        renders = (
+            ["plain", "native"]
+            if corpus == C.CORPUS_SINGLE and C.has_chat_template(tokenizer)
+            else ["plain"]
+        )
         for render in renders:
             t0 = time.time()
             stats = capture_cell(
