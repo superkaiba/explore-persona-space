@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 
-__all__ = ["identity_bias_predict", "knn_retrieval"]
+__all__ = ["identity_bias_predict", "identity_bias_predict_blocked", "knn_retrieval"]
 
 
 def identity_bias_predict(
@@ -43,6 +43,57 @@ def identity_bias_predict(
     if xev.shape[1:] != xtr.shape[1:]:
         raise ValueError(f"x_eval dim {xev.shape[1:]} != train dim {xtr.shape[1:]}")
     return xev + (ytr - xtr).mean(axis=0)
+
+
+def identity_bias_predict_blocked(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    tr_idx: np.ndarray,
+    x_eval: np.ndarray,
+    block: int = 65_536,
+    *,
+    return_bias: bool = False,
+):
+    """Blocked identity+bias baseline over ``tr_idx`` rows of the full stores.
+
+    Computes ``b = fp64 mean over x_train[tr_idx]/y_train[tr_idx] of (y − x)``
+    by accumulating ``(y_blk − x_blk).sum(0)`` over index blocks, then returns
+    ``x_eval + b`` — numerically the exact-helper result up to fp64
+    summation-order roundoff (≤1e-6 asserted in tests). Unlike
+    ``identity_bias_predict(x_train[tr_idx], y_train[tr_idx], x_eval)``, it
+    never materializes fp64 train copies or full fp32 advanced-index copies:
+    at n_train=963k × d=3584 the exact route peaks ≈138 GB where this route's
+    per-block temporaries are a few GB at the default block (#1901
+    mlp-scaling-densify, plan §9 LARGEST-CELL keying).
+
+    ``x_train`` / ``y_train`` are the FULL (N, d) stores (any indexable
+    array-like of matching row dim); ``tr_idx`` selects the train rows.
+    ``return_bias=True`` additionally returns the fp64 bias vector ``b``
+    (so callers can persist it without a second train pass).
+    """
+    tr_idx = np.asarray(tr_idx, dtype=np.int64)
+    if tr_idx.ndim != 1 or tr_idx.size == 0:
+        raise ValueError(f"tr_idx must be a non-empty 1-D index array, got shape {tr_idx.shape}")
+    if block <= 0:
+        raise ValueError(f"block must be positive, got {block}")
+    d_tr = tuple(x_train.shape[1:])
+    if tuple(y_train.shape[1:]) != d_tr:
+        raise ValueError(
+            f"identity+bias baseline needs matching train dims, got {x_train.shape[1:]} "
+            f"vs {y_train.shape[1:]}"
+        )
+    xev = np.asarray(x_eval, dtype=np.float64)
+    if tuple(xev.shape[1:]) != d_tr:
+        raise ValueError(f"x_eval dim {xev.shape[1:]} != train dim {d_tr}")
+    acc = np.zeros(d_tr, dtype=np.float64)
+    for s in range(0, tr_idx.size, block):
+        idx = tr_idx[s : s + block]
+        xb = np.asarray(x_train[idx], dtype=np.float64)
+        yb = np.asarray(y_train[idx], dtype=np.float64)
+        acc += (yb - xb).sum(axis=0)
+    b = acc / float(tr_idx.size)
+    pred = xev + b
+    return (pred, b) if return_bias else pred
 
 
 def _pairwise_dist(pred: np.ndarray, pool: np.ndarray, metric: str) -> np.ndarray:

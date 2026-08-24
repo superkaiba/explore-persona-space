@@ -5,6 +5,7 @@ import pytest
 
 from explore_persona_space.analysis.mapping_baselines import (
     identity_bias_predict,
+    identity_bias_predict_blocked,
     knn_retrieval,
 )
 
@@ -22,6 +23,45 @@ def test_identity_bias_exact_recovery():
 def test_identity_bias_shape_mismatch_raises():
     with pytest.raises(ValueError):
         identity_bias_predict(np.zeros((4, 3)), np.zeros((4, 5)), np.zeros((2, 3)))
+
+
+def test_identity_bias_blocked_matches_exact_helper():
+    """Plan #1901 mlp-scaling-densify equivalence bar: max |Δpred| ≤ 1e-6 vs the
+    exact helper on the same train subset, with block small enough to force
+    multiple accumulation blocks (7 over 173 rows) and fp32 store inputs."""
+    rng = np.random.default_rng(4)
+    x_all = rng.standard_normal((500, 16)).astype(np.float32)
+    y_all = rng.standard_normal((500, 16)).astype(np.float32)
+    tr_idx = np.sort(rng.choice(500, size=173, replace=False))
+    x_ev = rng.standard_normal((50, 16)).astype(np.float32)
+    exact = identity_bias_predict(x_all[tr_idx], y_all[tr_idx], x_ev)
+    blocked = identity_bias_predict_blocked(x_all, y_all, tr_idx, x_ev, block=7)
+    assert np.max(np.abs(blocked - exact)) <= 1e-6
+
+
+def test_identity_bias_blocked_return_bias():
+    rng = np.random.default_rng(5)
+    x_all = rng.standard_normal((60, 5))
+    b_true = rng.standard_normal(5)
+    y_all = x_all + b_true
+    tr_idx = np.arange(60)
+    x_ev = rng.standard_normal((9, 5))
+    pred, b = identity_bias_predict_blocked(x_all, y_all, tr_idx, x_ev, block=16, return_bias=True)
+    np.testing.assert_allclose(b, b_true, atol=1e-10)
+    np.testing.assert_allclose(pred, x_ev + b, atol=0)  # pred is exactly x_ev + b
+
+
+def test_identity_bias_blocked_invalid_inputs_raise():
+    x = np.zeros((10, 3))
+    y = np.zeros((10, 3))
+    with pytest.raises(ValueError):  # empty index set
+        identity_bias_predict_blocked(x, y, np.array([], dtype=np.int64), np.zeros((2, 3)))
+    with pytest.raises(ValueError):  # train dim mismatch
+        identity_bias_predict_blocked(x, np.zeros((10, 4)), np.arange(10), np.zeros((2, 3)))
+    with pytest.raises(ValueError):  # eval dim mismatch
+        identity_bias_predict_blocked(x, y, np.arange(10), np.zeros((2, 4)))
+    with pytest.raises(ValueError):  # non-positive block
+        identity_bias_predict_blocked(x, y, np.arange(10), np.zeros((2, 3)), block=0)
 
 
 def test_knn_perfect_predictions():
