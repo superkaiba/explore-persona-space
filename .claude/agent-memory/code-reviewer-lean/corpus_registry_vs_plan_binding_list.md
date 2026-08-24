@@ -29,3 +29,13 @@ fallback/retry path is the drifting one) and set-diff its kwargs against the pri
 + the rule-named keys (dataset revision, keep_cap, every filter constant). Related:
 [[registered-gate-quantity-substituted]], [[new-dial-missing-from-resume-regime]],
 [[linked-pins-pinned-separately]].
+
+**r2 closure probes (validated, #2502 r2 g1 PASS):** a family-restoration claim settles
+in minutes with (a) live `datasets-server /info` curls per named dataset (config +
+field + row count vs the SourceSpec), (b) cap-sum arithmetic split by topup class vs
+the plan target using r1's known per-source yield gaps, and (c) — for any "re-seed
+from checkpoint" fix — a byte-compare of the fix's checkpoint FILENAME convention
+against the consuming stager's (`.partial.jsonl`/`.partial.meta.json`): a name
+mismatch makes the fix silently inert with rc=0. Marker prose can misdescribe a sound
+mechanism ("fast-forward removed" vs retained-but-revision-pinned) — grade the code
+against the blocker's intent, per [[prescribed-fix-recipe-vs-stronger-mechanism]].

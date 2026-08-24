@@ -1,5 +1,6 @@
 # code-reviewer-lean memory index
 
+- [Retrofit digest write-if-absent](retrofit_digest_write_if_absent.md) — a new provenance digest published if-absent grandfathers PRE-fix artifacts; refuse when… (#2502 R2 g2)
 - [Substitution dial outside production predicate](substitution_dial_outside_production_predicate.md) — enumerate EVERY smoke dial vs _production() + regime; one guarded… (#2476 R1 g3)
 - [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a… (#2254 R1 g3)
 - [Gate mean nanmean denominator](gate_mean_nanmean_denominator.md) — a gate's np.nanmean over per-unit stats silently drops a NaN unit; require full finiteness or an n-in-mean… (#2379 R1 g4)
@@ -82,3 +83,4 @@
 - [Tiny-slice spend-smoke discharge recipe](tiny_slice_spend_smoke_discharge_recipe.md) — 3-way digest corroboration (marker/log/tree), both-direction scoped HF listing, dial… (#2479 r4 g2)
 - [Corpus registry vs plan binding list](corpus_registry_vs_plan_binding_list.md) — diff SourceSpecs vs the plan's by-dataset-id list INCL. construction clauses; probe counts… (#2502 r1 g1)
 - [Ported-pin application semantics](ported_pin_application_semantics.md) — verbatim constants can hide setdefault-vs-authoritative pin inversion + dropped row-level guards… (#2502 R1 g2)
+- [Measured-wall projection unit count](measured_wall_projection_unit_count.md) — recompute measured × realized-LOOP-count / parallelism yourself; marker unit counts lie +… (#2502 r2 g3)

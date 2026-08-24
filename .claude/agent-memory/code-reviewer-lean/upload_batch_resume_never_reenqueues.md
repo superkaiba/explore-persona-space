@@ -24,3 +24,13 @@ trace the crash-between-write-and-upload window and demand the re-enqueue
 diff. Related: [[spend-consumer-accepts-partial-shard-set]] (consumer-side
 partial acceptance; this is the producer-side wedge),
 [[force-flag-not-reaching-resume-state]].
+
+**Severity calibration (#2479 r2 g2):** before ranking a resume-skip
+stranding, grep the CONSUMER of the stranded artifact for a designed
+missing-artifact fallback. A trailing best-effort sidecar (bundle upload →
+sidecar upload) whose resume path never backfills it is only a WEDGE when
+some consumer hard-requires it; a consumer with an explicit
+`EntryNotFoundError → head-resolve + loud WARN` branch (still-correct
+containment) downgrades the finding to Minor + a cheap backfill-on-resume
+suggestion. The re-enqueue demand above stays Major/Critical only where the
+terminal verify (or any consumer) fails without the stranded bytes.
