@@ -26,7 +26,15 @@ prompt's mtime before trusting containment.
 
 **How to apply:** #2476 recipes at `/tmp/codex-2476-crc{4,5}-compose.py`
 (crc5 = latest; ran clean 2026-08-23 r5, incl. a fresh dismissal row +
-envelope execution-error assert).
+envelope execution-error assert). Dead-twin rounds (#823 r6,
+2026-08-24): a round whose Codex job died AFTER compose still leaves a
+valid prompt base — reuse it for round r+1, and add an explicit
+"INDEPENDENCE GAP — NOW CLOSED" REVIEW CONTEXT block: no fabricated
+verdict exists, this is the first Codex review of the cycle, verify the
+surviving Claude verdict's findings as inputs rather than defer to
+them, and state the head-sentinel-vs-posted-version offset (head = brief
+round; posted top-level = auto max+1 on the codex kind, which trails
+when a round never posted).
 Round-specific spans to replace: PRIOR CRITIQUE SUMMARIES block (ends
 at `\n\nAll paths above`), ROUND-N SCOPE + BINDING DISMISSALS block
 (ends at the `=== INLINED` banner), the three envelopes (BEGIN..END
