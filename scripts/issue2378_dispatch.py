@@ -2565,9 +2565,10 @@ def stage_p6(args, role: str, lstar: int) -> Path:
     """Jittered, scoped, shard-only staging of the activation store (plan §9).
 
     Every pod stages ALL cells' rows.json (KB-scale, fold-map identity) +
-    store_index.json; npz only for its shard cells (fits-d: ALL cells — the
-    pooled arm consumes every cell's train folds). Count-asserted BEFORE any
-    fit; a short-staged pod fails loud pre-fit, never mid-battery.
+    store_index.json; npz for its shard cells PLUS chat — the ladder source
+    of every chat->target pair (fits-d: ALL cells — the pooled arm consumes
+    every cell's train folds). Count-asserted BEFORE any fit; a short-staged
+    pod fails loud pre-fit, never mid-battery.
     """
     from huggingface_hub import HfApi, hf_hub_download
 
@@ -2586,7 +2587,10 @@ def stage_p6(args, role: str, lstar: int) -> Path:
         api, cm.HF_DATA_REPO, ACTIVATIONS_PREFIX, repo_type="dataset"
     )
     sizes: dict[str, int | None] = dict(entries)
-    my_cells = set(POD_ROLE_CELLS[role])
+    # chat is the SOURCE of every ladder pair, so its L* parts stage on every
+    # pod, not only its own shard (fits-b ladder crash: chat__part0000__L51.npz
+    # missing — only fits-a's shard happened to contain chat).
+    my_cells = set(POD_ROLE_CELLS[role]) | {"chat"}
     want_all_npz = role == "fits-d"
     wanted: list[str] = []
     for path, _size in entries:
