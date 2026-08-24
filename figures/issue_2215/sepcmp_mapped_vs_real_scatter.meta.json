@@ -1,0 +1,1849 @@
+{
+  "commit": "851d8ff8+dirty",
+  "render_id": "0723d0581003468f",
+  "git_commit": "851d8ff80bfcafc224d75959688364bf4453fbf8",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2215_separation_comparison.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/followups_running/2476/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2215_separation_comparison.py",
+  "created": "2026-08-24T18:56:25Z",
+  "figsize": [
+    7.4,
+    6.4
+  ],
+  "points": [
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14668075530420605,
+      "mapped-prediction separation ratio (single-turn map)": 0.6107616964449856,
+      "error": 0.20220482265421144,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.5615936833223699,
+      "mapped-prediction separation ratio (single-turn map)": 1.1216742460414546,
+      "error": 0.2535181755553237,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07729898694236839,
+      "mapped-prediction separation ratio (single-turn map)": 0.14669536717978726,
+      "error": 0.24126359751674537,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.008788924043294854,
+      "mapped-prediction separation ratio (single-turn map)": 0.018770509073713887,
+      "error": 0.006829712382844214,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.021280672162734666,
+      "mapped-prediction separation ratio (single-turn map)": 0.06547358669805625,
+      "error": 0.043223563686514435,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.3016081446086543,
+      "mapped-prediction separation ratio (single-turn map)": 0.04051264773570496,
+      "error": 0.037398930360853344,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.028971369484224498,
+      "mapped-prediction separation ratio (single-turn map)": 0.008316747078662992,
+      "error": 0.007294987847606278,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.02952032442852177,
+      "mapped-prediction separation ratio (single-turn map)": 0.010408115111394969,
+      "error": 0.003437569347520878,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.01839429378101844,
+      "mapped-prediction separation ratio (single-turn map)": 0.01091058788838297,
+      "error": 0.004744813711918729,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.2762220184989086,
+      "mapped-prediction separation ratio (single-turn map)": 2.0508402001196986,
+      "error": 0.38650938454258243,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.15346086709536494,
+      "mapped-prediction separation ratio (single-turn map)": 0.6982967764082681,
+      "error": 0.2185977820260419,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.33700083253367946,
+      "mapped-prediction separation ratio (single-turn map)": 0.5864881395609771,
+      "error": 0.11960079205333915,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.19887973076512178,
+      "mapped-prediction separation ratio (single-turn map)": 0.3921754300641943,
+      "error": 0.21855765196767457,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08048112473956101,
+      "mapped-prediction separation ratio (single-turn map)": 0.009088782403593551,
+      "error": 0.007613424304616568,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.32217204439162617,
+      "mapped-prediction separation ratio (single-turn map)": 0.04623133758157959,
+      "error": 0.03170815216868986,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35214981414358426,
+      "mapped-prediction separation ratio (single-turn map)": 0.039126150271809816,
+      "error": 0.026286368925243716,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.049478964077645744,
+      "mapped-prediction separation ratio (single-turn map)": 0.012863132393278378,
+      "error": 0.005020331798409596,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.04495422551777933,
+      "mapped-prediction separation ratio (single-turn map)": 0.012073891025919615,
+      "error": 0.005362743120822333,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.11220941585199788,
+      "mapped-prediction separation ratio (single-turn map)": 0.6100620988925192,
+      "error": 0.2082256147625595,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.10436832853788537,
+      "mapped-prediction separation ratio (single-turn map)": 0.5482688365107938,
+      "error": 0.17677617329884007,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.0880753438630832,
+      "mapped-prediction separation ratio (single-turn map)": 2.4806905527793375,
+      "error": 0.6963912619258236,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.014252470394732597,
+      "mapped-prediction separation ratio (single-turn map)": 0.05369541812524744,
+      "error": 0.02518181839926805,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 2.665769975338183,
+      "mapped-prediction separation ratio (single-turn map)": 0.9084598123359635,
+      "error": 0.37156129269749816,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.9839250952633867,
+      "mapped-prediction separation ratio (single-turn map)": 0.9355519345730526,
+      "error": 0.11905664720931342,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.2923739910011732,
+      "mapped-prediction separation ratio (single-turn map)": 0.4195493555211061,
+      "error": 0.16256441419789625,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.031154557442356165,
+      "mapped-prediction separation ratio (single-turn map)": 0.004615839438406866,
+      "error": 0.0022436898616479996,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.023776827090749374,
+      "mapped-prediction separation ratio (single-turn map)": 0.0025906119168340814,
+      "error": 0.0011346878364228703,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.09571775283427693,
+      "mapped-prediction separation ratio (single-turn map)": 0.42693030956074185,
+      "error": 0.14418685870083525,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06967695350385267,
+      "mapped-prediction separation ratio (single-turn map)": 0.281909219631977,
+      "error": 0.11095676895682091,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35761611637264484,
+      "mapped-prediction separation ratio (single-turn map)": 1.2432742294946884,
+      "error": 0.2597780766390033,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.18778561185131612,
+      "mapped-prediction separation ratio (single-turn map)": 0.7736531644788246,
+      "error": 0.26672167637407734,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.611654882214582,
+      "mapped-prediction separation ratio (single-turn map)": 0.255747054304259,
+      "error": 0.2119521221536004,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.045372593167477646,
+      "mapped-prediction separation ratio (single-turn map)": 0.02986077516883429,
+      "error": 0.02164781972409189,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07119237395100016,
+      "mapped-prediction separation ratio (single-turn map)": 0.2985014295939982,
+      "error": 0.1641732695740099,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.015391998274189862,
+      "mapped-prediction separation ratio (single-turn map)": 0.026784167633640273,
+      "error": 0.025424885304059352,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.22725800094488302,
+      "mapped-prediction separation ratio (single-turn map)": 0.5301189181573782,
+      "error": 0.3985566580168682,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.36782719162157723,
+      "mapped-prediction separation ratio (single-turn map)": 0.4765545527980325,
+      "error": 0.10176387382541827,
+      "series": "parent 37-cell battery",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.21432561371551387,
+      "mapped-prediction separation ratio (single-turn map)": 0.5188344156947438,
+      "error": 0.10277099176888757,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14821169802396758,
+      "mapped-prediction separation ratio (single-turn map)": 0.24617385336011838,
+      "error": 0.08795884740482095,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.9824361467433311,
+      "mapped-prediction separation ratio (single-turn map)": 2.683034675640204,
+      "error": 0.7871994081814166,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.7765033856983772,
+      "mapped-prediction separation ratio (single-turn map)": 0.8311143549674835,
+      "error": 0.3617987926433201,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.013021015540896606,
+      "mapped-prediction separation ratio (single-turn map)": 0.014194170157094246,
+      "error": 0.006444797996490878,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.12466082150413932,
+      "mapped-prediction separation ratio (single-turn map)": 0.1506883413379595,
+      "error": 0.05232893298265898,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.024723264293366527,
+      "mapped-prediction separation ratio (single-turn map)": 0.015277951631230122,
+      "error": 0.004148877163615371,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.8981888426428051,
+      "mapped-prediction separation ratio (single-turn map)": 1.0994682391455295,
+      "error": 0.21242617652590212,
+      "series": "8-type content battery",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14668075530420605,
+      "mapped-prediction separation ratio (single-turn map)": 0.6107616964449856,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.5615936833223699,
+      "mapped-prediction separation ratio (single-turn map)": 1.1216742460414546,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07729898694236839,
+      "mapped-prediction separation ratio (single-turn map)": 0.14669536717978726,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.008788924043294854,
+      "mapped-prediction separation ratio (single-turn map)": 0.018770509073713887,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.021280672162734666,
+      "mapped-prediction separation ratio (single-turn map)": 0.06547358669805625,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.3016081446086543,
+      "mapped-prediction separation ratio (single-turn map)": 0.04051264773570496,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.028971369484224498,
+      "mapped-prediction separation ratio (single-turn map)": 0.008316747078662992,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.02952032442852177,
+      "mapped-prediction separation ratio (single-turn map)": 0.010408115111394969,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.01839429378101844,
+      "mapped-prediction separation ratio (single-turn map)": 0.01091058788838297,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.2762220184989086,
+      "mapped-prediction separation ratio (single-turn map)": 2.0508402001196986,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.15346086709536494,
+      "mapped-prediction separation ratio (single-turn map)": 0.6982967764082681,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.33700083253367946,
+      "mapped-prediction separation ratio (single-turn map)": 0.5864881395609771,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.19887973076512178,
+      "mapped-prediction separation ratio (single-turn map)": 0.3921754300641943,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08048112473956101,
+      "mapped-prediction separation ratio (single-turn map)": 0.009088782403593551,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.32217204439162617,
+      "mapped-prediction separation ratio (single-turn map)": 0.04623133758157959,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35214981414358426,
+      "mapped-prediction separation ratio (single-turn map)": 0.039126150271809816,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.049478964077645744,
+      "mapped-prediction separation ratio (single-turn map)": 0.012863132393278378,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.04495422551777933,
+      "mapped-prediction separation ratio (single-turn map)": 0.012073891025919615,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.11220941585199788,
+      "mapped-prediction separation ratio (single-turn map)": 0.6100620988925192,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.10436832853788537,
+      "mapped-prediction separation ratio (single-turn map)": 0.5482688365107938,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.0880753438630832,
+      "mapped-prediction separation ratio (single-turn map)": 2.4806905527793375,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.014252470394732597,
+      "mapped-prediction separation ratio (single-turn map)": 0.05369541812524744,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 2.665769975338183,
+      "mapped-prediction separation ratio (single-turn map)": 0.9084598123359635,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.9839250952633867,
+      "mapped-prediction separation ratio (single-turn map)": 0.9355519345730526,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.2923739910011732,
+      "mapped-prediction separation ratio (single-turn map)": 0.4195493555211061,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.031154557442356165,
+      "mapped-prediction separation ratio (single-turn map)": 0.004615839438406866,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.023776827090749374,
+      "mapped-prediction separation ratio (single-turn map)": 0.0025906119168340814,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.09571775283427693,
+      "mapped-prediction separation ratio (single-turn map)": 0.42693030956074185,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06967695350385267,
+      "mapped-prediction separation ratio (single-turn map)": 0.281909219631977,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35761611637264484,
+      "mapped-prediction separation ratio (single-turn map)": 1.2432742294946884,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.18778561185131612,
+      "mapped-prediction separation ratio (single-turn map)": 0.7736531644788246,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.611654882214582,
+      "mapped-prediction separation ratio (single-turn map)": 0.255747054304259,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.045372593167477646,
+      "mapped-prediction separation ratio (single-turn map)": 0.02986077516883429,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07119237395100016,
+      "mapped-prediction separation ratio (single-turn map)": 0.2985014295939982,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.015391998274189862,
+      "mapped-prediction separation ratio (single-turn map)": 0.026784167633640273,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.22725800094488302,
+      "mapped-prediction separation ratio (single-turn map)": 0.5301189181573782,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.36782719162157723,
+      "mapped-prediction separation ratio (single-turn map)": 0.4765545527980325,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.10522489243885809,
+      "mapped-prediction separation ratio (single-turn map)": 0.6107616964449856,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.3268498223905196,
+      "mapped-prediction separation ratio (single-turn map)": 1.1216742460414546,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.018882044674563156,
+      "mapped-prediction separation ratio (single-turn map)": 0.14669536717978726,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.0065511966916438815,
+      "mapped-prediction separation ratio (single-turn map)": 0.018770509073713887,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.014054712025804434,
+      "mapped-prediction separation ratio (single-turn map)": 0.06547358669805625,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.16912022586973632,
+      "mapped-prediction separation ratio (single-turn map)": 0.04051264773570496,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.021033558830491107,
+      "mapped-prediction separation ratio (single-turn map)": 0.008316747078662992,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.021454019214843613,
+      "mapped-prediction separation ratio (single-turn map)": 0.010408115111394969,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.014562850254477034,
+      "mapped-prediction separation ratio (single-turn map)": 0.01091058788838297,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.1678723430902147,
+      "mapped-prediction separation ratio (single-turn map)": 2.0508402001196986,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.12232242015954181,
+      "mapped-prediction separation ratio (single-turn map)": 0.6982967764082681,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.2444171634281206,
+      "mapped-prediction separation ratio (single-turn map)": 0.5864881395609771,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.11716563527033179,
+      "mapped-prediction separation ratio (single-turn map)": 0.3921754300641943,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.03274032069441404,
+      "mapped-prediction separation ratio (single-turn map)": 0.009088782403593551,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.19652012075140216,
+      "mapped-prediction separation ratio (single-turn map)": 0.04623133758157959,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.19202412165748198,
+      "mapped-prediction separation ratio (single-turn map)": 0.039126150271809816,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.03656388947329641,
+      "mapped-prediction separation ratio (single-turn map)": 0.012863132393278378,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.028450870645152802,
+      "mapped-prediction separation ratio (single-turn map)": 0.012073891025919615,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08876505852338622,
+      "mapped-prediction separation ratio (single-turn map)": 0.6100620988925192,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07331001544030623,
+      "mapped-prediction separation ratio (single-turn map)": 0.5482688365107938,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.6421971566862773,
+      "mapped-prediction separation ratio (single-turn map)": 2.4806905527793375,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.009657596490817344,
+      "mapped-prediction separation ratio (single-turn map)": 0.05369541812524744,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.437492872235181,
+      "mapped-prediction separation ratio (single-turn map)": 0.9084598123359635,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.8909478615326354,
+      "mapped-prediction separation ratio (single-turn map)": 0.9355519345730526,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.21693204361840643,
+      "mapped-prediction separation ratio (single-turn map)": 0.4195493555211061,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.02005214284543998,
+      "mapped-prediction separation ratio (single-turn map)": 0.004615839438406866,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.01489478774285049,
+      "mapped-prediction separation ratio (single-turn map)": 0.0025906119168340814,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06403891886015062,
+      "mapped-prediction separation ratio (single-turn map)": 0.42693030956074185,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.03703200951882617,
+      "mapped-prediction separation ratio (single-turn map)": 0.281909219631977,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.22009003247770398,
+      "mapped-prediction separation ratio (single-turn map)": 1.2432742294946884,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.09909749290751217,
+      "mapped-prediction separation ratio (single-turn map)": 0.7736531644788246,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.130020674835932,
+      "mapped-prediction separation ratio (single-turn map)": 0.255747054304259,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.016798624477638507,
+      "mapped-prediction separation ratio (single-turn map)": 0.02986077516883429,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.031896984654573336,
+      "mapped-prediction separation ratio (single-turn map)": 0.2985014295939982,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.011829236838090172,
+      "mapped-prediction separation ratio (single-turn map)": 0.026784167633640273,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08575482853544253,
+      "mapped-prediction separation ratio (single-turn map)": 0.5301189181573782,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.308683157950945,
+      "mapped-prediction separation ratio (single-turn map)": 0.4765545527980325,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.18471834031730572,
+      "mapped-prediction separation ratio (single-turn map)": 0.6107616964449856,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.6970427154684213,
+      "mapped-prediction separation ratio (single-turn map)": 1.1216742460414546,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.3972088888771409,
+      "mapped-prediction separation ratio (single-turn map)": 0.14669536717978726,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.012931613292665161,
+      "mapped-prediction separation ratio (single-turn map)": 0.018770509073713887,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.04173822476482653,
+      "mapped-prediction separation ratio (single-turn map)": 0.06547358669805625,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.4673255962539361,
+      "mapped-prediction separation ratio (single-turn map)": 0.04051264773570496,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.058788209833454445,
+      "mapped-prediction separation ratio (single-turn map)": 0.008316747078662992,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08222288261018665,
+      "mapped-prediction separation ratio (single-turn map)": 0.010408115111394969,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.050274087925288355,
+      "mapped-prediction separation ratio (single-turn map)": 0.01091058788838297,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.5956232815323208,
+      "mapped-prediction separation ratio (single-turn map)": 2.0508402001196986,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.18411459837681204,
+      "mapped-prediction separation ratio (single-turn map)": 0.6982967764082681,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.41596397829866755,
+      "mapped-prediction separation ratio (single-turn map)": 0.5864881395609771,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.47513422610208506,
+      "mapped-prediction separation ratio (single-turn map)": 0.3921754300641943,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.09869001506117665,
+      "mapped-prediction separation ratio (single-turn map)": 0.009088782403593551,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.5349745545768487,
+      "mapped-prediction separation ratio (single-turn map)": 0.04623133758157959,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.529451946440731,
+      "mapped-prediction separation ratio (single-turn map)": 0.039126150271809816,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08027195088613091,
+      "mapped-prediction separation ratio (single-turn map)": 0.012863132393278378,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06948459161773905,
+      "mapped-prediction separation ratio (single-turn map)": 0.012073891025919615,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.15373125640422217,
+      "mapped-prediction separation ratio (single-turn map)": 0.6100620988925192,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.12383875326198931,
+      "mapped-prediction separation ratio (single-turn map)": 0.5482688365107938,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.5867159725272062,
+      "mapped-prediction separation ratio (single-turn map)": 2.4806905527793375,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.021830487217378992,
+      "mapped-prediction separation ratio (single-turn map)": 0.05369541812524744,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 5.407836436101684,
+      "mapped-prediction separation ratio (single-turn map)": 0.9084598123359635,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.1522106770971121,
+      "mapped-prediction separation ratio (single-turn map)": 0.9355519345730526,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.4327670328597749,
+      "mapped-prediction separation ratio (single-turn map)": 0.4195493555211061,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06377059724959108,
+      "mapped-prediction separation ratio (single-turn map)": 0.004615839438406866,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.04995341090194182,
+      "mapped-prediction separation ratio (single-turn map)": 0.0025906119168340814,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.1454906951456458,
+      "mapped-prediction separation ratio (single-turn map)": 0.42693030956074185,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.11872415606197706,
+      "mapped-prediction separation ratio (single-turn map)": 0.281909219631977,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.6202029308796942,
+      "mapped-prediction separation ratio (single-turn map)": 1.2432742294946884,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.4247836380539459,
+      "mapped-prediction separation ratio (single-turn map)": 0.7736531644788246,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 2.0986964462016844,
+      "mapped-prediction separation ratio (single-turn map)": 0.255747054304259,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.09547232636184834,
+      "mapped-prediction separation ratio (single-turn map)": 0.02986077516883429,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.10556443238322297,
+      "mapped-prediction separation ratio (single-turn map)": 0.2985014295939982,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.023720309943727372,
+      "mapped-prediction separation ratio (single-turn map)": 0.026784167633640273,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.6820785532453503,
+      "mapped-prediction separation ratio (single-turn map)": 0.5301189181573782,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.4349221772726063,
+      "mapped-prediction separation ratio (single-turn map)": 0.4765545527980325,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14668075530420605,
+      "mapped-prediction separation ratio (single-turn map)": 0.41150548618635535,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.5615936833223699,
+      "mapped-prediction separation ratio (single-turn map)": 0.9001345549178078,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07729898694236839,
+      "mapped-prediction separation ratio (single-turn map)": 0.058599367873255356,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.008788924043294854,
+      "mapped-prediction separation ratio (single-turn map)": 0.01346655575741961,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.021280672162734666,
+      "mapped-prediction separation ratio (single-turn map)": 0.03953806606803268,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.3016081446086543,
+      "mapped-prediction separation ratio (single-turn map)": 0.02142040996523566,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.028971369484224498,
+      "mapped-prediction separation ratio (single-turn map)": 0.0036944793156686575,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.02952032442852177,
+      "mapped-prediction separation ratio (single-turn map)": 0.006292204627530624,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.01839429378101844,
+      "mapped-prediction separation ratio (single-turn map)": 0.008088863361459489,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.2762220184989086,
+      "mapped-prediction separation ratio (single-turn map)": 1.7323936118005157,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.15346086709536494,
+      "mapped-prediction separation ratio (single-turn map)": 0.5501090245022593,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.33700083253367946,
+      "mapped-prediction separation ratio (single-turn map)": 0.4928057496214933,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.19887973076512178,
+      "mapped-prediction separation ratio (single-turn map)": 0.29317944290639475,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08048112473956101,
+      "mapped-prediction separation ratio (single-turn map)": 0.005579199034152401,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.32217204439162617,
+      "mapped-prediction separation ratio (single-turn map)": 0.023697821253121927,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35214981414358426,
+      "mapped-prediction separation ratio (single-turn map)": 0.01929740501100647,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.049478964077645744,
+      "mapped-prediction separation ratio (single-turn map)": 0.008081689605653091,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.04495422551777933,
+      "mapped-prediction separation ratio (single-turn map)": 0.006402449333293033,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.11220941585199788,
+      "mapped-prediction separation ratio (single-turn map)": 0.4016347074403985,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.10436832853788537,
+      "mapped-prediction separation ratio (single-turn map)": 0.3913841078754546,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.0880753438630832,
+      "mapped-prediction separation ratio (single-turn map)": 1.8501750264784846,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.014252470394732597,
+      "mapped-prediction separation ratio (single-turn map)": 0.03267564457070707,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 2.665769975338183,
+      "mapped-prediction separation ratio (single-turn map)": 0.583068252100877,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.9839250952633867,
+      "mapped-prediction separation ratio (single-turn map)": 0.8413016679640328,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.2923739910011732,
+      "mapped-prediction separation ratio (single-turn map)": 0.29308889511295166,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.031154557442356165,
+      "mapped-prediction separation ratio (single-turn map)": 0.002449221189471077,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.023776827090749374,
+      "mapped-prediction separation ratio (single-turn map)": 0.0013164339394530612,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.09571775283427693,
+      "mapped-prediction separation ratio (single-turn map)": 0.3139686571645556,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06967695350385267,
+      "mapped-prediction separation ratio (single-turn map)": 0.20028335912899298,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35761611637264484,
+      "mapped-prediction separation ratio (single-turn map)": 0.9779485217368957,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.18778561185131612,
+      "mapped-prediction separation ratio (single-turn map)": 0.49439158706718545,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.611654882214582,
+      "mapped-prediction separation ratio (single-turn map)": 0.08064965780925176,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.045372593167477646,
+      "mapped-prediction separation ratio (single-turn map)": 0.020149680322444744,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07119237395100016,
+      "mapped-prediction separation ratio (single-turn map)": 0.07636011979129767,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.015391998274189862,
+      "mapped-prediction separation ratio (single-turn map)": 0.01642594126195166,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.22725800094488302,
+      "mapped-prediction separation ratio (single-turn map)": 0.1289486742335837,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.36782719162157723,
+      "mapped-prediction separation ratio (single-turn map)": 0.3869648465890319,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14668075530420605,
+      "mapped-prediction separation ratio (single-turn map)": 0.8159151314947782,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.5615936833223699,
+      "mapped-prediction separation ratio (single-turn map)": 1.4071709060284552,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07729898694236839,
+      "mapped-prediction separation ratio (single-turn map)": 0.5411265629067461,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.008788924043294854,
+      "mapped-prediction separation ratio (single-turn map)": 0.027125980523108037,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.021280672162734666,
+      "mapped-prediction separation ratio (single-turn map)": 0.12598519344106154,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.3016081446086543,
+      "mapped-prediction separation ratio (single-turn map)": 0.09621827068694234,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.028971369484224498,
+      "mapped-prediction separation ratio (single-turn map)": 0.018284455010881214,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.02952032442852177,
+      "mapped-prediction separation ratio (single-turn map)": 0.01316734332257238,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.01839429378101844,
+      "mapped-prediction separation ratio (single-turn map)": 0.017578490785296948,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.2762220184989086,
+      "mapped-prediction separation ratio (single-turn map)": 2.5054123808856805,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.15346086709536494,
+      "mapped-prediction separation ratio (single-turn map)": 0.9873045885543431,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.33700083253367946,
+      "mapped-prediction separation ratio (single-turn map)": 0.7320073337281716,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.19887973076512178,
+      "mapped-prediction separation ratio (single-turn map)": 0.7302947468417439,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.08048112473956101,
+      "mapped-prediction separation ratio (single-turn map)": 0.020806047643385537,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.32217204439162617,
+      "mapped-prediction separation ratio (single-turn map)": 0.08711412559050165,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35214981414358426,
+      "mapped-prediction separation ratio (single-turn map)": 0.0718701428614939,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.049478964077645744,
+      "mapped-prediction separation ratio (single-turn map)": 0.018122353202472283,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.04495422551777933,
+      "mapped-prediction separation ratio (single-turn map)": 0.0171279355749377,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.11220941585199788,
+      "mapped-prediction separation ratio (single-turn map)": 0.8180859369655175,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.10436832853788537,
+      "mapped-prediction separation ratio (single-turn map)": 0.7449364544731347,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.0880753438630832,
+      "mapped-prediction separation ratio (single-turn map)": 3.2429575503301318,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.014252470394732597,
+      "mapped-prediction separation ratio (single-turn map)": 0.08303928136924317,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 2.665769975338183,
+      "mapped-prediction separation ratio (single-turn map)": 1.3261908374958733,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.9839250952633867,
+      "mapped-prediction separation ratio (single-turn map)": 1.0794149623826597,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.2923739910011732,
+      "mapped-prediction separation ratio (single-turn map)": 0.6182177235087442,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.031154557442356165,
+      "mapped-prediction separation ratio (single-turn map)": 0.006936600912767076,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.023776827090749374,
+      "mapped-prediction separation ratio (single-turn map)": 0.0035858096122988016,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.09571775283427693,
+      "mapped-prediction separation ratio (single-turn map)": 0.6023423745662261,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06967695350385267,
+      "mapped-prediction separation ratio (single-turn map)": 0.4221968970426348,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.35761611637264484,
+      "mapped-prediction separation ratio (single-turn map)": 1.4975046750149024,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.18778561185131612,
+      "mapped-prediction separation ratio (single-turn map)": 1.0278349398153401,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.611654882214582,
+      "mapped-prediction separation ratio (single-turn map)": 0.5045539021164526,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.045372593167477646,
+      "mapped-prediction separation ratio (single-turn map)": 0.06344531977062852,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.07119237395100016,
+      "mapped-prediction separation ratio (single-turn map)": 0.4047066589393175,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.015391998274189862,
+      "mapped-prediction separation ratio (single-turn map)": 0.06727571187007036,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.22725800094488302,
+      "mapped-prediction separation ratio (single-turn map)": 0.9260619902673201,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.36782719162157723,
+      "mapped-prediction separation ratio (single-turn map)": 0.5904925942398684,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.21432561371551387,
+      "mapped-prediction separation ratio (single-turn map)": 0.5188344156947438,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14821169802396758,
+      "mapped-prediction separation ratio (single-turn map)": 0.24617385336011838,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.9824361467433311,
+      "mapped-prediction separation ratio (single-turn map)": 2.683034675640204,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.7765033856983772,
+      "mapped-prediction separation ratio (single-turn map)": 0.8311143549674835,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.013021015540896606,
+      "mapped-prediction separation ratio (single-turn map)": 0.014194170157094246,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.12466082150413932,
+      "mapped-prediction separation ratio (single-turn map)": 0.1506883413379595,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.024723264293366527,
+      "mapped-prediction separation ratio (single-turn map)": 0.015277951631230122,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.8981888426428051,
+      "mapped-prediction separation ratio (single-turn map)": 1.0994682391455295,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.15030013190173455,
+      "mapped-prediction separation ratio (single-turn map)": 0.5188344156947438,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.10891608107746488,
+      "mapped-prediction separation ratio (single-turn map)": 0.24617385336011838,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.7603962837499254,
+      "mapped-prediction separation ratio (single-turn map)": 2.683034675640204,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.6403568175971692,
+      "mapped-prediction separation ratio (single-turn map)": 0.8311143549674835,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.008024193363998493,
+      "mapped-prediction separation ratio (single-turn map)": 0.014194170157094246,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.06609047131203306,
+      "mapped-prediction separation ratio (single-turn map)": 0.1506883413379595,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.016901084352769775,
+      "mapped-prediction separation ratio (single-turn map)": 0.015277951631230122,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.6897520305272796,
+      "mapped-prediction separation ratio (single-turn map)": 1.0994682391455295,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.30878129571142204,
+      "mapped-prediction separation ratio (single-turn map)": 0.5188344156947438,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.27175800446816345,
+      "mapped-prediction separation ratio (single-turn map)": 0.24617385336011838,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 2.390984349732954,
+      "mapped-prediction separation ratio (single-turn map)": 2.683034675640204,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.1366231752975313,
+      "mapped-prediction separation ratio (single-turn map)": 0.8311143549674835,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.01862849207504224,
+      "mapped-prediction separation ratio (single-turn map)": 0.014194170157094246,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.17650800826019666,
+      "mapped-prediction separation ratio (single-turn map)": 0.1506883413379595,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.03796134250065392,
+      "mapped-prediction separation ratio (single-turn map)": 0.015277951631230122,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.0200497762569538,
+      "mapped-prediction separation ratio (single-turn map)": 1.0994682391455295,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.21432561371551387,
+      "mapped-prediction separation ratio (single-turn map)": 0.44177655190069903,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14821169802396758,
+      "mapped-prediction separation ratio (single-turn map)": 0.16968098812138796,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.9824361467433311,
+      "mapped-prediction separation ratio (single-turn map)": 2.1804543766641453,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.7765033856983772,
+      "mapped-prediction separation ratio (single-turn map)": 0.5921851228094642,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.013021015540896606,
+      "mapped-prediction separation ratio (single-turn map)": 0.009719483710226053,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.12466082150413932,
+      "mapped-prediction separation ratio (single-turn map)": 0.10536884482384049,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.024723264293366527,
+      "mapped-prediction separation ratio (single-turn map)": 0.012421717949821059,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.8981888426428051,
+      "mapped-prediction separation ratio (single-turn map)": 0.8621066981298897,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.21432561371551387,
+      "mapped-prediction separation ratio (single-turn map)": 0.6473185354384742,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.14821169802396758,
+      "mapped-prediction separation ratio (single-turn map)": 0.34559868293102985,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 1.9824361467433311,
+      "mapped-prediction separation ratio (single-turn map)": 3.7548531930269786,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.7765033856983772,
+      "mapped-prediction separation ratio (single-turn map)": 1.3157827080961044,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.013021015540896606,
+      "mapped-prediction separation ratio (single-turn map)": 0.02260907970320781,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.12466082150413932,
+      "mapped-prediction separation ratio (single-turn map)": 0.21002671078915844,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.024723264293366527,
+      "mapped-prediction separation ratio (single-turn map)": 0.0207194722770518,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.8981888426428051,
+      "mapped-prediction separation ratio (single-turn map)": 1.286959051181694,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 0.0,
+      "mapped-prediction separation ratio (single-turn map)": 0.0,
+      "series": "y = x",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "real answer-vector separation ratio (pair / same-value yardstick)": 2.8976774496914204,
+      "mapped-prediction separation ratio (single-turn map)": 2.8976774496914204,
+      "series": "y = x",
+      "_kind": "line",
+      "_group": 12
+    }
+  ],
+  "n_series": 13,
+  "total_points": 272,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does the map separate minimal pairs more than the real answers do?",
+        "xlabel": "real answer-vector separation ratio (pair / same-value yardstick)",
+        "ylabel": "mapped-prediction separation ratio (single-turn map)",
+        "legend_labels": [
+          "y = x",
+          "parent 37-cell battery",
+          "8-type content battery"
+        ],
+        "annotations": [
+          "conflict_format_fwd",
+          "conflict_persona_fwd",
+          "constraint_knowledge",
+          "demo_format",
+          "demo_persona",
+          "fact_assistant_animal",
+          "fact_novel_queried",
+          "fact_user_name",
+          "filler_swap",
+          "icl_task_mapping",
+          "instr_format",
+          "instr_language",
+          "language_implied",
+          "list_numeric_detail",
+          "load_fact_assistant_animal_l3",
+          "load_fact_assistant_animal_l5",
+          "load_fact_user_name_l3",
+          "load_fact_user_name_l5",
+          "load_instr_format_l3",
+          "load_instr_format_l5",
+          "persona_prompted",
+          "persona_role_header",
+          "prior_topic",
+          "query_content",
+          "reasoning_style",
+          "recency_fact_user_name_d3",
+          "recency_fact_user_name_d5",
+          "recency_instr_format_d3",
+          "recency_instr_format_d5",
+          "recency_persona_prompted_d3",
+          "recency_persona_prompted_d5",
+          "recency_prior_topic_d3",
+          "recency_prior_topic_d5",
+          "refusal_boundary",
+          "user_emotion",
+          "user_expertise",
+          "verbosity",
+          "code_vs_prose",
+          "conversation_language",
+          "conversation_topic",
+          "refusal_request",
+          "style_register",
+          "user_doc_format",
+          "user_role_identity",
+          "user_sentiment"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0"
+        ]
+      }
+    ],
+    "series": [
+      "y = x",
+      "parent 37-cell battery",
+      "8-type content battery"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -19573,7 +19573,6 @@ _SHARED_TMP_DIR_IDIOM_REASON = (
     " lines); waiver-or-defer disposition in batch 2, never recipe-migration"
 )
 SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = (
-    ("scripts/clean_experiment_downloads.py", _SHARED_TMP_SEED_REASON),
     ("scripts/issue1073_capture.py", _SHARED_TMP_SEED_REASON),
     ("scripts/issue1090_fu6.py", _SHARED_TMP_DIR_IDIOM_REASON),
     ("scripts/issue1092_build_corpus.py", _SHARED_TMP_SEED_REASON),
@@ -19675,8 +19674,6 @@ SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = (
     ("scripts/issue779_l26_recovery_dispatch.sh", _SHARED_TMP_SEED_REASON),
     ("scripts/issue779_n1m_readout_dispatch.sh", _SHARED_TMP_SEED_REASON),
     ("scripts/issue823_ladder_fits.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/resource_ledger.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/sync_repo_root.py", _SHARED_TMP_SEED_REASON),
     ("src/explore_persona_space/artifacts/recipe.py", _SHARED_TMP_SEED_REASON),
     ("src/explore_persona_space/eval/callbacks.py", _SHARED_TMP_SEED_REASON),
     ("src/explore_persona_space/experiments/issue2329/bank2329.py", _SHARED_TMP_SEED_REASON),

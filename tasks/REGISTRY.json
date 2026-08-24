@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2545,
+  "highest_id": 2565,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6980,8 +6980,8 @@
       "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1901",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1901",
+      "status": "followups_running",
       "title": "Held-out variance explained and retrieval accuracy dissociate in both directions across the context-to-answer estimator ladder (HIGH confidence)"
     },
     "1902": {
@@ -9692,8 +9692,8 @@
       "goal": "Test whether the persona vector's pre-image under the fitted context\u2192answer map (M\u207ar_B, per-layer) is a causally effective persona direction when injected at the context vector \u2014 compared against the answer-extracted persona vector (at the context vector and at answer tokens), a context-extracted persona vector, and matched-norm random controls, via coherence-gated dose-response steering (single/middle/all layers, negative doses included) plus calibrated projection-patching and directional ablation against the donor-swap ceiling.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2254",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2254",
+      "status": "followups_running",
       "title": "Inverting the fitted context-to-answer map yields a direction that predicts persona strongly but cannot steer it at the context vector, where a directly-measured context direction can (MODERATE confidence)"
     },
     "2255": {
@@ -10252,15 +10252,15 @@
     "2327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2327",
-      "status": "running",
+      "path": "tasks/blocked/2327",
+      "status": "blocked",
       "title": "Step 5a spec-freshness sync copies a .claude doc without its workflow_lint.py grandfather cap, producing a deterministic false-red gate"
     },
     "2328": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2328",
-      "status": "running",
+      "path": "tasks/completed/2328",
+      "status": "completed",
       "title": "workflow-fix: review/compose briefs check marker presence against the WORKING TREE, so a transient stash-cycle read produces a false marker-destroyed escalation"
     },
     "2329": {
@@ -10360,8 +10360,8 @@
     "2340": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2340",
-      "status": "proposed",
+      "path": "tasks/running/2340",
+      "status": "running",
       "title": "verify_task_body: footer check for SHA-pinned GitHub links on named code/artifacts"
     },
     "2341": {
@@ -10374,8 +10374,8 @@
     "2342": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2342",
-      "status": "proposed",
+      "path": "tasks/running/2342",
+      "status": "running",
       "title": "workflow.yaml markers registry: reconcile marker kinds mismatch with /issue review-loop practice"
     },
     "2343": {
@@ -10641,11 +10641,11 @@
     },
     "2378": {
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2378",
-      "status": "running",
-      "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
+      "path": "tasks/interpreting/2378",
+      "status": "interpreting",
+      "title": "Context\u2192answer structure is shared across framings in Qwen3.6-27B, but the chat-trained map transfers to none of them unchanged (MODERATE confidence)"
     },
     "2379": {
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
@@ -10723,9 +10723,9 @@
       "goal": "On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (gold- or execution-verified, K=5 rollouts) is predictable from the frozen context vector before generation, and whether routing the context vector through the learned context-to-answer map improves that prediction at matched data budgets, across four correctness surfaces (short-answer QA, math, multiple-choice, code) and a distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2388",
-      "status": "reviewing",
-      "title": "Answer correctness is predictable from the context vector before generation on all four surfaces, and the context-to-answer map helps only at small label budgets on math and code (HIGH confidence)"
+      "path": "tasks/awaiting_promotion/2388",
+      "status": "awaiting_promotion",
+      "title": "Answer correctness is predictable from the context vector before generation on all four surfaces, with the context-to-answer map helping only at small label budgets on math and code (HIGH confidence)"
     },
     "2389": {
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
@@ -11398,8 +11398,8 @@
       "goal": "Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2476",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2476",
+      "status": "awaiting_promotion",
       "title": "The fresh turn-averaged SAE's indeterminate tier verdict is floor-local: every looser alive floor reads coarse-over-specific because newly admitted specific-tier features are poorly predicted (MODERATE confidence)"
     },
     "2477": {
@@ -11420,8 +11420,8 @@
       "goal": "Establish or bound the closeness-to-assistant transfer gradient: assistant-operator transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across >=12 characters; success = rank correlation with permutation band excluding zero.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2479",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/2479",
+      "status": "awaiting_promotion",
       "title": "Assistant-operator transfer recovery in held-out R\u00b2 rises with judged AI-likeness across 16 story characters (LOW confidence)"
     },
     "248": {
@@ -11603,8 +11603,8 @@
       "goal": "Fit the context\u2192answer activation map M_{C,A} on a very large, maximally diverse context/answer corpus (heavily weighted toward weird / OOD / red-team / jailbreak regimes), and test whether the map replicates across model generations: Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled). An answer = held-out R^2 plus the mandatory identity+learned-bias baseline and kNN-retrieval reads for the fitted map, measured under massive context diversity and compared across the two models.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/2502",
-      "status": "blocked",
+      "path": "tasks/running/2502",
+      "status": "running",
       "title": "Fit context\u2192answer map on a mega-diverse weird-behavior corpus, replicated on Qwen2.5-7B-Instruct + Qwen3.5-9B"
     },
     "2503": {
@@ -11695,8 +11695,8 @@
     "2514": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2514",
-      "status": "running",
+      "path": "tasks/blocked/2514",
+      "status": "blocked",
       "title": "workflow-fix: verify_plan c26/c27 routed-machine mirror is GCP-era, inverts under runpod-first auto default"
     },
     "2515": {
@@ -11856,8 +11856,8 @@
     "2537": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2537",
-      "status": "planning",
+      "path": "tasks/running/2537",
+      "status": "running",
       "title": "select_step9c_tests.py: feature-named consumer tests escape module mapping; over-wide sweep_scope label hides the gap"
     },
     "2538": {
@@ -11906,8 +11906,8 @@
       "goal": "Date the formation of the context\u2192answer activation map along a 15-rung Olmo-3-7B pretraining ladder (stage1-step0 through 5.93T tokens, plus midtrain, final base, and SFT/DPO/RLVR): (1) the formation curve D(T) of diagonal held-out R2 on each checkpoint's own completions, against the identity+learned-bias baseline, kNN retrieval, and a per-rung repeat-generation ceiling; (2) a reduced cross grid separating representation change (fixed answer text) from answer-distribution change (fixed weights); (3) cross-checkpoint transfer/retention, direct and general-linear/Procrustes-aligned against matched nulls, to find the token count past which the final map is already present up to a change of coordinates; (4) the in-context-substitution curve, 4-shot minus 0-shot diagonal at every rung, with query-block-only context pooling.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2544",
-      "status": "proposed",
+      "path": "tasks/running/2544",
+      "status": "running",
       "title": "How the context\u2192answer map forms across pretraining (Olmo 3 7B checkpoint ladder)"
     },
     "2545": {
@@ -11917,12 +11917,155 @@
       "status": "proposed",
       "title": "verify_task_body: HF file-count check page-cap reports 'unverified' inside a PASS line \u2014 full-pagination fallback for count claims on pinned tree links"
     },
+    "2546": {
+      "goal": "(1) In CoT-trained models, measure R2 and acc@1 for four maps \u2014 post-context\u2192answer, post-context\u2192CoT, post-context\u2192CoT+answer, post-CoT\u2192answer \u2014 on a corpus that DOES versus DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained model's context vector can predict the POST-CoT-trained model's post-</think> answer state, and how the fitted map changes across the CoT-training step, using a matched same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2546",
+      "status": "running",
+      "title": "Can the context\u2192answer map predict the POST-CoT answer, and how does CoT training change the map?"
+    },
+    "2547": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2547",
+      "status": "proposed",
+      "title": "Align clean-result-critic Lens 2 result-heading rule with the v4 SPEC contract (rubric is strictly stronger than SPEC; 5 invented-rule FAILs across 3 tasks)"
+    },
+    "2548": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2548",
+      "status": "proposed",
+      "title": "verify_task_body: per-unit-evidence check vocabulary misses the draw grain \u2014 3 false WARNs on per-draw figure captions"
+    },
+    "2549": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2549",
+      "status": "proposed",
+      "title": "workflow-fix: --check-shared-tmp-name is RED on main's own tree (issue823_ladder_ext_gen.py:1330), failing the live-tree gate test fleet-wide"
+    },
+    "2550": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2550",
+      "status": "proposed",
+      "title": "workflow-fix: scripts/issue2254_firstk_ctxext_sensitivity.py imports numpy before load_dotenv, reddening test_shared_vm_thread_caps on main"
+    },
+    "2551": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2551",
+      "status": "proposed",
+      "title": "Codex ensemble dispatch grants write access to five read-only review sites (--no-write missing from canonical snippet)"
+    },
+    "2552": {
+      "goal": "Determine (1, exploratory) how the context\u2192answer map's per-feature predictability of turn-averaged SAE features ranks across the five Der et al. (arXiv 2606.28548) schema categories (content/form/voice/function/meta) on the #2476 matryoshka SAEs (k=100 + k=200) and on a faithful flat replication of Der et al.'s recipe; (2) whether that replication (BatchTopK 32,768/k=128 on banked layer-19 turn means + their full judged evaluation, judge claude-sonnet-4-6 no-prefill) reproduces their discrimination-vs-coverage inversion; and (3) which feature properties (schema categories + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability, via a forward-selection partial-out ladder as the headline figure.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2552",
+      "status": "running",
+      "title": "Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder"
+    },
+    "2553": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2553",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a spec-freshness SPECS omits .gitleaksignore \u2014 the sibling-file arm stages sibling scripts it cannot commit"
+    },
+    "2554": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2554",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan binding-addendum coverage check (plan vs BINDING body scope decisions)"
+    },
+    "2555": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2555",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan per-corpus eligibility-floor arithmetic check (battery members vs the plan's own floor)"
+    },
+    "2556": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2556",
+      "status": "proposed",
+      "title": "workflow-fix: lattice label-semantics truth-table + threshold-CI-policy check (c20 extension or sibling)"
+    },
+    "2557": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2557",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a spec-freshness sync stages a CLAUDE.md whose workflow.yaml gate-key references cannot resolve, because CLAUDE.md is a FAMILY_OF singleton while .claude/workflow.yaml is in FAMILY_workflow"
+    },
+    "2558": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2558",
+      "status": "archived",
+      "title": "workflow-fix: codex-composer-common mem-commit message file collides across parallel same-name composers"
+    },
+    "2559": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2559",
+      "status": "proposed",
+      "title": "workflow_lint files-mode: check_sha_pin_domain grandfather-stale artifact when grandfathered file is in scope"
+    },
     "256": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/256",
       "status": "archived",
       "title": "Do pretraining experiments with Pingbang's model"
+    },
+    "2560": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2560",
+      "status": "proposed",
+      "title": "Step 10d lint gate normalization keeps workflow_lint note: lines whose scan COUNT changes with the payload, so any branch adding a scanned file gets a spurious block"
+    },
+    "2561": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2561",
+      "status": "proposed",
+      "title": "Step 10d lint gate: an unset WT silently certifies the WRONG tree and emits a benign-looking skip-artifact-only instead of failing loud"
+    },
+    "2562": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2562",
+      "status": "proposed",
+      "title": "workflow-fix: agent-memory per-file size ratchet + trim the 350KB codex-code-reviewer compose-recipe memory"
+    },
+    "2563": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2563",
+      "status": "proposed",
+      "title": "workflow-fix: gate single-flight probe counts a long-lived watcher carrying the gate pattern as a live gate, so the spec's own probe-keyed wait makes the next relaunch refuse against no gate"
+    },
+    "2564": {
+      "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/2564",
+      "status": "planning",
+      "title": "Controlled minimal-pair battery: does the context\u2192answer map predict the DIFFERENCE in answer vectors, per instruction axis?"
+    },
+    "2565": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2565",
+      "status": "archived",
+      "title": "workflow-fix: no-flags workflow_lint red on main \u2014 issue823_ladder_ext_gen.py trips --check-shared-tmp-name"
     },
     "257": {
       "has_clean_result": false,

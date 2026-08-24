@@ -1,0 +1,656 @@
+{
+  "commit": "aa16cab4+dirty",
+  "render_id": "5f5a4a77c46d4bfd",
+  "git_commit": "aa16cab4806afe6818e8b84562d5743f1ced866b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1639/retrieval_read/retrieval_base.json",
+    "eval_results/issue_1639/retrieval_read/retrieval_instruct.json",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_1639/retrieval_read.png",
+    "scripts/issue1639_retrieval_read.py",
+    "scripts/issue2215_sepcmp_cell_examples.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2215_sepcmp_cell_examples.py",
+  "created": "2026-08-24T20:22:17Z",
+  "figsize": [
+    7.2,
+    12.2
+  ],
+  "points": [
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.008788924043294854,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.018770509073713887,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.013021015540896606,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.014194170157094246,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.014252470394732597,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.05369541812524744,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.015391998274189862,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.026784167633640273,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.01839429378101844,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.01091058788838297,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.021280672162734666,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.06547358669805625,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.023776827090749374,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.0025906119168340814,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.024723264293366527,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.015277951631230122,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.028971369484224498,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.008316747078662992,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.02952032442852177,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.010408115111394969,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.031154557442356165,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.004615839438406866,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.04495422551777933,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.012073891025919615,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.045372593167477646,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.02986077516883429,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.049478964077645744,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.012863132393278378,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.06967695350385267,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.281909219631977,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.07119237395100016,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.2985014295939982,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.07729898694236839,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.14669536717978726,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.08048112473956101,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.009088782403593551,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.09571775283427693,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.42693030956074185,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.10436832853788537,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.5482688365107938,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.11220941585199788,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.6100620988925192,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.12466082150413932,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.1506883413379595,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.14668075530420605,
+      "y": 22.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.6107616964449856,
+      "y": 22.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.14821169802396758,
+      "y": 23.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.24617385336011838,
+      "y": 23.0,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.15346086709536494,
+      "y": 24.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.6982967764082681,
+      "y": 24.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.18778561185131612,
+      "y": 25.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.7736531644788246,
+      "y": 25.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.19887973076512178,
+      "y": 26.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.3921754300641943,
+      "y": 26.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.21432561371551387,
+      "y": 27.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.5188344156947438,
+      "y": 27.0,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.22725800094488302,
+      "y": 28.0,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.5301189181573782,
+      "y": 28.0,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.2923739910011732,
+      "y": 29.0,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.4195493555211061,
+      "y": 29.0,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.3016081446086543,
+      "y": 30.0,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.04051264773570496,
+      "y": 30.0,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.32217204439162617,
+      "y": 31.0,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.04623133758157959,
+      "y": 31.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.33700083253367946,
+      "y": 32.0,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.5864881395609771,
+      "y": 32.0,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.35214981414358426,
+      "y": 33.0,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.039126150271809816,
+      "y": 33.0,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.35761611637264484,
+      "y": 34.0,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 1.2432742294946884,
+      "y": 34.0,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.36782719162157723,
+      "y": 35.0,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.4765545527980325,
+      "y": 35.0,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.5615936833223699,
+      "y": 36.0,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 1.1216742460414546,
+      "y": 36.0,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.611654882214582,
+      "y": 37.0,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.255747054304259,
+      "y": 37.0,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.7765033856983772,
+      "y": 38.0,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.8311143549674835,
+      "y": 38.0,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.8981888426428051,
+      "y": 39.0,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 1.0994682391455295,
+      "y": 39.0,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.9839250952633867,
+      "y": 40.0,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.9355519345730526,
+      "y": 40.0,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 1.0880753438630832,
+      "y": 41.0,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 2.4806905527793375,
+      "y": 41.0,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 1.2762220184989086,
+      "y": 42.0,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 2.0508402001196986,
+      "y": 42.0,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 1.9824361467433311,
+      "y": 43.0,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 2.683034675640204,
+      "y": 43.0,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 2.665769975338183,
+      "y": 44.0,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "separation ratio (pair dist / cross-carrier yardstick)": 0.9084598123359635,
+      "y": 44.0,
+      "_kind": "scatter",
+      "_group": 89
+    }
+  ],
+  "n_series": 90,
+  "total_points": 90,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-cell separation: real answer vectors vs map predictions",
+        "xlabel": "separation ratio (pair dist / cross-carrier yardstick)",
+        "legend_labels": [
+          "real answer vectors",
+          "mapped predictions (779ce)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ],
+        "yticklabels": [
+          "demo_format",
+          "style_register \u2020",
+          "persona_role_header",
+          "user_emotion",
+          "filler_swap",
+          "demo_persona",
+          "recency_fact_user_name_d5",
+          "user_role_identity \u2020",
+          "fact_novel_queried",
+          "fact_user_name",
+          "recency_fact_user_name_d3",
+          "load_fact_user_name_l5",
+          "recency_prior_topic_d5",
+          "load_fact_user_name_l3",
+          "recency_instr_format_d5",
+          "refusal_boundary",
+          "constraint_knowledge",
+          "list_numeric_detail",
+          "recency_instr_format_d3",
+          "load_instr_format_l5",
+          "load_instr_format_l3",
+          "user_doc_format \u2020",
+          "conflict_format_fwd",
+          "conversation_language \u2020",
+          "instr_format",
+          "recency_persona_prompted_d5",
+          "language_implied",
+          "code_vs_prose \u2020",
+          "user_expertise",
+          "reasoning_style",
+          "fact_assistant_animal",
+          "load_fact_assistant_animal_l3",
+          "instr_language",
+          "load_fact_assistant_animal_l5",
+          "recency_persona_prompted_d3",
+          "verbosity",
+          "conflict_persona_fwd",
+          "recency_prior_topic_d3",
+          "refusal_request \u2020",
+          "user_sentiment \u2020",
+          "query_content",
+          "persona_prompted",
+          "icl_task_mapping",
+          "conversation_topic \u2020",
+          "prior_topic"
+        ]
+      }
+    ],
+    "series": [
+      "real answer vectors",
+      "mapped predictions (779ce)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
