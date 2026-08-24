@@ -133,6 +133,11 @@ DEFAULT_TENSORS_PREFIX = {
 # HF mirror root for committed eval_results JSONs (#12): files land at
 # {PUBLISH_EVAL_MIRROR}/{path relative to --out-root}.
 PUBLISH_EVAL_MIRROR = "issue2502_ctxmap_xgen/eval_mirror"
+# Canonical PRODUCTION out-root (the --out-root parser default). '--publish
+# none' against it is an explicit-flag loss path — refused by
+# _refuse_publish_none_on_canonical unless --allow-local-only states intent
+# (round-6 concern publish-none-hardening).
+CANONICAL_OUT_ROOT = _REPO_ROOT / "eval_results" / f"issue_{ISSUE}"
 # #10/SB-2 cross-pod shard merge: shards publish per-layer cells under
 # {prefix}/percell_model{K}/L{k:02d}.json; the assembly invocation adopts them
 # after a per-cell regime_sha16 verify (_pull_shard_cells / _cell_complete).
@@ -2073,13 +2078,66 @@ def publish_artifacts(paths, out_root: Path, *, publish: str, hf_prefix: str) ->
         _git_publish([p for p, _rel in resolved], _REPO_ROOT)
 
 
+def _publish_sentinel(sentinel: Path, publish: str, hf_prefix: str) -> None:
+    """Mirror the ``fits/.p4_done`` sentinel through the SELECTED durability
+    backend(s) — HF upload AND/OR git commit+push (round-6 concern
+    publish-none-hardening: the sentinel was previously uploaded only under
+    hf modes, leaving it consumer-less — never committed — on the pure-git
+    path). publish='none' is a no-op (smoke/selfcheck local-only)."""
+    if publish in ("hf", "hf+git"):
+        _gc().upload_single_file(sentinel, f"{hf_prefix}/fits/.p4_done")
+    if publish in ("git", "hf+git"):
+        _git_publish([sentinel], _REPO_ROOT)
+
+
+def _refuse_publish_none_on_canonical(args) -> None:
+    """Refuse the '--publish none' + canonical-production-out-root loss path
+    (round-6 concern publish-none-hardening): committed artifacts would land
+    in the production eval_results tree with NO durability disposition.
+    --allow-local-only is the explicit override; scratch out-roots (smokes,
+    selfchecks) pass untouched."""
+    if args.publish != "none" or getattr(args, "allow_local_only", False):
+        return
+    out_root = Path(args.out_root).resolve()
+    canonical = CANONICAL_OUT_ROOT.resolve()
+    if out_root == canonical or canonical in out_root.parents:
+        raise SystemExit(
+            f"--publish none with the canonical production out-root {out_root} is a "
+            "loss path (#12: artifacts would ship with no durable disposition); pass "
+            "--publish hf|git|hf+git, use a scratch --out-root, or state the intent "
+            "explicitly with --allow-local-only"
+        )
+
+
 def run_decide(args) -> dict:
     """Compose the registered decision from both models' assembled artifacts.
 
     #13: BOTH per-model reliability ceilings are REQUIRED (fail nonzero) —
     the H3 verdict is stated relative to them; --allow-missing-reliability is
     a selfcheck/smoke-only escape. #12: decision.json publishes durably on the
-    normal exit path and the fits/.p4_done sentinel is written LAST."""
+    normal exit path and the fits/.p4_done sentinel is written LAST.
+    IDEMPOTENT (round-6 concern decide-phase-idempotency): a matching
+    ``fits/.p4_done`` sentinel SKIPS the re-decide loud and returns the
+    persisted decision; ``--force`` re-runs."""
+    out_root = Path(args.out_root)
+    sentinel = out_root / "fits" / ".p4_done"
+    decision_path = out_root / "fits" / "decision.json"
+    if sentinel.exists() and not getattr(args, "force", False):
+        if not decision_path.is_file():
+            raise RuntimeError(
+                f"decide: sentinel {sentinel} present but {decision_path} is missing — "
+                "inconsistent phase state (a partial wipe?); quarantine the sentinel "
+                "or re-run with --force"
+            )
+        doc = json.loads(sentinel.read_text())
+        print(
+            f"[decide] fits/.p4_done present (verdict={doc.get('verdict')!r}) — "
+            "SKIPPING re-decide (idempotent resume); pass --force to re-run",
+            flush=True,
+        )
+        decision = json.loads(decision_path.read_text())
+        decision["resumed_from_sentinel"] = True
+        return decision
     import numpy as np
 
     GC = _gc()
@@ -2098,7 +2156,6 @@ def run_decide(args) -> dict:
                 "is stated relative to the per-model reliability ceilings); "
                 "--allow-missing-reliability is a selfcheck/smoke-only escape"
             )
-    out_root = Path(args.out_root)
     sum_a, rec_a = _load_model_artifacts(out_root / "fits" / "modelA")
     sum_b, rec_b = _load_model_artifacts(out_root / "fits" / "modelB")
 
@@ -2199,7 +2256,6 @@ def run_decide(args) -> dict:
         },
         "verdict": verdict,
     }
-    decision_path = out_root / "fits" / "decision.json"
     write_artifact_json(decision_path, decision)
     print(
         f"[decide] A_pass={passes['A']} B_pass={passes['B']} "
@@ -2210,7 +2266,6 @@ def run_decide(args) -> dict:
     publish = getattr(args, "publish", None) or "none"
     hf_prefix = getattr(args, "publish_prefix", None) or PUBLISH_EVAL_MIRROR
     publish_artifacts([decision_path], out_root, publish=publish, hf_prefix=hf_prefix)
-    sentinel = out_root / "fits" / ".p4_done"
     GC.atomic_write_json(
         sentinel,
         {
@@ -2221,8 +2276,9 @@ def run_decide(args) -> dict:
             "meta": GC.run_metadata({"artifact": "p4_done"}),
         },
     )
-    if publish != "none" and publish in ("hf", "hf+git"):
-        GC.upload_single_file(sentinel, f"{hf_prefix}/fits/.p4_done")
+    # Sentinel durability rides the SELECTED backend(s) — hf upload AND/OR git
+    # commit+push (publish-none-hardening: previously hf-only).
+    _publish_sentinel(sentinel, publish, hf_prefix)
     print(f"[decide] .p4_done sentinel written LAST at {sentinel}", flush=True)
     return decision
 
@@ -2675,6 +2731,7 @@ def _selfcheck_pipeline(args, tmp: Path) -> None:
     a.publish = "none"
     a.allow_missing_reliability = True
     a.reliability = None
+    a.force = True  # re-decide below on MUTATED artifacts (idempotency skip off)
     noise = {1: 0.8, 2: 0.15, 3: 0.5}
     store_a = _toy_store("A", [1, 2, 3], noise_by_hs=noise, seed=1)
     store_b = _toy_store("B", [1, 2, 3, 4], noise_by_hs={**noise, 4: 0.2}, seed=2)
@@ -2718,7 +2775,18 @@ def _selfcheck_pipeline(args, tmp: Path) -> None:
     _gc().atomic_write_json(a_dir / "percontext_recon.json", rec_a)
     d3 = run_decide(a)
     assert d3["a_pass"] is False and d3["verdict"] == "Inconclusive", d3["verdict"]
-    print("[selfcheck] pipeline verdicts: base + Fails + REACHABLE Inconclusive: OK", flush=True)
+    # Idempotency (round-6 decide-phase-idempotency): with the sentinel present
+    # and --force OFF, decide SKIPS and returns the PERSISTED decision.
+    a_skip = copy.copy(a)
+    a_skip.force = False
+    d4 = run_decide(a_skip)
+    assert d4.get("resumed_from_sentinel") is True, "sentinel skip path not taken"
+    assert d4["verdict"] == d3["verdict"], (d4["verdict"], d3["verdict"])
+    print(
+        "[selfcheck] pipeline verdicts: base + Fails + REACHABLE Inconclusive "
+        "+ sentinel-skip resume: OK",
+        flush=True,
+    )
 
 
 def _selfcheck_shard_assemble(args, tmp: Path) -> None:
@@ -2906,7 +2974,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="HF data-repo prefix of the u2 capture store (default per --model-key)",
     )
     ap.add_argument("--work-dir", default="/workspace/issue2502_fits")
-    ap.add_argument("--out-root", default=str(_REPO_ROOT / "eval_results" / "issue_2502"))
+    ap.add_argument("--out-root", default=str(CANONICAL_OUT_ROOT))
     ap.add_argument("--device", default="cpu", help="fit device (cpu on the cpu-bigmem pod)")
     ap.add_argument("--pilot", action="store_true", help="G1 pilot mode (80/20, MF-B)")
     ap.add_argument(
@@ -2952,6 +3020,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=PUBLISH_EVAL_MIRROR,
         help="HF data-repo prefix for the eval-results mirror (#12)",
     )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="decide: re-run even when fits/.p4_done exists (idempotent skip otherwise)",
+    )
+    ap.add_argument(
+        "--allow-local-only",
+        action="store_true",
+        help="explicit override for the '--publish none' + canonical-out-root refusal "
+        "(publish-none-hardening: without it, 'none' against the production "
+        "eval_results tree is a loss path)",
+    )
     ap.add_argument("--wall-n", type=int, default=150000, help="unitwall: rows (#10 basis)")
     ap.add_argument("--wall-hidden", type=int, default=4096, help="unitwall: hidden dim (B=4096)")
     ap.add_argument("--import-check", action="store_true")
@@ -2983,6 +3063,7 @@ def main() -> int:
                 "--publish {none,hf,git,hf+git} is REQUIRED for --phase decide (#12: "
                 "every caller states a durability disposition; smokes pass --publish none)"
             )
+        _refuse_publish_none_on_canonical(args)
         run_decide(args)
     else:
         if args.publish is None:
@@ -2990,6 +3071,7 @@ def main() -> int:
                 "--publish {none,hf,git,hf+git} is REQUIRED for --phase fit (#12: "
                 "every caller states a durability disposition; smokes pass --publish none)"
             )
+        _refuse_publish_none_on_canonical(args)
         if args.g1_gate and args.layers:
             raise SystemExit(
                 "--g1-gate with a partial --layers shard cannot evaluate the G1 verdict "

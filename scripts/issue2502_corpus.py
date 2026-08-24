@@ -757,6 +757,37 @@ def _access_error_types() -> tuple[type[BaseException], ...]:
     )
 
 
+def _is_permanent_access_error(exc: BaseException) -> bool:
+    """True ONLY for DEFINITIVE access-denial / not-found classes — the ones
+    the gated-source skip/fallback may act on (round-6 concern
+    ``transient-http-misclassified-as-access-skip``).
+
+    Transient/server-side failures return False and the caller RE-RAISES
+    them (never skip-and-redistribute, never fall over to a fallback dataset
+    on infra noise): 408 request-timeout, 429 rate-limit, any 5xx, and every
+    status-less / unclassified shape. The bounded transient retry lives at
+    the revision-resolution seam (``hub.retry_transient`` around
+    ``dataset_info`` in ``_resolve_dataset_revision`` — Retry-After-aware,
+    ``EPM_HF_RETRY_BUDGET_S``-walled); an error that still escapes it has
+    exhausted its retry budget and must HALT (the crash IS the signal;
+    staging is fingerprint-checkpointed, so a resume is cheap).
+    """
+    from datasets.exceptions import DataFilesNotFoundError, DatasetNotFoundError
+    from huggingface_hub.utils import GatedRepoError, HfHubHTTPError, RepositoryNotFoundError
+
+    if isinstance(exc, (GatedRepoError, RepositoryNotFoundError)):
+        return True  # typed gated / missing-repo classes
+    if isinstance(exc, (DatasetNotFoundError, DataFilesNotFoundError)):
+        return True  # datasets-lib typed missing/gated dataset or data files
+    if isinstance(exc, HfHubHTTPError):
+        # Bare HTTP error: permanent ONLY on definitive auth / not-found
+        # codes (401 unauthenticated-gated, 403 forbidden, 404 moved/removed).
+        # 408/429/5xx and status-less errors are transient — False.
+        code = getattr(getattr(exc, "response", None), "status_code", None)
+        return isinstance(code, int) and code in (401, 403, 404)
+    return False
+
+
 def _make_keep_fn(
     spec: SourceSpec,
     config: str | None,
@@ -885,12 +916,16 @@ def stage_source(
     - The gated-read fallback catches ACCESS-class errors only (g1 m6); the
       kept==0 fail-loud and genuine code bugs propagate. Once a config falls
       back, later configs of the same source read the fallback dataset too.
-    - A fallback-LESS source whose primary read fails an ACCESS-class error is
-      SKIPPED loud (per-config ``skipped_gated_no_access`` counter, surfaced in
-      ``build_report``'s ``skipped_sources``) — one gated dataset must never
-      crash the whole 150k build. Non-access errors still propagate, and
-      ``run_pipeline`` fails loud when the whole corpus / a whole regime-class
-      family collapses to zero staged rows.
+    - A fallback-LESS source whose primary read fails a PERMANENT access
+      error (``_is_permanent_access_error``: typed gated/not-found, or bare
+      401/403/404) is SKIPPED loud (per-config ``skipped_gated_no_access``
+      counter, surfaced in ``build_report``'s ``skipped_sources`` +
+      ``source_roster``) — one gated dataset must never crash the whole 150k
+      build. TRANSIENT HTTP errors (408/429/5xx/timeout/connection) RE-RAISE
+      instead — never a skip, never a fallback fallover (round-6 concern
+      transient-http-misclassified-as-access-skip). Non-access errors still
+      propagate, and ``run_pipeline`` fails loud when the whole corpus / a
+      whole regime-class family collapses to zero staged rows.
     """
     if spec.cross_query_bank is not None:
         return _stage_crossed_source(spec, out_dir, token_filter, stream_cap=stream_cap, seed=seed)
@@ -920,10 +955,19 @@ def stage_source(
                     seen_committed=seen_committed,
                 )
             except _access_error_types() as exc:
+                if not _is_permanent_access_error(exc):
+                    # Transient/server-side (408/429/5xx/timeout/connection):
+                    # NEVER reclassify as an access denial — no skip, no
+                    # fallback fallover, no budget redistribution. The
+                    # revision seam already bounded-retried
+                    # (hub.retry_transient); fail loud and resume from the
+                    # fingerprint checkpoint (round-6 concern
+                    # transient-http-misclassified-as-access-skip).
+                    raise
                 if spec.fallback_dataset_id is None:
                     logger.warning(
                         "[stage] %s:%s: %s gated/inaccessible, no fallback — SKIPPING "
-                        "this source (%s)",
+                        "this config (later configs of the source may still stage) (%s)",
                         spec.source_tag,
                         config or "default",
                         spec.dataset_id,
@@ -1017,6 +1061,12 @@ def _stage_crossed_source(
     resume + per-filter counters + kept>0 fail-loud). The crossing itself is
     a PURE deterministic function of (staged prefixes, committed bank, seed,
     cap) — recomputed each run, no extra checkpoint needed.
+
+    ACCESS errors here FAIL LOUD by design (no skip/fallback semantics —
+    round-5 review standing rec, recorded): none of the crossed prefix
+    datasets is gated, the family is the 150k top-up lever (a silent skip
+    would trip the budget-reachability gate anyway), and the orchestrator's
+    pre-launch real-corpus ``--probe`` exercises this path before GPU spend.
     """
     from explore_persona_space.artifacts import banks
 
@@ -1359,6 +1409,55 @@ def assert_split_disjoint(rows: list[dict]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def build_source_roster(
+    sources: tuple[SourceSpec, ...],
+    *,
+    pre_dedup_per_source: dict[str, int],
+    post_dedup_per_source: dict[str, int],
+    allocation: dict[str, int],
+    final_per_source: dict[str, int],
+    skipped_sources: list[dict],
+) -> list[dict]:
+    """Realized per-source composition roster (round-6 concern
+    ``gated-sources-absent-corpus-composition``): ONE row per SELECTED spec —
+    status (staged / skipped_gated_no_access / partially_skipped), planned
+    pre-dedup cap, and per-regime-tag realized counts at every stage
+    (pre-dedup / post-dedup / allocated / final) — so a production build with
+    absent gated sources DISCLOSES its composition durably instead of
+    shifting silently. Counts only — never item text."""
+    skipped_by_tag: dict[str, list[str]] = defaultdict(list)
+    for s in skipped_sources:
+        skipped_by_tag[s["source_tag"]].append(s["config"])
+    roster: list[dict] = []
+    for spec in sources:
+        tags = sorted(_regime_tags(spec))
+        pre_total = sum(pre_dedup_per_source.get(t, 0) for t in tags)
+        skipped_cfgs = sorted(skipped_by_tag.get(spec.source_tag, []))
+        if skipped_cfgs and pre_total == 0:
+            status = "skipped_gated_no_access"
+        elif skipped_cfgs:
+            status = "partially_skipped"
+        else:
+            status = "staged"
+        roster.append(
+            {
+                "source_tag": spec.source_tag,
+                "dataset_id": spec.dataset_id,
+                "fallback_dataset_id": spec.fallback_dataset_id,
+                "regime_tags": _regime_tags(spec),
+                "planned_pre_dedup_cap": spec.pre_dedup_cap,
+                "topup": spec.topup,
+                "status": status,
+                "skipped_configs": skipped_cfgs,
+                "pre_dedup_rows": {t: pre_dedup_per_source.get(t, 0) for t in tags},
+                "post_dedup_rows": {t: post_dedup_per_source.get(t, 0) for t in tags},
+                "allocated": {t: allocation.get(t, 0) for t in tags},
+                "final_rows": {t: final_per_source.get(t, 0) for t in tags},
+            }
+        )
+    return roster
+
+
 def build_report(
     *,
     pre_dedup_per_source: dict[str, int],
@@ -1370,6 +1469,7 @@ def build_report(
     stream_counters: dict[str, dict],
     budget: int,
     skipped_sources: list[dict] | None = None,
+    sources: tuple[SourceSpec, ...] | None = None,
 ) -> dict:
     split_counts: dict[str, int] = defaultdict(int)
     regime_counts: dict[str, int] = defaultdict(int)
@@ -1398,6 +1498,37 @@ def build_report(
         "dedup": dedup_report,
         "stream_counters": stream_counters,
         "skipped_sources": list(skipped_sources or []),
+        # Round-6 composition disclosure (gated-sources-absent-corpus-composition):
+        # realized per-source roster + where a skipped source's budget went.
+        "source_roster": build_source_roster(
+            sources or (),
+            pre_dedup_per_source=pre_dedup_per_source,
+            post_dedup_per_source=post_dedup_per_source,
+            allocation=allocation,
+            final_per_source=dict(final_per_source),
+            skipped_sources=list(skipped_sources or []),
+        ),
+        "budget_redistribution": {
+            "skipped_source_tags": sorted({s["source_tag"] for s in (skipped_sources or [])}),
+            "skipped_planned_caps": {
+                spec.source_tag: spec.pre_dedup_cap
+                for spec in (sources or ())
+                if any(s["source_tag"] == spec.source_tag for s in (skipped_sources or []))
+            },
+            "topup_tags": sorted(
+                tag for spec in (sources or ()) if spec.topup for tag in _regime_tags(spec)
+            ),
+            "note": (
+                "budget re-scales over realized post-dedup yields of SURVIVING "
+                "sources only (allocate_with_topup); a skipped source contributes "
+                "no yields, so its planned share flows to the survivors' "
+                "proportional re-scale, with topup sources absorbing the residual "
+                "to the 150k target — the plan-v7-sanctioned behavior (plan §4: "
+                "'the P0 --probe re-scales the 150k budget proportionally against "
+                "realized per-source counts'); a material shortfall past the "
+                "top-up lever still HALTS via the budget-reachability gate"
+            ),
+        },
         "source_regime_table": regime_table,
         "weight_pct": {
             "weird_ood": round(
@@ -1431,6 +1562,24 @@ def _selected_sources(names: list[str] | None) -> tuple[SourceSpec, ...]:
     if missing:
         raise SystemExit(f"unknown --sources tags: {sorted(missing)}")
     return sel
+
+
+def _log_roster(report: dict) -> None:
+    """One loud composition line per run (never silent): staged / partial /
+    skipped source counts, from the durable ``source_roster`` report key."""
+    roster = report.get("source_roster", [])
+    by_status: dict[str, int] = defaultdict(int)
+    for row in roster:
+        by_status[row["status"]] += 1
+    logger.info(
+        "[corpus] source roster: %d staged / %d partially_skipped / %d "
+        "skipped_gated_no_access of %d selected sources (durable in "
+        "report['source_roster'] + ['budget_redistribution'])",
+        by_status.get("staged", 0),
+        by_status.get("partially_skipped", 0),
+        by_status.get("skipped_gated_no_access", 0),
+        len(roster),
+    )
 
 
 def run_pipeline(args: argparse.Namespace) -> dict:
@@ -1498,7 +1647,11 @@ def run_pipeline(args: argparse.Namespace) -> dict:
             "— fail loud"
         )
     staged_regimes = {r["regime_class"] for r in all_rows}
-    missing_regimes = sorted({spec.regime_class for spec in sources} - staged_regimes)
+    # Declared classes come from the REGIME TABLE (per realized tag), not bare
+    # spec.regime_class — a moderation-split source ALSO declares its derived
+    # near-distribution stratum, so a selective --sources probe cannot lose it
+    # silently (round-6 NIT moderation-derived-regime-guard-gap).
+    missing_regimes = sorted(set(regime_table.values()) - staged_regimes)
     if missing_regimes:
         raise RuntimeError(
             f"regime class(es) {missing_regimes} kept 0 staged rows "
@@ -1573,7 +1726,9 @@ def run_pipeline(args: argparse.Namespace) -> dict:
             stream_counters=stream_counters,
             budget=args.budget,
             skipped_sources=skipped_sources,
+            sources=sources,
         )
+        _log_roster(report)
         report["mode"] = "probe"
         report["note"] = "post-dedup yields + re-scaled budget allocation (no full write)"
         _write_json(out_dir / "probe_report.json", report)
@@ -1621,7 +1776,9 @@ def run_pipeline(args: argparse.Namespace) -> dict:
         stream_counters=stream_counters,
         budget=args.budget,
         skipped_sources=skipped_sources,
+        sources=sources,
     )
+    _log_roster(report)
     report["mode"] = "build"
     report["corpus_path"] = str(corpus_path)
     _write_json(out_dir / "dedup_report.json", report)
