@@ -30,7 +30,13 @@ import re
 import sys
 from pathlib import Path
 
-import numpy as np
+# load_dotenv BEFORE numpy so the shared-VM BLAS thread caps bind in-process
+# (#847; tests/test_shared_vm_thread_caps.py).
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUND = ROOT / "eval_results/issue_2254/first-k-answer-token-steering"

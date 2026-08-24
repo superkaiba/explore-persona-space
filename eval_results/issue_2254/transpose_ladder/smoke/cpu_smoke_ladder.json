@@ -1,0 +1,41 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-24T23:11:45Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "030c9066",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2254_firstk_ctxext_sensitivity.py",
+    "scripts/issue2254_preimage.py"
+  ],
+  "followup_label": "transpose_ladder",
+  "directions": {
+    "n_direction_files": 16,
+    "parity": {
+      "evil__L14": 0.9999999999999997,
+      "sycophancy__L14": 0.9999999999999996,
+      "evil__L17": 0.9999999999999993,
+      "sycophancy__L17": 0.9999999999999998
+    }
+  },
+  "gate_i_negative_probe": "raised as designed",
+  "gate_ii_negative_probe": "raised as designed",
+  "reduce": {
+    "label": "H1",
+    "n_clearing": 1,
+    "fresh_nulls": false,
+    "undefined_cells": [
+      "evil__tr__ctx__all__c0p5"
+    ]
+  },
+  "figures": [
+    "hero_ladder",
+    "expl_all_cells",
+    "expl_delta_vs_lambda",
+    "expl_perq_clouds",
+    "expl_degradation",
+    "expl_cos_heatmap",
+    "expl_alignment_spectra"
+  ]
+}

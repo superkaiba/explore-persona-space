@@ -1767,6 +1767,14 @@ _DIR_SHORT = {
     # parent set, pinned by tests/test_issue2254_split.py)
     "par": "par",
     "perp": "prp",
+    # transpose_ladder amendment arms (plan v14 §4.1; tokens tr/rl1/rl2/rl3 —
+    # collision-free vs the parent set, pinned by
+    # tests/test_issue2254_transpose_ladder.py; the v7 par/prp registration is
+    # the precedent — an unregistered slug KeyErrors at the first cell)
+    "tr": "tr",
+    "rl1": "rl1",
+    "rl2": "rl2",
+    "rl3": "rl3",
 }
 _POS_SHORT = {"context": "ctx", "answer": "ans"}
 
