@@ -1,0 +1,452 @@
+{
+  "commit": "26d1f31a+dirty",
+  "render_id": "9704db2a06fd4c19",
+  "git_commit": "26d1f31a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_analyzer_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
+  "created": "2026-08-24T23:16:06Z",
+  "figsize": [
+    7.2,
+    5.0
+  ],
+  "points": [
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.09166795038118991,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.3800939251628541,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.008697479460909152,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.3416149068322981,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.0947906171628552,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.36252083017724585,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.07760212177235015,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.38842599606120287,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.13445760269433427,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.2258748674443266,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.12657483692562554,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.4520527192849568,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.2752343927875064,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.31555824875018934,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.28099031853046585,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.41433116194515984,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.3000633039792413,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.43856991364944703,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.7683561162678314,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.05271928495682472,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.8794357603534688,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.012422360248447204,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.38413108665121,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.027874564459930314,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.04540281019652914,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.054840175730949854,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.07360476506802649,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.011361914861384638,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.18723449731115183,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.176033934252386,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.1469514270701232,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.020602938948644144,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.26063790269665243,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.24359945462808666,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.26969426724265455,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.25602181487653386,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.7462254472043608,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.04484169065293137,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.9317572983755191,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.007120133313134373,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.39093233904132085,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.031055900621118012,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.035615727108465056,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.04620512043629753,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.06612379353795961,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.0056052113316164215,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.19126985245159311,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.1914861384638691,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.1427096411179828,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.013634297833661567,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.27197359266890675,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.27798818360854416,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.28352527079679746,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.3016209665202242,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.5982584853306638,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.050749886380851386,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.6825048302878984,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.012725344644750796,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.3294805435898529,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.02984396303590365,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.03920323654096636,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.05211331616421754,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.07044967579249517,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.006968641114982578,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.17795863925538002,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.163460081805787,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.14181505952774343,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.010604453870625663,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.25174224734156514,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.2266323284350856,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.2617317993461209,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.24072110286320256,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.672169887179606,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.024693228298742615,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.8274516876368172,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.003484320557491289,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.3778561120949806,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.016512649598545676,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.0028775080768521644,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.023178306317224662,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.03682230791368335,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.0013634297833661567,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.1561254725735325,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.14422057264050903,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.10133939170988604,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.0056052113316164215,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.23370276545204927,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.232995000757461,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.24592982118891527,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.2576882290562036,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.7411300992025267,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.02393576730798364,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.9748092788088865,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.00409028935009847,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.460455535871962,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.0157551886077867,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.017771864628702394,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.02893500984699288,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.03280257194114777,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.0013634297833661567,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.14270986156688115,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.14891683078321466,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.09251086999626135,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.005756703529768217,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.21943612528193934,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.2105741554309953,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.23103022193086475,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.23390395394637176,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.9631098058712664,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.05953643387365551,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.8263790560497,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.032267838206332375,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.2837086836969598,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.03575215876382366,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": -0.040873308535863684,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.03923647932131495,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.03871382536385648,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.002575367368580518,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.10552795178392382,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.06332373882745039,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.10395201020677403,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.009241024087259506,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.19908578578242553,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.07286774731101349,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)": 0.20678416507305142,
+      "rank-1 retrieval among held-out answers (CSLS cosine)": 0.07635206786850478,
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 63,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Retrieval dissociates from R\u00b2 on the frozen map",
+        "xlabel": "R\u00b2 (own map: stars; transfer rungs: dots; clipped at \u22121.05)",
+        "ylabel": "rank-1 retrieval among held-out answers (CSLS cosine)",
+        "annotations": [
+          "Chat (train)",
+          "Plain text",
+          "Astra",
+          "HELIOS",
+          "Wren",
+          "Dana",
+          "Vex",
+          "User (real)",
+          "frozen chat map: story + user framings",
+          "frozen chat map: plain text",
+          "each dot is one framing \u00d7 adaptation rung; chance rank-1 = 0.00015 (n_pool = 6,601)"
+        ],
+        "xticklabels": [
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

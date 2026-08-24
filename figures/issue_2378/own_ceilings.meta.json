@@ -1,0 +1,700 @@
+{
+  "commit": "26d1f31a+dirty",
+  "render_id": "b6ca4bd7d0484d3c",
+  "git_commit": "26d1f31a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_analyzer_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
+  "created": "2026-08-24T23:15:38Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 of the framing's own map": 0.6078300426340202,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 of the framing's own map": 0.3000633039792413,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 of the framing's own map": 0.26969426724265455,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 of the framing's own map": 0.28352527079679746,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 of the framing's own map": 0.2617317993461209,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 of the framing's own map": 0.24592982118891527,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 of the framing's own map": 0.23103022193086475,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 of the framing's own map": 0.20678416507305142,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 of the framing's own map": 0.019235959270189618,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 of the framing's own map": 0.0683062816658454,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 of the framing's own map": 0.028759020690706794,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 of the framing's own map": 0.04562992516747055,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 of the framing's own map": 0.0379504406591995,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 of the framing's own map": 0.027185295677376597,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 of the framing's own map": 0.016582824907358407,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 of the framing's own map": 0.20132204012095967,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 of the framing's own map": 0.6012045504474826,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 of the framing's own map": 0.607792732552217,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 of the framing's own map": 0.6138395205183853,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 of the framing's own map": 0.6112772422177543,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 of the framing's own map": 0.6040610317084902,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 of the framing's own map": 0.013565454389417031,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 of the framing's own map": 0.01784697607832253,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 of the framing's own map": 0.017024186062492563,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 of the framing's own map": 0.02063536828861523,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 of the framing's own map": 0.024505381855587927,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 of the framing's own map": 0.29363502726550816,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 of the framing's own map": 0.29730635965910024,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 of the framing's own map": 0.31072831858484684,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 of the framing's own map": 0.3022349836392588,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 of the framing's own map": 0.2948773873102246,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 of the framing's own map": 0.06404781515703162,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 of the framing's own map": 0.06908223681154713,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 of the framing's own map": 0.065479117200954,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 of the framing's own map": 0.0683566592371605,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 of the framing's own map": 0.07209519381227425,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 of the framing's own map": 0.2525004906012773,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 of the framing's own map": 0.29990012929984444,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 of the framing's own map": 0.22356783437638084,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 of the framing's own map": 0.26659844200454064,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 of the framing's own map": 0.2592608016272847,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 of the framing's own map": -0.005987385279855095,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 of the framing's own map": 0.0494629913838478,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 of the framing's own map": -0.004224106315680043,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 of the framing's own map": 0.010531911294626717,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 of the framing's own map": 0.02922470665265564,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 of the framing's own map": 0.28988844595245,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 of the framing's own map": 0.2597983381712001,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 of the framing's own map": 0.2732728631974626,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 of the framing's own map": 0.2861025040467131,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 of the framing's own map": 0.24558893916927638,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 of the framing's own map": 0.05368773594690257,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 of the framing's own map": -0.011483608676319479,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 of the framing's own map": 0.045699988760490196,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 of the framing's own map": 0.035104665854232664,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 of the framing's own map": 0.019454721006544218,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 of the framing's own map": 0.26456420099485645,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 of the framing's own map": 0.23915186716311554,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 of the framing's own map": 0.2471134897707178,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 of the framing's own map": 0.21806646151493925,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 of the framing's own map": 0.24090237229326195,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 of the framing's own map": 0.0023299674113094193,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 of the framing's own map": 0.013282745150380304,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 of the framing's own map": 0.015501104919580788,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 of the framing's own map": 0.016921121221110114,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 of the framing's own map": 0.012360755225897968,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 of the framing's own map": 0.22294185798991506,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 of the framing's own map": 0.23481293735922826,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 of the framing's own map": 0.2308896605265096,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 of the framing's own map": 0.22557547152176316,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 of the framing's own map": 0.24361478814848292,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 of the framing's own map": -0.015658065302948998,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 of the framing's own map": 0.03028856725732265,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 of the framing's own map": -0.007529339298733451,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 of the framing's own map": 0.018650477165510382,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 of the framing's own map": 0.018113374254511316,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 of the framing's own map": 0.24881796786166965,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 of the framing's own map": 0.22131279476851207,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 of the framing's own map": 0.19914402897591277,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 of the framing's own map": 0.22832359967582427,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 of the framing's own map": 0.20548730017362538,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 of the framing's own map": -0.003449813920562761,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 of the framing's own map": 0.006531156439758878,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 of the framing's own map": 0.00947623633162642,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 of the framing's own map": 0.003747451322724804,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 of the framing's own map": -6.19236379928445e-05,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 of the framing's own map": 0.20993729907588365,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 of the framing's own map": 0.20083512294085537,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 of the framing's own map": 0.2055344926814655,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 of the framing's own map": 0.20990451850394443,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 of the framing's own map": 0.2047204515331521,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 of the framing's own map": 0.20491342689871794,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 of the framing's own map": 0.19311483410968266,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 of the framing's own map": 0.2010920690074034,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 of the framing's own map": 0.20564252924595028,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 of the framing's own map": 0.1988219372864365,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 of the framing's own map": -0.03487174300745483,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 of the framing's own map": -0.06280928929644053,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 of the framing's own map": -0.04760627280619917,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 of the framing's own map": -0.050337220687465774,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 of the framing's own map": -0.06430974059171568,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 of the framing's own map": -0.05179546186934687,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 of the framing's own map": -0.051341734663709254,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 of the framing's own map": -0.04214834183602174,
+      "series": "shuffled-answer null (95th pct)",
+      "_kind": "line",
+      "_group": 18
+    }
+  ],
+  "n_series": 19,
+  "total_points": 104,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Every surviving framing is linearly mappable",
+        "ylabel": "held-out R\u00b2 of the framing's own map",
+        "legend_labels": [
+          "shuffled-answer null (95th pct)",
+          "context (full prompt)",
+          "prefix (before the question)"
+        ],
+        "annotations": [
+          "own context\u2192answer GCV-ridge map per framing, 5 grouped folds, n=6,601 rows each"
+        ],
+        "xticklabels": [
+          "Chat (train)",
+          "Plain text",
+          "Astra",
+          "HELIOS",
+          "Wren",
+          "Dana",
+          "Vex",
+          "User (real)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "shuffled-answer null (95th pct)",
+      "context (full prompt)",
+      "prefix (before the question)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

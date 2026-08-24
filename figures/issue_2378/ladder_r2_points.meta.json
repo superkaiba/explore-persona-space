@@ -1,0 +1,2012 @@
+{
+  "commit": "26d1f31a+dirty",
+  "render_id": "5e3dedc496e24106",
+  "git_commit": "26d1f31a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_analyzer_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
+  "created": "2026-08-24T23:15:48Z",
+  "figsize": [
+    12.5,
+    6.0
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.10039234599408053,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.08523705256917347,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.08195940706698623,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.09167705755348088,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.10154781170115479,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": -0.00518250254024899,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": 0.010290009659556287,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": 0.01824295661932862,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": 0.011085144435696415,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": 0.006581884439432306,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.11023340706276463,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.09383223400560037,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.08028927011498488,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.09368957841335113,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.09854867529591527,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": 0.06063859498740931,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": 0.07920658207577247,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": 0.0894786734273808,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": 0.07675325435811664,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": 0.07952042349126609,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.12440516578872118,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.13325252102567064,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.14406150174855137,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.13451976169756363,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.1339237897986555,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.11089815440014328,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.1277089255875492,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.1374378118391364,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.1261334076192624,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.12841323106912494,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.2686454669162873,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.27270468954752825,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.285762973856055,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.27882880350414696,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.2686617517758857,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.269907632221976,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.28010441284498055,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.29381170884213215,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.28232491931456827,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.27713736957928214,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.29363502726550816,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.29730635965910024,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.31072831858484684,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.3022349836392588,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.2948773873102246,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": -0.7487078321577059,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": -0.8114549700042251,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": -0.8045365843854975,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": -0.8066954947418004,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": -0.7949799610453105,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": -0.8635732922029071,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": -0.9274594355496146,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": -0.940177601337189,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": -0.9329426622389507,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": -0.86642521890184,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": -0.3769289740724533,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": -0.4098240174616352,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": -0.4265426128725496,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": -0.384297599191991,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": -0.4177080510904261,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.0288562412123462,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.04179075734901694,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.0035377205843321047,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.04484929105682045,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.04380212447565046,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "y": 0.058562698482760744,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 0.0671980161397483,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 0.03733641820891043,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 0.07515534788938161,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 0.06739083725413586,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "y": 0.17114078074461825,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.20180580020304184,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.1456563362831791,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.18720009792365533,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.17716844784020336,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "y": 0.13060491856385137,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": 0.14820082724381356,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": 0.10577673714366509,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": 0.150809408763231,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "y": 0.14270174498391353,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "y": 0.2426461286919248,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": 0.29166488330068197,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": 0.21381067815413313,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": 0.25849688619727074,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": 0.24945573513351338,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 9.0,
+      "y": 0.2525004906012773,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "y": 0.29990012929984444,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "y": 0.22356783437638084,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "y": 0.26659844200454064,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "y": 0.2592608016272847,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "y": -0.7553917130850418,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": -0.8189210764622241,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": -0.7317325885033674,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": -0.7633067268766927,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": -0.817385071578294,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": -0.9685133582520833,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": -0.9945288962647589,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": -0.9063551645267458,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": -0.9673615037010066,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": -0.9946581158371495,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "y": -0.36392298412092217,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": -0.43443421187381714,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": -0.45908721162102006,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": -0.38665417577572225,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": -0.4328058280199929,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.02930832421222873,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.011309423835354937,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.006383428406096403,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.03897775062206177,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.006833242005622631,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "y": 0.061814320370576326,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": 0.04616531484431763,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": 0.033248847054863306,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": 0.06337508152599058,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": 0.043505936393566036,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "y": 0.19637490591800066,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "y": 0.1681974344563184,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "y": 0.16680851448691814,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "y": 0.19344834367919594,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "y": 0.16032755218187666,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "y": 0.14466935447068385,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "y": 0.12399241411366968,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "y": 0.11492883772047768,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "y": 0.13952220213968247,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "y": 0.11497358294992843,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "y": 0.27858089052848345,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "y": 0.2478887601298151,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "y": 0.25952227097756964,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "y": 0.27540108399697916,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "y": 0.23448119626196462,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 9.0,
+      "y": 0.28988844595245,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "y": 0.2597983381712001,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "y": 0.2732728631974626,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "y": 0.2861025040467131,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "y": 0.24558893916927638,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "y": -0.6038135013893149,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": -0.5932679792278366,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": -0.7181361316749779,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": -0.6549556135562518,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": -0.6402502134703323,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "y": -0.7019007241521091,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": -0.6597119626397665,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": -0.8316113144878061,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": -0.7512947703461386,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": -0.6990887556487488,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "y": -0.2888440934476293,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "y": -0.42607315597073203,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "y": -0.4070291806983368,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "y": -0.34043918424566444,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "y": -0.37090320635110907,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "y": 0.02020641738237494,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "y": 0.0142507560940901,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "y": 0.012014295230291405,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "y": -0.009780176677275598,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "y": 0.030434738046722587,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.0,
+      "y": 0.05281179240897893,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "y": 0.03566572724527073,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "y": 0.04621079923095761,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "y": 0.03064791443565329,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "y": 0.06176588891895296,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.0,
+      "y": 0.16855644380370427,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "y": 0.1570483422617922,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "y": 0.15885359328485404,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "y": 0.1349273180633389,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "y": 0.16032181989122773,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 7.0,
+      "y": 0.13148423630749606,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 7.0,
+      "y": 0.10938993213618753,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 7.0,
+      "y": 0.12437486752062998,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 7.0,
+      "y": 0.09745868518758483,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 7.0,
+      "y": 0.1312784258071935,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 8.0,
+      "y": 0.2541332445553557,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "y": 0.23045509836510092,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "y": 0.2378682681218901,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "y": 0.2060235258194152,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "y": 0.23019822611263163,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 9.0,
+      "y": 0.26456420099485645,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 9.0,
+      "y": 0.23915186716311554,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 9.0,
+      "y": 0.2471134897707178,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 9.0,
+      "y": 0.21806646151493925,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 9.0,
+      "y": 0.24090237229326195,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.7172985668841438,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.6869436975751375,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.7072309033689268,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.6898605499117558,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2 (per fold)": -0.7191472569169333,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": -0.875100893198089,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": -0.8593284217537791,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": -0.8944745492617259,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": -0.8244115752588368,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2 (per fold)": -0.8569602402860161,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.3621685176296341,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.37497432623909566,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.44678544415953914,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.43252919334216067,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2 (per fold)": -0.4021643150958707,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": -0.03924635501043516,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": -0.004007721616477999,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": -0.038959710552670446,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": -0.01929112025532853,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2 (per fold)": -0.00770106580906571,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.004964606360573831,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.03269811491267838,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.0028765166676740783,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.02059014102381862,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2 (per fold)": 0.03188529219750247,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.12743184129667662,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.15433493095557949,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.1327739280363237,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.13397719595405033,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2 (per fold)": 0.15203083988732347,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.07714538734302634,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.09647446907448876,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.06781127847708146,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.0835498789476028,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2 (per fold)": 0.09682304274954467,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.21081237332127523,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.22295505900321677,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.21909945747741089,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.21099182512835613,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 8.0,
+      "transfer R\u00b2 (per fold)": 0.23165554664124666,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.22294185798991506,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.23481293735922826,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.2308896605265096,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.22557547152176316,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 9.0,
+      "transfer R\u00b2 (per fold)": 0.24361478814848292,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 1.0,
+      "y": -0.7748906634299662,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 1.0,
+      "y": -0.8054239848781908,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 1.0,
+      "y": -0.7186654846864409,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 1.0,
+      "y": -0.7190902724674846,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 1.0,
+      "y": -0.8138409629923198,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 2.0,
+      "y": -1.0150465596724496,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 2.0,
+      "y": -1.072735935254578,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 2.0,
+      "y": -0.9348715193722603,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 2.0,
+      "y": -0.9613283561651507,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 2.0,
+      "y": -1.033205084353316,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 3.0,
+      "y": -0.4137927781907038,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 3.0,
+      "y": -0.45089967142559684,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 3.0,
+      "y": -0.5601775660677681,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 3.0,
+      "y": -0.4107537961671801,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 3.0,
+      "y": -0.5688735378198895,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 4.0,
+      "y": -0.02465574757860378,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 4.0,
+      "y": -0.029747697662723338,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 4.0,
+      "y": -0.034358381936834936,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 4.0,
+      "y": -0.030956603013158945,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 4.0,
+      "y": -0.03792187857437401,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 5.0,
+      "y": 0.026423771109118754,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 5.0,
+      "y": 0.02061338990469419,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 5.0,
+      "y": 0.021428093579779817,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 5.0,
+      "y": 0.01446399868921866,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 5.0,
+      "y": 0.016008319824384998,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 6.0,
+      "y": 0.14785279901921622,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 6.0,
+      "y": 0.13496703581793434,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 6.0,
+      "y": 0.12208814027885717,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 6.0,
+      "y": 0.13117551475697475,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 6.0,
+      "y": 0.11972637861165925,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 7.0,
+      "y": 0.09000574391697846,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 7.0,
+      "y": 0.08260181580588133,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 7.0,
+      "y": 0.08048531820112148,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 7.0,
+      "y": 0.07413179056237651,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 7.0,
+      "y": 0.07439297870164252,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 8.0,
+      "y": 0.23900914587734257,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 8.0,
+      "y": 0.20760003055282283,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 8.0,
+      "y": 0.18661228171471567,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 8.0,
+      "y": 0.21731555898574972,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 8.0,
+      "y": 0.19369311606434603,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 9.0,
+      "y": 0.24881796786166965,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 9.0,
+      "y": 0.22131279476851207,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 9.0,
+      "y": 0.19914402897591277,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 9.0,
+      "y": 0.22832359967582427,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "adaptation rung (1 = frozen map, 9 = full refit)": 9.0,
+      "y": 0.20548730017362538,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": -0.9551885184793236,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": -0.962284861743244,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": -0.9716350927795958,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": -0.928002380622021,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": -1.0058256576094071,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "y": -0.8425710558456085,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": -0.8252761613592241,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": -0.8290124121737057,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": -0.8150521226337919,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": -0.8265132906211525,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 3.0,
+      "y": -0.26977853438719057,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": -0.2955564429553652,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": -0.26865653605119677,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": -0.25448404770818245,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": -0.3353946930493219,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 4.0,
+      "y": -0.041260702427530216,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.0,
+      "y": -0.03609344823056482,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.0,
+      "y": -0.04267411723848347,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.0,
+      "y": -0.038477946809614805,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.0,
+      "y": -0.04976287595297646,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 5.0,
+      "y": 0.03738817363447666,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 5.0,
+      "y": 0.03898923014731348,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 5.0,
+      "y": 0.03733475143517462,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 5.0,
+      "y": 0.04024328715217973,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 5.0,
+      "y": 0.03604496020690373,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 6.0,
+      "y": 0.11149217221954166,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 6.0,
+      "y": 0.10043744951593692,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 6.0,
+      "y": 0.10255003901760817,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 6.0,
+      "y": 0.10663337197711997,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 6.0,
+      "y": 0.10313329905330348,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 7.0,
+      "y": 0.10373461724935995,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 7.0,
+      "y": 0.10195416669984325,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 7.0,
+      "y": 0.10251307221842332,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 7.0,
+      "y": 0.1047651088359699,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 7.0,
+      "y": 0.10346294115051236,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 8.0,
+      "y": 0.20439136649673095,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 8.0,
+      "y": 0.1911405696593007,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 8.0,
+      "y": 0.19875845438899742,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 8.0,
+      "y": 0.20097706048092034,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 8.0,
+      "y": 0.19709672759928698,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 9.0,
+      "y": 0.20993729907588365,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 9.0,
+      "y": 0.20083512294085537,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 9.0,
+      "y": 0.2055344926814655,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 9.0,
+      "y": 0.20990451850394443,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 9.0,
+      "y": 0.2047204515331521,
+      "_kind": "line",
+      "_group": 62
+    }
+  ],
+  "n_series": 63,
+  "total_points": 315,
+  "text": {
+    "suptitle": "Per-fold transfer R\u00b2 behind the recovery ladder (dashed line = own ceiling)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Plain text",
+        "ylabel": "transfer R\u00b2 (per fold)",
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      },
+      {
+        "title_left": "Astra"
+      },
+      {
+        "title_left": "HELIOS"
+      },
+      {
+        "title_left": "Wren"
+      },
+      {
+        "title_left": "Dana",
+        "ylabel": "transfer R\u00b2 (per fold)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      },
+      {
+        "title_left": "Vex",
+        "xlabel": "adaptation rung (1 = frozen map, 9 = full refit)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "title_left": "User (real)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
