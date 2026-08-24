@@ -286,7 +286,9 @@ Plotted: per-tier retrieval accuracy at k = 1 (euclidean) against the floor, map
 | Middle, identity+bias | 0.0035 | 0.0134 | 0.0224 | 0.0252 |
 | Finest, map | 0.0001 | 0.0003 | 0.0004 | 0.0007 |
 
-The coarse-tier map rate is floor-invariant while middle- and finest-tier map rates grow roughly with their dimension counts and remain 80-fold or more below it; the baseline's middle-tier advantage strengthens at looser floors, so the dimension confound noted at the plan-fixed floor carries through the sweep. Bridge cells behave the same way (coarse 0.331–0.335 across its floors). Unlike the median-R² profile, the retrieval profile is floor-robust. Per-unit exemption: per-row rank distributions were recomputed only at the plan-fixed floor (embedded two results above); the sweep persisted aggregate cells.
+The coarse-tier map rate is floor-invariant while middle- and finest-tier map rates grow roughly with their dimension counts and remain 80-fold or more below it; the baseline's middle-tier advantage strengthens at looser floors, so the dimension confound noted at the plan-fixed floor carries through the sweep. Bridge cells behave the same way (coarse 0.331–0.335 across its floors). Unlike the median-R² profile, the retrieval profile is floor-robust.
+
+Per-unit exemption: per-row rank distributions were recomputed only at the plan-fixed floor (embedded two results above); the sweep persisted aggregate cells.
 
 ---
 
