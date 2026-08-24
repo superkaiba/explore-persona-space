@@ -10723,8 +10723,8 @@
       "goal": "On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (gold- or execution-verified, K=5 rollouts) is predictable from the frozen context vector before generation, and whether routing the context vector through the learned context-to-answer map improves that prediction at matched data budgets, across four correctness surfaces (short-answer QA, math, multiple-choice, code) and a distribution-shift ladder.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2388",
-      "status": "running",
+      "path": "tasks/interpreting/2388",
+      "status": "interpreting",
       "title": "Is answer correctness predictable from the context vector, and does the context-to-answer map help?"
     },
     "2389": {
