@@ -83,3 +83,4 @@
 - [Tiny-slice spend-smoke discharge recipe](tiny_slice_spend_smoke_discharge_recipe.md) — 3-way digest corroboration (marker/log/tree), both-direction scoped HF listing, dial… (#2479 r4 g2)
 - [Corpus registry vs plan binding list](corpus_registry_vs_plan_binding_list.md) — diff SourceSpecs vs the plan's by-dataset-id list INCL. construction clauses; probe counts… (#2502 r1 g1)
 - [Ported-pin application semantics](ported_pin_application_semantics.md) — verbatim constants can hide setdefault-vs-authoritative pin inversion + dropped row-level guards… (#2502 R1 g2)
+- [Measured-wall projection unit count](measured_wall_projection_unit_count.md) — recompute measured × realized-LOOP-count / parallelism yourself; marker unit counts lie +… (#2502 r2 g3)
