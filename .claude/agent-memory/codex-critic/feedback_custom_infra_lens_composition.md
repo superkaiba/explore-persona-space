@@ -1209,5 +1209,93 @@ bullet for any round-2+ re-review brief with rejected-findings guards.
   questions span; "P1-P6"/"T1"/"v1"/"Step 9c" atom-free under both-sides
   guards; registry leg from repo root; version-suffixed workspace).
 
+- **Hoist/migration/lint-ratchet sweep plan, standard alternatives lens +
+  brief roman press points + a fact-check JUDGE-THE-REMEDY order (#2336
+  round one): when the orchestrator says "don't re-report the fact-checker's
+  finding, judge whether the adopted remedy works", give the remedy its own
+  mandated output section** (`### Fact-check remedy verdict`, WORKS | FAILS,
+  "a FAILS here is a Must Fix") placed between press-point dispositions and
+  Must Fix, with the trace targets named in the inputs span (the delegating
+  def, the caplog scope + record-name-filter line numbers FROM THE PLAN's
+  own citations, and the plan's claim about how the sibling donor tests
+  reach the writers — "verify that claim in the test file itself"). A brief
+  census slip ("the N arm-B files" vs the plan's lines-in-fewer-files
+  census) gets the #2422 verify-and-correct move: press span stays verbatim,
+  inputs span states the corrected form ("judge against the plan's
+  numbers"). Per-point verdict-word extensions worked: (iii) COMPLETE |
+  GAP-FOUND with quote-the-grep, (iv) BREAKS | HOLDS with the concrete
+  two-process interleaving, (v) DEFENSIBLE | UNCOSTED-RISK. Read discipline:
+  ban pytest (planned tests absent + read-only mode) but ENCOURAGE bounded
+  false-negative greps over scripts/ + src/ ("an empirical miss beats a
+  hypothetical"). Numcheck PASS first try at ~88 KB (spans = inputs + press
+  + lensitems + plan + empty prior; digit-free scaffold; comma-grouping
+  self-test `75,049` as one atom; registry leg from repo root;
+  version-suffixed workspace keyed to PLAN version — no prior-round mv
+  needed).
+
+- **Fact-check-challenge methodology compose on a migration-sweep +
+  lint-ratchet infra plan (#2336 round one): the #2263 inline-the-report
+  shape extends with a mandated `### Fact-check correction adequacy` output
+  section (one line per prior BLOCKER, CURED | INCOMPLETE | WRONG;
+  non-CURED ⇒ matching Must Fix) when the brief orders "do NOT re-report the
+  settled findings, but challenge the corrections if wrong or incomplete".**
+  Earned probes that generalize to any sweep/ratchet plan: (i) a
+  probabilistic race-manifestation control registered into the
+  always-selected invariant test tuple = fleet-wide flake exposure — press
+  for the post-landing flake story, weighing the plan's cited measured
+  baseline; (ii) failure-path-semantics drift — a recipe that deletes
+  "local cleanup boilerplate" can flip a fail-open writer to raising,
+  invisible to a success-path byte-identity spot check — ask whether the
+  blind-spot enumeration owns it; (iii) the highest-consequence batch's
+  dedicated-test instruments get a reaches-the-changed-line grep
+  (hollow-instrument check); (iv) advisory claim-marker over-credit —
+  claims posted on the sweep's own task are unread by live owners, so the
+  real protection is probe+defer; (v) close-with-deferrals judged against
+  the body Goal (bounded handoff vs ownerless deferral). Scaffold-safe
+  tokens re-confirmed: K1-K4 / B1 / A8 / v2 atom-free under both-sides
+  guards; all counts stayed span-side. Numcheck PASS first try at ~180 KB
+  (spans = inputs + factcheck + plan + lensitems + questions + empty prior;
+  registry leg from repo root; version-suffixed workspace keyed to PLAN
+  version).
+
+- **Shrinking-allowlist lint-ratchet migration plan, standard statistics lens +
+  brief directed press points (#2336 round one, atomic-write hoist + repo
+  sweep + `--check-shared-tmp-name`): press points that generalize to ANY
+  shrinking-allowlist ratchet plan.** (1) THE STALE-ENTRY→NEW-OFFENSE SILENT
+  PASS: an allowlisted file passes on ANY hit and the stale WARN fires only
+  while the file has zero hits — walk the composite cell (forgotten shrink →
+  transient advisory WARN bound to no criterion → later new unsafe line makes
+  the entry non-stale → permanent silent pass) and ask whether close-out
+  needs a BINDING allowlist condition (set-equality vs the disposition
+  ledger). (2) Baseline-subtracted lint acceptance keyed on failure-LINE sets:
+  press lineno-drift (the migration's own edits re-key pre-existing reds in
+  touched files → false NEW lines) and task-start-vs-per-batch baseline
+  staleness under a moving shared tree (sibling commits falsely attribute).
+  (3) Dual-instrument completeness criteria: walk the set-relationship BOTH
+  directions (the grep can't see f-string arms; the grep substring-matches
+  identifiers the arms deliberately exclude, e.g. `fname` — a future site
+  makes the grep return a file the check can never flag) + is "both must
+  agree" set-equality or per-instrument membership. (4) Fact-check-corrected
+  v2 at critique round one: mandate `### Round-one fix closure` CLOSED |
+  NOT-CLOSED lines scoped to the fixes IN THIS LENS (B-ids letter-digit,
+  scaffold-safe), framed "the plan's claim of closure is a CLAIM — verify in
+  the v2 body"; the fact-check report inlines verbatim as its own span
+  (#2263 move) framed two-sided. (5) Churn-narrative adjudication: when a
+  claimed live-churn count delta EXACTLY equals a newly-added predicate arm's
+  yield (here: concat "moved" by the same count as the bare-name arm's lines),
+  press the mis-narrative reading (anchored-vs-unanchored accounting gap, not
+  churn) as Concern-level narrative accuracy. (6) Paired-arms hammer control:
+  when deviations-allowed includes "harness tuning to satisfy the control",
+  ask whether the positive arm and the control arm are pinned to the SAME
+  tuned harness parameters, plus venue transfer of a race-detection rate
+  (pod-measured incident rate vs loaded-VM serialization → false-halt
+  direction). (7) Edge-shape stratification of byte-identity spot checks:
+  sample where the by-construction guarantee FAILS (the npz path→handle
+  conversions are real code changes, not derivation swaps) rather than by
+  format. Numcheck PASS first try at ~154 KB (spans = briefnote + questions +
+  factcheck + lensitems + planbody + empty prior; the #2270 numcheck reused
+  with sed path edits only; scaffold fully digit-free — criterion ids A6/K4/B3
+  atom-free under both-sides guards; "Phase 1.5" kept span-side).
+
 Related: [[plan-path-missing-read-from-main]],
 [[stale-tmp-files-across-plan-versions]].
