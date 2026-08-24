@@ -115,9 +115,13 @@ Down column `C` the tokens and their positions are byte-identical, so only the w
 | 0-shot fixed text (`s` = final base, `m` varies) | 14 | representation change alone: identical tokens and positions, only the weights differ |
 | 0-shot fixed weights (`m` = final base, `s` varies) | 14 | answer-distribution change alone: identical weights, only the text differs |
 | k-shot diagonal, all rungs | 15 | format control, and the in-context-substitution curve |
-| k-dose sub-probe, `k ∈ {0, 1, 4, 16}` at 3 rungs | 9 | is `k = 4` doing the work |
+| k-dose sub-probe, `k ∈ {1, 16}` at 3 rungs | 6 | is `k = 4` doing the work (`k = 0` and `k = 4` at those rungs come free from the two arms above) |
 
-58 cells, against 225 for the full 15×15 grid. #1902 ran its full 4×4 because K=4 made it cheap; at K=15 the reduced cross buys the same three reads.
+**64 capture cells** (43 + 15 + 6), against 225 for the 0-shot full square alone. #1902 ran its full 4×4 because 16 cells was cheap; at 15 rungs the cross buys the same three reads for a fifth of the square.
+
+**Generation is per (rung, render), never per cell.** The cross adds zero generation: column `C` reuses the final base's answers, already generated for its own diagonal cell, and row `R` reuses each rung's own answers, already generated for theirs. All 43 cross cells are served by the same 15 answer sets. **36 generation passes** total: 15 at 0-shot, 15 at 4-shot, 6 for the dose probe. Only the k-shot arms add generation, because a different prompt yields different answers.
+
+Capture is prefill-only, no sampling and no autoregressive decoding, so a capture cell costs single-digit minutes against tens of minutes for a generation pass. Model loads are also per rung, not per cell: grouped by weights, 14 rungs carry 2 cells each (own diagonal plus their `C` cell) and the final base carries 15 (its diagonal plus all 14 `R` cells).
 
 Deferred: one more cell per rung (k-shot weights scored on 0-shot text) would separate representation from text *within* the k-shot arm. Worth buying only if the 0-shot to k-shot gap turns out to be the headline.
 
@@ -177,7 +181,7 @@ New code is confined to the k-shot render and its query-block pooling window, th
 
 ## Rough size
 
-58 capture cells plus roughly 30 generation passes, order 150 GPU-hours, ~14 GB download per rung and on the order of 130 GB of activation tensors. Pod work throughout; the per-rung download alone puts this over the shared-VM threshold. Incremental cache reaping between rungs is required. The planner sizes this properly; the figure here is a locator, not a budget.
+64 capture cells plus 36 generation passes, order 150 GPU-hours, ~14 GB download per rung and on the order of 130 GB of activation tensors. Pod work throughout; the per-rung download alone puts this over the shared-VM threshold. Incremental cache reaping between rungs is required. The planner sizes this properly; the figure here is a locator, not a budget.
 
 ## Open decisions for the planner
 
