@@ -10374,8 +10374,8 @@
     "2342": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2342",
-      "status": "approved",
+      "path": "tasks/running/2342",
+      "status": "running",
       "title": "workflow.yaml markers registry: reconcile marker kinds mismatch with /issue review-loop practice"
     },
     "2343": {
