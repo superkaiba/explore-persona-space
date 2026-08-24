@@ -1614,3 +1614,111 @@ def test_fs_healthy_floor_carries_reported_label_and_note():
     assert row["lattice_note"] == FS.LATTICE_NOTE
     reg = FS._finish_floor_row(_fs_stats_stub(), demo, floor=1200, n_fit=120_000, registered=True)
     assert reg["registered_cell"] is True and "registered 1% cell" in reg["lattice_note"]
+
+
+def _fs_args(tmp_path, **over):
+    ns = SimpleNamespace(
+        phase="all",
+        out_root=tmp_path / "out",
+        hf_prefix="issue2476_turnavg/analysis_tensors",
+        smoke=False,
+        max_chunks=0,
+        smoke_rows=0,
+        device="cpu",
+        sae_dir=tmp_path / "sae_cache",
+        fresh_stream=False,
+        skip_upload=False,
+        gpu_id=-1,
+        n_perm=10,
+        n_boot=10,
+        resume_across_code_sha=False,
+        import_check=False,
+    )
+    for k, v in over.items():
+        setattr(ns, k, v)
+    ns.out_root.mkdir(parents=True, exist_ok=True)
+    return ns
+
+
+def test_fs_enter_regime_collision_raises(tmp_path):
+    args = _fs_args(tmp_path)
+    d = args.out_root / "eval"
+    d.mkdir(parents=True)
+    FS._enter_regime(d, args, "fs_stats")
+    args2 = _fs_args(tmp_path, n_perm=99)  # output-affecting dial changed
+    with pytest.raises(RuntimeError, match="DIFFERENT regime"):
+        FS._enter_regime(d, args2, "fs_stats")
+
+
+def test_fs_enter_regime_code_sha_mismatch_wipes_stale(tmp_path, monkeypatch):
+    args = _fs_args(tmp_path)
+    d = args.out_root / "eval"
+    d.mkdir(parents=True)
+    _regime, resume_ok = FS._enter_regime(d, args, "fs_stats")
+    assert resume_ok is False
+    stale = d / "floor_sweep_c.json"
+    stale.write_text("{}")
+    manifest = json.loads((d / "regime.json").read_text())
+    manifest["code_sha"] = "0" * 40  # a different producing commit
+    (d / "regime.json").write_text(json.dumps(manifest))
+    _, resume_ok = FS._enter_regime(d, args, "fs_stats", stale_paths=[stale])
+    assert resume_ok is False
+    assert not stale.exists()  # wiped BEFORE the manifest rewrite (never a stale skip)
+    # retain escape: --resume-across-code-sha keeps outputs
+    stale.write_text("{}")
+    manifest["code_sha"] = "1" * 40
+    (d / "regime.json").write_text(json.dumps(manifest))
+    args_r = _fs_args(tmp_path, resume_across_code_sha=True)
+    _, resume_ok = FS._enter_regime(d, args_r, "fs_stats", stale_paths=[stale])
+    assert resume_ok is True
+    assert stale.exists()
+
+
+def test_fs_git_leg_production_body(tmp_path, monkeypatch):
+    """PRODUCTION-BODY probe of the smoke-fenced _git_leg (#1481 class): a real
+    git clone + local bare remote; exercises force-add of a gitignored .npz, the
+    staged-index verify, commit pathspec, push-verify, and the per-file
+    artifact-presence assert — no fake at any git boundary."""
+    import subprocess
+
+    def run(*argv, cwd):
+        return subprocess.run(
+            argv,
+            cwd=cwd,
+            check=True,
+            capture_output=True,
+            text=True,
+            env={**__import__("os").environ},
+        )
+
+    bare = tmp_path / "remote.git"
+    run("git", "init", "--bare", str(bare), cwd=tmp_path)
+    clone = tmp_path / "clone"
+    run("git", "clone", str(bare), str(clone), cwd=tmp_path)
+    run("git", "-C", str(clone), "config", "user.email", "t@t", cwd=tmp_path)
+    run("git", "-C", str(clone), "config", "user.name", "t", cwd=tmp_path)
+    run("git", "-C", str(clone), "checkout", "-b", "issue-2476-test", cwd=tmp_path)
+    (clone / ".gitignore").write_text("*.npz\n")
+    run("git", "-C", str(clone), "add", ".gitignore", cwd=tmp_path)
+    run("git", "-C", str(clone), "commit", "-m", "init", cwd=tmp_path)
+    run("git", "-C", str(clone), "push", "-u", "origin", "issue-2476-test", cwd=tmp_path)
+    dest = clone / "eval_results" / "issue_2476" / "floor_sweep"
+    dest.mkdir(parents=True)
+    npz = dest / "perfeature_union_c.npz"
+    np.savez(npz, x=np.arange(3))
+    js = dest / "floor_sweep_c.json"
+    js.write_text("{}")
+    monkeypatch.setattr(FS, "ROOT", clone)
+    FS._git_leg([js, npz])
+    tree = run(
+        "git",
+        "--git-dir",
+        str(bare),
+        "ls-tree",
+        "-r",
+        "issue-2476-test",
+        "--name-only",
+        cwd=tmp_path,
+    ).stdout
+    assert "eval_results/issue_2476/floor_sweep/perfeature_union_c.npz" in tree
+    assert "eval_results/issue_2476/floor_sweep/floor_sweep_c.json" in tree

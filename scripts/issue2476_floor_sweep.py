@@ -1453,7 +1453,7 @@ def _fig_hero_r2(sweep: dict, fig_dir: Path, drv, stem: str) -> None:
         ax.set_title(drv.TIER_LABELS[t].replace("\n", " "), fontsize=6)
         ax.set_xlabel("alive floor (% of fit rows)")
     axes[0].invert_xaxis()  # sharex: ONE inversion flips all panels (looser -> right)
-    axes[0].set_ylabel("median held-out R² (alive features)")
+    axes[0].set_ylabel("median held-out R²")
     axes[0].legend(fontsize=5, loc="best")
     savefig_paper(fig, stem, dir=fig_dir)
     plt.close(fig)
