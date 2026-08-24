@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2514,
+  "highest_id": 2515,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11698,6 +11698,13 @@
       "path": "tasks/running/2514",
       "status": "running",
       "title": "workflow-fix: verify_plan c26/c27 routed-machine mirror is GCP-era, inverts under runpod-first auto default"
+    },
+    "2515": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2515",
+      "status": "proposed",
+      "title": "verify_task_body check: markdown tables must not satisfy the per-unit companion requirement unless they carry per-unit rows"
     },
     "256": {
       "has_clean_result": false,
