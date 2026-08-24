@@ -1,3 +1,3 @@
 # MEMORY — codex-clean-result-critic
 
-- [Delta rounds beyond r3](feedback_delta_rounds_beyond_r3.md) — r4/r5 delta briefs: compose delta-scoped when the brief says so; spec accepts rounds 1-5 as of #1017 (malformed <=0/>5/non-integer refused).
+- [Delta rounds beyond r3](feedback_delta_rounds_beyond_r3.md) — delta-scoped briefs (r4+ and follow-up re-gates): compose delta-scoped, all 15 lens lines; round cap is 10 (was 5/#1017, stale twice — re-check spec before quoting).
