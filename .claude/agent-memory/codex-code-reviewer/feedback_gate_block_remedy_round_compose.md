@@ -1,6 +1,6 @@
 ---
 name: gate-block-remedy-round-compose
-description: Composing a round that exists because the Step 10d pre-push lint gate itself blocked (not a reviewer FAIL) — gate root-cause is the round contract, no acceptance-contract envelope, pin-has-teeth static translation (#2253 r4)
+description: Composing a round that exists because a GATE blocked (not a reviewer FAIL) — Step 10d lint gate (#2253 r4), doc-TRIM (#2280 r3), or a PRODUCTION validity gate halting the run with a plan-amended predicate recalibration (#2476 fs r2) — gate root-cause is the round contract, amendment-fidelity both directions, stale-record probes
 metadata:
   type: feedback
 ---
@@ -74,3 +74,45 @@ between rounds when the branch merges main (approved/ → running/ on
 #2280) — re-probe the plan path every round; the prior round's path
 sentence goes stale. Step 4.5 is satisfied-by-construction (the
 pre-existing gate test IS the regression guard; demand no new test).
+
+**Production-gate recalibration variant (#2476 floor-sensitivity-sweep r2,
+2026-08-24):** when the round exists because a PRODUCTION run halted on the
+deliverable's own validity gate (rc=32 on a 1-of-879 fp near-tie) and the
+remedy is a PLAN-AMENDED predicate recalibration (v6 max-based → v7
+quantile):
+
+- **Inline the halt-diagnosis `epm:progress` note in its own envelope** as
+  the incident ground truth (realized delta distribution, the violator's
+  identity/values, the decision rationale + rejected alternatives). The
+  round's realized-production-distribution test pin must be CONSISTENT with
+  it; the relaunch mechanics it names (`--resume-across-code-sha`, pod
+  held) are the orchestrator's duty — their absence from the diff is never
+  a finding.
+- **Attest the amendment in the plan preamble:** compose-time `diff vN-1
+  vN` proving the amendment touches ONLY the brief-named spans, plus the
+  `epm:plan-verify` PASS quote. Lets Codex score fidelity against a settled
+  amendment instead of re-adjudicating the plan change.
+- **The review contract is amendment fidelity in BOTH directions:**
+  implements the amended predicate EXACTLY (comparator boundary arithmetic:
+  ≤ vs < at each tolerance, share passing at exactly the bar, n-floor
+  inclusive; fixtures must pin the boundaries they claim) AND is
+  not-a-loosening (the FAIL-leg pins — systematic shift + order-of-magnitude
+  excursion — must still halt with rc + record-written-FIRST) AND does not
+  go beyond the amendment (no extra tolerance widening, no violator-list
+  cap, sibling gates/rc codes untouched).
+- **The halted out-root carries a STALE OLD-SHAPE gate record** — hand the
+  twin the stale-record probes explicitly: no stale-record skip on resume
+  (a recorded FAIL must never satisfy resume), no re-apply of the recorded
+  old-predicate verdict, no reader indexing NEW-shape keys (`predicate`,
+  new fields) on the OLD record before re-write, and the re-run gate
+  supersedes record-first. Regime-key neutrality (new constants
+  deliberately OUT of `_regime()` so `config_hash` still matches the halted
+  out-root) is a declared-decision adjudication — the impl marker's (b)
+  rationale + needs-eyeball flag it; verify, don't auto-flag as drift.
+- **When round 1 closed via reconciler PASS over the twin's OWN FAIL**, the
+  ledger swells with the reconciler's DOWNGRADED re-raises of the twin's
+  own rows: walk them as STATUS LINES (NOT-TOUCHED is the expected,
+  legitimate status on a micro-diff), pair the author-neutrality line with
+  the severity fence (re-raise at LEDGER severity only if this diff worsens
+  the surface), and pre-resolve the reconciler's standing recommendations
+  as do-not-gate — the brief scoped the round to the gate fix only.
