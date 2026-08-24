@@ -11695,8 +11695,8 @@
     "2514": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2514",
-      "status": "running",
+      "path": "tasks/blocked/2514",
+      "status": "blocked",
       "title": "workflow-fix: verify_plan c26/c27 routed-machine mirror is GCP-era, inverts under runpod-first auto default"
     },
     "2515": {
