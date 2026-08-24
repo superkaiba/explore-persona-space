@@ -56,4 +56,6 @@ If a concurrent session is editing `.claude/rules/LESSONS.md`, follow `.claude/r
 
 ## Provenance
 
+workflow_fix_target: .claude/rules/LESSONS.md, scripts/workflow_lint.py
+
 Filed by the #2313 orchestrator session at its round-2 Step 5c-ter concerns walk. Evidence: #2313 `epm:code-review v2` (Claude PASS, "close it, name the residual, route the trim as a separate follow-up"), `epm:code-review-codex v2` (CONCERNS, closure-ledger line `lessons-index-headroom: KEEP-OPEN`), and `epm:review-reconcile v1` (which named the `gotchas` row as the substantive lever and placed it out of #2313's round).
