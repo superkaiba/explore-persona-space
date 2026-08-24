@@ -1,14 +1,19 @@
 {
-  "commit": "a822434a+dirty",
-  "render_id": "633f27b2209545ff",
-  "git_commit": "a822434aed9bf198fe334bb6e288337de9d8ec1f",
+  "commit": "438ed8cb+dirty",
+  "render_id": "575f9629e361468a",
+  "git_commit": "438ed8cbd16f9d119b757b40684d52b579b9fee1",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2388/fig4_composition.meta.json",
+    "figures/issue_2388/fig4_composition.pdf",
+    "figures/issue_2388/fig4_composition.png",
+    "figures/issue_2388/fig5_transfer.meta.json",
+    "figures/issue_2388/fig5_transfer.pdf",
+    "figures/issue_2388/fig5_transfer.png",
     "scripts/issue2388_analyzer_figs.py"
   ],
-  "git_argv0_state": "untracked",
-  "git_argv0_path": "scripts/issue2388_analyzer_figs.py",
-  "created": "2026-08-24T13:49:56Z",
+  "git_argv0_state": null,
+  "created": "2026-08-24T17:34:18Z",
   "figsize": [
     13.6,
     3.4
@@ -16,91 +21,955 @@
   "points": [
     {
       "x": 0.0,
-      "Spearman rho": 0.5874499183363905,
-      "series": "Context probe, L=250",
-      "_kind": "line",
+      "Spearman rho": 0.5767729171767805,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.5914675768518435,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.5941092609805475,
+      "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 1.0,
-      "Spearman rho": 0.4767308601384334,
-      "series": "Context probe, L=250",
-      "_kind": "line",
-      "_group": 0
+      "Spearman rho": 0.46311686925225864,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4842432063134885,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.48283250484955315,
+      "_kind": "scatter",
+      "_group": 1
     },
     {
       "x": 0.0,
       "Spearman rho": 0.6414493225747735,
-      "series": "Context probe, L=full",
-      "_kind": "line",
-      "_group": 1
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6414493225747735,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6414493225747735,
+      "_kind": "scatter",
+      "_group": 2
     },
     {
       "x": 1.0,
       "Spearman rho": 0.4822879772314303,
-      "series": "Context probe, L=full",
-      "_kind": "line",
-      "_group": 1
-    },
-    {
-      "x": 0.0,
-      "Spearman rho": 0.568336853110302,
-      "series": "Mapped answer (linear map), L=250",
-      "_kind": "line",
-      "_group": 2
+      "_kind": "scatter",
+      "_group": 3
     },
     {
       "x": 1.0,
-      "Spearman rho": 0.45466907164676806,
-      "series": "Mapped answer (linear map), L=250",
-      "_kind": "line",
-      "_group": 2
+      "Spearman rho": 0.4822879772314303,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4822879772314303,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.54741750071572,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.5773949498503131,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.580198108764873,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.45057922201626455,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4674979163908364,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4459300765332032,
+      "_kind": "scatter",
+      "_group": 5
     },
     {
       "x": 0.0,
       "Spearman rho": 0.6447501390592902,
-      "series": "Mapped answer (linear map), L=full",
-      "_kind": "line",
-      "_group": 3
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6447501390592902,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6447501390592902,
+      "_kind": "scatter",
+      "_group": 6
     },
     {
       "x": 1.0,
       "Spearman rho": 0.48663398673398267,
-      "series": "Mapped answer (linear map), L=full",
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "x": 0.0,
-      "Spearman rho": 0.1700059593292298,
-      "series": "Surface features, L=250",
-      "_kind": "line",
-      "_group": 4
+      "_kind": "scatter",
+      "_group": 7
     },
     {
       "x": 1.0,
-      "Spearman rho": 0.07328480295903168,
-      "series": "Surface features, L=250",
-      "_kind": "line",
-      "_group": 4
+      "Spearman rho": 0.48663398673398267,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.48663398673398267,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.19931694018334709,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.19078498055873377,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.11991595724560855,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.07243542303788901,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.088437487463635,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.058981498375571026,
+      "_kind": "scatter",
+      "_group": 9
     },
     {
       "x": 0.0,
       "Spearman rho": 0.37887108416085147,
-      "series": "Surface features, L=full",
-      "_kind": "line",
-      "_group": 5
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.37887108416085147,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.37887108416085147,
+      "_kind": "scatter",
+      "_group": 10
     },
     {
       "x": 1.0,
       "Spearman rho": 0.15495047188488714,
-      "series": "Surface features, L=full",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.15495047188488714,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.15495047188488714,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.5874499183363905,
+      "series": "Context probe, 250 labels",
       "_kind": "line",
-      "_group": 5
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4767308601384334,
+      "series": "Context probe, 250 labels",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6414493225747735,
+      "series": "Context probe, all labels",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4822879772314303,
+      "series": "Context probe, all labels",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.568336853110302,
+      "series": "Mapped answer (linear map), 250 labels",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.45466907164676806,
+      "series": "Mapped answer (linear map), 250 labels",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6447501390592902,
+      "series": "Mapped answer (linear map), all labels",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.48663398673398267,
+      "series": "Mapped answer (linear map), all labels",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1700059593292298,
+      "series": "Surface features, 250 labels",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.07328480295903168,
+      "series": "Surface features, 250 labels",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.37887108416085147,
+      "series": "Surface features, all labels",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.15495047188488714,
+      "series": "Surface features, all labels",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": 0.6380139794817112,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.625732689027657,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.617469231006701,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": 0.6191812187443935,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.5875961131293655,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.5676769867596155,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.6840028927500365,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.6840028927500365,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.6840028927500365,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.6768233513002614,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 0.6768233513002614,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 0.6768233513002614,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.6730046655180122,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": 0.6627543391326424,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": 0.6707706794248602,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": 0.6399325814035489,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": 0.6548330737465948,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": 0.6392179431071467,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": 0.6849769724393305,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.6849769724393305,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.6849769724393305,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": 0.6865553840708732,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.6865553840708732,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": 0.6865553840708732,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "y": 0.37987217616944685,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "y": 0.34972759342795146,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "y": 0.2983936034529778,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "y": 0.21108782492171427,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 0.202068137484378,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 0.12043355450948043,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "y": 0.5751045543771506,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": 0.5751045543771506,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": 0.5751045543771506,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "y": 0.3911406926286674,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": 0.3911406926286674,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": 0.3911406926286674,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "y": 0.43787129941587455,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "y": 0.46978089750015395,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "y": 0.4368022127419753,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "y": 0.3226060538168568,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "y": 0.38620210502660984,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "y": 0.34141584763515165,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "y": 0.5442676914388508,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "y": 0.5442676914388508,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "y": 0.5442676914388508,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "y": 0.4511742630965624,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "y": 0.4511742630965624,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "y": 0.4511742630965624,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "y": 0.46962275426763767,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "y": 0.4667921673098767,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "y": 0.44662632497842586,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "y": 0.34350334877109584,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "y": 0.3529934763639923,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "y": 0.3170044135160322,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": 0.5154869762043514,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.5154869762043514,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.5154869762043514,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "y": 0.38847524856786997,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": 0.38847524856786997,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": 0.38847524856786997,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.0,
+      "y": 0.1985962322869764,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": 0.15326815257097945,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": 0.14753306031316626,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 1.0,
+      "y": 0.02950223365573407,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.023149185951473052,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.03345982193426234,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "y": 0.3318778027928193,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.3318778027928193,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.3318778027928193,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": 0.10237262771055008,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.10237262771055008,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.10237262771055008,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 0.0,
+      "y": 0.6324116827598252,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": 0.5908838908019589,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": 0.6120271179332565,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "y": 0.21038531825415052,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": 0.3399489076505205,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": 0.32659023211636967,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "y": 0.6555486431868991,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "y": 0.6555486431868991,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "y": 0.6555486431868991,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": 0.28685727938528016,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": 0.28685727938528016,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": 0.28685727938528016,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.0,
+      "y": 0.6342907990391219,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 0.0,
+      "y": 0.5912983594638211,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 0.0,
+      "y": 0.6444159439820836,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 1.0,
+      "y": 0.35021783566437814,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": 0.4341245786832995,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": 0.35094582630201077,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 0.0,
+      "y": 0.651519579681912,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "y": 0.651519579681912,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "y": 0.651519579681912,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "y": 0.3775179579115181,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": 0.3775179579115181,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": 0.3775179579115181,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.0,
+      "y": 0.3404778181705569,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "y": 0.3656007406602051,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "y": 0.26639836420655033,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 1.0,
+      "y": 0.14752384736407717,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": 0.13419395065357267,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": 0.19035393165573758,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "y": 0.4491709779640468,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": 0.4491709779640468,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": 0.4491709779640468,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 1.0,
+      "y": 0.11355991276788154,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": 0.11355991276788154,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": 0.11355991276788154,
+      "_kind": "scatter",
+      "_group": 53
     }
   ],
-  "n_series": 6,
-  "total_points": 12,
+  "n_series": 54,
+  "total_points": 156,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -109,16 +978,16 @@
         "title_left": "Short-answer QA (TriviaQA)",
         "ylabel": "Spearman rho",
         "legend_labels": [
-          "Context probe, L=250",
-          "Context probe, L=full",
-          "Mapped answer (linear map), L=250",
-          "Mapped answer (linear map), L=full",
-          "Surface features, L=250",
-          "Surface features, L=full"
+          "Context probe, 250 labels",
+          "Context probe, all labels",
+          "Mapped answer (linear map), 250 labels",
+          "Mapped answer (linear map), all labels",
+          "Surface features, 250 labels",
+          "Surface features, all labels"
         ],
         "xticklabels": [
-          "Test split\n(rung 0)",
-          "Shifted eval\n(rung 1)"
+          "Held-out\ntest split",
+          "Shifted\nevaluation set"
         ],
         "yticklabels": [
           "\u22120.1",
@@ -136,32 +1005,32 @@
       {
         "title_left": "Math (MATH)",
         "xticklabels": [
-          "Test split\n(rung 0)",
-          "Shifted eval\n(rung 1)"
+          "Held-out\ntest split",
+          "Shifted\nevaluation set"
         ]
       },
       {
         "title_left": "Multiple choice (MMLU-Pro)",
         "xticklabels": [
-          "Test split\n(rung 0)",
-          "Shifted eval\n(rung 1)"
+          "Held-out\ntest split",
+          "Shifted\nevaluation set"
         ]
       },
       {
         "title_left": "Code (5-benchmark pool)",
         "xticklabels": [
-          "Test split\n(rung 0)",
-          "Shifted eval\n(rung 1)"
+          "Held-out\ntest split",
+          "Shifted\nevaluation set"
         ]
       }
     ],
     "series": [
-      "Context probe, L=250",
-      "Context probe, L=full",
-      "Mapped answer (linear map), L=250",
-      "Mapped answer (linear map), L=full",
-      "Surface features, L=250",
-      "Surface features, L=full"
+      "Context probe, 250 labels",
+      "Context probe, all labels",
+      "Mapped answer (linear map), 250 labels",
+      "Mapped answer (linear map), all labels",
+      "Surface features, 250 labels",
+      "Surface features, all labels"
     ]
   },
   "formats_written": [

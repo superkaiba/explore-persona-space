@@ -1,916 +1,921 @@
 {
-  "commit": "a822434a+dirty",
-  "render_id": "094f7aa2723f400d",
-  "git_commit": "a822434aed9bf198fe334bb6e288337de9d8ec1f",
+  "commit": "438ed8cb+dirty",
+  "render_id": "03679bea4b6d4ff4",
+  "git_commit": "438ed8cbd16f9d119b757b40684d52b579b9fee1",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2388/fig4_composition.meta.json",
+    "figures/issue_2388/fig4_composition.pdf",
+    "figures/issue_2388/fig4_composition.png",
+    "figures/issue_2388/fig5_transfer.meta.json",
+    "figures/issue_2388/fig5_transfer.pdf",
+    "figures/issue_2388/fig5_transfer.png",
     "scripts/issue2388_analyzer_figs.py"
   ],
-  "git_argv0_state": "untracked",
-  "git_argv0_path": "scripts/issue2388_analyzer_figs.py",
-  "created": "2026-08-24T13:49:44Z",
+  "git_argv0_state": null,
+  "created": "2026-08-24T17:34:14Z",
   "figsize": [
     13.6,
     3.4
   ],
   "points": [
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5211571656237556,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5163300004531922,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5268312786362429,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.5283139497047002,
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.5690390331661722,
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.5721457719532117,
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.54741750071572,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.5773949498503131,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.580198108764873,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5818021544999692,
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5886700801318938,
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5913567665767452,
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6061643099220637,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6135104376071313,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6132646613500088,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.6220329378719407,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.6221350682107121,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.6182329922048593,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.6410986136640144,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.6410986136640144,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.6410986136640144,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6311708957002439,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6311708957002439,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6311708957002439,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.6447501390592902,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.6447501390592902,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.6447501390592902,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5214394815710636,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 9
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.5564995849413614,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 9
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.568336853110302,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 9
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.5872763337362027,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 10
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6109798029597346,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 10
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.620800332762504,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 10
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "Spearman rho (held-out test)": 0.6410986136640144,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 11
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "Spearman rho (held-out test)": 0.6311708957002439,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 11
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "Spearman rho (held-out test)": 0.6447501390592902,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 11
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6214356544124408,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6079826917668003,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.630316006348198,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6500111977373775,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6629416390848527,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6689954331405517,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6730046655180122,
       "_kind": "scatter",
       "_group": 14
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6627543391326424,
       "_kind": "scatter",
       "_group": 14
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6707706794248602,
       "_kind": "scatter",
       "_group": 14
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6469442715780362,
       "_kind": "scatter",
       "_group": 15
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.649659995749692,
       "_kind": "scatter",
       "_group": 15
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6430057776064134,
       "_kind": "scatter",
       "_group": 15
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6791713666424037,
       "_kind": "scatter",
       "_group": 16
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6735744604790472,
       "_kind": "scatter",
       "_group": 16
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6760885873789776,
       "_kind": "scatter",
       "_group": 16
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6754124426186907,
       "_kind": "scatter",
       "_group": 17
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6757421575704643,
       "_kind": "scatter",
       "_group": 17
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6797643717078876,
       "_kind": "scatter",
       "_group": 17
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6857955819912751,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6857955819912751,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6857955819912751,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6819275713501983,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6819275713501983,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6819275713501983,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6849769724393305,
       "_kind": "scatter",
       "_group": 20
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6849769724393305,
       "_kind": "scatter",
       "_group": 20
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6849769724393305,
       "_kind": "scatter",
       "_group": 20
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6199114508424797,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 21
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6606494233209272,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 21
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6688432280251716,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 21
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6465366816447139,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 22
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6762781381668095,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 22
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6769729906323475,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 22
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6857955819912751,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 23
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6819275713501983,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 23
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6849769724393305,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 23
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.4182923739459441,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.4060401509980209,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.3988047517723096,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.455068404127781,
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.4787092282563106,
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.4450077374498407,
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.46962275426763767,
       "_kind": "scatter",
       "_group": 26
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.4667921673098767,
       "_kind": "scatter",
       "_group": 26
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.44662632497842586,
       "_kind": "scatter",
       "_group": 26
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.4866652193535465,
       "_kind": "scatter",
       "_group": 27
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.4747895010524414,
       "_kind": "scatter",
       "_group": 27
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.471183783809243,
       "_kind": "scatter",
       "_group": 27
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.49643460133086237,
       "_kind": "scatter",
       "_group": 28
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.49994819706231364,
       "_kind": "scatter",
       "_group": 28
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.5021741320844768,
       "_kind": "scatter",
       "_group": 28
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5011252161233022,
       "_kind": "scatter",
       "_group": 29
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.515176528641477,
       "_kind": "scatter",
       "_group": 29
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5146744887033571,
       "_kind": "scatter",
       "_group": 29
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.5441183876738533,
       "_kind": "scatter",
       "_group": 30
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.5441183876738533,
       "_kind": "scatter",
       "_group": 30
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.5441183876738533,
       "_kind": "scatter",
       "_group": 30
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.541191763616843,
       "_kind": "scatter",
       "_group": 31
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.541191763616843,
       "_kind": "scatter",
       "_group": 31
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.541191763616843,
       "_kind": "scatter",
       "_group": 31
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5154869762043514,
       "_kind": "scatter",
       "_group": 32
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5154869762043514,
       "_kind": "scatter",
       "_group": 32
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5154869762043514,
       "_kind": "scatter",
       "_group": 32
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.40771242557209153,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 33
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.4595951232779774,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 33
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.4610137488519801,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 33
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.4775461680717436,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 34
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.49951897682588425,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 34
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5103254111560455,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 34
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.5441183876738533,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 35
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.541191763616843,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 35
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5154869762043514,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 35
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6077281081535126,
       "_kind": "scatter",
       "_group": 36
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.5668020837202311,
       "_kind": "scatter",
       "_group": 36
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.5890945773670534,
       "_kind": "scatter",
       "_group": 36
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6129191488238657,
       "_kind": "scatter",
       "_group": 37
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.5820340260432645,
       "_kind": "scatter",
       "_group": 37
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.5632162407053037,
       "_kind": "scatter",
       "_group": 37
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6342907990391219,
       "_kind": "scatter",
       "_group": 38
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.5912983594638211,
       "_kind": "scatter",
       "_group": 38
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6444159439820836,
       "_kind": "scatter",
       "_group": 38
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6306248585480546,
       "_kind": "scatter",
       "_group": 39
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6351187346023164,
       "_kind": "scatter",
       "_group": 39
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6431959340919909,
       "_kind": "scatter",
       "_group": 39
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6376780723012084,
       "_kind": "scatter",
       "_group": 40
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6384283172155104,
       "_kind": "scatter",
       "_group": 40
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6368019958564423,
       "_kind": "scatter",
       "_group": 40
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6637530749371295,
       "_kind": "scatter",
       "_group": 41
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6636662773743282,
       "_kind": "scatter",
       "_group": 41
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6364483310231105,
       "_kind": "scatter",
       "_group": 41
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6512364804214956,
       "_kind": "scatter",
       "_group": 42
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6512364804214956,
       "_kind": "scatter",
       "_group": 42
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6512364804214956,
       "_kind": "scatter",
       "_group": 42
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6476338199722168,
       "_kind": "scatter",
       "_group": 43
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6476338199722168,
       "_kind": "scatter",
       "_group": 43
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6476338199722168,
       "_kind": "scatter",
       "_group": 43
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.651519579681912,
       "_kind": "scatter",
       "_group": 44
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.651519579681912,
       "_kind": "scatter",
       "_group": 44
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.651519579681912,
       "_kind": "scatter",
       "_group": 44
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.5878749230802657,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 45
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.586056471857478,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 45
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6233350341616756,
-      "series": "L = 250",
+      "series": "250 labels",
       "_kind": "line",
       "_group": 45
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6363131757474539,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 46
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6376361284577203,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 46
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.6546225611115227,
-      "series": "L = 2000",
+      "series": "2,000 labels",
       "_kind": "line",
       "_group": 46
     },
     {
-      "Fraction of map pool in-domain (f_U)": 0.0,
+      "x": 0.0,
       "y": 0.6512364804214956,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 47
     },
     {
-      "Fraction of map pool in-domain (f_U)": 1.0,
+      "x": 1.0,
       "y": 0.6476338199722168,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 47
     },
     {
-      "Fraction of map pool in-domain (f_U)": 2.0,
+      "x": 2.0,
       "y": 0.651519579681912,
-      "series": "L = full",
+      "series": "all labels",
       "_kind": "line",
       "_group": 47
     }
@@ -919,21 +924,22 @@
   "total_points": 144,
   "text": {
     "suptitle": null,
-    "fig_texts": [],
+    "fig_texts": [
+      "Share of map pool from the target domain"
+    ],
     "axes": [
       {
         "title_left": "Short-answer QA (TriviaQA)",
-        "xlabel": "Fraction of map pool in-domain (f_U)",
         "ylabel": "Spearman rho (held-out test)",
         "legend_labels": [
-          "L = 250",
-          "L = 2000",
-          "L = full"
+          "250 labels",
+          "2,000 labels",
+          "all labels"
         ],
         "xticklabels": [
-          "0",
-          "0.5",
-          "1"
+          "0%",
+          "50%",
+          "100%"
         ],
         "yticklabels": [
           "0.50",
@@ -949,11 +955,10 @@
       },
       {
         "title_left": "Math (MATH)",
-        "xlabel": "Fraction of map pool in-domain (f_U)",
         "xticklabels": [
-          "0",
-          "0.5",
-          "1"
+          "0%",
+          "50%",
+          "100%"
         ],
         "yticklabels": [
           "0.60",
@@ -970,11 +975,10 @@
       },
       {
         "title_left": "Multiple choice (MMLU-Pro)",
-        "xlabel": "Fraction of map pool in-domain (f_U)",
         "xticklabels": [
-          "0",
-          "0.5",
-          "1"
+          "0%",
+          "50%",
+          "100%"
         ],
         "yticklabels": [
           "0.38",
@@ -991,11 +995,10 @@
       },
       {
         "title_left": "Code (5-benchmark pool)",
-        "xlabel": "Fraction of map pool in-domain (f_U)",
         "xticklabels": [
-          "0",
-          "0.5",
-          "1"
+          "0%",
+          "50%",
+          "100%"
         ],
         "yticklabels": [
           "0.54",
@@ -1010,9 +1013,9 @@
       }
     ],
     "series": [
-      "L = 250",
-      "L = 2000",
-      "L = full"
+      "250 labels",
+      "2,000 labels",
+      "all labels"
     ]
   },
   "formats_written": [

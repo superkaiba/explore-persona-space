@@ -297,19 +297,24 @@ def fig4_composition() -> None:
                 color=C["arm_maplin"],
                 alpha=shade[b],
                 lw=1.8,
-                label=f"L = {b}",
+                label=("all labels" if b == "full" else f"{int(b):,} labels"),
             )
-        ax.set_xticks([0, 1, 2], ["0", "0.5", "1"])
-        ax.set_xlabel("Fraction of map pool in-domain (f_U)")
+        ax.set_xticks([0, 1, 2], ["0%", "50%", "100%"])
         ax.set_title(SURFACE_TITLES[s])
     axes[0].set_ylabel("Spearman rho (held-out test)")
+    fig.supxlabel("Share of map pool from the target domain", fontsize=11)
     axes[0].legend(fontsize=8, loc="lower right")
     savefig_paper(fig, "fig4_composition", dir=OUT)
     plt.close(fig)
 
 
 def fig5_transfer() -> None:
-    """Shift-rung degradation: rung 0 vs rung 1 for context and mapped arms."""
+    """Shift-rung degradation: locked test vs shifted set for context and mapped arms.
+
+    v2 (revision round 2): reader-facing tick/legend labels (no rung codes or
+    L= shorthand) + per-draw points at both positions so the low-level view
+    rides the same panel (the three draws coincide at the full budget).
+    """
     fig, axes = plt.subplots(1, 4, figsize=(13.6, 3.4), sharey=True)
     for ax, s in zip(axes, SURFACES):
         rows = load_rows(s)
@@ -318,6 +323,7 @@ def fig5_transfer() -> None:
                 r0 = series(rows, arm, "rung0")
                 r1 = series(rows, arm, "rung1")
                 if b in r0 and b in r1:
+                    blab = "250 labels" if b == "250" else "all labels"
                     ax.plot(
                         [0, 1],
                         [r0[b][0], r1[b][0]],
@@ -327,9 +333,18 @@ def fig5_transfer() -> None:
                         alpha=alpha,
                         ls=ls,
                         lw=1.8,
-                        label=f"{LBL[arm]}, L={b}" if s == "qa" else None,
+                        label=f"{LBL[arm]}, {blab}" if s == "qa" else None,
                     )
-        ax.set_xticks([0, 1], ["Test split\n(rung 0)", "Shifted eval\n(rung 1)"])
+                    for x, ser in ((0, r0), (1, r1)):
+                        ax.scatter(
+                            [x] * len(ser[b][1]),
+                            ser[b][1],
+                            s=9,
+                            color=C[arm],
+                            alpha=alpha * 0.5,
+                            linewidths=0,
+                        )
+        ax.set_xticks([0, 1], ["Held-out\ntest split", "Shifted\nevaluation set"])
         ax.set_title(SURFACE_TITLES[s])
         ax.set_xlim(-0.25, 1.25)
     axes[0].set_ylabel("Spearman rho")
