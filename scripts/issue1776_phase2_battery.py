@@ -143,7 +143,7 @@ def run(args) -> int:
     if args.out.exists() and not args.force:
         try:
             prior = json.loads(args.out.read_text()).get("inputs")
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             prior = None
         if prior == fp:
             print(

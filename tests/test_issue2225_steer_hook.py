@@ -257,6 +257,47 @@ def test_hook_delta_exact_per_mode(trainer_and_hook, mode):
     assert hook.n_edits == 1
 
 
+def test_context_end_one_hot_matches_template_length(trainer_and_hook, qwen_tok):
+    """fu1 plan §4.2 + §12 A5: `context_end` is EXACTLY one-hot per row at the
+    last prompt token, cross-checked against a DIRECT
+    ``apply_chat_template(add_generation_prompt=True)`` token count on all 4
+    template shapes (with/without an explicit system turn x 2 lengths)."""
+    trainer, _ = trainer_and_hook
+    batch = _collated_batch(trainer)
+    am, labels = batch["attention_mask"], batch["labels"]
+    mask = masks_for_mode("context_end", attention_mask=am, labels=labels)
+    ctx = masks_for_mode("context", attention_mask=am, labels=labels)
+    # Exactly one position per row; context_end ⊆ context (hence ⊆ non-pad).
+    assert (mask.sum(dim=1) == 1).all(), mask.sum(dim=1).tolist()
+    assert torch.equal(mask & ctx, mask), "context_end must be a subset of context"
+    # Independent cross-check: the masked index == n_prompt_tokens - 1 under
+    # the SAME apply_chat_template(add_generation_prompt=True) render TRL's
+    # prompt-completion tokenizer uses (right padding puts the prompt first).
+    for i, row in enumerate(ROWS):
+        ids = qwen_tok.apply_chat_template(row["prompt"], add_generation_prompt=True, tokenize=True)
+        if ids and isinstance(ids[0], list):
+            ids = ids[0]
+        masked_idx = int(mask[i].nonzero().item())
+        assert masked_idx == len(ids) - 1, (
+            f"row {i}: context_end index {masked_idx} != template prompt length "
+            f"{len(ids)} - 1 (assistant-header tail)"
+        )
+
+
+def test_context_end_refuses_contextless_row(trainer_and_hook):
+    """A row with NO context position (every real token supervised) fails loud
+    instead of silently steering position 0 (argmax-of-all-False)."""
+    trainer, _ = trainer_and_hook
+    batch = _collated_batch(trainer)
+    labels = torch.where(
+        batch["attention_mask"] == 1,
+        batch["input_ids"],
+        torch.full_like(batch["input_ids"], -100),
+    )
+    with pytest.raises(AssertionError, match="NO context position"):
+        masks_for_mode("context_end", attention_mask=batch["attention_mask"], labels=labels)
+
+
 def test_unarmed_forward_raises(trainer_and_hook):
     """A forward under an installed hook with no armed mask fails loud."""
     trainer, _ = trainer_and_hook

@@ -25,9 +25,12 @@ load_dotenv()  # thread caps + credentials BEFORE numpy (shared-VM run)
 
 import numpy as np  # noqa: E402
 
-from explore_persona_space.task_workflow import repo_root  # noqa: E402
 
-PROJECT_ROOT = repo_root()
+# Derived from __file__, NOT task_workflow.repo_root(): that resolver branch-guards to the
+# MAIN checkout (it refuses sparse/shallow checkouts). In a default sparse worktree (no
+# eval_results/ cones) a re-run fails LOUD (FileNotFoundError) rather than silently reading
+# main's copies. #2183; precedent: scripts/issue1482_densesae_fullwidth.py.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import issue1482_residual_svd as RS  # noqa: E402
@@ -158,7 +161,7 @@ def main() -> None:
                 f"<td>{r_['variance_share']:.2e}</td>"
                 f'<td class="{"good" if r_["r2_ridge"] > 0.5 else ("bad" if r_["r2_ridge"] < 0 else "")}">{r_["r2_ridge"]:.3f}</td>'
                 f"<td>{r_['r2_mlp']:.3f}</td>"
-                f'<td>{r_["sae_feat"]}</td>'
+                f"<td>{r_['sae_feat']}</td>"
                 f"<td>{r_['abs_cos']:.2f}</td>"
                 f'<td class="desc">{esc(r_["own_desc"])}</td>'
                 f"<td>{tokcell(r_['logit_lens'])}</td>"

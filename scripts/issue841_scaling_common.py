@@ -435,9 +435,10 @@ def _write_overflow_pointer_dataset(
     read it to locate the rerouted ``.pt`` on the overflow repo, so a silently-missing
     pointer makes a fresh-instance durability fetch treat the bucket as public and return
     a partial/empty shard set while the run reads green (Codex #841 v11 review). Raises
-    RuntimeError on any upload miss or exception. (hub._write_overflow_pointer targets
-    repo_type='model'; this is the dataset twin with the {overflow_repo, path_in_repo,
-    ts, reason} schema.)"""
+    RuntimeError on any upload miss or exception. (hub._write_overflow_pointer takes
+    repo_type as a parameter since #2304 and writes a DIFFERENT schema; this local twin
+    stays for the {overflow_repo, path_in_repo, ts, reason} schema its own readers —
+    fetch_capture_from_hf / hf_download_pt_maybe_overflow — parse.)"""
     from explore_persona_space.orchestrate import hub
 
     payload = {

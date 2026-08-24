@@ -95,6 +95,13 @@ MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 HIDDEN_FULL = 3584
 N_MODEL_LAYERS_FULL = 28
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+# WRITE-side destination override. The canonical data repo above sits at HF's
+# hard 1,000,000-file-per-repo cap and refuses EVERY push (see #2304), so a run
+# needs somewhere else to persist while that is resolved. READS are deliberately
+# left on HF_DATA_REPO — parent artifacts (banks, parent grids, judge pools) live
+# there and are still fetchable — so only the upload destination reroutes.
+# Unset => byte-identical legacy behavior.
+HF_DATA_WRITE_REPO = os.environ.get("EPM_2162_DATA_WRITE_REPO", HF_DATA_REPO)
 HF_PREFIX = "issue2162_ctxinfo"
 DEFAULT_OUT_ROOT = Path("/workspace/issue2162_out")
 DEFAULT_LOG_DIR = Path("/workspace/logs")
@@ -137,6 +144,12 @@ PILOT_FENCE_MULT = 2.0
 # raised 3600 -> 14400 s so a legitimately long block never ages out mid-run).
 CLAIM_STALE_S = float(os.environ.get("EPM_2162_CLAIM_STALE_S", "14400"))
 CLAIM_POLL_S = float(os.environ.get("EPM_2162_CLAIM_POLL_S", "30"))
+# In-flight-tolerant claim read (#2305): a reader can observe a claim file
+# EMPTY inside the winner's microsecond open->replace window; retry the read
+# a bounded number of times (worst case ~1 s) before treating a still-empty
+# claim as a dead writer. Module-level so tests can pin them.
+CLAIM_READ_RETRIES = 4
+CLAIM_READ_SLEEP_RANGE = (0.05, 0.25)
 
 # Distinct rcs: a designed halt is never an anonymous rc=1 (#1415).
 RC_OK = 0
@@ -320,14 +333,85 @@ def _claim_stale(rec: dict, now: float | None = None) -> bool:
     return (now - float(rec.get("ts", 0.0))) > CLAIM_STALE_S
 
 
+_EMPTY_STALE = object()
+"""Sentinel: the claim file was still EMPTY after the full bounded read (#2305)."""
+
+
+def _read_claim_inflight_tolerant(path: Path) -> dict | None | object:
+    """Read + parse a claim file, tolerating an in-flight writer (#2305).
+
+    A reader can hit the microsecond window between the winner's
+    ``O_CREAT | O_EXCL`` open and its atomic payload ``os.replace`` (the
+    writer path in ``try_claim``), observing the claim file EMPTY. Retry the
+    read up to ``CLAIM_READ_RETRIES`` times, sleeping
+    ``random.uniform(*CLAIM_READ_SLEEP_RANGE)`` between attempts (module
+    constants so tests can pin them; worst-case bound ~1 s). Returns:
+
+    - the parsed record ``dict`` — the normal case;
+    - ``None`` — the claim VANISHED (released, or consumed by a concurrent
+      reclaim); the caller returns False and the outer scan revisits;
+    - ``_EMPTY_STALE`` — still EMPTY after the full bound: with the atomic
+      writer in place no LIVE same-version writer holds an empty claim for
+      ~1 s, so the writer died inside the open->replace window; the caller
+      falls into the stale-reclaim path. Residual accepted risk (same class
+      as the r1 M1 settle comment): a live writer stalled past the bound
+      inside that window — SIGSTOP'd, or delayed by network-FS (MooseFS
+      cross-host) visibility lag — is reclaimed as empty-dead and the block
+      double-runs; tolerated by release_claim's stolen-claim tolerance +
+      atomic idempotent done-files, never corruption.
+
+    Persistent NON-EMPTY garbage raises the same hard ``RuntimeError`` as
+    before: with atomic payload writes, partial JSON from a live writer is
+    impossible, so it is genuine corruption — fail-fast stays.
+    """
+    data: bytes = b""
+    last_err: Exception | None = None
+    for attempt in range(CLAIM_READ_RETRIES):
+        if attempt:
+            time.sleep(random.uniform(*CLAIM_READ_SLEEP_RANGE))
+        try:
+            data = path.read_bytes()
+        except FileNotFoundError:
+            return None
+        except OSError as e:
+            last_err = e
+            continue
+        if data == b"":
+            last_err = None
+            continue
+        try:
+            return json.loads(data)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            last_err = e
+            continue
+    if data == b"" and last_err is None:
+        logger.warning(
+            "[claims] EMPTY claim %s after %d bounded reads — treating as dead "
+            "writer (died inside the create window)",
+            path,
+            CLAIM_READ_RETRIES,
+        )
+        return _EMPTY_STALE
+    raise RuntimeError(
+        f"unparseable claim file {path} — inconsistent claim state, refusing "
+        "to guess (delete it manually after diagnosing the writer)"
+    ) from last_err
+
+
 def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     """Atomically claim one block; reclaim a STALE claim; never skip silently.
 
-    Fresh claim: ``O_CREAT | O_EXCL`` — exactly one worker wins. Existing
-    claim: parse it (an unparseable claim file is an inconsistent-state HARD
-    failure), and when stale, atomically replace it and verify OUR token won
-    (two workers can both see stale; ``os.replace`` serializes, last writer
-    wins, the read-back arbitrates).
+    Fresh claim: ``O_CREAT | O_EXCL`` on the target decides the election —
+    exactly one worker wins — and the winner lands its payload atomically
+    (tmp + ``os.replace``), so a reader can observe the claim file EMPTY
+    (the microsecond open->replace window) but never partially written
+    (#2305). Existing claim: read it with bounded in-flight tolerance
+    (``_read_claim_inflight_tolerant``): a VANISHED claim returns False (the
+    outer scan revisits), a still-EMPTY claim after the bound is a dead
+    writer and falls into the stale-reclaim path, persistent non-empty
+    garbage stays an inconsistent-state HARD failure. When stale, atomically
+    replace it and verify OUR token won (two workers can both see stale;
+    ``os.replace`` serializes, last writer wins, the read-back arbitrates).
     """
     cdir.mkdir(parents=True, exist_ok=True)
     path = cdir / f"{block.slug}.claim"
@@ -342,14 +426,14 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
-        try:
-            rec = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError) as e:
-            raise RuntimeError(
-                f"unparseable claim file {path} — inconsistent claim state, refusing "
-                "to guess (delete it manually after diagnosing the writer)"
-            ) from e
-        if not _claim_stale(rec):
+        rec = _read_claim_inflight_tolerant(path)
+        if rec is None:
+            # Claim VANISHED mid-read (released, or consumed by a concurrent
+            # reclaim) — never a raise, never a silent skip: the
+            # work-conserving outer scan revisits the block on its next pass.
+            return False
+        empty_dead = rec is _EMPTY_STALE
+        if not empty_dead and not _claim_stale(rec):
             return False
         tmp = path.parent / f"{path.name}.tmp.{token}"
         tmp.write_text(json.dumps(payload))
@@ -363,16 +447,31 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
         winner = json.loads(path.read_text())
         won = winner.get("token") == token
         if won:
-            logger.info(
-                "[claims] reclaimed STALE claim %s (was pid=%s host=%s age=%.0fs)",
-                block.key,
-                rec.get("pid"),
-                rec.get("host"),
-                time.time() - float(rec.get("ts", 0.0)),
-            )
+            if empty_dead:
+                # Distinct success line (#2305): the empty claim carried NO
+                # fields — never format pid/host/age off a record that was
+                # never parsed.
+                logger.warning(
+                    "[claims] reclaimed EMPTY claim %s (dead writer in create window)",
+                    block.key,
+                )
+            else:
+                logger.info(
+                    "[claims] reclaimed STALE claim %s (was pid=%s host=%s age=%.0fs)",
+                    block.key,
+                    rec.get("pid"),
+                    rec.get("host"),
+                    time.time() - float(rec.get("ts", 0.0)),
+                )
         return won
-    with os.fdopen(fd, "w") as f:
-        json.dump(payload, f)
+    # Winner (#2305): the election is decided by the O_CREAT|O_EXCL open
+    # above; close the empty fd and land the payload the way the
+    # stale-reclaim path does — tmp sibling + atomic os.replace — so readers
+    # observe the claim EMPTY or COMPLETE, never partially written.
+    os.close(fd)
+    tmp = path.parent / f"{path.name}.tmp.{token}"
+    tmp.write_text(json.dumps(payload))
+    os.replace(tmp, path)
     return True
 
 
@@ -1164,6 +1263,12 @@ def _gate_spot_specs(pairs: list[BANK.Pair2162]) -> list[dict]:
     return out
 
 
+def _default_spot_position(rec: dict, slot: str) -> int:
+    """Default ``run_injection_gate`` spot position — this module's own
+    :func:`slot_position` arithmetic (asserts ``1 <= prefix_end < ctx_len``)."""
+    return slot_position(rec["ctx_len"], rec["prefix_end"], slot)
+
+
 @torch.no_grad()
 def run_injection_gate(
     cfg: RunConfig,
@@ -1177,17 +1282,23 @@ def run_injection_gate(
     ids_fn=None,
     spots: list[dict] | None = None,
     payload_fn=None,
+    position_fn=None,
 ) -> dict:
     """Plan §7 gate 1 — the realized edit equals the intended donor state at
     the intended (row, position, layer) and NOWHERE else.
 
-    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn``
-    seams (defaults = this module's own registries — byte-equivalent for every
-    existing caller) let the #2162 LADDER driver reuse this gate verbatim over
-    its own bank (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS,
-    never re-implements, the injection-gate helper"). ``spots`` rows keep the
+    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn`` /
+    ``position_fn`` seams (defaults = this module's own registries —
+    byte-equivalent for every existing caller) let the #2162 LADDER driver
+    reuse this gate verbatim over its own bank
+    (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS, never
+    re-implements, the injection-gate helper"). ``spots`` rows keep the
     ``{"cell", "slot", "arm", "pair"}`` shape; ``payload_fn`` keeps
-    :func:`payload_for_arm`'s call signature.
+    :func:`payload_for_arm`'s call signature. ``position_fn(rec, slot) -> int``
+    overrides the per-spot edit-position computation (default =
+    :func:`_default_spot_position`; the #2333 donors gate passes a pe-safe
+    variant for flagged ``no_prefix`` bare renders whose ``prefix_end == 0``,
+    which the default asserts on).
 
     Stage 1 is REPLACE at every layer, so the exactness read is ABSOLUTE (the
     hooked state at the edited position IS the payload — no incremental
@@ -1204,6 +1315,7 @@ def run_injection_gate(
     contexts = BANK.build_contexts() if contexts is None else contexts
     ids_fn = BANK.context_token_ids_2162 if ids_fn is None else ids_fn
     payload_fn = payload_for_arm if payload_fn is None else payload_fn
+    position_fn = _default_spot_position if position_fn is None else position_fn
     ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
     pad_id = tok.pad_token_id
     recs = bank["per_context"]
@@ -1229,7 +1341,7 @@ def run_injection_gate(
         for p in batch_pairs:
             payload, donor_id = payload_fn(bank, p, slot, arm, donor_maps, pairs_by_id)
             rec = recs[p.a]
-            positions.append((slot_position(rec["ctx_len"], rec["prefix_end"], slot),))
+            positions.append((position_fn(rec, slot),))
             payloads.append(payload)
             donor_ids.append(donor_id)
 
@@ -2472,7 +2584,7 @@ def upload_dir_hf(
     for attempt in range(UPLOAD_TRANSPORT_RETRIES + 1):
         base_url = _upload_folder_filtered(
             local_dir=local_dir,
-            repo_id=HF_DATA_REPO,
+            repo_id=HF_DATA_WRITE_REPO,
             repo_type="dataset",
             path_in_repo=remote_prefix,
             allow_patterns=allow_patterns,
@@ -2579,7 +2691,7 @@ def _margin_state(cfg: RunConfig) -> dict:
     for p in sorted(cfg.manifest_dir.glob("margin_anchors_w*_done.json")):
         try:
             recs.append(json.loads(p.read_text()))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
     anchors_done = False
     for w in {int(r.get("num_workers", 0)) for r in recs}:
@@ -2665,7 +2777,9 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "num_workers": cfg.num_workers,
         },
         "wandb_url": None,
-        "hf_hub_url": f"https://huggingface.co/datasets/{HF_DATA_REPO}/tree/main/{HF_PREFIX}",
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{HF_DATA_WRITE_REPO}/tree/main/{HF_PREFIX}"
+        ),
         "worktree_path": str(REPO_ROOT),
         "final_commit_sha": _git_sha(),
         "gpu_hours_used": None,

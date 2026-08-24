@@ -232,7 +232,7 @@ def check_phase(
         if path.exists():
             try:
                 payload = json.loads(path.read_text())
-            except (OSError, json.JSONDecodeError):
+            except (OSError, json.JSONDecodeError, UnicodeDecodeError):
                 logger.warning("[rss-guard] unreadable prior report at %s — rewriting", path)
         payload.setdefault("checks", []).append(record)
         tmp = path.with_name(path.name + ".tmp")

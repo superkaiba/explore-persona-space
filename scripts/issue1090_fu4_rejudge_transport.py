@@ -270,7 +270,7 @@ def rejudge_read(judge_dir: Path, out_root: Path, *, max_tokens: int, dry_run: b
             if _HEX_CACHE_RE.match(f.name):
                 try:
                     rec = json.loads(f.read_text())
-                except (json.JSONDecodeError, OSError):
+                except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                     continue
                 if _is_transport(rec):
                     f.unlink()

@@ -111,7 +111,7 @@ def _expected_targets_for_cell(cell_dir: Path, layer: int, targets: list[str] | 
     done_path = cell_dir / CELL_DONE_SENTINEL
     try:
         meta = json.loads(done_path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise RuntimeError(
             f"unparsable .done sentinel at {done_path} ({exc}) — cannot trust the "
             "staged cell as complete"

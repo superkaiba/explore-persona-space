@@ -722,7 +722,7 @@ def _resume_cell(out_dir: Path, preds_dir: Path, cid: str, regime: dict) -> dict
         return None
     try:
         payload = json.loads(cell_json.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if payload.get("bnd_fit_regime") != regime:
         return None

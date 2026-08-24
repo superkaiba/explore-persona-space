@@ -158,11 +158,18 @@ def stage_shared(args, token: str) -> None:
         _log(f"[phase=stage_shared] train DV {behavior} -> {train_out}")
 
 
-def stage_extraction(behavior: str, args, token: str) -> None:
-    """Stage a behavior's E1 extraction store (only when its r_B bank is absent)."""
+def stage_extraction(behavior: str, args, token: str, *, force: bool = False) -> None:
+    """Stage a behavior's E1 extraction store (only when its r_B bank is absent).
+
+    ``force=True`` stages even when the r_B bank exists — the factorial leg's
+    e1_fc regime reads the store's context_end shards, which the bank does not
+    carry (a present store still short-circuits either way).
+    """
     bank = args.tensors_root / "r_b_e1" / f"{behavior}.npz"
     dest = args.store_root / f"{behavior}_extraction"
-    if bank.exists() or (dest / "row_index.jsonl").exists():
+    if (dest / "row_index.jsonl").exists():
+        return
+    if bank.exists() and not force:
         return
     from explore_persona_space.orchestrate import hub
 
@@ -212,7 +219,7 @@ def staged_slice_covers(
         return False, ""
     try:
         m = json.loads(manifest_path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         return False, f"unreadable {STAGE_MANIFEST} ({type(exc).__name__}) — re-staging"
     have_layers = {int(x) for x in m.get("layers", [])}
     have_kinds = set(m.get("kinds", []))

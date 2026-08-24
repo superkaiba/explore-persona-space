@@ -91,7 +91,7 @@ def _read_manifest(ds_dir: Path) -> dict | None:
         return None
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
 
 

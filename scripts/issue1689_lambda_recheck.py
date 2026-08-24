@@ -231,7 +231,7 @@ def process_cell_arm(
     if ckpt.exists():
         try:
             prior = json.loads(ckpt.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             prior = None
         if _ckpt_satisfies(prior, want):
             print(

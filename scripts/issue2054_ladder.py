@@ -256,7 +256,7 @@ def _load_target_ceiling(fits_dir: Path, cell_key: str, arm: str) -> float | Non
     try:
         with path.open(encoding="utf-8") as f:
             d = json.load(f)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
     try:
         arm_report = d.get("arm_reports", {}).get(arm, {})
@@ -1035,7 +1035,7 @@ def _pair_resume_check(out_path: Path, expected: dict) -> tuple[bool, str]:
     try:
         with out_path.open(encoding="utf-8") as f:
             existing = json.load(f)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return False, "existing rung JSON unreadable"
     # NaN-aware equality (issue2054_resume.regime_values_equal): the regime's
     # target_ceiling is legitimately NaN when the target cell's own ceiling is
@@ -1116,7 +1116,7 @@ def _run_ladder_pilot_gate(
                     units_basis="pending (pair, arm) units",
                 )
                 return
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             pass
 
     pilot_pair = None
@@ -1475,7 +1475,7 @@ def run_phase(args: argparse.Namespace) -> int:
         try:
             with pilot_report_path.open(encoding="utf-8") as f:
                 projected_fleet_wall_seconds = json.load(f).get("projected_fleet_wall_seconds")
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             pass
 
     digest = {

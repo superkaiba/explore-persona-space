@@ -313,7 +313,7 @@ def generate_labeling(
                 return False
             try:
                 meta = json.loads(path.read_text()).get("meta", {})
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 return False
             if meta.get("fingerprint") != fingerprint:
                 return False
@@ -517,7 +517,7 @@ def generate_e1_extraction(
             return False
         try:
             return json.loads(path.read_text()).get("meta", {}).get("fingerprint") == fingerprint
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             return False
 
     pending = [j for j in jobs if not _done(j)]

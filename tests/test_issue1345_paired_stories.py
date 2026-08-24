@@ -1190,3 +1190,30 @@ def test_merge_wave_counts_sums_and_merges_reason_dicts():
     acc = {"n_generated": 2, "kept": 1, "mech_fail_reasons": {"a": 1}}
     gp._merge_wave_counts(acc, {"n_generated": 3, "kept": 0, "mech_fail_reasons": {"a": 2, "b": 1}})
     assert acc == {"n_generated": 5, "kept": 1, "mech_fail_reasons": {"a": 3, "b": 1}}
+
+
+def test_bundle_draw_counts_skips_encoding_corrupt_meta_and_continues(tmp_path):
+    """#2168 shape-5 regression (suppress skip-and-continue): an
+    encoding-corrupt ``*.meta.json`` raises ``UnicodeDecodeError`` from
+    ``read_text()`` — a ``ValueError`` OUTSIDE the pre-#2168
+    ``contextlib.suppress(JSONDecodeError, OSError)`` args — so the resume
+    scan must SKIP that bundle and KEEP counting the later suffixes'
+    bundles, never raise."""
+    fp = "fp-2168"
+    # Main bundle: valid raw rows, encoding-corrupt meta → skipped entirely.
+    (tmp_path / "raw_stories_paired_instruct.jsonl").write_text(
+        json.dumps({"conv_id": "conv-corrupt"}) + "\n"
+    )
+    # 0xff is invalid UTF-8 in any position → read_text() raises
+    # UnicodeDecodeError before json.loads is ever reached.
+    (tmp_path / "raw_stories_paired_instruct.meta.json").write_bytes(
+        b'\xff\xfe{"fingerprint": "fp-2168"}'
+    )
+    # Retry bundle (a LATER loop iteration): valid same-fp meta → counted.
+    (tmp_path / "raw_stories_paired_instruct_retry.jsonl").write_text(
+        json.dumps({"conv_id": "conv-ok"}) + "\n" + json.dumps({"conv_id": "conv-ok"}) + "\n"
+    )
+    (tmp_path / "raw_stories_paired_instruct_retry.meta.json").write_text(
+        json.dumps({"fingerprint": fp})
+    )
+    assert gp._bundle_draw_counts(tmp_path, "paired", "instruct", fp) == {"conv-ok": 2}

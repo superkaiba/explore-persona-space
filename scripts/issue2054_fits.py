@@ -1001,7 +1001,7 @@ def _cell_resume_check(out_path: Path, expected: dict) -> tuple[bool, str]:
     try:
         with out_path.open(encoding="utf-8") as f:
             existing = json.load(f)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return False, "existing fit JSON unreadable"
     mismatched = [k for k in _CELL_RESUME_KEYS if existing.get(k) != expected.get(k)]
     fm = existing.get("fold_map") or {}
@@ -1070,7 +1070,7 @@ def _run_fits_pilot_gate(
                     units_basis="total cells x arms (resume not modeled)",
                 )
                 return
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             pass
 
     pilot_key = (

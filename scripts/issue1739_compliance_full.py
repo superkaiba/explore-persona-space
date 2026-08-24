@@ -380,7 +380,7 @@ def _load_trait_per_item_scores(trait_root: Path, rung: str) -> dict[str, list[f
         manifest = json.loads(manifest_path.read_text())
         rung_rep = (manifest.get("per_rung") or {}).get(rung) or {}
         return dict(rung_rep.get("per_item_scores") or {})
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 

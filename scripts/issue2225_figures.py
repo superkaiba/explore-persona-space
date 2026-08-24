@@ -56,10 +56,10 @@ from explore_persona_space.analysis.paper_plots import (
 CONFIG_ORDER = ("A", "B", "C", "D", "E", "F", "G", "I", "P", "H")
 CONFIG_LABEL = {
     "A": "Paper single-layer (response-avg dir, all tokens)",
-    "B": "Paper 3-layer (response-avg dir, all tokens)",
+    "B": "Paper all-layer, 28 incremental (response-avg dir, all tokens)",
     "C": "Context single-layer (context-end dir, context tokens)",
-    "D": "Context 2-layer (context-end dir, context tokens)",
-    "E": "Context 3-layer (context-end dir, context tokens)",
+    "D": "Context middle-band, 9 layers (context-end dir, context tokens)",
+    "E": "Context all-layer, 28 (context-end dir, context tokens)",
     "F": "Paper dir on context tokens",
     "G": "Context dir on all tokens",
     "I": "Paper dir on response tokens",
@@ -68,10 +68,10 @@ CONFIG_LABEL = {
 }
 CONFIG_SHORT = {
     "A": "Paper 1-layer",
-    "B": "Paper 3-layer",
+    "B": "Paper all-layer (28)",
     "C": "Context 1-layer",
-    "D": "Context 2-layer",
-    "E": "Context 3-layer",
+    "D": "Context middle-band (9)",
+    "E": "Context all-layer (28)",
     "F": "Paper dir, ctx tokens",
     "G": "Context dir, all tokens",
     "I": "Paper dir, resp tokens",

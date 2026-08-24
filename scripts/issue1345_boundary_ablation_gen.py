@@ -1003,7 +1003,7 @@ def _draw_counts(out_dir: Path, arm: str, fp: str) -> dict[str, int]:
         meta = raw.with_suffix(".meta.json")
         if not raw.exists() or not meta.exists():
             continue
-        with contextlib.suppress(json.JSONDecodeError, OSError):
+        with contextlib.suppress(json.JSONDecodeError, OSError, UnicodeDecodeError):
             if json.loads(meta.read_text()).get("fingerprint") != fp:
                 continue
             for r in c.read_jsonl(raw):

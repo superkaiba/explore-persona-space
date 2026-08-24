@@ -818,7 +818,7 @@ def _maxlayer_cell_done(
     try:
         with open(path) as f:
             data = json.load(f)
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     sm = data.get("stage_maxlayer")
     if not isinstance(sm, dict):
@@ -2172,7 +2172,7 @@ def _fixed_cell_done_v2(  # noqa: C901 — exhaustive param/artifact resume pred
     try:
         with open(path) as f:
             data = json.load(f)
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     if data.get("rb_version") != "v2":
         return False
@@ -2513,7 +2513,7 @@ def _maxlayer_cell_done_v2(
     try:
         with open(path) as f:
             data = json.load(f)
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     if data.get("rb_version") != "v2":
         return False

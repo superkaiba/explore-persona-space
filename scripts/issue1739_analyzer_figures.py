@@ -42,6 +42,9 @@ from explore_persona_space.analysis.paper_plots import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+if not (ROOT / "eval_results").exists():
+    # Running from a scratch copy: anchor on the repo root.
+    ROOT = Path("/home/thomasjiralerspong/explore-persona-space")
 EVAL = ROOT / "eval_results" / "issue_1739"
 OUT = ROOT / "figures" / "issue_1739"
 
@@ -462,6 +465,80 @@ def fig_compose(all_cells: dict[str, list[dict]]) -> None:
     plt.close(fig)
 
 
+def fig_compose_iclr(all_cells: dict[str, list[dict]]) -> None:
+    """--style iclr: Overleaf-paper variant of the composition-flip figure.
+
+    Same cells and grouping as ``fig_compose`` at final ICLR size into
+    figures/paper/; label budgets take a sequential viridis ramp (a quantity,
+    not a concept — avoids colliding with the PAPER_COLORS concept bindings),
+    no on-canvas title/caption (the LaTeX caption carries provenance).
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full, paper_color
+
+    rows = []
+    for c in all_cells["evil"]:
+        k = cell_key(c)
+        if k.get("f_u") is None:
+            continue
+        rows.append(
+            (k["variant"], k["f_u"], k["f_l"], k["budget_l"], c["headline"]["delta_rho_frozen"])
+        )
+    set_paper_style("iclr")
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.55))
+    groups = {
+        (0.0, "context_end"): [],
+        (0.5, "context_end"): [],
+        (0.0, "prefix_end"): [],
+        (0.5, "prefix_end"): [],
+    }
+    for variant, fu, fl, budget, d in rows:
+        groups[(fu, variant)].append((budget, d, fl))
+    xpos = {
+        (0.0, "context_end"): 0,
+        (0.5, "context_end"): 1,
+        (0.0, "prefix_end"): 2.4,
+        (0.5, "prefix_end"): 3.4,
+    }
+    budgets = [250, 2500, 8000]
+    ramp = plt.cm.viridis([0.15, 0.5, 0.8])
+    lcol = dict(zip(budgets, ramp, strict=True))
+    for key, vals in groups.items():
+        x = xpos[key]
+        for i, (budget, d, _fl) in enumerate(sorted(vals)):
+            ax.scatter(
+                x + (i - len(vals) / 2) * 0.07,
+                d,
+                s=16,
+                color=lcol[budget],
+                zorder=3,
+                edgecolor="white",
+                linewidths=0.4,
+            )
+    ax.axvline(1.7, color="0.85", lw=0.8)
+    ax.axhline(0.0, color=paper_color("reference"), lw=0.6, ls="--")
+    ax.set_xticks(list(xpos.values()))
+    ax.set_xticklabels(
+        [
+            "generic map pool\n(context vector)",
+            "half in-domain pool\n(context vector)",
+            "generic map pool\n(prefix vector)",
+            "half in-domain pool\n(prefix vector)",
+        ]
+    )
+    handles = [
+        plt.Line2D([], [], marker="o", ls="", color=lcol[b], label=f"{b:,} labels")
+        for b in budgets
+    ]
+    ax.legend(handles=handles, frameon=False, loc="upper left")
+    ax.set_ylabel("$\\Delta$ Spearman $\\rho$ (mapped $-$ context-native)")
+    fig.tight_layout()
+    out_dir = ROOT / "figures/paper"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c5_compose_flip", dir=out_dir)
+    plt.close(fig)
+    print(f"wrote {out_dir / 'c5_compose_flip'}.png/.pdf (iclr)")
+
+
 # ---------------------------------------------------------------- figure 6
 def fig_map_quality() -> None:
     d = json.load(open(EVAL / "evil" / "map_diagnostics.json"))
@@ -570,6 +647,23 @@ def write_percell_csv(all_cells: dict[str, list[dict]]) -> None:
 
 
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--style",
+        choices=("blog", "iclr"),
+        default="blog",
+        help=(
+            "iclr: render ONLY the paper composition-flip variant into figures/paper/ "
+            "and exit; the pinned blog-register figures are untouched"
+        ),
+    )
+    args = ap.parse_args()
+    if args.style == "iclr":
+        fig_compose_iclr({"evil": load_cells("evil")})
+        return
+
     OUT.mkdir(parents=True, exist_ok=True)
     all_cells = {beh: load_cells(beh) for beh in BEHS}
     fig_hero_forest(all_cells)

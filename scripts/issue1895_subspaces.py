@@ -203,7 +203,7 @@ def resume_ok(args, phase: str, fp: dict) -> bool:
         return False
     try:
         stored = json.loads(p.read_text()).get("fingerprint")
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return False
     if stored != fp:
         logger.info("[%s] stale fingerprint (stored != current) -> recompute", phase)

@@ -601,6 +601,7 @@ def loader_parity_smoke_gate(
 
     # Reference: sparsify's own SparseCoder.load + encode.
     print("[smoke] Loading SAE weights (sparsify reference)")
+    # PROD_IMPORT_LINT_EXEMPT: one-off eai-sparsify install per #2103; earlier gate fails loud
     from sparsify import SparseCoder
 
     ref = SparseCoder.load_from_hub(SAE_REPO, hookpoint=f"layers.{layer}", device=device)

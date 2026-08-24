@@ -310,7 +310,7 @@ def migrate_unqualified_keys(out_root: Path) -> dict:
     for upath in sorted(pairs_dir.glob("*.json")):
         try:
             unit = json.loads(upath.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             counts["unparseable"] += 1
             print(f"[dvf-migrate] SKIP {upath.name} (unparseable) — retained", flush=True)
             continue
@@ -787,7 +787,7 @@ def cmd_pairs(args) -> int:
         if upath.exists():
             try:
                 prior = json.loads(upath.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 prior = None
             if prior is not None and prior.get("meta") == want and not prior.get("retryable"):
                 print(f"[dvf] unit {i + 1}/{n_shard} {uk} RESUME (checkpoint)", flush=True)

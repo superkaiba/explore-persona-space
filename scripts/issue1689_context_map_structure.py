@@ -726,7 +726,7 @@ def cmd_units(args) -> int:
         if upath.exists():
             try:
                 prior = json.loads(upath.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 prior = None
             if prior is not None and prior.get("meta") == want and not prior.get("retryable"):
                 print(f"[cms] unit {i + 1}/{n_shard} {uk} RESUME (checkpoint)", flush=True)

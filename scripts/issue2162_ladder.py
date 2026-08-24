@@ -1464,7 +1464,7 @@ def _margin_state_ladder(cfg: LadderConfig) -> dict:
     for p in sorted(cfg.manifest_dir.glob("margin_anchors_w*_done.json")):
         try:
             recs.append(json.loads(p.read_text()))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
     anchors_done = False
     for w in {int(r.get("num_workers", 0)) for r in recs}:

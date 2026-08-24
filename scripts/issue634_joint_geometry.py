@@ -233,7 +233,7 @@ def _check_probe_pool_hash(blob: dict, tensors_dir: Path) -> str | None:
         try:
             with open(manifest_path) as f:
                 manifest_hash = json.load(f).get("probe_pool_hash")
-        except (OSError, json.JSONDecodeError) as e:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
             raise RuntimeError(f"#594 manifest {manifest_path} unreadable: {e}") from e
     if blob_hash is not None and manifest_hash is not None and blob_hash != manifest_hash:
         raise RuntimeError(

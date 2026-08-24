@@ -399,7 +399,7 @@ def _extract_trait_v2_done(
     try:
         with open(meta_path) as f:
             meta = json.load(f)
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     want = {
         "n_questions": n_questions,

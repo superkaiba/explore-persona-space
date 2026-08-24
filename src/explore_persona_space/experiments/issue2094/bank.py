@@ -202,16 +202,30 @@ def context_messages_2094(context: dict) -> list[dict]:
     return messages
 
 
-def render_context_2094(tokenizer, context: dict) -> str:
-    """Chat-template render (history-aware) WITH the generation prompt appended."""
+def render_context_2094(tokenizer, context: dict, template_kwargs: dict | None = None) -> str:
+    """Chat-template render (history-aware) WITH the generation prompt appended.
+
+    ``template_kwargs`` (#2329 divergence-1 seam, pure-additive) forwards extra
+    kwargs to ``apply_chat_template`` — e.g. ``{"enable_thinking": False}`` for
+    the Qwen3.5 thinking-off template. The default ``None`` expands to ``**{}``,
+    keeping the parent call byte-identical (unit-pinned in
+    tests/test_issue2329_bank.py).
+    """
     return tokenizer.apply_chat_template(
-        context_messages_2094(context), tokenize=False, add_generation_prompt=True
+        context_messages_2094(context),
+        tokenize=False,
+        add_generation_prompt=True,
+        **(template_kwargs or {}),
     )
 
 
-def context_token_ids_2094(tokenizer, context: dict) -> list[int]:
+def context_token_ids_2094(
+    tokenizer, context: dict, template_kwargs: dict | None = None
+) -> list[int]:
     """Token ids of the history-aware render (special tokens already in the render)."""
-    ids = tokenizer(render_context_2094(tokenizer, context), add_special_tokens=False)["input_ids"]
+    ids = tokenizer(
+        render_context_2094(tokenizer, context, template_kwargs), add_special_tokens=False
+    )["input_ids"]
     assert len(ids) >= 4, (len(ids), context.get("id"))
     return ids
 

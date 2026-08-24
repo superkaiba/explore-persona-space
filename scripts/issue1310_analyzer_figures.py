@@ -466,8 +466,99 @@ def fig_perfold() -> None:
     plt.close(fig)
 
 
+def _load_agg(model: str, name: str) -> dict:
+    """Scene-aggregated cell (issue1310_aggfit.py, one point per scenario)."""
+    d = _load_fresh_json([EV / "onpolicy_aggregated" / f"cells_agg_{model}_{name}.json"])
+    assert d is not None, (model, name)
+    fro = d["selection_symmetric"]["frozen_layer_table"][str(L)]
+    boot = d["r2_bootstrap_row_frozen"][str(L)]
+    return {
+        "r2": d["r2_per_layer_obs"][L],
+        "null_p975": fro["null_p975"],
+        "ci_lo": boot["ci_lo"],
+        "ci_hi": boot["ci_hi"],
+        "n_groups": d["n_groups"],
+    }
+
+
+def fig_iclr_character_maps(out_dir: Path) -> None:
+    """ICLR paper figure: character maps exist (A) and are character-specific (B).
+
+    Scene-aggregated on-policy fits at layer 19 (one point per scenario,
+    n=300 per persona) — the corrected estimator regime; the superseded
+    round-1 per-turn instruct reads (a lambda-selection artifact, #1887)
+    are not shipped. Panel B: pooled correct-pairing vs cross-character
+    swap (n=1,200 scene points), matched contexts.
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_panels, paper_color
+
+    fig, (axa, axb) = plt.subplots(
+        1, 2, figsize=figsize_iclr_panels(2, height_in=2.35), width_ratios=[1.7, 1.0]
+    )
+    w = 0.36
+    xs = np.arange(len(PERSONAS))
+    for j, model in enumerate(("base", "instruct")):
+        c = paper_color(model)
+        for i, persona in enumerate(PERSONAS):
+            cell = _load_agg(model, persona)
+            x = xs[i] + (j - 0.5) * w
+            axa.bar(x, cell["r2"], width=w * 0.9, color=c, zorder=3)
+            axa.vlines(x, cell["ci_lo"], cell["ci_hi"], color="0.2", lw=0.9, zorder=4)
+            axa.plot(
+                [x - w * 0.45, x + w * 0.45],
+                [cell["null_p975"]] * 2,
+                color="0.2",
+                lw=0.8,
+                ls=":",
+                zorder=5,
+            )
+    axa.axhline(0, color="0.6", lw=0.6)
+    axa.set_xticks(xs, [PERSONA_GLOSS[p].replace(" ", "\n", 1) for p in PERSONAS], fontsize=7)
+    axa.set_ylabel("held-out $R^2$ (layer 19)")
+    axa.set_title("A. per-character maps")
+
+    xb = np.arange(2)
+    for j, model in enumerate(("base", "instruct")):
+        c = paper_color(model)
+        sw = _load_fresh_json([EV / "onpolicy_aggregated" / f"swap_agg_{model}.json"])
+        assert sw is not None
+        for k, (name, val, alpha) in enumerate(
+            (
+                ("swapctrl_correct", sw["r2_correct"], 1.0),
+                ("swap", sw["r2_swap"], 0.45),
+            )
+        ):
+            x = xb[j] + (k - 0.5) * w
+            axb.bar(x, val, width=w * 0.9, color=c, alpha=alpha, zorder=3)
+            cell = _load_agg(model, name)
+            axb.vlines(x, cell["ci_lo"], cell["ci_hi"], color="0.2", lw=0.9, zorder=4)
+    axb.axhline(0, color="0.6", lw=0.6)
+    axb.set_xticks(xb, ["base", "instruct"])
+    axb.set_title("B. correct vs swapped")
+    from matplotlib.patches import Patch
+
+    axb.legend(
+        handles=[
+            Patch(facecolor="0.35", label="correct character"),
+            Patch(facecolor="0.35", alpha=0.45, label="swapped character"),
+        ],
+        loc="upper left",
+        fontsize=7,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "c4_character_maps", dir=out_dir)
+    plt.close(fig)
+
+
 def main() -> None:
     """Render the clean-result figures; optional argv names select a subset."""
+    if sys.argv[1:] == ["iclr"]:
+        set_paper_style("iclr")
+        out_dir = REPO / "figures" / "paper"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        fig_iclr_character_maps(out_dir)
+        print("wrote iclr figure to", out_dir)
+        return
     set_paper_style("blog")
     OUT.mkdir(parents=True, exist_ok=True)
     figs = {

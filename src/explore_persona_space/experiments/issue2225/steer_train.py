@@ -24,6 +24,9 @@ Position masks per batch row (plan §4.4, under ``completion_only_loss``):
   TOKEN IDS via the issue1415 ``<|im_start|>`` boundary convention (NEVER by
   re-tokenizing a concatenated string), threaded to the hook via a
   ``prefix_len`` batch column the trainer pops before ``model(**inputs)``.
+- ``context_end`` = one-hot at the LAST context position per row (the final
+  prompt token — the assistant-header tail, #779's ``c_last`` map-input slot;
+  #2225 fu1 plan §4.2).
 
 Threading the ``prefix_len`` column requires BOTH (verified against the
 installed TRL 0.29.1 source):
@@ -56,8 +59,8 @@ from trl.trainer.sft_trainer import DataCollatorForLanguageModeling
 from explore_persona_space.analysis.extraction import _resolve_decoder_blocks
 from explore_persona_space.experiments.issue1415.steering import prefix_end_index
 
-MaskMode = Literal["all", "context", "response", "prefix"]
-MASK_MODES: tuple[str, ...] = ("all", "context", "response", "prefix")
+MaskMode = Literal["all", "context", "response", "prefix", "context_end"]
+MASK_MODES: tuple[str, ...] = ("all", "context", "response", "prefix", "context_end")
 
 
 # ── position masks ─────────────────────────────────────────────────────────────
@@ -85,6 +88,30 @@ def masks_for_mode(
         return real
     if mode == "context":
         return real & (labels == -100)
+    if mode == "context_end":
+        # fu1 (#2225 plan §4.2): one-hot per-row mask at the LAST position where
+        # attention_mask==1 & labels==-100 — the final prompt token (under TRL
+        # prompt-completion tokenization with add_generation_prompt, the tail of
+        # the assistant header: the parent's E2 capture slot and #779's c_last
+        # map-input frame). Right padding (TRL default) keeps that position the
+        # row-wise argmax of the context mask.
+        ctx = real & (labels == -100)
+        assert bool(ctx.any(dim=1).all()), (
+            "context_end: a row has NO context position (attention_mask==1 & "
+            "labels==-100 empty) — completion_only_loss drift or a degenerate row"
+        )
+        B, T = ctx.shape
+        pos = torch.arange(T, device=ctx.device)
+        last_ctx = (ctx * (pos + 1).unsqueeze(0)).argmax(dim=1)  # last True per row
+        mask = torch.zeros_like(ctx)
+        mask[torch.arange(B, device=ctx.device), last_ctx] = True
+        # Fail-loud invariants (plan §4.2): exactly one position per row;
+        # context_end ⊆ context (which also implies ⊆ attention_mask==1).
+        assert bool((mask.sum(dim=1) == 1).all()), mask.sum(dim=1).tolist()
+        assert bool((mask & ~ctx).sum() == 0), (
+            "context_end position outside the context mask — padding-side violation?"
+        )
+        return mask
     if mode == "response":
         resp = labels != -100
         assert bool((resp & ~real).sum() == 0), (

@@ -57,32 +57,64 @@ SLOW_GUARDS = (
 LINT_GATE_HEADING = "#### Pre-push workflow-lint gate"
 SELF_CHOOM_ANCHOR = "sudo -n choom -n -600 -p $$"
 
+# The #2155 split relocated SKILL.md step bodies to steps/ companions,
+# leaving a `> **Full procedure:**` pointer per step in the router.
+STEP_POINTER_RE = re.compile(r"^>\s+\*\*Full procedure:\*\*\s+`\.claude/skills/issue/steps/(\S+?)`")
+
+
+def _gate_source_lines() -> tuple[Path, list[str], int]:
+    """(source path, its lines, index of the lint-gate heading line).
+
+    On an unsplit tree the Step-10d lint-gate section lives in SKILL.md
+    itself (the fallback, so the probe runs on either tree shape); on a
+    #2155 split tree the Step-10d body was relocated to a steps/ companion,
+    so resolve SKILL.md's `> **Full procedure:**` pointers and pick the
+    pointed-to companion carrying the heading. Exits FATAL when no source
+    carries it.
+    """
+    skill_lines = SKILL.read_text(encoding="utf-8").splitlines()
+    for i, ln in enumerate(skill_lines):
+        if ln.startswith(LINT_GATE_HEADING):
+            return SKILL, skill_lines, i  # unsplit tree
+    steps_dir = SKILL.parent / "steps"
+    for ln in skill_lines:
+        m = STEP_POINTER_RE.match(ln)
+        if m is None:
+            continue
+        companion = steps_dir / m.group(1)
+        if not companion.is_file():
+            continue
+        companion_lines = companion.read_text(encoding="utf-8").splitlines()
+        for i, cln in enumerate(companion_lines):
+            if cln.startswith(LINT_GATE_HEADING):
+                return companion, companion_lines, i
+    sys.exit(
+        f"FATAL: heading {LINT_GATE_HEADING!r} not found in {SKILL} nor in any "
+        f"steps/ companion it points to (#2155 split-aware resolution)"
+    )
+
 
 def extract_payload() -> str:
     """Pull the Step 10d lint-gate workload body out of SKILL.md verbatim.
 
-    Anchors on the lint-gate section heading, then the first self-choom line
-    after it (the wedged command's first token per the #2115 filing) — no
-    hardcoded line numbers, so the extraction survives SKILL.md drift. Stops
-    at the fenced-block terminator. Comment-only lines keep their leading
-    '#': they are part of the real argv (the orchestrator sends the
-    annotated body). Exits FATAL if either anchor is missing.
+    Anchors on the lint-gate section heading (resolved split-aware via
+    :func:`_gate_source_lines` — SKILL.md itself on an unsplit tree, the
+    pointed-to steps/ companion on a #2155 split tree), then the first
+    self-choom line after it (the wedged command's first token per the
+    #2115 filing) — no hardcoded line numbers, so the extraction survives
+    SKILL.md drift. Stops at the fenced-block terminator. Comment-only
+    lines keep their leading '#': they are part of the real argv (the
+    orchestrator sends the annotated body). Exits FATAL if either anchor
+    is missing.
     """
-    lines = SKILL.read_text(encoding="utf-8").splitlines()
-    section = None
-    for i, ln in enumerate(lines):
-        if ln.startswith(LINT_GATE_HEADING):
-            section = i
-            break
-    if section is None:
-        sys.exit(f"FATAL: heading {LINT_GATE_HEADING!r} not found in {SKILL}")
+    src, lines, section = _gate_source_lines()
     start = None
     for i in range(section, len(lines)):
         if SELF_CHOOM_ANCHOR in lines[i] and not lines[i].lstrip().startswith("#"):
             start = i
             break
     if start is None:
-        sys.exit(f"FATAL: self-choom anchor not found after the lint-gate heading in {SKILL}")
+        sys.exit(f"FATAL: self-choom anchor not found after the lint-gate heading in {src}")
     # Scan to the fence. The bound is a runaway guard, NOT a truncation policy:
     # silently cutting the body at the bound would understate every measured
     # cost in the table this script exists to reproduce, so hitting the bound
@@ -98,7 +130,7 @@ def extract_payload() -> str:
     if not fenced:
         sys.exit(
             f"FATAL: no closing fence within {scan_bound} lines of the gate-body "
-            f"anchor at SKILL.md:{start + 1}. The gate body either outgrew the "
+            f"anchor at {src.name}:{start + 1}. The gate body either outgrew the "
             f"scan bound or the anchor drifted; either way a truncated payload "
             f"would understate the measured cost. Re-check the anchor and raise "
             f"the bound deliberately."
