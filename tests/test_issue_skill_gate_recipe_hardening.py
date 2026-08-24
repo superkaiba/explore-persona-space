@@ -51,13 +51,56 @@ same span convention): the Step 10d mapped-invariant BASELINE pytest legs
 run on a detached sparse scratch tree via `step9c_baseline.py
 mapped-baseline` — never with cwd inside the shared repo root, which the
 #2015 pre-commit stash cycle reverts repo-wide (measured kill: #2288 RUN1).
+
+#2315 (#2312) closes the `-o junit_family=xunit1` omission trap: compare
+resolves failing testcases via the junit per-case `file` attribute, which
+only the xunit1 family emits, so a composed launcher that DROPS the flag
+looks healthy (correct rc) and aborts compare ~30 min later (`has no file
+attribute` / `indeterminate: True` — twice in #2312, 1787.80s of gate
+pytest lost). Pins: the 1b flag-set-fidelity comment (sanction point,
+BEFORE the launcher), the step-1d `check-junit-contract` pre-compare check
+(AFTER the 1b rc read, BEFORE the compare launcher, with a FATAL arm), the
+COMPARE_RC=2 xunit1 cause + discriminator (`"pristine_oracle": null` +
+`has no file attribute` in the compare stderr = LAUNCHER malformed), and
+the D2 lockstep pin (the `--emit-launcher` template token-equals the 1b
+canonical site; the junit-contract flag trio is present at BOTH canonical
+sites + the emitter). Two BEHAVIORAL fail-loud tests demonstrate the D1/D3
+guards actually refuse (subprocess check=True → CalledProcessError).
+
+#2315 r2 (revision round) closes the round-1 residuals: the 1b sanction block
+now INVOKES `--assert-launcher` before the launcher (pin:
+`test_step9c_1b_assert_launcher_wired_before_launch`, incl. the input
+contract — launcher COMMAND TEXT only, never the whole 1b block); the
+consumer exemption is scoped to EXCLUSIVELY-consumer text (a combined
+malformed-producer + consumer text is refused); the D2 lockstep pin asserts
+emitter == site-1 == site-2 under the pinned `_pytest_flag_set` normalization
+(divergence pinned to verbosity flags exactly); the public `--emit-launcher`
+CLI mode gets a subprocess test (mutation-visible at the argparse/dispatch
+seam); and `render_launcher`'s placeholder check is an explicit RuntimeError
+(never a `python -O`-strippable assert).
+
+#2315 r3 closes the round-2 CONCERN (`assert-launcher-fatal-arm-pin`): the r2
+wiring pin asserted only the FATAL message substring, so deleting just
+`exit 1` from the recipe's `||` arm left the suite green while the shipped
+1b block went fail-OPEN. The fail-closed arm is now pinned ON the extracted
+`--assert-launcher || { ... exit 1; }` compound AND executed —
+`test_step9c_1b_assert_launcher_fatal_arm_discriminates` runs the shipped
+compound against compliant / violating / verbatim-placeholder launcher text,
+asserting the actual exit codes and a trailing REACHED_LAUNCH sentinel. The
+arm's message also splits the remedy per cause: exit 1 = fix/emit the
+LAUNCHER; exit 3 = fix the GUARD (emitting a launcher cannot repair a broken
+self-test).
 """
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 from tests.issue_skill_source import issue_skill_text
 
@@ -495,3 +538,481 @@ def test_step9c_completion_read_attributes_list_shape():
     # Existing pinned guards untouched (acceptance criterion 4):
     assert "no tests ran|collected 0 items" in sec
     assert "[ ! -f /tmp/step9c-rc-issue-<N> ]" in sec
+
+
+# --- #2315: xunit1-contract guards (D1/D2/D3 behavioral + D4 prose pins) -------
+
+_SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+_SELECTOR_PY = _SCRIPTS / "select_step9c_tests.py"
+_BASELINE_PY = _SCRIPTS / "step9c_baseline.py"
+
+
+def _selector_module():
+    """Import scripts/select_step9c_tests.py by path (scripts/ is not an
+    importable package; mirrors tests/test_select_step9c_tests.py)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("select_step9c_tests_2315", _SELECTOR_PY)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _launcher_tokens(text: str) -> list[str]:
+    """Whitespace-insensitive token stream: strip `\\`-newline continuations,
+    then split — the doc indents/wraps the launcher, the emitter does not."""
+    return text.replace("\\\n", " ").split()
+
+
+def _extract_launcher(sec: str, start: str) -> str:
+    """A canonical launcher runs from its PYTEST_PID line through the closing
+    `& echo \\$!\")` of the outer bash -c capture."""
+    begin = sec.index(start)
+    end = sec.index('& echo \\$!")', begin) + len('& echo \\$!")')
+    return sec[begin:end]
+
+
+def _norm_comments(text: str) -> str:
+    """_norm for bash COMMENT blocks: strip the per-line `#` markers first so a
+    phrase wrapped across comment lines matches as continuous prose."""
+    return _norm(re.sub(r"(?m)^\s*#\s?", "", text))
+
+
+# The ONLY sanctioned flag divergence between the two canonical sites: pure
+# verbosity / report-style flags (site-1 diagnoses individual failures at
+# touched scope with `-v --tb=short`; site-2 runs the whole suite quietly with
+# `-q`). The lockstep normalization below strips EXACTLY this set — everything
+# else in the pytest flag set (junit-contract flags, collection behavior, the
+# basetemp expansion) must be equal across emitter, site-1, and site-2, so a
+# new one-site divergence (a dropped contract flag, a new required flag)
+# breaks the pin (#2315 r2, plan §3 D2 "emitter == site-1 == site-2").
+_VERBOSITY_STYLE_FLAGS = frozenset({"-v", "--tb=short", "-q"})
+
+
+def _pytest_flag_set(text: str) -> frozenset[str]:
+    """The launcher's pytest OPTION-token set: tokens between the standalone
+    `pytest` word and the rc-write `;`, keeping `-`-prefixed options (`-o`
+    joined with its value) and the `${S9C_BASETEMP...}` shell expansion.
+    Positional targets (`<files>` / `tests/`) are SCOPE, not flags — the two
+    sites differ there by construction, so they are excluded by design."""
+    toks = _launcher_tokens(text)
+    start = toks.index("pytest") + 1
+    end = toks.index(";", start)
+    flags: set[str] = set()
+    k = start
+    while k < end:
+        tok = toks[k]
+        if tok == "-o" and k + 1 < end:
+            flags.add(f"-o {toks[k + 1]}")
+            k += 2
+            continue
+        if tok.startswith("-") or tok.startswith("${"):
+            flags.add(tok)
+        k += 1
+    return frozenset(flags)
+
+
+def test_emit_launcher_lockstep_with_canonical_sites():
+    """D2 / SC-6 lockstep (emitter == site-1 == site-2, #2315 r2): the
+    `--emit-launcher` template token-equals the 1b canonical site (site-1)
+    modulo whitespace, and under the PINNED shared flag-set normalization
+    (`_pytest_flag_set` minus `_VERBOSITY_STYLE_FLAGS` — the sites are
+    different launchers by construction: test scope and verbosity differ,
+    nothing else may) the pytest flag sets of the emitter, site-1, AND the 1c
+    full-scope launcher (site-2) are EQUAL. The realized divergence is itself
+    pinned exactly, so it cannot silently grow. A drift in either canonical
+    site or the template breaks this pin."""
+    sel = _selector_module()
+    sec = _section_9c(_text())
+    launchers = [
+        _extract_launcher(sec, "PYTEST_PID=$(bash -c \"setsid nohup bash -c 'timeout"),
+    ]
+    # site-2 (1c full-scope) starts at the SECOND PYTEST_PID occurrence:
+    second = sec.index("PYTEST_PID=$(", sec.index("PYTEST_PID=$(") + 1)
+    launchers.append(_extract_launcher(sec[second:], "PYTEST_PID=$("))
+    site1, site2 = launchers
+    # Full token equality (emitter <-> site-1):
+    assert _launcher_tokens(sel._LAUNCHER_CANONICAL) == _launcher_tokens(site1), (
+        "the --emit-launcher template must token-equal the 1b canonical launcher; "
+        "update BOTH in one change"
+    )
+    # Shared-flag-set equality across ALL THREE (the plan's lockstep claim),
+    # under the pinned normalization:
+    emitter_flags = _pytest_flag_set(sel._LAUNCHER_CANONICAL)
+    site1_flags = _pytest_flag_set(site1)
+    site2_flags = _pytest_flag_set(site2)
+    assert (
+        emitter_flags - _VERBOSITY_STYLE_FLAGS
+        == site1_flags - _VERBOSITY_STYLE_FLAGS
+        == site2_flags - _VERBOSITY_STYLE_FLAGS
+    ), "emitter/site-1/site-2 diverge on a NON-verbosity pytest flag — re-lockstep all three"
+    # ... and the realized divergence is EXACTLY the sanctioned verbosity split:
+    assert site1_flags - site2_flags == {"-v", "--tb=short"}
+    assert site2_flags - site1_flags == {"-q"}
+    assert emitter_flags == site1_flags
+    contract_flags = [
+        "--continue-on-collection-errors",
+        "--junitxml=/tmp/step9c-junit-issue-<N>.xml",
+        "-o junit_family=xunit1",
+    ]
+    for name, text in (("site-1", site1), ("site-2", site2), ("emitter", sel._LAUNCHER_CANONICAL)):
+        n = _norm(text)
+        for flag in contract_flags:
+            assert flag in n, f"{name} lost the junit-contract flag {flag!r}"
+    # The rendered launcher substitutes every placeholder (space-joined files):
+    rendered = sel.render_launcher(["tests/test_a.py", "tests/test_b.py"], 424242, 6630)
+    assert "tests/test_a.py tests/test_b.py" in rendered
+    for ph in ("<files>", "<N>", "<T>"):
+        assert ph not in rendered
+
+
+def test_render_launcher_raises_on_unsubstituted_placeholder():
+    """The no-surviving-placeholder check is an explicit RuntimeError raise,
+    not a bare `assert` (`python -O` strips asserts — #2315 r2, Claude Minor).
+    Adversarial input: a test path CONTAINING a placeholder literal survives
+    the chained str.replace passes (replacement text is never rescanned by the
+    same call), so the guard must trip."""
+    sel = _selector_module()
+    with pytest.raises(RuntimeError, match="unsubstituted"):
+        sel.render_launcher(["tests/<files>_x.py"], 424242, 6630)
+
+
+def test_emit_launcher_cli_emits_substituted_launcher():
+    """D2 / SC-4 public-mode pin (#2315 r2, `emit-launcher-cli-subprocess-test`):
+    drive the REAL CLI — argparse registration, `_dispatch_2315_modes`, and the
+    live `--emit-launcher` output branch — via a subprocess, so deleting the
+    flag registration or the output branch fails THIS test (the
+    render_launcher-direct pin above is mutation-blind to the CLI seam).
+    Mirrors the D1/D3 subprocess shape."""
+    repo_root = Path(__file__).resolve().parents[1]
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(_SELECTOR_PY),
+            "--emit-launcher",
+            "--issue",
+            "424242",
+            "--timeout",
+            "6630",
+            "--no-fetch",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=600,
+        cwd=repo_root,
+        check=True,
+    )
+    out = proc.stdout
+    # The emitted stdout contract: the canonical detached launcher, fully
+    # substituted (issue + timeout + a non-empty space-joined selection):
+    assert out.startswith("PYTEST_PID=$(bash -c \"setsid nohup bash -c 'timeout"), out[:80]
+    assert "--junitxml=/tmp/step9c-junit-issue-424242.xml -o junit_family=xunit1" in out
+    assert "timeout --kill-after=60s 6630s" in out
+    for ph in ("<files>", "<N>", "<T>"):
+        assert ph not in out
+    assert ".py" in out  # >=1 real selected test path rides the argv
+    # Mode-exclusivity at the CLI seam (fail-CLOSED, argparse exit 2):
+    for bad_argv, err_frag in (
+        (["--emit-launcher"], "--emit-launcher requires --issue"),
+        (["--emit-launcher", "--issue", "1", "--json"], "not supported with --json"),
+    ):
+        bad = subprocess.run(
+            [sys.executable, str(_SELECTOR_PY), *bad_argv],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            cwd=repo_root,
+        )
+        assert bad.returncode == 2, bad_argv
+        assert err_frag in bad.stderr, bad_argv
+
+
+def _extract_assert_launcher_compound(sec: str) -> str:
+    """The 1b `--assert-launcher` invocation plus its backslash-continued
+    fail-closed `|| { ... exit 1; }` arm, extracted as shipped (#2315 r3,
+    concern `assert-launcher-fatal-arm-pin`: a section-wide substring pin
+    leaves an `exit 1` deletion green — the arm must be pinned ON the
+    compound and EXECUTED)."""
+    lines = sec.splitlines()
+    for i, ln in enumerate(lines):
+        if ln.lstrip().startswith("uv run") and "--assert-launcher" in ln:
+            snippet = [ln]
+            j = i
+            while lines[j].rstrip().endswith("\\") and j + 1 < len(lines):
+                j += 1
+                snippet.append(lines[j])
+            return "\n".join(snippet)
+    raise AssertionError(
+        "--assert-launcher invocation not found in the 9c section — the 1b "
+        "block no longer wires the pre-launch refusal"
+    )
+
+
+def test_step9c_1b_assert_launcher_wired_before_launch():
+    """#2315 r2 (`assert-launcher-live-path`): the 1b sanction block INVOKES
+    `--assert-launcher` as a required fail-closed step — a FATAL `||` arm with
+    exit 1 — ordered AFTER the flag-set-fidelity prose and BEFORE the site-1
+    launcher, so the AC3 refusal leg runs in the shipped recipe instead of
+    being a built-but-stranded guard. The call-site prose states the INPUT
+    CONTRACT (`assert-launcher-wiring-input-contract`): the composed LAUNCHER
+    COMMAND TEXT only, never the whole 1b block — whose fidelity comment
+    contains the literal `junit_family=xunit1`, so a whole-block input passes
+    vacuously by reading its own documentation. r3 rebinds the FATAL-arm pins
+    onto the extracted compound itself (concern `assert-launcher-fatal-arm-pin`)."""
+    sec = _section_9c(_text())
+    invocation = "uv run python scripts/select_step9c_tests.py --assert-launcher"
+    assert invocation in sec
+    wire_idx = sec.index(invocation)
+    fidelity_idx = sec.index("Flag-set fidelity (#2315)")
+    launcher_idx = sec.index("PYTEST_PID=$(bash -c \"setsid nohup bash -c 'timeout")
+    assert fidelity_idx < wire_idx < launcher_idx, (
+        "the --assert-launcher invocation must sit between the fidelity prose and the 1b launcher"
+    )
+    # The fail-closed FATAL arm, pinned ON the extracted compound — never a
+    # section-wide substring (r3, `assert-launcher-fatal-arm-pin`): the `||`
+    # arm carries the legible cause + remedy on stderr AND the `exit 1` that
+    # makes it fail-CLOSED; the executing proof is
+    # test_step9c_1b_assert_launcher_fatal_arm_discriminates below.
+    compound = _extract_assert_launcher_compound(sec)
+    assert "||" in compound, "the --assert-launcher invocation lost its fail-closed arm"
+    arm = compound.split("||", 1)[1]
+    # The exit 1 is pinned as the arm's COMMAND TAIL, never a bare substring:
+    # the FATAL message itself contains the prose token `exit 1:` (the
+    # per-cause remedy split), so `"exit 1" in arm` would pass vacuously off
+    # the quoted echo string with the actual exit command deleted — the same
+    # read-its-own-documentation channel as the r2 input-contract fix.
+    assert arm.rstrip().endswith(">&2; exit 1; }"), (
+        "fail-open: the FATAL arm no longer ends `>&2; exit 1; }`"
+    )
+    assert "FATAL: composed launcher violates the xunit1 contract" in arm
+    # Per-cause remedies (r3 item 2): exit 1 = fix/emit the LAUNCHER; exit 3 =
+    # the guard's own self-test — fix the guard (emitting a launcher cannot
+    # repair a broken self-test):
+    assert "--emit-launcher" in arm
+    assert "fix the guard" in arm
+    # The input contract, stated at the call site (comment-wrapped prose):
+    c = _norm_comments(sec)
+    assert "pass ONLY the composed LAUNCHER COMMAND TEXT" in c
+    assert "NEVER this whole 1b block" in c
+    assert "vacuous PASS" in c
+    # Route-(1) inertness + self-test gating are stated (the guard runs
+    # unconditionally; a broken guard blocks even a verbatim copy):
+    assert "runs UNCONDITIONALLY" in c
+    assert "SELF-TEST gates the launch" in c
+
+
+def test_step9c_1b_assert_launcher_fatal_arm_discriminates():
+    """BEHAVIORAL (r3, concern `assert-launcher-fatal-arm-pin`): extract the
+    shipped `--assert-launcher || { ... exit 1; }` compound from the 1b recipe
+    and EXECUTE it under bash, asserting the actual exit codes — the r2 pin
+    covered only the FATAL substring, so deleting just `exit 1` left the
+    recipe fail-OPEN (a REFUSED verdict no longer stops the launch) with the
+    suite green. A trailing REACHED_LAUNCH sentinel models the launcher line
+    that follows the compound in the recipe: on violating input the arm must
+    exit 1 BEFORE the sentinel; deleting `exit 1` makes the violating case
+    print the sentinel at rc 0 and FAILS this test (mutation-discrimination,
+    the plan §6 SC-4 discipline).
+
+    Two surgical, asserted substitutions before execution (the guard script
+    path, flag, and the `|| { ... exit 1; }` arm run as shipped): the quoted
+    inert placeholder -> "$LAUNCHER_TEXT" so one extracted compound serves
+    every input, and the `uv run python` interpreter prefix -> this test
+    run's own interpreter (env plumbing only: `uv run` may sync/build a venv
+    on detached scratch trees; sys.executable IS the synced env's python)."""
+    repo_root = Path(__file__).resolve().parents[1]
+    compound = _extract_assert_launcher_compound(_section_9c(_text()))
+    placeholder = re.search(r"'<[^']*>'", compound)
+    assert placeholder is not None, "quoted inert placeholder missing from the 1b compound"
+    prefix = "uv run python scripts/select_step9c_tests.py"
+    assert prefix in compound, "the 1b compound no longer invokes the selector guard"
+    interp = '"$PYTHON_EXE" scripts/select_step9c_tests.py'
+
+    def run(script_body: str, launcher_text: str | None) -> subprocess.CompletedProcess[str]:
+        env = {**os.environ, "PYTHON_EXE": sys.executable}
+        if launcher_text is not None:
+            env["LAUNCHER_TEXT"] = launcher_text
+        return subprocess.run(
+            ["bash", "-c", script_body + "\necho REACHED_LAUNCH\n"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd=repo_root,
+            env=env,
+        )
+
+    runnable = compound.replace(placeholder.group(0), '"$LAUNCHER_TEXT"', 1).replace(
+        prefix, interp, 1
+    )
+    # Compliant launcher text — the guard passes; the recipe reaches the launch:
+    ok = run(runnable, "uv run pytest tests/test_x.py --junitxml=/tmp/x.xml -o junit_family=xunit1")
+    assert ok.returncode == 0, (ok.returncode, ok.stderr)
+    assert "REACHED_LAUNCH" in ok.stdout
+    assert "FATAL" not in ok.stderr
+    # Violating launcher text — the arm refuses BEFORE the launch, exit 1:
+    bad = run(runnable, "uv run pytest tests/test_x.py --junitxml=/tmp/x.xml")
+    assert bad.returncode == 1, (bad.returncode, bad.stderr, "fail-open: the exit 1 arm is gone")
+    assert "REACHED_LAUNCH" not in bad.stdout, "fail-open: the launch line was reached"
+    assert "FATAL: composed launcher violates the xunit1 contract" in bad.stderr
+    # Route-(1) verbatim copy — the inert placeholder is out of scope for the
+    # verdict; only the guard's built-in self-test gates, so the copy proceeds:
+    verbatim = run(compound.replace(prefix, interp, 1), None)
+    assert verbatim.returncode == 0, (verbatim.returncode, verbatim.stderr)
+    assert "REACHED_LAUNCH" in verbatim.stdout
+
+
+def test_step9c_1b_flag_set_fidelity_comment():
+    """D4 sanction point: the 1b composition prose names the trap (the flag is
+    LOAD-BEARING; compare aborts ~30 min later; attributes unreconstructable)
+    and the mechanical remedy (--emit-launcher), BEFORE the launcher line."""
+    sec = _section_9c(_text())
+    # The comment block wraps phrases across `#`-prefixed lines — strip the
+    # markers before phrase-matching (plain _norm keeps them, #2315 r1):
+    n = _norm_comments(sec)
+    assert "Flag-set fidelity (#2315)" in n
+    assert "`-o junit_family=xunit1` is LOAD-BEARING" in n
+    assert "cannot be reconstructed from an existing junit" in n
+    assert "select_step9c_tests.py --emit-launcher --issue <N>" in n
+    fidelity_idx = sec.index("Flag-set fidelity (#2315)")
+    launcher_idx = sec.index("--junitxml=/tmp/step9c-junit-issue-<N>.xml")
+    assert fidelity_idx < launcher_idx, "the fidelity comment must precede the 1b launcher"
+
+
+def test_step9c_1d_contract_check_between_rc_read_and_compare():
+    """D4 ordering: step 1d invokes check-junit-contract AFTER the 1b rc read
+    and BEFORE the compare launcher, with a FATAL `||` arm — the cheap check
+    pre-empts the expensive pristine-oracle compare (#2312: 1787.80s lost)."""
+    sec = _section_9c(_text())
+    invocation = "scripts/step9c_baseline.py check-junit-contract"
+    assert invocation in sec
+    # The step-1d rc RE-READ is the LAST occurrence (the 1b completion-read
+    # reads the same file earlier); the compare anchor is the LAUNCHER
+    # invocation (`uv run python ...`), not the earlier prose mention of
+    # `scripts/step9c_baseline.py compare` (#2315 r1):
+    rc_read_idx = sec.rindex("PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)")
+    check_idx = sec.index(invocation)
+    compare_idx = sec.index("uv run python scripts/step9c_baseline.py compare")
+    assert rc_read_idx < check_idx < compare_idx, (
+        "check-junit-contract must sit between the 1d rc re-read and the compare launcher"
+    )
+    n = _norm(sec)
+    assert "FATAL: xunit1 contract violated" in n
+    assert "compare not run" in n
+
+
+def test_step9c_compare_rc2_xunit1_discriminator():
+    """D4 enumeration + discriminator: the COMPARE_RC=2 bullet names the
+    xunit1-contract cause, and the discriminator tells the reader how to
+    recognize a MALFORMED-LAUNCHER exit 2 (vs tool-could-not-decide) from the
+    JSON + stderr, with the re-run remedy."""
+    sec = _section_9c(_text())
+    n = _norm(sec)
+    assert "an xunit1-CONTRACT-violating junit" in n
+    assert "xunit1-contract DISCRIMINATOR (#2315)" in n
+    assert '`"pristine_oracle": null`' in n
+    assert "has no file attribute" in n
+    # The discriminator names the remedy (re-run via the canonical launcher):
+    assert "`select_step9c_tests.py --emit-launcher --issue <N>`" in n
+
+
+def test_assert_launcher_refuses_junitxml_without_xunit1(tmp_path):
+    """D1 BEHAVIORAL fail-loud: --assert-launcher run check=True REFUSES
+    (CalledProcessError) a pytest launcher carrying --junitxml (either
+    spelling) without junit_family=xunit1 — INCLUDING a combined text whose
+    malformed producer is chained with a later step9c_baseline.py consumer
+    (#2315 r2: the exemption is scoped to EXCLUSIVELY-consumer text) — and
+    PASSES the canonical text and the consumer exemption, incl. the shipped
+    compare shape whose `--pytest-rc` / log-path args contain `pytest` as a
+    substring but no standalone producer token."""
+
+    def run(text: str) -> None:
+        subprocess.run(
+            [sys.executable, str(_SELECTOR_PY), "--assert-launcher", text],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+    for bad in (
+        "uv run pytest tests/ --junitxml=/tmp/x.xml",
+        "uv run pytest tests/ --junit-xml=/tmp/x.xml -v",
+        # Combined malformed-producer + consumer text — the consumer substring
+        # must NOT suppress the producer verdict (#2315 r2):
+        "uv run pytest tests/ --junitxml=/tmp/x.xml && "
+        "uv run python scripts/step9c_baseline.py compare --junitxml /tmp/x.xml",
+    ):
+        with pytest.raises(subprocess.CalledProcessError) as exc_info:
+            run(bad)
+        assert exc_info.value.returncode == 1
+        assert "REFUSED" in exc_info.value.stderr
+        assert "--emit-launcher" in exc_info.value.stderr
+    # Negative controls — no raise:
+    run("uv run pytest tests/ --junitxml=/tmp/x.xml -o junit_family=xunit1")
+    run("uv run python scripts/step9c_baseline.py compare --junitxml /tmp/x.xml")
+    # The shipped 1d compare shape: `--pytest-rc` and the pytest log path carry
+    # `pytest` only as flag/path substrings — still exclusively-consumer:
+    run(
+        "uv run python scripts/step9c_baseline.py compare "
+        "--junitxml /tmp/step9c-junit-issue-1.xml --pytest-rc 1 --run-pristine --json"
+    )
+
+
+def test_assert_launcher_selftest_gate_refuses_verdict(monkeypatch, capsys):
+    """D1 self-test gate: broken discrimination — a negative fixture (either
+    spelling, or the #2315 r2 combined producer+consumer shape) that no longer
+    trips the detector — exits 3 and renders NO verdict (#2314: a guard that
+    cannot fail correctly is not a guard)."""
+    sel = _selector_module()
+    for fixture_name in (
+        "_ASSERT_LAUNCHER_SELFTEST_NEG",
+        "_ASSERT_LAUNCHER_SELFTEST_NEG_ALIAS",
+        "_ASSERT_LAUNCHER_SELFTEST_NEG_COMBINED",
+    ):
+        with monkeypatch.context() as m:
+            # Sabotage: replace the violating fixture with compliant text, so
+            # the self-test sees the detector "pass" a case it must refuse.
+            m.setattr(sel, fixture_name, "uv run pytest tests/")
+            rc = sel._run_assert_launcher_mode("uv run pytest tests/ --junitxml=/tmp/x.xml")
+        err = capsys.readouterr().err
+        assert rc == 3, fixture_name
+        assert "self-test failed" in err
+        assert "verdict NOT rendered" in err
+        assert "REFUSED" not in err  # no verdict line escaped
+
+
+def test_junit_contract_check_refuses_missing_file_attr(tmp_path):
+    """D3 BEHAVIORAL fail-loud: check-junit-contract run check=True REFUSES
+    (CalledProcessError) a junit whose failing testcase lacks the per-case
+    file attribute, and PASSES a green junit."""
+
+    bad = tmp_path / "violation.xml"
+    bad.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1">\n'
+        '<testcase classname="tests.test_broken" name="test_fails" time="0.01">\n'
+        '<failure message="assert False">assert False</failure>\n'
+        "</testcase>\n</testsuite></testsuites>\n"
+    )
+    good = tmp_path / "green.xml"
+    good.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1">\n'
+        '<testcase classname="tests.test_ok" name="test_a" file="tests/test_ok.py" time="0.01"/>\n'
+        "</testsuite></testsuites>\n"
+    )
+
+    def run(path: Path) -> None:
+        subprocess.run(
+            [sys.executable, str(_BASELINE_PY), "check-junit-contract", "--junitxml", str(path)],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+    with pytest.raises(subprocess.CalledProcessError) as exc_info:
+        run(bad)
+    assert exc_info.value.returncode == 1
+    assert "XUNIT1 CONTRACT VIOLATED" in exc_info.value.stderr
+    run(good)  # no raise

@@ -51,6 +51,7 @@ import subprocess
 import sys
 import time
 import types
+import xml.etree.ElementTree as ET
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
@@ -6359,3 +6360,172 @@ def test_suffix_dropped_files_recorded_for_absent_on_main(tmp_path: Path, monkey
     row = out["suffix_attributed"][0]
     assert row["offender"] == SUFFIX_CONTAM
     assert row["suffix_len"] == 1  # post-drop suffix
+
+
+# --- #2315: check-junit-contract (D3) + pyproject junit_family ini default (D0) ---
+#
+# D3: the step-1d pre-compare check exits 1 iff >=1 failing testcase lacks the
+# per-case ``file`` attribute (the xunit1-contract violation that aborts
+# ``compare`` as ``has no file attribute`` / ``indeterminate: True``, #2312);
+# missing/unparseable junits deliberately exit 0 (the 1b FAIL path and
+# compare's exit-2 arms keep ownership). D0: the repo pyproject.toml carries
+# ``junit_family = "xunit1"`` under ``[tool.pytest.ini_options]`` so a composed
+# launcher that DROPS ``-o junit_family=xunit1`` still emits file attributes;
+# an explicit CLI ``-o junit_family=...`` still overrides the ini (AC5).
+
+_J2315_VIOLATION = """<?xml version="1.0" encoding="utf-8"?>
+<testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1">
+<testcase classname="tests.test_broken" name="test_fails" time="0.01">
+<failure message="assert False">assert False</failure>
+</testcase>
+</testsuite></testsuites>
+"""
+
+_J2315_GREEN = """<?xml version="1.0" encoding="utf-8"?>
+<testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="2">
+<testcase classname="tests.test_ok" name="test_a" file="tests/test_ok.py" time="0.01"/>
+<testcase classname="tests.test_ok" name="test_b" file="tests/test_ok.py" time="0.01"/>
+</testsuite></testsuites>
+"""
+
+_J2315_XUNIT1_FAILURES = """<?xml version="1.0" encoding="utf-8"?>
+<testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1">
+<testcase classname="tests.test_broken" name="test_fails" file="tests/test_broken.py" time="0.01">
+<failure message="assert False">assert False</failure>
+</testcase>
+</testsuite></testsuites>
+"""
+
+# The #1746 collect-error fallback shape: an <error> row with NO file attr
+# whose name is the collected FILE PATH (endswith .py) is absorbed as
+# Node(file=name) — never a violation. (An omitted-flag collect-error row's
+# name is DOTTED — tests.test_broken — so it correctly still trips.)
+_J2315_COLLECT_ERROR = """<?xml version="1.0" encoding="utf-8"?>
+<testsuites><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1">
+<testcase classname="" name="tests/test_collect_broken.py" time="0.0">
+<error message="collection failure">ImportError: boom</error>
+</testcase>
+</testsuite></testsuites>
+"""
+
+
+def _contract_rc(path: Path, capsys) -> tuple[int, str]:
+    rc = sb.main(["check-junit-contract", "--junitxml", str(path)])
+    err = capsys.readouterr().err
+    return rc, err
+
+
+def test_junit_contract_violation_exits_1(tmp_path: Path, capsys):
+    """A failing testcase with no per-case file attribute (dotted name, the
+    omitted-flag xunit2 shape) is the ONE exit-1 arm — the message names the
+    compare abort it pre-empts and the --emit-launcher remedy."""
+    p = tmp_path / "violation.xml"
+    p.write_text(_J2315_VIOLATION)
+    rc, err = _contract_rc(p, capsys)
+    assert rc == 1
+    assert "XUNIT1 CONTRACT VIOLATED" in err
+    assert "has no file attribute" in err
+    assert "--emit-launcher" in err
+
+
+def test_junit_contract_green_exits_0(tmp_path: Path, capsys):
+    p = tmp_path / "green.xml"
+    p.write_text(_J2315_GREEN)
+    rc, err = _contract_rc(p, capsys)
+    assert rc == 0
+    assert "ok" in err
+
+
+def test_junit_contract_xunit1_failures_exit_0(tmp_path: Path, capsys):
+    """Failures whose rows carry file attributes are compare's normal input —
+    never this check's business."""
+    p = tmp_path / "xunit1_failures.xml"
+    p.write_text(_J2315_XUNIT1_FAILURES)
+    rc, _err = _contract_rc(p, capsys)
+    assert rc == 0
+
+
+def test_junit_contract_collect_error_fallback_exits_0(tmp_path: Path, capsys):
+    """The #1746 collect-error name fallback is REUSED (the predicate is
+    parse_junit's own file-attribute logic): a .py-named error row absorbs."""
+    p = tmp_path / "collect_error.xml"
+    p.write_text(_J2315_COLLECT_ERROR)
+    rc, _err = _contract_rc(p, capsys)
+    assert rc == 0
+
+
+def test_junit_contract_missing_exits_0(tmp_path: Path, capsys):
+    """Ownership boundary: a MISSING junit is the 1b FAIL path's verdict."""
+    rc, err = _contract_rc(tmp_path / "does-not-exist.xml", capsys)
+    assert rc == 0
+    assert "missing" in err
+
+
+def test_junit_contract_unparseable_exits_0(tmp_path: Path, capsys):
+    """Ownership boundary: an UNPARSEABLE junit is compare's exit-2 verdict."""
+    p = tmp_path / "unparseable.xml"
+    p.write_text("not xml at all <<<")
+    rc, err = _contract_rc(p, capsys)
+    assert rc == 0
+    assert "unparseable" in err
+
+
+_REPO_ROOT_2315 = Path(__file__).resolve().parents[1]
+
+
+def _run_pytest_junit(tmp_path: Path, extra: list[str]) -> Path:
+    """Run REAL pytest on a tmp failing test under the repo pyproject config
+    (-c pins the ini source; cwd=tmp_path keeps repo conftests out of scope)
+    and return the junit path."""
+    t = tmp_path / "test_fail_demo_2315.py"
+    t.write_text("def test_always_fails():\n    assert False\n")
+    out = tmp_path / "junit.xml"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-c",
+            str(_REPO_ROOT_2315 / "pyproject.toml"),
+            str(t),
+            "--junitxml",
+            str(out),
+            "-p",
+            "no:cacheprovider",
+            *extra,
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert proc.returncode == 1, proc.stdout + proc.stderr  # the demo test fails
+    assert out.exists(), proc.stdout + proc.stderr
+    return out
+
+
+def test_pyproject_junit_family_ini_default_emits_file_attrs(tmp_path: Path):
+    """D0 / SC-0(a): under the repo pyproject (NO -o junit_family on the CLI)
+    a failing testcase carries the per-case file attribute — the omitted-flag
+    launcher shape is harmless — and parse_junit resolves it."""
+    out = _run_pytest_junit(tmp_path, [])
+    root = ET.parse(out).getroot()
+    cases = [tc for tc in root.iter("testcase") if tc.find("failure") is not None]
+    assert cases, "expected one failing testcase"
+    assert all(tc.get("file") for tc in cases), "ini default must emit file attrs"
+    failing, summary = sb.parse_junit(out)
+    assert summary["failures"] == 1
+    assert failing and failing[0].file.endswith("test_fail_demo_2315.py")
+
+
+def test_cli_junit_family_override_beats_ini_default(tmp_path: Path):
+    """D0 / SC-0(b), the AC5 precedence proof: an explicit CLI
+    ``-o junit_family=xunit2`` OVERRIDES the ini default (so the canonical
+    launchers' explicit ``-o junit_family=xunit1`` stays authoritative), and
+    parse_junit raises its file-attribute JunitParseError on the result."""
+    out = _run_pytest_junit(tmp_path, ["-o", "junit_family=xunit2"])
+    root = ET.parse(out).getroot()
+    cases = [tc for tc in root.iter("testcase") if tc.find("failure") is not None]
+    assert cases and all(not tc.get("file") for tc in cases), "xunit2 must omit file attrs"
+    with pytest.raises(sb.JunitParseError, match="has no file attribute"):
+        sb.parse_junit(out)
