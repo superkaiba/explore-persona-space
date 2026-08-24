@@ -148,11 +148,16 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
         for cix, br in enumerate(breadths):
             ax = fig.add_subplot(gs[2 * r, cix])
             axs = fig.add_subplot(gs[2 * r + 1, cix], sharex=ax)
+            gate_failed: list[tuple[float, str]] = []  # (x position, direction color)
             for k, d in enumerate(HERO_DIRECTIONS):
                 xs, vals, los, his, caps, cjks = [], [], [], [], [], []
                 for i, pos in enumerate(POS_ORDER):
                     row = idx.get((d, br, pos))
-                    if not _row_valid(row):  # invalid cells excluded (plan rule 29 gate)
+                    if row is None:
+                        continue
+                    if not _row_valid(row):
+                        # rule-29 gate-failed: marked, never an ordinary bar (#2254 r4)
+                        gate_failed.append((x[i] + (k - 1) * width, DIR_COLORS[d]))
                         continue
                     xs.append(x[i] + (k - 1) * width)
                     vals.append(row["delta_score"])
@@ -186,7 +191,10 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
             sxs, sv, slo, shi = [], [], [], []
             for i, pos in enumerate(POS_ORDER):
                 row = idx.get(("preshuf", br, pos))
+                if row is None:
+                    continue
                 if not _row_valid(row):
+                    gate_failed.append((x[i], DIR_COLORS["preshuf"]))
                     continue
                 sxs.append(x[i])
                 sv.append(row["delta_score"])
@@ -199,7 +207,10 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
             rxs, rv, rlo, rhi = [], [], [], []
             for i, pos in enumerate(POS_ORDER):
                 row = idx.get(("random", br, pos))
+                if row is None:
+                    continue
                 if not _row_valid(row):
+                    gate_failed.append((x[i], DIR_COLORS["random"]))
                     continue
                 rxs.append(x[i])
                 rv.append(row["delta_score"])
@@ -215,6 +226,16 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
                     ms=3,
                     lw=0.9,
                     capsize=2,
+                )
+            if gate_failed:
+                ax.scatter(
+                    [g[0] for g in gate_failed],
+                    [0.0] * len(gate_failed),
+                    marker="x",
+                    s=42,
+                    c=[g[1] for g in gate_failed],
+                    linewidths=1.6,
+                    zorder=5,
                 )
             if ceil is not None:
                 ax.axhline(ceil, color="black", ls="--", lw=1.0)
@@ -241,6 +262,15 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
             label=DIR_LABELS["random"],
         ),
         Line2D([], [], color="black", ls="--", label="donor-swap ceiling"),
+        Line2D(
+            [],
+            [],
+            color="0.25",
+            marker="x",
+            mew=1.6,
+            ls="",
+            label="completeness gate failed (score not shown)",
+        ),
         Patch(facecolor="0.55", label="cap-hit fraction (strip)"),
         Patch(facecolor="0.85", hatch="///", label="CJK-intrusion fraction (strip)"),
     ]
@@ -438,6 +468,16 @@ def fig_expl_h4_pre_vs_shuffled(rroot: Path, fig_dir: Path):
     h4 = lat.get("h4") or {}
     if not h4:
         return "skip:no h4 rows (pre/preshuf arms absent)"
+    # (behavior, breadth, position) whose pre / shuffled-map arm failed the
+    # rule-29 completeness gate — drawn hollow, never an ordinary point (#2254 r4)
+    subfloor: set[tuple[str, str, str]] = set()
+    percell = _load(rroot, "steer/delta_score_percell.json")
+    if percell is not None:
+        for beh_name, rows in percell["behaviors"].items():
+            for row in rows.values():
+                c = row["cell"]
+                if c["direction"] in ("pre", "preshuf") and not _row_valid(row):
+                    subfloor.add((beh_name, c["breadth"], c["position"]))
     keys = sorted(h4)
     fig, axes = plt.subplots(1, len(keys), figsize=(5.2 * len(keys), 3.6), squeeze=False)
     for cix, key in enumerate(keys):
@@ -482,15 +522,47 @@ def fig_expl_h4_pre_vs_shuffled(rroot: Path, fig_dir: Path):
                 capsize=2,
                 label="pre-image − random (diagnostic)",
             )
+        flagged = [i for i, p in enumerate(pos_present) if (beh, br, p) in subfloor]
+        if flagged:
+            ax.plot(
+                [x[i] for i in flagged],
+                [vals[i] for i in flagged],
+                marker="o",
+                ms=8,
+                mfc="white",
+                mec="0.15",
+                mew=1.4,
+                ls="",
+                zorder=5,
+            )
         ax.axhline(0, color="0.6", lw=0.8)
         ax.set_title(f"{beh} — {BREADTH_LABELS[br]}")
         ax.set_ylabel("paired Δ graded score difference")
         ax.set_xticks(x)
         ax.set_xticklabels([POS_LABELS[p] for p in pos_present], rotation=25, ha="right")
         if cix == 0:
-            ax.legend(fontsize=7)
+            handles, _labels = ax.get_legend_handles_labels()
+            handles.append(
+                Line2D(
+                    [],
+                    [],
+                    marker="o",
+                    ms=8,
+                    mfc="white",
+                    mec="0.15",
+                    mew=1.4,
+                    ls="",
+                    label="arm(s) below completeness floor — descriptive only",
+                )
+            )
+            ax.legend(handles=handles, fontsize=7)
     fig.tight_layout()
-    return _save(fig, fig_dir, "expl_h4_pre_vs_shuffled", ["reads/verdict_lattice.json"])
+    return _save(
+        fig,
+        fig_dir,
+        "expl_h4_pre_vs_shuffled",
+        ["reads/verdict_lattice.json", "steer/delta_score_percell.json"],
+    )
 
 
 def fig_expl_rd_lattice(rroot: Path, fig_dir: Path):
@@ -575,8 +647,20 @@ def fig_expl_perq_clouds(rroot: Path, fig_dir: Path):
                         ),
                         None,
                     )
-                    if hit is None or not _row_valid(hit[1]):
-                        continue  # missing or validity-gated cell (plan rule 29)
+                    if hit is None:
+                        continue
+                    if not _row_valid(hit[1]):
+                        # rule-29 gate-failed: marked, never a silent blank (#2254 r4)
+                        ax.scatter(
+                            [x[i] + off],
+                            [0.0],
+                            marker="x",
+                            s=42,
+                            color=DIR_COLORS[d],
+                            linewidths=1.6,
+                            zorder=5,
+                        )
+                        continue
                     cid, row = hit
                     jf = judged_dir / f"{cid}.json"
                     if not jf.is_file():
@@ -612,7 +696,19 @@ def fig_expl_perq_clouds(rroot: Path, fig_dir: Path):
             ax.set_xticks(x)
             ax.set_xticklabels([POS_LABELS[p] for p in POS_ORDER], rotation=35, ha="right")
             if r == 0 and cix == 0:
-                ax.legend(fontsize=7)
+                handles, _labels = ax.get_legend_handles_labels()
+                handles.append(
+                    Line2D(
+                        [],
+                        [],
+                        color="0.25",
+                        marker="x",
+                        mew=1.6,
+                        ls="",
+                        label="completeness gate failed (score not shown)",
+                    )
+                )
+                ax.legend(handles=handles, fontsize=7)
     if not plotted:
         plt.close(fig)
         return "skip:no strong-direction judged cells found"
@@ -625,6 +721,121 @@ def fig_expl_perq_clouds(rroot: Path, fig_dir: Path):
     )
 
 
+# cell-id position tokens -> percell position slugs (foc rows are cell-id keyed)
+_CID_POS = {
+    "lctx": "lastctx",
+    "t1": "tok1",
+    "t2": "tok2",
+    "t3": "tok3",
+    "s13": "span13",
+    "s15": "span15",
+    "cmb": "combined",
+    "aans": "allans",
+}
+
+
+def fig_expl_ctxext_positions(rroot: Path, fig_dir: Path):
+    """Sycophancy, directly-measured context direction: fraction of the
+    donor-swap ceiling at each injection position (both breadths). Rule-29
+    gate-failed cells are drawn HOLLOW (descriptive only) — never an
+    ordinary point (#2254 round 4)."""
+    foc = _load(rroot, "reads/fraction_of_ceiling.json")
+    percell = _load(rroot, "steer/delta_score_percell.json")
+    if foc is None or percell is None:
+        return "skip:fraction_of_ceiling.json or delta_score_percell.json missing"
+    beh = "sycophancy"
+    if beh not in foc.get("behaviors", {}):
+        return "skip:no sycophancy rows in fraction_of_ceiling.json"
+    idx = _cell_index(percell["behaviors"][beh])
+    # foc rows keyed by cell id: <beh>__<dir>__<pos>__<layer>__<c>
+    by_bp: dict[tuple[str, str], dict] = {}
+    for cid, row in foc["behaviors"][beh].items():
+        _b, d, pos_tok, layer, _c = cid.split("__")
+        if d != "cxd":
+            continue
+        br = "mid" if layer == "mid" else "single"
+        by_bp[(br, _CID_POS[pos_tok])] = row
+    if not by_bp:
+        return "skip:no measured-context-direction rows in fraction_of_ceiling.json"
+    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+    x = np.arange(len(POS_ORDER), dtype=np.float64)
+    color = DIR_COLORS["ctxext"]
+    markers = {"single": "o", "mid": "s"}
+    lstyles = {"single": "-", "mid": "--"}
+    flagged_any = False
+    for br in BREADTH_ORDER:
+        xs_v, v_v, lo_v, hi_v = [], [], [], []
+        xs_f, v_f, lo_f, hi_f = [], [], [], []
+        for i, pos in enumerate(POS_ORDER):
+            row = by_bp.get((br, pos))
+            if row is None:
+                continue
+            pr = idx.get(("ctxext", br, pos))
+            dest = (xs_v, v_v, lo_v, hi_v) if _row_valid(pr) else (xs_f, v_f, lo_f, hi_f)
+            dest[0].append(x[i])
+            dest[1].append(row["fraction_point"])
+            dest[2].append(row["fraction_ci"][0])
+            dest[3].append(row["fraction_ci"][1])
+        if xs_v:
+            ax.errorbar(
+                xs_v,
+                v_v,
+                yerr=_err(v_v, lo_v, hi_v),
+                color=color,
+                marker=markers[br],
+                ls=lstyles[br],
+                ms=4,
+                lw=1.2,
+                capsize=2,
+                label=BREADTH_LABELS[br],
+            )
+        if xs_f:
+            flagged_any = True
+            ax.errorbar(
+                xs_f,
+                v_f,
+                yerr=_err(v_f, lo_f, hi_f),
+                color=color,
+                marker=markers[br],
+                ls="",
+                ms=7,
+                mfc="white",
+                mec=color,
+                mew=1.4,
+                capsize=2,
+            )
+    ax.axhline(0, color="0.6", lw=0.6)
+    ax.axhline(1.0, color="black", ls="--", lw=1.0)
+    ax.set_title("sycophancy — directly-measured context direction")
+    ax.set_ylabel("fraction of donor-swap ceiling")
+    ax.set_xticks(x)
+    ax.set_xticklabels([POS_LABELS[p] for p in POS_ORDER], rotation=35, ha="right")
+    handles, _labels = ax.get_legend_handles_labels()
+    handles.append(Line2D([], [], color="black", ls="--", label="donor-swap ceiling"))
+    if flagged_any:
+        handles.append(
+            Line2D(
+                [],
+                [],
+                marker="o",
+                ms=7,
+                mfc="white",
+                mec=color,
+                mew=1.4,
+                ls="",
+                label="completeness gate failed — descriptive only",
+            )
+        )
+    ax.legend(handles=handles, fontsize=7)
+    fig.tight_layout()
+    return _save(
+        fig,
+        fig_dir,
+        "expl_ctxext_positions",
+        ["reads/fraction_of_ceiling.json", "steer/delta_score_percell.json"],
+    )
+
+
 _BUILDERS = (
     fig_hero1_position_bars,
     fig_hero2_recovery_fraction,
@@ -633,6 +844,7 @@ _BUILDERS = (
     fig_expl_h4_pre_vs_shuffled,
     fig_expl_rd_lattice,
     fig_expl_perq_clouds,
+    fig_expl_ctxext_positions,
 )
 
 
