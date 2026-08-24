@@ -914,6 +914,7 @@ def phase_densein(args) -> None:
     try:
         t0 = time.time()
         pt, meta = drv._gram_ridge_single(Xc, yc, tr, va, te, drv.N1M.LAMBDAS_N1M, args.device)
+        # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
         tmp = densein_path.parent / f".tmp_{densein_path.name}"
         np.savez(
             tmp,
@@ -1059,6 +1060,7 @@ def phase_census(args) -> None:
     f_ib = drv._encode_restricted(sae, ib16, np.arange(len(ib16)), union)
     encode_wall = round(time.time() - t0, 1)
     f_true = np.asarray(yc[n_fit:], np.float16)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = enc_path.parent / f".tmp_{enc_path.name}"
     np.savez(
         tmp,

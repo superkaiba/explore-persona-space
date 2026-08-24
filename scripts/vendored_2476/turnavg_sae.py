@@ -489,6 +489,7 @@ def _extract_chunk_l19(path: Path) -> tuple[np.ndarray, np.ndarray, list[int]]:
 
 
 def _write_cursor(path: Path, fp: str, regime: dict, cursor_chunk: int, cursor_row: int) -> None:
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = path.parent / (path.name + ".tmp")
     tmp.write_text(
         json.dumps(
@@ -1027,6 +1028,7 @@ def _flush_vbar_shard(rec: dict[str, list], path: Path) -> None:
             else np.empty((0, C.EXPECTED_HIDDEN), np.float16)
         ),
     }
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = path.parent / f".tmp_{path.name}"
     np.savez(tmp, **arrays)
     tmp.replace(path)
@@ -1566,6 +1568,7 @@ def _consolidate_and_gate(args, out, rows_all, set_tag, gates, gates_path, store
         logger.warning(
             "[recapture] smoke: %d/%d rows missing (informational)", len(missing), len(expected)
         )
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = store_path.parent / f".tmp_{store_path.name}"
     np.savez(tmp, **arr)
     tmp.replace(store_path)
@@ -2529,6 +2532,7 @@ def _ib_arm_c(args, maps_dir: Path, scratch: Path) -> None:
     parity = float(np.abs(b_helper - b_sub).max())
     assert np.allclose(b_helper, b_sub, atol=1e-8), f"ib bias parity failed: {parity}"
     pred = np.asarray(X[hold], np.float64) + b
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = out.parent / f".tmp_{out.name}"
     np.savez(
         tmp,
@@ -2743,6 +2747,7 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     ib = identity_bias_predict(
         np.asarray(Z[tr], np.float64), np.asarray(vbar20[tr], np.float64), np.asarray(Z[te])
     )
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = out_maps.parent / f".tmp_{out_maps.name}"
     np.savez(
         tmp,
@@ -2770,6 +2775,7 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     f_true = _encode_restricted(sae, vbar20, np.arange(len(row_idx)), alive)
     f_true_in = _encode_restricted(sae, vbar20_in, te, alive)  # inlier twin, te rows only
     train_mean = np.asarray(f_true[fit_pos], np.float64).mean(0)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = out_alive.parent / f".tmp_{out_alive.name}"
     np.savez(
         tmp,
@@ -2781,12 +2787,14 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
         tier=S.tier_of(alive),
     )
     tmp.replace(out_alive)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = out_ftrue.parent / f".tmp_{out_ftrue.name}"
     np.savez(tmp, row_idx=row_idx, f_true=f_true, f_true_inlier_te=f_true_in)
     tmp.replace(out_ftrue)
 
     # dense-input companion (plan §4 P5): c20 -> f_true20, same carve, ONE Gram
     pt_d, meta_d = _gram_ridge_single(Z, f_true, tr, va, te, N1M.LAMBDAS_N1M, args.device)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = out_dense.parent / f".tmp_{out_dense.name}"
     np.savez(
         tmp,
@@ -2853,6 +2861,7 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     _encode_restricted(sae, Ymm, rows_c, alive, out_mm=yc)
     yc.flush()
     train_mean = _stream_fit_sum(yc, n_fit) / max(1, n_fit)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = alive_path.parent / f".tmp_{alive_path.name}"
     np.savez(
         tmp,
@@ -2871,6 +2880,7 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     te = np.arange(n_fit, len(rows_c))
     EL._assert_estimator_validity(len(tr), Xc.shape[1], args.smoke)
     pt, meta = _gram_ridge_single(Xc, yc, tr, va, te, N1M.LAMBDAS_N1M, args.device)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = dense_path.parent / f".tmp_{dense_path.name}"
     np.savez(
         tmp,
@@ -3122,6 +3132,7 @@ def _write_perfeature(path: Path, *, feat_ids, pred, true, counts_sel, te_prov, 
             corpus[label] = _r2_only(pred[m], true[m])
         else:
             corpus[label] = np.full(pred.shape[1], np.nan)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = path.parent / f".tmp_{path.name}"
     np.savez(
         tmp,

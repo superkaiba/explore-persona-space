@@ -136,6 +136,8 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 import turnavg_sae as T  # noqa: E402  (vendored @ d8e9f8bdd4)
 
+from explore_persona_space.atomic_io import savez_atomic  # noqa: E402
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", force=True
 )
@@ -822,9 +824,8 @@ def phase_census_panel(args) -> None:
     floor_primary = max(1, math.ceil(ALIVE_FRAC_PRIMARY * n_fit))
     floor_panel = max(1, math.ceil(ALIVE_FRAC_PANEL * n_fit))
     panel, pdoc = _activity_stratified_panel(acc["counts"], n_fit, PANEL_CAP, PANEL_SEED)
-    tmp = census_path.parent / f".tmp_{census_path.name}"
-    np.savez(
-        tmp,
+    savez_atomic(
+        census_path,
         counts=acc["counts"],
         act_sum=acc["act_sum"],
         act_sumsq=acc["act_sumsq"],
@@ -836,7 +837,6 @@ def phase_census_panel(args) -> None:
         floor_panel=np.int64(floor_panel),
         panel_ids=panel,
     )
-    tmp.replace(census_path)
     alive_240 = int((acc["counts"] >= floor_panel).sum())
     alive_1200 = int((acc["counts"] >= floor_primary).sum())
     T._write_json(
@@ -970,9 +970,8 @@ def phase_perfeature_r2(args) -> None:
     else:
         cf_doc["skipped"] = "fewer than 2 WildChat holdout rows / LMSYS fit rows (smoke)"
 
-    tmp = pf_path.parent / f".tmp_{pf_path.name}"
-    np.savez(
-        tmp,
+    savez_atomic(
+        pf_path,
         feat_ids=panel,
         r2_map=pf["r2"],
         spearman=pf["spearman"],
@@ -993,7 +992,6 @@ def phase_perfeature_r2(args) -> None:
         # NOTE: no `tier` column — the flat 32,768-wide rep SAE has no matryoshka
         # tiers (the ladder's tier covariate is matryoshka-arms-only, plan §4).
     )
-    tmp.replace(pf_path)
 
     ret: dict = {}
     for pname, parr in (("map", f_pred), ("ib", f_ib)):
@@ -1221,9 +1219,7 @@ def phase_rep_mining(args) -> None:
     mine_pos, mine_ids, pool_doc = _mining_pool(args)
     need = np.union1d(panel, _eval_union(args, "rep_ta"))
     vals, rows = _mine_top_rows(sae, y_mm, mine_pos, mine_ids, need, args.device)
-    tmp = out / f".tmp_{heap_path.name}"
-    np.savez(tmp, feat_ids=need, top_vals=vals, top_rows=rows)
-    tmp.replace(heap_path)
+    savez_atomic(heap_path, feat_ids=need, top_vals=vals, top_rows=rows)
     _manifest_update(args, "rep_ta", mine_ids, pool_doc)
     _measured_update(args, rep_ta_desc_union_n=int(len(need)))
     del sae
@@ -1560,9 +1556,8 @@ def phase_pt_mining(args) -> None:
             )
     top_r[top_v <= 0] = -1
     fve = float("nan") if ss_tot < 1e-12 else 1.0 - ss_res / ss_tot
-    tmp = out / f".tmp_{heap_path.name}"
-    np.savez(
-        tmp,
+    savez_atomic(
+        heap_path,
         feat_ids=need,
         top_vals=top_v.cpu().numpy(),
         top_rows=top_r.cpu().numpy(),
@@ -1572,7 +1567,6 @@ def phase_pt_mining(args) -> None:
         trainer2_fve_pool=np.float64(fve),
         n_pool_rows=np.int64(len(rows_iter)),
     )
-    tmp.replace(heap_path)
     _manifest_update(args, "pt", pool_ids, pool_doc)
     _measured_update(args, trainer2_fve_poolpass=fve, pt_mining_pool_n=int(len(rows_iter)))
 

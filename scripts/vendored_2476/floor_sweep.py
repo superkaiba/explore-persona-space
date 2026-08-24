@@ -190,6 +190,7 @@ def _write_json_atomic(path: Path, obj: dict) -> None:
     """Plain atomic JSON write (gate records + regime manifests; provenance-bearing
     phase docs go through the parent's _write_json)."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    # SHARED_TMP_EXEMPT: vendored verbatim from #2476 pin d8e9f8bdd4 (parent copy is batch-0 allowlisted); single-writer per out-root, migration deferred to parent
     tmp = path.parent / f".tmp_{path.name}"
     tmp.write_text(json.dumps(obj, indent=1, default=str))
     tmp.replace(path)

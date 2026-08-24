@@ -10,3 +10,13 @@ Also materialized from the same pin (branch-only artifacts, committed on issue-2
 Blob shas verified identical at d8e9f8bdd4 AND at origin/issue-2476 tip 4f0e512e4c (2026-08-24).
 Rationale: main's issue2476_turnavg_sae.py LAGS the branch (139 insertions / 15 deletions;
 k200_census.py + floor_sweep.py exist ONLY on the branch) - plan #2552 item (k) leg A remedy.
+
+Post-vendoring modification (2026-08-24, the ONLY deviation from the pin blobs):
+COMMENT-ONLY "# SHARED_TMP_EXEMPT: ..." waiver lines inserted immediately above the
+workflow_lint --check-shared-tmp-name (#2336) hit lines - 11 in turnavg_sae.py, 2 in
+k200_census.py, 1 in floor_sweep.py. No code line was changed. The parent's own
+main-resident copy (scripts/issue2476_turnavg_sae.py) carries the same disposition via
+the lint's batch-0 seed allowlist; migration to atomic_io stays with the parent files.
+Verify parity modulo the waivers:
+  git show d8e9f8bdd4:scripts/issue2476_<name>.py | diff - scripts/vendored_2476/<name>.py \
+    | grep '^[<>]' | grep -v SHARED_TMP_EXEMPT   # empty = only waiver insertions

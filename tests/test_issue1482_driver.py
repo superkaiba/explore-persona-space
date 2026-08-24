@@ -567,7 +567,7 @@ def test_download_chunk_retry_survives_storm_past_attempt_floor(monkeypatch, tmp
 
     calls = {"n": 0}
 
-    def fake(repo_id, filename=None, repo_type=None, local_dir=None):
+    def fake(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         if calls["n"] <= 5:
             raise LocalEntryNotFoundError("synthetic 429-on-HEAD storm")
@@ -590,7 +590,7 @@ def test_download_chunk_retry_budget_zero_is_attempt_bound_fail_loud(monkeypatch
 
     calls = {"n": 0}
 
-    def fake(repo_id, filename=None, repo_type=None, local_dir=None):
+    def fake(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         raise LocalEntryNotFoundError("persistent storm")
 
@@ -604,7 +604,7 @@ def test_download_chunk_retry_budget_zero_is_attempt_bound_fail_loud(monkeypatch
 def test_download_chunk_retry_nontransient_no_retry(monkeypatch, tmp_path):
     calls = {"n": 0}
 
-    def fake(repo_id, filename=None, repo_type=None, local_dir=None):
+    def fake(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         raise ValueError("non-transient")
 
