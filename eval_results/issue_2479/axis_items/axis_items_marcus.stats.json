@@ -1,0 +1,30 @@
+{
+  "character": "marcus",
+  "variant": "char_2479_marcus_op",
+  "kept_path": "data/issue_1345/char_2479_marcus_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1367,
+  "n_prepared": 1363,
+  "n_axis_items": 206,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 326.3536316947909,
+  "mean_answer_len_chars_axis": 327.0339805825243,
+  "prep_stats": {
+    "cell": "char_2479_marcus_op",
+    "n_in": 1367,
+    "answer_sources": {
+      "parsed_turns_span": 1367
+    },
+    "capped_source": "row_field",
+    "n_capped": 0,
+    "n_no_question": 0,
+    "n_short_answer": 4,
+    "n_short_by_source": {
+      "parsed_turns_span": 4
+    },
+    "n_join_miss": 0,
+    "n_out": 1363,
+    "capped_rate": 0.0,
+    "short_answer_drop_share": 0.002926,
+    "span_short_share": 0.002926
+  }
+}

@@ -151,6 +151,16 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         # *.sh *.yaml — the only references outside tasks/ records are
         # the script itself).
         "scripts/issue952_behavior_dashboard.py",
+        # #2479 axis-freeze tool (plan §4 Step 3): a VM-only per-issue script
+        # (same class as issue952_behavior_dashboard above). Its --commit mode
+        # commits/pushes eval_results/issue_2479/axis_freeze.json on the issue
+        # branch, then posts the "axis-frozen commit=<sha>" epm:progress marker
+        # via the MAIN-checkout task.py (resolved through the git common dir,
+        # cwd=main checkout). The tasks/ tree + REGISTRY exist only on the VM
+        # main checkout and task.py branch-guards to main, so a pod-side
+        # invocation crashes by construction; the axis judge legs it freezes
+        # run off-pod (VM, Batch API) per the plan.
+        "scripts/issue2479_freeze_axis.py",
         # The test itself contains pattern strings
         "tests/test_no_pod_side_task_py_shellout.py",
         # Workflow library — orchestrator-side, never imported from pod

@@ -1,0 +1,151 @@
+{
+  "metadata": {
+    "git_commit": "21556f1cc9af00550b793556dcef3452af14830e",
+    "timestamp": "2026-08-24T03:44:23Z",
+    "seed": 0,
+    "n": 40,
+    "script": "scripts/issue1345_onpolicy_judge_legs.py",
+    "pinned_parent_revision": "7159e5804d"
+  },
+  "leg": "ai_likeness",
+  "tag": "mask_iris",
+  "spend_executed": true,
+  "spend_reason": "explicitly acknowledged",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_draws": 5,
+  "temperature": 1.0,
+  "max_tokens": 1024,
+  "threshold_base": 0,
+  "n_items": 40,
+  "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+  "items_content_sha256": "e90af511c1f47c36789e2e9263529ef3ad7edc159b87fc79227fde6dd52a6c89",
+  "licensing_pilot": {
+    "report_path": "eval_results/issue_2479/pilot_gate_axis.json",
+    "family": "axis",
+    "instrument": {
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "n_draws": 5,
+      "temperature": 1.0,
+      "max_tokens": 1024,
+      "threshold_base": 0,
+      "dispatch_route": "forced-batch",
+      "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9"
+    },
+    "data_identity": {
+      "panel_sha256": "67ec9d3eaba8abd61967951d702dc73a14c1ddc07b7bddc80f3df69a63362438",
+      "panel_manifest_sha256": "79a33ac9f7e1ce6cc0b45e02a5a7289a25e14a51f6386f6f04275ed9f54080f0",
+      "items_content_sha256": "90fc024e0bc8342392e1b529631a6564fb716c28f8267b97b0ded6f63058fd1d",
+      "n_pooled_items": 3411,
+      "characters_pooled": [
+        "barnaby",
+        "cobalt",
+        "dana",
+        "elena",
+        "gus",
+        "helios",
+        "iris",
+        "marcus",
+        "marisol",
+        "mort",
+        "priya",
+        "tomas",
+        "vera",
+        "vex",
+        "wren",
+        "zara"
+      ]
+    },
+    "created_utc": "2026-08-24T02:15:49Z"
+  },
+  "n_dropped_draws_content": 0,
+  "n_refusal_draws": 0,
+  "n_transport_lost_draws": 0,
+  "n_total_draws": 200,
+  "n_scored_items": 40,
+  "sample_design": {
+    "seed": 0,
+    "tag": "mask_iris",
+    "n_target": 40,
+    "take_all": false,
+    "frame_n": 224,
+    "frame_capped": 0,
+    "frame_capped_rate": 0.0,
+    "eligible_n": 224,
+    "eligible_capped": 0,
+    "eligible_capped_rate": 0.0,
+    "strata_targets": {
+      "capped": 0,
+      "natural": 40
+    },
+    "realized_n": 40,
+    "realized_capped": 0,
+    "realized_natural": 40,
+    "realized_capped_rate": 0.0,
+    "yield_floor_halted_cell": false,
+    "conv_ids": [
+      "s4963",
+      "s4466",
+      "s1657",
+      "s1128",
+      "s488",
+      "s2289",
+      "s2472",
+      "s4140",
+      "s4883",
+      "s3476",
+      "s4937",
+      "s1661",
+      "s2367",
+      "s4516",
+      "s4076",
+      "s3778",
+      "s323",
+      "s1455",
+      "s3856",
+      "s493",
+      "s3066",
+      "s4436",
+      "s3031",
+      "s4862",
+      "s2168",
+      "s4775",
+      "s3947",
+      "s869",
+      "s4435",
+      "s3841",
+      "s1412",
+      "s4358",
+      "s4847",
+      "s4391",
+      "s4410",
+      "s1335",
+      "s2280",
+      "s2005",
+      "s4590",
+      "s405"
+    ]
+  },
+  "selection_caveat": null,
+  "means": {
+    "pooled": {
+      "n": 40,
+      "mean": 67.575
+    },
+    "capped": {
+      "n": 0,
+      "mean": null
+    },
+    "natural": {
+      "n": 40,
+      "mean": 67.575
+    },
+    "n_unscored_items": 0
+  },
+  "content_drop_classes": {
+    "available": true,
+    "refusal": 0,
+    "parse_error": 0,
+    "other_malformed": 0,
+    "fence_attribution": "unavailable \u2014 save_raw persists parsed values, not raw reply text; parse_error is the class a live fence residue would inflate"
+  }
+}

@@ -45,6 +45,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -73,7 +74,11 @@ from explore_persona_space.llm.api_dispatch import (  # noqa: E402
     dispatch_calls,
 )
 
-SMOKE_N_STORIES = 3
+# #2479 P0 seam: env ABSENT => the parent smoke target (3) stays byte-identical.
+# The #2479 toy-fit smoke leg needs >= 4 kept rows for the 5-fold cell fit
+# (run_cell_fit's train>=3 fold filter); its wrapper sets 12 so the extract
+# smoke cap (8) is reached with judge-filter margin.
+SMOKE_N_STORIES = int(os.environ.get("EPM_I1345_SMOKE_N_STORIES", "3"))
 # Paired-mode generation budget (cps fix round, 2026-07-17 — DECLARED plan
 # deviation vs v8 §11's inherited 1024): the r4 production run truncated ~49%
 # of its answer_occurrences_zero rejects mid-answer at the parent's FREE-FORM
@@ -322,7 +327,9 @@ def build_paired_prompt(row: dict, tokenizer, *, op_companion: bool) -> str:
     )
 
 
-def _filter_pool_feasible(pool: list[dict], tokenizer, *, op_companion: bool) -> tuple[list, dict]:
+def _filter_pool_feasible(
+    pool: list[dict], tokenizer, *, op_companion: bool, margins_out: list | None = None
+) -> tuple[list, dict]:
     """Drop rows whose formatted prompt / answer exceed the token budgets.
 
     Row schema is MODE-KEYED (att-20260716-230002 crash-fix): paired rows carry
@@ -331,6 +338,12 @@ def _filter_pool_feasible(pool: list[dict], tokenizer, *, op_companion: bool) ->
     companion rows carry ``{conv_id, question}`` ONLY (free generation — no
     fixed answer exists), so only the formatted-prompt budget applies and
     ``answer`` is never touched.
+
+    ``margins_out`` (concern round, #2479 r8): when a list is passed, one
+    ``(conv_id, PROMPT_TOKEN_BUDGET - n_tok)`` tuple is appended per KEPT row —
+    the emit-eligible-ids panel-invariance gate consumes the SAME token counts
+    the filter decided on (never a re-derivation). Default ``None`` leaves
+    every production call site byte-identical.
     """
     kept, counts = [], {"prompt_over_budget": 0, "answer_over_budget": 0}
     for row in pool:
@@ -344,6 +357,8 @@ def _filter_pool_feasible(pool: list[dict], tokenizer, *, op_companion: bool) ->
         if n_tok > g.PROMPT_TOKEN_BUDGET:
             counts["prompt_over_budget"] += 1
             continue
+        if margins_out is not None:
+            margins_out.append((str(row["conv_id"]), g.PROMPT_TOKEN_BUDGET - n_tok))
         kept.append(row)
     print(
         f"[seeds] feasibility filter (op_companion={op_companion}): "
@@ -1022,6 +1037,41 @@ def persist_bundle_paired(
         f"issue-1345: {mode_slug} story bundle ({model_key}, fp {fp})",
     )
     print(f"[gen] persisted {mode_slug} rollouts -> {prefix} (fp {fp})", flush=True)
+    if c.VARIANT.startswith(I2479_PANEL_PREFIX):
+        # #2479 r2 (hf-prefix bridge condition 4): record the data-repo revision
+        # AT-OR-AFTER this cell's upload so downstream staging (P3/P4/P5) can pin
+        # a revision that provably contains these bytes — the parent STORIES_PIN
+        # predates every panel cell (#2061 revision-pinning family). repo_info's
+        # main sha may include later concurrent commits; as a pin that is still
+        # a superset of this upload.
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate.hub import retry_transient
+
+        rev = retry_transient(
+            lambda: HfApi().repo_info(c.HF_DATA_REPO, repo_type="dataset").sha,
+            what=f"repo_info({c.HF_DATA_REPO})",
+        )
+        sidecar_name = f"upload_revision_{mode_slug}_{model_key}.json"
+        c.write_json(
+            out_dir / sidecar_name,
+            {
+                "metadata": c.metadata(c.GEN_SEED, 1, "scripts/issue1345_gen_stories_paired.py"),
+                "variant": c.VARIANT,
+                "mode": mode_slug,
+                "model": model_key,
+                "bundle_fingerprint": fp,
+                "hf_prefix": prefix,
+                "data_repo_revision_at_or_after_upload": rev,
+            },
+        )
+        g._hf_upload_folder(
+            out_dir,
+            prefix,
+            [sidecar_name],
+            f"issue-2479: upload-revision sidecar ({mode_slug}, {model_key})",
+        )
+        print(f"[gen] upload-revision sidecar -> {prefix}/{sidecar_name} rev={rev}", flush=True)
 
 
 def try_resume_paired(
@@ -1238,6 +1288,504 @@ def _write_yield_report(
 
 
 # ---------------------------------------------------------------------------
+# #2479 panel-manifest pool binding + per-mode gen-target resolution (r2 fixes)
+# ---------------------------------------------------------------------------
+I2479_PANEL_PREFIX = "char_2479_"
+I2479_MANIFEST_ENV = "EPM_I2479_PANEL_MANIFEST_JSON"
+
+
+def resolve_gen_targets(
+    op_powered: bool, n_stories: int | None, yield_floor: int | None
+) -> tuple[int, int]:
+    """(full kept target, yield floor) for the invoked mode; explicit CLI values BIND.
+
+    #2479 r2 fix (codex ``op-powered-cli-ignored``): ``--op-powered`` previously
+    pinned the parent constants (N_ONPOLICY_STORY_TARGET / ONPOLICY_STORY_YIELD_FLOOR)
+    regardless of CLI, silently ignoring the wrapper's ``--n-stories 1600
+    --yield-floor 800``. Mode constants stay the defaults, so parent invocations
+    (which pass neither flag) are byte-identical in BOTH modes.
+    """
+    if op_powered:
+        return (
+            n_stories if n_stories is not None else c.N_ONPOLICY_STORY_TARGET,
+            yield_floor if yield_floor is not None else c.ONPOLICY_STORY_YIELD_FLOOR,
+        )
+    return (
+        n_stories if n_stories is not None else c.N_STORIES_PAIRED_TARGET,
+        yield_floor if yield_floor is not None else c.STORY_PAIRED_YIELD_FLOOR,
+    )
+
+
+def _i2479_manifest_path() -> Path:
+    """Committed #2479 panel manifest (env-overridable; fail-loud when absent)."""
+    override = os.environ.get(I2479_MANIFEST_ENV, "").strip()
+    p = Path(override) if override else _REPO_ROOT / "eval_results/issue_2479/panel_manifest.json"
+    if not p.is_file():
+        raise FileNotFoundError(
+            f"panel cell {c.VARIANT!r} requires the committed panel manifest at {p} "
+            f"(override via {I2479_MANIFEST_ENV}) — production gen is bound to the "
+            "registered sample_conv_ids (plan §4 Step 1)"
+        )
+    return p
+
+
+def restrict_pool_to_manifest(pool: list[dict]) -> tuple[list[dict], dict | None]:
+    """#2479 panel cells: bind the gen pool to the manifest's registered conv_ids.
+
+    Non-panel variants return ``(pool, None)`` — byte-identical parent behavior.
+    Panel cells (EPM_I1345_VARIANT starting ``char_2479_``) load the committed
+    ``panel_manifest.json`` (schema-checked: n_sample count, id uniqueness),
+    restrict the pool to ``sample_conv_ids`` BEFORE the seeded permutation, and
+    FAIL LOUD when any registered id is absent from the eligible pool — the
+    manifest was sampled FROM this pool at seed 42, so a miss is recipe drift,
+    never a silent narrowing. Returns ``meta`` carrying the manifest sha256
+    (folded into the bundle fingerprint by the caller) + restriction counts.
+    """
+    if not c.VARIANT.startswith(I2479_PANEL_PREFIX):
+        return pool, None
+    mp = _i2479_manifest_path()
+    raw = mp.read_bytes()
+    m = json.loads(raw)
+    ids = m["sample_conv_ids"]
+    assert isinstance(ids, list) and ids, f"{mp}: empty/malformed sample_conv_ids"
+    id_set = {str(x) for x in ids}
+    assert len(id_set) == len(ids), f"{mp}: duplicate sample_conv_ids"
+    assert len(ids) == int(m["n_sample"]), f"{mp}: n_sample={m['n_sample']} != {len(ids)} ids"
+    pool_ids = {str(r["conv_id"]) for r in pool}
+    missing = sorted(id_set - pool_ids)
+    assert not missing, (
+        f"{mp}: {len(missing)} registered sample_conv_ids absent from the eligible pool "
+        f"(pool={len(pool)}) — e.g. {missing[:5]}"
+    )
+    restricted = [r for r in pool if str(r["conv_id"]) in id_set]
+    meta = {
+        "panel_manifest_path": str(mp),
+        "panel_manifest_sha256": hashlib.sha256(raw).hexdigest(),
+        "n_manifest_registered": len(ids),
+        "n_pool_before_manifest_restrict": len(pool),
+        "n_pool_after_manifest_restrict": len(restricted),
+    }
+    return restricted, meta
+
+
+def apply_manifest_fp_suffix(fp: str, manifest_meta: dict | None) -> str:
+    """Fold the panel-manifest identity into the bundle fingerprint (panel cells only)."""
+    if manifest_meta is None:
+        return fp
+    return f"{fp}-m{manifest_meta['panel_manifest_sha256'][:12]}"
+
+
+# --- panel-invariance gate for the eligibility export (#2479 concern round) ---
+# The export's feasibility filters tokenize prompts under the EMIT-time
+# (character_name, persona_desc) config, while the 24 panel cells each splice
+# their own (display_name, desc) into the templates — so exported eligibility
+# is config-dependent in principle. The gate below bounds that dependence:
+# min kept-row margin per regime must exceed the max panel-config template
+# delta plus a slack, so no exported-eligible id can leave any panel cell's
+# post-filter pool (the restrict_pool_to_manifest crash class, P0 2026-08-23;
+# reconciler r7 measured min margin 790 / max delta +16).
+I2479_PANEL_JSON_ENV = "EPM_I2479_CHAR_PANEL_JSON"  # same env the p1p4 launcher exports
+PANEL_MARGIN_SLACK_TOKENS = 64  # ≥4x the measured max per-config delta (+16, Barnaby)
+# Concern round r9 (panel-invariance-proof-remains-heuristic): the gate probes
+# the K MINIMUM-MARGIN kept rows per regime (not one arbitrary binding row) —
+# BPE deltas are row-dependent at token seams, so the worst-case delta must be
+# measured over the rows with the least headroom. 32 x 16 configs x 2 regimes
+# is ~1k CPU tokenizations — cheap.
+PANEL_GATE_PROBE_ROWS = 32
+
+
+def _i2479_panel_path() -> Path:
+    """Committed #2479 character panel (env-overridable; fail-loud when absent)."""
+    override = os.environ.get(I2479_PANEL_JSON_ENV, "").strip()
+    p = Path(override) if override else _REPO_ROOT / "eval_results/issue_2479/panel.json"
+    if not p.is_file():
+        raise FileNotFoundError(
+            f"--emit-eligible-ids requires the committed #2479 character panel at {p} "
+            f"(override via {I2479_PANEL_JSON_ENV}) — the export's panel-invariance "
+            "margin gate renders the binding rows under every panel config"
+        )
+    return p
+
+
+def _panel_char_intro(name: str, desc: str) -> str:
+    """Parametric replica of the module-level ``_CHAR_INTRO`` construction."""
+    return f"a character named {name}, {desc}" if desc else f"an AI assistant named {name}"
+
+
+def _panel_paired_system(name: str, desc: str) -> str:
+    """Parametric replica of ``STORY_PAIRED_SYSTEM_TEMPLATE`` (byte-identity asserted
+    against the module constant at emit time, so drift fails loud)."""
+    intro = _panel_char_intro(name, desc)
+    return (
+        f"You are writing a short narrative story scene in which {intro} "
+        f"is a character. The scene must contain exactly ONE moment "
+        f"where a person asks {name} a question and "
+        f"{name} answers it. Write 3-6 sentences of narrative context first, "
+        "then have the person ask the question given by the user (spoken aloud, in double "
+        f"quotes), and then have {name} answer with EXACTLY these words: "
+        '"{ANSWER}". Introduce the answer with an attribution before the quotation, exactly '
+        f'in the form: {name} replied: "..." — the quoted answer must match '
+        "the given words verbatim, with no paraphrasing, additions, or omissions. Do not "
+        "reveal or paraphrase the answer content anywhere before that attribution. Write "
+        "flowing narrative prose (never a script or 'Name:' dialogue format), and put all "
+        "spoken dialogue in double quotes."
+    )
+
+
+def _panel_op_system(name: str, desc: str) -> str:
+    """Parametric replica of ``STORY_OP_COMPANION_SYSTEM`` (byte-identity asserted)."""
+    intro = _panel_char_intro(name, desc)
+    return (
+        f"You are writing a short narrative story scene in which {intro} "
+        f"is a character. The scene must contain exactly ONE moment "
+        f"where a person asks {name} a question and "
+        f"{name} gives a substantive, helpful answer. Write 3-6 sentences "
+        "of narrative context first, then have the person ask the question given by the user "
+        f"(spoken aloud, in double quotes), and then have {name} answer it. "
+        f"Introduce the answer with an attribution before the quotation, exactly in the form: "
+        f'{name} replied: "..." Write flowing narrative prose (never a '
+        "script or 'Name:' dialogue format), and put all spoken dialogue in double quotes."
+    )
+
+
+def _panel_prompt_probe(row: dict, tokenizer, *, op_companion: bool, name: str, desc: str) -> str:
+    """``build_paired_prompt`` under an arbitrary (name, desc) config (replica;
+    byte-identity vs the module path asserted for the emit config at emit time)."""
+    system = (
+        _panel_op_system(name, desc)
+        if op_companion
+        else _panel_paired_system(name, desc).replace("{ANSWER}", row["answer"])
+    )
+    user_msg = f"Write the scene now. The question the person asks {name} is:\n{row['question']}"
+    return tokenizer.apply_chat_template(
+        [{"role": "system", "content": system}, {"role": "user", "content": user_msg}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+
+def _panel_invariance_gate(
+    pool_by_id: dict[str, dict],
+    margins: dict[str, list],
+    tokenizer,
+    panel_path: Path,
+) -> dict:
+    """Assert min kept-row margin >= max panel-config delta + slack, per regime.
+
+    Concern round r9: renders each regime's ``PANEL_GATE_PROBE_ROWS`` (32)
+    MINIMUM-margin kept rows — not one arbitrary binding row — under every
+    committed panel (display_name, desc) config and compares formatted-prompt
+    token counts against the emit config's. The margin condition is asserted
+    against the MAX delta observed across (probed rows x all configs):
+    ``min_margin >= max_delta + slack`` implies ``margin_i - max_delta_i >=
+    slack`` for every probed row. Each probed row's recomputed base token
+    count is cross-checked against the margin the feasibility filter recorded
+    (the gate and the filter must agree on the same counts), and the BINDING
+    (min-margin) row's rendered base prompt is sha256-hashed per regime —
+    ``binding_prompt_sha256`` binds the recorded margins to exact source
+    bytes. Fails loud with both numbers; returns the provenance block
+    recorded in the export. Replica-drift self-checks run first so a template
+    edit can never silently hollow the gate.
+    """
+    if not panel_path.is_file():
+        raise FileNotFoundError(
+            f"--emit-eligible-ids requires the #2479 character panel at {panel_path} "
+            f"(default: committed eval_results/issue_2479/panel.json; override via "
+            f"{I2479_PANEL_JSON_ENV}) — the panel-invariance margin gate renders the "
+            "binding rows under every panel config"
+        )
+    assert _panel_paired_system(c.STORY_CHARACTER_NAME, PERSONA_DESC) == (
+        STORY_PAIRED_SYSTEM_TEMPLATE
+    ), "panel-invariance probe: paired-template replica drifted from the module constant"
+    assert _panel_op_system(c.STORY_CHARACTER_NAME, PERSONA_DESC) == (STORY_OP_COMPANION_SYSTEM), (
+        "panel-invariance probe: op-template replica drifted from the module constant"
+    )
+    panel_raw = panel_path.read_bytes()
+    panel = json.loads(panel_raw)
+    assert isinstance(panel, list) and panel, f"{panel_path}: panel must be a non-empty list"
+    for cfg in panel:
+        for key in ("display_name", "desc"):
+            v = cfg.get(key)
+            assert isinstance(v, str) and v, (
+                f"{panel_path}: panel row {cfg.get('name')!r} lacks non-empty str {key!r}"
+            )
+    record: dict = {
+        "panel_path": str(panel_path),
+        "panel_sha256": hashlib.sha256(panel_raw).hexdigest(),
+        "n_panel_configs": len(panel),
+        "slack_tokens": PANEL_MARGIN_SLACK_TOKENS,
+        "regimes": {},
+    }
+    for regime, op in (("paired", False), ("op", True)):
+        assert margins[regime], f"panel-invariance probe: no kept-row margins for {regime}"
+        # Deterministic (margin, conv_id) ordering — the binding row is probe[0].
+        probe = sorted(margins[regime], key=lambda t: (t[1], t[0]))[:PANEL_GATE_PROBE_ROWS]
+        min_cid, min_margin = probe[0]
+        binding_prompt_sha256 = None
+        max_delta, max_cfg, max_cid = 0, None, None
+        worst_gap, worst_gap_cid = None, None
+        for cid, margin in probe:
+            row = pool_by_id[cid]
+            base_prompt = build_paired_prompt(row, tokenizer, op_companion=op)
+            assert (
+                _panel_prompt_probe(
+                    row, tokenizer, op_companion=op, name=c.STORY_CHARACTER_NAME, desc=PERSONA_DESC
+                )
+                == base_prompt
+            ), f"panel-invariance probe: prompt replica drifted from build_paired_prompt ({regime})"
+            n_base = len(tokenizer(base_prompt, add_special_tokens=False)["input_ids"])
+            assert g.PROMPT_TOKEN_BUDGET - n_base == margin, (
+                f"panel-invariance probe ({regime}, conv_id={cid}): gate-recomputed base "
+                f"token count {n_base} disagrees with the feasibility filter's recorded "
+                f"margin {margin} (budget {g.PROMPT_TOKEN_BUDGET}) — the gate must consume "
+                "the SAME counts the filter decided on"
+            )
+            if cid == min_cid:
+                binding_prompt_sha256 = hashlib.sha256(base_prompt.encode("utf-8")).hexdigest()
+            row_max_delta = 0
+            for cfg in panel:
+                alt = _panel_prompt_probe(
+                    row, tokenizer, op_companion=op, name=cfg["display_name"], desc=cfg["desc"]
+                )
+                delta = len(tokenizer(alt, add_special_tokens=False)["input_ids"]) - n_base
+                row_max_delta = max(row_max_delta, delta)
+                if delta > max_delta:
+                    max_delta, max_cfg, max_cid = delta, cfg["display_name"], cid
+            gap = margin - row_max_delta
+            if worst_gap is None or gap < worst_gap:
+                worst_gap, worst_gap_cid = gap, cid
+        required = max_delta + PANEL_MARGIN_SLACK_TOKENS
+        assert min_margin >= required, (
+            f"panel-invariance margin gate FAILED ({regime}): min kept-row margin "
+            f"{min_margin} tokens (conv_id={min_cid}) < max panel-config delta "
+            f"{max_delta} (config={max_cfg!r}, conv_id={max_cid}) over the "
+            f"{len(probe)} min-margin probe rows + slack {PANEL_MARGIN_SLACK_TOKENS} "
+            f"= {required} — an exported-eligible id could leave a panel cell's "
+            "post-filter pool (the restrict_pool_to_manifest crash class)"
+        )
+        record["regimes"][regime] = {
+            "n_probe_rows": len(probe),
+            "min_margin_tokens": min_margin,
+            "min_margin_conv_id": min_cid,
+            "max_panel_delta_tokens": max_delta,
+            "max_delta_config": max_cfg,
+            "max_delta_conv_id": max_cid,
+            "worst_row_gap_tokens": worst_gap,
+            "worst_row_gap_conv_id": worst_gap_cid,
+            "required_min_margin": required,
+            "binding_prompt_sha256": binding_prompt_sha256,
+        }
+        print(
+            f"[emit-eligible] panel-invariance ({regime}): min_margin={min_margin} "
+            f"(conv_id={min_cid}) >= max_delta={max_delta} ({max_cfg}, conv_id={max_cid}) + "
+            f"slack={PANEL_MARGIN_SLACK_TOKENS} over {len(probe)} probe rows; "
+            f"worst_row_gap={worst_gap} (conv_id={worst_gap_cid})",
+            flush=True,
+        )
+    return record
+
+
+def _resolve_tokenizer_revision(tokenizer, model_name: str) -> tuple[str | None, str]:
+    """(revision, source) for the LOADED tokenizer (export provenance pin).
+
+    transformers 5.x can leave ``_commit_hash`` unpopulated (None) — fall back
+    to parsing the hub-cache ``snapshots/<sha>/`` path of the file actually
+    loaded (the pin-engagement convention), else return ``(None,
+    "unresolved")``. Concern round r9: ``emit_eligible_ids`` FAILS LOUD on the
+    production branch when the resolved revision is not a 40-hex sha — a null
+    revision is never written into the export (the helper itself still just
+    reports; the refusal lives at the emit call site).
+    """
+    rev = getattr(tokenizer, "_commit_hash", None)
+    if rev:
+        return str(rev), "tokenizer._commit_hash"
+    try:
+        from transformers.utils import cached_file
+
+        parts = Path(cached_file(model_name, "tokenizer_config.json")).parts
+        if "snapshots" in parts:
+            return parts[parts.index("snapshots") + 1], "hf-cache snapshots path"
+    except Exception as exc:  # reporting helper: the emit call site owns the fail-loud
+        print(f"[emit-eligible] tokenizer revision unresolved: {exc!r}", flush=True)
+    return None, "unresolved"
+
+
+def _emit_git_provenance(*, allow_dirty: bool = False) -> dict:
+    """Fail-loud emit-checkout git identity for the eligibility export (r9).
+
+    Root cause of the eligibility-provenance-pins-not-enforced concern: the r8
+    regeneration ran the emit BEFORE committing the fix code, so the cwd-based
+    ``git rev-parse HEAD`` truthfully recorded the pre-fix parent commit
+    (552fb63e28) while the emitting scripts were dirty — the committed export
+    claimed provenance from a commit that does not contain the code that
+    produced it, and nothing refused. This helper (a) resolves HEAD from the
+    SCRIPT's own checkout (``git -C {_REPO_ROOT}``, never process cwd), (b)
+    requires a full 40-hex sha, and (c) REFUSES a dirty / unknown-dirty tree
+    unless ``--allow-dirty-emit`` was passed (the override records
+    ``git_dirty=True`` + the dirty paths instead of failing). Returns the
+    ``as_metadata_dict`` fields, spliced into the export provenance AFTER
+    ``c.metadata`` so ``git_commit`` is the verified emit-checkout HEAD.
+    """
+    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+    prov = git_provenance(cwd=_REPO_ROOT)
+    meta = as_metadata_dict(prov)
+    sha = meta.get("git_commit")
+    if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+        raise RuntimeError(
+            f"emit-eligible-ids: cannot resolve a full 40-hex HEAD for {_REPO_ROOT} "
+            f"(got {sha!r}) — the export's provenance must pin the emitting checkout"
+        )
+    if prov.dirty is not False and not allow_dirty:
+        raise RuntimeError(
+            "emit-eligible-ids: emitting checkout is dirty (or of unknown dirty state): "
+            f"git_dirty={prov.dirty!r}, paths={prov.dirty_paths[:10]} — commit first so the "
+            "recorded git_commit contains the emitting code (the r8 export recorded the "
+            "pre-fix parent SHA from a dirty tree), or pass --allow-dirty-emit to record "
+            "the dirty state explicitly"
+        )
+    return meta
+
+
+def emit_eligible_ids(
+    out_path: Path,
+    matched_dir: Path,
+    dl_dir: Path,
+    tokenizer=None,
+    panel_path: Path | None = None,
+    allow_dirty: bool = False,
+) -> None:
+    """#2479 crash-fix r8: single-source dual-regime gen-feasibility export.
+
+    The Step-1 panel sampler (scripts/issue2479_panel_sample.py) previously drew
+    from set intersections WITHOUT this script's own eligibility filters, so 122
+    registered sample_conv_ids fell in the answer_too_short / answer_over_budget
+    dropped set and restrict_pool_to_manifest fail-louded on every non-op panel
+    cell (P0 gen-smoke gate, 2026-08-23). This mode exports the CONSUMER's own
+    eligibility so the sampler never re-implements it: build the seed pool
+    through the SAME code path main() uses (load_paired_pool — matched-allowlist
+    join + the answer_too_short filter), apply _filter_pool_feasible under BOTH
+    consumer regimes (op_companion=False -> ``eligible_paired``; True ->
+    ``eligible_op``), and write the per-regime eligible conv_id lists +
+    per-regime drop counts + provenance to ``out_path``.
+
+    Panel-invariance gate (concern round, r8 residue): the exported eligibility
+    is tokenized under the EMIT-time (character_name, persona_desc) config while
+    each panel cell splices its own — so the export records the realized emit
+    config + per-regime min kept-row margins, and ``_panel_invariance_gate``
+    asserts min margin >= max panel-config template delta + slack over the
+    committed ``panel.json`` BEFORE anything is written. The panel MANIFEST
+    stays deliberately never read here (this mode PRODUCES the sampler's input;
+    manifest restriction must not apply — panel.json is the character roster,
+    not the manifest).
+
+    Tokenizer-only / CPU-safe: returns before any vLLM import or GPU work.
+    Inputs are staged on
+    demand through the normal pinned prefetch path (load_paired_pool's
+    stage_pinned_file downloads track_s.jsonl @ PIN_REV when absent; the
+    matched allowlist must already be staged — prefetch_reuse's fail-loud
+    contract). CONTENT HYGIENE: ids and counts only — no question/answer/story
+    text is printed, logged, or persisted. ``tokenizer=None`` loads the
+    production tokenizer; tests inject a signature-conformant fake at the hub
+    boundary only.
+    """
+    # Provenance pins FIRST (concern round r9): fail loud on a dirty / HEAD-
+    # unresolvable emitting checkout BEFORE any input staging or tokenization.
+    emit_git = _emit_git_provenance(allow_dirty=allow_dirty)
+    if tokenizer is None:
+        from transformers import AutoTokenizer
+
+        from explore_persona_space.experiments.issue_825.common import MODEL_INSTRUCT
+
+        tok_name = MODEL_INSTRUCT
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_INSTRUCT)
+        tok_rev, tok_rev_src = _resolve_tokenizer_revision(tokenizer, MODEL_INSTRUCT)
+        if not isinstance(tok_rev, str) or not re.fullmatch(r"[0-9a-f]{40}", tok_rev):
+            raise RuntimeError(
+                f"emit-eligible-ids: tokenizer revision unresolved (rev={tok_rev!r}, "
+                f"source={tok_rev_src!r}) — the export's margins are bound to exact "
+                "tokenizer bytes; refusing to write a null / non-sha revision "
+                "(concern round r9)"
+            )
+    else:
+        # Test-injected tokenizer: no hub revision exists; record the explicit
+        # sentinel string — a null tokenizer_revision is never written (r9).
+        tok_name = f"injected:{type(tokenizer).__name__}"
+        tok_rev, tok_rev_src = "injected", "injected"
+    pool, pool_counts = load_paired_pool(matched_dir, dl_dir)
+    matched_path = matched_dir / "matched_subsets_parent.json"
+    matched_sha = hashlib.sha256(matched_path.read_bytes()).hexdigest()
+    margins_paired: list = []
+    margins_op: list = []
+    kept_paired, drops_paired = _filter_pool_feasible(
+        pool, tokenizer, op_companion=False, margins_out=margins_paired
+    )
+    kept_op, drops_op = _filter_pool_feasible(
+        pool, tokenizer, op_companion=True, margins_out=margins_op
+    )
+    panel_record = _panel_invariance_gate(
+        {str(r["conv_id"]): r for r in pool},
+        {"paired": margins_paired, "op": margins_op},
+        tokenizer,
+        panel_path if panel_path is not None else _i2479_panel_path(),
+    )
+    eligible_paired = sorted(str(r["conv_id"]) for r in kept_paired)
+    eligible_op = sorted(str(r["conv_id"]) for r in kept_op)
+    assert eligible_paired, "eligible_paired is EMPTY — feasibility filter rejected the whole pool"
+    assert eligible_op, "eligible_op is EMPTY — feasibility filter rejected the whole pool"
+    payload = {
+        "eligible_paired": eligible_paired,
+        "eligible_op": eligible_op,
+        "counts": {
+            "pool": pool_counts,  # shared_convs / joined / answer_too_short / kept
+            "paired_drops": drops_paired,  # answer_over_budget + prompt_over_budget
+            "op_drops": drops_op,  # prompt_over_budget only (no fixed answer)
+            "n_pool": len(pool),
+            "n_eligible_paired": len(eligible_paired),
+            "n_eligible_op": len(eligible_op),
+            "n_eligible_both": len(set(eligible_paired) & set(eligible_op)),
+        },
+        "provenance": {
+            **c.metadata(c.GEN_SEED, len(pool), "scripts/issue1345_gen_stories_paired.py"),
+            # r9: the verified emit-checkout HEAD OVERRIDES c.metadata's cwd-based
+            # git_commit (splice order is load-bearing) + records git_dirty state.
+            **emit_git,
+            "mode": "emit-eligible-ids",
+            "emit_config": {
+                "character_name": c.STORY_CHARACTER_NAME,
+                "persona_desc": PERSONA_DESC,
+                "variant": c.VARIANT,
+            },
+            "tokenizer": tok_name,
+            "tokenizer_revision": tok_rev,
+            "tokenizer_revision_source": tok_rev_src,
+            "inputs": {
+                "matched_allowlist": {
+                    "path": str(matched_path),
+                    "sha256": matched_sha,
+                    "pinned_revision": c.REUSE_REV,
+                },
+                "track_s_path_in_repo": c.PARENT_TRACK_S_JSONL,
+                "track_s_revision": c.PIN_REV,
+            },
+            "budgets": {
+                "answer_char_min": ANSWER_CHAR_MIN,
+                "answer_token_budget": ANSWER_TOKEN_BUDGET,
+                "prompt_token_budget": g.PROMPT_TOKEN_BUDGET,
+            },
+            "panel_invariance": panel_record,
+        },
+    }
+    c.write_json(out_path, payload)
+    print(
+        f"[emit-eligible] wrote {out_path}: pool={len(pool)} "
+        f"eligible_paired={len(eligible_paired)} eligible_op={len(eligible_op)} "
+        f"both={payload['counts']['n_eligible_both']}",
+        flush=True,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main() -> None:
@@ -1250,8 +1798,20 @@ def main() -> None:
     ap.add_argument("--out-dir", type=Path, default=c.STORIES_DIR)
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
     ap.add_argument("--matched-dir", type=Path, default=c.MATCHED_DIR)
-    ap.add_argument("--n-stories", type=int, default=c.N_STORIES_PAIRED_TARGET)
-    ap.add_argument("--yield-floor", type=int, default=c.STORY_PAIRED_YIELD_FLOOR)
+    ap.add_argument(
+        "--n-stories",
+        type=int,
+        default=None,
+        help="kept-target override; default = mode constant (paired: N_STORIES_PAIRED_TARGET; "
+        "--op-powered: N_ONPOLICY_STORY_TARGET) — explicit values bind in BOTH modes (r2 fix)",
+    )
+    ap.add_argument(
+        "--yield-floor",
+        type=int,
+        default=None,
+        help="yield-floor override; default = mode constant (paired: STORY_PAIRED_YIELD_FLOOR; "
+        "--op-powered: ONPOLICY_STORY_YIELD_FLOOR) — explicit values bind in BOTH modes (r2 fix)",
+    )
     ap.add_argument(
         "--op-companion",
         action="store_true",
@@ -1268,6 +1828,25 @@ def main() -> None:
     )
     ap.add_argument("--smoke", action="store_true", help="n=3 stories, sync judge")
     ap.add_argument(
+        "--emit-eligible-ids",
+        type=Path,
+        default=None,
+        metavar="OUT_JSON",
+        help="CPU export mode (#2479 crash-fix r8): build the seed pool exactly as the "
+        "paired/--op-powered branches do (answer_too_short join filter included), run "
+        "_filter_pool_feasible in BOTH regimes (op_companion=False AND True), write "
+        "{eligible_paired, eligible_op, counts, provenance} to OUT_JSON, exit BEFORE any "
+        "vLLM import. Ids/counts only — no conversation content. Consumed by "
+        "scripts/issue2479_panel_sample.py --eligible-ids (single-source eligibility).",
+    )
+    ap.add_argument(
+        "--allow-dirty-emit",
+        action="store_true",
+        help="--emit-eligible-ids only (concern round r9): record git_dirty=true + the "
+        "dirty paths instead of REFUSING to emit from a dirty checkout. Default off — "
+        "the export's git_commit must name a commit containing the emitting code.",
+    )
+    ap.add_argument(
         "--verify-pool",
         action="store_true",
         help="CPU preflight: run main through the pool stage (incl. "
@@ -1280,6 +1859,30 @@ def main() -> None:
         "--op-companion and --op-powered are mutually exclusive (companion = <=200 "
         "control from the TF-kept set; powered = pool-sourced primary regime)"
     )
+    if args.emit_eligible_ids is not None:
+        # Standalone CPU export (crash-fix r8): the seed POOL is variant-
+        # independent (pinned parent inputs only), but the formatted-prompt
+        # eligibility is config-DEPENDENT (the templates splice the emit-time
+        # character_name/persona_desc) — the export records the realized emit
+        # config and _panel_invariance_gate bounds the per-config delta against
+        # the min kept-row margin (concern round, r8 residue). Runs BEFORE the
+        # variant/mode asserts and returns before any vLLM/GPU work.
+        assert not (args.op_companion or args.op_powered or args.smoke or args.verify_pool), (
+            "--emit-eligible-ids is a standalone CPU export mode — do not combine with "
+            "--op-companion/--op-powered/--smoke/--verify-pool"
+        )
+        emit_eligible_ids(
+            args.emit_eligible_ids,
+            args.matched_dir,
+            args.dl_dir,
+            allow_dirty=args.allow_dirty_emit,
+        )
+        return
+    if args.op_companion:
+        assert not c.VARIANT.startswith(I2479_PANEL_PREFIX), (
+            f"--op-companion is a parent-only control mode; #2479 panel cell {c.VARIANT!r} "
+            "is manifest-bound via the paired / --op-powered modes only (r2 fix)"
+        )
     if args.op_powered:
         assert c.HAS_ONPOLICY_STORY, (
             f"--op-powered requires EPM_I1345_VARIANT in {c.ONPOLICY_STORY_VARIANTS} "
@@ -1346,21 +1949,29 @@ def main() -> None:
         pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
         pool, feas_counts = _filter_pool_feasible(pool, tokenizer, op_companion=True)
         pool_counts.update(feas_counts)
-        n_target = SMOKE_N_STORIES if args.smoke else c.N_ONPOLICY_STORY_TARGET
-        yield_floor = g.resolve_yield_floor(args.smoke, c.ONPOLICY_STORY_YIELD_FLOOR)
+        pool, manifest_meta = restrict_pool_to_manifest(pool)
+        if manifest_meta is not None:
+            pool_counts.update(manifest_meta)
+        n_target_full, floor_default = resolve_gen_targets(True, args.n_stories, args.yield_floor)
+        n_target = SMOKE_N_STORIES if args.smoke else n_target_full
+        yield_floor = g.resolve_yield_floor(args.smoke, floor_default)
         assert len(pool) >= n_target, f"on-policy pool {len(pool)} < target {n_target}"
         rng = np.random.default_rng(c.GEN_SEED)
         order = rng.permutation(len(pool))
         ordered = [pool[i] for i in order]
-        fp = paired_fingerprint(mode_slug, ordered)
+        fp = apply_manifest_fp_suffix(paired_fingerprint(mode_slug, ordered), manifest_meta)
         rows_main = ordered[:n_target]
         seeds_reserve = ordered[n_target:]
     else:
         pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
         pool, feas_counts = _filter_pool_feasible(pool, tokenizer, op_companion=False)
         pool_counts.update(feas_counts)
-        n_target = SMOKE_N_STORIES if args.smoke else args.n_stories
-        yield_floor = g.resolve_yield_floor(args.smoke, args.yield_floor)
+        pool, manifest_meta = restrict_pool_to_manifest(pool)
+        if manifest_meta is not None:
+            pool_counts.update(manifest_meta)
+        n_target_full, floor_default = resolve_gen_targets(False, args.n_stories, args.yield_floor)
+        n_target = SMOKE_N_STORIES if args.smoke else n_target_full
+        yield_floor = g.resolve_yield_floor(args.smoke, floor_default)
         assert len(pool) >= n_target, f"paired pool {len(pool)} < target {n_target}"
         rng = np.random.default_rng(c.GEN_SEED)
         order = rng.permutation(len(pool))
@@ -1369,7 +1980,7 @@ def main() -> None:
         # the pre-fix rows_main + seeds_reserve set and CARRY-INDEPENDENT, so
         # a second relaunch (larger carry set) keys the SAME bundle and
         # generate_paired's per-row resume keeps working across relaunches.
-        fp = paired_fingerprint(mode_slug, ordered)
+        fp = apply_manifest_fp_suffix(paired_fingerprint(mode_slug, ordered), manifest_meta)
         kept_carry, carry_fp = load_kept_carryforward(
             mode_slug,
             model_key,

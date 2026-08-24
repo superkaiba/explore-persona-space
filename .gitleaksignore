@@ -1447,3 +1447,5 @@ eval_results/issue_2254/first-k-answer-token-steering/steer/delta_score_percell.
 # sibling delta_score_percell.json at 3d6e3ec6a6.
 eval_results/issue_2254/first-k-answer-token-steering/steer/percell_rows.jsonl:generic-api-key:112
 eval_results/issue_2254/first-k-answer-token-steering/steer/percell_rows.jsonl:generic-api-key:136
+eval_results/issue_2479/eligible_conv_ids.json:generic-api-key:8757
+eval_results/issue_2479/panel_manifest.json:generic-api-key:46

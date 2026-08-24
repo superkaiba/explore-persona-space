@@ -92,6 +92,16 @@ N/A claim (grep the module for a real no-registry unconditional-dispatch shape).
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
 + bare `per-arm-resolution:` heading + bare-token row keys, in one re-post.
 
+Seventh variant #2479 R7 g2 (2026-08-23): a CARRY-FORWARD wrapper — `arm-registry:
+carried from v4 (source=... n=24) — <prose>` — on a crash-fix round whose diff adds no
+per-arm path. Parses as neither accepted form (members= dropped, prose-decorated), and
+the per-arm rows regressed to parenthetical keys (`- (all 24 panel arms): REAL`).
+Fix: re-post the PRIOR round conforming line + bare rows VERBATIM; the carry-forward
+statement goes in a separate notes sentence. Same round: the crash-fix implementation
+marker itself was a one-line vN summary (no four-H3 body) — Step 0.5 genuine-absence
+Critical binds on crash-fix rounds too; sweep events/artifacts//tmp for a fuller body
+before FAILing (none existed here).
+
 **Argparse-choices drivers tempt PROSE-form registry lines (#2502 R1 g4).** A round
 whose drivers dispatch on argparse `choices=` (no `PHASES` dict) has no `source=`
 symbol to cite, and the implementer writes a free-prose "derived mechanically from

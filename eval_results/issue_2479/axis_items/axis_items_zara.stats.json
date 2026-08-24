@@ -1,0 +1,30 @@
+{
+  "character": "zara",
+  "variant": "char_2479_zara_op",
+  "kept_path": "data/issue_1345/char_2479_zara_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1336,
+  "n_prepared": 1333,
+  "n_axis_items": 201,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 185.52138034508627,
+  "mean_answer_len_chars_axis": 179.6318407960199,
+  "prep_stats": {
+    "cell": "char_2479_zara_op",
+    "n_in": 1336,
+    "answer_sources": {
+      "parsed_turns_span": 1336
+    },
+    "capped_source": "row_field",
+    "n_capped": 0,
+    "n_no_question": 0,
+    "n_short_answer": 3,
+    "n_short_by_source": {
+      "parsed_turns_span": 3
+    },
+    "n_join_miss": 0,
+    "n_out": 1333,
+    "capped_rate": 0.0,
+    "short_answer_drop_share": 0.002246,
+    "span_short_share": 0.002246
+  }
+}

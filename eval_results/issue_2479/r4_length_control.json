@@ -1,0 +1,135 @@
+{
+ "characters": [
+  "barnaby",
+  "cobalt",
+  "dana",
+  "elena",
+  "gus",
+  "helios",
+  "iris",
+  "marcus",
+  "marisol",
+  "mort",
+  "priya",
+  "tomas",
+  "vera",
+  "vex",
+  "wren",
+  "zara"
+ ],
+ "issue": 2479,
+ "length_matched_subsample": {
+  "companion_iqr_band": {
+   "excluded": [
+    "barnaby",
+    "cobalt",
+    "dana",
+    "helios",
+    "marcus",
+    "mort",
+    "priya",
+    "zara"
+   ],
+   "length_max": 282.8655,
+   "length_max_over_min": 1.1513,
+   "length_min": 245.7005,
+   "matching_rule": "IQR band: characters with mean answer length inside [Q1, Q3] of the 16-character length distribution (numpy linear-interpolation quantiles; Q1=243.5396, Q3=284.4545)",
+   "n": 8,
+   "n_null_ge": 333,
+   "n_perm": 10000,
+   "p_add_one": 0.0334,
+   "rho": 0.6905,
+   "seed": 0,
+   "subset": [
+    "elena",
+    "gus",
+    "iris",
+    "marisol",
+    "tomas",
+    "vera",
+    "vex",
+    "wren"
+   ],
+   "within_subset_diagnostics": {
+    "note": "descriptive within-subset rank correlations (no permutation band)",
+    "rho_axis_length": 0.8333,
+    "rho_length_recovery": 0.5238
+   }
+  },
+  "primary_caliper": {
+   "excluded": [
+    "barnaby",
+    "cobalt",
+    "helios",
+    "iris",
+    "marcus",
+    "priya",
+    "vera",
+    "zara"
+   ],
+   "length_max": 269.1276,
+   "length_max_over_min": 1.1488,
+   "length_min": 234.2746,
+   "matching_rule": "greedy caliper: largest contiguous window in sorted mean answer length with max/min <= 1.15 (ties: smaller realized ratio, then lower window start; characters ordered by (length, name))",
+   "n": 8,
+   "n_null_ge": 4626,
+   "n_perm": 10000,
+   "p_add_one": 0.4627,
+   "rho": 0.0476,
+   "seed": 0,
+   "subset": [
+    "mort",
+    "dana",
+    "marisol",
+    "tomas",
+    "elena",
+    "gus",
+    "wren",
+    "vex"
+   ],
+   "within_subset_diagnostics": {
+    "note": "descriptive within-subset rank correlations (no permutation band)",
+    "rho_axis_length": 0.1905,
+    "rho_length_recovery": 0.2143
+   }
+  }
+ },
+ "note": "answer-length-controlled recount of the headline gradient: does rho(axis, rung-4 recovery) = +0.703 survive controlling for per-character mean kept-answer length (per_character.mean_answer_len \u2014 the committed answer_length_vs_axis mediation diagnostic's exact values)? All permutation reads: n_perm=10000, seed=0, one-sided add-one p (verdict convention).",
+ "partial_spearman": {
+  "label": "partial rho(axis, rung-4 recovery | mean kept-answer length)",
+  "method": "rank-residual partial Spearman: average-tie ranks of all three variables; rank(axis) and rank(recovery) OLS-residualized (intercept + slope) on rank(length); Pearson correlation of the residuals",
+  "n": 16,
+  "n_null_ge": 34,
+  "n_perm": 10000,
+  "null_mean": -0.0013,
+  "null_q95": 0.4378,
+  "p_add_one": 0.0035,
+  "permutation": "axis labels permuted (single vectorized index matrix); the partial statistic is re-residualized and recomputed per draw; one-sided add-one p, matching the verdict script's spearman_perm_read convention",
+  "rho_partial": 0.6698,
+  "seed": 0,
+  "status": "ok"
+ },
+ "zero_order": {
+  "axis_recovery": {
+   "n": 16,
+   "note": "headline replay \u2014 asserted equal to the committed verdict",
+   "p_add_one": 0.0021,
+   "rho": 0.7029
+  },
+  "length_axis": {
+   "n": 16,
+   "note": "replay \u2014 asserted equal to the committed answer_length_vs_axis read",
+   "p_add_one": 0.0166,
+   "rho": 0.5294
+  },
+  "length_recovery": {
+   "n": 16,
+   "n_null_ge": 1201,
+   "n_perm": 10000,
+   "note": "new read this round; permutation permutes the length labels",
+   "p_add_one": 0.1202,
+   "rho": 0.3059,
+   "seed": 0
+  }
+ }
+}

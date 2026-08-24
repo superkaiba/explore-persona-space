@@ -1,0 +1,30 @@
+{
+  "character": "dana",
+  "variant": "char_2479_dana_op",
+  "kept_path": "data/issue_1345/char_2479_dana_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1476,
+  "n_prepared": 1475,
+  "n_axis_items": 229,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 237.0569491525424,
+  "mean_answer_len_chars_axis": 225.05240174672488,
+  "prep_stats": {
+    "cell": "char_2479_dana_op",
+    "n_in": 1476,
+    "answer_sources": {
+      "parsed_turns_span": 1476
+    },
+    "capped_source": "row_field",
+    "n_capped": 0,
+    "n_no_question": 0,
+    "n_short_answer": 1,
+    "n_short_by_source": {
+      "parsed_turns_span": 1
+    },
+    "n_join_miss": 0,
+    "n_out": 1475,
+    "capped_rate": 0.0,
+    "short_answer_drop_share": 0.000678,
+    "span_short_share": 0.000678
+  }
+}

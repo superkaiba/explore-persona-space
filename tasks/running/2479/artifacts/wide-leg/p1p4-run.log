@@ -1,0 +1,334 @@
+[phase=p0_smoke]
+[i2479-p1p4] P0 leg guard-selftest: bash -o pipefail -c uv run python scripts/issue1345_story_char_ladder_fill.py --guard-selftest 2>&1 | tee logs/i2479_p0_guardselftest.log (2026-08-24T00:39:21Z)
+[guard-selftest] branch=refuse-missing-freeze result=PASS
+[guard-selftest] branch=pass-committed-freeze result=PASS
+[guard-selftest] branch=refuse-stale-ladder result=PASS
+[i2479-p1p4] allocated: 0 1 2 3; usable (>=60000 MiB free): 0 1 2 3
+[i2479-p1p4] P0 gen-smoke char_2479_iris_op on device 0
+[i2479-p1p4] P0 gen-smoke char_2479_iris on device 1
+[i2479-p1p4] P0 gen-smoke char_2479_vex_op on device 2
+[i2479-p1p4] P0 gen-smoke char_2479_vex on device 3
+[i2479-p1p4] P0 leg gen-smoke: test 0 -eq 0 (2026-08-24T00:39:45Z)
+[i2479-p1p4] P0 leg ingen-pilot-char_2479_iris_op: env EPM_I1345_VARIANT=char_2479_iris_op EPM_STORY_CHARACTER_NAME=Iris EPM_I1345_PERSONA_DESC=a soft-spoken home AI assistant, unfailingly patient and factual EPM_I1345_JUDGE_SPEND_OK=1 uv run python scripts/issue2479_judge_pilots.py --family ingen --raw data/issue_1345/char_2479_iris_op/stories/raw_stories_paired_op_instruct.jsonl --partial-out /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris_op.json --work-dir /workspace/data/issue_2479/p0_pilot/ingen_char_2479_iris_op --n-target 38 --execute (2026-08-24T00:39:45Z)
+[issue1345] wrote /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris_op.json
+[pilot] family=ingen partial character=Iris n_judged=38 -> /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris_op.json
+[i2479-p1p4] P0 leg ingen-pilot-char_2479_iris: env EPM_I1345_VARIANT=char_2479_iris EPM_STORY_CHARACTER_NAME=Iris EPM_I1345_PERSONA_DESC=a soft-spoken home AI assistant, unfailingly patient and factual EPM_I1345_JUDGE_SPEND_OK=1 uv run python scripts/issue2479_judge_pilots.py --family ingen --raw data/issue_1345/char_2479_iris/stories/raw_stories_paired_instruct.jsonl --partial-out /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris.json --work-dir /workspace/data/issue_2479/p0_pilot/ingen_char_2479_iris --n-target 38 --execute (2026-08-24T00:39:47Z)
+[issue1345] wrote /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris.json
+[pilot] family=ingen partial character=Iris n_judged=38 -> /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris.json
+[i2479-p1p4] P0 leg ingen-pilot-char_2479_vex_op: env EPM_I1345_VARIANT=char_2479_vex_op EPM_STORY_CHARACTER_NAME=Vex EPM_I1345_PERSONA_DESC=a theatrical, scheming villain who delights in menace EPM_I1345_JUDGE_SPEND_OK=1 uv run python scripts/issue2479_judge_pilots.py --family ingen --raw data/issue_1345/char_2479_vex_op/stories/raw_stories_paired_op_instruct.jsonl --partial-out /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex_op.json --work-dir /workspace/data/issue_2479/p0_pilot/ingen_char_2479_vex_op --n-target 38 --execute (2026-08-24T00:39:54Z)
+[issue1345] wrote /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex_op.json
+[pilot] family=ingen partial character=Vex n_judged=38 -> /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex_op.json
+[i2479-p1p4] P0 leg ingen-pilot-char_2479_vex: env EPM_I1345_VARIANT=char_2479_vex EPM_STORY_CHARACTER_NAME=Vex EPM_I1345_PERSONA_DESC=a theatrical, scheming villain who delights in menace EPM_I1345_JUDGE_SPEND_OK=1 uv run python scripts/issue2479_judge_pilots.py --family ingen --raw data/issue_1345/char_2479_vex/stories/raw_stories_paired_instruct.jsonl --partial-out /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex.json --work-dir /workspace/data/issue_2479/p0_pilot/ingen_char_2479_vex --n-target 38 --execute (2026-08-24T00:39:56Z)
+[issue1345] wrote /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex.json
+[pilot] family=ingen partial character=Vex n_judged=38 -> /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex.json
+[i2479-p1p4] P0 leg ingen-pilot-merge: uv run python scripts/issue2479_judge_pilots.py --family ingen --merge /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris_op.json /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris.json /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex_op.json /workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex.json --report eval_results/issue_2479/pilot_gate_ingen.json (2026-08-24T00:40:06Z)
+[issue1345] wrote eval_results/issue_2479/pilot_gate_ingen.json
+[pilot] family=ingen verdict=PASS answered=152 truncated=0 parse_failed=3 -> eval_results/issue_2479/pilot_gate_ingen.json
+[i2479-p1p4] P0 leg capture-smoke-iris: bash scripts/issue1345_char_capture_launch.sh --smoke-only --cells char_2479_iris_op char_2479_iris (2026-08-24T00:40:07Z)
+[char-capture] allocated: 0 1 2 3; usable (>=60 GiB free): 0 1 2 3
+[char-capture] char_2479_iris_op: smoke-prefix marker present — smoke skipped (resume)
+[char-capture] char_2479_iris: smoke-prefix marker present — smoke skipped (resume)
+[char-capture] smoke leg: 0/2 cells pending
+[char-capture] --smoke-only: smoke leg complete rc=0 — exiting before production
+[sentinel] /workspace/logs/issue-1345-char-capture-results.json
+[i2479-p1p4] P0 leg capture-smoke-vex: bash scripts/issue1345_char_capture_launch.sh --smoke-only --cells char_2479_vex_op char_2479_vex (2026-08-24T00:40:09Z)
+[char-capture] allocated: 0 1 2 3; usable (>=60 GiB free): 0 1 2 3
+[char-capture] char_2479_vex_op: smoke-prefix marker present — smoke skipped (resume)
+[char-capture] char_2479_vex: smoke-prefix marker present — smoke skipped (resume)
+[char-capture] smoke leg: 0/2 cells pending
+[char-capture] --smoke-only: smoke leg complete rc=0 — exiting before production
+[sentinel] /workspace/logs/issue-1345-char-capture-results.json
+[i2479-p1p4] P0 leg stage-sources: uv run python scripts/issue1345_stage_char_stories.py --sources r4 r4op --dest-root /workspace/data/issue_2479/stage (2026-08-24T00:40:11Z)
+[stage] conversation_paired_stories_assistant turnstore: already staged at /workspace/data/issue_2479/stage/conversation_paired_stories_assistant_turnstore — skipped
+[stage] onpolicy_assistant_story turnstore: already staged at /workspace/data/issue_2479/stage/onpolicy_assistant_story_turnstore — skipped
+[i2479-p1p4] P0 leg toyfit-newcell-store: uv run python scripts/issue1345_story_char_ladder_fill.py --stage cells --cells char_helios --model instruct --arm context --stage-root /workspace/data/issue_2479/p0_smoke_stage --cache-dir /workspace/data/issue_2479/p0_smoke_cache --pilot-outdir /workspace/data/issue_2479/p0_pilot/toyfit --max-rows 8 (2026-08-24T00:40:11Z)
+[cache] instruct/char_helios/context L19: n=8 d=3584 in 0s -> instruct_char_helios_s_context_L19_sr03c34683.pt
+  cell char_helios [reduced]: ceiling -1.5984  identity+bias -3.3503  n=8
+[cell] char_helios wall 0s -> cell_char_helios__instruct_context_L19_reduced_s0_rows8.json
+TOTAL 0s
+[i2479-p1p4] P0 leg parity-pilot-fits: bash scripts/issue1345_char_phasef_driver.sh --cells char_helios_op --stage-root /workspace/data/issue_2479/stage --cache-dir /workspace/data/issue_2479/fill_cache --pilot-outdir /workspace/data/issue_2479/p0_pilot (2026-08-24T00:40:13Z)
+[phasef] preflight: 147 GiB free at /workspace/data/issue_2479/stage (floor 15 GiB)
+[phasef] source r4op/instruct: staged store present (onpolicy_assistant_story_turnstore); will slice on first use
+[stage_hub_prefix] start superkaiba1/explore-persona-space-data@main:issue1345_framing/char_helios_op/analysis_tensors/turnstore timeout=off
+[stage_hub_prefix] 12 files (~5.03 GB known) under superkaiba1/explore-persona-space-data@0e5ed1f1fcd0b3a62457d628f35f135d18a174bf:issue1345_framing/char_helios_op/analysis_tensors/turnstore
+[stage_hub_prefix] unit 1/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/_capture_complete.json elapsed=3s
+[stage_hub_prefix] unit 2/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard002.json elapsed=3s
+[stage_hub_prefix] unit 3/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard001.json elapsed=3s
+[stage_hub_prefix] unit 4/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard000.json elapsed=3s
+[stage_hub_prefix] unit 5/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard003.json elapsed=4s
+[stage_hub_prefix] unit 6/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard004.json elapsed=4s
+[stage_hub_prefix] unit 7/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_skip_manifest.json elapsed=4s
+[stage_hub_prefix] unit 8/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard004.pt elapsed=14s
+[stage_hub_prefix] unit 9/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard000.pt elapsed=14s
+[stage_hub_prefix] unit 10/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard002.pt elapsed=15s
+[stage_hub_prefix] unit 11/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard001.pt elapsed=29s
+[stage_hub_prefix] unit 12/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard003.pt elapsed=32s
+[stage] char_helios_op turnstore: 12 files (12 listed, 5 pt shards) -> /workspace/data/issue_2479/stage/char_helios_op_turnstore
+[cache] instruct/char_helios_op/context L19: n=2064 d=3584 in 5s -> instruct_char_helios_op_s_context_L19_srf6f8ce3d.pt
+  cell char_helios_op [reduced]: ceiling 0.2386  identity+bias -0.5106  n=2064
+[cell] char_helios_op wall 9s -> cell_char_helios_op__instruct_context_L19_reduced_s0.json
+TOTAL 9s
+[cache] instruct/char_helios_op/prefix L19: n=2064 d=3584 in 6s -> instruct_char_helios_op_s_prefix_L19_srf6f8ce3d.pt
+  cell char_helios_op [reduced]: ceiling 0.0238  identity+bias -1.7256  n=2064
+[cell] char_helios_op wall 9s -> cell_char_helios_op__instruct_prefix_L19_reduced_s0.json
+TOTAL 9s
+[cache] instruct/r4op/context L19: n=2018 d=3584 in 6s -> instruct_stories_paired_op_s_context_L19.pt
+  story_onpolicy<->char_helios_op [reduced k=422 n_tr_min=844]
+    story_onpolicy->char_helios_op: ceiling 0.2019  identity+bias -0.5009
+      1_direct            0.1405  null   -0.0489
+      2_ctx_offset        0.1279  null   -0.0481
+      3_ans_offset        0.1440  null   -0.0081
+      4_bias_refit        0.1685  null   -0.0076
+      5_global_scale      0.1823  null   -0.0050
+      6_rotation          0.1754  null    0.0118
+      7_ctx_reparam       0.0972  null   -0.0055
+      8_ans_reparam       0.1210  null   -0.0066
+      9_full_AMB          0.0740  null   -0.0052
+    char_helios_op->story_onpolicy: ceiling 0.2168  identity+bias -0.6454
+      1_direct            0.1558  null   -0.0475
+      2_ctx_offset        0.1391  null   -0.0469
+      3_ans_offset        0.1583  null   -0.0086
+      4_bias_refit        0.1782  null   -0.0080
+      5_global_scale      0.1790  null   -0.0053
+      6_rotation          0.1946  null    0.0177
+      7_ctx_reparam       0.0973  null   -0.0055
+      8_ans_reparam       0.1417  null   -0.0066
+      9_full_AMB          0.0747  null   -0.0054
+[pair] story_onpolicy<->char_helios_op wall 26s -> ladder_r4op__char_helios_op__instruct_context_L19_reduced_s0_nd2.json
+TOTAL 26s
+[cell] char_helios_op: deleted staged char_helios_op_turnstore (4.7G freed)
+[cell] char_helios_op done rc=0 wall 82s (146 GiB free)
+[p5] unit 1/1 char_helios_op elapsed=82s rc=0
+[phasef] done cells=1 ok=1 skipped=0 failed=0 eqn=skipped (non-production or panel env absent) rc=0 | char_helios_op=0
+[i2479-p1p4] P0 parity check (kill criterion (c), tol 0.02)
+[parity] metric=cell.context.ceiling_r2 ref=0.238611 got=0.238611 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=cell.context.identity_bias_r2 ref=-0.510608 got=-0.510608 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=cell.prefix.ceiling_r2 ref=0.023841 got=0.023841 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=cell.prefix.identity_bias_r2 ref=-1.725557 got=-1.725557 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.1_direct.r2 ref=0.140482 got=0.140482 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.2_ctx_offset.r2 ref=0.127924 got=0.127924 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.3_ans_offset.r2 ref=0.143979 got=0.143979 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.4_bias_refit.r2 ref=0.168533 got=0.168533 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.5_global_scale.r2 ref=0.182343 got=0.182343 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.6_rotation.r2 ref=0.175425 got=0.175425 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.7_ctx_reparam.r2 ref=0.097241 got=0.097241 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.8_ans_reparam.r2 ref=0.121026 got=0.121026 absdiff=0.000000 tol=0.02 PASS
+[parity] metric=ladder.9_full_AMB.r2 ref=0.073974 got=0.073974 absdiff=0.000000 tol=0.02 PASS
+[parity] summary checked=13 failed=0 tol=0.02
+[i2479-p1p4] P0 leg subsample-pilot: bash scripts/issue1345_char_phasef_driver.sh --cells char_helios_op --stage-root /workspace/data/issue_2479/stage --cache-dir /workspace/data/issue_2479/fill_cache --pilot-outdir /workspace/data/issue_2479/p0_pilot --max-rows 1100 (2026-08-24T00:41:35Z)
+[phasef] preflight: 146 GiB free at /workspace/data/issue_2479/stage (floor 15 GiB)
+[phasef] source r4op/instruct: slice cache present (instruct_stories_paired_op_s_context_L19.pt)
+[stage_hub_prefix] start superkaiba1/explore-persona-space-data@main:issue1345_framing/char_helios_op/analysis_tensors/turnstore timeout=off
+[stage_hub_prefix] 12 files (~5.03 GB known) under superkaiba1/explore-persona-space-data@0e5ed1f1fcd0b3a62457d628f35f135d18a174bf:issue1345_framing/char_helios_op/analysis_tensors/turnstore
+[stage_hub_prefix] unit 1/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/_capture_complete.json elapsed=2s
+[stage_hub_prefix] unit 2/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard002.json elapsed=2s
+[stage_hub_prefix] unit 3/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard000.json elapsed=2s
+[stage_hub_prefix] unit 4/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard001.json elapsed=2s
+[stage_hub_prefix] unit 5/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard003.json elapsed=2s
+[stage_hub_prefix] unit 6/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard004.json elapsed=2s
+[stage_hub_prefix] unit 7/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_skip_manifest.json elapsed=2s
+[stage_hub_prefix] unit 8/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard004.pt elapsed=6s
+[stage_hub_prefix] unit 9/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard003.pt elapsed=8s
+[stage_hub_prefix] unit 10/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard000.pt elapsed=8s
+[stage_hub_prefix] unit 11/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard001.pt elapsed=8s
+[stage_hub_prefix] unit 12/12 issue1345_framing/char_helios_op/analysis_tensors/turnstore/instruct_stories_paired_op_s_shard002.pt elapsed=8s
+[stage] char_helios_op turnstore: 12 files (12 listed, 5 pt shards) -> /workspace/data/issue_2479/stage/char_helios_op_turnstore
+  cell char_helios_op [reduced]: ceiling 0.2091  identity+bias -0.5160  n=1100
+[cell] char_helios_op wall 1s -> cell_char_helios_op__instruct_context_L19_reduced_s0_rows1100.json
+TOTAL 1s
+  cell char_helios_op [reduced]: ceiling 0.0227  identity+bias -1.7263  n=1100
+[cell] char_helios_op wall 1s -> cell_char_helios_op__instruct_prefix_L19_reduced_s0_rows1100.json
+TOTAL 1s
+  story_onpolicy<->char_helios_op [reduced k=422 n_tr_min=844]
+    story_onpolicy->char_helios_op: ceiling 0.2019  identity+bias -0.5009
+      1_direct            0.1405  null   -0.0489
+      2_ctx_offset        0.1279  null   -0.0481
+      3_ans_offset        0.1440  null   -0.0081
+      4_bias_refit        0.1685  null   -0.0076
+      5_global_scale      0.1823  null   -0.0050
+      6_rotation          0.1754  null    0.0118
+      7_ctx_reparam       0.0972  null   -0.0055
+      8_ans_reparam       0.1210  null   -0.0066
+      9_full_AMB          0.0740  null   -0.0052
+    char_helios_op->story_onpolicy: ceiling 0.2168  identity+bias -0.6454
+      1_direct            0.1558  null   -0.0475
+      2_ctx_offset        0.1391  null   -0.0469
+      3_ans_offset        0.1583  null   -0.0086
+      4_bias_refit        0.1782  null   -0.0080
+      5_global_scale      0.1790  null   -0.0053
+      6_rotation          0.1946  null    0.0177
+      7_ctx_reparam       0.0973  null   -0.0055
+      8_ans_reparam       0.1417  null   -0.0066
+      9_full_AMB          0.0747  null   -0.0054
+[pair] story_onpolicy<->char_helios_op wall 20s -> ladder_r4op__char_helios_op__instruct_context_L19_reduced_s0_nd2_rows1100.json
+TOTAL 21s
+[cell] char_helios_op: deleted staged char_helios_op_turnstore (4.7G freed)
+[cell] char_helios_op done rc=0 wall 37s (146 GiB free)
+[p5] unit 1/1 char_helios_op elapsed=37s rc=0
+[phasef] done cells=1 ok=1 skipped=0 failed=0 eqn=skipped (non-production or panel env absent) rc=0 | char_helios_op=0
+[i2479-p1p4] P0 leg r4-consumer-open: bash scripts/issue1345_char_phasef_driver.sh --cells char_helios --stage-root /workspace/data/issue_2479/stage --cache-dir /workspace/data/issue_2479/fill_cache --pilot-outdir /workspace/data/issue_2479/p0_pilot --max-rows 1100 (2026-08-24T00:42:13Z)
+[phasef] preflight: 146 GiB free at /workspace/data/issue_2479/stage (floor 15 GiB)
+[phasef] source r4/instruct: staged store present (conversation_paired_stories_assistant_turnstore); will slice on first use
+[stage_hub_prefix] start superkaiba1/explore-persona-space-data@main:issue1345_framing/char_helios/analysis_tensors/turnstore timeout=off
+[stage_hub_prefix] 12 files (~5.32 GB known) under superkaiba1/explore-persona-space-data@0e5ed1f1fcd0b3a62457d628f35f135d18a174bf:issue1345_framing/char_helios/analysis_tensors/turnstore
+[stage_hub_prefix] unit 1/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard002.json elapsed=2s
+[stage_hub_prefix] unit 2/12 issue1345_framing/char_helios/analysis_tensors/turnstore/_capture_complete.json elapsed=2s
+[stage_hub_prefix] unit 3/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard000.json elapsed=2s
+[stage_hub_prefix] unit 4/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard001.json elapsed=2s
+[stage_hub_prefix] unit 5/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard003.json elapsed=2s
+[stage_hub_prefix] unit 6/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard004.json elapsed=2s
+[stage_hub_prefix] unit 7/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_skip_manifest.json elapsed=3s
+[stage_hub_prefix] unit 8/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard001.pt elapsed=12s
+[stage_hub_prefix] unit 9/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard000.pt elapsed=13s
+[stage_hub_prefix] unit 10/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard004.pt elapsed=13s
+[stage_hub_prefix] unit 11/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard002.pt elapsed=14s
+[stage_hub_prefix] unit 12/12 issue1345_framing/char_helios/analysis_tensors/turnstore/instruct_stories_paired_s_shard003.pt elapsed=14s
+[stage] char_helios turnstore: 12 files (12 listed, 5 pt shards) -> /workspace/data/issue_2479/stage/char_helios_turnstore
+[cache] instruct/char_helios/context L19: n=2180 d=3584 in 7s -> instruct_char_helios_s_context_L19_srf6f8ce3d.pt
+  cell char_helios [reduced]: ceiling 0.3509  identity+bias -0.6293  n=1100
+[cell] char_helios wall 8s -> cell_char_helios__instruct_context_L19_reduced_s0_rows1100.json
+TOTAL 8s
+[cache] instruct/char_helios/prefix L19: n=2180 d=3584 in 22s -> instruct_char_helios_s_prefix_L19_srf6f8ce3d.pt
+  cell char_helios [reduced]: ceiling 0.0431  identity+bias -1.7717  n=1100
+[cell] char_helios wall 24s -> cell_char_helios__instruct_prefix_L19_reduced_s0_rows1100.json
+TOTAL 24s
+[cache] instruct/r4/context L19: n=2163 d=3584 in 12s -> instruct_stories_paired_s_context_L19.pt
+[cap] r4:char_helios: matched rows capped to 1100 (SMOKE)
+  story_inserted<->char_helios [reduced k=440 n_tr_min=880]
+    story_inserted->char_helios: ceiling 0.3559  identity+bias -0.6035
+      1_direct            0.2982  null   -0.0215
+      2_ctx_offset        0.3070  null   -0.0213
+      3_ans_offset        0.2847  null   -0.0062
+      4_bias_refit        0.3223  null   -0.0058
+      5_global_scale      0.3213  null   -0.0046
+      6_rotation          0.3305  null    0.0150
+      7_ctx_reparam       0.2246  null   -0.0055
+      8_ans_reparam       0.2911  null   -0.0059
+      9_full_AMB          0.2258  null   -0.0055
+    char_helios->story_inserted: ceiling 0.3710  identity+bias -0.7744
+      1_direct            0.2849  null   -0.0226
+      2_ctx_offset        0.2902  null   -0.0223
+      3_ans_offset        0.2774  null   -0.0071
+      4_bias_refit        0.3052  null   -0.0070
+      5_global_scale      0.3070  null   -0.0048
+      6_rotation          0.3208  null    0.0194
+      7_ctx_reparam       0.2270  null   -0.0058
+      8_ans_reparam       0.2833  null   -0.0068
+      9_full_AMB          0.2243  null   -0.0058
+[pair] story_inserted<->char_helios wall 33s -> ladder_r4__char_helios__instruct_context_L19_reduced_s0_nd2_rows1100.json
+TOTAL 33s
+[cell] char_helios: deleted staged char_helios_turnstore (5.0G freed)
+[cell] char_helios done rc=0 wall 86s (146 GiB free)
+[p5] unit 1/1 char_helios elapsed=86s rc=0
+[phasef] done cells=1 ok=1 skipped=0 failed=0 eqn=skipped (non-production or panel env absent) rc=0 | char_helios=0
+[sentinel] /workspace/logs/issue-2479-smoke-PASS.json
+[i2479-p1p4] P0 smoke gate PASS — state written to /workspace/logs/issue-2479-p0-PASS.state (sha 98dbe366064e)
+[phase=p1_gen]
+[pilot] require-pass OK: family=ingen report=eval_results/issue_2479/pilot_gate_ingen.json
+[i2479-p1p4] allocated: 0 1 2 3; usable (>=60000 MiB free): 0 1 2 3
+[i2479-p1p4] P1: 24/24 cells pending (work-conserving over 4 GPUs)
+[i2479-p1p4] P1 starting char_2479_helios_op on device 0 (2026-08-24T00:43:40Z)
+[i2479-p1p4] P1 starting char_2479_helios on device 2 (2026-08-24T00:43:40Z)
+[i2479-p1p4] P1 starting char_2479_iris_op on device 1 (2026-08-24T00:43:40Z)
+[i2479-p1p4] P1 starting char_2479_iris on device 3 (2026-08-24T00:43:40Z)
+[i2479-p1p4] P1 char_2479_iris_op finished rc=0 on device 1 wall=263s (2026-08-24T00:48:03Z)
+[i2479-p1p4] P1 starting char_2479_cobalt_op on device 1 (2026-08-24T00:48:03Z)
+[i2479-p1p4] P1 char_2479_helios_op finished rc=0 on device 0 wall=270s (2026-08-24T00:48:10Z)
+[i2479-p1p4] P1 starting char_2479_vera_op on device 0 (2026-08-24T00:48:10Z)
+[i2479-p1p4] P1 char_2479_iris finished rc=0 on device 3 wall=371s (2026-08-24T00:49:51Z)
+[i2479-p1p4] P1 starting char_2479_wren_op on device 3 (2026-08-24T00:49:51Z)
+[i2479-p1p4] P1 char_2479_helios finished rc=0 on device 2 wall=400s (2026-08-24T00:50:20Z)
+[i2479-p1p4] P1 starting char_2479_wren on device 2 (2026-08-24T00:50:20Z)
+[i2479-p1p4] P1 char_2479_cobalt_op finished rc=0 on device 1 wall=246s (2026-08-24T00:52:09Z)
+[i2479-p1p4] P1 starting char_2479_priya_op on device 1 (2026-08-24T00:52:09Z)
+[i2479-p1p4] P1 char_2479_vera_op finished rc=0 on device 0 wall=247s (2026-08-24T00:52:17Z)
+[i2479-p1p4] P1 starting char_2479_marcus_op on device 0 (2026-08-24T00:52:17Z)
+[i2479-p1p4] P1 char_2479_wren_op finished rc=0 on device 3 wall=228s (2026-08-24T00:53:39Z)
+[i2479-p1p4] P1 starting char_2479_elena_op on device 3 (2026-08-24T00:53:39Z)
+[i2479-p1p4] P1 char_2479_wren finished rc=0 on device 2 wall=335s (2026-08-24T00:55:55Z)
+[i2479-p1p4] P1 starting char_2479_elena on device 2 (2026-08-24T00:55:55Z)
+[i2479-p1p4] P1 char_2479_priya_op finished rc=0 on device 1 wall=229s (2026-08-24T00:55:58Z)
+[i2479-p1p4] P1 starting char_2479_dana_op on device 1 (2026-08-24T00:55:58Z)
+[i2479-p1p4] P1 char_2479_marcus_op finished rc=0 on device 0 wall=233s (2026-08-24T00:56:10Z)
+[i2479-p1p4] P1 starting char_2479_dana on device 0 (2026-08-24T00:56:10Z)
+[i2479-p1p4] P1 char_2479_elena_op finished rc=0 on device 3 wall=212s (2026-08-24T00:57:11Z)
+[i2479-p1p4] P1 starting char_2479_gus_op on device 3 (2026-08-24T00:57:11Z)
+[i2479-p1p4] P1 char_2479_dana_op finished rc=0 on device 1 wall=188s (2026-08-24T00:59:06Z)
+[i2479-p1p4] P1 starting char_2479_gus on device 1 (2026-08-24T00:59:06Z)
+[i2479-p1p4] P1 char_2479_gus_op finished rc=0 on device 3 wall=187s (2026-08-24T01:00:18Z)
+[i2479-p1p4] P1 starting char_2479_marisol_op on device 3 (2026-08-24T01:00:18Z)
+[i2479-p1p4] P1 char_2479_dana finished rc=0 on device 0 wall=316s (2026-08-24T01:01:26Z)
+[i2479-p1p4] P1 starting char_2479_tomas_op on device 0 (2026-08-24T01:01:26Z)
+[i2479-p1p4] P1 char_2479_elena finished rc=0 on device 2 wall=344s (2026-08-24T01:01:39Z)
+[i2479-p1p4] P1 starting char_2479_vex_op on device 2 (2026-08-24T01:01:39Z)
+[i2479-p1p4] P1 char_2479_marisol_op finished rc=0 on device 3 wall=227s (2026-08-24T01:04:05Z)
+[i2479-p1p4] P1 starting char_2479_vex on device 3 (2026-08-24T01:04:05Z)
+[i2479-p1p4] P1 char_2479_gus finished rc=0 on device 1 wall=374s (2026-08-24T01:05:20Z)
+[i2479-p1p4] P1 starting char_2479_barnaby_op on device 1 (2026-08-24T01:05:20Z)
+[i2479-p1p4] P1 char_2479_vex_op finished rc=0 on device 2 wall=236s (2026-08-24T01:05:35Z)
+[i2479-p1p4] P1 starting char_2479_zara_op on device 2 (2026-08-24T01:05:35Z)
+[i2479-p1p4] P1 char_2479_tomas_op finished rc=0 on device 0 wall=302s (2026-08-24T01:06:28Z)
+[i2479-p1p4] P1 starting char_2479_mort_op on device 0 (2026-08-24T01:06:28Z)
+[i2479-p1p4] P1 char_2479_barnaby_op finished rc=0 on device 1 wall=228s (2026-08-24T01:09:08Z)
+[i2479-p1p4] P1 starting char_2479_mort on device 1 (2026-08-24T01:09:08Z)
+[i2479-p1p4] P1 char_2479_zara_op finished rc=0 on device 2 wall=217s (2026-08-24T01:09:12Z)
+[i2479-p1p4] P1 char_2479_mort_op finished rc=0 on device 0 wall=205s (2026-08-24T01:09:53Z)
+[i2479-p1p4] P1 char_2479_vex finished rc=0 on device 3 wall=374s (2026-08-24T01:10:19Z)
+[i2479-p1p4] P1 char_2479_mort finished rc=0 on device 1 wall=360s (2026-08-24T01:15:08Z)
+[i2479-p1p4] P1 gen-complete: 24/24 cells (16/16 op cells)
+[phase=p4_capture]
+[char-capture] allocated: 0 1 2 3; usable (>=60 GiB free): 0 1 2 3
+[char-capture] gate-1 pilot: char_2479_helios_op
+[char-capture] starting char_2479_helios_op on device 0 (2026-08-24T01:15:23Z)
+[char-capture] char_2479_helios_op finished rc=0 wall=90s on device 0 (2026-08-24T01:16:53Z)
+[char-capture] gate-1: pilot wall=90s -> projected total 540s over 24 pending of 24 cells (max 8640s)
+[char-capture] starting char_2479_helios on device 1 (2026-08-24T01:16:53Z)
+[char-capture] starting char_2479_iris_op on device 0 (2026-08-24T01:16:53Z)
+[char-capture] starting char_2479_iris on device 2 (2026-08-24T01:16:53Z)
+[char-capture] starting char_2479_cobalt_op on device 3 (2026-08-24T01:16:53Z)
+[char-capture] char_2479_helios finished rc=0 wall=726s on device 1 (2026-08-24T01:28:59Z)
+[char-capture] starting char_2479_vera_op on device 1 (2026-08-24T01:28:59Z)
+[char-capture] char_2479_iris finished rc=0 wall=747s on device 2 (2026-08-24T01:29:20Z)
+[char-capture] starting char_2479_wren_op on device 2 (2026-08-24T01:29:20Z)
+[char-capture] char_2479_cobalt_op finished rc=0 wall=753s on device 3 (2026-08-24T01:29:26Z)
+[char-capture] starting char_2479_wren on device 3 (2026-08-24T01:29:26Z)
+[char-capture] char_2479_iris_op finished rc=0 wall=758s on device 0 (2026-08-24T01:29:31Z)
+[char-capture] starting char_2479_priya_op on device 0 (2026-08-24T01:29:31Z)
+[char-capture] char_2479_vera_op finished rc=0 wall=83s on device 1 (2026-08-24T01:30:22Z)
+[char-capture] starting char_2479_marcus_op on device 1 (2026-08-24T01:30:22Z)
+[char-capture] char_2479_wren_op finished rc=0 wall=448s on device 2 (2026-08-24T01:36:48Z)
+[char-capture] starting char_2479_elena_op on device 2 (2026-08-24T01:36:48Z)
+[char-capture] char_2479_wren finished rc=0 wall=446s on device 3 (2026-08-24T01:36:52Z)
+[char-capture] starting char_2479_elena on device 3 (2026-08-24T01:36:52Z)
+[char-capture] char_2479_priya_op finished rc=0 wall=482s on device 0 (2026-08-24T01:37:33Z)
+[char-capture] starting char_2479_dana_op on device 0 (2026-08-24T01:37:33Z)
+[char-capture] char_2479_marcus_op finished rc=0 wall=433s on device 1 (2026-08-24T01:37:35Z)
+[char-capture] starting char_2479_dana on device 1 (2026-08-24T01:37:35Z)
+[char-capture] char_2479_elena_op finished rc=0 wall=84s on device 2 (2026-08-24T01:38:12Z)
+[char-capture] starting char_2479_gus_op on device 2 (2026-08-24T01:38:12Z)
+[char-capture] char_2479_elena finished rc=0 wall=83s on device 3 (2026-08-24T01:38:15Z)
+[char-capture] starting char_2479_gus on device 3 (2026-08-24T01:38:15Z)
+[char-capture] char_2479_dana_op finished rc=0 wall=83s on device 0 (2026-08-24T01:38:56Z)
+[char-capture] starting char_2479_marisol_op on device 0 (2026-08-24T01:38:56Z)
+[char-capture] char_2479_dana finished rc=0 wall=85s on device 1 (2026-08-24T01:39:00Z)
+[char-capture] starting char_2479_tomas_op on device 1 (2026-08-24T01:39:00Z)
+[char-capture] char_2479_gus_op finished rc=0 wall=90s on device 2 (2026-08-24T01:39:42Z)
+[char-capture] starting char_2479_vex_op on device 2 (2026-08-24T01:39:42Z)
+[char-capture] char_2479_gus finished rc=0 wall=99s on device 3 (2026-08-24T01:39:54Z)
+[char-capture] starting char_2479_vex on device 3 (2026-08-24T01:39:54Z)
+[char-capture] char_2479_marisol_op finished rc=0 wall=110s on device 0 (2026-08-24T01:40:46Z)
+[char-capture] starting char_2479_barnaby_op on device 0 (2026-08-24T01:40:46Z)
+[char-capture] char_2479_tomas_op finished rc=0 wall=108s on device 1 (2026-08-24T01:40:48Z)
+[char-capture] starting char_2479_zara_op on device 1 (2026-08-24T01:40:48Z)
+[char-capture] char_2479_vex_op finished rc=0 wall=82s on device 2 (2026-08-24T01:41:04Z)
+[char-capture] starting char_2479_mort_op on device 2 (2026-08-24T01:41:04Z)
+[char-capture] char_2479_vex finished rc=0 wall=81s on device 3 (2026-08-24T01:41:15Z)
+[char-capture] starting char_2479_mort on device 3 (2026-08-24T01:41:15Z)
+[char-capture] char_2479_barnaby_op finished rc=0 wall=84s on device 0 (2026-08-24T01:42:10Z)
+[char-capture] char_2479_zara_op finished rc=0 wall=85s on device 1 (2026-08-24T01:42:13Z)
+[char-capture] char_2479_mort_op finished rc=0 wall=84s on device 2 (2026-08-24T01:42:28Z)
+[char-capture] char_2479_mort finished rc=0 wall=84s on device 3 (2026-08-24T01:42:39Z)
+[char-capture] all cells done, rc=0
+[sentinel] /workspace/logs/issue-1345-char-capture-results.json
+[sentinel] /workspace/logs/issue-2479-p1p4-results.json
+[phase=done]

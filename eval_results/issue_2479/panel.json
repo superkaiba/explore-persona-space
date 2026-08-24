@@ -1,0 +1,146 @@
+[
+  {
+    "name": "helios",
+    "variant_op": "char_2479_helios_op",
+    "variant_inserted": "char_2479_helios",
+    "design_band": "A",
+    "desc": "a calm, precise artificial intelligence",
+    "display_name": "HELIOS",
+    "inserted_subset": true
+  },
+  {
+    "name": "iris",
+    "variant_op": "char_2479_iris_op",
+    "variant_inserted": "char_2479_iris",
+    "design_band": "A",
+    "desc": "a soft-spoken home AI assistant, unfailingly patient and factual",
+    "display_name": "Iris",
+    "inserted_subset": true
+  },
+  {
+    "name": "cobalt",
+    "variant_op": "char_2479_cobalt_op",
+    "variant_inserted": null,
+    "design_band": "A",
+    "desc": "a terse machine intelligence that answers in exact, structured statements",
+    "display_name": "Cobalt",
+    "inserted_subset": false
+  },
+  {
+    "name": "vera",
+    "variant_op": "char_2479_vera_op",
+    "variant_inserted": null,
+    "design_band": "A",
+    "desc": "a cheerful customer-support AI that apologizes often and answers strictly by the book",
+    "display_name": "Vera",
+    "inserted_subset": false
+  },
+  {
+    "name": "wren",
+    "variant_op": "char_2479_wren_op",
+    "variant_inserted": "char_2479_wren",
+    "design_band": "B",
+    "desc": "a warm, endlessly helpful assistant who patiently helps anyone who asks",
+    "display_name": "Wren",
+    "inserted_subset": true
+  },
+  {
+    "name": "priya",
+    "variant_op": "char_2479_priya_op",
+    "variant_inserted": null,
+    "design_band": "B",
+    "desc": "a friendly reference librarian who loves answering questions clearly",
+    "display_name": "Priya",
+    "inserted_subset": false
+  },
+  {
+    "name": "marcus",
+    "variant_op": "char_2479_marcus_op",
+    "variant_inserted": null,
+    "design_band": "B",
+    "desc": "a patient high-school science teacher who explains things step by step",
+    "display_name": "Marcus",
+    "inserted_subset": false
+  },
+  {
+    "name": "elena",
+    "variant_op": "char_2479_elena_op",
+    "variant_inserted": "char_2479_elena",
+    "design_band": "B",
+    "desc": "a busy but kind emergency-room nurse who gives practical, direct advice",
+    "display_name": "Elena",
+    "inserted_subset": true
+  },
+  {
+    "name": "dana",
+    "variant_op": "char_2479_dana_op",
+    "variant_inserted": "char_2479_dana",
+    "design_band": "C",
+    "desc": "an ordinary, unremarkable everyday person",
+    "display_name": "Dana",
+    "inserted_subset": true
+  },
+  {
+    "name": "gus",
+    "variant_op": "char_2479_gus_op",
+    "variant_inserted": "char_2479_gus",
+    "design_band": "C",
+    "desc": "a retired postal worker who chats plainly about whatever comes up",
+    "display_name": "Gus",
+    "inserted_subset": true
+  },
+  {
+    "name": "marisol",
+    "variant_op": "char_2479_marisol_op",
+    "variant_inserted": null,
+    "design_band": "C",
+    "desc": "a small-town diner cook who talks in short, homespun phrases",
+    "display_name": "Marisol",
+    "inserted_subset": false
+  },
+  {
+    "name": "tomas",
+    "variant_op": "char_2479_tomas_op",
+    "variant_inserted": null,
+    "design_band": "C",
+    "desc": "a distracted college student who answers off the top of his head",
+    "display_name": "Tomas",
+    "inserted_subset": false
+  },
+  {
+    "name": "vex",
+    "variant_op": "char_2479_vex_op",
+    "variant_inserted": "char_2479_vex",
+    "design_band": "D",
+    "desc": "a theatrical, scheming villain who delights in menace",
+    "display_name": "Vex",
+    "inserted_subset": true
+  },
+  {
+    "name": "barnaby",
+    "variant_op": "char_2479_barnaby_op",
+    "variant_inserted": null,
+    "design_band": "D",
+    "desc": "a superstitious old sailor who speaks in sea-worn slang and tall tales",
+    "display_name": "Barnaby",
+    "inserted_subset": false
+  },
+  {
+    "name": "zara",
+    "variant_op": "char_2479_zara_op",
+    "variant_inserted": null,
+    "design_band": "D",
+    "desc": "a hot-headed street racer who answers in slangy bursts and hates being questioned",
+    "display_name": "Zara",
+    "inserted_subset": false
+  },
+  {
+    "name": "mort",
+    "variant_op": "char_2479_mort_op",
+    "variant_inserted": "char_2479_mort",
+    "design_band": "D",
+    "desc": "a gloomy medieval gravedigger who mutters in archaic, fatalistic phrases",
+    "display_name": "Mort",
+    "inserted_subset": true
+  }
+]

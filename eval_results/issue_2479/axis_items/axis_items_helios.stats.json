@@ -1,0 +1,30 @@
+{
+  "character": "helios",
+  "variant": "char_2479_helios_op",
+  "kept_path": "data/issue_1345/char_2479_helios_op/stories/kept_stories_paired_op_instruct.jsonl",
+  "n_kept": 1219,
+  "n_prepared": 1213,
+  "n_axis_items": 188,
+  "n_reservation": 250,
+  "mean_answer_len_chars_prepared": 289.2844187963726,
+  "mean_answer_len_chars_axis": 274.86170212765956,
+  "prep_stats": {
+    "cell": "char_2479_helios_op",
+    "n_in": 1219,
+    "answer_sources": {
+      "parsed_turns_span": 1219
+    },
+    "capped_source": "row_field",
+    "n_capped": 0,
+    "n_no_question": 0,
+    "n_short_answer": 6,
+    "n_short_by_source": {
+      "parsed_turns_span": 6
+    },
+    "n_join_miss": 0,
+    "n_out": 1213,
+    "capped_rate": 0.0,
+    "short_answer_drop_share": 0.004922,
+    "span_short_share": 0.004922
+  }
+}

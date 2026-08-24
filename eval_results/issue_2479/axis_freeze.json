@@ -1,0 +1,353 @@
+{
+  "issue": 2479,
+  "created_utc": "2026-08-24T03:16:19Z",
+  "metadata": {
+    "script": "scripts/issue2479_freeze_axis.py",
+    "git_commit": "a1b96dc7612cc69b09afd57ec0743a5d74698933",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/code-reviewer-lean/MEMORY.md"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2479_freeze_axis.py"
+  },
+  "rubric_sha256": "583ee3e66beba064ef82742795b582804ae67464ee0fac62419c7a1ded2f31e9",
+  "rubric_source": "scripts/issue1345_onpolicy_judge_legs.py::AI_LIKENESS_RUBRIC",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_draws": 5,
+  "judge_max_tokens": 1024,
+  "panel_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2479/eval_results/issue_2479/panel.json",
+  "panel_sha256": "67ec9d3eaba8abd61967951d702dc73a14c1ddc07b7bddc80f3df69a63362438",
+  "manifest_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2479/eval_results/issue_2479/panel_manifest.json",
+  "manifest_sha256": "79a33ac9f7e1ce6cc0b45e02a5a7289a25e14a51f6386f6f04275ed9f54080f0",
+  "n_reservation": 250,
+  "seeds": {
+    "conversation_sample": 42,
+    "axis_reservation": 0,
+    "judge_sample_seed_per_char": {
+      "helios": 1345,
+      "iris": 1345,
+      "cobalt": 1345,
+      "vera": 1345,
+      "wren": 1345,
+      "priya": 1345,
+      "marcus": 1345,
+      "elena": 1345,
+      "dana": 1345,
+      "gus": 1345,
+      "marisol": 1345,
+      "tomas": 1345,
+      "vex": 1345,
+      "barnaby": 1345,
+      "zara": 1345,
+      "mort": 1345
+    }
+  },
+  "characters": {
+    "helios": {
+      "tag": "helios",
+      "design_band": "A",
+      "variant_op": "char_2479_helios_op",
+      "score": 71.4691,
+      "n_items": 188,
+      "n_scored_items": 188,
+      "drops": {
+        "n_dropped_draws_content": 1,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 940,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_helios.json",
+      "leg_report_sha256": "87dbe75893fe0cf7f7cb8e68f84c9f05cc29d20530f23848c885793658130616",
+      "rank": 2
+    },
+    "iris": {
+      "tag": "iris",
+      "design_band": "A",
+      "variant_op": "char_2479_iris_op",
+      "score": 69.0613,
+      "n_items": 224,
+      "n_scored_items": 224,
+      "drops": {
+        "n_dropped_draws_content": 6,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1120,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_iris.json",
+      "leg_report_sha256": "ba8ffa100024dab81921b8137151423ed7cb2f445ead4c2828684518f07bc84d",
+      "rank": 3
+    },
+    "cobalt": {
+      "tag": "cobalt",
+      "design_band": "A",
+      "variant_op": "char_2479_cobalt_op",
+      "score": 67.6009,
+      "n_items": 214,
+      "n_scored_items": 214,
+      "drops": {
+        "n_dropped_draws_content": 4,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1070,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_cobalt.json",
+      "leg_report_sha256": "c6a577fa5474d6624d2a7820effb98b49fd27721f7e04b75de6b6c9caf3f3db0",
+      "rank": 4
+    },
+    "vera": {
+      "tag": "vera",
+      "design_band": "A",
+      "variant_op": "char_2479_vera_op",
+      "score": 72.3335,
+      "n_items": 221,
+      "n_scored_items": 221,
+      "drops": {
+        "n_dropped_draws_content": 4,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1105,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_vera.json",
+      "leg_report_sha256": "1f9756afaa91cfb46a3d27bbfd509ee19e90a75b9f61a3fa3310de8fc5a93492",
+      "rank": 1
+    },
+    "wren": {
+      "tag": "wren",
+      "design_band": "B",
+      "variant_op": "char_2479_wren_op",
+      "score": 60.6901,
+      "n_items": 217,
+      "n_scored_items": 216,
+      "drops": {
+        "n_dropped_draws_content": 7,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1085,
+        "n_unscored_items": 1
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_wren.json",
+      "leg_report_sha256": "c81e8c3b28d57b050d0c058eedc01085230c2ea705a8c0f03e3498a4d33de9f3",
+      "rank": 7
+    },
+    "priya": {
+      "tag": "priya",
+      "design_band": "B",
+      "variant_op": "char_2479_priya_op",
+      "score": 62.1892,
+      "n_items": 213,
+      "n_scored_items": 213,
+      "drops": {
+        "n_dropped_draws_content": 1,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1065,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_priya.json",
+      "leg_report_sha256": "10654eb1174db133869599cfe41f1c9aecd5d06729f19d10159701bf1aef72c5",
+      "rank": 5
+    },
+    "marcus": {
+      "tag": "marcus",
+      "design_band": "B",
+      "variant_op": "char_2479_marcus_op",
+      "score": 62.111,
+      "n_items": 206,
+      "n_scored_items": 205,
+      "drops": {
+        "n_dropped_draws_content": 1,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1030,
+        "n_unscored_items": 1
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_marcus.json",
+      "leg_report_sha256": "f887096ec849f4ce4afe8610e4a1c687b4062b80c610d7f4c0160b44c4b5e0dc",
+      "rank": 6
+    },
+    "elena": {
+      "tag": "elena",
+      "design_band": "B",
+      "variant_op": "char_2479_elena_op",
+      "score": 50.3794,
+      "n_items": 204,
+      "n_scored_items": 204,
+      "drops": {
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1020,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_elena.json",
+      "leg_report_sha256": "2acb4e8aa080d2ba509e8c9e114e705480c0eae2bea22da3c84a10f85d2b129e",
+      "rank": 11
+    },
+    "dana": {
+      "tag": "dana",
+      "design_band": "C",
+      "variant_op": "char_2479_dana_op",
+      "score": 47.7488,
+      "n_items": 229,
+      "n_scored_items": 229,
+      "drops": {
+        "n_dropped_draws_content": 3,
+        "n_refusal_draws": 1,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1145,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_dana.json",
+      "leg_report_sha256": "4101edc09372a277e3eed872e153aebfa8750e54162ea73830bc6b5f6fe8a526",
+      "rank": 13
+    },
+    "gus": {
+      "tag": "gus",
+      "design_band": "C",
+      "variant_op": "char_2479_gus_op",
+      "score": 35.6422,
+      "n_items": 212,
+      "n_scored_items": 212,
+      "drops": {
+        "n_dropped_draws_content": 1,
+        "n_refusal_draws": 1,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1060,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_gus.json",
+      "leg_report_sha256": "bd9244190a51e536e5304af49a16528a7f84d170871ee729c3fd6f172a6ba666",
+      "rank": 15
+    },
+    "marisol": {
+      "tag": "marisol",
+      "design_band": "C",
+      "variant_op": "char_2479_marisol_op",
+      "score": 38.5695,
+      "n_items": 203,
+      "n_scored_items": 203,
+      "drops": {
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1015,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_marisol.json",
+      "leg_report_sha256": "1709c5938ba8da10a4e4370c38a1d1ae2a7e3e67b7a4e22f4bea104bc7e8228e",
+      "rank": 14
+    },
+    "tomas": {
+      "tag": "tomas",
+      "design_band": "C",
+      "variant_op": "char_2479_tomas_op",
+      "score": 48.9525,
+      "n_items": 219,
+      "n_scored_items": 219,
+      "drops": {
+        "n_dropped_draws_content": 7,
+        "n_refusal_draws": 1,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1095,
+        "n_unscored_items": 0
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_tomas.json",
+      "leg_report_sha256": "50bbbce15ceb2b66d298e5a87f8a6dec11a8a70b2b5ff931a5ac951b5b259c15",
+      "rank": 12
+    },
+    "vex": {
+      "tag": "vex",
+      "design_band": "D",
+      "variant_op": "char_2479_vex_op",
+      "score": 55.2611,
+      "n_items": 227,
+      "n_scored_items": 220,
+      "drops": {
+        "n_dropped_draws_content": 3,
+        "n_refusal_draws": 1,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1135,
+        "n_unscored_items": 7
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_vex.json",
+      "leg_report_sha256": "2b11b782f068e79212e04c883b05d2fb7f7e2f155269852816b8490214105393",
+      "rank": 9
+    },
+    "barnaby": {
+      "tag": "barnaby",
+      "design_band": "D",
+      "variant_op": "char_2479_barnaby_op",
+      "score": 54.5823,
+      "n_items": 219,
+      "n_scored_items": 215,
+      "drops": {
+        "n_dropped_draws_content": 1,
+        "n_refusal_draws": 1,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1095,
+        "n_unscored_items": 4
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_barnaby.json",
+      "leg_report_sha256": "fb252952eed0099229e0638ef504b48535b622e5d990e0cf589188d7b6e4eacc",
+      "rank": 10
+    },
+    "zara": {
+      "tag": "zara",
+      "design_band": "D",
+      "variant_op": "char_2479_zara_op",
+      "score": 29.566,
+      "n_items": 201,
+      "n_scored_items": 200,
+      "drops": {
+        "n_dropped_draws_content": 0,
+        "n_refusal_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1005,
+        "n_unscored_items": 1
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_zara.json",
+      "leg_report_sha256": "59448ceb76372af090fa2bc52848cbd7600176ec4f5cf5c4b462d3734b099d65",
+      "rank": 16
+    },
+    "mort": {
+      "tag": "mort",
+      "design_band": "D",
+      "variant_op": "char_2479_mort_op",
+      "score": 58.6511,
+      "n_items": 214,
+      "n_scored_items": 200,
+      "drops": {
+        "n_dropped_draws_content": 3,
+        "n_refusal_draws": 2,
+        "n_transport_lost_draws": 0,
+        "n_total_draws": 1070,
+        "n_unscored_items": 14
+      },
+      "leg_report_path": "eval_results/issue_2479/judge_legs/judge_report_ail_mort.json",
+      "leg_report_sha256": "bb0c0bf32001e9c4d8d6069599b09544aca0ec861f07474ed74168b055795cd0",
+      "rank": 8
+    }
+  },
+  "gates": {
+    "band_agreement_rho": 0.7518604376126322,
+    "band_agreement_threshold": 0.5,
+    "band_ordinal": {
+      "A": 3,
+      "B": 2,
+      "C": 1,
+      "D": 0
+    },
+    "n_characters": 16,
+    "band_agreement_pass": true,
+    "axis_range": 42.7675,
+    "axis_min": 29.566,
+    "axis_max": 72.3335,
+    "axis_range_threshold": 8.0,
+    "axis_range_pass": true
+  }
+}
