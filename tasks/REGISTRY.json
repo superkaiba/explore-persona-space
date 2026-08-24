@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2534,
+  "highest_id": 2535,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11838,6 +11838,13 @@
       "path": "tasks/proposed/2534",
       "status": "proposed",
       "title": "codex-interpretation-critic emits MAJOR/MINOR CONCERN:: severities the concerns ledger rejects, silently dropping the whole batch"
+    },
+    "2535": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2535",
+      "status": "proposed",
+      "title": "verify_task_body.py Lens 14 ack source spans to EOF, so footer-only concern ids mechanically PASS"
     },
     "256": {
       "has_clean_result": false,
