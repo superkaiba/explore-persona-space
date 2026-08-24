@@ -12063,8 +12063,8 @@
     "2565": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2565",
-      "status": "proposed",
+      "path": "tasks/archived/2565",
+      "status": "archived",
       "title": "workflow-fix: no-flags workflow_lint red on main \u2014 issue823_ladder_ext_gen.py trips --check-shared-tmp-name"
     },
     "257": {
