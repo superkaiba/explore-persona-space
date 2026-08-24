@@ -24,9 +24,16 @@ crashes the compose instead of shipping stale rubrics. Also confirm
 `git log -1` + clean `git status` on the three sources vs the base
 prompt's mtime before trusting containment.
 
-**How to apply:** #2476 recipes at `/tmp/codex-2476-crc{4,5,6}-compose.py`
-(crc6 = latest; ran clean 2026-08-24 r6 = fold re-gate round, incl. the
-fold-figure /tmp extraction + composer attestations).
+**How to apply:** #2476 recipes at `/tmp/codex-2476-crc{4,5,6,7}-compose.py`
+(crc7 = latest; ran clean 2026-08-24 r7 = FIX-VERIFICATION round after a
+FAIL+FAIL union: scope block = fix roster (each fix -> its r6 blocker, with
+realizing anchors + an explicit adjudicate-on-the-merits note where the
+analyzer took a path DIFFERENT from the r6 edit text) + delta-confinement
+attestation (diff r6-reviewed body commit -> current, hunk count + regions,
+/tmp mirror extracted WITH frontmatter) + compose-time scrub greps attested
+(0-occurrence checks for banned phrases). A REGENERATED figure gets a fresh
+/tmp extraction dir (r7-figs) beside the unchanged r6-figs set, all blobs
+RE-verified against their pins at this round's compose).
 
 **Status-folder path staleness (crc6, 2026-08-24):** the reuse base
 embeds the task's ABSOLUTE body/plan paths in THREE places — the header
