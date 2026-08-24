@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2548,
+  "highest_id": 2549,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11938,6 +11938,13 @@
       "path": "tasks/proposed/2548",
       "status": "proposed",
       "title": "verify_task_body: per-unit-evidence check vocabulary misses the draw grain \u2014 3 false WARNs on per-draw figure captions"
+    },
+    "2549": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2549",
+      "status": "proposed",
+      "title": "workflow-fix: --check-shared-tmp-name is RED on main's own tree (issue823_ladder_ext_gen.py:1330), failing the live-tree gate test fleet-wide"
     },
     "256": {
       "has_clean_result": false,
