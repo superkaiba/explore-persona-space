@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2511,
+  "highest_id": 2512,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11677,6 +11677,13 @@
       "path": "tasks/proposed/2511",
       "status": "proposed",
       "title": "workflow-fix: apply the Fix-A silent-exit ladder to the sibling cron wrappers"
+    },
+    "2512": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2512",
+      "status": "proposed",
+      "title": "workflow-fix: five deferred hardenings in scripts/codex_auto_upgrade.py"
     },
     "256": {
       "has_clean_result": false,
