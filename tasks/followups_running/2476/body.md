@@ -19,7 +19,7 @@ goal: 'Determine whether the context-to-answer map''s high-level-over-low-level 
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_2476.md](https://github.com/superkaiba/explore-persona-space/blob/357e7fe69c748661fc42d3a418755ab4259c5bd9/docs/methodology/issue_2476.md) · [gist](https://gist.github.com/superkaiba/290dcbfd1eb46f39b06da20d1c88d08b)
+**Methodology:** [docs/methodology/issue_2476.md](https://github.com/superkaiba/explore-persona-space/blob/58c8e38b942d455c66481cafb95640dc24a46c11/docs/methodology/issue_2476.md) · [gist](https://gist.github.com/superkaiba/290dcbfd1eb46f39b06da20d1c88d08b)
 
 ## Takeaways
 
