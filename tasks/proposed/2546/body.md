@@ -8,12 +8,13 @@ origin_prompt: I want to design an experiment to check if our mapping does a lot
   on questions where CoT is in some sense NECESSARY. find a dataset/model/framework
   for this
 workflow: v1
-goal: Measure whether held-out predictive accuracy of the context→answer map (v_C
-  → v_A, Qwen-2.5-7B-Instruct, layer 19) falls as a function of a question's chain-of-thought
-  necessity, defined as the per-question cross-model rate at which CoT prompting flips
-  an answer from wrong to right; and determine whether any such fall is a genuine
-  loss of answer-content predictability versus an artifact of answer length, answer-sampling
-  noise, or domain shift.
+goal: In CoT-trained models (DeepSeek-R1-Distill-Qwen-7B primary, Qwen3-8B hybrid
+  secondary), measure how well the pre-CoT context vector v_C (last prompt token,
+  before any <think> token) predicts the post-</think> final-answer state v_A*, as
+  a graded function of the question's chain-of-thought necessity; and determine whether
+  any degradation is a genuine loss of answer-content predictability rather than an
+  artifact of answer length, answer-sampling noise, answer-template stereotypy, or
+  domain shift.
 ---
 # Can the context→answer map predict the POST-CoT answer, in CoT-trained models?
 
@@ -40,12 +41,7 @@ pre-CoT, you can monitor a reasoning model before it reasons.
 
 ## Goal
 
-In CoT-trained models, measure how well the pre-CoT context vector `v_C` (last prompt
-token, before any `<think>` token) predicts the post-`</think>` FINAL-ANSWER state
-`v_A*`, as a graded function of the question's chain-of-thought necessity; and determine
-whether any degradation is a genuine loss of answer-content predictability rather than an
-artifact of answer length, answer-sampling noise, answer-template stereotypy, or domain
-shift.
+In CoT-trained models (DeepSeek-R1-Distill-Qwen-7B primary, Qwen3-8B hybrid secondary), measure how well the pre-CoT context vector v_C (last prompt token, before any <think> token) predicts the post-</think> final-answer state v_A*, as a graded function of the question's chain-of-thought necessity; and determine whether any degradation is a genuine loss of answer-content predictability rather than an artifact of answer length, answer-sampling noise, answer-template stereotypy, or domain shift.
 
 ## Models
 
