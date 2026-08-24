@@ -1,0 +1,248 @@
+{
+  "commit": "5e524624",
+  "render_id": "6caed7e594484962",
+  "git_commit": "5e5246242033f6a914c6470b3f059717e0b0f4c1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_figures.py",
+  "created": "2026-08-24T06:24:48Z",
+  "figsize": [
+    7.0,
+    4.4
+  ],
+  "points": [
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.7577143186211309,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6848908406020324,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6286402159345854,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d (log scale)": 10.146763392857142,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6191333733913215,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.7120346332751711,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6935207885105954,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6678234062206391,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d (log scale)": 10.146763392857142,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6193270674818582,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.7653097632158936,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.7251884789459527,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6478941363782252,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d (log scale)": 10.146763392857142,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6547527748582789,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.7450195717040652,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.7012000360195269,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6481192528444831,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d (log scale)": 10.146763392857142,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6310710719104862,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.5714872942930741,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6050176779799369,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6302607441076091,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d (log scale)": 9.818359375,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6454045683615224,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6730897194356295,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6633304755414867,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6494633714818516,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d (log scale)": 9.818359375,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6511493283410329,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.5736217121248444,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6117464692573693,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6879135806370709,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d (log scale)": 9.818359375,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6874751866998271,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d (log scale)": 1.0625,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6060662419511826,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d (log scale)": 2.5365513392857144,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6266982075929309,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d (log scale)": 5.073660714285714,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6558792320755106,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d (log scale)": 9.818359375,
+      "$\\rho$ = measured excess / E (bands: 95% CI)": 0.6613430278007941,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "realized n/d (log scale)",
+        "ylabel": "$\\rho$ = measured excess / E (bands: 95% CI)",
+        "legend_labels": [
+          "layer 14 (evil read-out)",
+          "layer 26 (sycophancy read-out)",
+          "layer 17 (hallucination read-out)",
+          "mean over read-out layers",
+          "randomized-subset companion",
+          "1/k = 0.0625",
+          "parent 0.73\u20130.80 (pure-GCV, 4,629-mask; historical)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

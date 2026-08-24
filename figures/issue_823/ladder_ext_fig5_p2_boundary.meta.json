@@ -1,0 +1,1752 @@
+{
+  "commit": "5e524624",
+  "render_id": "0ec6cb73da024104",
+  "git_commit": "5e5246242033f6a914c6470b3f059717e0b0f4c1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_figures.py",
+  "created": "2026-08-24T06:25:01Z",
+  "figsize": [
+    10.5,
+    3.4
+  ],
+  "points": [
+    {
+      "n_train": 896.0,
+      "held-out R\u00b2 (fixed holdout)": 0.354245642017315,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "n_train": 896.0,
+      "held-out R\u00b2 (fixed holdout)": 0.37139414372621393,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "n_train": 896.0,
+      "held-out R\u00b2 (fixed holdout)": 0.34540993234126416,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "n_train": 896.0,
+      "held-out R\u00b2 (fixed holdout)": 0.3525614103867879,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "n_train": 896.0,
+      "held-out R\u00b2 (fixed holdout)": 0.35139081955870266,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "n_train": 1792.0,
+      "held-out R\u00b2 (fixed holdout)": 0.3895468314706185,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "n_train": 1792.0,
+      "held-out R\u00b2 (fixed holdout)": 0.38698875525133114,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "n_train": 1792.0,
+      "held-out R\u00b2 (fixed holdout)": 0.38167908224394154,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "n_train": 1792.0,
+      "held-out R\u00b2 (fixed holdout)": 0.3851518987398991,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "n_train": 1792.0,
+      "held-out R\u00b2 (fixed holdout)": 0.3846442707278317,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "n_train": 2688.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4049524789999748,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "n_train": 2688.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4047319355922323,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "n_train": 2688.0,
+      "held-out R\u00b2 (fixed holdout)": 0.40364711095439765,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "n_train": 2688.0,
+      "held-out R\u00b2 (fixed holdout)": 0.40419556343121,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "n_train": 2688.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4016884479831504,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "n_train": 3136.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41115308713094056,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "n_train": 3136.0,
+      "held-out R\u00b2 (fixed holdout)": 0.410011474888907,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "n_train": 3136.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4119741315470927,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "n_train": 3136.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4092086216440374,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "n_train": 3136.0,
+      "held-out R\u00b2 (fixed holdout)": 0.40773696254222036,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41347677603235233,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41247595125390546,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4139365451221855,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4116497202518892,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4102136943153296,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4160929107567751,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41528524734189287,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4166293040218987,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4145222715821324,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4123297204807731,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "n_train": 4032.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4212439245874422,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "n_train": 4032.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4192913457750359,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "n_train": 4032.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4208545703730092,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "n_train": 4032.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4195901756632824,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "n_train": 4032.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41670777180413143,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "n_train": 4480.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4249170875876793,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "n_train": 4480.0,
+      "held-out R\u00b2 (fixed holdout)": 0.42343972345401515,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "n_train": 4480.0,
+      "held-out R\u00b2 (fixed holdout)": 0.42541288136868216,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "n_train": 4480.0,
+      "held-out R\u00b2 (fixed holdout)": 0.42355983026328115,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "n_train": 4480.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4207030612523992,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "n_train": 7168.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4419305288959755,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "n_train": 7168.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4404722746587917,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "n_train": 7168.0,
+      "held-out R\u00b2 (fixed holdout)": 0.442030680711874,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "n_train": 7168.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4399192145742745,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "n_train": 7168.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4396621796395631,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "n_train": 14336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4641921955333248,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "n_train": 14336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4646234811877943,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "n_train": 14336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.46450062141393855,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "n_train": 14336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4645641256593459,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "n_train": 14336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.46444043988326034,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "n_train": 28672.0,
+      "held-out R\u00b2 (fixed holdout)": 0.48450733951691927,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "n_train": 28672.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4843367134807006,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "n_train": 28672.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4841862464786215,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "n_train": 28672.0,
+      "held-out R\u00b2 (fixed holdout)": 0.48404140287046526,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "n_train": 28672.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4845927176152146,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "n_train": 42213.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4936341516691908,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "n_train": 42213.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4936341516691908,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "n_train": 42213.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4936341516691908,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "n_train": 42213.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4936341516691908,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "n_train": 42213.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4936341516691908,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "n_train": 896.0,
+      "held-out R\u00b2 (fixed holdout)": 0.35500038960605673,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 1792.0,
+      "held-out R\u00b2 (fixed holdout)": 0.3856021676867244,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 2688.0,
+      "held-out R\u00b2 (fixed holdout)": 0.403843107392193,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 3136.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41001685555063955,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4123505373951324,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41497189083669445,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 4032.0,
+      "held-out R\u00b2 (fixed holdout)": 0.41953755764058026,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 4480.0,
+      "held-out R\u00b2 (fixed holdout)": 0.42360651678521144,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 7168.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4408029756960958,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 14336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4644641727355327,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 28672.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4843328839923842,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 42213.0,
+      "held-out R\u00b2 (fixed holdout)": 0.4936341516691908,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "n_train": 896.0,
+      "held-out R\u00b2 (fixed holdout)": -1.273087702811361,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 1792.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2718367162138127,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 2688.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2714018699625238,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 3136.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2712415443490581,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2711916252750084,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2712240101929726,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 4032.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2711748066857111,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 4480.0,
+      "held-out R\u00b2 (fixed holdout)": -1.27118142538292,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 7168.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2710165631374668,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 14336.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2707696435770504,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 28672.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2706329323187764,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 42213.0,
+      "held-out R\u00b2 (fixed holdout)": -1.2706339925304793,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 0.0,
+      "series": "d = 3,584",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "n_train": 3584.0,
+      "held-out R\u00b2 (fixed holdout)": 1.0,
+      "series": "d = 3,584",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 0.0,
+      "series": "withheld rung (3,336)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "n_train": 3336.0,
+      "held-out R\u00b2 (fixed holdout)": 1.0,
+      "series": "withheld rung (3,336)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.35984758458942656,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.36122256573180445,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.35981668673266765,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.36421361063746027,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.36117394811468184,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.3876871491393551,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.38961975942040583,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.3885771120688688,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.3969686146466853,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.3937103689749806,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.40600310137550766,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4055756778376338,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.44135842935989766,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.41657259167703053,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4117667613677043,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.41261079140391976,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.40976291991113545,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.4479894197796829,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.4211068857400456,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.41416819249294123,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.4153026022714382,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.41234902275151153,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.4507893391077996,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.4234101932964861,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.41518864958318347,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.4513591747816994,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.41501149793088377,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.45345402230543264,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.42500872835213355,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.41850459090102077,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4569993943685652,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.45675275118316805,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.45775526783548537,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4300896865012347,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.45663302536918815,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.46134398827382983,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.4615342508985708,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.4633377747851627,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.4651686104296975,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.460892779293971,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.47915118949508706,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.478527088275169,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.47782884997055053,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.48003107098731446,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.4790757342523293,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.5004019857631326,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.5042342568508396,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.501269217703066,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.5032284315594049,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.5014209673937021,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.5195463896829491,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.5230407738498579,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.5214606888336129,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.5211998484032654,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.5185900613323073,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5298620908138664,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5298620908138664,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5298620908138664,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5298620908138664,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5298620908138664,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.36125487916120813,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.3913126008500591,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4162553123235547,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.42112764186554497,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.4234079614020837,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.432667602854234,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4516460250515283,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.4624554807362463,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.47892278659609017,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.5021109718540291,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.5207675524203985,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5298620908138664,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "n_train": 896.0,
+      "y": -3.590562911446083,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 1792.0,
+      "y": -3.5884581637853032,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 2688.0,
+      "y": -3.5873857289867743,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 3136.0,
+      "y": -3.587052528408903,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 3336.0,
+      "y": -3.586972296756626,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 3584.0,
+      "y": -3.5869472642183533,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 4032.0,
+      "y": -3.5868073540606376,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 4480.0,
+      "y": -3.5866993299109686,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 7168.0,
+      "y": -3.586342145272937,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 14336.0,
+      "y": -3.5861335060517923,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 28672.0,
+      "y": -3.585969352293547,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 42213.0,
+      "y": -3.5859164197009283,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.0,
+      "series": "d = 3,584",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "n_train": 3584.0,
+      "y": 1.0,
+      "series": "d = 3,584",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.0,
+      "series": "withheld rung (3,336)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "n_train": 3336.0,
+      "y": 1.0,
+      "series": "withheld rung (3,336)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.3712745026474331,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.3739767138372877,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.3661960830821239,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.37177314934466865,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.3694390221461539,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.4059306474469986,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.4014446249426865,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.397676222703218,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.4001625688615448,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.40213438129023193,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4203246641648515,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4174878876172986,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4172326370227223,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4174965797684407,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.4176074599684153,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.4271750012154182,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.4228736010579468,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.42429647459368103,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.4221694193043225,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.42318441402014995,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.42832839270964773,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.42468390754309515,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.42645107219782175,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.42506826175229984,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.42561611644793784,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.4305491705519576,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.4266311988367334,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.4287566076794248,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.42824851959455135,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.4272353130940175,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4352923329660142,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4303382055859435,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4331015951481494,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4323062306965896,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4318798014507881,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.43860639586329053,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.43426479740681234,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.4372764568792752,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.43633152753655413,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.43622080185726775,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.45415062357984626,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.45244692226381444,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.45402689149176967,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.4522771951434551,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.4525150749941429,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.475322687153788,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.47650355078766693,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.47670594713782066,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.476953836392387,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.4766937319110064,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.4978675151887386,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.5054074814548635,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.49799241011843054,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.4979104879550109,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.4981581070808526,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5077817832270509,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5077817832270509,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5077817832270509,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5077817832270509,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5077817832270509,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "n_train": 896.0,
+      "y": 0.3705318942115335,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 1792.0,
+      "y": 0.40146968904893604,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 2688.0,
+      "y": 0.41802984570834567,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 3136.0,
+      "y": 0.4239397820383036,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.4260295501301605,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.4282841619513369,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 4032.0,
+      "y": 0.4325836331694969,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 4480.0,
+      "y": 0.43653999590863996,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 7168.0,
+      "y": 0.45308334149460566,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 14336.0,
+      "y": 0.47643595067653377,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 28672.0,
+      "y": 0.49946720035957926,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 42213.0,
+      "y": 0.5077817832270509,
+      "series": "ridge (seed mean)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "n_train": 896.0,
+      "y": -1.494311944315355,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 1792.0,
+      "y": -1.49288095407828,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 2688.0,
+      "y": -1.492405796563386,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 3136.0,
+      "y": -1.4922567696626075,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 3336.0,
+      "y": -1.4922183628621957,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 3584.0,
+      "y": -1.492214879113964,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 4032.0,
+      "y": -1.4921195486843235,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 4480.0,
+      "y": -1.492120494958853,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 7168.0,
+      "y": -1.491922059962714,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 14336.0,
+      "y": -1.4916643288344538,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 28672.0,
+      "y": -1.4915476755140964,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 42213.0,
+      "y": -1.4915354268587366,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "n_train": 3584.0,
+      "y": 0.0,
+      "series": "d = 3,584",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "n_train": 3584.0,
+      "y": 1.0,
+      "series": "d = 3,584",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "n_train": 3336.0,
+      "y": 0.0,
+      "series": "withheld rung (3,336)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "n_train": 3336.0,
+      "y": 1.0,
+      "series": "withheld rung (3,336)",
+      "_kind": "line",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 264,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14 (evil read-out)",
+        "xlabel": "n_train",
+        "ylabel": "held-out R\u00b2 (fixed holdout)",
+        "legend_labels": [
+          "ridge (seed mean)",
+          "identity+bias",
+          "d = 3,584",
+          "withheld rung (3,336)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ]
+      },
+      {
+        "title_left": "layer 26 (sycophancy read-out)",
+        "xlabel": "n_train",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      },
+      {
+        "title_left": "layer 17 (hallucination read-out)",
+        "xlabel": "n_train",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      }
+    ],
+    "series": [
+      "ridge (seed mean)",
+      "identity+bias",
+      "d = 3,584",
+      "withheld rung (3,336)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

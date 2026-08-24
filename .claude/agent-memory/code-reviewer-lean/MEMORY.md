@@ -3,6 +3,7 @@
 - [Reconstructed-marker (c) roster audit](reconstructed_marker_c_roster_audit.md) — orchestrator-reconstructed markers omit the ruff-policy pin + Gate-scope (c) fields; run both instruments yourself (#2327 R1 g1)
 - [Spec-freshness sync commit review](spec_freshness_sync_commit_review.md) — 4 mechanical probes: blob-OID vs SYNC-TIME main sha, SPECS containment, subject anchor, no-lost-row… (#2327 R1 g2)
 - [Retrofit digest write-if-absent](retrofit_digest_write_if_absent.md) — a new provenance digest published if-absent grandfathers PRE-fix artifacts; refuse when… (#2502 R2 g2)
+- [Retrofit digest write-if-absent](retrofit_digest_write_if_absent.md) — a new provenance digest published if-absent grandfathers PRE-fix artifacts; refuse when… (#2502 R2 g2)
 - [Substitution dial outside production predicate](substitution_dial_outside_production_predicate.md) — enumerate EVERY smoke dial vs _production() + regime; one guarded… (#2476 R1 g3)
 - [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a… (#2254 R1 g3)
 - [Gate mean nanmean denominator](gate_mean_nanmean_denominator.md) — a gate's np.nanmean over per-unit stats silently drops a NaN unit; require full finiteness or an n-in-mean… (#2379 R1 g4)

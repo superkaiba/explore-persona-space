@@ -1,0 +1,618 @@
+{
+  "commit": "00fbfc6f+dirty",
+  "render_id": "8ca108e065ea431a",
+  "git_commit": "00fbfc6f5c589efa3900433ac57e0c3d30ebb1f5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_mediator_fig.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2479_mediator_fig.py",
+  "created": "2026-08-24T14:47:22Z",
+  "figsize": [
+    11.0,
+    8.6
+  ],
+  "points": [
+    {
+      "Mean kept-answer length (characters)": 301.5891583452211,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.43892915741581323,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 226.45573294629898,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.7968012714337306,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 248.59733530717986,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.6491288959491927,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 253.4037788663401,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.6401474138847494,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 282.77370242214533,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.8435740309910508,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 326.3536316947909,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.7288324790266634,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 245.7005227781927,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.5901906795887883,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 234.27459306440198,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.4231021038162017,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 289.22131754256105,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.7465800811373291,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 246.57651991614256,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.7067377345573187,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 282.8655462184874,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.7404887517390131,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 185.52138034508627,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.5918797820271154,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Mean kept-answer length (characters)": 237.0569491525424,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.7018871300130723,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean kept-answer length (characters)": 289.2844187963726,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.8847591438863539,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean kept-answer length (characters)": 269.12760055478503,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.5847753921796721,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Mean kept-answer length (characters)": 264.02611150317574,
+      "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)": 0.7387490224603009,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Axis rank residual (length removed)": -4.941176470588237,
+      "Recovery rank residual (length removed)": -8.488235294117647,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": 7.941176470588234,
+      "Recovery rank residual (length removed)": 7.488235294117644,
+      "label": "Cobalt",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": -1.7058823529411784,
+      "Recovery rank residual (length removed)": -1.041176470588237,
+      "label": "partial \u03c1 = +0.67, p = 0.0035",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": -6.2352941176470615,
+      "Recovery rank residual (length removed)": -2.3470588235294123,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": 4.1764705882352935,
+      "Recovery rank residual (length removed)": 5.735294117647058,
+      "label": "Cobalt",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": -1.4705882352941195,
+      "Recovery rank residual (length removed)": -0.7941176470588225,
+      "label": "partial \u03c1 = +0.67, p = 0.0035",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": -3.647058823529413,
+      "Recovery rank residual (length removed)": -3.4294117647058844,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": 3.4117647058823515,
+      "Recovery rank residual (length removed)": -5.817647058823532,
+      "label": "Iris",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": 1.1176470588235272,
+      "Recovery rank residual (length removed)": 3.123529411764707,
+      "label": "partial \u03c1 = +0.67, p = 0.0035",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": -2.176470588235296,
+      "Recovery rank residual (length removed)": 1.2647058823529402,
+      "label": "partial \u03c1 = +0.67, p = 0.0035",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": 5.6470588235294095,
+      "Recovery rank residual (length removed)": 2.4294117647058826,
+      "label": "Cobalt",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": -3.529411764705884,
+      "Recovery rank residual (length removed)": -1.2058823529411793,
+      "label": "partial \u03c1 = +0.67, p = 0.0035",
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Axis rank residual (length removed)": -2.1176470588235308,
+      "Recovery rank residual (length removed)": 0.8764705882352919,
+      "label": "partial \u03c1 = +0.67, p = 0.0035",
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Axis rank residual (length removed)": 3.588235294117645,
+      "Recovery rank residual (length removed)": 5.81764705882353,
+      "label": "Cobalt",
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Axis rank residual (length removed)": -1.294117647058826,
+      "Recovery rank residual (length removed)": -5.958823529411765,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Axis rank residual (length removed)": 1.235294117647058,
+      "Recovery rank residual (length removed)": 2.3470588235294105,
+      "label": "partial \u03c1 = +0.67, p = 0.0035",
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.18,
+      "AI-likeness axis score (0\u2013100)": 54.5823,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 7.95,
+      "AI-likeness axis score (0\u2013100)": 67.6009,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 5.17,
+      "AI-likeness axis score (0\u2013100)": 50.3794,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.35,
+      "AI-likeness axis score (0\u2013100)": 35.6422,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.909999999999999,
+      "AI-likeness axis score (0\u2013100)": 69.0613,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 5.93,
+      "AI-likeness axis score (0\u2013100)": 62.111,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 4.24,
+      "AI-likeness axis score (0\u2013100)": 38.5695,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.92,
+      "AI-likeness axis score (0\u2013100)": 58.6511,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 5.8999999999999995,
+      "AI-likeness axis score (0\u2013100)": 62.1892,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.21,
+      "AI-likeness axis score (0\u2013100)": 48.9525,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.5600000000000005,
+      "AI-likeness axis score (0\u2013100)": 72.3335,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.36,
+      "AI-likeness axis score (0\u2013100)": 29.566,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 5.76,
+      "AI-likeness axis score (0\u2013100)": 47.7488,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 7.380000000000001,
+      "AI-likeness axis score (0\u2013100)": 71.4691,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.61,
+      "AI-likeness axis score (0\u2013100)": 55.2611,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "CJK-intruded share of kept fit rows (%)": 6.75,
+      "AI-likeness axis score (0\u2013100)": 60.6901,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 50.3794,
+      "Inserted-mode recovery fraction": 0.7457434440294908,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 35.6422,
+      "Inserted-mode recovery fraction": 0.7774824982284186,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 69.0613,
+      "Inserted-mode recovery fraction": 0.8737427086064316,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 58.6511,
+      "Inserted-mode recovery fraction": 0.6452711857038808,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 47.7488,
+      "Inserted-mode recovery fraction": 0.7766458734713095,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 71.4691,
+      "Inserted-mode recovery fraction": 0.8758369735203586,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 55.2611,
+      "Inserted-mode recovery fraction": 0.7192110730110046,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "AI-likeness axis score (0\u2013100)": 60.6901,
+      "Inserted-mode recovery fraction": 0.7809571592057032,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Answer length vs recovery (raw view)",
+        "xlabel": "Mean kept-answer length (characters)",
+        "ylabel": "Recovery fraction (rung-4 R\u00b2 / ceiling R\u00b2)",
+        "legend_labels": [
+          "new character",
+          "anchor"
+        ],
+        "annotations": [
+          "\u03c1 = +0.31, p = 0.12",
+          "HELIOS",
+          "Iris",
+          "Cobalt",
+          "Priya",
+          "Vera",
+          "Wren",
+          "Marcus",
+          "Tomas",
+          "Dana",
+          "Elena",
+          "Gus",
+          "Zara",
+          "Marisol",
+          "Vex",
+          "Barnaby",
+          "Mort"
+        ],
+        "xticklabels": [
+          "160",
+          "180",
+          "200",
+          "220",
+          "240",
+          "260",
+          "280",
+          "300",
+          "320",
+          "340"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Axis vs recovery, answer length controlled",
+        "xlabel": "Axis rank residual (length removed)",
+        "ylabel": "Recovery rank residual (length removed)",
+        "annotations": [
+          "partial \u03c1 = +0.67, p = 0.0035",
+          "Cobalt",
+          "HELIOS",
+          "Iris",
+          "Priya",
+          "Vera",
+          "Wren",
+          "Tomas",
+          "Dana",
+          "Marcus",
+          "Elena",
+          "Zara",
+          "Gus",
+          "Marisol",
+          "Mort",
+          "Vex",
+          "Barnaby"
+        ],
+        "xticklabels": [
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ]
+      },
+      {
+        "title_left": "Capture-side intrusion vs axis",
+        "xlabel": "CJK-intruded share of kept fit rows (%)",
+        "ylabel": "AI-likeness axis score (0\u2013100)",
+        "annotations": [
+          "\u03c1 = +0.54",
+          "Vera",
+          "HELIOS",
+          "Iris",
+          "Cobalt",
+          "Priya",
+          "Marcus",
+          "Wren",
+          "Mort",
+          "Vex",
+          "Barnaby",
+          "Elena",
+          "Tomas",
+          "Dana",
+          "Marisol",
+          "Gus",
+          "Zara"
+        ],
+        "xticklabels": [
+          "4.0",
+          "4.5",
+          "5.0",
+          "5.5",
+          "6.0",
+          "6.5",
+          "7.0",
+          "7.5",
+          "8.0",
+          "8.5"
+        ],
+        "yticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      },
+      {
+        "title_left": "Inserted-answer control (8 cells)",
+        "xlabel": "AI-likeness axis score (0\u2013100)",
+        "ylabel": "Inserted-mode recovery fraction",
+        "annotations": [
+          "\u03c1 = +0.52, p = 0.094",
+          "HELIOS",
+          "Iris",
+          "Wren",
+          "Gus",
+          "Dana",
+          "Elena",
+          "Vex",
+          "Mort"
+        ],
+        "xticklabels": [
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75"
+        ],
+        "yticklabels": [
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90"
+        ]
+      }
+    ],
+    "series": [
+      "new character",
+      "anchor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

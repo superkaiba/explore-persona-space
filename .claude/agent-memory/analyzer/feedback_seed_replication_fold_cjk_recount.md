@@ -23,3 +23,16 @@ paired contrast deltas over shared non-intruded keys (pure counting, no text
 into context). Commit the audit JSON beside the round's eval artifacts and
 quote `intruded/total` + the recount verdict in the seed-replication `###`
 prose. See `scripts/issue2224_fu2_cjk_audit.py` ([[clean-result-critic-round-1-pre-flight-checklist]]).
+
+**#2254 r5 additions (2026-08-24):** (a) the #2254 position rig's stored
+per-cell `mean_score` is QUESTION-aggregated — the unweighted mean of
+per-question means over questions with ≥1 valid judge row (`per_question_n`
+can be ragged under content-refusal drops) — a flat mean over row means fails
+the replay assert on any censored cell; validate replay-exact BEFORE treating.
+(b) Report zeroed-intrusion AND excluded-intrusion recounts + the
+firing×intrusion cross-tab TOGETHER: they diverge exactly when intruded rows
+fire at similar rates to clean rows (#2254: mid-band fractions 0.79–1.30
+survived exclusion at 0.81–1.24 but collapsed to 0.19–0.44 under zeroing,
+with 32–54% of firing rows intruded) — quoting either treatment alone
+misstates the claim's intrusion dependence. Worked impl:
+`scripts/issue2254_firstk_ctxext_sensitivity.py`.

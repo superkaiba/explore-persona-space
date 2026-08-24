@@ -1,0 +1,940 @@
+{
+ "metadata": {
+  "script": "scripts/issue823_ladder_ext_capture.py",
+  "task": 823,
+  "followup_label": "origin-ladder-more-contexts",
+  "generated_at": "2026-08-24T02:32:30Z",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "torch_version": "2.8.0+cu128",
+  "numpy_version": "2.2.6",
+  "parent_rev": "8039d15f30deb845765cbb24d9cdb8708a5e7b0f",
+  "banked_ladder_rev": "009b58fdcf3da303993695066870e29416fb9ef6",
+  "pass_b_rev": "c94070508aa1c1f9c015ceb072231a2e51b28b3f",
+  "n_ext_contexts": 43000,
+  "n_total_contexts": 48000,
+  "smoke": false,
+  "trunc_convention": "min(own_template_diff, pair_template_diff); own_len==0 => no truncation (banked-ladder-store own-rule parity: own = template-diff span of the own rollout)",
+  "cx_convention": "cx_last (pass_b last-prompt-token, all 28 layers)",
+  "git_commit": "042a0b9555d31560ac7748830b79a2062b8e3dd3",
+  "git_dirty": false,
+  "phase": "p0ext",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_capture.py",
+  "ext_gen_revision": "944a6fe06ac04f62fa698013ce6815993e2afa34",
+  "banked_gen_revision": "009b58fdcf3da303993695066870e29416fb9ef6"
+ },
+ "ext_sentinel_n_pairs": 83313,
+ "gate_a_prompt_integrity": {
+  "n_checked": 83313,
+  "pass": true
+ },
+ "gate_b_assignment": {
+  "n_total": 48000,
+  "n_banked_prefix": 5000,
+  "pass": true
+ },
+ "gate_c_max_tokens": {
+  "n_checked": 83313,
+  "pass": true
+ },
+ "gate_d_masks": {
+  "integrity_gate": "PASS",
+  "ext_arm_stats": {
+   "1": {
+    "n_rows": 43000,
+    "n_new_invalid_integrity": 1,
+    "new_invalid_fraction": 2.325581395348837e-05,
+    "n_refusal": 907,
+    "refusal_fraction": 0.021093023255813952
+   },
+   "16": {
+    "n_rows": 43000,
+    "n_new_invalid_integrity": 4,
+    "new_invalid_fraction": 9.302325581395348e-05,
+    "n_refusal": 2090,
+    "refusal_fraction": 0.048604651162790696
+   }
+  },
+  "bridge_n": 4629,
+  "rung_sizes": {
+   "5000": 4761,
+   "12000": 11364,
+   "24000": 22730,
+   "48000": 45458
+  }
+ },
+ "gate_e_duplicates": {
+  "n_contexts": 48000,
+  "n_unique": 47627,
+  "duplicate_fraction": 0.007770833333333282,
+  "n_duplicate_groups": 78,
+  "duplicate_groups": [
+   {
+    "context_ids": [
+     34,
+     211,
+     293,
+     547,
+     881,
+     980,
+     1138,
+     1182,
+     1208,
+     1211,
+     1358,
+     1515,
+     1650,
+     1730,
+     2031,
+     2063,
+     2108,
+     2540,
+     2623,
+     2730,
+     2757,
+     2938,
+     2973,
+     3054,
+     3056,
+     3125,
+     3143,
+     3310,
+     3348,
+     3394,
+     3543,
+     3677,
+     3783,
+     3825,
+     4181,
+     4327,
+     4429,
+     4936
+    ],
+    "representative": 34
+   },
+   {
+    "context_ids": [
+     36,
+     235,
+     321,
+     874,
+     890,
+     950,
+     1030,
+     1115,
+     1199,
+     1596,
+     1773,
+     2036,
+     2155,
+     2384,
+     2644,
+     2693,
+     3249,
+     3566,
+     3661,
+     4148,
+     4374,
+     4683,
+     4780,
+     4835,
+     4945
+    ],
+    "representative": 36
+   },
+   {
+    "context_ids": [
+     43,
+     96,
+     187,
+     194,
+     609,
+     805,
+     1119,
+     1142,
+     1223,
+     1327,
+     1373,
+     1571,
+     1639,
+     1753,
+     2026,
+     2115,
+     2326,
+     2366,
+     2603,
+     2607,
+     2846,
+     3028,
+     3353,
+     3436,
+     3446,
+     3487,
+     3555,
+     3590,
+     3663,
+     3699,
+     3764,
+     3805,
+     3822,
+     3830,
+     4045,
+     4102,
+     4134,
+     4353,
+     4581,
+     4584,
+     4806,
+     4870,
+     4898
+    ],
+    "representative": 43
+   },
+   {
+    "context_ids": [
+     57,
+     133,
+     1131,
+     1673,
+     2287,
+     3012,
+     3607,
+     3667,
+     3685,
+     4150
+    ],
+    "representative": 57
+   },
+   {
+    "context_ids": [
+     61,
+     72,
+     77,
+     93,
+     172,
+     338,
+     490,
+     666,
+     858,
+     1002,
+     1015,
+     1046,
+     1084,
+     1145,
+     1171,
+     1216,
+     1332,
+     1363,
+     1407,
+     1481,
+     1523,
+     1535,
+     1630,
+     1664,
+     1704,
+     1852,
+     1876,
+     2150,
+     2186,
+     2229,
+     2256,
+     2355,
+     2536,
+     2544,
+     2612,
+     2799,
+     2826,
+     2877,
+     2890,
+     2921,
+     2970,
+     2976,
+     3128,
+     3360,
+     3574,
+     3598,
+     3673,
+     3838,
+     4081,
+     4115,
+     4165,
+     4364,
+     4554,
+     4614,
+     4668,
+     4763,
+     4846,
+     4848,
+     4970,
+     4985
+    ],
+    "representative": 61
+   },
+   {
+    "context_ids": [
+     80,
+     1900,
+     2515,
+     3801
+    ],
+    "representative": 80
+   },
+   {
+    "context_ids": [
+     120,
+     3200,
+     4262
+    ],
+    "representative": 120
+   },
+   {
+    "context_ids": [
+     140,
+     3860
+    ],
+    "representative": 140
+   },
+   {
+    "context_ids": [
+     170,
+     658,
+     3745
+    ],
+    "representative": 170
+   },
+   {
+    "context_ids": [
+     184,
+     236,
+     381,
+     423,
+     520,
+     601,
+     927,
+     942,
+     997,
+     1236,
+     1247,
+     1302,
+     1347,
+     1678,
+     2025,
+     2117,
+     2137,
+     2331,
+     2376,
+     2404,
+     2518,
+     2531,
+     2747,
+     3478,
+     3496,
+     3714,
+     3813,
+     3870,
+     3924,
+     3958,
+     4012,
+     4042,
+     4074,
+     4519,
+     4543,
+     4552,
+     4652,
+     4689,
+     4723,
+     4877
+    ],
+    "representative": 184
+   },
+   {
+    "context_ids": [
+     193,
+     1118,
+     1605,
+     1780,
+     2218,
+     2874,
+     4804
+    ],
+    "representative": 193
+   },
+   {
+    "context_ids": [
+     240,
+     1221,
+     1334,
+     1674,
+     3114,
+     3622,
+     4078
+    ],
+    "representative": 240
+   },
+   {
+    "context_ids": [
+     262,
+     4844
+    ],
+    "representative": 262
+   },
+   {
+    "context_ids": [
+     348,
+     411,
+     3800
+    ],
+    "representative": 348
+   },
+   {
+    "context_ids": [
+     379,
+     561,
+     667,
+     823,
+     952,
+     1405,
+     1519,
+     1862,
+     2665,
+     2710,
+     2720,
+     3009,
+     3101,
+     3174,
+     3967,
+     4606,
+     4984
+    ],
+    "representative": 379
+   },
+   {
+    "context_ids": [
+     422,
+     1743,
+     2181,
+     2311,
+     4525
+    ],
+    "representative": 422
+   },
+   {
+    "context_ids": [
+     471,
+     2998
+    ],
+    "representative": 471
+   },
+   {
+    "context_ids": [
+     484,
+     4213
+    ],
+    "representative": 484
+   },
+   {
+    "context_ids": [
+     525,
+     675,
+     2061,
+     2579,
+     4727
+    ],
+    "representative": 525
+   },
+   {
+    "context_ids": [
+     528,
+     749,
+     1308,
+     4157,
+     4575
+    ],
+    "representative": 528
+   },
+   {
+    "context_ids": [
+     588,
+     3735
+    ],
+    "representative": 588
+   },
+   {
+    "context_ids": [
+     604,
+     1023,
+     1256,
+     1372,
+     1601,
+     1895,
+     2784,
+     4976
+    ],
+    "representative": 604
+   },
+   {
+    "context_ids": [
+     614,
+     2793
+    ],
+    "representative": 614
+   },
+   {
+    "context_ids": [
+     620,
+     878
+    ],
+    "representative": 620
+   },
+   {
+    "context_ids": [
+     632,
+     1111,
+     3398
+    ],
+    "representative": 632
+   },
+   {
+    "context_ids": [
+     633,
+     1697,
+     2409,
+     2817,
+     2861,
+     2922,
+     2933,
+     3333,
+     3621,
+     3695,
+     3865,
+     3914,
+     3961,
+     4744
+    ],
+    "representative": 633
+   },
+   {
+    "context_ids": [
+     640,
+     4131
+    ],
+    "representative": 640
+   },
+   {
+    "context_ids": [
+     649,
+     2735
+    ],
+    "representative": 649
+   },
+   {
+    "context_ids": [
+     676,
+     2008,
+     2038,
+     2062,
+     3445,
+     4305,
+     4540
+    ],
+    "representative": 676
+   },
+   {
+    "context_ids": [
+     687,
+     3684
+    ],
+    "representative": 687
+   },
+   {
+    "context_ids": [
+     722,
+     4464,
+     4764,
+     4860
+    ],
+    "representative": 722
+   },
+   {
+    "context_ids": [
+     734,
+     4085,
+     4881
+    ],
+    "representative": 734
+   },
+   {
+    "context_ids": [
+     745,
+     2627,
+     3116
+    ],
+    "representative": 745
+   },
+   {
+    "context_ids": [
+     755,
+     3247
+    ],
+    "representative": 755
+   },
+   {
+    "context_ids": [
+     797,
+     3938,
+     4816,
+     4821
+    ],
+    "representative": 797
+   },
+   {
+    "context_ids": [
+     870,
+     1210,
+     2652,
+     3507,
+     4621
+    ],
+    "representative": 870
+   },
+   {
+    "context_ids": [
+     885,
+     1280,
+     2399,
+     3816
+    ],
+    "representative": 885
+   },
+   {
+    "context_ids": [
+     907,
+     2419
+    ],
+    "representative": 907
+   },
+   {
+    "context_ids": [
+     949,
+     1351,
+     1759,
+     2541,
+     4863
+    ],
+    "representative": 949
+   },
+   {
+    "context_ids": [
+     1041,
+     1812
+    ],
+    "representative": 1041
+   },
+   {
+    "context_ids": [
+     1053,
+     3541
+    ],
+    "representative": 1053
+   },
+   {
+    "context_ids": [
+     1071,
+     1620,
+     1859,
+     2371,
+     3204,
+     4786
+    ],
+    "representative": 1071
+   },
+   {
+    "context_ids": [
+     1075,
+     3442
+    ],
+    "representative": 1075
+   },
+   {
+    "context_ids": [
+     1180,
+     4390
+    ],
+    "representative": 1180
+   },
+   {
+    "context_ids": [
+     1181,
+     2851,
+     3096,
+     3488,
+     4389
+    ],
+    "representative": 1181
+   },
+   {
+    "context_ids": [
+     1228,
+     2988
+    ],
+    "representative": 1228
+   },
+   {
+    "context_ids": [
+     1229,
+     2151
+    ],
+    "representative": 1229
+   },
+   {
+    "context_ids": [
+     1244,
+     1353
+    ],
+    "representative": 1244
+   },
+   {
+    "context_ids": [
+     1317,
+     2400,
+     3758
+    ],
+    "representative": 1317
+   },
+   {
+    "context_ids": [
+     1368,
+     1827
+    ],
+    "representative": 1368
+   },
+   {
+    "context_ids": [
+     1376,
+     3728
+    ],
+    "representative": 1376
+   },
+   {
+    "context_ids": [
+     1418,
+     2288,
+     2505,
+     4048
+    ],
+    "representative": 1418
+   },
+   {
+    "context_ids": [
+     1439,
+     4734
+    ],
+    "representative": 1439
+   },
+   {
+    "context_ids": [
+     1475,
+     3514
+    ],
+    "representative": 1475
+   },
+   {
+    "context_ids": [
+     1514,
+     4741
+    ],
+    "representative": 1514
+   },
+   {
+    "context_ids": [
+     1625,
+     1824
+    ],
+    "representative": 1625
+   },
+   {
+    "context_ids": [
+     1764,
+     1816
+    ],
+    "representative": 1764
+   },
+   {
+    "context_ids": [
+     1795,
+     2765
+    ],
+    "representative": 1795
+   },
+   {
+    "context_ids": [
+     1869,
+     2235
+    ],
+    "representative": 1869
+   },
+   {
+    "context_ids": [
+     1896,
+     4615
+    ],
+    "representative": 1896
+   },
+   {
+    "context_ids": [
+     1930,
+     3045,
+     3817
+    ],
+    "representative": 1930
+   },
+   {
+    "context_ids": [
+     1962,
+     4183
+    ],
+    "representative": 1962
+   },
+   {
+    "context_ids": [
+     1963,
+     3391,
+     4225,
+     4467
+    ],
+    "representative": 1963
+   },
+   {
+    "context_ids": [
+     2146,
+     3577,
+     4304
+    ],
+    "representative": 2146
+   },
+   {
+    "context_ids": [
+     2201,
+     2594
+    ],
+    "representative": 2201
+   },
+   {
+    "context_ids": [
+     2205,
+     2587
+    ],
+    "representative": 2205
+   },
+   {
+    "context_ids": [
+     2252,
+     3331
+    ],
+    "representative": 2252
+   },
+   {
+    "context_ids": [
+     2320,
+     4900
+    ],
+    "representative": 2320
+   },
+   {
+    "context_ids": [
+     2574,
+     3279
+    ],
+    "representative": 2574
+   },
+   {
+    "context_ids": [
+     2801,
+     2961
+    ],
+    "representative": 2801
+   },
+   {
+    "context_ids": [
+     2836,
+     4423
+    ],
+    "representative": 2836
+   },
+   {
+    "context_ids": [
+     2895,
+     4254
+    ],
+    "representative": 2895
+   },
+   {
+    "context_ids": [
+     3120,
+     4204
+    ],
+    "representative": 3120
+   },
+   {
+    "context_ids": [
+     3220,
+     3977
+    ],
+    "representative": 3220
+   },
+   {
+    "context_ids": [
+     3350,
+     4100
+    ],
+    "representative": 3350
+   },
+   {
+    "context_ids": [
+     3381,
+     3465
+    ],
+    "representative": 3381
+   },
+   {
+    "context_ids": [
+     3546,
+     4323
+    ],
+    "representative": 3546
+   },
+   {
+    "context_ids": [
+     4776,
+     4893
+    ],
+    "representative": 4776
+   }
+  ],
+  "dedup_sensitivity_refit_required": false
+ },
+ "probe_g_span_unit": {
+  "n_checked": 64,
+  "n_exact": 64,
+  "min_exact": 63,
+  "n_truncated_checked": 33,
+  "n_truncated_exact": 33,
+  "n_untruncated_checked": 31,
+  "n_untruncated_exact": 31,
+  "mismatches_first10": [],
+  "pass": true
+ },
+ "mask_crosscheck_phase1": {
+  "n_common_field": 4998,
+  "n_common_valid_idx": 4998,
+  "n_in_common_valid_true": 4998,
+  "counts_equal": true,
+  "set_equal": true,
+  "n_only_in_records": 0,
+  "n_only_in_common_valid_idx": 0,
+  "n_filled_true": 4998,
+  "parent_rev": "8039d15f30deb845765cbb24d9cdb8708a5e7b0f"
+ },
+ "pass": false,
+ "pre_gpu_check_only": true
+}

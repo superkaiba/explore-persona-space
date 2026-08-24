@@ -1,0 +1,163 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "5e766afacd624803",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:50Z",
+  "figsize": [
+    5.5,
+    4.0
+  ],
+  "points": [
+    {
+      "Design band (panel registry)": 0.0,
+      "Frozen AI-likeness axis score": 67.6009,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Design band (panel registry)": 0.0,
+      "Frozen AI-likeness axis score": 69.0613,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Design band (panel registry)": 0.0,
+      "Frozen AI-likeness axis score": 71.4691,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Design band (panel registry)": 0.0,
+      "Frozen AI-likeness axis score": 72.3335,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Design band (panel registry)": 1.0,
+      "Frozen AI-likeness axis score": 50.3794,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Design band (panel registry)": 1.0,
+      "Frozen AI-likeness axis score": 60.6901,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Design band (panel registry)": 1.0,
+      "Frozen AI-likeness axis score": 62.111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Design band (panel registry)": 1.0,
+      "Frozen AI-likeness axis score": 62.1892,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Design band (panel registry)": 2.0,
+      "Frozen AI-likeness axis score": 35.6422,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Design band (panel registry)": 2.0,
+      "Frozen AI-likeness axis score": 38.5695,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Design band (panel registry)": 2.0,
+      "Frozen AI-likeness axis score": 47.7488,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Design band (panel registry)": 2.0,
+      "Frozen AI-likeness axis score": 48.9525,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Design band (panel registry)": 3.0,
+      "Frozen AI-likeness axis score": 29.566,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Design band (panel registry)": 3.0,
+      "Frozen AI-likeness axis score": 54.5823,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Design band (panel registry)": 3.0,
+      "Frozen AI-likeness axis score": 55.2611,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Design band (panel registry)": 3.0,
+      "Frozen AI-likeness axis score": 58.6511,
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Design band (panel registry)",
+        "ylabel": "Frozen AI-likeness axis score",
+        "annotations": [
+          "Cobalt",
+          "Iris",
+          "HELIOS",
+          "Vera",
+          "Elena",
+          "Wren",
+          "Marcus",
+          "Priya",
+          "Gus",
+          "Marisol",
+          "Dana",
+          "Tomas",
+          "Zara",
+          "Barnaby",
+          "Vex",
+          "Mort"
+        ],
+        "xticklabels": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "yticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
