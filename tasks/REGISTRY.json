@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2554,
+  "highest_id": 2555,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11981,6 +11981,13 @@
       "path": "tasks/proposed/2554",
       "status": "proposed",
       "title": "workflow-fix: verify_plan binding-addendum coverage check (plan vs BINDING body scope decisions)"
+    },
+    "2555": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2555",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan per-corpus eligibility-floor arithmetic check (battery members vs the plan's own floor)"
     },
     "256": {
       "has_clean_result": false,
