@@ -1,0 +1,51 @@
+{
+  "tally": {
+    "per_family": {
+      "question": {
+        "valid": 42580,
+        "api_refusal": 27
+      }
+    },
+    "per_cell": {
+      "storyq_astra": {
+        "valid": 9137,
+        "api_refusal": 4
+      },
+      "storyq_dana": {
+        "valid": 5791,
+        "api_refusal": 1
+      },
+      "storyq_helios": {
+        "valid": 9007,
+        "api_refusal": 9
+      },
+      "storyq_vex": {
+        "valid": 8092,
+        "api_refusal": 3
+      },
+      "storyq_wren": {
+        "valid": 10553,
+        "api_refusal": 10
+      }
+    },
+    "stop_reasons": {
+      "end_turn": 42580,
+      "refusal": 27
+    }
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-23T18:16:58-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_judge.py",
+      "--wave",
+      "admission",
+      "--stage-from-hf"
+    ],
+    "git_commit": "ed49b2d5",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}
