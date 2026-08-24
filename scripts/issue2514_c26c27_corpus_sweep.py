@@ -13,27 +13,41 @@ Two subcommands:
     header row first). Checkpoint-per-unit: each row is flushed the moment
     its plan completes, with one stdout line per completed unit. Re-runnable:
     when ``--out`` exists and its header matches the current regime
-    (``verify_plan_path`` / ``mirror`` / ``lane_head`` /
+    (``verify_plan_path`` / ``module_sha`` — sha256 of the swept module's
+    file bytes, round-3 reconciler item 2 — / ``mirror`` / ``lane_head`` /
     ``under_hbm_intents``), prior rows are KEPT (rewritten compacted,
     dropping any truncated tail a killed run left) and completed plans are
     SKIPPED; a header-regime mismatch restarts from scratch. Point
     ``--verify-plan-path`` at a ``git show <ref>:scripts/verify_plan.py``
     materialization for the BEFORE leg and at the live
-    ``scripts/verify_plan.py`` for the AFTER leg.
+    ``scripts/verify_plan.py`` for the AFTER leg, and pass
+    ``--source-ref '<40-hex sha>:scripts/verify_plan.py'`` so the blob's git
+    provenance is recorded in the header (annotation only — ``module_sha``
+    is the mechanical content key; round-3 reconciler item 3).
 
 ``classify``
-    Diffs a before/after JSONL pair and buckets EVERY c26/c27 verdict flip
-    into the #2514 plan taxonomy: ``expected-inversion`` (DIRECTIONAL — the
-    realized before AND after verdicts both EQUAL the verdict predicted by
-    replaying the c26 offender rule over the row's recorded basis-row
-    tokens under the old/new mirror respectively; round-2 reconciler
-    item 2 — the round-1 ``fams_old != fams_new`` read was true by
-    construction under a wholesale family remap), ``c27-disarm`` (a c27
+    FIRST refuses (SystemExit) any leg whose header regime (``mirror`` /
+    ``lane_head`` / ``under_hbm_intents``) differs from the APPROVED #2514
+    pins (``_APPROVED_LEG_REGIMES``; round-3 reconciler item 1a): the
+    directional replay below is self-consistent under ANY mirror, approved
+    or not, so without this anchor a wrong-but-self-consistent remap (a
+    B200 substitution, an empty mirror from total capture loss) would
+    self-certify. Then diffs the before/after JSONL pair and buckets EVERY
+    c26/c27 verdict flip into the #2514 plan taxonomy:
+    ``expected-inversion`` (DIRECTIONAL — the realized before AND after
+    verdicts both EQUAL the verdict predicted by replaying the c26 offender
+    rule over the row's recorded basis-row tokens under the old/new mirror
+    respectively (round-2 reconciler item 2 — the round-1
+    ``fams_old != fams_new`` read was true by construction under a
+    wholesale family remap), AND the realized transition is itself an
+    inversion — ``(WARN,PASS)`` or ``(PASS,WARN)`` per the plan's
+    registered taxonomy; round-3 reconciler item 1b), ``c27-disarm`` (a c27
     FAIL/WARN — or a downstream no->=7B-signal SKIP — that becomes the D3
     empty-under-floor PASS), ``new-key-arming`` (a c26 SKIP that now
     resolves because the plan books a key new to the mirror, e.g. inf-70b /
     ft-70b), and ``unexplained`` (anything else, incl. a flip whose
-    direction the mirror does NOT predict). A non-empty ``unexplained`` set
+    direction the mirror does NOT predict and any non-inversion transition,
+    ``WARN->SKIP`` included). A non-empty ``unexplained`` set
     exits 1 — the plan's KILL criterion; never baseline it away.
 
 Every file is verified with ``kind="experiment"`` uniformly (the #1395
@@ -57,6 +71,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import sys
@@ -85,7 +100,16 @@ def _load_verify_plan(path: Path, repo_root: Path):
 
 #: Header keys that define a sweep's regime — a resume is legal only when
 #: ALL of them match the existing file's header (round-2 reconciler item 3).
-_HEADER_REGIME_KEYS = ("verify_plan_path", "mirror", "lane_head", "under_hbm_intents")
+#: ``module_sha`` (round-3 reconciler item 2) keys the resume to the swept
+#: module's CONTENT: same-path edits to scripts/verify_plan.py are this
+#: tool's normal workflow, so a path match alone is not a regime match.
+_HEADER_REGIME_KEYS = (
+    "verify_plan_path",
+    "module_sha",
+    "mirror",
+    "lane_head",
+    "under_hbm_intents",
+)
 
 
 def _c26_row_meta(mod, text: str) -> list[dict]:
@@ -158,6 +182,8 @@ def cmd_sweep(args: argparse.Namespace) -> int:
         under = getattr(mod, "_C27_L4_INTENTS", frozenset())
     header = {
         "verify_plan_path": str(args.verify_plan_path),
+        "module_sha": hashlib.sha256(args.verify_plan_path.read_bytes()).hexdigest(),
+        "source_ref": args.source_ref,
         "n_plans": len(plans),
         "mirror": dict(mod._C26_INTENT_GPU),
         "lane_head": getattr(mod, "_C26_LANE_HEAD", None),
@@ -223,6 +249,107 @@ def _families(intents: list[str], mirror: dict[str, str]) -> frozenset[str]:
     return frozenset(mirror[i] for i in intents if i in mirror)
 
 
+#: The APPROVED #2514 leg regimes (round-3 reconciler item 1a) — classifier
+#: inputs INDEPENDENT of the swept modules. BEFORE is pinned from the
+#: pre-#2514 blob ``3de240d59f:scripts/verify_plan.py`` (git blob
+#: 4e576527df97, sha256 20504ba9093c…: the GCP-era static
+#: ``_C26_INTENT_GPU`` literal, ``_C27_L4_INTENTS`` == {debug, eval}, and
+#: no ``_C26_LANE_HEAD`` symbol — hence ``lane_head: None``). AFTER is
+#: pinned from plan v4's approved "Resulting families under the runpod
+#: head" table plus decision D2 (``eval-h100`` -> H100) and acceptance
+#: criterion 4's empty under-HBM set. ``cmd_classify`` REFUSES a leg whose
+#: header regime differs: ``_predicted_c26`` replays the offender rule
+#: under whatever mirror the header carries, so it is self-consistent under
+#: ANY mirror — without this pin a wrong-but-self-consistent remap (a B200
+#: substitution, an empty mirror from total capture loss) would
+#: self-certify as ``expected-inversion`` (the round-2 reconciler FAIL).
+_APPROVED_LEG_REGIMES: dict[str, dict] = {
+    "before": {
+        "mirror": {
+            "lora-7b": "A100",
+            "lora": "A100",
+            "capture-7b": "A100",
+            "ft-7b": "A100",
+            "eval": "L4",
+            "debug": "L4",
+            "lora-7b-h100": "H100",
+            "eval-h100": "H100",
+            "cpu-bigmem": "CPU",
+            "cpu-small": "CPU",
+            "cpu-mid": "CPU",
+            "sweep-8g-a100": "A100",
+            "sweep-8g-h100": "H100",
+        },
+        "lane_head": None,
+        "under_hbm_intents": ["debug", "eval"],
+    },
+    "after": {
+        "mirror": {
+            "lora-7b": "H100",
+            "lora": "H100",
+            "capture-7b": "H100",
+            "ft-7b": "H100",
+            "eval": "H100",
+            "debug": "H100",
+            "lora-7b-h100": "H100",
+            "eval-h100": "H100",
+            "cpu-bigmem": "CPU",
+            "cpu-small": "CPU",
+            "cpu-mid": "CPU",
+            "sweep-8g-a100": "A100",
+            "sweep-8g-h100": "H100",
+            "inf-70b": "H100",
+            "ft-70b": "H200",
+        },
+        "lane_head": "runpod",
+        "under_hbm_intents": [],
+    },
+}
+
+
+def _assert_approved_regime(leg: str, header: dict) -> None:
+    """Refuse (SystemExit, non-zero) unless ``header``'s mirror / lane_head /
+    under_hbm_intents equal the approved #2514 pin for ``leg`` — the round-3
+    item-1a anchor that makes the kill criterion falsifiable: a leg swept
+    under an unapproved regime fails loud BEFORE any bucketing."""
+    approved = _APPROVED_LEG_REGIMES[leg]
+    mismatched = [k for k, v in approved.items() if header.get(k) != v]
+    if mismatched:
+        detail = "; ".join(
+            f"{k}: approved={approved[k]!r} got={header.get(k)!r}" for k in mismatched
+        )
+        raise SystemExit(
+            f"[classify] REFUSED: {leg} leg header regime differs from the approved "
+            f"#2514 pin on {mismatched} — an unapproved remap or capture loss cannot "
+            f"self-certify through the directional replay (round-3 reconciler "
+            f"item 1a). {detail}"
+        )
+
+
+#: The ONLY realized c26 transitions the plan's REGISTERED expected-inversion
+#: class names ("an H100-basis plan that stops WARNing, or an A100-basis plan
+#: that starts WARNing") — round-3 reconciler item 1b: any other realized
+#: transition (``WARN->SKIP`` included) is not semantically an inversion and
+#: lands in ``unexplained`` even when the directional replay matches both
+#: sides (an empty routed set predicts SKIP self-consistently).
+_C26_INVERSION_TRANSITIONS = frozenset({("WARN", "PASS"), ("PASS", "WARN")})
+
+
+def _bucket_c26_flip(before: str, after: str, predicted_before: str, predicted_after: str) -> str:
+    """Bucket one c26 verdict flip: ``expected-inversion`` requires BOTH the
+    directional-replay match (realized == predicted under each leg's own
+    mirror; round-2 item 2) AND a realized transition in
+    ``_C26_INVERSION_TRANSITIONS`` (round-3 item 1b); anything else is
+    ``unexplained`` — the #2514 KILL criterion."""
+    if (
+        (before, after) in _C26_INVERSION_TRANSITIONS
+        and before == predicted_before
+        and after == predicted_after
+    ):
+        return "expected-inversion"
+    return "unexplained"
+
+
 def _predicted_c26(row_meta: list[dict], intents: list[str], mirror: dict[str, str]) -> str:
     """The c26 verdict a mirror ALONE predicts for a plan's recorded
     basis-row tokens — an independent replay of the check's routed-side
@@ -236,7 +363,11 @@ def _predicted_c26(row_meta: list[dict], intents: list[str], mirror: dict[str, s
     PASS, runpod-pin SKIP) are deliberately not replayed: they are constant
     across the before/after runs of one plan text, so they cannot produce a
     flip — a flip that nonetheless traces to one is exactly the anomaly the
-    unexplained bucket must surface."""
+    unexplained bucket must surface. ANCHOR (round-3 item 1a): this replay
+    runs under whatever mirror the header carries, so on its own it cannot
+    reject a wrong-but-self-consistent remap — ``cmd_classify`` refuses
+    unapproved leg regimes (``_assert_approved_regime``) BEFORE any
+    prediction runs."""
     routed = {mirror[i] for i in intents if i in mirror}
     if not routed:
         return "SKIP"
@@ -252,9 +383,13 @@ def _predicted_c26(row_meta: list[dict], intents: list[str], mirror: dict[str, s
 
 
 def cmd_classify(args: argparse.Namespace) -> int:
-    """Bucket every c26/c27 verdict flip; exit 1 on any ``unexplained``."""
+    """Bucket every c26/c27 verdict flip; refuses (SystemExit) a leg whose
+    header regime differs from the approved #2514 pins; exit 1 on any
+    ``unexplained``."""
     before_hdr, before = _load_rows(args.before)
     after_hdr, after = _load_rows(args.after)
+    _assert_approved_regime("before", before_hdr)
+    _assert_approved_regime("after", after_hdr)
     if set(before) != set(after):
         print(
             f"corpus mismatch: {len(set(before) ^ set(after))} plans differ "
@@ -304,17 +439,18 @@ def cmd_classify(args: argparse.Namespace) -> int:
             # DIRECTIONAL predicate (round-2 reconciler item 2): the round-1
             # `fams_old != fams_new` read was true by construction for every
             # mapped-intent plan under a wholesale family remap — it
-            # certified only "families changed". Expected-inversion now
-            # requires the realized verdicts to MATCH the per-plan verdicts
-            # the old/new mirrors predict from the recorded basis-row tokens.
+            # certified only "families changed". Expected-inversion requires
+            # the realized verdicts to MATCH the per-plan verdicts the
+            # old/new mirrors predict from the recorded basis-row tokens,
+            # AND (round-3 item 1b) the realized transition to BE an
+            # inversion — (WARN,PASS)/(PASS,WARN); the header regimes were
+            # already asserted against the approved pins (round-3 item 1a).
             predicted_before = _predicted_c26(b["c26_rows"], b["intents"], mirror_old)
             predicted_after = _predicted_c26(a["c26_rows"], a["intents"], mirror_new)
             entry["predicted_before"] = predicted_before
             entry["predicted_after"] = predicted_after
-            if b["c26"] == predicted_before and a["c26"] == predicted_after:
-                buckets["expected-inversion"].append(entry)
-            else:
-                buckets["unexplained"].append(entry)
+            bucket = _bucket_c26_flip(b["c26"], a["c26"], predicted_before, predicted_after)
+            buckets[bucket].append(entry)
     summary = {
         "n_plans": len(before),
         "n_flips": n_flips,
@@ -347,6 +483,12 @@ def main() -> int:
         type=Path,
         default=REPO_ROOT_DEFAULT / "scripts" / "verify_plan.py",
         help="verify_plan.py to import (default: this checkout's)",
+    )
+    sweep.add_argument(
+        "--source-ref",
+        default=None,
+        help="git provenance of --verify-plan-path (e.g. '<40-hex sha>:scripts/verify_plan.py'); "
+        "recorded verbatim in the header as annotation — module_sha is the mechanical content key",
     )
     sweep.add_argument("--repo-root", type=Path, default=REPO_ROOT_DEFAULT)
     sweep.add_argument("--out", type=Path, required=True)
