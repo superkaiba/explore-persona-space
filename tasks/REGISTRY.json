@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2531,
+  "highest_id": 2532,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11817,6 +11817,13 @@
       "path": "tasks/proposed/2531",
       "status": "proposed",
       "title": "workflow-fix: per-arm-resolution parser accept em-dash arm/res separator"
+    },
+    "2532": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2532",
+      "status": "proposed",
+      "title": "step5a_coupling_check._git_show reports clean over an undecidable state; non-repo test presumes TMPDIR outside a git repo"
     },
     "256": {
       "has_clean_result": false,
