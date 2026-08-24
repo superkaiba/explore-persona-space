@@ -1,0 +1,156 @@
+{
+  "reference_verify": {
+    "anchors": {
+      "evil@2500": {
+        "recomputed_gap_maxread": 0.3325,
+        "pinned": 0.063,
+        "reproduced_at_step0p": false,
+        "verdict": "REPORT-ONLY (plan reference not reproduced under any tested reduction; see raised concern)"
+      },
+      "evil@8000": {
+        "recomputed_gap_maxread": 0.0218,
+        "pinned": 0.0218,
+        "reproduced_at_step0p": true,
+        "verdict": "ASSERTED-MATCH"
+      },
+      "hallucination@2500": {
+        "recomputed_gap_maxread": 0.2181,
+        "pinned": 0.03,
+        "reproduced_at_step0p": false,
+        "verdict": "REPORT-ONLY (plan reference not reproduced under any tested reduction; see raised concern)"
+      },
+      "hallucination@16000": {
+        "recomputed_gap_maxread": 0.0078,
+        "pinned": 0.0078,
+        "reproduced_at_step0p": true,
+        "verdict": "ASSERTED-MATCH"
+      },
+      "sycophancy@2500": {
+        "recomputed_gap_maxread": 0.1081,
+        "pinned": 0.1081,
+        "reproduced_at_step0p": true,
+        "verdict": "ASSERTED-MATCH"
+      },
+      "sycophancy@16000": {
+        "recomputed_gap_maxread": -0.0068,
+        "pinned": -0.0068,
+        "reproduced_at_step0p": true,
+        "verdict": "ASSERTED-MATCH"
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "036cb059c889f8d72e329ca4afba6d5e49c5e9ca",
+    "git_dirty": false,
+    "phase": "h3-gap",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2388_fits.py"
+  },
+  "recompute_gaps": {
+    "sycophancy": {
+      "budget": 2500,
+      "cell_filter": {
+        "config": "config_a",
+        "variant": "context_end",
+        "eval_rung": "train",
+        "f_u": null,
+        "u_rung_label": "full"
+      },
+      "direct_arm": "arm4_ridge_ctx",
+      "direct_mean_rho": 0.673894591084398,
+      "mapped_means": {
+        "arm6_map_proj_e1": 0.379486522081396,
+        "arm7_map_ridge_pred": 0.6713362259228655
+      },
+      "gaps": {
+        "arm6_map_proj_e1": -0.294408069003002,
+        "arm7_map_ridge_pred": -0.0025583651615325165
+      },
+      "headline_mapped_arm": "arm7_map_ridge_pred",
+      "headline_gap": -0.0025583651615325165,
+      "headline_gap_ci95": [
+        -0.0025583651615325165,
+        -0.0025583651615325165
+      ],
+      "ci_wholly_positive": false,
+      "n_boot": 2000,
+      "aggregation": "mean-over-(seed,draw)-cells-at-registered-cell (pinned; never max)",
+      "n_paired_cells": 1,
+      "n_rows_per_arm": {
+        "arm6_map_proj_e1": 1,
+        "arm7_map_ridge_pred": 1,
+        "arm4_ridge_ctx": 1
+      }
+    },
+    "evil": {
+      "budget": 2500,
+      "cell_filter": {
+        "config": "config_a",
+        "variant": "context_end",
+        "eval_rung": "train",
+        "f_u": null,
+        "u_rung_label": "full"
+      },
+      "direct_arm": "arm4_ridge_ctx",
+      "direct_mean_rho": 0.6931627811255385,
+      "mapped_means": {
+        "arm6_map_proj_e1": 0.5064538925473012,
+        "arm7_map_ridge_pred": 0.6896321656488922
+      },
+      "gaps": {
+        "arm6_map_proj_e1": -0.1867088885782373,
+        "arm7_map_ridge_pred": -0.0035306154766463482
+      },
+      "headline_mapped_arm": "arm7_map_ridge_pred",
+      "headline_gap": -0.0035306154766463482,
+      "headline_gap_ci95": [
+        -0.0035306154766463482,
+        -0.0035306154766463482
+      ],
+      "ci_wholly_positive": false,
+      "n_boot": 2000,
+      "aggregation": "mean-over-(seed,draw)-cells-at-registered-cell (pinned; never max)",
+      "n_paired_cells": 1,
+      "n_rows_per_arm": {
+        "arm6_map_proj_e1": 1,
+        "arm7_map_ridge_pred": 1,
+        "arm4_ridge_ctx": 1
+      }
+    },
+    "hallucination": {
+      "budget": 2500,
+      "cell_filter": {
+        "config": "config_a",
+        "variant": "context_end",
+        "eval_rung": "train",
+        "f_u": null,
+        "u_rung_label": "full"
+      },
+      "direct_arm": "arm4_ridge_ctx",
+      "direct_mean_rho": 0.533087812050242,
+      "mapped_means": {
+        "arm6_map_proj_e1": 0.11345363580072408,
+        "arm7_map_ridge_pred": 0.5516865475545564
+      },
+      "gaps": {
+        "arm6_map_proj_e1": -0.41963417624951793,
+        "arm7_map_ridge_pred": 0.018598735504314345
+      },
+      "headline_mapped_arm": "arm7_map_ridge_pred",
+      "headline_gap": 0.018598735504314345,
+      "headline_gap_ci95": [
+        0.018598735504314345,
+        0.018598735504314345
+      ],
+      "ci_wholly_positive": true,
+      "n_boot": 2000,
+      "aggregation": "mean-over-(seed,draw)-cells-at-registered-cell (pinned; never max)",
+      "n_paired_cells": 1,
+      "n_rows_per_arm": {
+        "arm6_map_proj_e1": 1,
+        "arm7_map_ridge_pred": 1,
+        "arm4_ridge_ctx": 1
+      }
+    }
+  }
+}
