@@ -19,6 +19,7 @@
 - [Diag-gated null-family](feedback_diagnostic_gated_null_family_selection.md) — OK iff DV-independent gate (#778)
 - #2061 SAE set: [single-gen axis](feedback_single_generation_selection_axis.md) · [pool ceiling](feedback_pool_ceiling_absolute_gate.md) · [mixed regime](feedback_mixed_regime_selection_axis.md) · [stage-perm null](feedback_stage_permutation_null_modest_construct.md) · [runtime gate](feedback_runtime_estimator_convention_gate.md)
 - [Rank-test trained-neg](feedback_rank_test_trained_negative_contamination.md) — pin in/exclusion of trained negs (#621)
+- [Nested floor-sweep review](feedback_nested_floor_sweep_review.md) — compositional deltas; any-over-grid verdict mobility; defined-only conditioning (#2476)
 
 ## Threshold / calibration provenance
 - [Subset-mismatched calibration](feedback_subset_mismatched_threshold_calibration.md) — recompute same-subset (#558)
