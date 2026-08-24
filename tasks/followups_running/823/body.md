@@ -348,6 +348,13 @@ The extension round's decision read: ρ — the sixteen-persona map's mean extra
 | top-1 retrieval, cosine (chance 0.0011 at the smallest rung to 0.00011 at the largest) | 0.259–0.399 | 0.100–0.170 |
 | top-1 retrieval, euclidean (same chance) | 0.245–0.394 | 0.088–0.157 |
 
+| Mandatory map reads, extension fits (randomized-subset companion ladder; ranges over rungs × read-out layers) | one-persona arm | sixteen-persona arm |
+|---|---|---|
+| pooled out-of-fold R² | 0.442–0.553 | 0.315–0.397 |
+| identity+learned-bias baseline R² | −3.54 to −1.28 | −3.60 to −1.35 |
+| top-1 retrieval, cosine (chance 1/1,471 ≈ 0.00068; eval pool fixed at every rung) | 0.280–0.511 | 0.194–0.351 |
+| top-1 retrieval, euclidean (same chance) | 0.266–0.481 | 0.174–0.309 |
+
 The per-unit companion:
 
 ![Per-rung ECDFs of per-context paired error differences, both ladders, most mass above zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/85cf46170452071bb5e2d00cb6c684a13d1c23fc/figures/issue_823/ladder_ext_fig8_paired_diff_ecdf.png)
