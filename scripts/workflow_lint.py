@@ -17192,21 +17192,20 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 118,770 B @ #2294 Step 10d 2026-08-22 RE-MEASURED against the
-    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
-    # ((measured+2_800)//100)*100 = 121_500, headroom 2,730 — clears
-    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
-    # caps were 120_700, each measuring only its own side: #2294's
-    # IMPLEMENTER-MARKER-MISSING guard branch (+797 B, 117,984 B) and #2472's
-    # composer-role lean-twin ladder extension (+786 B, 117,973 B) landed on
-    # the same file concurrently.
-    # Prior: 120_700 (#2294, 117,984 B) / 120_700 (#2472, 117,973 B) /
+    # measured 121,494 B @ #2327 2026-08-23 (Step 5a coupling-check call site
+    # + FAMILY_OF/SPECS registrations for the helper/test pair, +1,427 B over
+    # the 120,067 B pre-edit base); corridor-max ((measured+2_800)//100)*100
+    # = 124_200, headroom 2,706 — clears guard_skill_doc_headroom.sh's
+    # 2,000 B warn floor. Re-measure + re-set at Step 10d against the MERGED
+    # tree (concurrent sessions edit this file).
+    # Prior: 121_500 (#2294 Step 10d merged-tree re-measure, 118,770 B; both
+    # pre-merge sides 120_700 — #2294 +797 B / #2472 +786 B concurrent) /
     # 119_900 (#2241 Step 10d merged-tree re-measure, 117,187 B) / 113_400
     # (#2260, 110,622 B) / 113_100 (#2241 r4, 110,316 B) / 111_900 (#2241
     # r3, 109,181 B) / 110_300 (#2241 r2, 107,590 B) / 109_600 (#2241 r1,
     # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
     # 100_300 (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 121_500,
+    "issue/steps/09-step-5.md": 124_200,
     # measured 149,017 B @ #2263 r8 2026-08-22 (parent-reuse refusal prose
     # states the FULL #2161 guard predicate — the defaulting conjunct
     # included: with a live issue worktree on a non-main branch a bare
@@ -17218,14 +17217,15 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 145_400 (#2350, 142,643 B) / 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 151_800,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
-    # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
-    # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =
-    # 297_000, headroom 2,791 — clears guard_skill_doc_headroom.sh's 2,000 B
+    # measured 295,145 B @ #2327 2026-08-23 (coupling-check FAMILY_OF entries
+    # + SPECS_10D tokens mirrored into the auto-merge inline copy, +194 B over
+    # the 294,951 B pre-edit base); corridor-max ((measured+2_800)//100)*100 =
+    # 297_900, headroom 2,755 — clears guard_skill_doc_headroom.sh's 2,000 B
     # warn floor. Re-measure + re-set at Step 10d against the MERGED tree
     # (concurrent sessions edit this file).
-    # Prior: 292_100 (#2246 post-rebase, 289,354 B) / 290_900 (#2428).
-    "issue/steps/18-step-10d.md": 297_000,
+    # Prior: 297_000 (#2260, 294,209 B) / 292_100 (#2246 post-rebase,
+    # 289,354 B) / 290_900 (#2428).
+    "issue/steps/18-step-10d.md": 297_900,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,

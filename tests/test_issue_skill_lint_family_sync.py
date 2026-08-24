@@ -284,7 +284,9 @@ def test_step5a_specs_include_lint_family():
         "tests/test_planner_phase_outputs_declaration.py "
         "tests/test_realized_rows_prose_pins.py "
         "tests/test_selection_symmetric_nulls_pointers.py "
-        'tests/test_v2_composer_plan_path_brief.py"'
+        "tests/test_v2_composer_plan_path_brief.py "
+        "scripts/step5a_coupling_check.py "
+        'tests/test_step5a_coupling_check.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
         "(workflow_lint.py, .claude/hooks, the :(glob) test_workflow_lint* "
@@ -326,7 +328,12 @@ def test_step5a_specs_include_lint_family():
         "#2251 half-sync: fresh planner.md vs branch-era pin test, 74-min "
         "gate red) and the workflow-family cross-reader "
         "tests/test_inline_payload_lint_gate_contract.py (its helper import "
-        "forces same-family admission per guard (19))"
+        "forces same-family admission per guard (19)) — plus the #2327 "
+        "coupling-check pair scripts/step5a_coupling_check.py + "
+        "tests/test_step5a_coupling_check.py (the Step 5a advisory "
+        "cap-coherence / sibling-split detector and its unit tests; the "
+        "test_issue_skill_* repros execute the worktree helper copy, so "
+        "helper-vs-pin sync must be family-atomic — the #2412 precedent)"
     )
 
 
@@ -1853,6 +1860,8 @@ _FORK_STUBS_2303 = (
     "tests/test_issue_skill_x.py",
     "scripts/step5a_sibling_probe.py",
     "tests/test_step5a_sibling_probe.py",
+    "scripts/step5a_coupling_check.py",
+    "tests/test_step5a_coupling_check.py",
     "tests/test_adversarial_planner_factchecker_grain_pin.py",
     "tests/test_adversarial_planner_lens_brief_headings.py",
     "tests/test_analyzer_language_intrusion_duty.py",
@@ -2922,3 +2931,510 @@ def test_agents_guard_vintage_discriminator_topology():
     assert _existence_verdict(on_disk=False, at_merge_base=True) == "fail"
     assert _existence_verdict(on_disk=True, at_merge_base=False) == "check"
     assert _existence_verdict(on_disk=True, at_merge_base=True) == "check"
+
+
+# ===========================================================================
+# #2327 — Step 5a coupling / cap-coherence diagnosis (advisory detector).
+# The repros run the SHIPPED family/sibling arm text under real git, then the
+# LIVE helper (scripts/step5a_coupling_check.py) against the resulting
+# half-sync state. mkdtemp, not tmp_path (concurrent-session prune race).
+# ===========================================================================
+
+_COUPLING_HELPER = _REPO / "scripts" / "step5a_coupling_check.py"
+
+
+def _coupling_lint_src(
+    *, skill_cap: int = 100, fail: int = 60, lessons: int = 10_000, agent_fail: int = 40_000
+) -> str:
+    """Fixture workflow_lint.py carrying the six cap constants (#2327)."""
+    return (
+        '"""fixture lint (#2327 coupling-check repros)."""\n'
+        f"SKILL_DOC_FAIL_BYTES = {fail}\n"
+        "SKILL_DOC_GENERATED_EXEMPT: frozenset[str] = frozenset()\n"
+        "SKILL_DOC_EXEMPT_DIR_SEGMENTS: frozenset[str] = frozenset()\n"
+        f'SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {{"issue/SKILL.md": {skill_cap}}}\n'
+        f"_LESSONS_MAX_BYTES = {lessons}\n"
+        f"AGENT_SPEC_FAIL_BYTES = {agent_fail}\n"
+    )
+
+
+def _coupling_fixture(
+    tmp: Path,
+    env: dict,
+    *,
+    fork_overrides: dict[str, str] | None = None,
+    advances: tuple[dict[str, str], ...] = (),
+    branch_commits: tuple[dict[str, str], ...] = (),
+) -> Path:
+    """Origin + issue-9999 wt pair for the #2327 repros: fork-era stubs (one
+    per SPECS token, caps file included so an all-clean atomic sync resolves)
+    with `fork_overrides` applied; one main advance commit per `advances`
+    dict; one deliberate branch commit per `branch_commits` dict (non-anchor
+    subject => pass 1 reads the touched family as dirty). wt has fetched."""
+    origin = tmp / "origin.git"
+    _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
+    seed = tmp / "seed"
+    _run_git(tmp, "clone", str(origin), str(seed), env=env)
+    files = {rel: f"fork-era stub: {rel}\n" for rel in _FORK_STUBS_2303}
+    files[".claude/config/agent_spec_size_caps.txt"] = "x.md 1_000\n"
+    files.update(fork_overrides or {})
+    for rel, content in files.items():
+        p = seed / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content)
+    _run_git(seed, "add", "-A", env=env)
+    _run_git(seed, "commit", "-m", "fork-era stubs", env=env)
+    _run_git(seed, "push", "origin", "main", env=env)
+
+    wt = tmp / "wt"
+    _run_git(tmp, "clone", str(origin), str(wt), env=env)
+    _run_git(wt, "checkout", "-b", "issue-9999", env=env)
+    _run_git(wt, "config", "user.email", "eps-test@example.com", env=env)
+    _run_git(wt, "config", "user.name", "EPS Test", env=env)
+
+    for commit_files in advances:
+        for rel, content in commit_files.items():
+            p = seed / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content)
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side advance", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+    for commit_files in branch_commits:
+        for rel, content in commit_files.items():
+            p = wt / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content)
+        _run_git(wt, "add", "-A", env=env)
+        _run_git(wt, "commit", "-m", "issue-9999: deliberate branch edit", env=env)
+    _run_git(wt, "fetch", "origin", env=env)
+    return wt
+
+
+def _run_family_arm_2327(tmp: Path, wt: Path, env: dict) -> subprocess.CompletedProcess:
+    """Run the SHIPPED Step 5a family arm against the scratch wt."""
+    script = tmp / "familyarm.sh"
+    script.write_text(_family_arm_block(_step5a_span(_text())).replace("<N>", "9999"))
+    env_arm = dict(env)
+    env_arm["WT"] = str(wt)
+    return subprocess.run(
+        ["bash", str(script)], cwd=tmp, env=env_arm, capture_output=True, text=True, timeout=120
+    )
+
+
+def _run_coupling_check(
+    wt: Path, env: dict, own_issue: str = "9999"
+) -> subprocess.CompletedProcess:
+    """Invoke the LIVE coupling-check helper CLI against the scratch wt."""
+    mb = _run_git(wt, "merge-base", "HEAD", "origin/main", env=env).strip()
+    return subprocess.run(
+        [
+            sys.executable,
+            str(_COUPLING_HELPER),
+            "--worktree",
+            str(wt),
+            "--merge-base",
+            mb,
+            "--own-issue",
+            own_issue,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        env=env,
+    )
+
+
+def _coupling_call_site_block(span: str) -> str:
+    """Extract the #2327 call-site block: leading comment through its own
+    closing `fi` (the first `\\nfi` after the unavailable-echo)."""
+    start = span.index("# Coupling / cap-coherence diagnosis (#2327")
+    end = span.index("\nfi", span.index("coupling check unavailable", start)) + len("\nfi")
+    return span[start:end]
+
+
+def test_coupling_check_cap_skew_repro_2321():
+    """#2321 repro (acceptance 1a): the family arm syncs the step doc while a
+    deliberate branch lint-family edit withholds main's grandfather raise —
+    the helper labels exactly one cap-skew naming both cap vintages."""
+    fork_lint = _coupling_lint_src(skill_cap=100)
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={"scripts/workflow_lint.py": fork_lint},
+            advances=(
+                {
+                    ".claude/skills/issue/SKILL.md": "X" * 150,
+                    "scripts/workflow_lint.py": _coupling_lint_src(skill_cap=200),
+                },
+            ),
+            branch_commits=(
+                {"scripts/workflow_lint.py": fork_lint + "# branch lint-family edit\n"},
+            ),
+        )
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        # premise: half-sync realized — doc synced, lint withheld branch-vintage
+        assert (wt / ".claude" / "skills" / "issue" / "SKILL.md").read_text() == "X" * 150
+        assert "# branch lint-family edit" in (wt / "scripts" / "workflow_lint.py").read_text()
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        skew = [ln for ln in res.stdout.splitlines() if "[step5a] WARN: cap-skew:" in ln]
+        assert len(skew) == 1, res.stdout
+        assert ".claude/skills/issue/SKILL.md = 150 B" in skew[0]
+        assert "SKILL_DOC_SIZE_GRANDFATHER['issue/SKILL.md'] = 100" in skew[0]
+        assert "(200) admits" in skew[0]
+        assert "#2321" in skew[0] and "merge origin/main" in skew[0]
+        assert "1 cap-skew, 0 sibling-split, 0 cap-red-on-main" in res.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_lessons_repro_2168():
+    """#2168 INSTANCE 1 repro (acceptance 1b): LESSONS.md synced while the
+    branch-vintage _LESSONS_MAX_BYTES rejects it and main's admits it."""
+    fork_lint = _coupling_lint_src(lessons=40)
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={"scripts/workflow_lint.py": fork_lint},
+            advances=(
+                {
+                    ".claude/rules/LESSONS.md": "L" * 80,
+                    "scripts/workflow_lint.py": _coupling_lint_src(lessons=120),
+                },
+            ),
+            branch_commits=(
+                {"scripts/workflow_lint.py": fork_lint + "# branch lint-family edit\n"},
+            ),
+        )
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert (wt / ".claude" / "rules" / "LESSONS.md").read_text() == "L" * 80
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        skew = [ln for ln in res.stdout.splitlines() if "[step5a] WARN: cap-skew:" in ln]
+        assert len(skew) == 1, res.stdout
+        assert ".claude/rules/LESSONS.md = 80 B" in skew[0]
+        assert "_LESSONS_MAX_BYTES = 40" in skew[0]
+        assert "(120) admits" in skew[0]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_sibling_split_repro_2168_i3():
+    """#2168 INSTANCE 3 repro (acceptance 1c) through the SHIPPED sibling
+    arm: one main commit co-lands a sibling issue's test + script; the branch
+    deliberately edited the script (skip), the arm syncs the test — the
+    helper labels exactly one sibling-split naming issue, sha, both halves."""
+    text = _text()
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        seed, _ = _scratch_origin_and_wt(tmp, env)
+        (seed / "tests").mkdir()
+        (seed / "scripts").mkdir()
+        (seed / "tests" / "test_issue2162_x.py").write_text("def test_x():\n    assert True\n")
+        (seed / "scripts" / "issue2162_run.py").write_text("VALUE = 1\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "fork-era sibling pair", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        wt = _clone_issue_wt(tmp, env)
+        (wt / "scripts" / "issue2162_run.py").write_text("VALUE = 2  # branch edit\n")
+        _run_git(wt, "add", "-A", env=env)
+        _run_git(wt, "commit", "-m", "issue-9999: deliberate edit to sibling script", env=env)
+        # ONE main commit co-lands BOTH halves of the sibling pair
+        (seed / "tests" / "test_issue2162_x.py").write_text(
+            "def test_x():\n    assert True\n\n\ndef test_y():\n    assert True\n"
+        )
+        (seed / "scripts" / "issue2162_run.py").write_text("VALUE = 3\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: co-landed sibling pair", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        _run_git(wt, "fetch", "origin", env=env)
+        _plant_helper(wt)
+        proc = _run_sibling_arm(tmp, wt, env, _sibling_arm_script(text))
+        assert proc.returncode == 0, f"sibling arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert "[step5a] sibling-file sync: 1 file(s)" in proc.stdout, proc.stdout
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        split = [ln for ln in res.stdout.splitlines() if "[step5a] WARN: sibling-split:" in ln]
+        assert len(split) == 1, res.stdout
+        sha12 = _run_git(wt, "rev-parse", "origin/main", env=env).strip()[:12]
+        assert "issue 2162" in split[0]
+        assert sha12 in split[0]
+        assert "tests/test_issue2162_x.py" in split[0]
+        assert "scripts/issue2162_run.py" in split[0]
+        assert "0 cap-skew, 1 sibling-split, 0 cap-red-on-main" in res.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_agent_caps_repro_2303():
+    """#2303-shape repro (acceptance 1d): the agents doc syncs while the
+    lint-family caps DATA FILE raise is withheld — cap-skew naming the
+    agent_spec_size_caps.txt entry vintages."""
+    fork_lint = _coupling_lint_src()
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={
+                "scripts/workflow_lint.py": fork_lint,
+                ".claude/config/agent_spec_size_caps.txt": "x.md 60\n",
+            },
+            advances=(
+                {
+                    ".claude/agents/x.md": "y" * 100,
+                    ".claude/config/agent_spec_size_caps.txt": "x.md 200\n",
+                },
+            ),
+            branch_commits=(
+                {"scripts/workflow_lint.py": fork_lint + "# branch lint-family edit\n"},
+            ),
+        )
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert (wt / ".claude" / "agents" / "x.md").read_text() == "y" * 100
+        assert (wt / ".claude" / "config" / "agent_spec_size_caps.txt").read_text() == "x.md 60\n"
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        skew = [ln for ln in res.stdout.splitlines() if "[step5a] WARN: cap-skew:" in ln]
+        assert len(skew) == 1, res.stdout
+        assert ".claude/agents/x.md = 100 B" in skew[0]
+        assert "agent_spec_size_caps.txt['x.md'] = 60" in skew[0]
+        assert "(200) admits" in skew[0]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_uncommitted_cap_edit_warns():
+    """Acceptance 1e: an UNCOMMITTED branch-side cap LOWERING (the #1972
+    dirt-arm shape) still yields a cap-skew — the divergence basis is the
+    WORKING TREE, not HEAD."""
+    fork_lint = _coupling_lint_src(skill_cap=200)
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={"scripts/workflow_lint.py": fork_lint},
+            advances=({".claude/skills/issue/SKILL.md": "X" * 150},),
+        )
+        # uncommitted lint dirt LOWERING the cap (arms the #1972 dirt arm)
+        (wt / "scripts" / "workflow_lint.py").write_text(_coupling_lint_src(skill_cap=100))
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert (wt / ".claude" / "skills" / "issue" / "SKILL.md").read_text() == "X" * 150
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        skew = [ln for ln in res.stdout.splitlines() if "[step5a] WARN: cap-skew:" in ln]
+        assert len(skew) == 1, res.stdout
+        assert ".claude/skills/issue/SKILL.md = 150 B" in skew[0]
+        assert "SKILL_DOC_SIZE_GRANDFATHER['issue/SKILL.md'] = 100" in skew[0]
+        assert "coupling check: clean" not in res.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_quiet_on_coherent_sync():
+    """Acceptance 1f (noise criterion): a COHERENT sync — doc AND its cap
+    raise both carried in — produces zero WARNs and the clean summary."""
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={"scripts/workflow_lint.py": _coupling_lint_src(skill_cap=100)},
+            advances=(
+                {
+                    ".claude/skills/issue/SKILL.md": "X" * 150,
+                    "scripts/workflow_lint.py": _coupling_lint_src(skill_cap=200),
+                },
+            ),
+        )
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        # premise: the coherent sync carried BOTH halves in
+        assert (wt / ".claude" / "skills" / "issue" / "SKILL.md").read_text() == "X" * 150
+        assert "200" in (wt / "scripts" / "workflow_lint.py").read_text()
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        assert "[step5a] WARN:" not in res.stdout, res.stdout
+        assert "coupling check: clean" in res.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_uncommitted_doc_regrowth_silent():
+    """Acceptance 1g (noise criterion): branch-authored UNCOMMITTED doc
+    regrowth is in the divergence set — never a cap WARN, even over-cap."""
+    fork_lint = _coupling_lint_src(skill_cap=100)
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={"scripts/workflow_lint.py": fork_lint},
+            branch_commits=(
+                {"scripts/workflow_lint.py": fork_lint + "# branch lint-family edit\n"},
+            ),
+        )
+        # uncommitted branch-authored regrowth over the cap
+        (wt / ".claude" / "skills" / "issue" / "SKILL.md").write_text("X" * 150)
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        assert "[step5a] WARN:" not in res.stdout, res.stdout
+        assert "coupling check: clean" in res.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_main_red_labeled():
+    """Acceptance 1h: a doc whose synced bytes exceed BOTH cap vintages is
+    the DISTINCT cap-red-on-main label (main itself is red — merging cannot
+    fix it), never conflated with cap-skew."""
+    fork_lint = _coupling_lint_src(skill_cap=100)
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={"scripts/workflow_lint.py": fork_lint},
+            advances=({".claude/skills/issue/SKILL.md": "X" * 150},),
+            branch_commits=(
+                {"scripts/workflow_lint.py": fork_lint + "# branch lint-family edit\n"},
+            ),
+        )
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert (wt / ".claude" / "skills" / "issue" / "SKILL.md").read_text() == "X" * 150
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        assert "WARN: cap-skew:" not in res.stdout
+        red = [ln for ln in res.stdout.splitlines() if "[step5a] WARN: cap-red-on-main:" in ln]
+        assert len(red) == 1, res.stdout
+        assert ".claude/skills/issue/SKILL.md = 150 B" in red[0]
+        assert "100" in red[0]
+        assert "0 cap-skew, 0 sibling-split, 1 cap-red-on-main" in res.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_sibling_separate_commits_silent():
+    """Acceptance 1i (noise criterion): the same sibling pair landed in
+    SEPARATE main commits never fires Arm B — the co-landing key is the
+    single COMMIT, not the issue."""
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        seed, _ = _scratch_origin_and_wt(tmp, env)
+        (seed / "tests").mkdir()
+        (seed / "scripts").mkdir()
+        (seed / "tests" / "test_issue2162_x.py").write_text("def test_x():\n    assert True\n")
+        (seed / "scripts" / "issue2162_run.py").write_text("VALUE = 1\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "fork-era sibling pair", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        wt = _clone_issue_wt(tmp, env)
+        (wt / "scripts" / "issue2162_run.py").write_text("VALUE = 2  # branch edit\n")
+        _run_git(wt, "add", "-A", env=env)
+        _run_git(wt, "commit", "-m", "issue-9999: deliberate edit to sibling script", env=env)
+        # SEPARATE main commits: test first, then script
+        (seed / "tests" / "test_issue2162_x.py").write_text(
+            "def test_x():\n    assert True\n\n\ndef test_y():\n    assert True\n"
+        )
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: test only", env=env)
+        (seed / "scripts" / "issue2162_run.py").write_text("VALUE = 3\n")
+        _run_git(seed, "add", "-A", env=env)
+        _run_git(seed, "commit", "-m", "main-side: script only", env=env)
+        _run_git(seed, "push", "origin", "main", env=env)
+        _run_git(wt, "fetch", "origin", env=env)
+        # sync the test half (mixed vintages realized, but no co-landing commit)
+        _run_git(wt, "checkout", "origin/main", "--", "tests/test_issue2162_x.py", env=env)
+        res = _run_coupling_check(wt, env)
+        assert res.returncode == 0, res.stderr
+        assert "sibling-split" not in res.stdout, res.stdout
+        assert "coupling check: clean" in res.stdout
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_coupling_check_helper_crash_is_advisory():
+    """Success criterion 3 (advisory/fail-open hard contract): with a helper
+    that exits 1, the SHIPPED call-site block still exits 0, prints the loud
+    unavailable-line to stderr, and the sync commit is retained."""
+    text = _text()
+    block = _coupling_call_site_block(_step5a_span(text)).replace("<N>", "9999")
+    tmp = Path(tempfile.mkdtemp(prefix="eps2327repro-"))
+    try:
+        env = _scratch_env()
+        wt = _coupling_fixture(
+            tmp,
+            env,
+            fork_overrides={"scripts/workflow_lint.py": _coupling_lint_src()},
+            advances=({".claude/skills/issue/SKILL.md": "X" * 30},),
+        )
+        proc = _run_family_arm_2327(tmp, wt, env)
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        head_before = _run_git(wt, "rev-parse", "HEAD", env=env).strip()
+        # crash-stub helper at the path ROOT_CC resolves (a standalone clone's
+        # git-common-dir parent is the clone itself)
+        (wt / "scripts" / "step5a_coupling_check.py").write_text("import sys\nsys.exit(1)\n")
+        shim_dir = _write_uv_shim(tmp)
+        script = tmp / "callsite.sh"
+        script.write_text(block)
+        env_cs = dict(env)
+        env_cs["PATH"] = f"{shim_dir}:{env['PATH']}"
+        env_cs["WT"] = str(wt)
+        env_cs["MB"] = _run_git(wt, "merge-base", "HEAD", "origin/main", env=env).strip()
+        res = subprocess.run(
+            ["bash", str(script)], cwd=tmp, env=env_cs, capture_output=True, text=True, timeout=120
+        )
+        assert res.returncode == 0, f"call site must be advisory:\n{res.stdout}\n{res.stderr}"
+        assert "[step5a] WARN: coupling check unavailable (helper rc != 0)" in res.stderr
+        assert "run manually:" in res.stderr
+        assert _run_git(wt, "rev-parse", "HEAD", env=env).strip() == head_before, (
+            "the advisory call site must never mutate git state"
+        )
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_step5a_coupling_check_call_site():
+    """Durability pin (the #2311-family precedent): the coupling-check call
+    site lives in the Step 5a span with the main-checkout ROOT_CC idiom, the
+    advisory-only failure arm (no exit anywhere in the block), and NO
+    invocation in the Step 10d auto-merge copy (Step-5a-only, like the
+    sibling arm)."""
+    text = _text()
+    span = _step5a_span(text)
+    block = _coupling_call_site_block(span)  # raises if the block is absent
+    assert (
+        'ROOT_CC="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")"'
+    ) in block
+    assert "timeout --kill-after=10s 60s uv run python" in block
+    assert 'scripts/step5a_coupling_check.py --worktree "$WT" --merge-base "$MB"' in block
+    assert '--own-issue "<N>"' in block
+    assert "exit" not in block, "the only failure arm is an echo — advisory, never an exit"
+    assert ">&2" in block, "the unavailable-line must go to stderr"
+    # the prose remedy pointer follows the fenced block
+    assert "the remedy is the #2311 merge paragraph" in span
+    # Step-5a-only: no invocation in the 10d auto-merge copy (registry tokens
+    # are mirrored there, but no call site)
+    assert "step5a_coupling_check.py --worktree" not in _automerge_span(text)

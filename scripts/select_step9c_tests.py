@@ -822,6 +822,9 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
     # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
     # reaches a constructed-path consumer.
     "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
+    # #2327: same shape for the Step 5a coupling-check helper — its unit
+    # tests load it by constructed path (importlib under a test-unique name).
+    "scripts/step5a_coupling_check.py": ("tests/test_step5a_coupling_check.py",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------
