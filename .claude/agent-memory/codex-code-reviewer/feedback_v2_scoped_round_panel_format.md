@@ -38,4 +38,16 @@ Post-cap user-authorized scoped rounds on a `workflow: v2` task (#2389 r6,
    for adjudication, not auto-flagging), calibration both directions, and
    "PASS plainly if clean".
 
+5. **Brief SHAs can carry corrupted trailing characters (#2389 cf3,
+   2026-08-23).** The brief's 12-char `f073f7219028` did not resolve while its
+   10-char prefix `f073f72190` did (true SHA `...902b`, "28" vs "2b" slip).
+   Rescue: `git log --oneline` around the named sibling commits + `rev-parse`
+   the longest resolving prefix; put the FULL 40-char SHAs in the prompt with
+   an explicit "SHA correction (composer-verified)" block (Codex would
+   otherwise hit the unresolvable range and BLOCK), and flag the correction in
+   the return — silent substitution risks orchestrator-side range mismatch.
+   Also: when the output-format sketch shows lines indented (display
+   convention), add an explicit "emit at COLUMN 0" rule or Codex may
+   reproduce the indentation and break the `^CONCERN:: ` position-parse.
+
 Related: [[revision-round-compose-recipe]], [[whole-round-unsplit-compose]].
