@@ -1,0 +1,129 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "9e0cb94f923e42df",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:32Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "AI-likeness axis score (judge, 0-100)": 50.3794,
+      "Inserted-mode rung-4 recovery fraction": 0.7457434440294908,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 35.6422,
+      "Inserted-mode rung-4 recovery fraction": 0.7774824982284186,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 69.0613,
+      "Inserted-mode rung-4 recovery fraction": 0.8737427086064316,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 58.6511,
+      "Inserted-mode rung-4 recovery fraction": 0.6452711857038808,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 47.7488,
+      "Inserted-mode rung-4 recovery fraction": 0.7766458734713095,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 71.4691,
+      "Inserted-mode rung-4 recovery fraction": 0.8758369735203586,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 55.2611,
+      "Inserted-mode rung-4 recovery fraction": 0.7192110730110046,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 60.6901,
+      "Inserted-mode rung-4 recovery fraction": 0.7809571592057032,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "AI-likeness axis score (judge, 0-100)",
+        "ylabel": "Inserted-mode rung-4 recovery fraction",
+        "legend_labels": [
+          "new character",
+          "anchor"
+        ],
+        "annotations": [
+          "Dana",
+          "Elena",
+          "Gus",
+          "HELIOS",
+          "Iris",
+          "Mort",
+          "Vex",
+          "Wren"
+        ],
+        "xticklabels": [
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75"
+        ],
+        "yticklabels": [
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90"
+        ]
+      }
+    ],
+    "series": [
+      "new character",
+      "anchor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

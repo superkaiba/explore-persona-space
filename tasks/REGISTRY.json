@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2509,
+  "highest_id": 2534,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5746,8 +5746,8 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1739",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1739",
+      "status": "awaiting_promotion",
       "title": "Mapped-answer probes lead context probes on 10 of 13 held-out rungs, but only one flagship clears the control intervals (MODERATE confidence)"
     },
     "174": {
@@ -9762,8 +9762,8 @@
     "2263": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2263",
-      "status": "running",
+      "path": "tasks/completed/2263",
+      "status": "completed",
       "title": "verify_carryover_inputs.py default ref checks the wrong tree on a suffixed issue branch (Step 6a.5 gate)"
     },
     "2264": {
@@ -10091,8 +10091,8 @@
     "2306": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2306",
-      "status": "running",
+      "path": "tasks/completed/2306",
+      "status": "completed",
       "title": "/issue Step 10d merge fence never binds $WT \u2014 git -C '' retargets every worktree op at the SHARED repo root (destroys a valid gate verdict; reaches a shared-root working-tree revert)"
     },
     "2307": {
@@ -10161,8 +10161,8 @@
     "2315": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2315",
-      "status": "running",
+      "path": "tasks/reviewing/2315",
+      "status": "reviewing",
       "title": "Step 9c 1b: a self-composed gate launcher can silently drop --files-only newline flattening OR -o junit_family=xunit1; neither omission fails where the recipe checks"
     },
     "2316": {
@@ -10217,9 +10217,9 @@
     "2322": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2322",
-      "status": "proposed",
-      "title": "Codex twin: CLI 0.147.0 + gpt-5.6-sol, daily auto-upgrade cron"
+      "path": "tasks/completed/2322",
+      "status": "completed",
+      "title": "Codex twin: CLI + gpt-5.6-sol, daily auto-upgrade cron (landed)"
     },
     "2323": {
       "has_clean_result": false,
@@ -10252,15 +10252,15 @@
     "2327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2327",
-      "status": "proposed",
+      "path": "tasks/running/2327",
+      "status": "running",
       "title": "Step 5a spec-freshness sync copies a .claude doc without its workflow_lint.py grandfather cap, producing a deterministic false-red gate"
     },
     "2328": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2328",
-      "status": "proposed",
+      "path": "tasks/running/2328",
+      "status": "running",
       "title": "workflow-fix: review/compose briefs check marker presence against the WORKING TREE, so a transient stash-cycle read produces a false marker-destroyed escalation"
     },
     "2329": {
@@ -10289,8 +10289,8 @@
     "2331": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2331",
-      "status": "proposed",
+      "path": "tasks/archived/2331",
+      "status": "archived",
       "title": "Fix stale fellows-first auto-default text in critic-lens-reference.md + plan-compute-sizing.md (live order is runpod-first, #2054)"
     },
     "2332": {
@@ -10325,8 +10325,8 @@
     "2336": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2336",
-      "status": "proposed",
+      "path": "tasks/running/2336",
+      "status": "running",
       "title": "Hoist a process-safe atomic-write helper into shared code and sweep the shared-tmp pattern out of scripts/"
     },
     "2337": {
@@ -11383,8 +11383,8 @@
       "goal": "Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2474",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2474",
+      "status": "awaiting_promotion",
       "title": "Pre-fine-tuning context geometry predicts emergent-misalignment re-elicitation but adds at most a marginal increment over surface-text similarity (MODERATE confidence)"
     },
     "2475": {
@@ -11398,9 +11398,9 @@
       "goal": "Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2476",
-      "status": "awaiting_promotion",
-      "title": "The context-to-answer map's coarse-over-specific predictability gradient does not reproduce in turn-averaged SAE bases: nearly all specific-tier features fall below the alive floor, and retrieval stays coarse-tier-concentrated (MODERATE confidence)"
+      "path": "tasks/followups_running/2476",
+      "status": "followups_running",
+      "title": "The fresh turn-averaged SAE's indeterminate tier verdict is floor-local: every looser alive floor reads coarse-over-specific because newly admitted specific-tier features are poorly predicted (MODERATE confidence)"
     },
     "2477": {
       "has_clean_result": true,
@@ -11418,11 +11418,11 @@
     },
     "2479": {
       "goal": "Establish or bound the closeness-to-assistant transfer gradient: assistant-operator transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across >=12 characters; success = rank correlation with permutation band excluding zero.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2479",
-      "status": "running",
-      "title": "Dedicated AI-likeness gradient: does map transfer to a character scale with closeness to the assistant? (n>=12 characters)"
+      "path": "tasks/reviewing/2479",
+      "status": "reviewing",
+      "title": "Assistant-operator transfer recovery in held-out R\u00b2 rises with judged AI-likeness across 16 story characters (LOW confidence)"
     },
     "248": {
       "has_clean_result": false,
@@ -11603,8 +11603,8 @@
       "goal": "Fit the context\u2192answer activation map M_{C,A} on a very large, maximally diverse context/answer corpus (heavily weighted toward weird / OOD / red-team / jailbreak regimes), and test whether the map replicates across model generations: Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled). An answer = held-out R^2 plus the mandatory identity+learned-bias baseline and kNN-retrieval reads for the fitted map, measured under massive context diversity and compared across the two models.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2502",
-      "status": "running",
+      "path": "tasks/blocked/2502",
+      "status": "blocked",
       "title": "Fit context\u2192answer map on a mega-diverse weird-behavior corpus, replicated on Qwen2.5-7B-Instruct + Qwen3.5-9B"
     },
     "2503": {
@@ -11663,6 +11663,181 @@
       "path": "tasks/archived/251",
       "status": "archived",
       "title": "More workflow improvements"
+    },
+    "2510": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2510",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan should assert the smoke blind-spot enumeration when a plan declares a smoke/dry-run verification"
+    },
+    "2511": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2511",
+      "status": "proposed",
+      "title": "workflow-fix: apply the Fix-A silent-exit ladder to the sibling cron wrappers"
+    },
+    "2512": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2512",
+      "status": "proposed",
+      "title": "workflow-fix: five deferred hardenings in scripts/codex_auto_upgrade.py"
+    },
+    "2513": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2513",
+      "status": "proposed",
+      "title": "Fix main-red tests/test_argcheck.py::test_bind_fleet_census_positive_coverage: issue2477_base_coherence.py api bindings not uniformly HfApi()"
+    },
+    "2514": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2514",
+      "status": "running",
+      "title": "workflow-fix: verify_plan c26/c27 routed-machine mirror is GCP-era, inverts under runpod-first auto default"
+    },
+    "2515": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2515",
+      "status": "proposed",
+      "title": "verify_task_body check: markdown tables must not satisfy the per-unit companion requirement unless they carry per-unit rows"
+    },
+    "2516": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2516",
+      "status": "proposed",
+      "title": "workflow-fix: reclaim LESSONS.md index headroom \u2014 aggregate cap is ~60 B from blocking every new rule file"
+    },
+    "2517": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2517",
+      "status": "proposed",
+      "title": "verify_task_body Lens-14/check-64 substring false-positive: HTML comments inside Takeaways count as concern acknowledgment"
+    },
+    "2518": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2518",
+      "status": "proposed",
+      "title": "bootstrap_pod.sh: install Times-alike serif fonts for pod-side paper figures"
+    },
+    "2519": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2519",
+      "status": "proposed",
+      "title": "tick_triage.py from main imports task_workflow symbols absent in worktree cwd resolution (open_async_ask ImportError)"
+    },
+    "2520": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2520",
+      "status": "archived",
+      "title": "verify_uploads.py residue git arm cannot see a suffixed round branch (issue-<N>-<slug>)"
+    },
+    "2521": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2521",
+      "status": "proposed",
+      "title": "verify_uploads.py outroot-residue false-FAILs a sanctioned line-split (sharded) text artifact"
+    },
+    "2522": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2522",
+      "status": "proposed",
+      "title": "paper_plots _extract_bars drops bar-container labels from sidecar point rows"
+    },
+    "2523": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2523",
+      "status": "proposed",
+      "title": "codex-code-reviewer composes a CONCERN:: row template its own forwarder cannot parse, breaking the concerns round-trip"
+    },
+    "2524": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2524",
+      "status": "proposed",
+      "title": "verify_task_body.py: sidecar short-series-label opaque-code check"
+    },
+    "2525": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2525",
+      "status": "proposed",
+      "title": "Fix three fleet-wide test invariants broken by sibling landings on main (ungated HF upload #1739, bind-census skips #2477, dangling import roots #2379/#2474)"
+    },
+    "2526": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2526",
+      "status": "proposed",
+      "title": "verify_task_body v4: mechanical FAIL for banned Confidence: sentences (check 6 gap)"
+    },
+    "2527": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2527",
+      "status": "proposed",
+      "title": "Smoke and production legs must not share one HF upload prefix (upload-policy gap)"
+    },
+    "2528": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2528",
+      "status": "proposed",
+      "title": "workflow-fix: step9c_baseline.py status reports 'fresh' on a content-stale ledger (2,134 commits behind main) \u2014 the 1d compare then classifies pre-existing main-side reds as NEW"
+    },
+    "2529": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2529",
+      "status": "proposed",
+      "title": "verify_task_body per-unit-evidence WARN vocabulary misses per-character grain"
+    },
+    "2530": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2530",
+      "status": "proposed",
+      "title": "task.py list-concerns --open-only undercounts: a severity-downgrade re-raise with no addressed event is reported closed"
+    },
+    "2531": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2531",
+      "status": "proposed",
+      "title": "workflow-fix: per-arm-resolution parser accept em-dash arm/res separator"
+    },
+    "2532": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2532",
+      "status": "proposed",
+      "title": "step5a_coupling_check._git_show reports clean over an undecidable state; non-repo test presumes TMPDIR outside a git repo"
+    },
+    "2533": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2533",
+      "status": "proposed",
+      "title": "Ownership-probe recipe: cwd match is not ownership \u2014 a worktree-cwd sweep returns other sessions' transient subprocesses"
+    },
+    "2534": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2534",
+      "status": "proposed",
+      "title": "codex-interpretation-critic emits MAJOR/MINOR CONCERN:: severities the concerns ledger rejects, silently dropping the whole batch"
     },
     "256": {
       "has_clean_result": false,

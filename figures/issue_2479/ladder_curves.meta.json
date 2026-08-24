@@ -1,0 +1,935 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "6285346e77e64555",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:48Z",
+  "figsize": [
+    7.5,
+    4.5
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -0.8770534657948794,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -1.5980500110180884,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.2205446157120153,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5918797820271154,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5905133585667379,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8144007807369619,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.20246218311299652,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.28344260657134007,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.09382056771368089,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -0.14222335391940388,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -0.613844550015249,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.35776970144095516,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.6401474138847494,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.640585648709332,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.819555444712784,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.25282764055476287,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.35595377947747886,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.12456558082220968,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -1.5763132287602728,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -2.3727756644030955,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.24577851391997355,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5901906795887883,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5912418826772795,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.87125510372494,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.22829209085048222,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.3107234960130709,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.09714267498327106,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.39479036290492675,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.2530483366873455,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5090577568606145,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7018871300130723,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7272334226680833,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8167348020545744,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.24381772836611187,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4770257782143759,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.19808170566574643,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.27177965502341983,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.1169389119468833,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4500689321290013,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7067377345573187,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7197557328395435,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8264828957034027,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.2604803273486982,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4950017179843723,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.2050861533226038,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.25794422836195274,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.07328519505201543,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.46248183395217884,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.6491288959491927,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.6610482180920049,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7881737631010177,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.22847074269349357,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4555552132595198,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.17317427755104348,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -2.924767005225805,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -4.93744082732793,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -0.5904135108143375,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.43892915741581323,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4843361275076729,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8171644353665248,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.25814977192581573,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.26963310013849495,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.10899947269948235,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -0.33816194843163105,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -1.2337499671291028,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -0.026361054507746836,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5847753921796721,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5829323732371646,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7918453626604403,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.3426686655557496,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.2922912052906238,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.1788761045450071,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -2.1942718244932706,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -4.175598682819433,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": -0.4443027507272029,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4231021038162017,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4535061669053993,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7601139209673194,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.23557386350083737,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.21586922075488324,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.10961006411195615,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5235780117543947,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4115225483613433,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5593939549186954,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7387490224603009,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7871443816226159,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8268934638035715,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.35139750034369804,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.530962514938746,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.2811158555776883,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.40099381610720786,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.27872223991226136,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5412608915382126,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7288324790266634,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7414970205259777,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8281792890013149,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.30154083195836934,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5200739753178876,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.22476315988072834,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4770988936509063,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.42441227364522155,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5714360867646374,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7465800811373291,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7928384305268364,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8321169879806138,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4512876807328064,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5270548414655951,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.35534984313260143,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.6148187897311247,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.48573043907535396,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.6500572770308779,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7968012714337306,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.850249046305608,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8611187798123237,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.49210836527904406,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5652056140791115,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.40786653328608813,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7372897819395168,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7218625403535046,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7470353302247156,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8435740309910508,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8882003082211991,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.87241567300265,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5361333361532526,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.6183302420355564,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.427782999037219,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7293120337970704,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.689918681090176,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7115745480232865,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.8847591438863539,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.9442842637958,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.9151377870636677,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5505430742588261,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.669756170788677,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.4219668283253708,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5149020844092974,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5300942733571279,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5855463830458046,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7404887517390131,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7611909325200258,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.7953357099353828,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.26782219320796213,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.5634440801683411,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "Recovery fraction (rung R2 / ceiling R2)": 0.20742601569861077,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "Recovery fraction (rung R2 / ceiling R2)",
+        "xticklabels": [
+          "1_direct",
+          "2_ctx_offset",
+          "3_ans_offset",
+          "4_bias_refit",
+          "5_global_scale",
+          "6_rotation",
+          "7_ctx_reparam",
+          "8_ans_reparam",
+          "9_full_AMB"
+        ],
+        "yticklabels": [
+          "\u22126",
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "ylabel": "AI-likeness axis score",
+        "yticklabels": [
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

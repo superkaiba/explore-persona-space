@@ -1,0 +1,448 @@
+{
+  "metadata": {
+    "git_commit": "700115ca8a8fcbbb237e558ef2a0273fa970c233",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/issue2476_matched_tier_ci.py"
+    ],
+    "git_argv0_state": "untracked",
+    "git_argv0_path": "scripts/issue2476_matched_tier_ci.py",
+    "script": "scripts/issue2476_matched_tier_ci.py",
+    "timestamp_utc": "2026-08-23T14:20:03.137291+00:00",
+    "numpy_version": "2.2.6",
+    "n_boot": 10000,
+    "seed": 42,
+    "inputs": {
+      "fresh": "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+      "bridge": "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
+      "pile": "eval_results/issue_2476/turnavg/perfeature_b_pile.npz"
+    },
+    "estimator_provenance": {
+      "_boot_median_ci": "scripts/issue2476_turnavg_sae.py (imported, not reimplemented)",
+      "_boot_median_diff": "scripts/issue1482_matryoshka_tier.py (imported, not reimplemented; independent resamples per side \u2014 tiers are disjoint feature sets)"
+    }
+  },
+  "band_definitions": {
+    "rule": "arm-specific: each arm's matched band is its OWN tier-2 survivors' activity envelope; bridge uses the exact envelope, fresh's committed band is the envelope outward-rounded to grain 200; bounds inclusive, activity = active fit rows",
+    "fresh": {
+      "n_fit_rows": 120000,
+      "alive_floor": 1200,
+      "tier2_survivor_envelope": [
+        1473.0,
+        2274.0
+      ],
+      "committed_body_band": [
+        1400.0,
+        2400.0
+      ]
+    },
+    "bridge": {
+      "n_fit_rows": 24000,
+      "alive_floor": 240,
+      "tier2_survivor_envelope": [
+        390.0,
+        552.0
+      ],
+      "committed_body_band": [
+        390.0,
+        552.0
+      ]
+    },
+    "pile": {
+      "n_fit_rows": 24000,
+      "alive_floor": 240,
+      "tier2_survivor_envelope": [
+        250.0,
+        1922.0
+      ],
+      "committed_body_band": null,
+      "derivation_note": "no committed pile band existed; derived here as the exact tier-2 envelope per the bridge-arm convention"
+    }
+  },
+  "self_check": [
+    {
+      "arm": "fresh",
+      "band": [
+        1400.0,
+        2400.0
+      ],
+      "tier": "coarsest",
+      "expected": {
+        "median_3dp": 0.525,
+        "n": 197
+      },
+      "computed": {
+        "median": 0.5248977895814699,
+        "n": 197
+      },
+      "pass": true
+    },
+    {
+      "arm": "fresh",
+      "band": [
+        1400.0,
+        2400.0
+      ],
+      "tier": "middle",
+      "expected": {
+        "median_3dp": 0.132,
+        "n": 41
+      },
+      "computed": {
+        "median": 0.13197765894340974,
+        "n": 41
+      },
+      "pass": true
+    },
+    {
+      "arm": "bridge",
+      "band": [
+        390.0,
+        552.0
+      ],
+      "tier": "coarsest",
+      "expected": {
+        "median_3dp": 0.393,
+        "n": 83
+      },
+      "computed": {
+        "median": 0.39335027852550664,
+        "n": 83
+      },
+      "pass": true
+    },
+    {
+      "arm": "bridge",
+      "band": [
+        1400.0,
+        2400.0
+      ],
+      "tier": "coarsest",
+      "expected": {
+        "median_3dp": 0.509,
+        "n": 22
+      },
+      "computed": {
+        "median": 0.5093221554560319,
+        "n": 22
+      },
+      "pass": true
+    }
+  ],
+  "reads": {
+    "fresh_body_band": {
+      "band": [
+        1400.0,
+        2400.0
+      ],
+      "band_rule": "committed body band: fresh tier-2 envelope [1473, 2274] outward-rounded to grain 200 -> [1400, 2400]",
+      "tiers": {
+        "coarsest": {
+          "median": 0.5248977895814699,
+          "ci95": [
+            0.49073294802659073,
+            0.564724170572134
+          ],
+          "n": 197
+        },
+        "middle": {
+          "median": 0.13197765894340974,
+          "ci95": [
+            0.10402179277090828,
+            0.17952724517379304
+          ],
+          "n": 41
+        },
+        "finest": {
+          "median": 0.6695627724230564,
+          "ci95": [
+            0.6482739984006689,
+            0.8799020838070336
+          ],
+          "n": 3
+        }
+      },
+      "contrasts": {
+        "coarse_minus_middle": {
+          "point": 0.3929201306380602,
+          "ci95": [
+            0.3332129227162677,
+            0.4416219698154803
+          ],
+          "n_coarse": 197,
+          "n_middle": 41
+        },
+        "coarse_minus_finest": {
+          "point": -0.14466498284158646,
+          "ci95": [
+            -0.3807994580979106,
+            -0.09709858658479797
+          ],
+          "n_coarse": 197,
+          "n_finest": 3
+        }
+      }
+    },
+    "fresh_exact_envelope_sensitivity": {
+      "band": [
+        1473.0,
+        2274.0
+      ],
+      "band_rule": "sensitivity: own tier-2 survivors' exact activity envelope [min, max] active fit rows, inclusive (unrounded twin of the committed fresh band)",
+      "tiers": {
+        "coarsest": {
+          "median": 0.5166107539728326,
+          "ci95": [
+            0.48142583190946897,
+            0.5560803677194263
+          ],
+          "n": 138
+        },
+        "middle": {
+          "median": 0.13197765894340974,
+          "ci95": [
+            0.08336746665570849,
+            0.17952724517379304
+          ],
+          "n": 35
+        },
+        "finest": {
+          "median": 0.6695627724230564,
+          "ci95": [
+            0.6482739984006689,
+            0.8799020838070336
+          ],
+          "n": 3
+        }
+      },
+      "contrasts": {
+        "coarse_minus_middle": {
+          "point": 0.3846330950294229,
+          "ci95": [
+            0.3267169643206371,
+            0.43794627494239907
+          ],
+          "n_coarse": 138,
+          "n_middle": 35
+        },
+        "coarse_minus_finest": {
+          "point": -0.15295201845022377,
+          "ci95": [
+            -0.3891691357804429,
+            -0.10240323331359669
+          ],
+          "n_coarse": 138,
+          "n_finest": 3
+        }
+      }
+    },
+    "bridge_own_band": {
+      "band": [
+        390.0,
+        552.0
+      ],
+      "band_rule": "own tier-2 survivors' exact activity envelope [min, max] active fit rows, inclusive (committed body band)",
+      "tiers": {
+        "coarsest": {
+          "median": 0.39335027852550664,
+          "ci95": [
+            0.3430910101210862,
+            0.4521442061044586
+          ],
+          "n": 83
+        },
+        "middle": {
+          "median": 0.5192635606630047,
+          "ci95": [
+            0.00040606005999199724,
+            0.7961135511276562
+          ],
+          "n": 5
+        },
+        "finest": {
+          "median": 0.6011933639863004,
+          "ci95": [
+            0.317540486130116,
+            0.7450259422203604
+          ],
+          "n": 4
+        }
+      },
+      "contrasts": {
+        "coarse_minus_middle": {
+          "point": -0.12591328213749808,
+          "ci95": [
+            -0.40969483457227673,
+            0.3938076968046207
+          ],
+          "n_coarse": 83,
+          "n_middle": 5
+        },
+        "coarse_minus_finest": {
+          "point": -0.20784308546079377,
+          "ci95": [
+            -0.35421803961685594,
+            0.07580979239539065
+          ],
+          "n_coarse": 83,
+          "n_finest": 4
+        }
+      }
+    },
+    "bridge_under_fresh_band": {
+      "band": [
+        1400.0,
+        2400.0
+      ],
+      "band_rule": "cross-read: the fresh arm's committed absolute band applied to the bridge arm (the body's 0.509 n=22 read)",
+      "tiers": {
+        "coarsest": {
+          "median": 0.5093221554560319,
+          "ci95": [
+            0.3034030550384921,
+            0.5773901071749188
+          ],
+          "n": 22
+        },
+        "middle": {
+          "median": 0.747783113401199,
+          "ci95": [
+            0.6457701394137674,
+            0.8497960873886305
+          ],
+          "n": 2
+        },
+        "finest": {
+          "median": null,
+          "ci95": null,
+          "n": 0,
+          "null_reason": "only 0 finite in-band feature(s); >=2 required for a CI"
+        }
+      },
+      "contrasts": {
+        "coarse_minus_middle": {
+          "point": -0.23846095794516708,
+          "ci95": [
+            -0.5137109254290746,
+            -0.08080722822376751
+          ],
+          "n_coarse": 22,
+          "n_middle": 2
+        },
+        "coarse_minus_finest": {
+          "point": null,
+          "ci95": null,
+          "n_coarse": 22,
+          "n_finest": 0,
+          "null_reason": "skipped: coarse n=22, finest n=0 in band; both sides need >=2 finite in-band features"
+        }
+      }
+    },
+    "pile_own_band": {
+      "band": [
+        250.0,
+        1922.0
+      ],
+      "band_rule": "own tier-2 survivors' exact activity envelope [min, max] active fit rows, inclusive (derived here by the bridge-arm convention; same instrument and 24,000 fit rows)",
+      "tiers": {
+        "coarsest": {
+          "median": 0.41610263777467194,
+          "ci95": [
+            0.38124428695335877,
+            0.44426880425607673
+          ],
+          "n": 192
+        },
+        "middle": {
+          "median": 0.5573404488201035,
+          "ci95": [
+            0.4292687255945553,
+            0.634465398694478
+          ],
+          "n": 35
+        },
+        "finest": {
+          "median": 0.4126127004887162,
+          "ci95": [
+            0.25010486312048086,
+            0.6052395400275108
+          ],
+          "n": 14
+        }
+      },
+      "contrasts": {
+        "coarse_minus_middle": {
+          "point": -0.14123781104543154,
+          "ci95": [
+            -0.20038673528749298,
+            -0.03489375333897761
+          ],
+          "n_coarse": 192,
+          "n_middle": 35
+        },
+        "coarse_minus_finest": {
+          "point": 0.0034899372859557576,
+          "ci95": [
+            -0.1884828999577991,
+            0.16451183159315316
+          ],
+          "n_coarse": 192,
+          "n_finest": 14
+        }
+      }
+    },
+    "pile_under_bridge_band": {
+      "band": [
+        390.0,
+        552.0
+      ],
+      "band_rule": "cross-read: the bridge arm's band applied to the pile twin (arm-specific convention => both bands reported)",
+      "tiers": {
+        "coarsest": {
+          "median": 0.42481777170567525,
+          "ci95": [
+            0.30719480319318004,
+            0.500597680685265
+          ],
+          "n": 38
+        },
+        "middle": {
+          "median": 0.34866682221306355,
+          "ci95": [
+            0.15864666526048055,
+            0.626295809989525
+          ],
+          "n": 10
+        },
+        "finest": {
+          "median": 0.3503872959009405,
+          "ci95": [
+            0.09553505177437016,
+            0.6052395400275108
+          ],
+          "n": 2
+        }
+      },
+      "contrasts": {
+        "coarse_minus_middle": {
+          "point": 0.0761509494926117,
+          "ci95": [
+            -0.21920820419090845,
+            0.24672558717748855
+          ],
+          "n_coarse": 38,
+          "n_middle": 10
+        },
+        "coarse_minus_finest": {
+          "point": 0.07443047580473477,
+          "ci95": [
+            -0.2843108870821267,
+            0.39208477969662303
+          ],
+          "n_coarse": 38,
+          "n_finest": 2
+        }
+      }
+    }
+  }
+}

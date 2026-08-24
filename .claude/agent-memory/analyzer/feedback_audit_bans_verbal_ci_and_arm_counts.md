@@ -16,7 +16,13 @@ Three discipline-audit patterns beyond the bracketed-CI ban (all hit on the
    `the <adj> arm` (behavioral/geometric/LoRA/...) FAIL — write
    "predictors"/"readouts" or describe what was done. Compound forms like
    "three fitted arms" / "context-end arms" do NOT match (adjective breaks
-   the bigram), but keep them sparse.
+   the bigram), but keep them sparse. The scan covers METHODOLOGY prose too
+   (#823 fold: "two arms only" + "the two arms share" in a Design paragraph
+   both FAILed — rewrote as "only the decisive contrast" / "shared between
+   the arms"), and `verdict_caps` hits ALL-CAPS `PASSED` in Methodology
+   ("solver parity PASSED" → "passed") while table-cell `PASS` and a
+   pre-existing `FAILED` were not flagged — lowercase verdict verbs
+   everywhere in prose.
 
 **Why:** Lens 7 wants intervals out of narrative prose entirely; GFM table
 rows, fenced blocks, and `>` blockquote captions are EXEMPT from the scan.

@@ -16,8 +16,13 @@ provably never fires on (the plan-v1 fatal gap).
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import inspect
 import json
+import os
+import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -118,7 +123,11 @@ def _main(repo: Path, plan: Path, issue: int = 77, extra: list[str] | None = Non
         str(repo),
         "--no-fetch",
     ]
-    return vci.main(argv + (extra or []))
+    # #2263: pin the invoking cwd to the fixture repo (branch `main`) so the
+    # rung-3 worktree inference reads a DETERMINISTIC cwd regardless of where
+    # pytest itself runs (an issue-scoped worktree cwd would otherwise leak in).
+    with contextlib.chdir(repo):
+        return vci.main(argv + (extra or []))
 
 
 def _findings(repo: Path, text: str, issue: int = 77, check_ref: str = "origin/main"):
@@ -166,7 +175,7 @@ def test_on_main_not_on_branch_fails_with_merge_remediation(repo: Path, tmp_path
     _git(repo, "push", "-q", "origin", "issue-77")
     _write(repo, "eval_results/issue_841/late.json")
     _commit_push(repo, "eval_results/issue_841/late.json")
-    assert vci.resolve_check_ref(repo, 77, fetch=False) == "origin/issue-77"
+    assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo).ref == "origin/issue-77"
     text = "Consumes eval_results/issue_841/late.json from the sibling issue."
     fs = _findings(repo, text, check_ref="origin/issue-77")
     assert [(f.verdict, f.reason) for f in fs] == [("fail", "on-main-not-on-branch")]
@@ -239,10 +248,18 @@ def test_extract_strips_trailing_punctuation() -> None:
 
 
 def test_ref_fallback_origin_main_when_no_issue_branch(repo: Path) -> None:
-    assert vci.resolve_check_ref(repo, 77, fetch=False) == "origin/main"
+    # #2263 test 6: the two legacy default rows keep their resolved ref and
+    # gain a source tag (R4 unchanged-rows contract).
+    assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo) == (
+        "origin/main",
+        "origin-main-default",
+    )
     _git(repo, "branch", "issue-77")
     _git(repo, "push", "-q", "origin", "issue-77")
-    assert vci.resolve_check_ref(repo, 77, fetch=False) == "origin/issue-77"
+    assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo) == (
+        "origin/issue-77",
+        "bare-issue-branch-default",
+    )
 
 
 def test_other_issue_nonexistent_warns_not_fails(repo: Path, tmp_path: Path) -> None:
@@ -1282,3 +1299,1315 @@ def test_path_re_lookbehind_still_excludes_hf_and_urls() -> None:
     # Extraction sanity: bare-name hits (Channel B) also don't spuriously fire
     # on the HF-embedded path.
     assert "fixtures" not in {n.split(".")[0] for n in vci.extract_bare_names(text)}
+
+
+# ---------------------------------------------------------------------------
+# #2263 — check-ref resolution ladder (resolve_check_ref -> ResolvedRef),
+# derive_local_branch, derive_worktree_repo_branch / --print-repo-branch, the
+# env sanitization, and the Step 6 shared-resolver skill pins.
+# ---------------------------------------------------------------------------
+
+
+def _branch_push(repo: Path, branch: str, base: str = "main") -> None:
+    """Create `branch` at `base` and push it to the local bare origin."""
+    _git(repo, "branch", branch, base)
+    _git(repo, "push", "-q", "origin", branch)
+
+
+def _foreign_repo(base: Path, name: str = "foreign", branch: str = "main") -> Path:
+    """An INDEPENDENT throwaway repo (own git dir, own bare origin) at base/name."""
+    r = base / name
+    r.mkdir()
+    _git(r, "init", "-q", "-b", branch)
+    _git(r, "config", "user.email", "test@example.com")
+    _git(r, "config", "user.name", "Test")
+    _git(r, "config", "commit.gpgsign", "false")
+    bare = base / f"{name}-origin.git"
+    subprocess.run(
+        ["git", "init", "-q", "--bare", str(bare)], check=True, capture_output=True, text=True
+    )
+    _git(r, "remote", "add", "origin", str(bare))
+    (r / "seed.txt").write_text("seed\n")
+    _git(r, "add", "seed.txt")
+    _git(r, "commit", "-q", "-m", "seed")
+    _git(r, "push", "-q", "-u", "origin", branch)
+    return r
+
+
+def test_repo_branch_flag_resolves_suffixed_over_stale_bare(repo: Path) -> None:
+    _branch_push(repo, "issue-77")
+    _branch_push(repo, "issue-77-full")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="issue-77-full")
+    assert got == ("origin/issue-77-full", "repo-branch-flag")
+
+
+def test_repo_branch_missing_on_origin_raises(repo: Path) -> None:
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="issue-77-nope")
+    assert "origin/issue-77-nope" in str(ei.value)
+
+
+def test_worktree_inference_resolves_suffixed(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77")  # stale bare sibling also present
+    wt = tmp_path / "wt-full"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-full")
+    _git(repo, "push", "-q", "origin", "issue-77-full")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=wt)
+    assert got == ("origin/issue-77-full", "worktree-branch")
+
+
+def test_worktree_inference_ignores_foreign_and_digit_prefix_branches(
+    repo: Path, tmp_path: Path
+) -> None:
+    _branch_push(repo, "issue-77")  # bare-only remote state
+    for branch in ("issue-88-x", "issue-771-x"):
+        wt = tmp_path / f"wt-{branch}"
+        _git(repo, "worktree", "add", "-q", str(wt), "-b", branch)
+        got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=wt)
+        assert got == ("origin/issue-77", "bare-issue-branch-default")
+
+
+def test_worktree_inference_unpushed_branch_raises(repo: Path, tmp_path: Path) -> None:
+    wt = tmp_path / "wt-local"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-local")  # never pushed
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=wt)
+    msg = str(ei.value)
+    assert "issue-77-local" in msg and "push the branch" in msg
+
+
+def test_default_refuses_when_suffixed_exists(repo: Path) -> None:
+    # (a) suffixed-only.
+    _branch_push(repo, "issue-77-full")
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo)
+    msg = str(ei.value)
+    assert "origin/issue-77-full" in msg
+    assert msg.index("--repo-branch") < msg.index("--ref")  # remedy ordering
+    # (b) bare + suffixed: EVERY candidate named, bare included.
+    _branch_push(repo, "issue-77")
+    with pytest.raises(vci.CheckRefResolutionError) as ei2:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo)
+    msg2 = str(ei2.value)
+    assert "origin/issue-77-full" in msg2 and "origin/issue-77" in msg2
+
+
+def test_fetch_true_glob_prunes_deleted_suffixed_branch(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77-old")
+    assert vci.ref_exists(repo, "origin/issue-77-old")  # stale tracking ref armed
+    # Delete the branch INSIDE the bare origin — only the fetch=True --prune
+    # glob can clear the stale local remote-tracking ref.
+    _git(tmp_path / "origin.git", "update-ref", "-d", "refs/heads/issue-77-old")
+    got = vci.resolve_check_ref(repo, 77, fetch=True, invoke_cwd=repo)
+    assert got == ("origin/main", "origin-main-default")
+    assert not vci.ref_exists(repo, "origin/issue-77-old")
+
+
+def test_cli_ref_and_repo_branch_mutually_exclusive(repo: Path, tmp_path: Path) -> None:
+    plan = _plan(tmp_path, "no citations")
+    with pytest.raises(SystemExit) as ei:
+        _main(repo, plan, extra=["--ref", "origin/main", "--repo-branch", "main"])
+    assert ei.value.code == 2
+
+
+def test_cli_incident_shape_end_to_end(repo: Path, tmp_path: Path) -> None:
+    """The #1336 shape: the input lives ONLY on the suffixed dispatch branch."""
+    _branch_push(repo, "issue-77")  # stale bare branch, no file
+    _git(repo, "checkout", "-q", "-b", "issue-77-full")
+    _write(repo, "eval_results/issue_77/f.json")
+    _git(repo, "add", "eval_results/issue_77/f.json")
+    _git(repo, "commit", "-q", "-m", "add f on suffixed branch")
+    _git(repo, "push", "-q", "origin", "issue-77-full")
+    _git(repo, "checkout", "-q", "main")
+    _write(repo, "eval_results/issue_77/f.json")  # the VM-local copy
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/f.json from the prior round.")
+    # (a) mirrored --repo-branch grades the RIGHT tree -> PASS.
+    assert _main(repo, plan, extra=["--repo-branch", "issue-77-full"]) == 0
+    # (b) neither flag -> the rung-4 ambiguity refusal, exit 2.
+    assert _main(repo, plan) == 2
+    # (c) --ref pinning the STALE bare branch still wins and still FAILs —
+    # the gate is not weakened; the wrong-tree grade is deliberate.
+    assert _main(repo, plan, extra=["--ref", "origin/issue-77"]) == 1
+
+
+def test_cli_refusal_stderr_names_candidates_and_remedy(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _branch_push(repo, "issue-77")
+    _branch_push(repo, "issue-77-full")
+    plan = _plan(tmp_path, "no citations")
+    assert _main(repo, plan) == 2
+    err = capsys.readouterr().err
+    assert "origin/issue-77" in err and "origin/issue-77-full" in err
+    assert "--repo-branch" in err
+
+
+def test_cli_verdict_lines_carry_ref_every_severity(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")  # PASS (in-ref)
+    _write(repo, "data/issue_77/x.json")  # WARN (data-local-only)
+    _write(repo, "eval_results/issue_12/m.json")  # FAIL (untracked-local-only)
+    text = (
+        "Reuses eval_results/issue_12/a.json and consumes data/issue_77/x.json "
+        "and reads eval_results/issue_12/m.json "
+        "and writes eval_results/issue_77/out.json now."  # SKIP (planned-output)
+    )
+    plan = _plan(tmp_path, text)
+    assert _main(repo, plan) == 1
+    out = capsys.readouterr().out
+    rows = [ln for ln in out.splitlines() if ln.startswith("[")]
+    assert {ln[1:5].strip() for ln in rows} == {"PASS", "WARN", "FAIL", "SKIP"}
+    assert rows and all(" ref=origin/" in ln for ln in rows)
+    assert "ref source:" in out
+
+
+def test_cli_json_carries_check_ref_source(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _branch_push(repo, "issue-77-full")
+    plan = _plan(tmp_path, "no citations")
+    assert _main(repo, plan, extra=["--repo-branch", "issue-77-full", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/issue-77-full"
+    assert payload["check_ref_source"] == "repo-branch-flag"
+
+
+def test_committed_unpushed_on_suffixed_branch_detected(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77-full")  # origin tip WITHOUT the file
+    _git(repo, "checkout", "-q", "issue-77-full")
+    _write(repo, "eval_results/issue_77/inp.json")
+    _git(repo, "add", "eval_results/issue_77/inp.json")
+    _git(repo, "commit", "-q", "-m", "add input on suffixed branch")  # NOT pushed
+    _git(repo, "checkout", "-q", "main")
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/inp.json from the prior round.")
+    assert _main(repo, plan, extra=["--repo-branch", "issue-77-full"]) == 1
+    fs = vci.run_check(
+        "Consumes eval_results/issue_77/inp.json now.",
+        repo_root=repo,
+        issue=77,
+        check_ref="origin/issue-77-full",
+        local_branch="issue-77-full",
+    )
+    assert [(f.verdict, f.reason) for f in fs] == [("fail", "committed-unpushed")]
+    assert "issue-77-full" in fs[0].detail
+
+
+def test_step6_repo_branch_shared_resolver_pin() -> None:
+    """#2263 durability pin: BOTH Step 6 fences call the ONE shared resolver.
+
+    Byte-identical unindented preludes (assignment + ${REPO_BRANCH:?} guard)
+    in the 6a.5 gate fence and the 6b launch fence; zero hardcoded
+    `--repo-branch issue-<N>` literals survive anywhere in the composed spec.
+    """
+    text = issue_skill_text()
+    expected_assign = (
+        'REPO_BRANCH="$(uv run python scripts/verify_carryover_inputs.py '
+        '--print-repo-branch --issue <N>)"   '
+        "# the ONE shared issue-scoped resolver — re-derived per fence; "
+        "never the cwd branch (#2263)"
+    )
+    assign_lines = re.findall(r"(?m)^REPO_BRANCH=.*$", text)
+    assert assign_lines == [expected_assign, expected_assign]
+    assert len(re.findall(r"(?<![$\w])REPO_BRANCH=", text)) == 2
+    guard_lines = re.findall(r'(?m)^: "\$\{REPO_BRANCH:\?.*$', text)
+    assert len(guard_lines) == 2
+    assert len(set(guard_lines)) == 1  # byte-identical guards
+    assert (
+        'uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" '
+        '--issue <N> --repo-branch "$REPO_BRANCH"'
+    ) in text
+    assert '--issue <N> --intent "$INTENT" --repo-branch "$REPO_BRANCH" \\' in text
+    assert 'git push origin "$REPO_BRANCH"' in text  # the push remediation
+    assert '--repo-branch "issue-<N>"' not in text
+    assert "--repo-branch issue-<N>" not in text
+
+
+def test_step6_repo_branch_shared_resolver_fresh_shell_execution(
+    repo: Path, tmp_path: Path
+) -> None:
+    """#2263 execution pin: the fence prelude RUNS, verbatim from the spec.
+
+    Extraction failure IS test failure (never a silent skip): the prelude
+    lines are pulled from the composed spec by the same regexes as the text
+    pin, substituted ONLY on `<N>` and the `uv run python <script>` prefix,
+    and executed under `bash -c` in a fresh shell.
+    """
+    text = issue_skill_text()
+    assigns = re.findall(r"(?m)^REPO_BRANCH=.*$", text)
+    guards = re.findall(r'(?m)^: "\$\{REPO_BRANCH:\?.*$', text)
+    assert len(assigns) == 2 and len(guards) == 2, "prelude extraction failed"
+    assign = (
+        assigns[0]
+        .replace("<N>", "77")
+        .replace(
+            "uv run python scripts/verify_carryover_inputs.py",
+            f"{sys.executable} {_SCRIPT}",
+        )
+    )
+    guard = guards[0].replace("<N>", "77")
+    script = assign + "\n" + guard + "\n" + 'echo "REACHED-$REPO_BRANCH"'
+    # Arm 1: repo-root shape (branch main, no issue worktree) -> the guard
+    # ABORTS the fence; the dispatch line is never reached.
+    proc = subprocess.run(["bash", "-c", script], cwd=repo, capture_output=True, text=True)
+    assert proc.returncode != 0
+    assert "REACHED" not in proc.stdout
+    assert "ERROR:" in proc.stderr  # the resolver's refusal reached the shell
+    # Arm 2: ONE live issue worktree -> the fence proceeds with its branch.
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-77-full")
+    proc2 = subprocess.run(["bash", "-c", script], cwd=repo, capture_output=True, text=True)
+    assert proc2.returncode == 0, proc2.stderr
+    assert proc2.stdout.strip().endswith("REACHED-issue-77-full")
+
+
+def test_worktree_inference_repository_bound(repo: Path, tmp_path: Path) -> None:
+    """Guard (b): a FOREIGN repository cwd can never steer the check ref."""
+    foreign = _foreign_repo(tmp_path, name="foreign", branch="issue-77-full")
+    # (c) bare-only fall-through FIRST: the foreign cwd is rejected by the
+    # repository-binding guard and rung 4 resolves the bare default.
+    _branch_push(repo, "issue-77")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=foreign)
+    assert got == ("origin/issue-77", "bare-issue-branch-default")
+    # (a) suffix present on the TARGET: the same foreign cwd now hits the
+    # rung-4 candidates refusal — NOT rung 3's unpushed message, and never a
+    # silent worktree-branch pick of the foreign checkout's branch.
+    _branch_push(repo, "issue-77-full")
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=foreign)
+    msg = str(ei.value)
+    assert "candidates" in msg and "origin/issue-77-full" in msg
+    assert "materialize nothing" not in msg  # not the rung-3 unpushed refusal
+    # (b) foreign repo NESTED inside the target tree — same refusal.
+    nested = _foreign_repo(repo, name="nested_foreign", branch="issue-77-x")
+    with pytest.raises(vci.CheckRefResolutionError) as ei2:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=nested)
+    assert "candidates" in str(ei2.value)
+
+
+def test_repo_branch_flag_beats_worktree_inference(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77-full")
+    wt = tmp_path / "wt-other"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-other")
+    _git(repo, "push", "-q", "origin", "issue-77-other")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="issue-77-full", invoke_cwd=wt)
+    assert got == ("origin/issue-77-full", "repo-branch-flag")
+    got_main = vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="main", invoke_cwd=wt)
+    assert got_main == ("origin/main", "repo-branch-flag")
+
+
+_MATRIX_CELLS = [
+    ("bare-only", ("repo-branch", "issue-77"), ("origin/issue-77", "repo-branch-flag")),
+    ("bare-only", ("repo-branch", "main"), ("origin/main", "repo-branch-flag")),
+    ("bare-only", ("repo-branch", "issue-77-absent"), "raise"),
+    ("bare-only", ("worktree-pushed", "issue-77"), ("origin/issue-77", "worktree-branch")),
+    ("bare-only", ("worktree-unpushed", "issue-77-local"), "raise"),
+    ("none", ("default", None), ("origin/main", "origin-main-default")),
+    ("none", ("repo-branch", "main"), ("origin/main", "repo-branch-flag")),
+    ("none", ("repo-branch", "issue-77-full"), "raise"),
+    ("none", ("worktree-unpushed", "issue-77-local"), "raise"),
+    ("suffix-only", ("default", None), "raise"),
+    (
+        "suffix-only",
+        ("repo-branch", "issue-77-full"),
+        ("origin/issue-77-full", "repo-branch-flag"),
+    ),
+    ("suffix-only", ("repo-branch", "main"), ("origin/main", "repo-branch-flag")),
+    (
+        "suffix-only",
+        ("worktree-pushed", "issue-77-full"),
+        ("origin/issue-77-full", "worktree-branch"),
+    ),
+    ("bare+suffix", ("default", None), "raise"),
+    ("bare+suffix", ("repo-branch", "issue-77"), ("origin/issue-77", "repo-branch-flag")),
+    (
+        "bare+suffix",
+        ("repo-branch", "issue-77-full"),
+        ("origin/issue-77-full", "repo-branch-flag"),
+    ),
+    (
+        "bare+suffix",
+        ("worktree-pushed", "issue-77-full"),
+        ("origin/issue-77-full", "worktree-branch"),
+    ),
+    ("bare+suffix", ("main-cwd", None), "raise"),
+]
+
+
+@pytest.mark.parametrize(("remote_state", "invocation", "expected"), _MATRIX_CELLS)
+def test_matrix_feasible_cells(
+    repo: Path, tmp_path: Path, remote_state: str, invocation: tuple, expected
+) -> None:
+    """#2263 feasible-cell matrix: remote state x invocation -> (ref, source)."""
+    if remote_state in ("bare-only", "bare+suffix"):
+        _branch_push(repo, "issue-77")
+    if remote_state in ("suffix-only", "bare+suffix"):
+        _branch_push(repo, "issue-77-full")
+    kind, value = invocation
+    kwargs: dict = {"fetch": False, "invoke_cwd": repo}
+    if kind == "repo-branch":
+        kwargs["repo_branch"] = value
+    elif kind == "worktree-pushed":
+        wt = tmp_path / "wt"
+        if vci.ref_exists(repo, f"refs/heads/{value}"):
+            _git(repo, "worktree", "add", "-q", str(wt), value)
+        else:
+            _git(repo, "worktree", "add", "-q", str(wt), "-b", value)
+            _git(repo, "push", "-q", "origin", value)
+        kwargs["invoke_cwd"] = wt
+    elif kind == "worktree-unpushed":
+        wt = tmp_path / "wt"
+        _git(repo, "worktree", "add", "-q", str(wt), "-b", value)
+        kwargs["invoke_cwd"] = wt
+    # "default" / "main-cwd": invoke from the repo root (branch main).
+    if expected == "raise":
+        with pytest.raises(vci.CheckRefResolutionError):
+            vci.resolve_check_ref(repo, 77, **kwargs)
+    else:
+        assert vci.resolve_check_ref(repo, 77, **kwargs) == expected
+
+
+def test_cli_repo_branch_validator_rejects_empty_and_origin_prefixed(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    plan = _plan(tmp_path, "no citations")
+    with pytest.raises(SystemExit) as ei:
+        _main(repo, plan, extra=["--repo-branch", ""])
+    assert ei.value.code == 2
+    with pytest.raises(SystemExit) as ei2:
+        _main(repo, plan, extra=["--repo-branch", "origin/issue-77"])
+    assert ei2.value.code == 2
+    err = capsys.readouterr().err
+    assert "origin/" in err and "--ref" in err  # names the remedy
+
+
+def test_cli_worktree_inference_via_cwd_default(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The ONE test exercising the Path.cwd() default positively (CLI-level)."""
+    wt = tmp_path / "wt-full"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-full")
+    _git(repo, "push", "-q", "origin", "issue-77-full")
+    plan = _plan(tmp_path, "no citations here")
+    argv = [
+        "--plan",
+        str(plan),
+        "--issue",
+        "77",
+        "--repo-root",
+        str(repo),
+        "--no-fetch",
+        "--json",
+    ]
+    with contextlib.chdir(wt):
+        rc = vci.main(argv)
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/issue-77-full"
+    assert payload["check_ref_source"] == "worktree-branch"
+
+
+def test_local_branch_regression_arms(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """R6/MF-3: NO derivation converts the committed-unpushed FAIL to SKIP/WARN.
+
+    Fixture: an own-issue tracked-results citation committed ONLY on the
+    LOCAL issue-77 tip — absent from every origin ref and from disk.
+    """
+    _branch_push(repo, "issue-77")  # stale bare tip on origin (no file)
+    _git(repo, "checkout", "-q", "issue-77")
+    _write(repo, "eval_results/issue_77/inp.json")
+    _git(repo, "add", "eval_results/issue_77/inp.json")
+    _git(repo, "commit", "-q", "-m", "add input on local branch")  # NOT pushed
+    _git(repo, "checkout", "-q", "main")
+    _branch_push(repo, "foo")  # pushed foreign branch, no file
+    main_sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "main"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/inp.json from the prior round.")
+
+    def _fail_row(extra: list[str]) -> str:
+        assert _main(repo, plan, extra=extra) == 1
+        out = capsys.readouterr().out
+        rows = [ln for ln in out.splitlines() if "committed-unpushed" in ln]
+        assert len(rows) == 1, out
+        return rows[0]
+
+    _fail_row([])  # (a) bare-only default
+    _fail_row(["--ref", "origin/main"])  # (b)
+    _fail_row(["--ref", "origin/foo"])  # (c) pushed foreign branch
+    row_sha = _fail_row(["--ref", main_sha])  # (d) raw SHA check ref
+    # (h) non-branch-shaped wording: no branch interpolated from the raw SHA.
+    assert "the branch the dispatch will materialize" in row_sha
+    _fail_row(["--ref", "foo"])  # (e) non-origin local-ref form
+    # (f)/(g): own-issue SUFFIXED namespace — the union-probe extension.
+    _branch_push(repo, "issue-77-full")  # cut from main, no file
+    row_f = _fail_row(["--ref", "origin/issue-77-full"])
+    row_g = _fail_row(["--repo-branch", "issue-77-full"])
+    # (h) remediation names the FOUND branch and the MATERIALIZED ref.
+    for row in (row_f, row_g):
+        assert "issue-77" in row and "origin/issue-77-full" in row
+    assert "merge/rebase" in row_g
+
+
+def test_cli_unchanged_rows_semantic_invariants(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """MF-5/R4: bare-invocation rows on the legacy fixture states keep today's
+    resolved ref, per-severity verdict counts, and exit code — asserted as
+    FIXTURE LITERALS, never recomputed through resolve_check_ref."""
+    # One row per severity by construction:
+    #   pass: a.json committed+pushed on main BEFORE any branch cut (in-ref)
+    #   warn: data/issue_77/x.json untracked (data-local-only)
+    #   fail: eval_results/issue_12/m.json untracked (untracked-local-only)
+    #   skip: eval_results/issue_77/out.json nowhere (planned-output)
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    _write(repo, "data/issue_77/x.json")
+    _write(repo, "eval_results/issue_12/m.json")
+    text = (
+        "Reuses eval_results/issue_12/a.json and consumes data/issue_77/x.json "
+        "and reads eval_results/issue_12/m.json "
+        "and writes eval_results/issue_77/out.json now."
+    )
+    plan = _plan(tmp_path, text)
+
+    def _counts(payload: dict) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for f in payload["findings"]:
+            counts[f["verdict"]] = counts.get(f["verdict"], 0) + 1
+        return counts
+
+    # main-only state: the LITERAL origin/main.
+    assert _main(repo, plan, extra=["--json"]) == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/main"
+    assert _counts(payload) == {"pass": 1, "warn": 1, "fail": 1, "skip": 1}
+    # bare-only state: the LITERAL origin/issue-77 (cut AFTER a.json landed
+    # on main, so the pass row survives in-ref on the branch tip too).
+    _branch_push(repo, "issue-77")
+    assert _main(repo, plan, extra=["--json"]) == 1
+    payload2 = json.loads(capsys.readouterr().out)
+    assert payload2["check_ref"] == "origin/issue-77"
+    assert _counts(payload2) == {"pass": 1, "warn": 1, "fail": 1, "skip": 1}
+
+
+@pytest.mark.parametrize(
+    ("check_ref", "ref_source", "expected"),
+    [
+        ("origin/issue-77-full", "repo-branch-flag", "issue-77-full"),
+        ("origin/main", "repo-branch-flag", "main"),
+        ("origin/issue-77-full", "worktree-branch", "issue-77-full"),
+        ("origin/issue-77", "bare-issue-branch-default", "issue-77"),
+        ("origin/main", "origin-main-default", "issue-77"),
+        ("origin/issue-77-full", "ref-flag", "issue-77-full"),
+        ("origin/issue-77", "ref-flag", "issue-77"),
+        ("origin/foo", "ref-flag", "issue-77"),
+        ("origin/main", "ref-flag", "issue-77"),
+        ("3f2c1a9", "ref-flag", "issue-77"),
+        ("foo", "ref-flag", "issue-77"),
+        ("issue-77-full", "ref-flag", "issue-77-full"),
+        ("origin/issue-771-x", "ref-flag", "issue-77"),  # digit boundary
+    ],
+)
+def test_derive_local_branch_pure(check_ref: str, ref_source: str, expected: str) -> None:
+    assert vci.derive_local_branch(check_ref, ref_source, 77) == expected
+
+
+@pytest.mark.parametrize("branch", ["issue-77", "issue-77-full"])
+def test_derive_worktree_repo_branch_unique(repo: Path, tmp_path: Path, branch: str) -> None:
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", branch)
+    assert vci.derive_worktree_repo_branch(repo, 77) == branch
+
+
+@pytest.mark.parametrize("state", ["no-worktree", "foreign-issue", "digit-prefix", "detached"])
+def test_derive_worktree_repo_branch_zero_match_raises(
+    repo: Path, tmp_path: Path, state: str
+) -> None:
+    if state == "foreign-issue":
+        _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-88-x")
+    elif state == "digit-prefix":
+        _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-771-x")
+    elif state == "detached":
+        _git(repo, "worktree", "add", "-q", "--detach", str(tmp_path / "wt"))
+    with pytest.raises(vci.RepoBranchDerivationError) as ei:
+        vci.derive_worktree_repo_branch(repo, 77)
+    assert "--repo-branch main" in str(ei.value)  # the wholly-main escape
+
+
+def test_derive_worktree_repo_branch_multiple_raises(repo: Path, tmp_path: Path) -> None:
+    wt1 = tmp_path / "wt1"
+    wt2 = tmp_path / "wt2"
+    _git(repo, "worktree", "add", "-q", str(wt1), "-b", "issue-77")
+    _git(repo, "worktree", "add", "-q", str(wt2), "-b", "issue-77-full")
+    with pytest.raises(vci.RepoBranchDerivationError) as ei:
+        vci.derive_worktree_repo_branch(repo, 77)
+    msg = str(ei.value)
+    assert "issue-77" in msg and "issue-77-full" in msg
+    assert str(wt1) in msg and str(wt2) in msg
+    assert "--repo-branch <branch>" in msg
+
+
+def test_derive_worktree_repo_branch_stale_registration_skipped(repo: Path, tmp_path: Path) -> None:
+    wt = tmp_path / "wt-stale"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-gone")
+    shutil.rmtree(wt)  # deleted WITHOUT `git worktree prune` (probe P1b)
+    with pytest.raises(vci.RepoBranchDerivationError) as ei:
+        vci.derive_worktree_repo_branch(repo, 77)
+    msg = str(ei.value)
+    assert "issue-77-gone" in msg and "stale" in msg
+
+
+def test_derive_worktree_repo_branch_stale_plus_live_notes_skip(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#2263 review finding 2: a SUCCESS beside a skipped stale registration
+    emits one diagnostic stderr note — a transient is_dir() False could
+    otherwise silently convert a designed multiple-match refusal into a
+    unique match with no trace."""
+    stale = tmp_path / "wt-stale"
+    _git(repo, "worktree", "add", "-q", str(stale), "-b", "issue-77-gone")
+    shutil.rmtree(stale)
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt-live"), "-b", "issue-77-full")
+    assert vci.derive_worktree_repo_branch(repo, 77) == "issue-77-full"
+    err = capsys.readouterr().err
+    assert "skipped stale" in err and "issue-77-gone" in err
+
+
+def test_cli_print_repo_branch(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Healthy: EXACTLY the branch + newline on stdout, empty stderr, rc 0.
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-77-full")
+    rc = vci.main(["--print-repo-branch", "--issue", "77", "--repo-root", str(repo)])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out == "issue-77-full\n"
+    assert captured.err == ""
+    # Zero-match: rc 2, stdout EXACTLY EMPTY (the ${REPO_BRANCH:?} guard keys
+    # on it), stderr names the --repo-branch main escape.
+    rc2 = vci.main(["--print-repo-branch", "--issue", "88", "--repo-root", str(repo)])
+    captured2 = capsys.readouterr()
+    assert rc2 == 2
+    assert captured2.out == ""
+    assert "ERROR:" in captured2.err and "--repo-branch main" in captured2.err
+    # Mode-combination refusals: EVERY forbidden check-mode flag family
+    # (all 7 — #2263 r2 finding 4) exits 2 via argparse, naming the flag.
+    for extra in (
+        ["--plan", str(_plan(tmp_path, "x"))],
+        ["--ref", "origin/main"],
+        ["--repo-branch", "main"],
+        ["--extra-sync-path", "eval_results/issue_77/x"],
+        ["--no-fetch"],
+        ["--json"],
+        ["--lane", "rsync"],
+    ):
+        with pytest.raises(SystemExit) as ei:
+            vci.main(["--print-repo-branch", "--issue", "77", "--repo-root", str(repo), *extra])
+        assert ei.value.code == 2
+        assert extra[0] in capsys.readouterr().err  # the refusal names the flag
+    # Non-print mode still REQUIRES --plan.
+    with pytest.raises(SystemExit) as ei2:
+        vci.main(["--issue", "77", "--repo-root", str(repo), "--no-fetch"])
+    assert ei2.value.code == 2
+
+
+def test_git_env_sanitized_against_repo_selection_overrides(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """MF-C: inherited GIT_* repo-selection overrides cannot repoint probes."""
+    _branch_push(repo, "issue-77")  # bare-only remote state
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-77-full")
+    baseline = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo)
+    assert baseline == ("origin/issue-77", "bare-issue-branch-default")
+    # Foreign repo with a DIVERGENT remote state (a pushed issue-77-x suffix
+    # would force a refusal if the poisoned env were honored), an issue-scoped
+    # checkout branch, and its own issue-scoped worktree.
+    foreign = _foreign_repo(tmp_path, name="foreign", branch="issue-77-full")
+    _git(foreign, "branch", "issue-77-x")
+    _git(foreign, "push", "-q", "origin", "issue-77-x")
+    _git(foreign, "worktree", "add", "-q", str(tmp_path / "fwt"), "-b", "issue-77-foreign")
+    poison = {
+        "GIT_DIR": str(foreign / ".git"),
+        "GIT_COMMON_DIR": str(foreign / ".git"),
+        "GIT_WORK_TREE": str(foreign),
+    }
+    for var, value in poison.items():
+        monkeypatch.setenv(var, value)
+        # (a) resolution identical to the unset-env baseline.
+        assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo) == baseline
+        # (b) the repository-binding guard still REJECTS the foreign cwd —
+        # the bare default, never the foreign branch as `worktree-branch`.
+        assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=foreign) == baseline
+        # (c) worktree derivation lists the FIXTURE repo's worktrees, not
+        # the foreign repo's.
+        assert vci.derive_worktree_repo_branch(repo, 77) == "issue-77-full"
+        monkeypatch.delenv(var)
+    # (d) bare-context negative arm (no poison): a .git-dir cwd reports a
+    # branch (probe P1) but fails --is-inside-work-tree (probe P4) -> rung 4
+    # default, never `worktree-branch`.
+    _git(repo, "checkout", "-q", "issue-77")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo / ".git")
+    assert got == ("origin/issue-77", "bare-issue-branch-default")
+    # (e) the _default_repo_root CHOKEPOINT itself under the full poison set
+    # (#2263 r2 finding 4): every other arm passes an explicit repo root, so
+    # sanitization removed from _default_repo_root ALONE would stay green
+    # without this arm — a poisoned default must still resolve the CWD's
+    # repository, never the foreign one.
+    for var, value in poison.items():
+        monkeypatch.setenv(var, value)
+    with contextlib.chdir(repo):
+        got_root = vci._default_repo_root()
+    assert got_root is not None
+    assert Path(os.path.realpath(got_root)) == Path(os.path.realpath(repo))
+
+
+@pytest.mark.parametrize("remote_state", ["none", "bare-only", "suffix-only", "bare+suffix"])
+def test_cli_explicit_ref_bypasses_resolver_on_all_remote_states(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], remote_state: str
+) -> None:
+    """Rung 1: --ref never calls the resolver — exit 0 even on the suffix
+    states whose resolver path would REFUSE (exit 2)."""
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    if remote_state in ("bare-only", "bare+suffix"):
+        _branch_push(repo, "issue-77")
+    if remote_state in ("suffix-only", "bare+suffix"):
+        _branch_push(repo, "issue-77-full")
+    plan = _plan(tmp_path, "Reuses eval_results/issue_12/a.json only.")
+    assert _main(repo, plan, extra=["--ref", "origin/main", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/main"
+    assert payload["check_ref_source"] == "ref-flag"
+
+
+def test_sanitized_git_env_strips_config_injection_channels(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#2263 r2: every config-injection env channel is stripped — COUNT,
+    PARAMETERS, the GLOBAL/SYSTEM file redirects, and the indexed KEY/VALUE
+    pairs at EVERY index (not just 0) — while an unrelated GIT_*-prefixed
+    name survives (the pair regex is anchored, not a prefix match)."""
+    poison = {
+        "GIT_CONFIG_COUNT": "13",
+        "GIT_CONFIG_KEY_0": "url.x.insteadOf",
+        "GIT_CONFIG_VALUE_0": "y",
+        "GIT_CONFIG_KEY_12": "url.a.insteadOf",
+        "GIT_CONFIG_VALUE_12": "b",
+        "GIT_CONFIG_PARAMETERS": "'url.x.insteadOf=y'",
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_SYSTEM": "/dev/null",
+    }
+    for k, v in poison.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.setenv("GIT_CONFIGURATION_UNRELATED", "keep")  # anchor guard
+    env = vci._sanitized_git_env()
+    for k in poison:
+        assert k not in env, k
+    assert env["GIT_CONFIGURATION_UNRELATED"] == "keep"
+    # #2263 r3 finding 3: the documented-OPEN channels are DELIBERATELY not
+    # stripped — operators set these on purpose (a remote reachable only via
+    # a custom SSH/proxy command; HOME/XDG relocate the user config file),
+    # and stripping them trades a real fetch failure for a theoretical
+    # spoof. The sanitizer defends accidental inheritance, not a hostile
+    # caller (who already controls the session).
+    open_channels = {
+        "GIT_SSH": "/usr/bin/ssh",
+        "GIT_SSH_COMMAND": "ssh -i /tmp/key",
+        "GIT_PROXY_COMMAND": "/usr/bin/proxy-cmd",
+        "GIT_EXEC_PATH": "/usr/lib/git-core",
+        "HOME": os.environ.get("HOME", "/home/x"),
+        "XDG_CONFIG_HOME": "/tmp/xdg",
+    }
+    for k, v in open_channels.items():
+        monkeypatch.setenv(k, v)
+    env2 = vci._sanitized_git_env()
+    for k, v in open_channels.items():
+        assert env2.get(k) == v, f"documented-open channel stripped: {k}"
+
+
+def test_git_config_env_injection_cannot_redirect_fetch(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#2263 r2 (git-config-origin-spoof): an env-injected
+    `url.<foreign>.insteadOf` rewrite cannot redirect the gate's bounded
+    fetch — the sanitized fetch reads the REAL origin.
+
+    The control arm FIRST proves the channel is potent on this git binary (a
+    raw UNSANITIZED fetch under the poison pulls the FOREIGN tip into
+    origin/issue-77), so the sanitized arm cannot pass hollow.
+    """
+    # Real origin: issue-77 carries real_marker.txt.
+    _git(repo, "checkout", "-q", "-b", "issue-77")
+    _write(repo, "real_marker.txt", "real\n")
+    _git(repo, "add", "real_marker.txt")
+    _git(repo, "commit", "-q", "-m", "real issue-77")
+    _git(repo, "push", "-q", "origin", "issue-77")
+    _git(repo, "checkout", "-q", "main")
+    # Foreign origin: an UNRELATED repo whose issue-77 tip carries
+    # foreign_marker.txt instead.
+    foreign = _foreign_repo(tmp_path, name="evil", branch="issue-77")
+    _write(foreign, "foreign_marker.txt", "foreign\n")
+    _git(foreign, "add", "foreign_marker.txt")
+    _git(foreign, "commit", "-q", "-m", "foreign issue-77")
+    _git(foreign, "push", "-q", "origin", "issue-77")
+    poison = {
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": f"url.{tmp_path / 'evil-origin.git'}.insteadOf",
+        "GIT_CONFIG_VALUE_0": str(tmp_path / "origin.git"),
+    }
+    # CONTROL ARM — raw fetch, poison honored: origin/issue-77 now points at
+    # the foreign tip (the reproduced #2263 r2 spoof).
+    subprocess.run(
+        ["git", "-C", str(repo), "fetch", "origin", "--quiet", "--no-tags", "issue-77"],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={**os.environ, **poison},
+    )
+    assert vci.path_in_ref(repo, "origin/issue-77", "foreign_marker.txt")
+    assert not vci.path_in_ref(repo, "origin/issue-77", "real_marker.txt")
+    # SANITIZED ARM — the SAME poison in os.environ: the resolver's
+    # fetch=True path strips it and restores origin/issue-77 to the REAL tip.
+    for k, v in poison.items():
+        monkeypatch.setenv(k, v)
+    got = vci.resolve_check_ref(repo, 77, fetch=True, invoke_cwd=repo)
+    assert got == ("origin/issue-77", "bare-issue-branch-default")
+    assert vci.path_in_ref(repo, "origin/issue-77", "real_marker.txt")
+    assert not vci.path_in_ref(repo, "origin/issue-77", "foreign_marker.txt")
+
+
+def _launch_fence_executable_span(text: str) -> str:
+    """The Step 6b launch fence's recheck->dispatch span, VERBATIM.
+
+    Extracts the ONE ```bash block carrying both the gate recheck and the
+    `dispatch_issue.py launch` command, slices at its `REPO_BRANCH=` prelude
+    line (the lines above it are the `BACKEND=`/`INTENT=<inferred>` setup —
+    `<inferred>` is an orchestrator-filled placeholder that is not valid
+    bash, and both feed only the dispatch command, which the caller
+    stands in for), and replaces ONLY the dispatch command itself with an
+    `echo "DISPATCHED-$REPO_BRANCH"` reachability stand-in. No halt
+    semantics are added or removed: whether a failing recheck stops the
+    dispatch is decided by the production text alone (#2263 r3 finding 1 —
+    the prior version of this test injected `set -e`, constructing the very
+    behavior it claimed to verify). Extraction failure IS test failure.
+    """
+    blocks = re.findall(r"(?ms)^```bash\n(.*?)^```$", text)
+    hits = [
+        b
+        for b in blocks
+        if "scripts/dispatch_issue.py launch" in b
+        and 'scripts/verify_carryover_inputs.py --plan "$PLAN_PATH"' in b
+    ]
+    assert len(hits) == 1, f"launch-fence block extraction failed ({len(hits)} candidates)"
+    lines = hits[0].splitlines()
+    starts = [i for i, ln in enumerate(lines) if ln.startswith("REPO_BRANCH=")]
+    assert len(starts) == 1, "launch-fence REPO_BRANCH prelude extraction failed"
+    span = "\n".join(lines[starts[0] :])
+    span, n_sub = re.subn(
+        r"(?ms)^uv run python scripts/dispatch_issue\.py launch \\\n"
+        r".*?\$\{BACKEND:\+--backend \"\$BACKEND\"\}$",
+        'echo "DISPATCHED-$REPO_BRANCH"',
+        span,
+    )
+    assert n_sub == 1, "dispatch-command stand-in substitution failed"
+    return span
+
+
+def test_step6_launch_fence_gate_recheck_blocks_cross_fence_divergence(
+    repo: Path, tmp_path: Path
+) -> None:
+    """#2263 r2 (cross-fence-ref-drift) + r3 finding 1: the Step 6b launch
+    fence RE-RUNS the carry-over gate against ITS OWN resolved branch AND
+    mechanically HALTS on a recheck failure, so a sole worktree switched
+    from pushed branch A to pushed branch B between the fences is re-graded
+    — and here REFUSED — before any dispatch (the false-PASS class this
+    task exists to close; both resolutions succeed, so no resolver refusal
+    can catch it).
+
+    The fence executes AS WRITTEN (verbatim span, no injected `set -e`, no
+    synthesized halt — see `_launch_fence_executable_span`): the divergence
+    arm fails if and only if the real text fails to halt. Against the r2
+    text (bare recheck adjacent to the dispatch, halt in a comment only)
+    this test FAILS on the divergence arm — the dispatch stand-in is
+    reached. NOTE the sibling
+    `test_step6_repo_branch_shared_resolver_fresh_shell_execution` is real
+    for SOURCE drift but structurally blind to cross-fence PARITY (it runs
+    one prelude against two independent static states) — this test owns the
+    divergence arm.
+    """
+    text = issue_skill_text()
+    fence = (
+        _launch_fence_executable_span(text)
+        .replace("<N>", "77")
+        .replace(
+            "uv run python scripts/verify_carryover_inputs.py",
+            f"{sys.executable} {_SCRIPT}",
+        )
+    )
+
+    # Fixture: the plan cites a file committed+pushed ONLY on branch A
+    # (issue-77-full, checked out in the sole issue worktree). An untracked
+    # VM-local copy at the repo root keeps the divergence arm out of the
+    # own-issue planned-output SKIP (a nonexistent own-issue path would skip).
+    wt = tmp_path / "wt"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-full")
+    _write(wt, "eval_results/issue_77/f.json")
+    _git(wt, "add", "eval_results/issue_77/f.json")
+    _git(wt, "commit", "-q", "-m", "input on branch A")
+    _git(wt, "push", "-q", "origin", "issue-77-full")
+    _write(repo, "eval_results/issue_77/f.json")  # untracked VM-local copy
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/f.json from the prior round.")
+    env = {**os.environ, "PLAN_PATH": str(plan)}
+
+    # Healthy arm: the fence resolves A, the recheck grades
+    # origin/issue-77-full (in-ref) -> the dispatch line is reached.
+    ok = subprocess.run(["bash", "-c", fence], cwd=repo, capture_output=True, text=True, env=env)
+    assert ok.returncode == 0, ok.stderr
+    assert "DISPATCHED-issue-77-full" in ok.stdout
+
+    # Divergence arm: the SOLE worktree switches to pushed branch B (cut from
+    # main — the cited file is NOT reachable there). Pre-fix, the launch
+    # fence dispatched B with no gate ever grading it.
+    _git(repo, "branch", "issue-77-alt", "main")
+    _git(repo, "push", "-q", "origin", "issue-77-alt")
+    _git(wt, "checkout", "-q", "issue-77-alt")
+    blocked = subprocess.run(
+        ["bash", "-c", fence], cwd=repo, capture_output=True, text=True, env=env
+    )
+    assert blocked.returncode == 1, blocked.stderr  # the guard's exit 1, not the resolver's 2
+    assert "DISPATCHED" not in blocked.stdout
+    assert "dispatch REFUSED" in blocked.stderr  # the guard's fail-loud message fired
+    combined = blocked.stdout + blocked.stderr
+    assert "untracked-local-only" in combined  # the RECHECK graded branch B
+    assert "eval_results/issue_77/f.json" in combined
+
+
+def _realized_launch_argv(launch_cmd: str, tmp_path: Path, *, rsync_lane: bool) -> list[str]:
+    """Execute the extracted launch command in REAL bash; return its argv.
+
+    Exactly TWO mechanical substitutions are applied before execution —
+    (1) the leading ``uv run python scripts/dispatch_issue.py launch``
+    program prefix is replaced by an argv recorder, and (2) every ``<N>``
+    issue-number placeholder is instantiated to the literal ``77`` —
+    every OTHER byte runs verbatim, so the EXECUTING SHELL (not a regex
+    over the span) decides which words reach the dispatch argv. That is
+    what makes the pin comment-escape-proof (#2263 r5): a
+    backslash-continued COMMENT
+    containing the expansion token keeps any substring assertion green
+    while bash discards the token (and its trailing backslash) as comment
+    text, silently ending the command one line early.
+
+    ``rsync_lane=True`` populates ``EXTRA_SYNC_ARGS`` with two values (one
+    space-containing, so word-splitting bugs surface); ``False`` leaves the
+    array UNSET — under ``set -u``, exactly the non-rsync-lane regime the
+    ``${VAR[@]+...}`` guard exists for. Extraction/exec failure IS test
+    failure; returns the argv words the recorder observed, in order.
+    """
+    recorder = tmp_path / "recorder.sh"
+    argv_out = tmp_path / "argv.out"
+    recorder.write_text(
+        '#!/usr/bin/env bash\n: > "$ARGV_OUT"\n'
+        'for a in "$@"; do printf \'%s\\0\' "$a" >> "$ARGV_OUT"; done\n'
+    )
+    recorder.chmod(0o755)
+    body, n_sub = re.subn(
+        r"\Auv run python scripts/dispatch_issue\.py launch ",
+        '"$RECORDER" ',
+        launch_cmd.replace("<N>", "77"),
+    )
+    assert n_sub == 1, "launch recorder stand-in substitution failed"
+    setup = "set -u\nunset EXTRA_SYNC_ARGS\nINTENT=eval\nREPO_BRANCH=issue-77-full\nBACKEND=\n"
+    if rsync_lane:
+        setup += 'EXTRA_SYNC_ARGS=(--extra-sync-path "$SYNC_A" --extra-sync-path "$SYNC_B")\n'
+    proc = subprocess.run(
+        ["bash", "-c", setup + body],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "RECORDER": str(recorder),
+            "ARGV_OUT": str(argv_out),
+            "SYNC_A": "/tmp/sync-a",
+            "SYNC_B": "/tmp/with space/b",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert argv_out.exists(), "dispatch recorder never executed"
+    return argv_out.read_text().split("\0")[:-1]
+
+
+def test_realized_launch_argv_docstring_discloses_both_substitutions() -> None:
+    """#2263 r7 (codex r5 recorder-verbatim-placeholder-omission), claim
+    trued up r8 (reconciler r6 recorder-disclosure-pin-syntax-escape): the
+    recorder helper applies exactly TWO mechanical substitutions (program
+    prefix -> recorder stand-in; ``<N>`` -> ``77``), and its "every OTHER
+    byte runs verbatim" claim is honest only while the docstring names
+    BOTH. Source-pin the disclosure: (a) the docstring must name the
+    recorder stand-in AND the ``<N>`` -> 77 instantiation; (b) the body
+    must carry exactly the two disclosed substitution sites AMONG THE
+    SYNTAXES THIS PIN DETECTS — attribute calls spelled ``.replace(``,
+    ``.translate(``, or ``.sub(``/``.subn(`` (``re.sub``/``re.subn`` and
+    compiled-pattern calls alike) — so a third substitution written in one
+    of those forms must update the docstring, this pin, and the disclosure
+    together. A substitution written in any OTHER form (slicing,
+    ``str.format``, an f-string rebuild, a ``bytes`` round-trip, a
+    getattr-resolved method) is NOT detected here; that residual is
+    review-owned, not pin-owned. The r7 wording claimed the un-scoped
+    durable "a third substitution must update both together" — a claim
+    exceeding what was enforced (codex r6: a ``str.translate`` mutation
+    stayed GREEN under the r7 regex; this task's defining defect shape)."""
+    doc = _realized_launch_argv.__doc__ or ""
+    assert "recorder" in doc, "substitution 1 (program prefix -> recorder) undisclosed"
+    assert "<N>" in doc and "77" in doc, "substitution 2 (<N> -> 77) undisclosed"
+    src = inspect.getsource(_realized_launch_argv)
+    n_substitution_sites = len(re.findall(r"\.replace\(|\.translate\(|\.subn?\(", src))
+    assert n_substitution_sites == 2, (
+        f"{n_substitution_sites} substitution site(s) of the pin-detected syntaxes "
+        "(.replace( / .translate( / .sub( / .subn() in _realized_launch_argv, but its "
+        "docstring discloses exactly TWO (recorder prefix + <N> -> 77); a launch-command "
+        "byte may only be rewritten if the docstring's verbatim claim discloses it — "
+        "update the docstring, this pin, and the disclosure together (substitution "
+        "forms outside these syntaxes are not counted here; review owns that residual)"
+    )
+
+
+def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity(tmp_path: Path) -> None:
+    """#2263 r3+r4 text pins: the recheck halts MECHANICALLY, carries the
+    SAME lane/extra-sync args as the 6a.5 invocation, and the LAUNCH argv
+    expands the same extra-sync values.
+
+    (a) Mechanical halt (r3 finding 1): the recheck runs inside an
+        `if ! ...; then ... exit 1; fi` guard whose body fail-louds; the
+        launch fence has no `set -e`, so a BARE recheck's non-zero rc would
+        not stop the adjacent dispatch — exactly one bare (line-initial)
+        invocation may exist, the 6a.5 gate (last command of its block,
+        whose rc the orchestrator branches on in prose).
+    (b) Lane parity (r3 finding 2): BOTH gate invocations carry the identical
+        argv incl. the `"${LANE_ARGS[@]}"` lane/extra-sync token, and the
+        two `LANE_ARGS=` default assignments are byte-identical — the rsync
+        suffix is in the COMMAND, not a comment, so the 6a.5-graded lane
+        set and the recheck-graded lane set cannot drift.
+    (c) Launch parity (r4, reconciler v3 BLOCKER): the operational
+        `dispatch_issue.py launch` command ITSELF expands
+        `${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}` — without it, a
+        gate + recheck PASS earned via `--extra-sync-path` certifies
+        rsync-lane inputs the dispatched tree never stages (deterministic
+        post-provision missing-input crash). The `+`-guard form is pinned
+        so the expansion stays unset-array-safe on non-rsync lanes.
+        r5 hardening (codex r4, launch-parity-test-comment-escape): the
+        token SUBSTRING alone is defeatable by a backslash-continued
+        comment containing it, so the command is ALSO executed with a
+        recorder stand-in and the REALIZED argv asserted — set array =>
+        the values appear as separate words (space-safe); unset array
+        under `set -u` => zero words, no empty word. The substring pin
+        stays load-bearing for the `+`-guard FORM: bash >= 4.4 does not
+        error on an unguarded unset `"${arr[@]}"` under `set -u`, so
+        execution alone cannot tell guarded from unguarded.
+    """
+    text = issue_skill_text()
+    invocation = (
+        'uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" '
+        '--issue <N> --repo-branch "$REPO_BRANCH" "${LANE_ARGS[@]}"'
+    )
+    assert text.count(invocation) == 2  # 6a.5 gate + launch-fence recheck, identical argv
+    bare = re.findall(r"(?m)^uv run python scripts/verify_carryover_inputs\.py --plan .*$", text)
+    assert len(bare) == 1, "an UNGUARDED recheck adjacent to the dispatch is the r3 defect"
+    m = re.search(
+        r"(?ms)^if ! uv run python scripts/verify_carryover_inputs\.py --plan [^\n]*; then\n"
+        r"(.*?)^fi$",
+        text,
+    )
+    assert m, "launch-fence recheck guard extraction failed"
+    body = m.group(1)
+    assert "dispatch REFUSED" in body
+    assert re.search(r"(?m)^\s+exit 1$", body), "guard body must halt the fence"
+    lane_lines = re.findall(r"(?m)^LANE_ARGS=.*$", text)
+    assert len(lane_lines) == 2, "one LANE_ARGS default assignment per fence"
+    assert len(set(lane_lines)) == 1  # byte-identical across fences
+    assert lane_lines[0].startswith("LANE_ARGS=()")
+    assert '--lane rsync "${EXTRA_SYNC_ARGS[@]}"' in lane_lines[0]  # the rsync form named
+    # (c) The OPERATIONAL launch command (the one sharing a bash block with
+    # the recheck) expands the extra-sync values in its OWN argv.
+    blocks = re.findall(r"(?ms)^```bash\n(.*?)^```$", text)
+    op_blocks = [
+        b
+        for b in blocks
+        if "scripts/dispatch_issue.py launch" in b
+        and 'scripts/verify_carryover_inputs.py --plan "$PLAN_PATH"' in b
+    ]
+    assert len(op_blocks) == 1, "operational launch block extraction failed"
+    launch = re.search(
+        r"(?ms)^uv run python scripts/dispatch_issue\.py launch \\\n(?:[^\n]*\\\n)*[^\n]*$",
+        op_blocks[0],
+    )
+    assert launch, "operational launch command extraction failed"
+    assert '${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}' in launch.group(0), (
+        "the LAUNCH argv must expand the SAME extra-sync values the gate + "
+        "recheck graded (#2263 r4) — a gate PASS earned via --extra-sync-path "
+        "must be a set the dispatched tree actually stages; the ${VAR[@]+...} "
+        "guard keeps non-rsync lanes (unset array) safe under set -u"
+    )
+    # (c2) #2263 r5 (codex r4 Minor, launch-parity-test-comment-escape): the
+    # substring above proves the token's PRESENCE, not that it is a Bash argv
+    # WORD — a backslash-continued COMMENT containing the token keeps the
+    # substring green while the executing shell drops the values AND ends the
+    # command at the comment (this task's defining defect shape: a comment
+    # where a mechanism belonged). Prove the ARGV: execute the command in
+    # real bash under _realized_launch_argv's two disclosed substitutions
+    # (program prefix -> recorder; <N> -> 77); every other byte verbatim.
+    sync_words = ["--extra-sync-path", "/tmp/sync-a", "--extra-sync-path", "/tmp/with space/b"]
+    argv = _realized_launch_argv(launch.group(0), tmp_path, rsync_lane=True)
+    assert any(argv[i : i + len(sync_words)] == sync_words for i in range(len(argv))), (
+        "the extra-sync values never reached the dispatch argv as words — the "
+        "expansion is dead text (commented / quoted / broken continuation), "
+        f"the #2263 r2 defect shape one level down; realized argv: {argv}"
+    )
+    bare = _realized_launch_argv(launch.group(0), tmp_path, rsync_lane=False)
+    assert "--repo-branch" in bare, bare  # mainline args intact around the guard
+    assert "--extra-sync-path" not in bare and "" not in bare, (
+        "non-rsync lane (array unset, set -u): the +-guard must expand to "
+        f"ZERO words — no flag, no empty word; realized argv: {bare}"
+    )
+
+
+#: Opening code fence: >=3 backticks or tildes after optional leading
+#: whitespace, plus any info string (group 2). Indentation is deliberately
+#: UNBOUNDED (`[ \t]*`, not CommonMark's 0-3): the two #2470 anchor sites
+#: are list content indented 2 and 5 spaces, and a `{0,3}` bound would
+#: recognize the first and miss the second (#2263 r8, reconciler r6).
+_FENCE_OPEN = re.compile(r"^[ \t]*(`{3,}|~{3,})(.*)$")
+
+
+def _fenced_blocks(text: str) -> list[str]:
+    """Fenced code-block bodies of a markdown doc, at ANY indentation.
+
+    CommonMark-shaped: an opening fence is a `_FENCE_OPEN` match (a
+    backtick fence whose info string contains a backtick is NOT a fence —
+    CommonMark 4.5); the closing fence is a run of the SAME marker char at
+    least as long as the opening, alone on its line at any indentation; an
+    UNCLOSED fence runs to end-of-text. Returns block bodies only (fence
+    lines excluded).
+    """
+    blocks: list[str] = []
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        m = _FENCE_OPEN.match(lines[i])
+        if m is None or (m.group(1)[0] == "`" and "`" in m.group(2)):
+            i += 1
+            continue
+        marker = m.group(1)
+        close = re.compile(rf"^[ \t]*{re.escape(marker[0])}{{{len(marker)},}}[ \t]*$")
+        body: list[str] = []
+        i += 1
+        while i < len(lines) and not close.match(lines[i]):
+            body.append(lines[i])
+            i += 1
+        blocks.append("\n".join(body))
+        i += 1  # past the closing fence (no-op at EOF: unclosed runs to EOF)
+    return blocks
+
+
+def _executable_view(block: str) -> str:
+    """A fenced block's invocation-counting view: comment-stripped, joined.
+
+    The strip rule is exactly what the regex below implements: a `#` at
+    LINE START or PRECEDED BY WHITESPACE strips to end-of-line — nothing
+    else. Deliberately NOT bash's comment rule (quote-state-dependent;
+    bash also starts comments after operators). Both off-rule directions:
+    quote state is ignored, so a boundary-matching `#` inside a quoted
+    string is stripped as comment text (under-count), while an
+    operator-adjacent `#` (`;#`, `&&#`) meets no boundary and is NOT
+    stripped, so launch-shaped text after it still counts (over-count ->
+    RED, fail-closed). THEN backslash-newline continuations are joined so
+    one wrapped invocation reads as one line. Order is load-bearing:
+    stripping first keeps a `# note: \\` comment line from swallowing the
+    next line's real invocation.
+    """
+    no_comments = re.sub(r"(?m)(?:^|(?<=\s))#.*$", "", block)
+    return re.sub(r"\\\n[ \t]*", " ", no_comments)
+
+
+def test_fenced_launch_invocation_detector_semantics() -> None:
+    """#2263 r8: pin `_fenced_blocks` + `_executable_view` to exactly the
+    claims the uniqueness pin's docstring makes. Each sub-case is one
+    documented escape/over-fire shape from the r6 reconciler probes and the
+    codex r6 pin-defeat battery — a detector regression that reopens one
+    fails HERE on synthetic text, without needing a live spec mutation.
+    """
+    launch = re.compile(r"dispatch_issue(?:\.py)?\s+launch\b")
+
+    def count(md: str) -> int:
+        return sum(len(launch.findall(_executable_view(b))) for b in _fenced_blocks(md))
+
+    assert count("```bash\nuv run python scripts/dispatch_issue.py launch --issue 7\n```\n") == 1
+    # (1) indented fences at the two real #2470 anchor indents (2 and 5 spaces)
+    assert count("  ```bash\n  scripts/dispatch_issue.py launch --issue 7\n  ```\n") == 1
+    assert count("     ```bash\n     scripts/dispatch_issue.py launch --issue 7\n     ```\n") == 1
+    # (2) the strip rule, exactly: a `#` at line start or preceded by
+    # whitespace strips to end-of-line. Both boundaries count ZERO (the r6
+    # over-fire probe)...
+    assert count("```bash\n# uv run python scripts/dispatch_issue.py launch --issue 7\n```\n") == 0
+    assert count("```bash\necho hi  # scripts/dispatch_issue.py launch\n```\n") == 0
+    # (2b) ...and an OPERATOR-ADJACENT `#` is off-rule by design: nothing
+    # strips, each line counts 1 — EXPECTED, the disclosed over-count
+    # residual (-> RED, fail-closed; #2263 r7 reconciler probe) — even
+    # though bash lexes the launch text as comment text either way
+    # (probed: the `;#` line prints only `hi`; the standalone `&&#` line
+    # is a syntax error at EOF, executing nothing)
+    assert count("```bash\necho hi;# scripts/dispatch_issue.py launch\n```\n") == 1
+    assert count("```bash\necho hi&&# scripts/dispatch_issue.py launch\n```\n") == 1
+    # (3) tilde fence, (4) four-backtick fence, (5) extended info string
+    assert count("~~~bash\nscripts/dispatch_issue.py launch --issue 7\n~~~\n") == 1
+    assert count("````bash\nscripts/dispatch_issue.py launch --issue 7\n````\n") == 1
+    assert count('```bash title="x" {1-2}\nscripts/dispatch_issue.py launch --issue 7\n```\n') == 1
+    # (6) a backslash-wrapped invocation counts ONCE; a comment ending in a
+    # backslash does NOT swallow the next line's real invocation
+    assert count("```bash\nuv run scripts/dispatch_issue.py \\\n  launch --issue 7\n```\n") == 1
+    assert count("```bash\n# note: \\\nscripts/dispatch_issue.py launch --issue 7\n```\n") == 1
+    # (7) module spelling, in a non-bash fence language
+    assert count("```console\npython -m scripts.dispatch_issue launch --issue 7\n```\n") == 1
+    # (8) an unclosed fence runs to end-of-text
+    assert count("```bash\nscripts/dispatch_issue.py launch --issue 7\n") == 1
+    # (9) prose mentions outside any fence stay uncounted
+    assert count("run `dispatch_issue.py launch --issue 7` by hand\n") == 0
+    # (10) a longer fence is closed only by >= its own marker run length
+    assert count("````md\n```bash\nscripts/dispatch_issue.py launch --issue 7\n```\n````\n") == 1
+
+
+def test_step6_parent_reuse_fallback_points_at_canonical_launch_fence() -> None:
+    """#2263 r6 (codex r4 CONCERN parent-reuse-fallback-parity): ONE
+    operator-copyable launch site; the parent-reuse fallback POINTS at it.
+
+    The parent-reuse block's fresh-launch arm used to duplicate a bare
+    `dispatch_issue.py launch` carrying NONE of the fence's three mandatory
+    elements (shared `--print-repo-branch` resolver, mechanical `if !`
+    recheck halt, extra-sync threading). Copied verbatim, that bare
+    dispatch is NOT reliably refused (#2263 r8, reconciler r6): when the
+    current-branch/worktree defaulting resolves a branch — a live issue
+    worktree checked out on a non-main branch is the normal /issue
+    topology (`dispatch_issue.py::_launch_extra_from_args`, worktree
+    fallback) — it LAUNCHES on the defaulted branch with no recheck and no
+    extra-sync threading (under-staging any rsync lane). The #2161 drift
+    guard (`dispatch_issue.py::_repo_branch_default_main_conflict`)
+    refuses (exit 2) only when ALL THREE hold, in the guard's own order:
+    (a) no `--repo-branch` AND that defaulting resolved nothing (invoking
+    checkout on main/unresolvable AND no issue worktree on a non-main
+    branch); (b) a repo-materializing lane is reachable (backend
+    auto/absent, gcp, a SLURM lane, or runpod with `--execute-workload`;
+    a provision-only runpod launch never refuses); (c) `issue-<N>` branch
+    refs exist (the ref probe fails OPEN on git errors). Duplicating the
+    full fence there instead would open a third drift channel of the same
+    class, so the fix is a pointer, pinned in two halves:
+
+    (a) exactly ONE `dispatch_issue[.py] launch` INVOCATION across the
+        fenced code blocks of the COMPOSED /issue spec, and the one block
+        carrying it IS the canonical Step 6b fence (resolver + guarded
+        recheck + extra-sync expansion all present); a future copy-paste
+        launch block must either be the fence or amend this pin. What the
+        detector enforces — no more (#2263 r8; the r6 block-count pin and
+        the r7 column-zero occurrence pin were each escapable while
+        green): fences per `_fenced_blocks` (>=3 backticks or tildes at
+        ANY indentation, any info string, same-marker close of >= the
+        opening length; unclosed runs to EOF); count = occurrences of
+        `dispatch_issue(?:\\.py)?\\s+launch\\b` — covering the
+        `scripts/dispatch_issue.py launch` and
+        `python -m scripts.dispatch_issue launch` spellings — on each
+        block's `_executable_view` (a `#` at LINE START or PRECEDED BY
+        WHITESPACE strips to end-of-line, THEN backslash-newline
+        continuations join: a launch-shaped line commented at those two
+        boundaries counts ZERO, a wrapped invocation counts ONCE). Prose
+        mentions OUTSIDE fences stay deliberately uncounted (not
+        operator-copyable; 13 exist today). Detector semantics are pinned
+        by `test_fenced_launch_invocation_detector_semantics`; known
+        residuals it does NOT model: quote state (a boundary-matching `#`
+        inside a quoted string is stripped as comment text — under-count),
+        operator-adjacent comments (a `;#` / `&&#` line's `#` meets no
+        boundary, so launch-shaped text after it still counts — over-count
+        -> RED, fail-closed), and heredocs (bodies inside a fence are
+        scanned — over-count -> RED, fail-closed);
+    (b) the parent-reuse decision block (the `pod.py resume` probe) still
+        exists, invokes no `dispatch_issue.py` at all, and NAMES the
+        canonical fence as the fresh-launch route.
+    """
+    text = issue_skill_text()
+    blocks = _fenced_blocks(text)
+    launch_invocation = re.compile(r"dispatch_issue(?:\.py)?\s+launch\b")
+    views = [_executable_view(b) for b in blocks]
+    launch_blocks = [b for b, v in zip(blocks, views, strict=True) if launch_invocation.search(v)]
+    n_invocations = sum(len(launch_invocation.findall(v)) for v in views)
+    assert n_invocations == 1 and len(launch_blocks) == 1, (
+        f"{n_invocations} fenced `dispatch_issue[.py] launch` invocation(s) across "
+        f"{len(launch_blocks)} fenced block(s); the composed /issue spec allows exactly "
+        "ONE operator-copyable launch invocation — the canonical Step 6b fence's. A "
+        "second copy either omits the fence's mandatory elements (with a live issue "
+        "worktree on a non-main branch it LAUNCHES on the defaulted branch without the "
+        "recheck and under-stages an rsync lane; it REFUSES exit 2 only when no "
+        "--repo-branch is passed AND the current-branch/worktree defaulting resolves "
+        "nothing AND a repo-materializing lane is reachable AND issue-<N> branch refs "
+        "exist — the #2263 parent-reuse defect) or duplicates the fence (a drift "
+        "channel of the same class); point at the canonical fence instead."
+    )
+    fence = launch_blocks[0]
+    assert "scripts/verify_carryover_inputs.py --print-repo-branch" in fence  # shared resolver
+    assert "if ! uv run python scripts/verify_carryover_inputs.py --plan" in fence  # recheck halt
+    assert '${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}' in fence  # extra-sync threading
+    parent_blocks = [b for b in blocks if 'pod.py resume --issue "$PARENT_ID"' in b]
+    assert len(parent_blocks) == 1, "parent-reuse decision block extraction failed"
+    parent = parent_blocks[0]
+    assert "dispatch_issue" not in parent, (
+        "the parent-reuse fallback must not dispatch — its bare launch omitted "
+        "--repo-branch, the launch-fence recheck, and extra-sync threading (#2263 r6); "
+        "the fresh-launch route is the canonical Step 6b fence"
+    )
+    assert "canonical Step 6b launch fence" in parent, (
+        "the parent-reuse fresh-launch arm must NAME the canonical Step 6b launch "
+        "fence as its route — a pointer, not a duplicated (drift-prone) dispatch"
+    )
+
+
+def test_corpus_sweep_resolver_failure_surfaces_error_not_substitute(
+    repo: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """#2263 r2 finding 3: a resolve_check_ref failure in the #1995 corpus
+    sweep is recorded per plan + exits nonzero — NEVER silently graded
+    against a substituted origin/main (plausible-but-wrong calibration)."""
+    monkeypatch.setitem(sys.modules, "verify_carryover_inputs", vci)  # restored at teardown
+    spec = importlib.util.spec_from_file_location(
+        "issue1995_corpus_sweep", REPO_ROOT / "scripts" / "issue1995_corpus_sweep.py"
+    )
+    assert spec is not None and spec.loader is not None
+    sweep = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sweep)
+
+    plan_dir = repo / "tasks" / "running" / "77" / "plans"
+    plan_dir.mkdir(parents=True)
+    (plan_dir / "v1.md").write_text("Runs scripts/issue77_helper.py on the corpus.\n")
+
+    def _boom(*_a, **_k):
+        raise vci.CheckRefResolutionError("cannot enumerate candidates (for-each-ref rc=128)")
+
+    monkeypatch.setattr(sweep._vci, "resolve_check_ref", _boom)
+    out_dir = tmp_path / "sweep-out"
+    rc = sweep.main(["--repo-root", str(repo), "--no-fetch", "--output-dir", str(out_dir)])
+    captured = capsys.readouterr()
+    assert rc != 0
+    assert "resolution_errors=1" in captured.out
+    assert "check-ref resolution failed" in captured.err
+    payload = json.loads((out_dir / "corpus_sweep.json").read_text())
+    (rec,) = payload["sample"]
+    assert rec["resolution_error"].startswith("CheckRefResolutionError")
+    assert rec["check_ref"] is None
+    assert rec["candidates"] == []
+    # No record graded against a substituted fallback ref.
+    assert all(r["check_ref"] != "origin/main" for r in payload["sample"])
+    assert payload["aggregates"]["n_resolution_errors"] == 1
