@@ -9,7 +9,10 @@ this step.
 
 Only if status is `running` and the appropriate implementation marker
 (`epm:experiment-implementation v<n>` for experiments, `epm:results v<n>`
-for infra) is present.
+for infra) is present — a precondition the pre-split completeness guard
+below now enforces MECHANICALLY (`IMPLEMENTER-MARKER-MISSING`, exit 4;
+#2294): prose alone let #2290 round 1 dispatch the ensemble with zero
+implementer markers on events.jsonl.
 
 **Pre-split completeness guard (#2158; incident #1336 r4 — 2 subagent
 deaths + a 2-day park on a Unit-A-only review).** Before ANY reviewer
@@ -27,6 +30,14 @@ deliverables, and never dispatch a review scoped to an intermediate unit.
 `BREADCRUMB-UNPARSEABLE` (exit 3) → fail loud: repost the breadcrumb in
 the documented grammar (`pre-split unit k/M complete: <SHAs>; remaining:
 <deliverables>`), then re-run the guard — never treat as OK.
+`IMPLEMENTER-MARKER-MISSING` (exit 4) → do NOT dispatch either reviewer:
+the round's implementer marker (`epm:experiment-implementation` for
+`kind: experiment`, `epm:results` for `kind: infra|batch|analysis|survey`)
+is absent from canonical state (#2294). Post it from the implementer's
+returned report FIRST (the orchestrator owns this post — subagents never
+hand-post it), then re-run the guard. Never dispatch a review to discover
+the missing marker: the reviewer correctly FAILs `marker-shape` and the
+whole round buys nothing but the absence (#2290 round 1).
 
 This step runs an **ensemble of two reviewers in parallel** — the Claude
 `code-reviewer` agent and the `codex-code-reviewer` Codex twin (gpt-5.5
@@ -619,6 +630,25 @@ issue's src at fork-era content (scripts on main import other issues'
 `experiments.issue_<M>` packages): committing the pin-back keeps the widened
 sync from advancing the consumed dir mid-experiment.
 
+**Root-cause fix — bring the branch current (#2311).** A pair-revert restores
+the fork-era pair; it does NOT make `src/` and the synced sibling tests agree,
+so the skew recurs on every later round. The #2412-widened globs handle the
+issue-namespaced case automatically (src syncs WITH the pair, or the strict
+identity arm reverts it), so reach for this fallback when the automatic path
+cannot: a skew inside SHARED experiment src (routed lenient by design — content
+diffs alone never fail shared src) or a branch-side-edit skip holding a sibling
+pair stale. Then MERGE the fetched base into the issue branch IN THE WORKTREE —
+`git -C "$WT" merge origin/main` — so both sides sit at one revision. Do NOT
+rebase (the branch is already pushed, so rebasing needs a force-push — a
+user-ask, § Cost and safety rails) and never merge at the repo root (hook-blocked,
+#1128/#1090). Measured on #2303: a synced main-era
+`tests/test_issue2225_steer_hook.py` ran against fork-era
+`experiments/issue2225/steer_train.py`, COLLECTED cleanly, then failed at call
+time — `ValueError: unknown mask mode 'context_end'`, 2 nodes the Step 9c
+compare correctly classified NEW — costing a 1h26m gate run plus a re-gate;
+after the merge (`642a792d39fd89f7d21fb4e6a988b04bd08157f2`) the file passed
+14/14.
+
 The refresh touches the workflow surface PLUS sibling-issue experiment
 code: the #2412-widened globs above also sync issue-namespaced
 `src/explore_persona_space/experiments/issue*/` dirs (probe-guarded +
@@ -910,6 +940,8 @@ cheap and mechanical — the trigger-dense hunks only, with file/line
 anchors:
 
 ```bash
+# wt-binding: caller — $WT must already be bound in this shell; extracting
+# standalone? prepend: eval "$(bash scripts/step10d_guards.sh <N> --guard prelude)"
 # Scope the pathspec to the trigger-dense paths actually touched
 # (`git -C "$WT" diff --name-only origin/main...HEAD` first):
 git -C "$WT" diff origin/main...HEAD -- .claude/hooks/ 'scripts/guard_*.sh' \

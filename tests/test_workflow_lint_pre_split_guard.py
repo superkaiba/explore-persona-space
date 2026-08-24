@@ -8,10 +8,12 @@ was dispatched against a Unit-A-only intermediate commit of a pre-split
 multi-unit round, costing 2 subagent deaths + a ~2-day park) must stay
 present across its SEVEN surfaces spanning EIGHT files:
 
-(1) ``scripts/pre_split_review_guard.py`` naming ``pre_split_review_gate``;
+(1) ``scripts/pre_split_review_guard.py`` naming ``pre_split_review_gate``
+    AND the #2294 ``IMPLEMENTER-MARKER-MISSING`` exit-4 verdict;
 (2) ``task_workflow.py``: ``def pre_split_review_gate`` +
     ``PRE-SPLIT-INCOMPLETE``;
-(3) 09-step-5.md: the ``**Pre-split completeness guard`` region;
+(3) 09-step-5.md: the ``**Pre-split completeness guard`` region (incl. the
+    #2294 ``IMPLEMENTER-MARKER-MISSING`` token);
 (4) 08-step-4.md: breadcrumb-grammar tokens + the ``unit=<k>`` emitter
     mandate;
 (5) 08-step-4.md: the shared-worktree arbitration note;
@@ -25,8 +27,10 @@ Tests (mirroring ``tests/test_workflow_lint_smoke_blind_spots.py``):
 
 1. ``test_passes_on_complete_corpus`` — tmp corpus with all 7 surfaces /
    8 files.
-2. ``test_fails_per_missing_surface`` — 8 parametrized drops, one per FILE
-   (surfaces 1-6 one file each; surface 7 TWO independent per-file drops).
+2. ``test_fails_per_missing_surface`` — 10 parametrized drops: one per FILE
+   (surfaces 1-6 one file each; surface 7 TWO independent per-file drops)
+   plus the two #2294 ``IMPLEMENTER-MARKER-MISSING`` token drops (CLI +
+   step-5 region).
 3. ``test_review_lens_passes_on_live_tree`` — binds the landed #2158 edits.
 4. ``test_bundled_in_no_flags`` — the two-part behavioral bundling pin
    (scoped-flag subprocess against a drifted corpus via
@@ -66,13 +70,20 @@ def _write_guard_corpus(root: Path, *, drop: str | None = None) -> Path:
     for d in (scripts, src, steps, rules, agents):
         d.mkdir(parents=True, exist_ok=True)
 
-    # (1) the thin CLI naming the library entry.
+    # (1) the thin CLI naming the library entry + the #2294 exit-4 verdict.
+    impl_verdict_line = '_EXIT_FOR_VERDICT_4 = "IMPLEMENTER-MARKER-MISSING"  # exit 4 (#2294)\n'
     cli_body = (
         '"""Thin CLI for the #2158 pre-split review gate."""\n\n'
         "from explore_persona_space.task_workflow import pre_split_review_gate\n"
+        + impl_verdict_line
     )
     if drop == "cli-gate-token":
-        cli_body = '"""Thin CLI placeholder (library entry stripped)."""\n'
+        cli_body = '"""Thin CLI placeholder (library entry stripped)."""\n' + impl_verdict_line
+    elif drop == "cli-impl-marker-token":
+        cli_body = (
+            '"""Thin CLI for the #2158 pre-split review gate."""\n\n'
+            "from explore_persona_space.task_workflow import pre_split_review_gate\n"
+        )
     (scripts / "pre_split_review_guard.py").write_text(cli_body, encoding="utf-8")
 
     # (2) the library predicate + verdict token.
@@ -87,6 +98,13 @@ def _write_guard_corpus(root: Path, *, drop: str | None = None) -> Path:
     # (3) 09-step-5.md: the guard block region (bounded by the next
     # paragraph opening ``**``).
     step5_verdict = "INCOMPLETE-VERDICT" if drop == "step5-region-token" else _VERDICT
+    step5_impl_missing = (
+        ""
+        if drop == "step5-impl-marker-token"
+        else " `IMPLEMENTER-MARKER-MISSING` (exit 4) means no "
+        "implementation-class marker exists on canonical events — post the "
+        "implementer marker FIRST, then re-run the guard (#2294)."
+    )
     (steps / "09-step-5.md").write_text(
         "# Step 5\n\n"
         "Only if status is `running` and the implementation marker is "
@@ -95,7 +113,7 @@ def _write_guard_corpus(root: Path, *, drop: str | None = None) -> Path:
         "dispatch run `uv run python scripts/pre_split_review_guard.py "
         f"<N>`. `{step5_verdict}` (exit 2) means a breadcrumb with a "
         "non-empty `remaining:` list has no later implementation marker — "
-        "do NOT dispatch either reviewer.\n\n"
+        f"do NOT dispatch either reviewer.{step5_impl_missing}\n\n"
         "**Per-commit split-review dispatch.** Placeholder paragraph.\n",
         encoding="utf-8",
     )
@@ -160,8 +178,10 @@ def test_passes_on_complete_corpus(tmp_path: Path) -> None:
 
 _DROP_CASES: list[tuple[str, str, str]] = [
     ("cli-gate-token", "pre_split_review_gate", "scripts/pre_split_review_guard.py"),
+    ("cli-impl-marker-token", "IMPLEMENTER-MARKER-MISSING", "scripts/pre_split_review_guard.py"),
     ("predicate-def", "def pre_split_review_gate", "task_workflow.py"),
     ("step5-region-token", _VERDICT, "09-step-5.md"),
+    ("step5-impl-marker-token", "IMPLEMENTER-MARKER-MISSING", "09-step-5.md"),
     ("step4-unit-token", "unit=<k>", "08-step-4.md"),
     ("step4-arbitration-note", "cross-session-writer-arbitration.md", "08-step-4.md"),
     ("rule-file", "missing", "rules/cross-session-writer-arbitration.md"),

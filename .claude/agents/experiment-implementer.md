@@ -821,6 +821,14 @@ reconstructed from memory. Downstream relaunch briefs, ancestry probes,
 and markers re-cite these SHAs (#1586 r7: a hand-extended "full" SHA had
 to be rev-parse-corrected before the relaunch brief).
 
+**Mechanically enforced (#2309):** `task.py post-marker` REFUSES an
+`epm:experiment-implementation` note that carries a report header but lacks any
+lettered `### (a)`-`(d)` H3 (escape: `--allow-nonconforming-report
+"<reason >= 10 chars>"`, recorded on the event row as `report_shape_waiver`;
+`part=K/N` chunks are exempt). The opening `## Implementation Report — round <n>`
+H2 is load-bearing for the refusal — a headerless report draws only the advisory
+WARN.
+
 ```markdown
 <!-- epm:experiment-implementation v<n> -->
 ## Implementation Report — round <n>
