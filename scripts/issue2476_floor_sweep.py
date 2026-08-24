@@ -231,6 +231,7 @@ def _parent_args(args) -> SimpleNamespace:
         gpu_id=int(args.gpu_id),
         sae_steps=0,
         sae_dict=0,
+        sae_k=0,  # production SAE_K=100 (the parent regime now hashes the k budget)
         n_perm=int(args.n_perm),
         n_boot=int(args.n_boot),
         fit_n=0,

@@ -135,6 +135,15 @@ STREAM_FLUSH_EVERY = int(os.environ.get("EPM_I2476_STREAM_FLUSH_EVERY", "1"))
 # m-round store @ the pinned revision (plan §10 HF reuse rows; #1345 revision-pin rule)
 M_STORE_PREFIX = "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store"
 M_STORE_REVISION = "8b82eb975326774003512db1e7e542491edcd056"
+
+# The lineage data-repo pin for the P1 assembly inputs (capture chunks + pass_b):
+# the #2476 post-run pin (issue2476_floor_sweep.py:83 / issue2476_perrow_views.py:68),
+# threaded through the chunk listing, every chunk download, the pass_b fetch, and
+# the stream-resume fingerprint (k200 plan v11 B1 — a future upload to the capture
+# prefix must never silently change the assembled pool; pin == HEAD content as of
+# the 2026-08-24 identity probe, so this is a correctness invariant, not a content
+# change).
+DATA_REPO_REVISION = "89cfa76cdcd4207d95c1fec1c3131f36e21beec0"
 COMMITTED_SPLIT_1482 = PROJECT_ROOT / "eval_results" / "issue_1482" / "split_1482.json"
 COMMITTED_M_SPLIT = (
     PROJECT_ROOT / "eval_results" / "issue_1482" / "matryoshka_tier" / "m_split.json"
@@ -289,6 +298,7 @@ def _regime(args) -> dict:
         "max_chunks": int(args.max_chunks),
         "smoke_rows": int(args.smoke_rows),
         "sae_dict": int(args.sae_dict),  # output-affecting instrument width (0 = production)
+        "sae_k": int(args.sae_k),  # sparsity budget (0 = production SAE_K; k200 plan §4)
         "sae_steps": int(args.sae_steps),
         "fit_n": int(args.fit_n),
         "n_perm": int(args.n_perm),
@@ -404,11 +414,15 @@ def _capture_chunk_names(args) -> list[str]:
             f.path.rsplit("/", 1)[-1]
             # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
             for f in HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=EA.CAPTURE_PREFIX, repo_type="dataset", recursive=True
+                C.HF_DATA_REPO,
+                path_in_repo=EA.CAPTURE_PREFIX,
+                repo_type="dataset",
+                recursive=True,
+                revision=DATA_REPO_REVISION,  # B1 seam i: list at the lineage pin
             )
             if getattr(f, "size", None) is not None and f.path.endswith(".pt")
         ),
-        what=f"capture chunk listing ({EA.CAPTURE_PREFIX})",
+        what=f"capture chunk listing ({EA.CAPTURE_PREFIX} @ {DATA_REPO_REVISION[:12]})",
     )
     if not names:
         raise FileNotFoundError(f"no capture chunks under HF {EA.CAPTURE_PREFIX}")
@@ -536,6 +550,7 @@ def _load_pass_b_wo():
                     filename=N1G.PASS_B_HF_PATH,
                     repo_type="dataset",
                     local_dir=local_path.parent,
+                    revision=DATA_REPO_REVISION,  # B1 seam iii: pass_b at the lineage pin
                 ),
                 what=f"pass_b bundle fetch ({N1G.PASS_B_HF_PATH})",
             )
@@ -578,7 +593,11 @@ def phase_assemble(args) -> None:
     assert pb_x19.shape == pb_y19.shape == (n_pb, C.EXPECTED_HIDDEN), (pb_x19.shape, n_pb)
 
     names = _capture_chunk_names(args)
-    fp = N1M._stream_ckpt_fingerprint(LAYER_C, EA.CAPTURE_PREFIX, names)
+    # B1 seam iv: the source revision joins the stream identity — a resume cursor
+    # minted at a different pin is REFUSED (fingerprint mismatch => re-stream).
+    fp = N1M._stream_ckpt_fingerprint(
+        LAYER_C, EA.CAPTURE_PREFIX, names, revision=DATA_REPO_REVISION
+    )
     if args.max_chunks > 0:
         rows_present = _assemble_stream_smoke(args, out, stage, names, rev, pb_x19, pb_y19)
     else:
@@ -706,7 +725,12 @@ def _assemble_stream_production(
     t0 = time.time()
     for k in range(start_chunk, len(names)):
         got = Path(
-            N1M._download_chunk_with_retry(C.HF_DATA_REPO, f"{EA.CAPTURE_PREFIX}/{names[k]}", cache)
+            N1M._download_chunk_with_retry(
+                C.HF_DATA_REPO,
+                f"{EA.CAPTURE_PREFIX}/{names[k]}",
+                cache,
+                revision=DATA_REPO_REVISION,  # B1 seam ii
+            )
         )
         cx, vx, ci = _extract_chunk_l19(got)
         got.unlink()
@@ -747,7 +771,12 @@ def _assemble_stream_smoke(args, out, stage, names, rev, pb_x19, pb_y19) -> np.n
     t0 = time.time()
     for k, name in enumerate(names):
         got = Path(
-            N1M._download_chunk_with_retry(C.HF_DATA_REPO, f"{EA.CAPTURE_PREFIX}/{name}", cache)
+            N1M._download_chunk_with_retry(
+                C.HF_DATA_REPO,
+                f"{EA.CAPTURE_PREFIX}/{name}",
+                cache,
+                revision=DATA_REPO_REVISION,  # B1 seam ii (smoke stream)
+            )
         )
         cx, vx, ci = _extract_chunk_l19(got)
         got.unlink()
@@ -1909,8 +1938,21 @@ class MatryoshkaBatchTopKSAE(torch.nn.Module):
         return obj.to(device).eval()
 
 
+def _sae_k(args) -> int:
+    """Resolved SAE-c sparsity budget (--sae-k; 0 = production SAE_K = 100)."""
+    return int(args.sae_k) if int(args.sae_k) > 0 else SAE_K
+
+
+def _sae_leaf(args) -> str:
+    """SAE-c artifact leaf name: `sae_c` at the production budget, `sae_c_k<k>`
+    otherwise (k200 plan §4 Code delta 1 — a non-default-k instrument can never
+    collide with the parent's banked sae_c/, on disk or on the Hub)."""
+    k = _sae_k(args)
+    return "sae_c" if k == SAE_K else f"sae_c_k{k}"
+
+
 def _sae_out_dir(args) -> Path:
-    return args.out_root / "sae_c"
+    return args.out_root / _sae_leaf(args)
 
 
 def _maps_dir(args) -> Path:
@@ -2062,7 +2104,7 @@ def _p4_upload(args, out: Path, *, resume_skip: bool) -> None:
     up.mkdir(parents=True, exist_ok=True)
     for name in ("sae_weights.safetensors", "cfg.json", "train_log.json"):
         shutil.copy2(out / name, up / name)
-    prefix = f"{args.hf_prefix}/sae_c"
+    prefix = f"{args.hf_prefix}/{_sae_leaf(args)}"  # k-aware leaf (k200 plan §4)
     res = upload_dir_sharded(
         up,
         C.HF_DATA_REPO,
@@ -2132,7 +2174,18 @@ def phase_sae_train(args) -> None:
     if width != SAE_DICT:
         assert not production, "sub-production --sae-dict is smoke-only (plan §11 instrument width)"
         logger.warning("[sae_train] SMOKE dictionary width %d (production %d)", width, SAE_DICT)
-    model = MatryoshkaBatchTopKSAE(dict_size=width, tier_bounds=_sae_tier_bounds(width)).to(dev)
+    sae_k = _sae_k(args)
+    # Unlike --sae-dict, a non-default k IS the k200 round's production value —
+    # this membership assert is a typo fence, not a smoke gate (k200 plan §4).
+    assert sae_k in (100, 200), (
+        f"--sae-k resolved to {sae_k}: only the parent's k=100 and the #2476 "
+        "k200-census round's k=200 are registered instrument budgets"
+    )
+    if sae_k != SAE_K:
+        logger.info("[sae_train] sparsity budget k=%d (leaf %s)", sae_k, _sae_leaf(args))
+    model = MatryoshkaBatchTopKSAE(
+        dict_size=width, tier_bounds=_sae_tier_bounds(width), k=sae_k
+    ).to(dev)
     # b_dec init: seeded train-subsample mean (streamed fp64; standard SAE practice)
     rng0 = np.random.default_rng(SAE_SEED + 1)
     sub = np.sort(rng0.choice(tr_pos, size=min(65_536, len(tr_pos)), replace=False))
@@ -4714,6 +4767,14 @@ def _parse_args(argv=None):
         type=int,
         default=0,
         help="P4 SAE-c dictionary width (0 = production 65,536; sub-production = smoke-only)",
+    )
+    ap.add_argument(
+        "--sae-k",
+        type=int,
+        default=0,
+        help="P4 SAE-c sparsity budget (0 = production SAE_K = 100; the #2476 k200-census "
+        "round passes 200 — membership-asserted in phase_sae_train, regime-keyed, and the "
+        "sae_c leaf/HF prefix become sae_c_k200 so the banked k=100 instrument is untouchable)",
     )
     ap.add_argument("--n-perm", type=int, default=10_000, help="P6 tier-permutation draws")
     ap.add_argument("--n-boot", type=int, default=10_000, help="P6 feature-bootstrap draws")

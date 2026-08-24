@@ -79,6 +79,7 @@ def _args(tmp_path: Path, **over) -> SimpleNamespace:
         fit_n=0,
         import_check=False,
         sae_dict=0,
+        sae_k=0,
         g2a_probe_rows=0,
         resume_across_code_sha=False,
     )
@@ -1256,7 +1257,10 @@ def test_p1_stream_interrupted_two_chunk_restart(tmp_path, monkeypatch):
     calls: list[str] = []
     state = {"boom_on": names[1]}
 
-    def fake_dl(repo, path_in_repo, cache):
+    def fake_dl(repo, path_in_repo, cache, revision=None):
+        # signature mirrors N1M._download_chunk_with_retry (B1: optional
+        # revision kwarg); the production stream threads the lineage pin
+        assert revision == D.DATA_REPO_REVISION
         name = path_in_repo.rsplit("/", 1)[1]
         calls.append(name)
         if name == state["boom_on"]:
