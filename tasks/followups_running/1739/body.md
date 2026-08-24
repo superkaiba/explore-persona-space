@@ -161,7 +161,7 @@ What is plotted: seed-mean held-out Spearman rho difference (map-then-project mi
 | sycophancy | +0.041 | -0.036 to +0.118 | 7 of 10 positive (context variant only) | indeterminate |
 | hallucination | -0.017 | -0.064 to +0.031 | 9 of 20 positive | indeterminate |
 
-The round-1 preliminary read replicates for evil only: the flip contrast excludes zero there, includes it for the other two behaviors, and the 16 banked single-seed cells reproduce exactly (largest absolute difference 0.0002). Sycophancy is scored on its reduced 10-pair grid after the prefix exclusion (Methodology; about 2 unique prefix rows in 5,632 — deterministic on rerun, not missing data). Excluding map-pool groups that overlap an anchor's labeled rows shifts no cell by more than 0.007 and flips no verdict.
+The round-1 preliminary read replicates for evil only: the flip contrast excludes zero there, includes it for the other two behaviors, and the 16 banked single-seed cells reproduce within 0.0002 maximum absolute difference. Sycophancy is scored on its reduced 10-pair grid after the prefix exclusion (Methodology; about 2 unique prefix rows in 5,632 — deterministic on rerun, not missing data). Excluding map-pool groups that overlap an anchor's labeled rows shifts no cell by more than 0.007 and flips no verdict.
 
 ### The evil flip grows with the in-domain pool share, from −0.27 to +0.09 with the zero crossing near one quarter; sycophancy and hallucination never cross zero
 
@@ -263,11 +263,11 @@ The true-map delta is positive on 10 of 13 rungs and the margin over the shuffle
 
 Four open hardening concerns bound this read: `claim4-seed-rerun-idempotency`, `claim4-lattice-rung-identity`, `claim4-pushdown-production-bitidentity`, `claim4-chunk-turnover-rss`. The comparator returned inconclusive here; its repair is reported below.
 
-### The repaired context-direction comparator provisionally supports the mapped-answer edge for sycophancy and hallucination
+### The repaired context-direction comparator provisionally supports the mapped-answer edge for sycophancy and hallucination (median +0.12 over eight passing rungs)
 
-What is plotted: per-rung held-out Spearman rho difference, mapped-answer probe minus the repaired comparator, on the 13 fair-allocation rungs; dot and whisker are the 5-seed mean and t-interval, the thin bar the paired context bootstrap; evil rows are grayed as excluded (sanity-gate fail).
+What is plotted: per-rung held-out Spearman rho difference, mapped-answer probe minus repaired comparator, on the 13 fair-allocation rungs; dot and whisker are the 5-seed mean and t-interval, thin bar the paired context bootstrap; evil rows grayed (sanity-gate fail).
 
-![Forest of mapped-answer minus repaired-comparator differences; evil rows grayed as excluded](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0530e0e8bc5b753fe99f418c7269ac7c239b1d8/figures/issue_1739/claim4_controls/arm2fix/arm2fix_forest_D.png)
+![Forest of mapped-answer minus repaired-comparator differences, evil grayed](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f0530e0e8bc5b753fe99f418c7269ac7c239b1d8/figures/issue_1739/claim4_controls/arm2fix/arm2fix_forest_D.png)
 
 > **Figure.** *The mapped-answer probe beats the repaired comparator where the repair validates.* Positive on 6 of 8 sanity-passing rungs; median difference +0.12 (sycophancy +0.21, hallucination +0.12); the model-written-evaluations flagship clears both the seed and context intervals; evil's five rungs are excluded — its repaired comparator still reads below its in-distribution band.
 
@@ -277,9 +277,9 @@ What is plotted: per-rung held-out Spearman rho difference, mapped-answer probe 
 | sycophancy | v1 | 0.404 vs 0.295 to 0.526 | pass |
 | hallucination | v1 | 0.526 vs 0.442 to 0.556 | pass |
 
-The comparator that was inconclusive last round now lands inside its band for sycophancy and hallucination, and the mapped-answer edge provisionally survives it: median +0.12 over the 8 passing rungs, the model-written-evaluations flagship at +0.35 with both intervals clear of zero, losses confined to answer and mimicry. Two open adjudicated concerns bound the read — `arm2fix-sanity-band-budget-universe-self-derived` (the sanity band's budget universe is self-derived from the artifact rather than fixed in advance per behavior) and `cms-smoke-phase-coverage` — leaving the gate that admits these two behaviors unhardened.
+The previously inconclusive comparator now lands in-band for sycophancy and hallucination, and the mapped-answer edge provisionally survives it: median +0.12 over 8 passing rungs, the model-written-evaluations flagship +0.35 with both intervals clear of zero, losses confined to answer and mimicry. Open concerns bound the read: `arm2fix-sanity-band-budget-universe-self-derived` (budget universe self-derived, not fixed in advance) and `cms-smoke-phase-coverage` leave the admitting gate unhardened; `arm2fix-d0-phase-idempotency` (no idempotency guard on the probe phase) leaves the repair's confound and degeneracy evidence single-run; `arm2fix-pvsynth-fit-axis-self-derived` makes the secondary synthetic-rung read weaker (fit axis self-derived from realized rows, not pre-fixed).
 
-Evil's comparator still reads below its band after the quantile-restricted refit, so its five rungs stay indeterminate-adapter — evidence neither way. The five per-seed differences behind every row ship in `arm2fix_table.json` and the pinned HF per-seed row files.
+Evil's comparator still reads below its band after the quantile-restricted refit, so its five rungs stay indeterminate-adapter, evidence neither way. Per-unit exemption: the five per-seed differences behind every row ship in `arm2fix_table.json` (`per_rung[].D.per_seed`) and the pinned HF per-seed row files.
 
 ### The sycophancy mapped-answer edge ranges from +0.33 on model-written evaluations to -0.20 on mimicry
 
