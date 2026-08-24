@@ -71,3 +71,4 @@
 - [gotchas.md size-trim recipe](reference_gotchas_size_trim_recipe.md) — duplicate-collapse + cross-entry-repetition levers, keep fuN/crash-N disambiguators, pin surfaces to re-check, >500s lint fence
 - [Corpus-sweep flip taxonomy must be directional](feedback_corpus_sweep_flip_taxonomy_directional.md) — "expected" buckets predict per-unit verdicts from recorded tokens; set-difference predicates are vacuous under a wholesale remap (#2514 r2 blocker)
 - [Plan-disclosure edits need a NEW version](feedback_plan_disclosure_edit_needs_new_version.md) — #2123 Arm W FAILs in-place plans/vK.md edits fleet-wide (probes repo root from worktrees); land sanctioned disclosure updates via task.py new-plan-version (#2336 r3)
+- [Scratch sparse worktree config scope](reference_scratch_sparse_worktree_config.md) — `git -C <wt> config` w/o --worktree writes SHARED .git/config (sparseCheckout pollution, #2537); baseline-tree recipe + --show-origin repair
