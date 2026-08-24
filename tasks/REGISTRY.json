@@ -10217,8 +10217,8 @@
     "2322": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2322",
-      "status": "running",
+      "path": "tasks/completed/2322",
+      "status": "completed",
       "title": "Codex twin: CLI + gpt-5.6-sol, daily auto-upgrade cron (landed)"
     },
     "2323": {
