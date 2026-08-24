@@ -14,9 +14,14 @@ Design (dispatch note on #2215, same-day epm:progress):
       REAL    banked realized answer means v_A (tail-inclusive pooling,
               layer 19; parent battery streamed from the #2215 va2215 store,
               dbe battery read from the persisted predictions payload).
-      TEXT    OpenAI `text-embedding-3-large` of each rollout's COMPLETION
-              text only, one embedding per draw, L2-normalized, averaged
-              over the banked draws per context.
+      TEXT    text embedding of each rollout's COMPLETION text only, one
+              embedding per draw, L2-normalized, averaged over the banked
+              draws per context. Default source (GPU override, user
+              2026-08-24): banked Qwen3-Embedding-8B per-context means
+              produced pod-side by `issue2215_sepcmp_qwen_embed.py`
+              (space `text_qwen3_8b`); the original OpenAI
+              `text-embedding-3-large` route stays available via
+              `--text-space openai` (key was revoked at dispatch time).
     Common currency: per (cell, space), carrier yardstick = median cosine
     distance between same-value different-carrier members; reported
     quantity = separation ratio (pair-side distance / yardstick). Per-cell
@@ -105,6 +110,10 @@ EMBED_BATCH = 128
 EMBED_REQ_TOKEN_BUDGET = 200_000
 EMBED_CONCURRENCY = 8
 EMBED_HF_PREFIX = "issue2215_sepcmp/analysis_tensors/embeddings"
+# GPU override route (user, 2026-08-24): Qwen3-Embedding-8B means banked by
+# scripts/issue2215_sepcmp_qwen_embed.py on pod-2215-sepcmp.
+QWEN_HF_PREFIX = "issue2215_sepcmp/analysis_tensors/embeddings_qwen3_8b"
+QWEN_SPACE = "text_qwen3_8b"
 
 PARENT_JSONL = tuple(
     f"issue2162_ctxinfo/raw_completions/anchors/anchors_{batch}_w{w}.jsonl"
@@ -393,6 +402,26 @@ def context_means(ids: list[str], emb: np.ndarray, order: list[str]) -> tuple[np
     return sums / counts[:, None], {"draws_per_context_min": int(counts.min())}
 
 
+def qwen_text_means(root: Path, order: list[str], battery: str) -> np.ndarray:
+    """Banked Qwen3-Embedding-8B per-context means, aligned to ``order``.
+
+    Produced pod-side by scripts/issue2215_sepcmp_qwen_embed.py and uploaded
+    to QWEN_HF_PREFIX; staged at the repo's CURRENT main (the upload
+    postdates REV_MAIN by design)."""
+    local = stage(f"{QWEN_HF_PREFIX}/means_qwen3_8b_{battery}.npz", root, None)
+    z = np.load(local, allow_pickle=False)
+    cids = [str(s) for s in z["context_ids"]]
+    assert set(cids) == set(order), (
+        battery,
+        len(set(order) - set(cids)),
+        "context-id set drift vs the banked qwen means",
+    )
+    row_of = {c: i for i, c in enumerate(cids)}
+    mean = z["mean"].astype(np.float64)
+    assert mean.shape == (len(order), 4096), mean.shape
+    return mean[np.array([row_of[c] for c in order], dtype=np.int64)]
+
+
 # ── parent REAL leg: stream the va2215 tail store at layer 19 ─────────
 
 
@@ -476,7 +505,8 @@ def analyze_battery(
                 "median_pair_dist": float(np.median(pair_d[s])),
                 "yardstick": obs_yard[s],
             }
-        for arm in CONTRAST_ARMS:
+        text_spaces = [s for s in spaces if s.startswith("text")]
+        for arm in [*CONTRAST_ARMS, *text_spaces]:
             delta = boot[arm] - boot["real"]
             lo, hi = ci95(delta)
             rec["contrasts"][f"{arm}_minus_real"] = {
@@ -484,12 +514,10 @@ def analyze_battery(
                 "ci_lo": lo,
                 "ci_hi": hi,
             }
-        for a, b in (
-            ("mapped_779ce", "real"),
-            ("mapped_779ce", "text"),
-            ("real", "text"),
-            ("mapped_1738ce", "real"),
-        ):
+        spearman_pairs = [("mapped_779ce", "real"), ("mapped_1738ce", "real")]
+        for tname in text_spaces:
+            spearman_pairs += [("mapped_779ce", tname), ("real", tname)]
+        for a, b in spearman_pairs:
             if a not in spaces or b not in spaces:
                 continue
             rho, p = spearmanr(pair_d[a], pair_d[b])
@@ -524,58 +552,65 @@ def make_figures(cell_records: list[dict], fig_dir: Path) -> list[Path]:
     pal = paper_palette_blog(4)
     written: list[Path] = []
 
-    # (a) mapped (779ce) vs real median ratio per cell
-    fig, ax = plt.subplots(figsize=(7.4, 6.4))
-    lims = [0.0, 0.0]
-    for batt, color, marker in (("parent", pal[0], "o"), ("dbe", pal[1], "s")):
-        recs = [r for r in cell_records if r["battery"] == batt]
-        xs = [r["spaces"]["real"]["median_ratio"] for r in recs]
-        ys = [r["spaces"]["mapped_779ce"]["median_ratio"] for r in recs]
-        xerr = np.array(
-            [
-                [r["spaces"]["real"]["median_ratio"] - r["spaces"]["real"]["ci_lo"] for r in recs],
-                [r["spaces"]["real"]["ci_hi"] - r["spaces"]["real"]["median_ratio"] for r in recs],
-            ]
+    # (a) per-cell ratio scatter vs the real answers: mapped panel (+ text
+    # companion panel when a text space is present)
+    def ratio_scatter_panel(ax, yspace: str, ylabel: str, title: str) -> float:
+        top = 0.0
+        for batt, color, marker in (("parent", pal[0], "o"), ("dbe", pal[1], "s")):
+            recs = [r for r in cell_records if r["battery"] == batt]
+            xs = [r["spaces"]["real"]["median_ratio"] for r in recs]
+            ys = [r["spaces"][yspace]["median_ratio"] for r in recs]
+            err = {}
+            for key, sp, vals in (("xerr", "real", xs), ("yerr", yspace, ys)):
+                err[key] = np.array(
+                    [
+                        [v - r["spaces"][sp]["ci_lo"] for r, v in zip(recs, vals)],
+                        [r["spaces"][sp]["ci_hi"] - v for r, v in zip(recs, vals)],
+                    ]
+                )
+            ax.errorbar(
+                xs,
+                ys,
+                fmt=marker,
+                color=color,
+                ecolor=color,
+                elinewidth=0.7,
+                alpha=0.85,
+                ms=5,
+                ls="none",
+                label="parent 37-cell battery" if batt == "parent" else "8-type content battery",
+                **err,
+            )
+            for r, x, y in zip(recs, xs, ys):
+                ax.text(x, y, r["cell"], fontsize=5.5, alpha=0.8, ha="left", va="bottom")
+            top = max(top, max(xs), max(ys))
+        hi = top * 1.08
+        ax.plot([0, hi], [0, hi], color="gray", lw=1.0, ls="--", zorder=0, label="y = x")
+        ax.set_xlim(0, hi)
+        ax.set_ylim(0, hi)
+        ax.set_xlabel("real answer-vector separation ratio (pair / same-value yardstick)")
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        return hi
+
+    text_space = next((s for s in cell_records[0]["spaces"] if s.startswith("text")), None)
+    n_panels = 2 if text_space else 1
+    fig, axes = plt.subplots(1, n_panels, figsize=(7.4 * n_panels, 6.4))
+    axes = np.atleast_1d(axes)
+    ratio_scatter_panel(
+        axes[0],
+        "mapped_779ce",
+        "mapped-prediction separation ratio (single-turn map)",
+        "Does the map separate minimal pairs more than the real answers do?",
+    )
+    axes[0].legend(loc="upper left")
+    if text_space:
+        ratio_scatter_panel(
+            axes[1],
+            text_space,
+            "text-embedding separation ratio (Qwen3-Embedding-8B)",
+            "Does text-embedding separation track the real answers?",
         )
-        yerr = np.array(
-            [
-                [
-                    r["spaces"]["mapped_779ce"]["median_ratio"]
-                    - r["spaces"]["mapped_779ce"]["ci_lo"]
-                    for r in recs
-                ],
-                [
-                    r["spaces"]["mapped_779ce"]["ci_hi"]
-                    - r["spaces"]["mapped_779ce"]["median_ratio"]
-                    for r in recs
-                ],
-            ]
-        )
-        ax.errorbar(
-            xs,
-            ys,
-            xerr=xerr,
-            yerr=yerr,
-            fmt=marker,
-            color=color,
-            ecolor=color,
-            elinewidth=0.7,
-            alpha=0.85,
-            ms=5,
-            ls="none",
-            label=f"{'parent 37-cell battery' if batt == 'parent' else '8-type content battery'}",
-        )
-        for r, x, y in zip(recs, xs, ys):
-            ax.text(x, y, r["cell"], fontsize=5.5, alpha=0.8, ha="left", va="bottom")
-        lims[1] = max(lims[1], max(xs), max(ys))
-    hi = lims[1] * 1.08
-    ax.plot([0, hi], [0, hi], color="gray", lw=1.0, ls="--", zorder=0, label="y = x")
-    ax.set_xlim(0, hi)
-    ax.set_ylim(0, hi)
-    ax.set_xlabel("real answer-vector separation ratio (pair / same-value yardstick)")
-    ax.set_ylabel("mapped-prediction separation ratio (single-turn map)")
-    ax.set_title("Does the map separate minimal pairs more than the real answers do?")
-    ax.legend(loc="upper left")
     written += list(savefig_paper(fig, "sepcmp_mapped_vs_real_scatter", dir=fig_dir).values())
     plt.close(fig)
 
@@ -590,7 +625,8 @@ def make_figures(cell_records: list[dict], fig_dir: Path) -> list[Path]:
     space_labels = {
         "mapped_779ce": "mapped (single-turn map)",
         "real": "real answer vectors",
-        "text": "text embedding",
+        "text": "text embedding (OpenAI)",
+        QWEN_SPACE: "text embedding (Qwen3-8B)",
     }
     space_labels = {s: v for s, v in space_labels.items() if s in cell_records[0]["spaces"]}
     fig, ax = plt.subplots(figsize=(13.0, 5.2))
@@ -636,10 +672,12 @@ def main() -> None:
     ap.add_argument("--figures-only", action="store_true", help="re-render from sepcmp.json")
     ap.add_argument("--skip-hf-upload", action="store_true", help="skip embedding HF upload")
     ap.add_argument(
-        "--no-text",
-        action="store_true",
-        help="drop the text-embedding space (e.g. embedding credential unavailable); "
-        "the blocked leg is recorded in meta, never silently absent",
+        "--text-space",
+        choices=("qwen3_8b", "openai", "none"),
+        default="qwen3_8b",
+        help="text-embedding source: banked Qwen3-Embedding-8B means (GPU override route, "
+        "default), the OpenAI API route, or none (skipped leg recorded in meta, never "
+        "silently absent)",
     )
     args = ap.parse_args()
 
@@ -673,7 +711,9 @@ def main() -> None:
     emb_dir = root / "embeddings"
     emb_dir.mkdir(parents=True, exist_ok=True)
     ep: dict | None = None
-    if not args.no_text:
+    if args.text_space == "qwen3_8b":
+        parent_spaces[QWEN_SPACE] = qwen_text_means(root, pt.ids, "parent")
+    elif args.text_space == "openai":
         rows_parent = read_rollout_rows([stage(p, root, REV_PARENT) for p in PARENT_JSONL])
         assert len(rows_parent) == 14_040, len(rows_parent)
         ep = embed_battery("parent", rows_parent, emb_dir)
@@ -710,11 +750,19 @@ def main() -> None:
     cells_dbe, pairs_dbe = analyze_battery("dbe", bank_d, pt_d, dbe_spaces, 1, args.b_boot)
 
     # ── per-context mean embeddings for the HF bank ───────────────────
-    if args.no_text:
+    if args.text_space == "none":
         embedding_meta: dict = {
-            "status": "BLOCKED — text leg not run",
+            "status": "SKIPPED — text leg not run (--text-space none)",
             "reason": "no valid OPENAI_API_KEY on the VM (every candidate key returned 401 "
             "invalid_api_key at dispatch time, 2026-08-24); leg dropped, never substituted",
+        }
+    elif args.text_space == "qwen3_8b":
+        qmeta_path = stage(f"{QWEN_HF_PREFIX}/meta.json", root, None)
+        embedding_meta = {
+            "space": QWEN_SPACE,
+            "route": "GPU override (user, 2026-08-24) — supersedes the OpenAI "
+            "text-embedding-3-large route (key revoked, 401)",
+            **json.loads(qmeta_path.read_text()),
         }
     else:
         assert ep is not None and ed is not None
@@ -735,7 +783,7 @@ def main() -> None:
             "dbe": {k: ed[k] for k in ("n_truncated", "n_empty", "total_tokens")},
         }
         (emb_dir / "embeddings_meta.json").write_text(json.dumps(embedding_meta, indent=1))
-    if not args.skip_hf_upload and not args.no_text:
+    if not args.skip_hf_upload and args.text_space == "openai":
         from huggingface_hub import HfApi
 
         assert_hub_dir_filecounts(emb_dir, EMBED_HF_PREFIX, ignore_patterns=["_hf/**"])
