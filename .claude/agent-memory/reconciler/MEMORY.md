@@ -99,6 +99,7 @@
 ## Clean-result-critic + interp-critic calibration
 
 - [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — sweep ALL rows vs BOTH candidate sources (#2333 r2)
+- [Claude interp skips derived-quantity inversion](feedback_claude_interp_skips_derived_quantity_inversion.md) — invert pool=1/chance clauses yourself; point value ≤ committed min ≠ rounding (#2479 r3)
 - [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — pre-pass PASS ≠ spec compliance; DISCARD list inside (#923, #2333, #2477)
 - [Bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md) — Methodology Source col / caption #N + reuse path (b) grounded (#722)
 - [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — re-scan for named tests, ± (#378)
