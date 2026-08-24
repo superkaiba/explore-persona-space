@@ -91,3 +91,15 @@ N/A claim (grep the module for a real no-registry unconditional-dispatch shape).
 **How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
 + bare `per-arm-resolution:` heading + bare-token row keys, in one re-post.
+
+**Argparse-choices drivers tempt PROSE-form registry lines (#2502 R1 g4).** A round
+whose drivers dispatch on argparse `choices=` (no `PHASES` dict) has no `source=`
+symbol to cite, and the implementer writes a free-prose "derived mechanically from
+each script's argparse choices via ..." line — `check-smoke-arch-registry` REFUSEs it
+(neither accepted form). The correct escape for this driver class is the
+`arm-registry: N/A — <reason>` form (reason may enumerate the per-script choices).
+Reviewer duty when the mechanical arm is down: verify arm substance yourself — grep
+each script's `choices=(...)` + standalone flag arms (`--probe`, `--self-test`) and
+set-compare against the per-arm-resolution rows + `arms_stubbed` ↔ FALLBACK-row
+consistency; grammar-only miss with complete substance = Critical `marker-shape`
+with a one-line re-post fix, never `substantive`.

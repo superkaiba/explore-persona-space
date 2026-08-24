@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2506,
+  "highest_id": 2510,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9762,8 +9762,8 @@
     "2263": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2263",
-      "status": "running",
+      "path": "tasks/completed/2263",
+      "status": "completed",
       "title": "verify_carryover_inputs.py default ref checks the wrong tree on a suffixed issue branch (Step 6a.5 gate)"
     },
     "2264": {
@@ -10084,8 +10084,8 @@
     "2305": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2305",
-      "status": "reviewing",
+      "path": "tasks/completed/2305",
+      "status": "completed",
       "title": "Non-atomic fresh claim-file write in run_claim_queue kills a concurrent worker with 'unparseable claim file'"
     },
     "2306": {
@@ -10112,8 +10112,8 @@
     "2309": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2309",
-      "status": "running",
+      "path": "tasks/completed/2309",
+      "status": "completed",
       "title": "workflow-fix: implementer marker four-H3 completion-report contract is judgment-caught, not mechanically checked"
     },
     "231": {
@@ -10133,8 +10133,8 @@
     "2311": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2311",
-      "status": "proposed",
+      "path": "tasks/completed/2311",
+      "status": "completed",
       "title": "Step 5a sibling arm: synced sibling tests run against branch-era src/; #2208 collection probe cannot see the runtime skew"
     },
     "2312": {
@@ -10147,8 +10147,8 @@
     "2313": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2313",
-      "status": "proposed",
+      "path": "tasks/running/2313",
+      "status": "running",
       "title": "Policy: rebase-rewritten own issue branch \u2014 sanctioned --force-with-lease arm, or explicit ban + force-free route only?"
     },
     "2314": {
@@ -10161,8 +10161,8 @@
     "2315": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2315",
-      "status": "proposed",
+      "path": "tasks/running/2315",
+      "status": "running",
       "title": "Step 9c 1b: a self-composed gate launcher can silently drop --files-only newline flattening OR -o junit_family=xunit1; neither omission fails where the recipe checks"
     },
     "2316": {
@@ -10217,8 +10217,8 @@
     "2322": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2322",
-      "status": "proposed",
+      "path": "tasks/running/2322",
+      "status": "running",
       "title": "Codex twin: CLI 0.147.0 + gpt-5.6-sol, daily auto-upgrade cron"
     },
     "2323": {
@@ -10252,8 +10252,8 @@
     "2327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2327",
-      "status": "proposed",
+      "path": "tasks/planning/2327",
+      "status": "planning",
       "title": "Step 5a spec-freshness sync copies a .claude doc without its workflow_lint.py grandfather cap, producing a deterministic false-red gate"
     },
     "2328": {
@@ -11383,8 +11383,8 @@
       "goal": "Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2474",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2474",
+      "status": "followups_running",
       "title": "Pre-fine-tuning context geometry predicts emergent-misalignment re-elicitation but adds at most a marginal increment over surface-text similarity (MODERATE confidence)"
     },
     "2475": {
@@ -11636,12 +11636,40 @@
       "status": "proposed",
       "title": "Add 4 verify_plan.py mechanical-backstop checks surfaced during #2502 planning (new-model-env-row, selection-inherited-CI, cross-section verdict-drift, concurrent-launch name-collision)"
     },
+    "2507": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2507",
+      "status": "proposed",
+      "title": "Fix pre-existing no-flags lint red: bare list_repo_tree + hf_hub_download in scripts/issue2378_segb_think_audit.py"
+    },
+    "2508": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2508",
+      "status": "proposed",
+      "title": "Step 10d gate normalization: exclude 'workflow_lint: note:' lines from the failure-line sets"
+    },
+    "2509": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2509",
+      "status": "proposed",
+      "title": "Step 10d form-(iii) surgical checkout: add bounded index.lock retry to the committed block"
+    },
     "251": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/archived/251",
       "status": "archived",
       "title": "More workflow improvements"
+    },
+    "2510": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2510",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan should assert the smoke blind-spot enumeration when a plan declares a smoke/dry-run verification"
     },
     "256": {
       "has_clean_result": false,

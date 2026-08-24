@@ -17,9 +17,14 @@ issue1434_worker.py:571 — this gate catches the plan-text CITATION, which
 existed in bare-filename form, not the construction), HF-staged data/ inputs
 (WARN only; staging correctness is artifact-reuse check (h)(iii)'s territory),
 direct dispatch_issue.py launches that bypass /issue Step 6a.5, and
-extension-less citations. The check ref defaults to origin/issue-<N>; a lane
-whose actual materialization ref differs (RunPod BOOTSTRAP_BRANCH defaults to
-main) can be probed by threading --ref.
+extension-less citations. The check ref resolves via a precedence ladder
+mirroring dispatch_issue.py's own --repo-branch resolution (#2263): an
+explicit --ref verbatim > --repo-branch <b> -> origin/<b> (refusing when the
+ref is absent from origin) > the invoking cwd's issue-scoped worktree branch
+> the legacy origin/issue-<N>-or-origin/main default, which now REFUSES when
+suffixed origin/issue-<N>-* siblings exist (the #1336 wrong-tree class). A
+lane whose materialization ref is known to differ (RunPod BOOTSTRAP_BRANCH
+defaults to main) is probed by threading --ref / --repo-branch accordingly.
 
 Lane-aware (#1835): the SLURM lanes materialize via an RSYNC of
 RSYNC_INCLUDE_PATHS (eval_results/ excluded), not a git clone, so
@@ -70,10 +75,12 @@ import contextlib
 import dataclasses
 import fnmatch
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 # ---------------------------------------------------------------------------
 # Extraction — TWO channels, both feeding one classifier (plan #1469 §4.1).
@@ -453,14 +460,78 @@ def resolve_bare_name(name: str, *, repo_root: Path, issue: int, scope: set[int]
 # Git probes (pure git — no tokens, no network beyond the bounded fetch).
 # ---------------------------------------------------------------------------
 
+#: Repository-selection env vars that would silently repoint every `git -C`
+#: probe at a DIFFERENT repository than the path-named one (#2263 MF-C).
+#: Convention mirror: task_workflow.py `_GIT_ENV_POISONERS`, plus
+#: GIT_COMMON_DIR (it repoints the worktree/common-dir probes specifically).
+#: The GIT_CONFIG_* rows are the config-INJECTION channels (#2263 r2): an
+#: env-injected `url.<foreign>.insteadOf` rewrite redirects the bounded
+#: fetch, so the gate would certify FOREIGN content as the dispatch tree
+#: (reproduced against git 2.34; not theoretical).
+_GIT_ENV_POISONERS = (
+    "GIT_DIR",
+    "GIT_COMMON_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_CONFIG_COUNT",
+    "GIT_CONFIG_PARAMETERS",
+    "GIT_CONFIG_GLOBAL",
+    "GIT_CONFIG_SYSTEM",
+)
+
+#: Indexed GIT_CONFIG_KEY_<n> / GIT_CONFIG_VALUE_<n> pairs carry the injected
+#: entries themselves — every index, enumerable only dynamically (#2263 r2).
+_GIT_CONFIG_PAIR_RE = re.compile(r"^GIT_CONFIG_(?:KEY|VALUE)_\d+$")
+
+
+def _sanitized_git_env() -> dict[str, str]:
+    """os.environ minus repo-selection AND config-injection GIT_* overrides.
+
+    Repository selection (#2263 MF-C): a caller-inherited GIT_DIR /
+    GIT_WORK_TREE would make every `git -C` probe — and the worktree/branch
+    inference built on them — read a DIFFERENT repository than the path
+    selects. Config injection (#2263 r2): GIT_CONFIG_COUNT +
+    GIT_CONFIG_KEY_<n>/VALUE_<n> (all indices), GIT_CONFIG_PARAMETERS, and a
+    redirected GIT_CONFIG_GLOBAL/SYSTEM can inject `url.<foreign>.insteadOf`
+    and redirect the fetch to a foreign origin. Stripping the ENV channels
+    leaves on-disk config (repo/user/system files) fully in effect.
+
+    Documented-open channels — DELIBERATELY not stripped (#2263 r3):
+    executable / transport / TLS-proxy env (GIT_SSH, GIT_SSH_COMMAND,
+    GIT_PROXY_COMMAND, GIT_EXEC_PATH, the *_PROXY family) and the
+    config-LOCATION roots HOME / XDG_CONFIG_HOME (which relocate the user
+    config file wholesale), plus ceiling dirs and namespaces. Operators set
+    these deliberately — a remote reachable only through a custom SSH or
+    proxy command — so stripping them trades a real fetch failure for a
+    theoretical spoof. This sanitizer defends against ACCIDENTAL inheritance
+    (a hook-exported GIT_DIR, a pre-commit-exported GIT_CONFIG_*), NOT
+    against a hostile caller: the gate runs inside the orchestrator's own
+    environment, so anyone able to set these variables already controls the
+    session. It is not, and cannot be, spoof-proof against its own caller.
+    """
+    env = dict(os.environ)
+    for key in _GIT_ENV_POISONERS:
+        env.pop(key, None)
+    for key in [k for k in env if _GIT_CONFIG_PAIR_RE.match(k)]:
+        del env[key]
+    return env
+
 
 def _git(repo_root: Path, *args: str, timeout: int = 60) -> subprocess.CompletedProcess:
+    """Run `git -C <repo_root> <args>` under a sanitized env; never raises on rc.
+
+    The env strips `_GIT_ENV_POISONERS` (#2263 MF-C) so the `-C` path — not a
+    caller-inherited GIT_DIR/GIT_WORK_TREE — selects the repository. Returns
+    the CompletedProcess (check=False); TimeoutExpired propagates.
+    """
     return subprocess.run(
         ["git", "-C", str(repo_root), *args],
         capture_output=True,
         text=True,
         timeout=timeout,
         check=False,
+        env=_sanitized_git_env(),
     )
 
 
@@ -473,23 +544,347 @@ def path_in_ref(repo_root: Path, ref: str, path: str) -> bool:
     return _git(repo_root, "cat-file", "-e", f"{ref}:{path}").returncode == 0
 
 
-def resolve_check_ref(repo_root: Path, issue: int, *, fetch: bool = True) -> str:
-    """The PUSHED dispatch ref: origin/issue-<N> if it verifies, else origin/main.
+class CheckRefResolutionError(RuntimeError):
+    """No unambiguous check ref could be resolved (CLI: ERROR to stderr, exit 2)."""
 
-    fetch=True first runs a bounded `git fetch origin --quiet --no-tags <ref>`
-    for issue-<N> and main, each fail-open (`|| true` semantics: staleness
-    biases toward the committed-unpushed FAIL, whose push-and-rerun
-    remediation self-heals it). Use fetch=False (--no-fetch) for tests/sweeps.
+
+class RepoBranchDerivationError(RuntimeError):
+    """--print-repo-branch found zero or multiple live issue-scoped worktrees (exit 2)."""
+
+
+class ResolvedRef(NamedTuple):
+    """A resolved check ref plus WHICH precedence-ladder rung produced it (#2263)."""
+
+    ref: str
+    #: ref-flag | repo-branch-flag | worktree-branch | bare-issue-branch-default
+    #: | origin-main-default
+    source: str
+
+
+def _issue_scoped(branch: str, issue: int) -> bool:
+    """True iff `branch` is issue-<issue> or issue-<issue>-* (digit-boundary safe)."""
+    return branch == f"issue-{issue}" or branch.startswith(f"issue-{issue}-")
+
+
+def _fetch_branch_refs(repo_root: Path, *branches: str) -> None:
+    """Bounded per-branch `git fetch origin --quiet --no-tags <branch>` calls.
+
+    Each is fail-open (`|| true` semantics — check=False plus the sanctioned
+    TimeoutExpired suppression): staleness biases toward the
+    committed-unpushed FAIL, whose push-and-rerun remediation self-heals it.
+    """
+    for ref in branches:
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            _git(repo_root, "fetch", "origin", "--quiet", "--no-tags", ref, timeout=120)
+
+
+def _cwd_worktree_branch(repo_root: Path, invoke_cwd: Path) -> str | None:
+    """The invoking cwd's checked-out branch, iff it is a work tree OF repo_root.
+
+    Rung-3 guards (b) + (c); any failure returns None — fail CLOSED to the
+    legacy rung, never infer from an unproven cwd:
+
+    (b) repository binding — the cwd's `--git-common-dir` equals repo_root's,
+        both realpath-normalized, so a foreign or nested repository can never
+        steer the check ref;
+    (c) `rev-parse --is-inside-work-tree` prints `true` — a `.git`-dir cwd
+        reports a branch but is not a work tree (probe P4).
+
+    Guard (a), issue scoping of the branch name, lives in the caller.
+    """
+    proc = _git(invoke_cwd, "branch", "--show-current")
+    branch = proc.stdout.strip()
+    if proc.returncode != 0 or not branch:
+        return None
+    cwd_common = _git(invoke_cwd, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    root_common = _git(repo_root, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if cwd_common.returncode != 0 or root_common.returncode != 0:
+        return None
+    if os.path.realpath(cwd_common.stdout.strip()) != os.path.realpath(root_common.stdout.strip()):
+        return None
+    inside = _git(invoke_cwd, "rev-parse", "--is-inside-work-tree")
+    if inside.returncode != 0 or inside.stdout.strip() != "true":
+        return None
+    return branch
+
+
+def _suffixed_remote_branches(repo_root: Path, issue: int) -> list[str]:
+    """Sorted `origin/issue-<issue>-*` remote-tracking refs known locally.
+
+    Enumeration is the rung-4 ambiguity input, so a failed `for-each-ref` is
+    fail-CLOSED (raises) rather than silently reading as "no candidates".
+    """
+    proc = _git(
+        repo_root,
+        "for-each-ref",
+        f"refs/remotes/origin/issue-{issue}-*",
+        "--format=%(refname:short)",
+    )
+    if proc.returncode != 0:
+        raise CheckRefResolutionError(
+            f"cannot enumerate origin/issue-{issue}-* candidates "
+            f"(for-each-ref rc={proc.returncode}): {proc.stderr.strip()}"
+        )
+    return sorted(line.strip() for line in proc.stdout.splitlines() if line.strip())
+
+
+def _resolve_repo_branch_rung(repo_root: Path, repo_branch: str, *, fetch: bool) -> ResolvedRef:
+    """Rung 2: an explicit --repo-branch mirrors the dispatch's own value.
+
+    Requires origin/<repo_branch> to verify (after the bounded fetch when
+    fetch=True); absent raises — the dispatch would materialize a ref that
+    does not exist on origin. `main` is legal (deliberate wholly-main-resident
+    confirmation).
     """
     if fetch:
-        for ref in (f"issue-{issue}", "main"):
-            # Fail-open to possibly-stale refs (see docstring).
-            with contextlib.suppress(subprocess.TimeoutExpired):
-                _git(repo_root, "fetch", "origin", "--quiet", "--no-tags", ref, timeout=120)
-    branch_ref = f"origin/issue-{issue}"
+        _fetch_branch_refs(repo_root, repo_branch, "main")
+    branch_ref = f"origin/{repo_branch}"
     if ref_exists(repo_root, branch_ref):
-        return branch_ref
-    return "origin/main"
+        return ResolvedRef(branch_ref, "repo-branch-flag")
+    hint = "after fetch" if fetch else "under --no-fetch (locally-known refs only)"
+    raise CheckRefResolutionError(
+        f"--repo-branch {repo_branch}: {branch_ref} does not verify {hint} — the dispatch "
+        f"would materialize a ref absent from origin; push the branch "
+        f"(git push origin {repo_branch}) or pass the branch the launch will actually use"
+    )
+
+
+def _resolve_worktree_rung(repo_root: Path, branch: str, *, fetch: bool) -> ResolvedRef:
+    """Rung 3: the invoking cwd's issue-scoped worktree branch (already guarded).
+
+    Mirrors dispatch_issue.py's current-branch defaulting. An UNPUSHED
+    inferred branch raises — the lane would materialize nothing from it.
+    """
+    if fetch:
+        _fetch_branch_refs(repo_root, branch, "main")
+    branch_ref = f"origin/{branch}"
+    if ref_exists(repo_root, branch_ref):
+        return ResolvedRef(branch_ref, "worktree-branch")
+    hint = "after fetch" if fetch else "under --no-fetch"
+    raise CheckRefResolutionError(
+        f"worktree branch {branch} is not on origin ({branch_ref} missing {hint}) — the lane "
+        f"would materialize nothing from it; push the branch (git push origin {branch}) and "
+        f"re-run, or pass --repo-branch/--ref explicitly"
+    )
+
+
+def _resolve_default_rung(repo_root: Path, issue: int, *, fetch: bool) -> ResolvedRef:
+    """Rung 4: the legacy origin/issue-<N>-or-origin/main default + ambiguity refusal.
+
+    Fetches issue-<N> + main as before PLUS a --prune glob fetch of
+    issue-<N>-* (so a deleted suffixed sibling cannot leave a stale
+    refusal-triggering tracking ref); a NON-empty suffixed candidate set
+    raises listing every candidate — a bare-branch guess among suffixed
+    siblings grades the WRONG tree (#1336). Under fetch=False the enumeration
+    reads the locally-known remote-tracking refs (possibly stale).
+    """
+    if fetch:
+        _fetch_branch_refs(repo_root, f"issue-{issue}", "main")
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            _git(
+                repo_root,
+                "fetch",
+                "--prune",
+                "origin",
+                "--quiet",
+                "--no-tags",
+                f"+refs/heads/issue-{issue}-*:refs/remotes/origin/issue-{issue}-*",
+                timeout=120,
+            )
+    suffixed = _suffixed_remote_branches(repo_root, issue)
+    bare_ref = f"origin/issue-{issue}"
+    bare_exists = ref_exists(repo_root, bare_ref)
+    if suffixed:
+        candidates = sorted(suffixed + ([bare_ref] if bare_exists else []))
+        raise CheckRefResolutionError(
+            f"cannot pick a check ref for issue {issue}: suffixed origin/issue-{issue}-* "
+            f"branch(es) exist — candidates: {', '.join(candidates)}. A bare-branch guess "
+            f"among suffixed siblings grades the WRONG tree (#1336). Remedies, in order: "
+            f"(1) pass --repo-branch <branch> mirroring the launch's --repo-branch (lead "
+            f"remedy; derive it via --print-repo-branch); (2) run the gate from the issue "
+            f"worktree so inference picks its branch; (3) an explicit --ref LAST — caution: "
+            f"--ref bypasses the ref-existence guard and can deliberately grade a tree the "
+            f"dispatch will not materialize"
+        )
+    if bare_exists:
+        return ResolvedRef(bare_ref, "bare-issue-branch-default")
+    return ResolvedRef("origin/main", "origin-main-default")
+
+
+def resolve_check_ref(
+    repo_root: Path,
+    issue: int,
+    *,
+    fetch: bool = True,
+    repo_branch: str | None = None,
+    invoke_cwd: Path | None = None,
+) -> ResolvedRef:
+    """Resolve the ref the dispatch will ACTUALLY materialize + its source (#2263).
+
+    Precedence ladder (rung 1 — an explicit --ref — is handled by the CLI and
+    never calls this resolver):
+
+    2. `repo_branch` (--repo-branch): the dispatch's own value, mirrored to
+       this gate — check ref origin/<repo_branch>, REFUSED when absent from
+       origin after the bounded fetch. Source `repo-branch-flag`.
+    3. Worktree inference: when the INVOKING cwd (`invoke_cwd`, default
+       Path.cwd()) is a live work tree OF `repo_root` checked out on an
+       issue-<issue>-scoped branch, that branch mirrors dispatch_issue.py's
+       current-branch defaulting; an unpushed inferred branch REFUSES.
+       Source `worktree-branch`.
+    4. Legacy default + ambiguity refusal: origin/issue-<N> if it exists,
+       else origin/main — REFUSED when suffixed origin/issue-<N>-* siblings
+       exist (candidates listed). Sources `bare-issue-branch-default` /
+       `origin-main-default`.
+
+    fetch=True runs bounded fail-open per-branch fetches (see
+    `_fetch_branch_refs`); fetch=False (--no-fetch) resolves against
+    possibly-STALE locally-known origin/* refs — a just-pushed sibling branch
+    is invisible until fetched.
+
+    Cross-fence divergence (#2263 r2): the Step 6a.5 gate and the Step 6b
+    launch fences resolve INDEPENDENTLY, so worktree/branch state changed
+    between them changes the resolution — and the sole-worktree
+    switched-from-pushed-A-to-pushed-B case resolves CLEANLY at both fences
+    (no refusal fires anywhere). The launch fence therefore RE-RUNS the
+    carry-over gate against its OWN resolved branch immediately before
+    dispatch (.claude/skills/issue/steps/10-step-6.md Step 6b), so every
+    branch a launch resolves has been graded in the SAME fence. Residuals,
+    stated exactly: (a) the recheck and the dispatch are consecutive shell
+    commands, not one atomic operation — state switched between those two
+    commands still dispatches an ungraded tree; (b) the dispatch-side
+    conflict guard bounds none of this — ANY explicit --repo-branch value
+    bypasses it by construction (scripts/dispatch_issue.py:1203) and the
+    pushed-ref ls-remote existence check only WARNs.
+    """
+    if repo_branch is not None:
+        return _resolve_repo_branch_rung(repo_root, repo_branch, fetch=fetch)
+    cwd = invoke_cwd if invoke_cwd is not None else Path.cwd()
+    branch = _cwd_worktree_branch(repo_root, cwd)
+    if branch is not None and _issue_scoped(branch, issue):
+        return _resolve_worktree_rung(repo_root, branch, fetch=fetch)
+    return _resolve_default_rung(repo_root, issue, fetch=fetch)
+
+
+def derive_local_branch(check_ref: str, ref_source: str, issue: int) -> str:
+    """The LOCAL branch whose unpushed tip classify() should probe (#2263 MF-3).
+
+    Source-aware: an explicitly-resolved branch ref (`repo-branch-flag` /
+    `worktree-branch`) probes ITS bare branch name (main included); an
+    explicit --ref strips `origin/` ONLY when the stripped name lies in this
+    issue's own namespace (issue-<N> / issue-<N>-*, digit-boundary safe),
+    else falls back to issue-<N>; both defaults keep the legacy issue-<N>.
+    """
+    if ref_source in ("repo-branch-flag", "worktree-branch"):
+        return check_ref.removeprefix("origin/")
+    if ref_source == "ref-flag":
+        name = check_ref.removeprefix("origin/")
+        if _issue_scoped(name, issue):
+            return name
+    return f"issue-{issue}"
+
+
+def _parse_worktree_list(porcelain: str) -> list[tuple[Path, str | None]]:
+    """Parse `git worktree list --porcelain` output into
+    `(worktree path, branch ref or None)` records. Records are blank-line
+    separated; each opens with `worktree <path>` and carries `branch <ref>`
+    only for branch-bound checkouts (a DETACHED checkout has a bare
+    `detached` line instead). Pure string parsing — no git, no filesystem.
+
+    Convention copy of scripts/verify_task_body.py `_parse_worktree_list`
+    (#2288); duplicated rather than imported to avoid coupling the two
+    verifiers' release cadences (#2263 plan §10).
+    """
+    records: list[tuple[Path, str | None]] = []
+    path: Path | None = None
+    branch: str | None = None
+    for line in porcelain.splitlines():
+        if line.startswith("worktree "):
+            if path is not None:
+                records.append((path, branch))
+            path = Path(line[len("worktree ") :])
+            branch = None
+        elif line.startswith("branch "):
+            branch = line[len("branch ") :]
+        elif not line.strip():
+            if path is not None:
+                records.append((path, branch))
+            path = None
+            branch = None
+    if path is not None:
+        records.append((path, branch))
+    return records
+
+
+def derive_worktree_repo_branch(repo_root: Path, issue: int) -> str:
+    """The ONE live issue-<issue>-scoped worktree branch (#2263 MF-A).
+
+    The shared --repo-branch resolver both Step 6 fences call
+    (--print-repo-branch). Parses `git worktree list --porcelain` (pure local
+    read — no network), keeps records whose branch is issue-scoped
+    (issue-<N> / issue-<N>-*, digit-boundary safe) AND whose worktree
+    directory still exists (a registered-but-DELETED worktree keeps its
+    branch line plus a `prunable` marker — probe P1b), and:
+
+    - exactly ONE survivor -> returns its bare branch name (structurally
+      never `main` — out of the issue namespace by construction);
+    - ZERO -> raises RepoBranchDerivationError (a wholly-main-resident
+      workload passes --repo-branch main explicitly at BOTH fences);
+    - MULTIPLE -> raises listing every (branch, path) candidate.
+
+    Skipped stale registrations are named in the refusal messages AND, on
+    success, in one stderr note (#2263 review finding 2): a transient
+    is_dir() False — e.g. a mount hiccup — can turn a designed 2-worktree
+    multiple-match refusal into a unique match, and the note makes that
+    visible. Diagnostic only; stdout stays the bare branch name.
+    """
+    proc = _git(repo_root, "worktree", "list", "--porcelain")
+    if proc.returncode != 0:
+        raise RepoBranchDerivationError(
+            f"git worktree list --porcelain failed (rc={proc.returncode}): "
+            f"{proc.stderr.strip() or proc.stdout.strip()}"
+        )
+    live: list[tuple[str, Path]] = []
+    stale: list[tuple[str, Path]] = []
+    for wt_path, branch_ref in _parse_worktree_list(proc.stdout):
+        if branch_ref is None:
+            continue  # detached worktree — carries no branch to mirror
+        branch = branch_ref.removeprefix("refs/heads/")
+        if not _issue_scoped(branch, issue):
+            continue
+        if wt_path.is_dir():
+            live.append((branch, wt_path))
+        else:
+            stale.append((branch, wt_path))
+    stale_desc = ", ".join(f"{b} @ {p}" for b, p in stale)
+    if len(live) == 1:
+        if stale:
+            print(
+                f"NOTE: skipped stale issue-{issue} worktree registration(s) "
+                f"(directory missing): {stale_desc} — a transient miss here can mask a "
+                f"multiple-match refusal (#2263)",
+                file=sys.stderr,
+            )
+        return live[0][0]
+    if not live:
+        raise RepoBranchDerivationError(
+            f"no live worktree of this repository is checked out on an issue-{issue}-scoped "
+            f"branch (issue-{issue} / issue-{issue}-*)"
+            + (
+                f"; skipped stale registration(s) (directory missing): {stale_desc}"
+                if stale
+                else ""
+            )
+            + f" — a wholly-main-resident workload passes --repo-branch main explicitly at BOTH "
+            f"the gate and the launch; otherwise create the issue-{issue} worktree "
+            f"(scripts/new_worktree.sh) first"
+        )
+    listing = "; ".join(f"{b} @ {p}" for b, p in live)
+    raise RepoBranchDerivationError(
+        f"multiple live issue-{issue}-scoped worktrees: {listing}"
+        + (f"; skipped stale registration(s): {stale_desc}" if stale else "")
+        + " — pass --repo-branch <branch> explicitly, threaded to BOTH the gate and the launch"
+    )
 
 
 def exists_locally(repo_root: Path, issue: int, path: str) -> bool:
@@ -513,7 +908,42 @@ class Finding:
     channel: str = "A"
 
 
-def classify(cand: dict, *, repo_root: Path, issue: int, check_ref: str) -> Finding:
+def _committed_unpushed_detail(found_branch: str, check_ref: str) -> str:
+    """committed-unpushed remediation, split on found-branch vs check-ref branch (#2263).
+
+    Three wordings: (1) found == check-ref branch — today's push-and-rerun;
+    (2) found != check-ref branch, origin/-shaped check ref — merge/rebase or
+    re-dispatch with --repo-branch <found>; (3) non-branch-shaped check ref
+    (a raw --ref SHA / local ref) — no branch is interpolated from it.
+    """
+    if check_ref == f"origin/{found_branch}":
+        return (
+            f"committed on the local {found_branch} tip but absent from {check_ref} — "
+            "push the branch and re-run"
+        )
+    if check_ref.startswith("origin/"):
+        return (
+            f"committed on the local {found_branch} tip but the dispatch materializes "
+            f"{check_ref} — merge/rebase {found_branch} into "
+            f"{check_ref.removeprefix('origin/')} and push, or re-dispatch with "
+            f"--repo-branch {found_branch}"
+        )
+    return (
+        f"committed on the local {found_branch} tip but absent from the checked ref "
+        f"{check_ref} — push {found_branch} and re-dispatch with --repo-branch "
+        f"{found_branch}, or merge {found_branch} into the branch the dispatch will "
+        "materialize"
+    )
+
+
+def classify(
+    cand: dict,
+    *,
+    repo_root: Path,
+    issue: int,
+    check_ref: str,
+    local_branch: str | None = None,
+) -> Finding:
     """Classify one concrete candidate path against the pushed check ref.
 
     Ladder: in-ref pass -> on-main-not-on-branch -> committed-unpushed ->
@@ -522,12 +952,19 @@ def classify(cand: dict, *, repo_root: Path, issue: int, check_ref: str) -> Find
     warn). The own-issue exemption applies ONLY at the nowhere-visible rung —
     the #1434 incident file was an own-issue INPUT that resolved locally, and
     it must FAIL.
+
+    `local_branch` (#2263 MF-3) is the source-aware `derive_local_branch`
+    value; None keeps the legacy issue-<N>. The committed-unpushed rung
+    probes the deduped UNION [local_branch, issue-<N>] (first hit wins) so a
+    suffixed check ref still catches a commit stranded on the legacy bare
+    branch and vice versa; no derivation may convert that FAIL to SKIP/WARN.
     """
     path = cand["path"]
     channel = cand.get("channel", "A")
     cls = "data" if path.startswith("data/") else "tracked-results"
     fatal = "fail" if cls == "tracked-results" else "warn"  # data class never FAILs
-    local_branch = f"issue-{issue}"
+    if local_branch is None:
+        local_branch = f"issue-{issue}"
 
     if path_in_ref(repo_root, check_ref, path):
         return Finding(path, "pass", "in-ref", f"reachable at {check_ref}", channel)
@@ -541,17 +978,17 @@ def classify(cand: dict, *, repo_root: Path, issue: int, check_ref: str) -> Find
             "then re-run (the file is already committed)",
             channel,
         )
-    if ref_exists(repo_root, f"refs/heads/{local_branch}") and path_in_ref(
-        repo_root, local_branch, path
-    ):
-        return Finding(
-            path,
-            fatal,
-            "committed-unpushed",
-            f"committed on the local {local_branch} tip but absent from {check_ref} — "
-            "push the branch and re-run",
-            channel,
-        )
+    for probe_branch in dict.fromkeys((local_branch, f"issue-{issue}")):
+        if ref_exists(repo_root, f"refs/heads/{probe_branch}") and path_in_ref(
+            repo_root, probe_branch, path
+        ):
+            return Finding(
+                path,
+                fatal,
+                "committed-unpushed",
+                _committed_unpushed_detail(probe_branch, check_ref),
+                channel,
+            )
     if exists_locally(repo_root, issue, path):
         if cls == "data":
             return Finding(
@@ -590,8 +1027,19 @@ def classify(cand: dict, *, repo_root: Path, issue: int, check_ref: str) -> Find
     )
 
 
-def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) -> list[Finding]:
+def run_check(
+    plan_text: str,
+    *,
+    repo_root: Path,
+    issue: int,
+    check_ref: str,
+    local_branch: str | None = None,
+) -> list[Finding]:
     """Extract (both channels), resolve, and classify every candidate.
+
+    #2263: `local_branch` (the source-aware `derive_local_branch` value)
+    threads into every classify() call; None keeps the legacy issue-<N>
+    committed-unpushed probe (the #1995 sweep caller's contract).
 
     #1935 restructure: plan-declared outputs are computed once from the plan's
     STRUCTURED declarations (`extract_declared_outputs`). Channel A: an
@@ -633,6 +1081,7 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                 repo_root=repo_root,
                 issue=issue,
                 check_ref=check_ref,
+                local_branch=local_branch,
             )
         )
     a_paths = {c["path"] for c in a_cands}
@@ -711,6 +1160,7 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
                     repo_root=repo_root,
                     issue=issue,
                     check_ref=check_ref,
+                    local_branch=local_branch,
                 )
             )
         # Post-classify downgrade (#1982): #1979 HF-staged + #1739 in-ref
@@ -904,15 +1354,78 @@ def apply_rsync_lane_downgrade(
 
 
 def _default_repo_root() -> Path | None:
+    """Repo root from the cwd's `--git-common-dir` parent (worktree-safe).
+
+    Runs under the same sanitized env as `_git` (#2263 MF-C) so an inherited
+    GIT_DIR/GIT_WORK_TREE cannot silently repoint the default repo root.
+    """
     proc = subprocess.run(
         ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
         capture_output=True,
         text=True,
         check=False,
+        env=_sanitized_git_env(),
     )
     if proc.returncode != 0:
         return None
     return Path(proc.stdout.strip()).parent
+
+
+def _repo_branch_arg(value: str) -> str:
+    """argparse type for --repo-branch: a bare branch name.
+
+    Rejects empty/whitespace values and `origin/`-prefixed refs (the gate
+    probes origin/<branch> itself; a raw ref override is --ref's job).
+    """
+    if not value.strip():
+        raise argparse.ArgumentTypeError("--repo-branch needs a non-empty branch name")
+    if value.startswith("origin/"):
+        raise argparse.ArgumentTypeError(
+            "pass the bare branch name without the `origin/` prefix (the gate probes "
+            "origin/<branch> itself); use --ref for a raw ref override"
+        )
+    return value
+
+
+def _validate_cli_mode(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    """Post-parse mode validation (#2263); `parser.error` exits 2.
+
+    Resolver mode (--print-repo-branch) takes only --issue/--repo-root —
+    every check-mode flag is refused loud so a fence typo cannot half-run
+    the gate; check mode still REQUIRES --plan.
+    """
+    if args.print_repo_branch:
+        forbidden = [
+            ("--plan", args.plan is not None),
+            ("--ref", args.ref is not None),
+            ("--repo-branch", args.repo_branch is not None),
+            ("--extra-sync-path", bool(args.extra_sync_path)),
+            ("--no-fetch", args.no_fetch),
+            ("--json", args.as_json),
+            ("--lane", args.lane != "clone"),
+        ]
+        bad = [flag for flag, hit in forbidden if hit]
+        if bad:
+            parser.error(
+                f"--print-repo-branch combines only with --issue/--repo-root (got {', '.join(bad)})"
+            )
+    elif args.plan is None:
+        parser.error("--plan is required")
+
+
+def _print_repo_branch_mode(repo_root: Path, issue: int) -> int:
+    """Execute --print-repo-branch: the bare branch name on stdout, exit 0.
+
+    On a derivation refusal: ERROR on stderr, EMPTY stdout (load-bearing —
+    the fences' ${REPO_BRANCH:?} guard keys on the empty stdout), exit 2.
+    """
+    try:
+        branch = derive_worktree_repo_branch(repo_root, issue)
+    except RepoBranchDerivationError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+    print(branch)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -923,7 +1436,11 @@ def main(argv: list[str] | None = None) -> int:
             "the compute lane's clone will materialize (/issue Step 6a.5 second stanza)."
         ),
     )
-    parser.add_argument("--plan", required=True, help="path to the approved plan markdown")
+    parser.add_argument(
+        "--plan",
+        default=None,
+        help="path to the approved plan markdown (required except under --print-repo-branch)",
+    )
     parser.add_argument("--issue", type=int, required=True, help="task/issue number")
     parser.add_argument(
         "--repo-root",
@@ -932,14 +1449,44 @@ def main(argv: list[str] | None = None) -> int:
         help="repo root (default: parent of `git rev-parse --git-common-dir`, worktree-safe)",
     )
     parser.add_argument(
+        "--print-repo-branch",
+        action="store_true",
+        help=(
+            "print the ONE live issue-<N>-scoped worktree branch and exit — the shared "
+            "issue-scoped branch resolver BOTH Step 6 fences call (#2263). Exit 2 with "
+            "EMPTY stdout on zero or multiple candidates; combines only with "
+            "--issue/--repo-root"
+        ),
+    )
+    ref_group = parser.add_mutually_exclusive_group()
+    ref_group.add_argument(
         "--ref",
         default=None,
-        help="check ref override (default: origin/issue-<N> if it exists, else origin/main)",
+        help=(
+            "check ref override — wins over --repo-branch and worktree inference, and "
+            "BYPASSES the ref-existence guard (it can deliberately grade a tree the "
+            "dispatch will not materialize, e.g. RunPod BOOTSTRAP_BRANCH defaulting to main)"
+        ),
+    )
+    ref_group.add_argument(
+        "--repo-branch",
+        type=_repo_branch_arg,
+        default=None,
+        help=(
+            "the dispatch's --repo-branch value, mirrored to this gate (#2263): the check "
+            "ref becomes origin/<branch>, REFUSED (exit 2) when absent from origin after "
+            "the bounded fetch; `main` is legal (deliberate wholly-main-resident workload). "
+            "Pass the SAME value to `dispatch_issue.py launch --repo-branch`"
+        ),
     )
     parser.add_argument(
         "--no-fetch",
         action="store_true",
-        help="skip the bounded `git fetch origin issue-<N> main` (tests / corpus sweeps)",
+        help=(
+            "skip the bounded per-branch `git fetch origin ...` calls (tests / corpus "
+            "sweeps); resolution then reads possibly-STALE locally-known origin/* refs — "
+            "a just-pushed sibling branch is invisible until fetched"
+        ),
     )
     parser.add_argument(
         "--lane",
@@ -976,6 +1523,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--json", action="store_true", dest="as_json", help="JSON findings")
     args = parser.parse_args(argv)
+    _validate_cli_mode(parser, args)
 
     repo_root = args.repo_root if args.repo_root is not None else _default_repo_root()
     if repo_root is None:
@@ -985,6 +1533,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
     repo_root = Path(repo_root).resolve()
+
+    if args.print_repo_branch:
+        return _print_repo_branch_mode(repo_root, args.issue)
 
     plan_path = Path(args.plan)
     try:
@@ -1011,8 +1562,32 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     try:
-        check_ref = args.ref or resolve_check_ref(repo_root, args.issue, fetch=not args.no_fetch)
-        findings = run_check(plan_text, repo_root=repo_root, issue=args.issue, check_ref=check_ref)
+        if args.ref:
+            # Rung 1: an explicit --ref is taken VERBATIM — no resolver call,
+            # no existence guard (it can deliberately grade a tree the
+            # dispatch will not materialize; #2263).
+            resolved = ResolvedRef(args.ref, "ref-flag")
+        else:
+            resolved = resolve_check_ref(
+                repo_root,
+                args.issue,
+                fetch=not args.no_fetch,
+                repo_branch=args.repo_branch,
+            )
+        check_ref, ref_source = resolved
+        local_branch = derive_local_branch(check_ref, ref_source, args.issue)
+        findings = run_check(
+            plan_text,
+            repo_root=repo_root,
+            issue=args.issue,
+            check_ref=check_ref,
+            local_branch=local_branch,
+        )
+    except CheckRefResolutionError as exc:
+        # A refusal is a USAGE-class outcome (exit 2, like a missing plan):
+        # distinct from a citation FAIL (exit 1) and never silently skipped.
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     except subprocess.TimeoutExpired as exc:
         # A hung git probe is an infra fault, not a verdict: fail CLOSED with
         # a clean message (exit 1 blocks dispatch; the stanza's re-run path
@@ -1035,6 +1610,7 @@ def main(argv: list[str] | None = None) -> int:
                     "plan": str(plan_path),
                     "issue": args.issue,
                     "check_ref": check_ref,
+                    "check_ref_source": ref_source,
                     "lane": args.lane,
                     "extra_sync_paths": extra_sync_paths,
                     "n_fail": n_fail,
@@ -1046,13 +1622,15 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         for f in findings:
-            line = f"[{f.verdict.upper():<4}] {f.path} reason={f.reason}"
+            # ref= on EVERY severity (#2263): a wrong-tree grade must be
+            # visible on the row itself, not only in the summary.
+            line = f"[{f.verdict.upper():<4}] {f.path} ref={check_ref} reason={f.reason}"
             if f.detail:
                 line += f" — {f.detail}"
             print(line)
         print(
-            f"checked {len(findings)} citation(s) against {check_ref}: "
-            f"{n_fail} fail / {n_warn} warn"
+            f"checked {len(findings)} citation(s) against {check_ref} "
+            f"[ref source: {ref_source}]: {n_fail} fail / {n_warn} warn"
         )
     return 1 if n_fail else 0
 

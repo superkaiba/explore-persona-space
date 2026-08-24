@@ -1,0 +1,74 @@
+{
+  "commit": "7249718b",
+  "render_id": "74fdd3b1af294dd3",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:57:39Z",
+  "figsize": [
+    7.4,
+    5.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Emergent misalignment \u2014 observed max vs permutation null band",
+        "xlabel": "Pooled Spearman rho (max over layers, level DV)",
+        "legend_labels": [
+          "Null max band (p50\u2013p97.5)",
+          "Null p95",
+          "Observed max \u00b1 95% boot CI",
+          "DV agreement ceiling"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "Context vs inoc.",
+          "Pred. answer vs inoc.",
+          "Shift-only vs inoc.",
+          "Real answer vs inoc.",
+          "Context vs train ctx.",
+          "Pred. answer vs train ans.",
+          "Shift-only vs train ans.",
+          "Real answer vs train ans."
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "perm_band",
+    "variant": "full",
+    "dv": "level",
+    "band_definition": "per-draw max over layers of pooled signed rho under joint trigger permutation (one permutation per draw shared across arms/layers/conditions; n_perm in prefit_stats.json .seeds) \u2014 the selection-symmetric read for any max-over-layer quote",
+    "errorbar_definition": "grey band = permutation-null percentiles (p50\u2013p97.5), not a CI; colored bar on the observed point = selection-inherited 95% bootstrap CI (2.5/97.5 pct of per-draw max-over-layers of the condition-pooled rho, valid draws only)"
+  }
+}
