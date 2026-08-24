@@ -2204,7 +2204,15 @@ def write_summary(
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    rows = [r for rec in records for r in rec.get("arms", [])]
+    rows: list[dict] = []
+    for rec in records:
+        # Cell-level row_extra constants (h3_label, selector) are merged into
+        # the per-cell record, not into each entry of rec["arms"] — carry them
+        # into the exploded arm rows so label-keyed consumers (#2388 phase_h3
+        # stage-2) see them; absent keys leave rows byte-identical.
+        carry = {k: rec[k] for k in ("h3_label", "selector") if rec.get(k) is not None}
+        arm_rows = rec.get("arms", [])
+        rows.extend([{**r, **carry} for r in arm_rows] if carry else arm_rows)
     payload = {
         "n_cells": len(records),
         "n_arm_rows": len(rows),
