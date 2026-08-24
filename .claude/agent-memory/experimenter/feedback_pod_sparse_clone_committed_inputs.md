@@ -22,7 +22,11 @@ relaunch cost one round.
 
 **How to apply:** pre-launch, grep the driver for `PROJECT_ROOT /
 "eval_results"` (and any committed cross-issue constants) and `ls` each on
-the pod. On a miss, materialize the exact committed bytes from the pod's
+the pod. **Follow the IMPORT CHAIN:** grep every module the driver imports
+or `spec_from_file_location`-loads too — the second #2476 hit (2026-08-24,
+floor-sweep r1) crashed on the SAME split_1482.json because the cross-issue
+constant lives in the imported parent `issue2476_turnavg_sae.py`, and a
+grep scoped to the launched driver alone read clean. On a miss, materialize the exact committed bytes from the pod's
 own odb — `git show HEAD:<path> > <path>` (mkdir -p parent first) — then
 verify `git hash-object <path>` equals `git ls-tree HEAD -- <path>`'s blob
 (the #1112 MooseFS content check). Prefer per-file `git show` over
