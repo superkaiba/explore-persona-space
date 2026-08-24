@@ -11,6 +11,7 @@
 - [Null-read family: rank-space + stratified](feedback_rank_null_equals_observed_anchor_dominated.md) — MRR at its shuffled null when v̂ anchor-dominated; tail-mass + stratified siblings in entry (#1776 #825 #1482)
 - [Stale __pycache__ masks a signature change](feedback_stale_pycache_masks_signature_change.md) — Edit+format-hook inside 1s leaves a stale pyc; smoke runs OLD code (#1345)
 - [Lane input staging: git-clone/rsync lanes ship no data/](feedback_hf_fallback_pod_side_data_inputs.md) — local-first → HF-fetch → fail-loud; VM-produced inputs need producer upload (#779 #1773 #1689)
+- [Pinned parent driver: repo-root assert + branch-only core kwargs](feedback_pinned_parent_driver_repo_root_assert.md) — <tmp>/scripts + stub pyproject + REPO_ROOT repoint; rebind P.F to the pinned core; verify kwargs via inspect.signature (#2388 n1m)
 - [BPE/span-alignment trap family](feedback_bpe_zero_width_span_plain_text_delimiters.md) — zero-width spans, seam merges, offset-map anchors, token-count no-roundtrip (never exact-cap asserts on stored text); GEN-time span-validate; 7 siblings in entry (#825 #1315 #1776 #1336)
 - [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin (#1482)
 - [TRL schema/template traps](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key; assistant_only_loss False on Qwen (#1489 #519)
