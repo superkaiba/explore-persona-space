@@ -964,6 +964,20 @@ def phase_densein(args) -> None:
 # ── R5: census JSON + score-side encodes + pred_encode_fve + G-C'(ii)/(iii) ──────
 
 
+def _recount_fit_active(yc, n_fit: int, chunk: int = 8192) -> np.ndarray:
+    """Fit-side active-count recount over the FIRST ``n_fit`` rows of a
+    concat(fit, holdout) store. The chunk slice end is CLAMPED at ``n_fit``:
+    numpy clamps a past-the-end slice at the ARRAY end, so an unclamped final
+    chunk (``yc[s : s + chunk]``) spills ``(-n_fit) % chunk`` holdout rows into
+    the fit-side recount (r3 crash-fix: 2,880 spill rows -> +2,832 on saturated
+    features -> deterministic G-C'(ii) rc=31). Returns per-column int64 counts
+    of strictly-positive entries; pinned by tests/test_issue2476_k200.py."""
+    counts = np.zeros(yc.shape[1], np.int64)
+    for s in range(0, n_fit, chunk):
+        counts += (np.asarray(yc[s : min(s + chunk, n_fit)]) > 0).sum(0).astype(np.int64)
+    return counts
+
+
 def phase_census(args) -> None:
     """R5 (plan §4): (a) per-floor alive sets + the registered BUDGET-lattice
     census input (census_k200.json) from the R4-persisted counts; (b)
@@ -1018,9 +1032,7 @@ def phase_census(args) -> None:
     assert int(sae.k) == SAE_K200, f"loaded instrument k={sae.k} != {SAE_K200}"
 
     # ── (d.ii): full-width census counts vs the restricted-encode recount ─────────
-    recount = np.zeros(len(union), np.int64)
-    for s in range(0, n_fit, 8192):
-        recount += (np.asarray(yc[s : s + 8192]) > 0).sum(0).astype(np.int64)
+    recount = _recount_fit_active(yc, n_fit)
     # VERBATIM floor-sweep _gate_counts (A2): reference = the R4 full-width pass
     # counts at the union columns (self-consistency — no banked k=200 census
     # exists by construction); tol_rows = GC_COUNT_TOL, off-boundary sym-diffs

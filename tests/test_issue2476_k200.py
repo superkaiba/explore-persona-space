@@ -807,3 +807,69 @@ def test_p4_upload_k200_prefix_and_staging(tmp_path, monkeypatch):
         "sae_weights.safetensors",
         "train_log.json",
     ]
+
+
+# ── r3 crash-fix: concat-store chunk-slice spill (G-C'(ii) recount clamp) ────────
+
+
+def _concat_store(tmp_path: Path, n_fit: int = 10, n_hold: int = 3, width: int = 5):
+    """Synthetic concat(fit, holdout) fp16 memmap where the LAST fit chunk
+    (chunk=4 below) would spill: col 0 is silent on the fit side and saturated
+    on the holdout side, so any holdout row leaking into a fit-side reduction
+    is visible as a nonzero col-0 count/sum."""
+    rng = np.random.default_rng(0)
+    fit = (rng.random((n_fit, width)) < 0.5).astype(np.float16)
+    fit[:, 0] = 0.0
+    hold = np.ones((n_hold, width), np.float16)
+    path = tmp_path / "ftrue_concat.fp16.npy"
+    np.save(path, np.concatenate([fit, hold], 0))
+    return np.load(path, mmap_mode="r"), fit
+
+
+def test_recount_fit_active_equals_fit_only_counts(tmp_path):
+    """r3 crash-fix pin: the census G-C'(ii) recount clamps its chunk slice at
+    n_fit — with the pre-fix ``yc[s : s + chunk]`` the final chunk spills
+    holdout rows (numpy clamps a past-the-end slice at the ARRAY end) and this
+    assertion fails (col 0 reads the spill count instead of 0)."""
+    yc, fit = _concat_store(tmp_path)
+    got = K._recount_fit_active(yc, n_fit=10, chunk=4)
+    want = (fit > 0).sum(0).astype(np.int64)
+    np.testing.assert_array_equal(got, want)
+    assert got[0] == 0  # the spill-marker column
+
+
+def test_recount_unclamped_slice_spills_on_this_fixture(tmp_path):
+    """Characterizes the pre-fix bug on the SAME fixture (proves the fixture
+    actually exercises the boundary): the unclamped final chunk [8:12) on a
+    13-row store returns rows 8..11 — two holdout rows — so col 0 counts 2."""
+    yc, _ = _concat_store(tmp_path)
+    buggy = np.zeros(yc.shape[1], np.int64)
+    for s in range(0, 10, 4):
+        buggy += (np.asarray(yc[s : s + 4]) > 0).sum(0).astype(np.int64)
+    assert buggy[0] == 2  # (-n_fit) % chunk == 2 spill rows
+
+
+def test_stream_fit_sum_equals_fit_only_sum(tmp_path):
+    """r3 sibling pin (parent driver arm-c train_mean, _dense_companion_c):
+    _stream_fit_sum clamps at n_fit — pre-fix the final chunk spilled holdout
+    rows into the train-mean numerator."""
+    yc, fit = _concat_store(tmp_path)
+    got = D._stream_fit_sum(yc, n_fit=10, chunk=4)
+    want = np.asarray(fit, np.float64).sum(0)
+    np.testing.assert_allclose(got, want, rtol=0, atol=0)
+    assert got[0] == 0.0  # the spill-marker column
+
+
+def test_recount_exact_chunk_multiple_unchanged(tmp_path):
+    """n_fit an exact multiple of chunk: the clamp is a no-op (healthy-path
+    behavior unchanged by the fix)."""
+    yc, fit = _concat_store(tmp_path, n_fit=8)
+    got = K._recount_fit_active(yc, n_fit=8, chunk=4)
+    np.testing.assert_array_equal(got, (fit > 0).sum(0).astype(np.int64))
+
+
+def test_incident_spill_arithmetic():
+    """Documents the production incident shape: 120,000 fit rows under an
+    8,192 chunk leave a 2,880-row holdout spill in the unclamped final slice
+    (the r2-diagnosed gc_ii FAIL: +2,832 on saturated features, rc=31)."""
+    assert (-120_000) % 8_192 == 2_880

@@ -2810,6 +2810,19 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     }
 
 
+def _stream_fit_sum(yc, n_fit: int, chunk: int = 8192) -> np.ndarray:
+    """fp64 per-column sums over the FIRST ``n_fit`` rows of a concat(fit,
+    holdout) store. The chunk slice end is CLAMPED at ``n_fit``: numpy clamps a
+    past-the-end slice at the ARRAY end, so an unclamped final chunk
+    (``yc[s : s + chunk]``) spills ``(-n_fit) % chunk`` holdout rows into the
+    fit-side sum (#2476 k200 r3 crash-fix sibling of the census recount spill;
+    pinned by tests/test_issue2476_k200.py)."""
+    s = np.zeros(yc.shape[1], np.float64)
+    for i in range(0, n_fit, chunk):
+        s += np.asarray(yc[i : min(i + chunk, n_fit)], np.float64).sum(0)
+    return s
+
+
 def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) -> dict:
     """Arm-c SAE-c alive mask + f_true encodes (fit-side 120k + 20k holdout, ONE
     memmap) + the c19->f_true dense-input companion off ONE Gram (plan §4 P5)."""
@@ -2839,10 +2852,7 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     )
     _encode_restricted(sae, Ymm, rows_c, alive, out_mm=yc)
     yc.flush()
-    tm = np.zeros(len(alive), np.float64)
-    for s in range(0, n_fit, 8192):
-        tm += np.asarray(yc[s : s + 8192], np.float64).sum(0)
-    train_mean = tm / max(1, n_fit)
+    train_mean = _stream_fit_sum(yc, n_fit) / max(1, n_fit)
     tmp = alive_path.parent / f".tmp_{alive_path.name}"
     np.savez(
         tmp,
