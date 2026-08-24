@@ -30,7 +30,11 @@ not; each stays covered only by the per-file ``untested_touched`` WARN):
 targets; loaders living in ``conftest.py`` or imported from another file;
 stem lists built by loops/comprehensions; ``scripts/`` subpackage modules;
 stems shorter than 6 chars; stems riding a non-first positional or keyword
-argument of a loader call.
+argument of a loader call; local loader wrappers invoked through an
+attribute reference (``obj._load(...)``) or called from outside the
+wrapper's defining lexical scope — the scope-bound bare-name rule (#2537
+round 2, concern ``constructed-loader-binding``) trades these for zero
+invented pairs (measured-identical on the landing tree).
 """
 
 from __future__ import annotations
@@ -89,14 +93,16 @@ def _call_name(node: ast.Call) -> str | None:
 
 
 class _CallCollector(ast.NodeVisitor):
-    """One traversal per file: every Call with its innermost enclosing function.
+    """One traversal per file: every Call with its enclosing-function stack.
 
     The recursive function stack replaces the naive walk-within-walk variant
     (measured 11.63 s vs the 4.2-6.8 s single-pass band, plan §4.2 step 2).
+    The FULL stack (not only the innermost name) is recorded so a local
+    loader wrapper can be bound to its defining lexical scope (#2537 r2).
     """
 
     def __init__(self) -> None:
-        self.calls: list[tuple[str | None, ast.Call]] = []
+        self.calls: list[tuple[tuple[str, ...], ast.Call]] = []
         self._stack: list[str] = []
 
     def _visit_fn(self, node) -> None:
@@ -108,28 +114,51 @@ class _CallCollector(ast.NodeVisitor):
     visit_AsyncFunctionDef = _visit_fn
 
     def visit_Call(self, node: ast.Call) -> None:
-        self.calls.append((self._stack[-1] if self._stack else None, node))
+        self.calls.append((tuple(self._stack), node))
         self.generic_visit(node)
 
 
 def _loader_call_stems(collector: _CallCollector) -> tuple[set[str], bool]:
     """Arm (i): FIRST-POSITIONAL constant-string args at loader call sites.
 
-    A loader function is a local FunctionDef whose body contains a
-    ``spec_from_file_location`` call. Returns ``(stems, saw_nonconstant)``
-    where the flag records any loader call with a non-constant first arg
-    (the parametrized shape that arms the stem-list pass, arm (ii)).
+    Two match classes, kept separate (#2537 round 2, concern
+    ``constructed-loader-binding``):
+
+    - a DIRECT ``spec_from_file_location`` call — terminal name under any
+      prefix (plan §4.2 step 2 specs "attribute/name" for the spec call
+      itself), unchanged;
+    - a direct ``ast.Name`` call of a LOCAL loader wrapper (a FunctionDef
+      whose body contains a ``spec_from_file_location`` call; its path is
+      the spec call's enclosing-function stack), bound to the wrapper's
+      DEFINING LEXICAL SCOPE: the call site's own enclosing stack must lie
+      within the scope the def is visible in (the def's parent stack is a
+      prefix of the call's stack). An attribute call (``obj._load(...)``)
+      NEVER matches a local wrapper — file-global terminal-name equality
+      let an unrelated same-named method call whose first argument happened
+      to be an existing script stem invent a consumer pair.
+
+    Returns ``(stems, saw_nonconstant)`` where the flag records any MATCHED
+    call with a non-constant first arg (the parametrized shape that arms
+    the stem-list pass, arm (ii)).
     """
-    loader_fns = {
-        fn
-        for fn, call in collector.calls
-        if fn is not None and _call_name(call) == "spec_from_file_location"
+    loader_paths = {
+        stack
+        for stack, call in collector.calls
+        if stack and _call_name(call) == "spec_from_file_location"
     }
     stems: set[str] = set()
     saw_nonconstant = False
-    for _fn, call in collector.calls:
-        name = _call_name(call)
-        if (name != "spec_from_file_location" and name not in loader_fns) or not call.args:
+    for stack, call in collector.calls:
+        if _call_name(call) == "spec_from_file_location":
+            matched = True
+        elif isinstance(call.func, ast.Name):
+            name = call.func.id
+            matched = any(
+                name == path[-1] and stack[: len(path) - 1] == path[:-1] for path in loader_paths
+            )
+        else:
+            matched = False
+        if not matched or not call.args:
             continue
         first = call.args[0]
         if isinstance(first, ast.Constant) and isinstance(first.value, str):
@@ -169,10 +198,12 @@ def discover_pairs(work_root: Path) -> set[tuple[str, str]]:
 
     Returns ``{(test_relpath, "scripts/<stem>.py")}`` where the stem was the
     FIRST POSITIONAL constant-string argument at a call site of
-    ``spec_from_file_location`` or of a local loader function wrapping it —
-    plus, ONLY in files with a non-constant loader argument, module-level
-    all-constant-string lists/tuples whose elements ALL resolve to existing
-    ``scripts/<stem>.py`` files (the parametrize-list shape).
+    ``spec_from_file_location`` or at a scope-bound direct bare-name call of
+    a local loader function wrapping it (#2537 r2: an attribute call never
+    matches a local wrapper) — plus, ONLY in files with a non-constant
+    loader argument, module-level all-constant-string lists/tuples whose
+    elements ALL resolve to existing ``scripts/<stem>.py`` files (the
+    parametrize-list shape).
     """
     pairs: set[tuple[str, str]] = set()
     scripts_dir = work_root / "scripts"
@@ -293,3 +324,46 @@ def test_discovery_fires_on_incident_pairs(shared: SimpleNamespace) -> None:
             f"{t} missing from the TRANSITIVE_CONSUMER_TESTS entry for "
             f"{_INCIDENT_MODULE} — the #2537 registration regressed"
         )
+
+
+def test_same_named_method_call_does_not_bind_to_local_loader(tmp_path: Path) -> None:
+    """Synthetic negative: the reconciler-confirmed collision shape (#2537 r2).
+
+    A temp test tree holds a genuine local loader wrapper (``_load``, body
+    contains ``spec_from_file_location``) PLUS an unrelated same-named METHOD
+    call (``cache._load(...)``) whose first argument is an existing script
+    stem. Under file-global terminal-name matching (the pre-fix rule) the
+    method call bound to the wrapper and INVENTED a consumer pair — in an
+    every-gate WORKFLOW_INVARIANT member, fleet-blocking a healthy landing.
+    The scope-bound ``ast.Name`` rule must keep the genuine pair and omit
+    the invented one (concern ``constructed-loader-binding``: fails pre-fix
+    on the invented-pair assert, passes post-fix).
+    """
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "verify_task_body.py").write_text("")
+    (scripts / "clean_experiment_downloads.py").write_text("")
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_collision.py").write_text(
+        "import importlib.util\n"
+        "\n"
+        "\n"
+        "def _load(stem):\n"
+        "    return importlib.util.spec_from_file_location(stem, f'scripts/{stem}.py')\n"
+        "\n"
+        "\n"
+        "def test_uses_wrapper(cache):\n"
+        "    mod = _load('verify_task_body')\n"
+        "    cache._load('clean_experiment_downloads')\n"
+        "    return mod\n"
+    )
+    pairs = discover_pairs(tmp_path)
+    genuine = ("tests/test_collision.py", "scripts/verify_task_body.py")
+    invented = ("tests/test_collision.py", "scripts/clean_experiment_downloads.py")
+    assert genuine in pairs, "discovery no longer fires on a genuine local-wrapper bare-name call"
+    assert invented not in pairs, (
+        "unrelated same-named METHOD call bound to the local loader wrapper — "
+        "the scope-bound ast.Name rule regressed (#2537 r2, concern "
+        "constructed-loader-binding)"
+    )
