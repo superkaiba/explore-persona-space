@@ -1,0 +1,356 @@
+{
+  "commit": "74038d8b+dirty",
+  "render_id": "3c62d7ddd22c4fe5",
+  "git_commit": "74038d8b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/feedback_installed_api_evidence_envelope.md"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_postnorm.py",
+  "created": "2026-08-24T03:50:22Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.3170374360297861,
+      "error": 0.5009557008743286,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.7350539441082519,
+      "error": 0.18450099229812622,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.751185378291806,
+      "error": 0.23644065856933594,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.4510428411346163,
+      "error": 0.3880759922321886,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.3677483337446667,
+      "error": 0.493751585483551,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6809510734819586,
+      "error": 0.21318978071212769,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.7226426620503844,
+      "error": 0.28052833676338196,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6302413502846216,
+      "error": 0.35365791618824005,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.3143953058143403,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.28514332372251133,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.3515736785525068,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.7851652401750802,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.7468039430827678,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6731926490669077,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.747306119579636,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6627884994859564,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.8434615158098258,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.4279726676006726,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.5057899432696927,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.4193659125334835,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.3621307187390307,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.34539682367578006,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.3957174588191893,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6682957809456657,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6288428657094669,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.7457145737907431,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.7209693400349793,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6271455840206425,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.8198130620955316,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6320827090717627,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.5618002390009003,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.6968411027812018,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.7993044853210449,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.4816585183143616,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.4509176015853882,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho (level DV, layer 27)": -0.00539699150249362,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": -0.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.20260691642761225,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.850660502910614,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.9237989187240601,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.81,
+      "Pooled Spearman rho (level DV, layer 27)": 0.7707549929618835,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho (level DV, layer 27)": -0.846457839012146,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.41039031744003296,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.35697609186172485,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.17631718516349792,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.1410453319549561,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.8367698788642883,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.9180327653884888,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.19,
+      "Pooled Spearman rho (level DV, layer 27)": 0.883633017539978,
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Training-reference arms: pre-norm vs post-final-RMSNorm",
+        "ylabel": "Pooled Spearman rho (level DV, layer 27)",
+        "legend_labels": [
+          "Pre-norm (stored)",
+          "Post-final-RMSNorm"
+        ],
+        "xticklabels": [
+          "Context",
+          "Predicted answer",
+          "Shift-only answer",
+          "Real answer"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "Pre-norm (stored)",
+      "Post-final-RMSNorm"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

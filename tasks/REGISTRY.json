@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2517,
+  "highest_id": 2518,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11420,8 +11420,8 @@
       "goal": "Establish or bound the closeness-to-assistant transfer gradient: assistant-operator transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across >=12 characters; success = rank correlation with permutation band excluding zero.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/2479",
-      "status": "verifying",
+      "path": "tasks/interpreting/2479",
+      "status": "interpreting",
       "title": "Dedicated AI-likeness gradient: does map transfer to a character scale with closeness to the assistant? (n>=12 characters)"
     },
     "248": {
@@ -11719,6 +11719,13 @@
       "path": "tasks/proposed/2517",
       "status": "proposed",
       "title": "verify_task_body Lens-14/check-64 substring false-positive: HTML comments inside Takeaways count as concern acknowledgment"
+    },
+    "2518": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2518",
+      "status": "proposed",
+      "title": "bootstrap_pod.sh: install Times-alike serif fonts for pod-side paper figures"
     },
     "256": {
       "has_clean_result": false,
