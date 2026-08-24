@@ -259,7 +259,7 @@ Nine open concerns from the code-review ledger remain open and non-verdict-beari
 
 The all-answer arm clears everywhere — evil +96 to +99 raw (random control 0), sycophancy +42.7 / +68.1 net of control; sycophancy's single-layer arm is gate-failed (0.74 complete), refusing that block's recovery ratio (mid-band control gate-clean). The two-thirds mark is a sibling text-prefill reference, not directly comparable (Methodology).
 
-### Per-question view: the first-k nulls are uniform, and the full evil effect rides on degraded text
+### Per-question view: the persona vector's small first-k shifts spread across questions, the pre-image shows none, and the full evil effect rides on degraded text
 
 **What is plotted (EXACTLY):** Per-question mean Δ graded score (one dot per question, 20 per cell) for the persona vector and map pre-image at each injection position, per behavior and breadth; bars are cell means.
 
