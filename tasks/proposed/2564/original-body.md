@@ -1,3 +1,31 @@
+---
+title: 'Controlled minimal-pair battery: does the context→answer map predict the DIFFERENCE
+  in answer vectors, per instruction axis?'
+kind: experiment
+tags: []
+created_at: '2026-08-24T22:46:30Z'
+has_clean_result: false
+parent_id: 2215
+origin_prompt: 'Interactive design session 2026-08-24: Thomas wanted a maximally-controlled
+  version of the #2215 separation-comparison round — only one aspect differs between
+  two contexts, measured as observed vs predicted answer-vector DIFFERENCE. Iterated
+  to: single-turn skeleton, 7 instruction axes + 2 query axes (content, form), 12
+  agent-generated debatable carriers + non-question forms, difference-vector measure,
+  judge manipulation check, text-embedding third space.'
+workflow: v1
+goal: 'On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair
+  battery (one token-matched instruction or query manipulation per pair, no crossing)
+  across instruction axes (persona, format, lexical-marker, stance, content-constraint,
+  register, hedging) and query axes (content, form), measure how faithfully the frozen
+  #779 context-end ridge map predicts the DIFFERENCE between paired answer representations
+  — per axis: direction cos(Δ̂,Δ), magnitude calibration vs the map''s global shrinkage,
+  real-vs-predicted axis-identity cosine, and split-half reliability — against an
+  identity/identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B
+  answer-text third space, to determine which kinds of context information the map
+  carries faithfully vs distorts.'
+relates_to:
+- spec-context-as-vector
+---
 # Controlled minimal-pair battery: does the context→answer map predict the DIFFERENCE in answer vectors, per instruction axis?
 
 ## Provenance
@@ -37,8 +65,6 @@ Every minimal pair is byte-identical except one slot; the non-varied slots hold 
 | content-constraint | 5 | give exactly three reasons · never mention numbers · never use the word "I" · mention a real example · answer in under 20 words |
 | register | 2 | very formal & professional · very casual & conversational |
 | hedging | 2 | answer with strong confidence · answer with heavy caveats & hedging |
-| user-fact-express | 5 | a SINGLE-TOKEN user fact + instruction to EXPRESS it: `The user's name is 〈Marcus〉. Always address them by name.` — swap the single-token value only (implementer verifies each value is exactly one Qwen token — e.g. names like Marcus, Diego, Sarah, or place words like Boston, Denver; two-token names such as Priya or Kenji are excluded). Local, marker-like content — does the map carry a single injected user token into the answer? |
-| user-profile-aware | 5 | DIFFUSE user info + instruction to BE AWARE of it (not restate): `The user is 〈a busy single parent on a tight budget who wants quick practical help〉. Keep this in mind when answering.` — swap the ~15-18-token profile, token-matched. Diffuse content — does the map carry diffuse user conditioning the model is told to be aware of but not echo? |
 
 **Query axes (user slot):**
 - **query-content** — swap WHAT is asked across the 12 carrier items (system empty). The reference-ceiling content axis.
@@ -63,9 +89,7 @@ Non-question forms (query-form axis), worked examples:
 - dog/cat → imperative "Help me decide between a dog and a cat." · statement "I'm torn between adopting a dog and a cat."
 - rent/buy → imperative "Help me choose between renting and buying." · statement "I can't decide whether to rent or buy."
 
-The two user-information axes form a matched contrast — LOCAL+EXPRESS (single token, told to surface it) vs DIFFUSE+AWARE (profile, told to condition on it without restating) — a granularity × instruction-strength diagonal that directly probes whether the map carries a surgically-injected token differently from diffuse conditioning (the marker-leakage vs persona-propagation distinction, on the user side).
-
-**Scale:** ~480 contexts (12 empty + 39 instruction values × 12 carriers) + the query-form contexts; ~4,800 on-policy rollouts (K=10, temp 1.0, seed 42; `inherited #2162/dbe`) + teacher-forced captures. ~⅓ larger than the #2215 dbe round; still cheap band.
+**Scale:** ~360 contexts (12 empty + 29 instruction values × 12 carriers) + the query-form contexts; ~3,600 on-policy rollouts (K=10, temp 1.0, seed 42; `inherited #2162/dbe`) + teacher-forced captures. Matches the #2215 dbe round footprint.
 
 ## Measure
 
@@ -88,6 +112,6 @@ Descriptive/exploratory (no pass/fail gate). The result is the per-axis profile 
 
 ## Compute
 
-~4 GPU-h (generation + teacher-forced capture, ~4,800 rollouts) + ~1 GPU-h (embedding) on 1× H100, RunPod `eval` intent (`inherited` lane); difference-vector analysis is 0-GPU CPU. Cheap band (< 20 GPU-h). Judge check ~$3-6 Batch API.
+~3 GPU-h (generation + teacher-forced capture) + ~0.7 GPU-h (embedding) on 1× H100, RunPod `eval` intent (`inherited` lane); difference-vector analysis is 0-GPU CPU. Cheap band (< 20 GPU-h). Judge check ~$2-5 Batch API.
 
 **Repro:** design session 2026-08-24; parent #2215 (separation-comparison round: `eval_results/issue_2215/separation_comparison/`). Executes via `/issue <N>` → adversarial-planner (which fixes the final value strings, map-arm decision, and per-axis null construction).
