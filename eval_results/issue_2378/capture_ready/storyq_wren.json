@@ -6811,7 +6811,7 @@
   ],
   "metadata": {
     "issue": 2378,
-    "timestamp": "2026-08-24T03:35:09+0000",
+    "timestamp": "2026-08-24T10:52:59+0000",
     "python": "3.11.10",
     "argv": [
       "/workspace/explore-persona-space/scripts/issue2378_gen.py",
@@ -6819,8 +6819,12 @@
       "capture_ready",
       "--stage-raw-from-hf"
     ],
-    "git_commit": "4482631e",
-    "git_dirty": false,
+    "git_commit": "ee30ae9e",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/capture_ready/storyq_astra.json",
+      "eval_results/issue_2378/capture_ready/storyq_helios.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_gen.py"
   }
