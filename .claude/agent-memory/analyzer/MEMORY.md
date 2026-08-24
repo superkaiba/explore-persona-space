@@ -83,3 +83,4 @@
 - [HF resolve URLs rejected in footer](feedback_hf_resolve_url_footer_rejected.md) — check 8 accepts only /tree|/blob|/raw|@<ref>; pinned resolve/ dashboard links go in Methodology. #2223 fold.
 - [Bar sidecars need generator-side series annotation](feedback_bar_sidecar_series_annotation.md) — savefig_paper bars drop per-row series; re-annotate from container order + jq-verify; Lens-14 clears via address-concern alone. #2479 r2.
 - [Prescribed wording: grammar-check in situ](feedback_prescribed_wording_grammar_check.md) — verdict-prescribed text can break the host sentence; adapt minimally, keep word arithmetic, flag deviation. #823 r7.
+- [Touched-sentence scope sweep](feedback_touched_sentence_scope_sweep.md) — re-verify every number in a touched sentence vs its implied cell set; mixed-scope parentheticals ("A plus B (stat)") hide narrow-scope stats. #823 r8.
