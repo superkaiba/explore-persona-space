@@ -283,6 +283,7 @@ def test_step5a_specs_include_lint_family():
         "tests/test_planner_incident_trace_guidance.py "
         "tests/test_planner_phase_outputs_declaration.py "
         "tests/test_realized_rows_prose_pins.py "
+        "tests/test_repo_root_uncommitted_state_pins.py "
         "tests/test_selection_symmetric_nulls_pointers.py "
         'tests/test_v2_composer_plan_path_brief.py"'
     ) in _text(), (
@@ -1825,7 +1826,8 @@ def _family_arm_block(span: str) -> str:
 # The #2412 sibling-probe pair (scripts/step5a_sibling_probe.py +
 # tests/test_step5a_sibling_probe.py) joined SPECS, so it needs fork stubs
 # too — without them the atomic checkout errors and syncs NOTHING.
-# The #2260 FAMILY_agents members (30 agents prose pins + the workflow
+# The #2260 FAMILY_agents members (31 agents prose pins incl. the #2328
+# test_repo_root_uncommitted_state_pins.py admission + the workflow
 # cross-reader test_inline_payload_lint_gate_contract.py) are literal SPECS
 # tokens too — one stub each, same atomic-checkout requirement; guard (20)'s
 # completeness failure message names this stub-update duty for future
@@ -1882,6 +1884,7 @@ _FORK_STUBS_2303 = (
     "tests/test_planner_incident_trace_guidance.py",
     "tests/test_planner_phase_outputs_declaration.py",
     "tests/test_realized_rows_prose_pins.py",
+    "tests/test_repo_root_uncommitted_state_pins.py",
     "tests/test_selection_symmetric_nulls_pointers.py",
     "tests/test_v2_composer_plan_path_brief.py",
 )
