@@ -581,22 +581,30 @@ def fig_ext7(data: dict, parent_refusal: dict | None) -> plt.Figure:
 
 
 def fig_ext8(data: dict) -> plt.Figure:
-    """Per-rung paired-diff ECDFs (stream-prefix ladder), per read-out layer."""
+    """Per-rung paired-diff ECDFs per read-out layer, BOTH ladders — stream-prefix
+    solid, randomized-subset companion dashed (the fig_ext1/fig_ext9 encoding).
+    Round-6 revision: the aggregate fig_ext1 plots both ladders, so the per-unit
+    companion carries both too (Lens 11, companion-ladder-per-unit-evidence)."""
     labels = data["labels"]
     cmap = matplotlib.colormaps["viridis"]
     rung_colors = {lab: cmap(i / max(len(labels) - 1, 1)) for i, lab in enumerate(labels)}
     fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.4), sharey=True)
     for ax, layer in zip(axes, READ_OUT_LAYERS):
-        for lab in labels:
-            _, diff = shared_paired_diff(data["pc"]["primary"][lab], layer)
-            xs = np.sort(diff)
-            ys = np.arange(1, xs.size + 1) / xs.size
-            ax.plot(xs, ys, color=rung_colors[lab], lw=1.2, label=f"rung {lab}")
+        for tag, style, alpha in (("primary", "-", 1.0), ("companion", "--", 0.75)):
+            for lab in labels:
+                _, diff = shared_paired_diff(data["pc"][tag][lab], layer)
+                xs = np.sort(diff)
+                ys = np.arange(1, xs.size + 1) / xs.size
+                ax.plot(xs, ys, style, color=rung_colors[lab], lw=1.2, alpha=alpha)
         ax.axvline(0.0, color="grey", ls=":", lw=1.0)
         ax.set_title(LAYER_TITLE[layer], fontsize=8)
         ax.set_xlabel("paired diff (pooled − reference ss_res)")
     axes[0].set_ylabel("ECDF over shared contexts")
-    axes[0].legend(fontsize=7, loc="best")
+    handles = [Line2D([], [], color=rung_colors[lab], label=f"rung {lab}") for lab in labels] + [
+        Line2D([], [], color="grey", ls="-", label="stream-prefix ladder"),
+        Line2D([], [], color="grey", ls="--", label="randomized-subset companion"),
+    ]
+    axes[0].legend(handles=handles, fontsize=6, loc="best")
     return fig
 
 
@@ -853,6 +861,15 @@ def build_argparser() -> argparse.ArgumentParser:
         default=None,
         help="optional {persona: refusal_fraction} JSON for the fig_ext7 parent overlay",
     )
+    ap.add_argument(
+        "--only-fig8",
+        action="store_true",
+        help=(
+            "Render ONLY ladder_ext_fig8_paired_diff_ecdf (round-6 revision: add the "
+            "randomized-subset companion series). Skips the other nine figures AND the "
+            "summary-JSON rewrite so already-pinned sidecars/summary are not overwritten."
+        ),
+    )
     ap.add_argument("--import-check", action="store_true", help="argcheck + exit 0")
     return ap
 
@@ -892,13 +909,22 @@ def main(argv: list[str] | None = None) -> int:
         flush=True,
     )
 
+    figures = FIGURES
+    if args.only_fig8:
+        figures = tuple((stem, fn) for stem, fn in FIGURES if fn is fig_ext8)
+
     fig_paths: dict[str, str] = {}
-    for i, (stem, fn) in enumerate(FIGURES, start=1):
+    for i, (stem, fn) in enumerate(figures, start=1):
         fig = fn(data, parent_refusal) if fn is fig_ext7 else fn(data)
         written = savefig_paper(fig, stem, dir=out_dir, formats=formats)
         plt.close(fig)
         fig_paths[stem] = str(written.get("png", next(iter(written.values()))))
-        print(f"[panalysis-ext] figure {i}/{len(FIGURES)} {stem}", flush=True)
+        print(f"[panalysis-ext] figure {i}/{len(figures)} {stem}", flush=True)
+
+    if args.only_fig8:
+        print("[panalysis-ext] --only-fig8: skipped the other nine figures + summary rewrite")
+        print("[phase=done]", flush=True)
+        return 0
 
     summary = build_summary(data, fig_paths, results_dir)
     summary_out = (
