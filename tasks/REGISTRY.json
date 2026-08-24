@@ -12058,7 +12058,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/2564",
       "status": "proposed",
-      "title": ""
+      "title": "Controlled minimal-pair battery: does the context\u2192answer map predict the DIFFERENCE in answer vectors, per instruction axis?"
     },
     "257": {
       "has_clean_result": false,
