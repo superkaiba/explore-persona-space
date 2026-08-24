@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2540,
+  "highest_id": 2541,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11880,6 +11880,13 @@
       "path": "tasks/proposed/2540",
       "status": "proposed",
       "title": "verify_task_body: resolve same-repo /commit/<40-hex> URLs so a hand-extended SHA cannot ship"
+    },
+    "2541": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2541",
+      "status": "proposed",
+      "title": "plan-conditions check: flag ran-but-unreported registered conditions, not just literal slug coverage"
     },
     "256": {
       "has_clean_result": false,
