@@ -1,0 +1,32 @@
+{
+  "cell": "chat_user_real",
+  "n_kept": 0,
+  "floor": 6500,
+  "floor_pass": false,
+  "close_miss_band": false,
+  "drop_counts": {
+    "kept": 0
+  },
+  "kept_ids": [],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T03:36:14+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_gen.py",
+      "--phase",
+      "capture_ready",
+      "--stage-raw-from-hf"
+    ],
+    "git_commit": "4482631e",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  },
+  "pair_intersection": {
+    "n_real_kept": 0,
+    "n_sim_kept": 521,
+    "n_intersection": 0,
+    "intersection_ids": []
+  }
+}
