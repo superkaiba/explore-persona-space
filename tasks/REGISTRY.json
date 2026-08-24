@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2546,
+  "highest_id": 2547,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11924,6 +11924,13 @@
       "path": "tasks/proposed/2546",
       "status": "proposed",
       "title": "Does the context\u2192answer map degrade on questions where chain-of-thought is necessary?"
+    },
+    "2547": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2547",
+      "status": "proposed",
+      "title": "Align clean-result-critic Lens 2 result-heading rule with the v4 SPEC contract (rubric is strictly stronger than SPEC; 5 invented-rule FAILs across 3 tasks)"
     },
     "256": {
       "has_clean_result": false,
