@@ -82,6 +82,21 @@ advisory network carve-out, eliminating the EXCEPTION-2 BLOCKED risk. The
 interpretation marker's phrase "local judge-input mirror" is the tell it
 exists.
 
+**Stale-worktree + oversized-plan case: materialize to /tmp instead of
+inlining (#2388 r1, 2026-08-24).** When the worktree plan FAILS the
+identity check (stale v4 vs canonical v5) AND the canonical plan is far too
+large to inline (160KB — a 5x prompt bloat), a third option is safe: copy
+the canonical plan to `/tmp/issue-<N>-plan-v<K>.md` and reference that path.
+/tmp readability is a foundational assumption of the whole twin pipeline —
+the interpretation-marker body itself is passed as a /tmp path — so a /tmp
+plan reference is exactly as reliable as the review target itself. Carry:
+the md5 + byte count in the plan block, a grep-then-slice instruction
+naming the sections worth pulling (kill criteria, cell grid, hypothesis
+lattice), the stale-copy DO-NOT-READ warnings (worktree plan AND worktree
+body), and a guard sentence scoping "plan unreachable" to /tmp-unreadable
+(which would equally block the marker). Same trick for the promoted BODY
+when it lives only at repo-root `tasks/` (copy to /tmp/issue-<N>-body.md).
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw
