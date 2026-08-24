@@ -42,3 +42,24 @@ Two compose-mechanics lessons from #2514 r2 (2026-08-23):
    staleness fact in the prompt (a sharp twin checks and gets derailed);
    word it "frozen trees CAN serve stale plans; verified identical at
    compose time; canonical path stays authoritative".
+
+4. **Cached-prompt reuse re-validates TIP STATE, not just marker identity
+   (#2514 r2 re-return, 2026-08-24).** A validated prompt survived in /tmp
+   overnight; on the re-compose the branch tip had gained TWO Step-5a
+   spec-freshness sync commits ON TOP of the round commit. Two consequences
+   a marker-identity check alone misses: (a) the inlined marker's verbatim
+   `HEAD~1..HEAD` / `git show HEAD~1:<file>` commands now MIS-resolve —
+   `HEAD~1:<file>` yields the POST-fix blob, silently inverting the
+   report's before/after comparison — so add an explicit translation note
+   (`HEAD` -> round SHA, `HEAD~1` -> round SHA`^`), framed as a
+   compose-time staleness observation, never an implementer defect; (b)
+   the sync commits must be NAMED out of scope after verifying (per file)
+   byte-identity to the pinned base (`git diff --quiet <base> <tip> --
+   <file>` over `git diff --name-only <round>..<tip>`). Also from the same
+   re-compose: an unscoped `diff <sha>~1..<sha>` command in a data-heavy
+   round is a paging trap — path-scope the primary body command itself
+   (`-- scripts/ tests/`), not just the prose read-budget note; and when
+   the orchestrator's addressed-events land AFTER the marker ts (their
+   bookkeeping, not the parallel twin's outputs), the #2326 ts-pin does
+   NOT exclude them — inline the event-log ledger with addressed-CLAIMED
+   framing + per-concern status-line duties.
