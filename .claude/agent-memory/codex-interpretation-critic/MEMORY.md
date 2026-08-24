@@ -19,3 +19,5 @@
 - [Lens-7 carried-forward on revision rounds](feedback_lens7_carried_forward_on_revision_rounds.md) — r2+ with HF-only raw text: scope Lens 7 to local-JSON recompute + "satisfied in r1" tag; override the network EXCEPTION-2 BLOCKED downgrade
 - [Lens-6 farthest-overlay "never rises" vs one outlier line](feedback_farthest_overlay_nonzero.md) — Trace each individual overlay member; one dashed line at ~10% falsifies a "stays at zero" group claim
 - [Lens-1 "sustained threshold" that is transient](feedback_sustained_threshold_transient.md) — "Sustained 5%" defined as two adjacent checkpoints; check later checkpoints for regression below threshold
+- [Lens-7 sanitized disposition for firewalled corpora](feedback_lens7_sanitized_activation_dv_disposition.md) — say the text firewall is the SANCTIONED disposition (not BLOCKED); score via coherence sub-checks; defuse the network paragraph
+- [Held clean-result draft is the caption fix target](feedback_heldbody_caption_fix_target.md) — fix-verification rounds: caption fixes live in /tmp/issue-<N>-clean-result-body-held.md; pass it explicitly
