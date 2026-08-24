@@ -4,7 +4,7 @@ title: Assistant-operator transfer recovery rises with judged AI-likeness across
 kind: experiment
 tags: []
 created_at: '2026-08-22T20:24:19Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1345
 origin_prompt: Paper outline 2026-08-22 Results II title clause + critique F4 (n=4
   cannot carry a title claim)
