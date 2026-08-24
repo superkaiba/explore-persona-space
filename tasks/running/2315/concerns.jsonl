@@ -1,0 +1,1 @@
+{"ts": "2026-08-24T01:05:35Z", "event": "raised", "concern_id": "assert-launcher-live-path", "severity": "BLOCKER", "summary": "Step 1b never invokes or mentions --assert-launcher, so the planned AC3 pre-launch refusal is hollow.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
