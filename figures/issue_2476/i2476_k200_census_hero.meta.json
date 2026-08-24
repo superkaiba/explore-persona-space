@@ -1,0 +1,192 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "2cbc4bedb7ab49e7",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:14Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "x": -0.342,
+      "alive features (log)": 788.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.252,
+      "alive features (log)": 1239.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.144,
+      "alive features (log)": 992.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.054,
+      "alive features (log)": 1483.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.054,
+      "alive features (log)": 1137.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.144,
+      "alive features (log)": 1645.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.252,
+      "alive features (log)": 1178.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.342,
+      "alive features (log)": 1687.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.658,
+      "alive features (log)": 88.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.748,
+      "alive features (log)": 35.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.856,
+      "alive features (log)": 314.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.946,
+      "alive features (log)": 244.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.054,
+      "alive features (log)": 696.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.144,
+      "alive features (log)": 702.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.252,
+      "alive features (log)": 842.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.342,
+      "alive features (log)": 882.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.658,
+      "alive features (log)": 3.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 1.748,
+      "alive features (log)": 4.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 1.856,
+      "alive features (log)": 26.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.946,
+      "alive features (log)": 21.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 2.054,
+      "alive features (log)": 80.0,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 2.144,
+      "alive features (log)": 53.0,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 2.252,
+      "alive features (log)": 130.0,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 2.342,
+      "alive features (log)": 90.0,
+      "_kind": "bar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "alive features (log)",
+        "legend_labels": [
+          "k=100 (committed)",
+          "k=200 (this round)"
+        ],
+        "xticklabels": [
+          "coarsest",
+          "middle",
+          "finest"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

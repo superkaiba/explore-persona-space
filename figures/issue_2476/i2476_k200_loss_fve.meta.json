@@ -1,0 +1,163 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "222c6285b6f54741",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:39Z",
+  "figsize": [
+    5.5,
+    1.6995
+  ],
+  "points": [
+    {
+      "epoch": 1.0,
+      "mean train loss": 174.681,
+      "series": "k=200",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 2.0,
+      "mean train loss": 108.095,
+      "series": "k=200",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 3.0,
+      "mean train loss": 99.244,
+      "series": "k=200",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 1.0,
+      "mean train loss": 211.781,
+      "series": "k=100 (committed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "epoch": 2.0,
+      "mean train loss": 141.283,
+      "series": "k=100 (committed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "epoch": 3.0,
+      "mean train loss": 130.751,
+      "series": "k=100 (committed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "epoch": 1.0,
+      "val var-FVE": 0.9118,
+      "series": "k=200",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "epoch": 2.0,
+      "val var-FVE": 0.92661,
+      "series": "k=200",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "epoch": 3.0,
+      "val var-FVE": 0.930353,
+      "series": "k=200",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "epoch": 1.0,
+      "val var-FVE": 0.888416,
+      "series": "k=100 (committed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "epoch": 2.0,
+      "val var-FVE": 0.90476,
+      "series": "k=100 (committed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "epoch": 3.0,
+      "val var-FVE": 0.909269,
+      "series": "k=100 (committed)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "epoch",
+        "ylabel": "mean train loss",
+        "legend_labels": [
+          "k=200",
+          "k=100 (committed)"
+        ],
+        "xticklabels": [
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5"
+        ],
+        "yticklabels": [
+          "75",
+          "100",
+          "125",
+          "150",
+          "175",
+          "200",
+          "225"
+        ]
+      },
+      {
+        "xlabel": "epoch",
+        "ylabel": "val var-FVE",
+        "xticklabels": [
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5"
+        ],
+        "yticklabels": [
+          "0.88",
+          "0.89",
+          "0.90",
+          "0.91",
+          "0.92",
+          "0.93",
+          "0.94"
+        ]
+      }
+    ],
+    "series": [
+      "k=200",
+      "k=100 (committed)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

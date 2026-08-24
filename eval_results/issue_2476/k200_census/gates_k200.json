@@ -1,0 +1,139 @@
+{
+  "pred_encode_fve": {
+    "pred_encode_fve": 0.955704,
+    "pred_encode_mean_l0": 186.01,
+    "n_rows": 20000,
+    "wall_s": 0.7,
+    "k100_reference": {
+      "value": 0.937,
+      "source": "parent promoted body (no committed JSON carries it); DV1 disposition comparison is the analyzer's (plan \u00a76 \u2014 reported, never a gate)"
+    }
+  },
+  "gates": {
+    "g4_k200": {
+      "val_var_fve": 0.930353,
+      "val_l0": 200.39,
+      "floor": 0.5,
+      "n_val": 10000,
+      "verdict": "PASS"
+    },
+    "ga": {
+      "gate": "G-A",
+      "checks": {
+        "refit_rows_eq_ib_rows": true,
+        "refit_rows_eq_assembled_holdout": true
+      },
+      "verdict": "PASS"
+    },
+    "gc_i": {
+      "gate": "G-C'(i)",
+      "sum_per_feature_counts": 24000340,
+      "sum_per_row_l0": 24000340,
+      "n_rows": 120000,
+      "verdict": "PASS"
+    },
+    "gc_ii": {
+      "gate": "G-C",
+      "arm": "k200_selfconsistency",
+      "tol_rows": 3,
+      "max_abs_delta": 0,
+      "worst_features": [
+        {
+          "feat": 2648,
+          "banked": 247,
+          "recomputed": 247
+        },
+        {
+          "feat": 2649,
+          "banked": 319,
+          "recomputed": 319
+        },
+        {
+          "feat": 2650,
+          "banked": 1405,
+          "recomputed": 1405
+        },
+        {
+          "feat": 2651,
+          "banked": 406,
+          "recomputed": 406
+        },
+        {
+          "feat": 2652,
+          "banked": 279,
+          "recomputed": 279
+        }
+      ],
+      "per_floor_sym_diff": {
+        "1200": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "600": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "300": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "240": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        }
+      },
+      "off_boundary_examples": [],
+      "verdict": "PASS",
+      "production": true,
+      "sae_threshold": 0.3730108439922333
+    },
+    "gc_iii": {
+      "gate": "G-C'(iii)",
+      "n_fit_rows": 120000,
+      "expected": 120000,
+      "verdict": "PASS",
+      "production": true
+    },
+    "gs": {
+      "gate": "G-S",
+      "assembled_shas": {
+        "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+        "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+        "sae_fit_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+        "sae_val_sha256": "8b3933c053ea8b8db11676d2585e4997db44b21c4e7a280e96d04381c0d680d9",
+        "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+        "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
+      },
+      "banked_shas": {
+        "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+        "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+        "sae_fit_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+        "sae_val_sha256": "8b3933c053ea8b8db11676d2585e4997db44b21c4e7a280e96d04381c0d680d9",
+        "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+        "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
+      },
+      "verdict": "PASS"
+    },
+    "pred_encode_fve": {
+      "pred_encode_fve": 0.955704,
+      "pred_encode_mean_l0": 186.01,
+      "n_rows": 20000,
+      "wall_s": 0.7,
+      "k100_reference": {
+        "value": 0.937,
+        "source": "parent promoted body (no committed JSON carries it); DV1 disposition comparison is the analyzer's (plan \u00a76 \u2014 reported, never a gate)"
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+    "timestamp_utc": "2026-08-24T18:43:02.550783Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "k200-stats",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_k200_census.py"
+  }
+}

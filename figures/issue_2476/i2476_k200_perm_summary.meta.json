@@ -1,0 +1,88 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "3be452e6f5754b2e",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:26Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "pooled Spearman(tier, R\u00b2)": -0.23208602368308867,
+      "series": "observed",
+      "_kind": "line"
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "pooled Spearman(tier, R\u00b2)": -0.5258200757966266,
+      "series": "observed",
+      "_kind": "line"
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "pooled Spearman(tier, R\u00b2)": -0.6979863624621453,
+      "series": "observed",
+      "_kind": "line"
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "pooled Spearman(tier, R\u00b2)": -0.7151668627109239,
+      "series": "observed",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "pooled Spearman(tier, R\u00b2)",
+        "legend_labels": [
+          "null 2.5\u201397.5%",
+          "observed"
+        ],
+        "xticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.7",
+          "\u22120.6",
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1"
+        ]
+      }
+    ],
+    "series": [
+      "observed",
+      "null 2.5\u201397.5%"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

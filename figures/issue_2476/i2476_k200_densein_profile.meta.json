@@ -1,0 +1,238 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "f66f30f6bcb24325",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:32Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.5895179528458496,
+      "series": "coarsest map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.5853738493421021,
+      "series": "coarsest map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.575619176440343,
+      "series": "coarsest map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.5739917755672164,
+      "series": "coarsest map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.5229920859707967,
+      "series": "coarsest densein",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.5091918502702046,
+      "series": "coarsest densein",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.48748381637579274,
+      "series": "coarsest densein",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.48233962391627916,
+      "series": "coarsest densein",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.15508853821480417,
+      "series": "middle map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.14911527193348922,
+      "series": "middle map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.12610892059980788,
+      "series": "middle map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.12654641269263572,
+      "series": "middle map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.1900883697164062,
+      "series": "middle densein",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.13645842148077308,
+      "series": "middle densein",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.11988179776486801,
+      "series": "middle densein",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.11795775575509387,
+      "series": "middle densein",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.4936598557503373,
+      "series": "finest map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.32293544613506153,
+      "series": "finest map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.08654095881503909,
+      "series": "finest map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.07170564516510752,
+      "series": "finest map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.5624450396671613,
+      "series": "finest densein",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.40194196703890717,
+      "series": "finest densein",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.206124424318051,
+      "series": "finest densein",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.12573299624074535,
+      "series": "finest densein",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "median held-out R\u00b2",
+        "legend_labels": [
+          "coarsest map",
+          "coarsest densein",
+          "middle map",
+          "middle densein",
+          "finest map",
+          "finest densein"
+        ],
+        "xticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "coarsest map",
+      "coarsest densein",
+      "middle map",
+      "middle densein",
+      "finest map",
+      "finest densein"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

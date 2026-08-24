@@ -1,0 +1,147 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "e3fbbf2ee049452b",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:36Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.19738464355468777,
+      "series": "densein null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.12054290771484366,
+      "series": "densein null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.08563232421875,
+      "series": "densein null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.07830810546875,
+      "series": "densein null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.34713745117187766,
+      "series": "ib null p97.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.38817749023437464,
+      "series": "ib null p97.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.40966186523437464,
+      "series": "ib null p97.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.4189453125,
+      "series": "ib null p97.5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.08673095703125,
+      "series": "map null p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.013916015625,
+      "series": "map null p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.005077362060546875,
+      "series": "map null p97.5",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "shuffle-null R\u00b2 p97.5 (K=20)": -0.003021240234375,
+      "series": "map null p97.5",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "shuffle-null R\u00b2 p97.5 (K=20)",
+        "legend_labels": [
+          "densein null p97.5",
+          "ib null p97.5",
+          "map null p97.5"
+        ],
+        "xticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1"
+        ]
+      }
+    ],
+    "series": [
+      "densein null p97.5",
+      "ib null p97.5",
+      "map null p97.5"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,239 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "fa4ae83331f6465b",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:34Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.5837967163230565,
+      "series": "coarsest lmsys",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.5746593226371037,
+      "series": "coarsest lmsys",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.5616769865440874,
+      "series": "coarsest lmsys",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.5589788944942093,
+      "series": "coarsest lmsys",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.5506671509708991,
+      "series": "coarsest wildchat",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.5434820408212129,
+      "series": "coarsest wildchat",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.5344687409101114,
+      "series": "coarsest wildchat",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.5307109563784581,
+      "series": "coarsest wildchat",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.1453497005151989,
+      "series": "middle lmsys",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.12637076485437881,
+      "series": "middle lmsys",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.11131562466316014,
+      "series": "middle lmsys",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.11151918661539773,
+      "series": "middle lmsys",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.11585964194032838,
+      "series": "middle wildchat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.11885853219147735,
+      "series": "middle wildchat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.10526295070145308,
+      "series": "middle wildchat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.10368535743237095,
+      "series": "middle wildchat",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.4828324984861793,
+      "series": "finest lmsys",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.1750825620617934,
+      "series": "finest lmsys",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.05409861777753311,
+      "series": "finest lmsys",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.011630136508803901,
+      "series": "finest lmsys",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.40246429162259334,
+      "series": "finest wildchat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.025906802798859263,
+      "series": "finest wildchat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.02855690510974984,
+      "series": "finest wildchat",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.02855690510974984,
+      "series": "finest wildchat",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "median held-out R\u00b2 (map)",
+        "legend_labels": [
+          "coarsest lmsys",
+          "coarsest wildchat",
+          "middle lmsys",
+          "middle wildchat",
+          "finest lmsys",
+          "finest wildchat"
+        ],
+        "xticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "coarsest lmsys",
+      "coarsest wildchat",
+      "middle lmsys",
+      "middle wildchat",
+      "finest lmsys",
+      "finest wildchat"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

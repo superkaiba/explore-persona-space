@@ -1,0 +1,151 @@
+{
+  "regime": {
+    "smoke": false,
+    "max_chunks": 0,
+    "smoke_rows": 0,
+    "device": "cuda",
+    "n_perm": 10000,
+    "n_boot": 10000,
+    "sae_steps": 0,
+    "sae_dict": 0,
+    "sae_k": 200,
+    "hf_prefix": "issue2476_turnavg/analysis_tensors",
+    "skip_upload": false,
+    "floors": [
+      1200,
+      600,
+      300,
+      240
+    ],
+    "registered_floor": 1200,
+    "budget_finest_alive_min": 10,
+    "data_repo_revision": "89cfa76cdcd4207d95c1fec1c3131f36e21beec0",
+    "gc_count_tol": 3,
+    "config_hash": "76d3040cf110c154",
+    "code_sha": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1"
+  },
+  "instrument": {
+    "k": 200,
+    "width": 65536,
+    "seed": 2476
+  },
+  "n_fit_rows": 120000,
+  "floors_rows": [
+    1200,
+    600,
+    300,
+    240
+  ],
+  "floors_eff": [
+    1200,
+    600,
+    300,
+    240
+  ],
+  "registered_floor_rows": 1200,
+  "candidates_by_tier": {
+    "0": 2048,
+    "1": 14336,
+    "2": 49152
+  },
+  "per_floor": {
+    "1200": {
+      "floor_rows_effective": 1200,
+      "n_alive": 1278,
+      "alive_by_tier": {
+        "0": 1239,
+        "1": 35,
+        "2": 4
+      }
+    },
+    "600": {
+      "floor_rows_effective": 600,
+      "n_alive": 1748,
+      "alive_by_tier": {
+        "0": 1483,
+        "1": 244,
+        "2": 21
+      }
+    },
+    "300": {
+      "floor_rows_effective": 300,
+      "n_alive": 2400,
+      "alive_by_tier": {
+        "0": 1645,
+        "1": 702,
+        "2": 53
+      }
+    },
+    "240": {
+      "floor_rows_effective": 240,
+      "n_alive": 2659,
+      "alive_by_tier": {
+        "0": 1687,
+        "1": 882,
+        "2": 90
+      }
+    }
+  },
+  "mean_firing": {
+    "k200_realized_frac": 0.0030518010457356772,
+    "k200_design_frac": 0.0030517578125,
+    "k100_design_frac": 0.00152587890625
+  },
+  "budget_lattice": {
+    "rule": "Budget-limited <=> k200-finest-alive >= 10; Budget-discharged <=> otherwise",
+    "threshold": 10,
+    "finest_tier_ids": [
+      16384,
+      65536
+    ],
+    "finest_alive_at_registered_floor": 4,
+    "registered_floor_rows": 1200,
+    "verdict": "Budget-discharged",
+    "registered": true,
+    "val_l0": 200.39,
+    "manipulation_realized": true,
+    "manipulation_check": {
+      "predicate": "val_l0 >= 150.0 (conservative concrete form of plan \u00a73's 'realized k=200 val L0 materially exceeding the parent's 98.96' \u2014 the A4 lattice-evaluation note)",
+      "threshold_val_l0": 150.0,
+      "parent_k100_val_l0": 98.96,
+      "narration": "conditional-on-manipulation: the CAUSAL (budget) narration of this branch is licensed only when manipulation_realized; otherwise the analyzer reports 'manipulation not realized' (census still valid and reported)"
+    }
+  },
+  "k100_committed": {
+    "source": "eval_results/issue_2476/floor_sweep/floor_sweep_c.json",
+    "alive_by_tier_per_floor": {
+      "1200": {
+        "0": 788,
+        "1": 88,
+        "2": 3
+      },
+      "600": {
+        "0": 992,
+        "1": 314,
+        "2": 26
+      },
+      "300": {
+        "0": 1137,
+        "1": 696,
+        "2": 80
+      },
+      "240": {
+        "0": 1178,
+        "1": 842,
+        "2": 130
+      }
+    }
+  },
+  "census_note": "census computed from raw threshold counts (cap-independent; the 16,384-cap panel enters only the R6 medians per parent convention)",
+  "metadata": {
+    "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+    "timestamp_utc": "2026-08-24T18:41:56.391905Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "k200-census",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_k200_census.py"
+  }
+}

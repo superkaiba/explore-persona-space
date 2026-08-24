@@ -1,0 +1,394 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "756c276745b5475e",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:29Z",
+  "figsize": [
+    5.5,
+    1.133
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "retrieval acc@1 (euclidean)": 0.71395,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "retrieval acc@1 (euclidean)": 0.71085,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "retrieval acc@1 (euclidean)": 0.7094,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "retrieval acc@1 (euclidean)": 0.7094,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "retrieval acc@1 (euclidean)": 0.2892,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "retrieval acc@1 (euclidean)": 0.2935,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "retrieval acc@1 (euclidean)": 0.2949,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "retrieval acc@1 (euclidean)": 0.2951,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "retrieval acc@1 (euclidean)": 0.7272,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "retrieval acc@1 (euclidean)": 0.72575,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "retrieval acc@1 (euclidean)": 0.72415,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "retrieval acc@1 (euclidean)": 0.72425,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.0,
+      "retrieval acc@1 (euclidean)": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "retrieval acc@1 (euclidean)": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.00055,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0033,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.0048,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.00515,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.00095,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0066,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.01605,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.0191,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.0006,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0023,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.00375,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.00505,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 5e-05,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.00025,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.0002,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.00025,
+      "series": "dense-input companion",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.0,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0003,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.0009,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.0012,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 5e-05,
+      "series": "map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0003,
+      "series": "map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.00055,
+      "series": "map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.0008,
+      "series": "map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "alive floor (% of fit rows)": 0.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 42,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "coarsest (ids <2,048)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "retrieval acc@1 (euclidean)",
+        "legend_labels": [
+          "dense-input companion",
+          "identity+bias",
+          "map",
+          "chance"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-8}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      },
+      {
+        "title": "middle (2,048\u201316,383)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "title": "finest (16,384\u201365,535)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$"
+        ]
+      }
+    ],
+    "series": [
+      "dense-input companion",
+      "identity+bias",
+      "map",
+      "chance"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

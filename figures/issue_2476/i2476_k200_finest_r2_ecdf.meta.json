@@ -1,0 +1,1078 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "59d6f66339424d27",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:24Z",
+  "figsize": [
+    5.5,
+    0.84975
+  ],
+  "points": [
+    {
+      "finest-tier per-feature R\u00b2": 0.3817317850963593,
+      "fraction of alive features": 0.25,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.39493720258058973,
+      "fraction of alive features": 0.5,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5923825089200848,
+      "fraction of alive features": 0.75,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.7396777077549701,
+      "fraction of alive features": 1.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.007066695401021672,
+      "y": 0.047619047619047616,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0044615646193229,
+      "y": 0.09523809523809523,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.007666559732898981,
+      "y": 0.14285714285714285,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.008188632484358083,
+      "y": 0.19047619047619047,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0695986788013917,
+      "y": 0.23809523809523808,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07073464752863245,
+      "y": 0.2857142857142857,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11191365232505635,
+      "y": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.15338535863178926,
+      "y": 0.38095238095238093,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.16370163367584767,
+      "y": 0.42857142857142855,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.26530184058132933,
+      "y": 0.47619047619047616,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.32293544613506153,
+      "y": 0.5238095238095238,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.32445487313772137,
+      "y": 0.5714285714285714,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.3817317850963593,
+      "y": 0.6190476190476191,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.387961373905816,
+      "y": 0.6666666666666666,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.39493720258058973,
+      "y": 0.7142857142857143,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4050195804010873,
+      "y": 0.7619047619047619,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4178603125215884,
+      "y": 0.8095238095238095,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.44315764048393347,
+      "y": 0.8571428571428571,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5248852025647819,
+      "y": 0.9047619047619048,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5923825089200848,
+      "y": 0.9523809523809523,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.7396777077549701,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.26842210160269375,
+      "y": 0.018867924528301886,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.12837918212748578,
+      "y": 0.03773584905660377,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.027782875644532634,
+      "y": 0.05660377358490566,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.02463764778806965,
+      "y": 0.07547169811320754,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.01812754104943548,
+      "y": 0.09433962264150944,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0121395825795092,
+      "y": 0.11320754716981132,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.007066695401021672,
+      "y": 0.1320754716981132,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.004208863586251832,
+      "y": 0.1509433962264151,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.00398144023653435,
+      "y": 0.16981132075471697,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.003634687958422367,
+      "y": 0.18867924528301888,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.001924227988725269,
+      "y": 0.20754716981132076,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0018569741186165167,
+      "y": 0.22641509433962265,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.001139342888072603,
+      "y": 0.24528301886792453,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0004800496418768674,
+      "y": 0.2641509433962264,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0044615646193229,
+      "y": 0.2830188679245283,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.007666559732898981,
+      "y": 0.3018867924528302,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.008188632484358083,
+      "y": 0.32075471698113206,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.008533478440028497,
+      "y": 0.33962264150943394,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0294867333403952,
+      "y": 0.3584905660377358,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.041572133978951764,
+      "y": 0.37735849056603776,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.045553589135897354,
+      "y": 0.39622641509433965,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.060103657222079,
+      "y": 0.41509433962264153,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0695986788013917,
+      "y": 0.4339622641509434,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07073464752863245,
+      "y": 0.4528301886792453,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07267664280158259,
+      "y": 0.4716981132075472,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07835586003425887,
+      "y": 0.49056603773584906,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.08654095881503909,
+      "y": 0.5094339622641509,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.08828667648827182,
+      "y": 0.5283018867924528,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.09381327870602074,
+      "y": 0.5471698113207547,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.09918243994531994,
+      "y": 0.5660377358490566,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11116346778688835,
+      "y": 0.5849056603773585,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11191365232505635,
+      "y": 0.6037735849056604,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.13020692097910735,
+      "y": 0.6226415094339622,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.15338535863178926,
+      "y": 0.6415094339622641,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.15797146278947305,
+      "y": 0.660377358490566,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.16370163367584767,
+      "y": 0.6792452830188679,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.18125857001757295,
+      "y": 0.6981132075471698,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.18320099494740094,
+      "y": 0.7169811320754716,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.19243107058703102,
+      "y": 0.7358490566037735,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.22532382999415068,
+      "y": 0.7547169811320755,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.26530184058132933,
+      "y": 0.7735849056603774,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.32293544613506153,
+      "y": 0.7924528301886793,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.32445487313772137,
+      "y": 0.8113207547169812,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.3817317850963593,
+      "y": 0.8301886792452831,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.387961373905816,
+      "y": 0.8490566037735849,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.39493720258058973,
+      "y": 0.8679245283018868,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4050195804010873,
+      "y": 0.8867924528301887,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4178603125215884,
+      "y": 0.9056603773584906,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.44315764048393347,
+      "y": 0.9245283018867925,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4909255802342457,
+      "y": 0.9433962264150944,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5248852025647819,
+      "y": 0.9622641509433962,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5923825089200848,
+      "y": 0.9811320754716981,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.7396777077549701,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.26842210160269375,
+      "y": 0.011111111111111112,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.12837918212748578,
+      "y": 0.022222222222222223,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.12259490253889083,
+      "y": 0.03333333333333333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.10245313711190995,
+      "y": 0.044444444444444446,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.07086447583356215,
+      "y": 0.05555555555555555,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.06191774996474808,
+      "y": 0.06666666666666667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.05412859402718739,
+      "y": 0.07777777777777778,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.04750321597721152,
+      "y": 0.08888888888888889,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.027782875644532634,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.02463764778806965,
+      "y": 0.1111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.021241827830747573,
+      "y": 0.12222222222222222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.02086646812381754,
+      "y": 0.13333333333333333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.01812754104943548,
+      "y": 0.14444444444444443,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0121395825795092,
+      "y": 0.15555555555555556,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.007066695401021672,
+      "y": 0.16666666666666666,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.006618365180693697,
+      "y": 0.17777777777777778,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.004208863586251832,
+      "y": 0.18888888888888888,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.00398144023653435,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0036773827631362277,
+      "y": 0.2111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.003634687958422367,
+      "y": 0.2222222222222222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0021674798149684538,
+      "y": 0.23333333333333334,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.001924227988725269,
+      "y": 0.24444444444444444,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0018569741186165167,
+      "y": 0.25555555555555554,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.001838576431593797,
+      "y": 0.26666666666666666,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0017967431610346196,
+      "y": 0.2777777777777778,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0017397708597977068,
+      "y": 0.28888888888888886,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.001735921054192291,
+      "y": 0.3,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0011645334736947177,
+      "y": 0.3111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.001139342888072603,
+      "y": 0.32222222222222224,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0010762353574358396,
+      "y": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": -0.0004800496418768674,
+      "y": 0.34444444444444444,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0044615646193229,
+      "y": 0.35555555555555557,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.007666559732898981,
+      "y": 0.36666666666666664,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.008188632484358083,
+      "y": 0.37777777777777777,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.008533478440028497,
+      "y": 0.3888888888888889,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.018485587034302697,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.02704590339132762,
+      "y": 0.4111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0294867333403952,
+      "y": 0.4222222222222222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.041572133978951764,
+      "y": 0.43333333333333335,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.045553589135897354,
+      "y": 0.4444444444444444,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.05757251428359733,
+      "y": 0.45555555555555555,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.060103657222079,
+      "y": 0.4666666666666667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.06951312760037831,
+      "y": 0.4777777777777778,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0695986788013917,
+      "y": 0.4888888888888889,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07073464752863245,
+      "y": 0.5,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07267664280158259,
+      "y": 0.5111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07688148711687715,
+      "y": 0.5222222222222223,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.07835586003425887,
+      "y": 0.5333333333333333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.08628145506639107,
+      "y": 0.5444444444444444,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.08654095881503909,
+      "y": 0.5555555555555556,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.0881295006960261,
+      "y": 0.5666666666666667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.08828667648827182,
+      "y": 0.5777777777777777,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.09381327870602074,
+      "y": 0.5888888888888889,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.09918243994531994,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.1016857878924382,
+      "y": 0.6111111111111112,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11116346778688835,
+      "y": 0.6222222222222222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11172988878331447,
+      "y": 0.6333333333333333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11191365232505635,
+      "y": 0.6444444444444445,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11319015241206432,
+      "y": 0.6555555555555556,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.11379021209103501,
+      "y": 0.6666666666666666,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.12988399738617407,
+      "y": 0.6777777777777778,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.13020692097910735,
+      "y": 0.6888888888888889,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.13091541959532715,
+      "y": 0.7,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.14742010788291549,
+      "y": 0.7111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.15338535863178926,
+      "y": 0.7222222222222222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.15797146278947305,
+      "y": 0.7333333333333333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.16370163367584767,
+      "y": 0.7444444444444445,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.18125857001757295,
+      "y": 0.7555555555555555,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.18320099494740094,
+      "y": 0.7666666666666667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.1862185005910717,
+      "y": 0.7777777777777778,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.19243107058703102,
+      "y": 0.7888888888888889,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.22532382999415068,
+      "y": 0.8,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.2308369684386511,
+      "y": 0.8111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.25729225005709355,
+      "y": 0.8222222222222222,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.26530184058132933,
+      "y": 0.8333333333333334,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.32293544613506153,
+      "y": 0.8444444444444444,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.32445487313772137,
+      "y": 0.8555555555555555,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.36975737810709175,
+      "y": 0.8666666666666667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.3817317850963593,
+      "y": 0.8777777777777778,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.387961373905816,
+      "y": 0.8888888888888888,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.39493720258058973,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4050195804010873,
+      "y": 0.9111111111111111,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4178603125215884,
+      "y": 0.9222222222222223,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.44315764048393347,
+      "y": 0.9333333333333333,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4632295711950354,
+      "y": 0.9444444444444444,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.4909255802342457,
+      "y": 0.9555555555555556,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5248852025647819,
+      "y": 0.9666666666666667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5504586055455962,
+      "y": 0.9777777777777777,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.5923825089200848,
+      "y": 0.9888888888888889,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "finest-tier per-feature R\u00b2": 0.7396777077549701,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 168,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "floor 1200 rows (n=4)",
+        "xlabel": "finest-tier per-feature R\u00b2",
+        "ylabel": "fraction of alive features",
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1"
+        ],
+        "yticklabels": [
+          "\u22121",
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "title": "floor 600 rows (n=21)",
+        "xlabel": "finest-tier per-feature R\u00b2",
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1"
+        ]
+      },
+      {
+        "title": "floor 300 rows (n=53)",
+        "xlabel": "finest-tier per-feature R\u00b2",
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1"
+        ]
+      },
+      {
+        "title": "floor 240 rows (n=90)",
+        "xlabel": "finest-tier per-feature R\u00b2",
+        "xticklabels": [
+          "\u22121",
+          "0",
+          "1"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,344 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "09f07691489f46f3",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:16Z",
+  "figsize": [
+    5.5,
+    1.133
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.5895179528458496,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.5853738493421021,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.575619176440343,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.5739917755672164,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": -1.212174820012681,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": -1.3623582729018349,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": -1.4208114474744025,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": -1.4265895069561543,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.6251079033669263,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.6066485182164321,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.5915391709372131,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.5876398676632282,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.15508853821480417,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.14911527193348922,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.12610892059980788,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.12654641269263572,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": -7.493213525699877,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": -6.428385133132393,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": -5.9272506945579035,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": -5.626383805667279,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.1313119636916356,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.17200907348666272,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.16566729444515227,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.16319792934993943,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.4936598557503373,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.32293544613506153,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.08654095881503909,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.07170564516510752,
+      "series": "map (k=200)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": -0.5299706059437531,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": -3.35876424099228,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": -4.348107861757276,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": -7.412227131168492,
+      "series": "identity+bias (k=200)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.6667357361081003,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0866486277125792,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.04875375920874059,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.0456387852775193,
+      "series": "map k=100 (committed; different instrument)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "coarsest (ids <2,048)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "median held-out R\u00b2",
+        "legend_labels": [
+          "map (k=200)",
+          "identity+bias (k=200)",
+          "map k=100 (committed; different instrument)"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ]
+      },
+      {
+        "title": "middle (2,048\u201316,383)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      },
+      {
+        "title": "finest (16,384\u201365,535)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      }
+    ],
+    "series": [
+      "map (k=200)",
+      "identity+bias (k=200)",
+      "map k=100 (committed; different instrument)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

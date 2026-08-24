@@ -1,0 +1,198 @@
+{
+  "commit": "8360a1d7",
+  "render_id": "71312eadf96f40c4",
+  "git_commit": "8360a1d72ddcc50ab44ac01c69ce4e6a9f8999b1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_k200_census.py",
+  "created": "2026-08-24T18:43:19Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "epoch": 1.0,
+      "dead-feature fraction": 0.0,
+      "series": "coarsest k=200",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 2.0,
+      "dead-feature fraction": 0.0005,
+      "series": "coarsest k=200",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 3.0,
+      "dead-feature fraction": 0.0088,
+      "series": "coarsest k=200",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 1.0,
+      "dead-feature fraction": 0.0,
+      "series": "coarsest k=100",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "epoch": 2.0,
+      "dead-feature fraction": 0.0332,
+      "series": "coarsest k=100",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "epoch": 3.0,
+      "dead-feature fraction": 0.0952,
+      "series": "coarsest k=100",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "epoch": 1.0,
+      "dead-feature fraction": 0.0,
+      "series": "middle k=200",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "epoch": 2.0,
+      "dead-feature fraction": 0.009,
+      "series": "middle k=200",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "epoch": 3.0,
+      "dead-feature fraction": 0.1307,
+      "series": "middle k=200",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "epoch": 1.0,
+      "dead-feature fraction": 0.0,
+      "series": "middle k=100",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "epoch": 2.0,
+      "dead-feature fraction": 0.0903,
+      "series": "middle k=100",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "epoch": 3.0,
+      "dead-feature fraction": 0.2912,
+      "series": "middle k=100",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "epoch": 1.0,
+      "dead-feature fraction": 0.0,
+      "series": "finest k=200",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "epoch": 2.0,
+      "dead-feature fraction": 0.0138,
+      "series": "finest k=200",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "epoch": 3.0,
+      "dead-feature fraction": 0.1767,
+      "series": "finest k=200",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "epoch": 1.0,
+      "dead-feature fraction": 0.0,
+      "series": "finest k=100",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "epoch": 2.0,
+      "dead-feature fraction": 0.1042,
+      "series": "finest k=100",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "epoch": 3.0,
+      "dead-feature fraction": 0.3558,
+      "series": "finest k=100",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "epoch",
+        "ylabel": "dead-feature fraction",
+        "legend_labels": [
+          "coarsest k=200",
+          "coarsest k=100",
+          "middle k=200",
+          "middle k=100",
+          "finest k=200",
+          "finest k=100"
+        ],
+        "xticklabels": [
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75",
+          "2.00",
+          "2.25",
+          "2.50",
+          "2.75",
+          "3.00",
+          "3.25"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "coarsest k=200",
+      "coarsest k=100",
+      "middle k=200",
+      "middle k=100",
+      "finest k=200",
+      "finest k=100"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
