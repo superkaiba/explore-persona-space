@@ -11964,8 +11964,8 @@
       "goal": "Determine (1, exploratory) how the context\u2192answer map's per-feature predictability of turn-averaged SAE features ranks across the five Der et al. (arXiv 2606.28548) schema categories (content/form/voice/function/meta) on the #2476 matryoshka SAEs (k=100 + k=200) and on a faithful flat replication of Der et al.'s recipe; (2) whether that replication (BatchTopK 32,768/k=128 on banked layer-19 turn means + their full judged evaluation, judge claude-sonnet-4-6 no-prefill) reproduces their discrimination-vs-coverage inversion; and (3) which feature properties (schema categories + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability, via a forward-selection partial-out ladder as the headline figure.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2552",
-      "status": "proposed",
+      "path": "tasks/planning/2552",
+      "status": "planning",
       "title": "Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder"
     },
     "2553": {
