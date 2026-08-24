@@ -2,7 +2,8 @@
 title: 'select_step9c_tests.py: feature-named consumer tests escape module mapping;
   over-wide sweep_scope label hides the gap'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-24T14:28:30Z'
 has_clean_result: false
 parent_id: 2336
