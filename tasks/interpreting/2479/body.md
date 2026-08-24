@@ -1,6 +1,6 @@
 ---
 title: Assistant-operator transfer recovery in held-out R² rises with judged AI-likeness
-  across 16 story characters (MODERATE confidence)
+  across 16 story characters (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-22T20:24:19Z'
