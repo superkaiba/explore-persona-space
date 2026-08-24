@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2549,
+  "highest_id": 2550,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11945,6 +11945,13 @@
       "path": "tasks/proposed/2549",
       "status": "proposed",
       "title": "workflow-fix: --check-shared-tmp-name is RED on main's own tree (issue823_ladder_ext_gen.py:1330), failing the live-tree gate test fleet-wide"
+    },
+    "2550": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2550",
+      "status": "proposed",
+      "title": "workflow-fix: scripts/issue2254_firstk_ctxext_sensitivity.py imports numpy before load_dotenv, reddening test_shared_vm_thread_caps on main"
     },
     "256": {
       "has_clean_result": false,
