@@ -23,6 +23,8 @@ goal: 'On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal
   identity/identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B
   answer-text third space, to determine which kinds of context information the map
   carries faithfully vs distorts.'
+relates_to:
+- spec-context-as-vector
 ---
 # Controlled minimal-pair battery: does the context→answer map predict the DIFFERENCE in answer vectors, per instruction axis?
 
