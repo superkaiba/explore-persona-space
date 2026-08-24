@@ -24,7 +24,7 @@ goal: 'Establish or bound the closeness-to-assistant transfer gradient: assistan
 - The coarse designed tier orders recovery more tightly than the judged axis (+0.92, p = 0.0001, vs +0.70), and within tiers the pooled rank association is only +0.15 — this run does not establish that the continuous judged score, rather than the designed character class or its answer register, is the operative variable; mean answer length (+0.53, p = 0.017) and the capture-side language-intrusion rate (+0.54) also track the axis.
 - The ordering is stable under every recount: equalizing all characters to 1,028 fit rows gives +0.72 (p = 0.0014), though one character moves materially (mort, 0.42 to 0.30); the 12 characters new to this run alone give +0.68 (p = 0.009); excluding CJK-intruded items gives +0.69 under both substrates (67 of 3,411 judged replies; 181 of 3,411 story wrappers); assigning the 28 judge-unscored items any extreme 0-or-100 combination keeps it between +0.66 and +0.71; raw un-normalized transferred R² gives +0.65 (p = 0.0044); direct no-refit transfer +0.73 (p = 0.0011).
 - Trivial baselines recover none of the level — identity-plus-learned-bias held-out R² is negative for 16 of 16 characters (−0.69 to −0.40), and a capacity-matched random operator recovers −0.06 to −0.03 of ceiling. The ordering holds across the transfer ladder but is slot-specific: 8 of 9 rungs carry it (+0.69 to +0.81, rebounding to +0.81 at the rung-7 and rung-9 reparameterizations); only rung-6 rotation drops it to +0.35 (p = 0.10), and every prefix-slot own-map ceiling (−0.001 to 0.020) fails the plan's 0.05 eligibility floor.
-- One fit seed and a judge-only axis measure the association, and the one independent companion metric — top-1 retrieval — disagrees; the agreeing recounts (raw, equalized-n, direct-transfer, 8 of 9 rungs) all share the same capture-and-fit pipeline, and why recovery orders this way (designed tier, answer register, capture-side intrusion) remains unresolved.
+- The association rests on one fit seed and a judge-only axis, and the one independent companion metric, top-1 retrieval, disagrees; the agreeing recounts (raw, equalized-n, direct-transfer, 8 of 9 rungs) all share the same capture-and-fit pipeline, and why recovery orders this way (designed tier, answer register, capture-side intrusion) remains unresolved.
 
 ## Goal
 
@@ -112,7 +112,7 @@ Conciseness acknowledgment: this body of 7 results ships check-20 WARNs — seve
 
 ### Recovery fraction rises with judged AI-likeness across all 16 characters
 
-What is plotted: the frozen AI-likeness judge score (x, 0–100) against the rung-4 recovery fraction (y) — held-out R² of the transferred assistant-story operator with a target-refit bias, divided by the character's own-map ceiling R² — one labeled point per character, tier anchors drawn as diamonds.
+What is plotted: the frozen AI-likeness judge score (x, 0–100) against the rung-4 recovery fraction (y) — held-out R² of the transferred assistant-story operator with a target-refit bias, divided by the character's own-map ceiling R² — one labeled point per character, tier anchors (the four parent-rig characters) drawn as diamonds.
 
 ![Recovery fraction versus judged AI-likeness, one labeled point per character](https://raw.githubusercontent.com/superkaiba/explore-persona-space/745b120206fa0c92af8ab8dfd276dc2d6c8a3c05/figures/issue_2479/gradient_hero_v2.png)
 
@@ -132,7 +132,7 @@ What is plotted: raw held-out R² of the transferred operator (rung 4, no ceilin
 
 Own-map ceilings themselves rise with the axis (+0.43, p = 0.044; range 0.151–0.214), so the recovery fraction's denominator is not neutral and a fraction-only read could partly reflect ceiling behavior.
 
-The raw numerator alone still orders with the axis (0.064–0.180 across characters), so the gradient is a property of how well the transferred operator fits each character, not of the normalization.
+The raw numerator alone still orders with the axis (0.064–0.180 across characters), so the gradient is carried by how well the transferred operator fits each character; the normalization is not required to produce it.
 
 ### Trivial baselines recover none of the gradient's level
 
@@ -142,7 +142,7 @@ What is plotted: per-character own-map ceiling R² and identity-plus-learned-bia
 
 > **Figure.** *Identity plus a learned bias is negative for every character.* Ceilings span 0.151–0.214, all above the 0.05 eligibility floor; identity-plus-bias held-out R² spans −0.69 to −0.40 (16 characters, same folds).
 
-Copying the context summary and adding a fitted offset is negative everywhere — context and answer summaries do not share comparable coordinates at this slot, so identity fails as a no-map baseline rather than discriminating between transfer mechanisms — and its ordering does not reach significance (+0.31, p = 0.11).
+Copying the context summary and adding a fitted offset is negative everywhere: context and answer summaries do not share comparable coordinates at this slot, so identity fails as a no-map baseline rather than discriminating between transfer mechanisms. Its ordering also does not reach significance (+0.31, p = 0.11).
 
 A capacity-matched random operator recovers −0.060 to −0.032 of ceiling against the real operator's 0.42–0.88. The two sampled random operators do not reproduce the transferred operator's recovery level, but a 2-draw null cannot rule out a rank-level common cause — its own ordering trends at +0.39 (p = 0.065) — so target-side fit easiness stays an open alternative.
 
@@ -156,7 +156,7 @@ What is plotted: left panel — recovery in retrieval space (top-1 accuracy at m
 
 The variance-explained and retrieval reads dissociate, and retrieval reverses the intended baseline hierarchy — the right panel shows the reversal per character. The identity baseline's own retrieval accuracy does not order with the axis either (−0.19). The retrieval-versus-identity half of the Goal's recovery read therefore failed outright, not merely inconclusively.
 
-Transferred-operator retrieval can still exceed the own-map ceiling (helios: 0.199 against its own 0.063), consistent with the source operator being fit on 2,064 conversations while target maps get 1,028–1,245 and retrieval rewarding the better-estimated map. Rank-space ordering mixes source-fit sample effects with transfer per se; the headline claim stays scoped to variance-explained space.
+Transferred-operator retrieval can still exceed the own-map ceiling (helios: 0.199 against its own 0.063), consistent with the source operator's larger fit sample (2,064 conversations vs 1,028–1,245) and retrieval rewarding the better-estimated map; no down-sampled source refit tested this. Rank-space ordering mixes source-fit sample effects with transfer per se; the headline claim stays scoped to variance-explained space.
 
 ### The designed tier orders recovery more tightly than the judged axis
 
@@ -178,9 +178,9 @@ What is plotted: the rank correlation between the judged axis and per-character 
 
 > **Figure.** *Only rotation drops the ordering.* Eight of nine rungs order with the axis at +0.69 to +0.81 (each p < 0.01, same permutation machinery); rung-6 rotation falls to +0.35 (p = 0.10), the one rung below the 0.42 null 95th percentile, and the rung-7 and rung-9 reparameterizations rebound to +0.81. n = 16 characters per rung.
 
-Rotation is the one transform that lifts recovery while erasing the ordering — it raises recovery above the rung-4 headline for all 16 characters (0.76 to 0.92 of ceiling), and its extra freedom absorbs the between-character differences the axis tracks.
+Rotation is the one transform that lifts recovery while erasing the ordering — it raises recovery above the rung-4 headline for all 16 characters (0.76 to 0.92 of ceiling), consistent with its extra freedom absorbing the between-character differences the axis tracks.
 
-The slot half is sharper: every prefix-slot own-map ceiling (−0.001 to 0.020) fails the plan's 0.05 eligibility floor, so the read exists at the reply-attribution context slot, not everywhere.
+The slot side of the scope is sharper: every prefix-slot own-map ceiling (−0.001 to 0.020) fails the plan's 0.05 eligibility floor, so the read is specific to the reply-attribution context slot.
 
 ### The axis instrument passes its gates; four mediators stay open
 
@@ -190,9 +190,9 @@ What is plotted: the judged AI-likeness score per character, grouped by designed
 
 > **Figure.** *Judge scores agree with the designed tiers.* Tier-agreement rank correlation +0.75 (gate bar 0.5); realized axis range 42.8 points (29.6–72.3, bar 8); 188–229 judged items per character, 5 draws each.
 
-The remaining gates: re-scoring identical text under every character wrapper moves scores by a 1.8-point spread (bar 21.4; realized on the 44-item shared subsample disclosed in Methodology), and masking character names shifts scores 1.3 points on average (bar 8) with a masked-unmasked rank correlation of 0.976 (bar 0.7) — the judge reads content, not names.
+The remaining gates: re-scoring identical text under every character wrapper moves scores by a 1.8-point spread (bar 21.4; on the 44-item shared subsample, Methodology), and masking character names shifts scores 1.3 points on average (bar 8), rank correlation 0.976 (bar 0.7): the judge is scoring content.
 
-Four mediators stay open: mean answer length tracks the axis (+0.53, p = 0.017); the capture-side language-intrusion rate tracks it at +0.54 (recovery +0.34; no intrusion-excluded refit of the maps was run — detailed in Methodology); the inserted-answer control at n = 8 is directionally consistent but not significant (+0.52, p = 0.094); and the designed-tier account above orders recovery more tightly than the axis itself. Kept-row count does not track the axis (−0.05); activation-space closeness reads agree (context +0.71, answer +0.75) but share stores with the headline.
+Four mediators stay open: mean answer length tracks the axis (+0.53, p = 0.017); the capture-side language-intrusion rate tracks it at +0.54 (exploratory, no permutation p; recovery +0.34; no intrusion-excluded map refit was run — detailed in Methodology); the inserted-answer control at n = 8 is directionally consistent but not significant (+0.52, p = 0.094); and the designed-tier account above orders recovery more tightly than the axis itself. Kept-row count does not track the axis (−0.05); activation-space closeness reads agree (context +0.71, answer +0.75) but reuse the headline's activation stores, so they are not independent evidence.
 
 ---
 
@@ -204,4 +204,5 @@ Four mediators stay open: mean answer length tracks the axis (+0.53, p = 0.017);
 Judge: claude-sonnet-4-5-20250929 throughout (story gate at temperature 0; axis at 5 draws, temperature 1.0). Seeds: generation 42, fits 0, permutations 0, axis reservation 0.
 
 **Context:** Originating prompt: `Paper outline 2026-08-22 Results II title clause + critique F4 (n=4 cannot carry a title claim)`. Parent: [#1345](https://eps.superkaiba.com/tasks/1345) — the story-character operator-transfer rig; this run is its 16-character scale-up. Plan v4 (`plans/plan.md`); run legs 2026-08-23/24 UTC; analyzer round 1, 2026-08-23; analyzer round 2 (interpretation-critique fixes: retrieval reversal, tier mediation, judge-loss accounting, CJK substrate split, figure relabels), 2026-08-24; analyzer round 3 (rung-wise ladder report, equalized-n sensitivity, capture-intrusion mediator, identity-vs-transfer retrieval figure, confidence re-adjudication), 2026-08-24.
+
 
