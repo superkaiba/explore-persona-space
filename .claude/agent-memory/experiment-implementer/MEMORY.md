@@ -108,3 +108,4 @@
 - [Gate domain authority + bool-int aliasing](feedback_gate_domain_authority_and_bool_int_aliasing.md) — verifier domain comes from the CALLER, never the artifact; type-is-int for identity fields (True aliases 1 through exact-set reconciliation) (#823 r5)
 - [Unconditional per-arm empty guard](feedback_unconditional_per_arm_empty_guard.md) — any cross-arm conjunct leaves the all-empty cell dispatching; pin measured zero-dispatch, not guard source shape (#2329 r18)
 - [Model venvs pin the full accel-dep closure](feedback_model_venv_pin_full_dep_closure_flashinfer.md) — floating flashinfer 0.6.16.post3 TypeErrors past vLLM ImportError-only guard on py3.11; smoke the compile-backend import path (#2378)
+- [Shared Overleaf clone commit race](feedback_shared_overleaf_clone_commit_race.md) — verify landing by blob sha at HEAD, never own commit rc; git -C for non-EPS repos (#1894 sibling)
