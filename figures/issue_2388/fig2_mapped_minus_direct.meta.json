@@ -1,0 +1,1396 @@
+{
+  "commit": "a822434a+dirty",
+  "render_id": "05a0c31e19224d9a",
+  "git_commit": "a822434aed9bf198fe334bb6e288337de9d8ec1f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2388_analyzer_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2388_analyzer_figs.py",
+  "created": "2026-08-24T13:49:21Z",
+  "figsize": [
+    13.6,
+    3.4
+  ],
+  "points": [
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.029355416461060435,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.014072627001530336,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.013911152215674516,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.006052377842840406,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.015181519062371418,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.02945482994938986,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": -0.01267266253932009,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": 0.00222443798612737,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": -0.005573749173899412,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.0023239457678493336,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.0035242706350637754,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.005914470754553203,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.00979380616068426,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.01710113652924905,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.008352658088140896,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": 0.0040697932261831715,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": -0.012898908763127714,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": -0.007720258791980794,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": 0.0033008164845167443,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": 0.0033008164845167443,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": 0.0033008164845167443,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.04732410835296563,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.03132627020274947,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.030169051895387877,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.033557215845590016,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.027656640476125927,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.03404868889911117,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": -0.02619775253208878,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": -0.007321104267036027,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": -0.018268693206536346,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.029398410010106124,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.015287896135390278,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.019674166239290414,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.02313045910790079,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.028595229134940725,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.030266212583903274,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": -0.013787337928230614,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": -0.027585832848423086,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": -0.024665723287175867,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": -0.017462534849754352,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": -0.017462534849754352,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": -0.017462534849754352,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.019113065226088428,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.01689624228486723,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": -0.0053406579090307105,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.003920895719155437,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.01174920025935807,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": -0.005516458109641779,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": 0.0033008164845167443,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "Delta Spearman rho (mapped - direct)": -0.036273143483701,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "Delta Spearman rho (mapped - direct)": -0.0317541817402757,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "Delta Spearman rho (mapped - direct)": -0.017262516668553718,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "Delta Spearman rho (mapped - direct)": -0.021453490794928937,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "Delta Spearman rho (mapped - direct)": -0.02733063360891493,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "Delta Spearman rho (mapped - direct)": -0.022012964687943188,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Correctness labels L (log scale)": 11009.0,
+      "Delta Spearman rho (mapped - direct)": -0.017462534849754352,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.034990686036300955,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.03702165010498537,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.0533014484181592,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.03012684966377166,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.0291223981070885,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.02654172538304045,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.014284451315949354,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.013559899030708422,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.022650891181407284,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.01489146324706303,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.01264039802868977,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.016945578892646473,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.006367593881655642,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.007286705282372741,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.01181556184428334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.00017920043815511377,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": 0.0014421917680145224,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": 0.0013638334246117712,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": 0.0009740796892940828,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": 0.0009740796892940828,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": 0.0009740796892940828,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.03781699801329541,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.04421388449685104,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.05187827067869122,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.028543159245443817,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.028078731344951202,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.03135517215583228,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.021567101600021288,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.012490918229739023,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.02432356837147176,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.02406447739107276,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.014436285320074682,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.019970747829072266,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.005909179031745371,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.0026740752683848124,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.004443173102555487,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.0034670724657023255,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": 0.00027693838890452405,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.0010588751896288828,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": -0.0019849915518654893,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": -0.0019849915518654893,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": -0.0019849915518654893,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.041771261519815174,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.028596991051300202,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.016831747176021688,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.014825813389466425,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.008489953669437241,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": 0.0008756082514903932,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": 0.0009740796892940828,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.044636384396279226,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.029325687582075766,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.01946052940041069,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.01949050351340657,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": 0.00434214246756189,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.001416336422142228,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Correctness labels L (log scale)": 8747.0,
+      "y": -0.0019849915518654893,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.03175145485176312,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": -0.0029887301902772334,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.009824112236450577,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.005669002880328067,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.021705860842896163,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": -0.013232269126658203,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.010930164478748616,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.00011809222713793366,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.0030981902665071503,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.015153195000153441,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.008816238775660734,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.010148381054058908,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.0076625894685747875,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.0003273396672784923,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.033698567156013826,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.03104192679143669,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.03392772671566502,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.030581193251391636,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.028780715234499432,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.028780715234499432,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.028780715234499432,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.014100125634127658,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": -0.02671225950125028,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.0014503733059961776,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": -0.007533149640762848,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.005666580060831594,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.004713075270716793,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.007218785606306843,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": -0.017388265214382692,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.00328863510673838,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.02818516445391217,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.06776984581633555,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.012945541413114492,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.04678133536797663,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.031615494054563875,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.06443421437673674,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.057778823374357524,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.0536642265130412,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.053979146191377336,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.05238352041406846,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.05238352041406846,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.05238352041406846,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.01286227896597882,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.004714198198855342,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.004715482324131233,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.004607017573918422,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.013896165430622368,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.03185028225283112,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.028780715234499432,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": -0.0037205868537088147,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.0009488352302618464,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": -0.002293614833779156,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.03630018389445407,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Correctness labels L (log scale)": 4000.0,
+      "y": -0.04761034793309241,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Correctness labels L (log scale)": 8000.0,
+      "y": -0.05514073202625869,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Correctness labels L (log scale)": 8421.0,
+      "y": -0.05238352041406846,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.0018791162792967109,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.00041446866186223286,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.03238882604882709,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": -0.006195481234975153,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.027330056798059443,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.010326112849798452,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.021664767080972203,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.034415370254428646,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.02072473408081288,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.04359297549819485,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.03118886871583615,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.025546337610269365,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": -0.004029063504987107,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": -0.004029063504987107,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": -0.004029063504987107,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": -0.0022357560378387653,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": -0.005250439432166076,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": -8.215303670777718e-05,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": -0.00925448928028394,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.031187827925675204,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.00016155231611481025,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.024436417299455893,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.037196326871601904,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.015434189534443088,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.03167351699092913,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.026693101892781956,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": -0.008666226008038347,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": 0.005612591041935566,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": 0.005612591041935566,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": 0.005612591041935566,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": 0.011560803663328678,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.01048689613762758,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.025601623805404577,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.01641183553458721,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": -0.004029063504987107,
+      "series": "vs direct (linear map)",
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "Correctness labels L (log scale)": 250.0,
+      "y": -0.002522782835570873,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Correctness labels L (log scale)": 500.0,
+      "y": 0.007364963653835359,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Correctness labels L (log scale)": 1000.0,
+      "y": 0.025688977901833627,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Correctness labels L (log scale)": 2000.0,
+      "y": 0.016566797625224245,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Correctness labels L (log scale)": 3958.0,
+      "y": 0.005612591041935566,
+      "series": "vs direct (MLP map)",
+      "_kind": "line",
+      "_group": 59
+    }
+  ],
+  "n_series": 60,
+  "total_points": 208,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Short-answer QA (TriviaQA)",
+        "xlabel": "Correctness labels L (log scale)",
+        "ylabel": "Delta Spearman rho (mapped - direct)",
+        "legend_labels": [
+          "vs direct (linear map)",
+          "vs direct (MLP map)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ],
+        "yticklabels": [
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06"
+        ]
+      },
+      {
+        "title_left": "Math (MATH)",
+        "xlabel": "Correctness labels L (log scale)",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      },
+      {
+        "title_left": "Multiple choice (MMLU-Pro)",
+        "xlabel": "Correctness labels L (log scale)",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      },
+      {
+        "title_left": "Code (5-benchmark pool)",
+        "xlabel": "Correctness labels L (log scale)",
+        "xticklabels": [
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      }
+    ],
+    "series": [
+      "vs direct (linear map)",
+      "vs direct (MLP map)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

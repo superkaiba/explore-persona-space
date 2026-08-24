@@ -1,0 +1,171 @@
+{
+  "commit": "a822434a+dirty",
+  "render_id": "633f27b2209545ff",
+  "git_commit": "a822434aed9bf198fe334bb6e288337de9d8ec1f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2388_analyzer_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2388_analyzer_figs.py",
+  "created": "2026-08-24T13:49:56Z",
+  "figsize": [
+    13.6,
+    3.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho": 0.5874499183363905,
+      "series": "Context probe, L=250",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4767308601384334,
+      "series": "Context probe, L=250",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6414493225747735,
+      "series": "Context probe, L=full",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.4822879772314303,
+      "series": "Context probe, L=full",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.568336853110302,
+      "series": "Mapped answer (linear map), L=250",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.45466907164676806,
+      "series": "Mapped answer (linear map), L=250",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.6447501390592902,
+      "series": "Mapped answer (linear map), L=full",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.48663398673398267,
+      "series": "Mapped answer (linear map), L=full",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1700059593292298,
+      "series": "Surface features, L=250",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.07328480295903168,
+      "series": "Surface features, L=250",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.37887108416085147,
+      "series": "Surface features, L=full",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.15495047188488714,
+      "series": "Surface features, L=full",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Short-answer QA (TriviaQA)",
+        "ylabel": "Spearman rho",
+        "legend_labels": [
+          "Context probe, L=250",
+          "Context probe, L=full",
+          "Mapped answer (linear map), L=250",
+          "Mapped answer (linear map), L=full",
+          "Surface features, L=250",
+          "Surface features, L=full"
+        ],
+        "xticklabels": [
+          "Test split\n(rung 0)",
+          "Shifted eval\n(rung 1)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Math (MATH)",
+        "xticklabels": [
+          "Test split\n(rung 0)",
+          "Shifted eval\n(rung 1)"
+        ]
+      },
+      {
+        "title_left": "Multiple choice (MMLU-Pro)",
+        "xticklabels": [
+          "Test split\n(rung 0)",
+          "Shifted eval\n(rung 1)"
+        ]
+      },
+      {
+        "title_left": "Code (5-benchmark pool)",
+        "xticklabels": [
+          "Test split\n(rung 0)",
+          "Shifted eval\n(rung 1)"
+        ]
+      }
+    ],
+    "series": [
+      "Context probe, L=250",
+      "Context probe, L=full",
+      "Mapped answer (linear map), L=250",
+      "Mapped answer (linear map), L=full",
+      "Surface features, L=250",
+      "Surface features, L=full"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

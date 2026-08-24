@@ -1,0 +1,233 @@
+{
+  "commit": "a822434a+dirty",
+  "render_id": "eec24afcb079466d",
+  "git_commit": "a822434aed9bf198fe334bb6e288337de9d8ec1f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2388_analyzer_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2388_analyzer_figs.py",
+  "created": "2026-08-24T13:50:18Z",
+  "figsize": [
+    13.6,
+    3.2
+  ],
+  "points": [
+    {
+      "Correctness rate (K=5 rollouts)": "0",
+      "Fraction of contexts": 0.39636881145420044,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.2",
+      "Fraction of contexts": 0.06020355356218734,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.4",
+      "Fraction of contexts": 0.044635156115232014,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.6",
+      "Fraction of contexts": 0.04191823356908746,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.8",
+      "Fraction of contexts": 0.05679661894083146,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "1.0",
+      "Fraction of contexts": 0.4000776263584613,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0",
+      "y": 0.1257203149095041,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.2",
+      "y": 0.053810567324080835,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.4",
+      "y": 0.04999594188783378,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.6",
+      "y": 0.06225144062981901,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.8",
+      "y": 0.10088466845223602,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "1.0",
+      "y": 0.6073370667965262,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0",
+      "y": 0.235392181378678,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.2",
+      "y": 0.12053013253313329,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.4",
+      "y": 0.09460698507960323,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.6",
+      "y": 0.09252313078269567,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.8",
+      "y": 0.11561223639243144,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "1.0",
+      "y": 0.3413353338334584,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0",
+      "y": 0.37026548672566373,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.2",
+      "y": 0.08424778761061946,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.4",
+      "y": 0.07486725663716814,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.6",
+      "y": 0.07663716814159292,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "0.8",
+      "y": 0.09592920353982301,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "Correctness rate (K=5 rollouts)": "1.0",
+      "y": 0.29805309734513274,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "QA (n=23,188)",
+        "xlabel": "Correctness rate (K=5 rollouts)",
+        "ylabel": "Fraction of contexts",
+        "xticklabels": [
+          "0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "Math (n=12,321)",
+        "xlabel": "Correctness rate (K=5 rollouts)",
+        "xticklabels": [
+          "0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "MMLU-Pro (n=11,997)",
+        "xlabel": "Correctness rate (K=5 rollouts)",
+        "xticklabels": [
+          "0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Code (n=5,650)",
+        "xlabel": "Correctness rate (K=5 rollouts)",
+        "xticklabels": [
+          "0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
