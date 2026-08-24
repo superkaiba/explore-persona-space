@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2517,
+  "highest_id": 2518,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11719,6 +11719,13 @@
       "path": "tasks/proposed/2517",
       "status": "proposed",
       "title": "verify_task_body Lens-14/check-64 substring false-positive: HTML comments inside Takeaways count as concern acknowledgment"
+    },
+    "2518": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2518",
+      "status": "proposed",
+      "title": "bootstrap_pod.sh: install Times-alike serif fonts for pod-side paper figures"
     },
     "256": {
       "has_clean_result": false,
