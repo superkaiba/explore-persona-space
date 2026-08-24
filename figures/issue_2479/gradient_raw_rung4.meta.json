@@ -1,0 +1,192 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "65781fd0e88c4971",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:27Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "AI-likeness axis score (judge, 0-100)": 54.5823,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.07108612321052521,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 67.6009,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.15950988121350418,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 50.3794,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.117781628386188,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 35.6422,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.12440516263305201,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 69.0613,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.17711869494483512,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.111,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.13853816401331087,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 38.5695,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.09678915396804788,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 58.6511,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.06374715494212169,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.1892,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.15299094830476012,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 48.9525,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.12789619515117845,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 72.3335,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.14338676381796978,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 29.566,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.09080923232067695,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 47.7488,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.14747005142508485,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 71.4691,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.17947882420230454,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 55.2611,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.10277477384772638,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 60.6901,
+      "Rung-4 held-out R2 (raw, unnormalized)": 0.15805749637267874,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "AI-likeness axis score (judge, 0-100)",
+        "ylabel": "Rung-4 held-out R2 (raw, unnormalized)",
+        "legend_labels": [
+          "new character",
+          "anchor"
+        ],
+        "annotations": [
+          "Barnaby",
+          "Cobalt",
+          "Dana",
+          "Elena",
+          "Gus",
+          "HELIOS",
+          "Iris",
+          "Marcus",
+          "Marisol",
+          "Mort",
+          "Priya",
+          "Tomas",
+          "Vera",
+          "Vex",
+          "Wren",
+          "Zara"
+        ],
+        "xticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "new character",
+      "anchor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

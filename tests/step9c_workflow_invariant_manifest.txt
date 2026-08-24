@@ -7,6 +7,7 @@
 tests/test_adhoc_summary_disclosure_pins.py
 tests/test_adversarial_planner_factchecker_grain_pin.py
 tests/test_adversarial_planner_warn_disposition.py
+tests/test_atomic_io.py
 tests/test_autonomous_plan_gate.py
 tests/test_autonomous_session_watch.py
 tests/test_check_mcp_json_no_secrets.py
@@ -138,6 +139,7 @@ tests/test_workflow_lint_json_guard_unicode.py
 tests/test_workflow_lint_no_repo_root_syspath.py
 tests/test_workflow_lint_pre_split_guard.py
 tests/test_workflow_lint_prod_import_lockfile.py
+tests/test_workflow_lint_shared_tmp.py
 tests/test_workflow_lint_smoke_blind_spots.py
 tests/test_workflow_lint_two_tier_yield_floor.py
 tests/test_workflow_lint_worktree_task_paths.py

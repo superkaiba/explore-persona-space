@@ -40,23 +40,22 @@ def init_wandb(cfg: DictConfig, tags: list[str] | None = None):
 
 
 def save_json_atomic(path, data, indent=2):
-    """Write JSON atomically via temp file + rename. Prevents corruption on crash."""
+    """Write JSON atomically via a process-unique temp file + rename.
+
+    Re-pointed at ``explore_persona_space.atomic_io.atomic_replace`` (#2336).
+    This is an error-contract FIX, not pure consolidation: the previous body ran a bare
+    ``os.remove(tmp_path)`` inside ``except Exception:`` before ``raise``, so a remove
+    failure propagated INSTEAD of the original serialization exception;
+    ``atomic_replace`` logs the cleanup failure and re-raises the original.
+    Success-path output bytes are unchanged (``indent`` + ``default=str`` preserved).
+    """
     import json
-    import os
-    import tempfile
     from pathlib import Path
 
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False, mode="w", suffix=".tmp") as tmp:
-        tmp_path = tmp.name
-        try:
-            json.dump(data, tmp, indent=indent, default=str)
-        except Exception:
-            tmp.close()
-            os.remove(tmp_path)
-            raise
-    os.replace(src=tmp_path, dst=str(path))
+    from explore_persona_space.atomic_io import atomic_replace
+
+    with atomic_replace(Path(path)) as tmp:
+        tmp.write_text(json.dumps(data, indent=indent, default=str), encoding="utf-8")
 
 
 def save_run_result(path, result, include_metadata=True):

@@ -120,6 +120,52 @@ third leg — CRASH-safety (a crash in the check wedges every session's gate,
 worse than over-strictness; the #2309 error-mode duty applies to lint-flag
 variants too).
 
+**#2336 r1 (2026-08-24) sharpening — donor-citation archaeology for
+verbatim-hoist claims:** when the plan pins a donor by (commit, line-range)
+for a "verbatim hoist except one change" claim, resolve BOTH at compose time
+— the range can match CURRENT origin/main while the pinned COMMIT has the
+function at a different line WITHOUT a later-landed guard (#2336: plan cited
+`issue2329_run.py:1404-1438 @ 27206c15d9`; at that commit the function sat at
+:1256 lacking the OSError→log guard, which landed in a later r3 commit).
+Attest the true archaeology, instruct Codex to diff against the CURRENT form
+(`git -C . show HEAD:<donor>` — verify worktree HEAD's copy is identical to
+origin/main's first), and pre-route the citation mismatch as PLAN imprecision
+(at most Minor), never an implementer defect. Without this, the twin either
+diffs against the wrong (guard-less) donor and false-FAILs the "one change"
+claim, or bloks on an unresolvable line range. Also from #2336 r1: a
+brief-supplied "adjudicate these N disclosed deviations" list composes as a
+dedicated `## Disclosed-deviation adjudications` output section with one
+grounded `**Adjudication (D<k>):** upheld|rejected — <file:line>` line each
+(the [[brief-named-concern-adjudication]] pattern, generalized to
+deviations); and stakes-both-directions for a fleet lint ratchet gains a
+third leg — CRASH-safety (a crash in the check wedges every session's gate,
+worse than over-strictness; the #2309 error-mode duty applies to lint-flag
+variants too).
+
+**#2336 r2 (2026-08-24) sharpenings — predicate-fix closure rounds on a LIVE
+fleet lint gate:** (a) a scan-identity claim ("post-fix allowlist=() scan
+per-line IDENTICAL, 208/118 both sides") composes as a bounded SHAPE-GREP
+corroboration battery the no-uv twin can run (`git -C . grep` per fixed
+shape whose live instance would falsify identity, hand-classify hits) with a
+REQUIRED header line `**Allowlist-delta claim:** CORROBORATED | REFUTED |
+UNVERIFIABLE` — REFUTED = substantive (frozen allowlist now wrong on a gate
+every session runs); UNVERIFIABLE residuals route to a CONCERN row, never
+FAIL. (b) An orchestrator-run probe TABLE (n probes vs expected, executed on
+round code) inlines as SETTLED facts with the explicit duty "hunt shapes
+NONE of them covers" + the over-correction note (which probes show the real
+waiver/true-positive still work). (c) A recorded plan-amendment note inlines
+verbatim in its own envelope with a REQUIRED `**Plan-amendment coverage:**
+COMPLETE | INCOMPLETE` header line; the twin enumerates regex-TEXT changes
+from the DIFF HUNKS itself (never the note's own list) — an uncovered
+predicate-text change is substantive. (d) Hand-rolled lexer/finditer helpers
+added to the fleet no-flags path get a named crash-safety duty (adversarial
+line shapes: unterminated string, trailing backslash, quote-in-comment,
+triple-quote, `#` inside f-string expr) — a reachable exception is Critical
+(the third stakes direction beyond FP/FN). (e) Stats hygiene: re-derive
+per-file `--numstat` at compose time; a marker whose per-file split
+disagrees while totals agree gets pre-triaged in the prompt as "at most a
+Minor report-accuracy note" so the twin doesn't build a blocker on it.
+
 **#2309 r1 (2026-08-23) sharpening — `task.py post-marker`-path gate variant
 (diff adds validation on the LIVE marker-posting path, not a lint flag):**
 hollow-gate = trace the validator is CALLED from the post-marker handler
@@ -136,3 +182,17 @@ EXCLUDED (the Codex marker template supersedes it) — assert
 check must tolerate ONE prose mention of `---BEGIN APPROVED PLAN BODY---`
 in the blocked-read paragraph (assert on the END token count + first-BEGIN
 position, not `count == 1`).
+**#2313 r1 (2026-08-23) sharpenings:** (i) brief-VERBATIM review questions can
+embed stale source line refs (`:16272` vs the worktree's actual 16374 for
+`_LESSONS_MAX_BYTES`) — keep the question verbatim (it is the brief's
+extraction contract) but add a compose-time-fact correction verifying the
+VALUE and naming the true line, plus a post-question steer to the substance;
+(ii) a `diverged_on_main` pin whose file content probes IDENTICAL to current
+origin/main simplifies the duty — state that fact so Codex knows main's whole
+concurrent delta is the pinned-sha-vs-merge-base diff and needs no further
+main-side walk; (iii) a brief-supplied judgment-call question (headroom-spend
+vs wording-tighten) composes with explicit routing: verdict-body answer +
+optional `CONCERN::` row, never a FAIL. Also validated again: crash-safety
+hypothesis duty (fact-8 stakes-both-directions wording) for a check wired
+into the no-flags default run.
+
