@@ -119,35 +119,53 @@ fetch+reset; SLURM materialize_branch_src), so the clone will NOT have it
 network beyond a bounded fetch):
 
 ```bash
-uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N>
+REPO_BRANCH="$(uv run python scripts/verify_carryover_inputs.py --print-repo-branch --issue <N>)"   # the ONE shared issue-scoped resolver — re-derived per fence; never the cwd branch (#2263)
+: "${REPO_BRANCH:?repo-branch resolver refused — read its stderr above; a wholly-main-resident workload passes --repo-branch main explicitly at BOTH gate and launch (#2263)}"
+LANE_ARGS=()   # rsync lanes set LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}") per § Rsync-lane invocation — the SAME assignment at BOTH fences, so gate and launch recheck grade ONE lane set (#2263 r3)
+uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N> --repo-branch "$REPO_BRANCH" "${LANE_ARGS[@]}"
 ```
 
 - Exit `0` -> proceed to 6a.6. WARN lines are informational — carry them into
   the step notes; a `data-local-only` WARN means the workload must self-build
   or HF-stage that input (artifact-reuse check (h)); never block on a WARN.
 - Exit `1` with ONLY recoverable failures -> remediate in-step and re-run the
-  gate ONCE: `committed-unpushed` -> push the branch (`git -C "$WT" push
-  origin issue-<N>`, bare, exit code checked); `on-main-not-on-branch` ->
-  merge origin/main into the branch (or rebase it) in the WORKTREE and push
-  (the file is already committed — never `git add`). Still failing, or any
-  `untracked-local-only` failure -> same contract as the first stanza: post
-  `epm:carry-over-missing v1` with the helper's failure lines, set status
-  `blocked`, post the §5 marker via `scripts/post_step_completed.py`
-  (`--step 6c --exit-kind failure-exit --notes "carry-over local input
-  unreachable on pushed ref"`), EXIT. Remediation for untracked files is a
-  commit+push of the cited file on the issue branch (the #1434 fix), then
-  re-run `/issue <N>`.
-- Exit `2` (plan missing/unreadable) -> fail loud like a missing plan in the
-  first stanza; do NOT skip the gate.
+  gate ONCE: `committed-unpushed` -> push the branch
+  (`git push origin "$REPO_BRANCH"`, bare, exit code checked; re-run the
+  Step 6a.5 assignment line first if `$REPO_BRANCH` is unset in this shell);
+  `on-main-not-on-branch` -> merge origin/main into the branch (or rebase it)
+  in the WORKTREE and push (the file is already committed — never `git add`).
+  Still failing, or any `untracked-local-only` failure -> same contract as
+  the first stanza: post `epm:carry-over-missing v1` with the helper's
+  failure lines, set status `blocked`, post the §5 marker via
+  `scripts/post_step_completed.py` (`--step 6c --exit-kind failure-exit
+  --notes "carry-over local input unreachable on pushed ref"`), EXIT.
+  Remediation for untracked files is a commit+push of the cited file on the
+  issue branch (the #1434 fix), then re-run `/issue <N>`.
+- Exit `2` (plan missing/unreadable, the shared resolver refusing — no
+  unambiguous live issue worktree — or the check ref unresolvable:
+  `--repo-branch` absent from origin, an unpushed worktree branch, or
+  suffixed `issue-<N>-*` candidates with no explicit branch) -> fail loud
+  like a missing plan in the first stanza; remediate by re-running the
+  resolver assignment line / threading `--repo-branch` explicitly at BOTH
+  fences (the lead remedy) or pushing the branch it names; do NOT skip the
+  gate.
 
 Residual risks this gate does NOT cover (it reduces the class, not
 eliminates it): config-file indirection, runtime-constructed paths (the gate
 catches the plan-text citation, not the consumer's path construction),
 HF-staged `data/` inputs (WARN only — staging correctness stays with
 artifact-reuse check (h)(iii)), direct `dispatch_issue.py` launches that
-bypass 6a.5, and extension-less citations. The check ref defaults to
-`origin/issue-<N>`; where the lane's materialization ref is known to differ
-(RunPod `BOOTSTRAP_BRANCH` defaults to `main`), thread `--ref` accordingly.
+bypass 6a.5, and extension-less citations. Worktree/branch state switched
+BETWEEN this gate and the Step 6b launch is covered by the launch fence's
+gate RECHECK against its own resolved branch (#2263 r2); the residual there
+is only the non-atomic gap between that recheck and the dispatch command
+itself. The check ref resolves via the
+#2263 precedence ladder (`--ref` verbatim > `--repo-branch` -> its
+`origin/<branch>`, refused when absent from origin > the invoking worktree's
+issue-scoped branch > the legacy `origin/issue-<N>`-or-`origin/main` default,
+refusing when suffixed `origin/issue-<N>-*` siblings exist); where the lane's
+materialization ref is known to differ (RunPod `BOOTSTRAP_BRANCH` defaults to
+`main`), thread `--ref` / `--repo-branch` accordingly.
 
 **Rsync-lane invocation (#1835).** When the task's `backend:` frontmatter
 names an rsync-materialized SLURM lane — every member of
@@ -155,17 +173,32 @@ names an rsync-materialized SLURM lane — every member of
 legacy `cluster` alias — OR is absent/`auto` (the auto chain is
 runpod-first, but a RunPod capacity miss falls through to fellows — an
 rsync lane — so `auto` must satisfy the rsync-lane bar too), run the gate
-with `--lane rsync` plus any
-plan-named `--extra-sync-path` values: git-reachability is necessary but NOT
-sufficient there — the lane's scratch tree is an rsync of
+in rsync mode: set
+`EXTRA_SYNC_ARGS=(--extra-sync-path eval_results/issue_<M>/ladder)` to any
+plan-named values (omit when none), then replace the fence's default
+`LANE_ARGS=()` with `LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}")` —
+in BOTH fences, per their identical assignment lines. Git-reachability is
+necessary but NOT sufficient there — the lane's scratch tree is an rsync of
 `RSYNC_INCLUDE_PATHS` with `eval_results/` excluded, so an in-ref
 `eval_results/...` citation NOT covered by the sync set downgrades to FAIL
 `rsync-lane-not-synced` (#1689). That FAIL is recoverable IN-STEP, not a
 park: add the covering `--extra-sync-path` value(s) and re-run the gate
-ONCE. Compose the gate call and the later `dispatch_issue.py launch` from
-ONE variable (e.g. `EXTRA_SYNC_ARGS=(--extra-sync-path
-eval_results/issue_<M>/ladder)` threaded to BOTH) so the gate-PASSing set
-and the launched set cannot drift.
+ONCE. The gate invocation lines at BOTH fences expand the SAME
+`"${LANE_ARGS[@]}"` token IN THE COMMAND (#2263 r3 — lane parity by
+construction, not by comment: a recheck graded under different lane args
+than the 6a.5 gate is a different gate), and the launch argv expands
+`${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}` IN THE COMMAND (#2263
+r4 — `--extra-sync-path` threads through `dispatch_issue.py` into the
+lane's rsync materialization; the `+`-guard expands to zero words where
+the array is unset, so non-rsync lanes are unaffected). With both
+assignments above applied in the Step 6b shell, the recheck-graded set
+and the launched set read ONE `EXTRA_SYNC_ARGS` variable and cannot
+drift within that shell. What REMAINS operator duty: shell state does
+not persist between the two fence blocks, so the `EXTRA_SYNC_ARGS` +
+`LANE_ARGS` assignments must be applied identically at BOTH fences —
+the same per-fence duty as re-running the `$REPO_BRANCH` resolver
+assignment line (a 6b shell run without them is graded AND launched as
+a non-rsync lane — consistent, but with NO rsync-coverage check).
 
 #### Step 6a.6: HF write-headroom probe (quota gate, before provisioning)
 
@@ -335,8 +368,10 @@ alias for nibi) triggers a conflict warning +
 `extra.frontmatter_backend_unrecognized=true` — the latter two also
 carry `extra.frontmatter_backend: "<value>"`. Frontmatter
 `backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
-on the pushed branch, so you MUST pass `--repo-branch issue-<N>`
-EXPLICITLY: the orchestrator runs `dispatch_issue.py` from the repo
+on the pushed branch, so you MUST pass `--repo-branch "$REPO_BRANCH"`
+EXPLICITLY (the Step 6a.5 shared issue-scoped resolver's output,
+re-derived per fence — #2263): the orchestrator runs
+`dispatch_issue.py` from the repo
 ROOT (pinned to `main`), so the `--repo-branch` default (the cwd's
 current branch) resolves to `main`, NOT the issue branch where a
 per-issue driver script lives (#595). Defense-in-depth
@@ -449,7 +484,8 @@ launch and `--workload-cmd` carries dispatch scripts on every lane.)
 **Ad-hoc probe workloads are committed scripts invoked by path — never
 inline interpreter one-liners in `--workload-cmd`.** A probe dispatch
 composes exactly like a full run: a committed script on the pushed issue
-branch, invoked by path with `--repo-branch issue-<N>`; staging/phase
+branch, invoked by path with `--repo-branch "$REPO_BRANCH"` (the shared
+resolver's output); staging/phase
 logic lives in the script, never in the command string. An inline
 `python -c '...'` / `uv run python - <<EOF` one-liner as the workload
 body is the named anti-pattern — un-lintable and un-smokeable (ruff, the
@@ -723,6 +759,22 @@ BACKEND=$(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.ba
 # --gpus / --time-budget-hours for anything else.
 INTENT=<inferred>
 
+REPO_BRANCH="$(uv run python scripts/verify_carryover_inputs.py --print-repo-branch --issue <N>)"   # the ONE shared issue-scoped resolver — re-derived per fence; never the cwd branch (#2263)
+: "${REPO_BRANCH:?repo-branch resolver refused — read its stderr above; a wholly-main-resident workload passes --repo-branch main explicitly at BOTH gate and launch (#2263)}"
+LANE_ARGS=()   # rsync lanes set LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}") per § Rsync-lane invocation — the SAME assignment at BOTH fences, so gate and launch recheck grade ONE lane set (#2263 r3)
+# Launch-fence gate RECHECK (#2263 r2, cross-fence-ref-drift): re-runs the
+# carry-over gate against THIS fence's resolved branch, so a worktree
+# switched between the 6a.5 gate and this launch is re-graded before any
+# dispatch. The `if ! ...` guard is the MECHANICAL halt (#2263 r3): this block
+# runs without `set -e`, so a bare recheck's non-zero rc would NOT stop the
+# adjacent dispatch command below — the guard must exit, not a comment. On
+# failure, follow the Step 6a.5 exit-code contract (remediate / fail loud);
+# re-run the Step 6a.5 `PLAN_PATH=` assignment first if unset in this shell.
+if ! uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N> --repo-branch "$REPO_BRANCH" "${LANE_ARGS[@]}"; then
+    echo "launch-fence gate recheck FAILED (rc above) — dispatch REFUSED; remediate per the Step 6a.5 exit-code contract, then re-run this fence (#2263)" >&2
+    exit 1
+fi
+
 # Single operational call — runs the router (auto / explicit override
 # both flow through here). On RunPod the underlying pod_lifecycle.py
 # enforces team scoping (X-Team-Id), SSH bring-up (startSsh: true,
@@ -731,12 +783,22 @@ INTENT=<inferred>
 # renders + ssh-submits the sbatch; on GCP the GcpBackend renders +
 # ``gcloud compute instances create``s the VM. Hydra args repeatable.
 uv run python scripts/dispatch_issue.py launch \
-    --issue <N> --intent "$INTENT" --repo-branch "issue-<N>" \
+    --issue <N> --intent "$INTENT" --repo-branch "$REPO_BRANCH" \
+    ${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"} \
     ${BACKEND:+--backend "$BACKEND"}
-# --repo-branch is MANDATORY: the orchestrator dispatches from the repo
-# root (main), so omitting it clones main on the gcp/auto lane and a
-# per-issue driver script is absent (#595). Drop it ONLY if the workload
-# is wholly on main (no issue-branch-only script).
+# --repo-branch is MANDATORY and comes from the SAME shared resolver as
+# the Step 6a.5 gate fence (#2263) — never a hand-typed branch: the
+# orchestrator dispatches from the repo root (main), so omitting it
+# clones main on the gcp/auto lane and a per-issue driver script is
+# absent (#595). A wholly-main-resident workload passes
+# --repo-branch main explicitly (the resolver refuses there by design).
+# On an rsync lane the SAME `EXTRA_SYNC_ARGS` values the gate + recheck
+# graded thread into the dispatch itself (#2263 r4): `--extra-sync-path`
+# rides dispatch_issue.py into the lane's rsync materialization
+# (backends/slurm.py), so a gate PASS earned via `--extra-sync-path` is
+# a set the launch actually stages. The `${VAR[@]+...}` guard expands to
+# ZERO words where the array is unset — non-rsync lanes are unaffected,
+# and the expansion is safe under `set -u`.
 ```
 
 `dispatch_issue.py launch` prints ONE JSON line on stdout with the
@@ -817,9 +879,25 @@ if [ -n "$PARENT_ID" ] && uv run python scripts/pod.py list-ephemeral --issue "$
   uv run python scripts/pod.py resume --issue "$PARENT_ID"
   # Record the assigned pod as epm-issue-$PARENT_ID in the launch marker.
 else
-  # Fresh launch through the router (the canonical path above).
-  uv run python scripts/dispatch_issue.py launch \
-      --issue <N> --intent "$INTENT" ${BACKEND:+--backend "$BACKEND"}
+  # Parent pod gone — fresh launch. Do NOT dispatch from here: run the FULL
+  # canonical Step 6b launch fence above ("The operational command") — its
+  # shared --print-repo-branch resolver, mechanical launch-fence gate
+  # RECHECK, and EXTRA_SYNC_ARGS threading are mandatory and deliberately
+  # NOT duplicated in this block (#2263 r6: one launch site, nothing to
+  # drift). A bare dispatch omitting them is NOT reliably refused (#2263
+  # r8): with a live issue worktree checked out on a non-main branch (the
+  # normal /issue topology) the current-branch/worktree defaulting RESOLVES
+  # a branch and the bare dispatch LAUNCHES on it — skipping the recheck
+  # and under-staging any rsync lane. The #2161 guard refuses (exit 2)
+  # only when ALL THREE hold, in the order the guard checks them: (a) no
+  # --repo-branch was passed AND that defaulting resolved nothing (invoking
+  # checkout on main/unresolvable AND no issue worktree on a non-main
+  # branch); (b) a repo-materializing lane is reachable (backend
+  # auto/absent, gcp, a SLURM lane, or runpod with --execute-workload — a
+  # provision-only runpod launch materializes no branch and never refuses);
+  # (c) issue-<N> branch refs exist (the ref probe fails OPEN on git
+  # errors — a git hiccup never blocks a launch).
+  echo "parent pod not alive — run the canonical Step 6b launch fence above (this block does not dispatch)" >&2
 fi
 ```
 
