@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2551,
+  "highest_id": 2552,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11959,6 +11959,13 @@
       "path": "tasks/proposed/2551",
       "status": "proposed",
       "title": "Codex ensemble dispatch grants write access to five read-only review sites (--no-write missing from canonical snippet)"
+    },
+    "2552": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2552",
+      "status": "proposed",
+      "title": "Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder"
     },
     "256": {
       "has_clean_result": false,
