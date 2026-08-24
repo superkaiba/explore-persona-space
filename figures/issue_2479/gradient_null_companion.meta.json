@@ -1,0 +1,191 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "c00514482a2a41fd",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:35Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "AI-likeness axis score (judge, 0-100)": 54.5823,
+      "Random-operator recovery fraction": -0.0577072864796398,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 67.6009,
+      "Random-operator recovery fraction": -0.03573232133107512,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 50.3794,
+      "Random-operator recovery fraction": -0.05018122280117608,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 35.6422,
+      "Random-operator recovery fraction": -0.03427666087061745,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 69.0613,
+      "Random-operator recovery fraction": -0.038488118132652294,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.111,
+      "Random-operator recovery fraction": -0.04061078284661158,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 38.5695,
+      "Random-operator recovery fraction": -0.04918103608766672,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 58.6511,
+      "Random-operator recovery fraction": -0.06048654301818759,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.1892,
+      "Random-operator recovery fraction": -0.03470401670928223,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 48.9525,
+      "Random-operator recovery fraction": -0.0404934511596034,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 72.3335,
+      "Random-operator recovery fraction": -0.03875962332337558,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 29.566,
+      "Random-operator recovery fraction": -0.05704393399282807,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 47.7488,
+      "Random-operator recovery fraction": -0.03721693099631551,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 71.4691,
+      "Random-operator recovery fraction": -0.031745558081370646,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 55.2611,
+      "Random-operator recovery fraction": -0.039716109424374896,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 60.6901,
+      "Random-operator recovery fraction": -0.03297693336088291,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "AI-likeness axis score (judge, 0-100)",
+        "ylabel": "Random-operator recovery fraction",
+        "legend_labels": [
+          "new character",
+          "anchor"
+        ],
+        "annotations": [
+          "Barnaby",
+          "Cobalt",
+          "Dana",
+          "Elena",
+          "Gus",
+          "HELIOS",
+          "Iris",
+          "Marcus",
+          "Marisol",
+          "Mort",
+          "Priya",
+          "Tomas",
+          "Vera",
+          "Vex",
+          "Wren",
+          "Zara"
+        ],
+        "xticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "\u22120.065",
+          "\u22120.060",
+          "\u22120.055",
+          "\u22120.050",
+          "\u22120.045",
+          "\u22120.040",
+          "\u22120.035",
+          "\u22120.030"
+        ]
+      }
+    ],
+    "series": [
+      "new character",
+      "anchor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

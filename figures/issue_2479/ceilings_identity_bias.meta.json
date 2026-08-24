@@ -1,0 +1,260 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "2651b278f9b14294",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:44Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "Held-out R2": 0.1936380039281228,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "Held-out R2": 0.20285613937137037,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "Held-out R2": 0.2099622421244427,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "Held-out R2": 0.20018778449799512,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "Held-out R2": 0.2049223548419561,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "Held-out R2": 0.19008231383750207,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "Held-out R2": 0.21395290087327656,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "Held-out R2": 0.15066612613633767,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "Held-out R2": 0.17575085275843627,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.8,
+      "Held-out R2": 0.16195352258902862,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.8,
+      "Held-out R2": 0.18144567145475954,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.8,
+      "Held-out R2": 0.18096698237188247,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.8,
+      "Held-out R2": 0.21010507974742076,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.8,
+      "Held-out R2": 0.16399641220272254,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.8,
+      "Held-out R2": 0.1943383038573825,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.8,
+      "Held-out R2": 0.15342512969384847,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "Held-out R2": -0.4854339555639602,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "Held-out R2": -0.5051226879634407,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "Held-out R2": -0.47350807121974325,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "Held-out R2": -0.39749511631058687,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "Held-out R2": -0.40676357929069207,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "Held-out R2": -0.5210465808582332,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "Held-out R2": -0.39780739749754224,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "Held-out R2": -0.5845008201056716,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "Held-out R2": -0.4692325914390505,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.2,
+      "Held-out R2": -0.6885287355560041,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.2,
+      "Held-out R2": -0.4554298609741907,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.2,
+      "Held-out R2": -0.4398246152990928,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.2,
+      "Held-out R2": -0.42662560099295543,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 13.2,
+      "Held-out R2": -0.5657391178931688,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 14.2,
+      "Held-out R2": -0.477393872803606,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 15.2,
+      "Held-out R2": -0.4358509842438476,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "Held-out R2",
+        "legend_labels": [
+          "own-ceiling R2 (ladder direction)",
+          "identity + learned-bias R2"
+        ],
+        "xticklabels": [
+          "Vera",
+          "HELIOS",
+          "Iris",
+          "Cobalt",
+          "Priya",
+          "Marcus",
+          "Wren",
+          "Mort",
+          "Vex",
+          "Barnaby",
+          "Elena",
+          "Tomas",
+          "Dana",
+          "Marisol",
+          "Gus",
+          "Zara"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4"
+        ]
+      }
+    ],
+    "series": [
+      "own-ceiling R2 (ladder direction)",
+      "identity + learned-bias R2"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
