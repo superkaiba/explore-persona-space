@@ -98,6 +98,20 @@ lint-check diff whose payload is `.claude/skills/**` fence edits under a
    fleet gate, and an over-strict new check arm is itself a fleet-blocking
    false-FAIL class — so over-strictness findings weigh equal to bugs.
 
+**#2313 r1 (2026-08-23) sharpenings:** (i) brief-VERBATIM review questions can
+embed stale source line refs (`:16272` vs the worktree's actual 16374 for
+`_LESSONS_MAX_BYTES`) — keep the question verbatim (it is the brief's
+extraction contract) but add a compose-time-fact correction verifying the
+VALUE and naming the true line, plus a post-question steer to the substance;
+(ii) a `diverged_on_main` pin whose file content probes IDENTICAL to current
+origin/main simplifies the duty — state that fact so Codex knows main's whole
+concurrent delta is the pinned-sha-vs-merge-base diff and needs no further
+main-side walk; (iii) a brief-supplied judgment-call question (headroom-spend
+vs wording-tighten) composes with explicit routing: verdict-body answer +
+optional `CONCERN::` row, never a FAIL. Also validated again: crash-safety
+hypothesis duty (fact-8 stakes-both-directions wording) for a check wired
+into the no-flags default run.
+
 **#2309 r1 (2026-08-23) sharpening — `task.py post-marker`-path gate variant
 (diff adds validation on the LIVE marker-posting path, not a lint flag):**
 hollow-gate = trace the validator is CALLED from the post-marker handler
