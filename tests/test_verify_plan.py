@@ -5654,6 +5654,22 @@ def test_c26_mirror_fail_open_unknown_lane_head(capsys):
     assert "'moon'" in capsys.readouterr().err
 
 
+def test_c26_mirror_fail_open_undecodable_source(tmp_path, monkeypatch, capsys):
+    # #2514 round-2 blocker 1: UnicodeDecodeError from read_text subclasses
+    # ValueError, NOT OSError, so pre-fix it escaped both except arms and —
+    # because _C26_INTENT_GPU binds at MODULE SCOPE — made verify_plan.py
+    # unimportable fleet-wide (the #1388 class the plan registers as a kill
+    # criterion). An undecodable router source must take the SAME static
+    # runpod fallback as an unreadable one, with a stderr note.
+    bad = tmp_path / "router.py"
+    bad.write_bytes(b"\xff\xfe not utf-8 \x9c")
+    monkeypatch.setattr(verify_plan, "_C26_ROUTER_SRC_PATH", bad)
+    mirror, head = verify_plan._c26_routed_intent_gpu()
+    assert mirror == verify_plan._C26_RUNPOD_FALLBACK_INTENT_GPU
+    assert head == "runpod"
+    assert "verify_plan: note:" in capsys.readouterr().err
+
+
 def test_verify_plan_module_stays_hermetic_of_backend_imports():
     # #2514 kill criterion: the mirror is AST-derived from SOURCE TEXT, never
     # imported — verify_plan's module source must carry no router or

@@ -7,22 +7,34 @@ Two subcommands:
     ``check_capture_intent_hbm`` (c27) — imported from a given
     ``verify_plan.py`` path, never a re-implementation (the #2276
     ``issue2276_c62c63_corpus_sweep.py`` convention) — over every
-    ``tasks/*/*/plans/v*.md`` under ``--repo-root`` and appends one JSON row
-    per plan (c26/c27 status + detail head + resolved intents) to ``--out``
-    (JSONL; header row first). Point ``--verify-plan-path`` at a
-    ``git show <ref>:scripts/verify_plan.py`` materialization for the
-    BEFORE leg and at the live ``scripts/verify_plan.py`` for the AFTER leg.
+    ``tasks/*/*/plans/v*.md`` under ``--repo-root``, writing one JSON row
+    per plan (c26/c27 status + detail head + resolved intents + the c26
+    basis-row token meta the classifier replays) to ``--out`` (JSONL;
+    header row first). Checkpoint-per-unit: each row is flushed the moment
+    its plan completes, with one stdout line per completed unit. Re-runnable:
+    when ``--out`` exists and its header matches the current regime
+    (``verify_plan_path`` / ``mirror`` / ``lane_head`` /
+    ``under_hbm_intents``), prior rows are KEPT (rewritten compacted,
+    dropping any truncated tail a killed run left) and completed plans are
+    SKIPPED; a header-regime mismatch restarts from scratch. Point
+    ``--verify-plan-path`` at a ``git show <ref>:scripts/verify_plan.py``
+    materialization for the BEFORE leg and at the live
+    ``scripts/verify_plan.py`` for the AFTER leg.
 
 ``classify``
     Diffs a before/after JSONL pair and buckets EVERY c26/c27 verdict flip
-    into the #2514 plan taxonomy: ``expected-inversion`` (the routed family
-    set changed for the plan's resolved intents), ``c27-disarm`` (a c27
+    into the #2514 plan taxonomy: ``expected-inversion`` (DIRECTIONAL — the
+    realized before AND after verdicts both EQUAL the verdict predicted by
+    replaying the c26 offender rule over the row's recorded basis-row
+    tokens under the old/new mirror respectively; round-2 reconciler
+    item 2 — the round-1 ``fams_old != fams_new`` read was true by
+    construction under a wholesale family remap), ``c27-disarm`` (a c27
     FAIL/WARN — or a downstream no->=7B-signal SKIP — that becomes the D3
     empty-under-floor PASS), ``new-key-arming`` (a c26 SKIP that now
     resolves because the plan books a key new to the mirror, e.g. inf-70b /
-    ft-70b), and ``unexplained`` (anything else). A non-empty
-    ``unexplained`` set exits 1 — the plan's KILL criterion; never baseline
-    it away.
+    ft-70b), and ``unexplained`` (anything else, incl. a flip whose
+    direction the mirror does NOT predict). A non-empty ``unexplained`` set
+    exits 1 — the plan's KILL criterion; never baseline it away.
 
 Every file is verified with ``kind="experiment"`` uniformly (the #1395
 ``issue1395_corpus_audit.py`` convention): the sweep is a label DIFF of two
@@ -71,8 +83,74 @@ def _load_verify_plan(path: Path, repo_root: Path):
     return mod
 
 
+#: Header keys that define a sweep's regime — a resume is legal only when
+#: ALL of them match the existing file's header (round-2 reconciler item 3).
+_HEADER_REGIME_KEYS = ("verify_plan_path", "mirror", "lane_head", "under_hbm_intents")
+
+
+def _c26_row_meta(mod, text: str) -> list[dict]:
+    """The c26 offender-rule tokens per compute-table row with a basis-cell
+    GPU-family hit — extracted with the SWEPT module's OWN helpers (each leg
+    records what its own check saw). ``classify`` replays the offender rule
+    over these under either mirror to DERIVE the predicted verdict (the
+    directional expected-inversion predicate, round-2 reconciler item 2)."""
+    meta: list[dict] = []
+    for _component, basis, wall, row_text in mod._c26_compute_table_rows(text):
+        hit = mod._C26_BASIS_GPU_RE.search(basis)
+        if not hit:
+            continue
+        conv = f"{basis} {wall}"
+        meta.append(
+            {
+                "basis_family": mod._c26_family(hit.group(1)),
+                "conv_families": sorted(
+                    {mod._c26_family(m.group(1)) for m in mod._C26_ROW_GPU_ANY_RE.finditer(conv)}
+                ),
+                "scaling": bool(mod._C26_SCALING_RE.search(row_text)),
+            }
+        )
+    return meta
+
+
+def _resume_rows(out: Path, header: dict) -> dict[str, dict]:
+    """Prior sweep rows to KEEP when resuming into ``out``: parseable rows
+    (a truncated trailing line from a killed run is dropped) under a header
+    whose regime keys ALL match the current run's. A missing file, a file
+    with no parseable header, or a regime mismatch returns {} — start
+    fresh (the mismatch case prints which keys differ)."""
+    if not out.exists():
+        return {}
+    existing_header: dict | None = None
+    rows: dict[str, dict] = {}
+    with out.open(encoding="utf-8") as fh:
+        for line in fh:
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                break  # truncated tail — rows before it still count
+            if "header" in obj:
+                existing_header = obj["header"]
+            else:
+                rows[obj["plan"]] = obj
+    if existing_header is None:
+        print(f"[sweep] {out} has no parseable header — restarting from scratch", flush=True)
+        return {}
+    mismatched = [k for k in _HEADER_REGIME_KEYS if existing_header.get(k) != header.get(k)]
+    if mismatched:
+        print(
+            f"[sweep] {out} header regime mismatch on {mismatched} — restarting from scratch",
+            flush=True,
+        )
+        return {}
+    return rows
+
+
 def cmd_sweep(args: argparse.Namespace) -> int:
-    """Append one JSON row per plan (checkpoint-per-unit; re-runnable)."""
+    """One JSON row per plan, checkpointed per unit: every row is flushed the
+    moment its plan completes, with one stdout progress line per completed
+    unit. Re-runnable via ``_resume_rows``: prior same-regime rows are kept
+    (rewritten compacted so a truncated tail can never corrupt the file) and
+    their plans skipped; a header-regime mismatch restarts from scratch."""
     mod = _load_verify_plan(args.verify_plan_path, args.repo_root)
     plans = sorted(args.repo_root.glob("tasks/*/*/plans/v*.md"))
     under = getattr(mod, "_C27_UNDER_HBM_INTENTS", None)
@@ -85,28 +163,45 @@ def cmd_sweep(args: argparse.Namespace) -> int:
         "lane_head": getattr(mod, "_C26_LANE_HEAD", None),
         "under_hbm_intents": sorted(under),
     }
+    plan_rels = {str(p.relative_to(args.repo_root)) for p in plans}
+    done = {
+        rel: row
+        for rel, row in _resume_rows(args.out, header).items()
+        # a row without c26_rows predates the directional-taxonomy schema
+        # (round-1 sweep version) — re-sweep it rather than KeyError classify
+        if rel in plan_rels and "c26_rows" in row
+    }
+    if done:
+        print(f"[sweep] resuming {args.out}: {len(done)}/{len(plans)} plans done", flush=True)
     t0 = time.time()
     with args.out.open("w", encoding="utf-8") as fh:
         fh.write(json.dumps({"header": header}) + "\n")
+        for row in done.values():
+            fh.write(json.dumps(row) + "\n")
+        fh.flush()
         for i, path in enumerate(plans, 1):
+            rel = str(path.relative_to(args.repo_root))
+            if rel in done:
+                continue
             text = path.read_text(errors="replace")
             r26 = mod.check_gpu_basis_routed_machine(text, "experiment")
             r27 = mod.check_capture_intent_hbm(text, "experiment")
             row = {
-                "plan": str(path.relative_to(args.repo_root)),
+                "plan": rel,
                 "intents": sorted(mod._c26_intents(text)),
                 "c26": r26.status,
                 "c26_detail": r26.detail[:160],
                 "c27": r27.status,
                 "c27_detail": r27.detail[:160],
+                "c26_rows": _c26_row_meta(mod, text),
             }
             fh.write(json.dumps(row) + "\n")
-            if i % 250 == 0 or i == len(plans):
-                print(
-                    f"[sweep] unit {i}/{len(plans)} {path.name} elapsed={time.time() - t0:.0f}s",
-                    flush=True,
-                )
-    print(f"[sweep] wrote {args.out} ({len(plans)} plans)", flush=True)
+            fh.flush()
+            print(
+                f"[sweep] unit {i}/{len(plans)} {path.name} elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+    print(f"[sweep] wrote {args.out} ({len(plans)} plans, {len(done)} resumed)", flush=True)
     return 0
 
 
@@ -126,6 +221,34 @@ def _load_rows(path: Path) -> tuple[dict, dict[str, dict]]:
 
 def _families(intents: list[str], mirror: dict[str, str]) -> frozenset[str]:
     return frozenset(mirror[i] for i in intents if i in mirror)
+
+
+def _predicted_c26(row_meta: list[dict], intents: list[str], mirror: dict[str, str]) -> str:
+    """The c26 verdict a mirror ALONE predicts for a plan's recorded
+    basis-row tokens — an independent replay of the check's routed-side
+    offender rule (basis family not in the routed set; no routed family in
+    the conversion cells; no scaling escape), NOT a re-run of the check.
+    ``expected-inversion`` requires the realized verdict to EQUAL this
+    prediction on BOTH sides of the flip (round-2 reconciler item 2): a
+    flip the mirror does not predict — a gate change, a row-parsing change,
+    an escape anomaly — lands in ``unexplained``. The check's
+    mirror-INDEPENDENT gates (kind exemption, no-rows SKIP, standalone-N/A
+    PASS, runpod-pin SKIP) are deliberately not replayed: they are constant
+    across the before/after runs of one plan text, so they cannot produce a
+    flip — a flip that nonetheless traces to one is exactly the anomaly the
+    unexplained bucket must surface."""
+    routed = {mirror[i] for i in intents if i in mirror}
+    if not routed:
+        return "SKIP"
+    for r in row_meta:
+        if r["basis_family"] in routed:
+            continue
+        if set(r["conv_families"]) & routed:
+            continue
+        if r["scaling"]:
+            continue
+        return "WARN"
+    return "PASS"
 
 
 def cmd_classify(args: argparse.Namespace) -> int:
@@ -177,7 +300,18 @@ def cmd_classify(args: argparse.Namespace) -> int:
             # c26 flips
             if b["c26"] == "SKIP" and set(a["intents"]) & new_keys:
                 buckets["new-key-arming"].append(entry)
-            elif fams_old != fams_new:
+                continue
+            # DIRECTIONAL predicate (round-2 reconciler item 2): the round-1
+            # `fams_old != fams_new` read was true by construction for every
+            # mapped-intent plan under a wholesale family remap — it
+            # certified only "families changed". Expected-inversion now
+            # requires the realized verdicts to MATCH the per-plan verdicts
+            # the old/new mirrors predict from the recorded basis-row tokens.
+            predicted_before = _predicted_c26(b["c26_rows"], b["intents"], mirror_old)
+            predicted_after = _predicted_c26(a["c26_rows"], a["intents"], mirror_new)
+            entry["predicted_before"] = predicted_before
+            entry["predicted_after"] = predicted_after
+            if b["c26"] == predicted_before and a["c26"] == predicted_after:
                 buckets["expected-inversion"].append(entry)
             else:
                 buckets["unexplained"].append(entry)

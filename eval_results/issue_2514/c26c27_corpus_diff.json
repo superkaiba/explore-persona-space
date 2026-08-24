@@ -1,0 +1,3964 @@
+{
+  "n_plans": 4595,
+  "n_flips": 208,
+  "counts": {
+    "expected-inversion": 175,
+    "c27-disarm": 26,
+    "new-key-arming": 7,
+    "unexplained": 0
+  },
+  "buckets": {
+    "expected-inversion": [
+      {
+        "plan": "tasks/archived/456/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row '**Total**' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row \u2014 a basis ",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/archived/456/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row '**Total**' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row \u2014 a basis ",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/archived/456/plans/v3.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row '**Total**' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row \u2014 a basis ",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/archived/459/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 \u2014 retrain ~20 gap (cell, seed) combos' basis names H100; row '**TOTAL**' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INT",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/archived/459/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 \u2014 retrain ~20 gap (cell, seed) combos' basis names H100; row '**TOTAL**' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INT",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1090/plans/v11.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "4 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis measure",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1090/plans/v12.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "4 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis measure",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1090/plans/v13.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "4 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis measure",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1090/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "4 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1' basis names A100-80; row 'P2' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scalin",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1092/plans/v10.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'A capture+encode' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1092/plans/v11.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'A capture+encode' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1092/plans/v12.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'A capture+encode' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1092/plans/v13.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'A capture+encode' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1092/plans/v14.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'A capture+encode' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1092/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'A capture+encode' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1092/plans/v9.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'A capture+encode' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1112/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "14 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Tier-2 gen (3 new behavior cells + 2 generic) \u00d7 200 + parity' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1112/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "14 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Tier-2 gen (3 new behavior cells + 2 generic) \u00d7 200 + parity' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1315/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Tier-2 trained gen (2 cells \u00d7 200) + 4 parity probes (100 ge' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1315/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Tier-2 trained gen (2 cells \u00d7 200) + 4 parity probes (100 ge' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1315/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Tier-2 trained gen (2 cells \u00d7 200) + 4 parity probes (100 ge' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1315/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'p8 own-text capture (merge + 100 greedy gens + TF 28-layer 3' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head wit",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1315/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'p8 own-text capture (merge + 100 greedy gens + TF 28-layer 3' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head wit",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1332/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 16 band-stopped trainings' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1332/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 16 band-stopped trainings' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1332/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 16 band-stopped trainings' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1332/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 16 band-stopped trainings' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1332/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 16 band-stopped trainings' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1333/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 retrain ext_bare \u2192 step 100, save every 5' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-G",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1333/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 retrain ext_bare \u2192 step 100, save every 5' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-G",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1333/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 retrain ext_bare \u2192 step 400 (full parent horizon), save e' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1333/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 retrain ext_bare \u2192 step 400 (full parent horizon), save e' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1335/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 generation' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1335/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 generation' basis names A100; row 'P3 fits' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1335/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 generation' basis names A100; row 'P3 fits' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1335/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 generation' basis names A100; row 'P3 fits' basis names A100; row 'R-P3 fits (inner-group-CV)' basis names A100 but resolved intent(s) route ['H100'] un",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1335/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 gen (per lane)' basis names A100; row 'P3 fits (per lane)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1335/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 gen (per lane)' basis names A100; row 'P3 fits (per lane)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1335/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 gen (per lane)' basis names A100; row 'P3 fits (per lane)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1336/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase G: on-policy generation, 5 models \u00d7 (5k lmsys + 5k gsm' basis names A100-80; row 'Phase A: ladder alignment battery (total_calls = 7 pairs \u00d7 4' basis",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1336/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase G: on-policy generation, 5 models \u00d7 (5k lmsys + 5k gsm' basis names A100-80; row 'Phase A: ladder alignment battery (total_calls = 7 pairs \u00d7 4' basis",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1336/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase G: on-policy generation, 5 models \u00d7 (5k lmsys + 5k gsm' basis names A100-80; row 'Phase A: ladder alignment battery (total_calls = 7 pairs \u00d7 4' basis",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1336/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'D1.4 refit battery + D1.6 calibration (\u2248190 eigh fp64 + 3,20' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1336/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'D1.4 refit battery + D1.6 calibration (\u2248190 eigh fp64 + 3,20' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1336/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'E1.a\u2013c recal + nulls + bootstrap + fold checks + gain spectr' basis names A100 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane head",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1336/plans/v9.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'E1.a\u2013c recal + nulls + bootstrap + fold checks + gain spectr' basis names A100 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane head",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1345/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '2a' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis measure",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1345/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'gen_stories_paired (vLLM, 2,700 wrappers + retry, instruct o' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head wit",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1345/plans/v9.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'gen_stories_paired (vLLM, 2,700 wrappers + retry, instruct o' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head wit",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1415/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 capture' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1417/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 generation: 10 units \u00d7 4,724 \u00d7 \u22641,024 tok sampled' basis names A100; row 'PC-2 fits: (10 new + 4 anchor) cells \u00d7 2 arms \u00d7 28 layers + ' basis names A100",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1417/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 generation: 10 units \u00d7 4,724 \u00d7 \u22641,024 tok sampled' basis names A100; row 'PC-2 fits: (10 new + 4 anchor) cells \u00d7 2 arms \u00d7 28 layers + ' basis names A100",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1417/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 generation: 10 units \u00d7 4,724 \u00d7 \u22641,024 tok sampled' basis names A100; row 'PC-2 fits: (10 new + 4 anchor) cells \u00d7 2 arms \u00d7 28 layers + ' basis names A100",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1426/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '**Total**' basis names A100-40 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1426/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '**Total**' basis names A100-40 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a basis ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1434/plans/v10.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['L4']",
+        "after_detail": "row 'Q3 control-panel gen (pod)' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in t",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1434/plans/v11.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['L4']",
+        "after_detail": "row 'Q3 control-panel gen (pod)' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in t",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1434/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['L4']",
+        "after_detail": "row 'Q3 dose-panel gen (pod)' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1434/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['L4']",
+        "after_detail": "row 'Q3 dose-panel gen (pod)' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1434/plans/v9.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['L4']",
+        "after_detail": "row 'Q3 control-panel gen (pod)' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in t",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1481/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'L4']",
+        "after_detail": "row 'A1+A2+A3 content train+rungs+ladder-gen (108 fresh runs + 12' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1481/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'L4']",
+        "after_detail": "row 'A1+A2+A3 content train+rungs+ladder-gen (108 fresh runs + 12' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v10.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'S3 PCA basis rebuild (train_full covariance + eigh)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v11.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'S3 PCA basis rebuild (train_full covariance + eigh)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v12.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'S3 PCA basis rebuild (train_full covariance + eigh)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v4.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'B2: capture (10,000 seqs, ~5.0e6 tok, layer 19)' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with no stated cro",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v5.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'B2: capture (10,000 seqs, ~5.0e6 tok, layer 19)' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with no stated cro",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'B2: capture (10,000 seqs, ~5.0e6 tok, layer 19)' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated c",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'B2: capture (10,000 seqs, ~5.0e6 tok, layer 19)' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated c",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'S3 PCA basis rebuild (train_full covariance + eigh)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1482/plans/v9.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'S3 PCA basis rebuild (train_full covariance + eigh)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1738/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "capture-7b",
+          "cpu-mid",
+          "lora-7b",
+          "sweep-8g-a100"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "A100",
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "row 'Phase 2 capture fleet' basis names H100 but resolved intent(s) route ['A100', 'CPU'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU', 'H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1773/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Pass B window extraction' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the ro",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1773/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Pass B window extraction' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the ro",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1773/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Pass B window extraction' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the ro",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1773/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Pass B window extraction' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the ro",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1773/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Pass B window extraction' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the ro",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1774/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 fits + operators' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1774/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 fits + operators' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1774/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 fits + operators' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1774/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P2 fits + operators' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1776/plans/v5.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'p3_swapgen (3,000 rollouts \u22641024 tok: 2,250 steered + 750 ba' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) wit",
+        "after_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1946/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'L4']",
+        "after_detail": "row 'X1 capture+encode' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a b",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1946/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'L4']",
+        "after_detail": "row 'X1 capture+encode' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a b",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1946/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'L4']",
+        "after_detail": "row 'X1 capture+encode' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a b",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1946/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "eval",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'L4']",
+        "after_detail": "row 'X1 capture+encode' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the row \u2014 a b",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/2054/plans/v9.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "cpu-bigmem",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "row 'R3 capture 48 cells' basis names H100 but resolved intent(s) route ['A100', 'CPU'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in t",
+        "after_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['CPU', 'H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/2222/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 capture (24k rows, 4 kinds, 28 layers)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-G",
+        "after_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/2356/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 generation (pod)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row ",
+        "after_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/2477/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase C generation (pod, contingent)' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scal",
+        "after_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/504/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 trajectory eval (vLLM gen + HF logp for 6 checkpoint' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) wit",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/504/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 trajectory eval (vLLM gen + HF logp for 6 ckpts \u00d7 56' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) wit",
+        "after_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/504/plans/v3.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b",
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 trajectory eval (vLLM gen + HF logp for 6 ckpts \u00d7 56' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) wit",
+        "after_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/504/plans/v4.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval",
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 trajectory eval (vLLM gen + HF logp through FIXED re' basis names H100 but resolved intent(s) route ['A100', 'L4'] under auto (GCP INTENT_TO_MACHIN",
+        "after_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/504/plans/v5.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval",
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100",
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 trajectory eval (vLLM gen + HF logp through FIXED re' basis names H100 but resolved intent(s) route ['A100', 'L4'] under auto (GCP INTENT_TO_MACHIN",
+        "after_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/537/plans/v4.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 marker cross-eval (1,344 cells \u00d7 32 Q, G2 hooks ON)' basis names H200 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no s",
+        "after_detail": "17 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/537/plans/v5.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 marker cross-eval (1,440 cells (v5) \u00d7 32 Q, G2 hooks ON)' basis names H200 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with",
+        "after_detail": "17 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/537/plans/v6.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 marker cross-eval (480 cells (v6) \u00d7 32 Q, G2 hooks ON)' basis names H200 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with n",
+        "after_detail": "17 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/545/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 trains (bad-medical 3 seeds \u00d7 5 arms-ish + marker 3 + edu' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) wit",
+        "after_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/545/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 trains (bad-medical 3 seeds \u00d7 5 arms-ish + marker 3 + edu' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) wit",
+        "after_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/559/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase G: vLLM greedy generation, 700 prompts' basis names H100; row 'Phase S0 + S: HF forward scoring, 700 + 700 slots' basis names H100 but resolved inten",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/559/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase G: vLLM greedy generation, 700 prompts' basis names H100; row 'Phase S0 + S: HF forward scoring, 700 + 700 slots' basis names H100 but resolved inten",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/585/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'corrected re-eval (6 ckpts: vLLM gen+DV-A, then HF KL+slot s' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with ",
+        "after_detail": "4 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/585/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'corrected re-eval (6 ckpts: vLLM gen+DV-A, then HF KL+slot s' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with ",
+        "after_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/591/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'e2 Phase B base-model gen' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in the ",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/602/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'New-family shift extraction (1b, 25 cells)' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GP",
+        "after_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/603/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Extraction, 21 cells \u00d7 24 personas \u00d7 20 q, `same` variant' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with no ",
+        "after_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/605/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 marker candidate measurement (146 ctx \u00d7 50 probes ge' basis names H100; row 'Phase 2 marker trained sweep (640 cells) + corrected-slot re' basis na",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/605/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 marker candidate measurement (146 ctx \u00d7 50 probes ge' basis names H100; row 'Phase 2 marker trained sweep (640 cells) + corrected-slot re' basis na",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/627/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 1 smoke cell (1 cell, 12k gens)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scal",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/642/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 0.5 install-pilot (4 arms \u00d7 ~44 steps + coarse stage-A' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/642/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 0.5 install-pilot (4 arms \u00d7 ~44 steps + coarse stage-A' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v10.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase D-x recon: point fits (LOCO 50-fold + LOFO 7-fold, 252' basis names A100-40 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane h",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v11.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase D-x recon: point fits (LOCO 50-fold + LOFO 7-fold, 252' basis names A100-40 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane h",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v6.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'D-g-recon ridge + nulls (cuda)' basis names A100-40; row 'D-g MLP validity arm (cuda, chunk 256)' basis names A100-40 but resolved intent(s) route ['CPU', ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v7.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase D-x recon: point fits (LOCO 50-fold + LOFO 7-fold, 252' basis names A100-40 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane h",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase D-x recon: point fits (LOCO 50-fold + LOFO 7-fold, 252' basis names A100-40 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane h",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v9.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b",
+          "cpu-mid"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase D-x recon: point fits (LOCO 50-fold + LOFO 7-fold, 252' basis names A100-40 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane h",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v19.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'G2 generation (2 models \u00d7 600\u20131,200 prompts \u00d7 \u2264768 tok, vLLM' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v20.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'G2 generation (2 models \u00d7 600\u20131,200 prompts \u00d7 \u2264768 tok, vLLM' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v21.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'G2 generation (2 models \u00d7 600\u20131,200 prompts \u00d7 \u2264768 tok, vLLM' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v22.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'G2 generation: per model, arm B 600\u00d7\u2264768 + wave-2, arm C 6,0' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/841/plans/v8.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 1 capture (96k cx_last, batched **fp32** forward, TF32' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/841/plans/v9.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 1 capture (96k cx_last, batched **fp32** forward, TF32' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/920/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 set-B generation (GPU, vLLM)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/920/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 set-B generation (GPU, vLLM)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/920/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 set-B generation (GPU, vLLM)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/923/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "cpu-mid",
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase 1c F_full store-cell forwards' basis names A100 but resolved intent(s) route ['CPU', 'H100'] under the runpod auto lane head with no stated cross-GPU",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/923/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "cpu-mid",
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase 1a+1b gen+TF-capture, new arms' basis names A100-80; row 'Phase 1c F_full store-cell forwards' basis names A100 but resolved intent(s) route ['CPU', ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/923/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "cpu-mid",
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100",
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100', 'CPU']",
+        "after_detail": "row 'Phase 1a+1b gen+TF-capture, new arms' basis names A100-80; row 'Phase 1c F_full store-cell forwards' basis names A100 but resolved intent(s) route ['CPU', ",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/928/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase G generation' basis names A100; row 'Phase B TF capture' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head wi",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/928/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase G generation' basis names A100; row 'Phase B TF capture' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head wi",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/928/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase G generation' basis names A100; row 'Phase B TF capture' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head wi",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/931/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 Arm-B story generation (vLLM)' basis names A100; row 'P3 fit battery (9 cells + power curve) + G1' basis names A100 but resolved intent(s) route ['H100'",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/931/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 Arm-B story generation (vLLM)' basis names A100; row 'P3 fit battery (9 cells + power curve) + G1' basis names A100 but resolved intent(s) route ['H100'",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/931/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 Arm-B story generation (vLLM)' basis names A100; row 'P3 fit battery (9 base cells + 2 boundary-token variant cell' basis names A100 but resolved intent",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/931/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'P1 Arm-B story generation (vLLM)' basis names A100; row 'P3 fit battery (9 base cells + 2 boundary-token variant cell' basis names A100 but resolved intent",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/952/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '1e: ridge batteries + parity' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/952/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '1e: ridge batteries + parity' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/952/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '1e: ridge batteries + parity' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/952/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '1e: ridge batteries + parity' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/952/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "capture-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row '1e: ridge batteries + parity' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in th",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/completed/1073/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 greedy gen (5,000 \u00d7 ~300 tok)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scalin",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/1073/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 greedy gen (5,000 \u00d7 ~300 tok)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scalin",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/1073/plans/v3.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'P1 greedy gen (5,000 \u00d7 ~300 tok)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scalin",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/448/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1+2 per-cell (build + train + merge + eval + upload)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with ",
+        "after_detail": "8 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/448/plans/v3.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 2 smoke train (Anchor cell, 1 epoch, \u2264 700 rows, 4\u00d7 H1' basis names H100; row 'Phase 4 eval (11 outer \u00d7 24 panel \u00d7 20 q = 5280 prompts \u00d7 2 ' basis na",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/478/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 (on-policy R-gen, 55 personas \u00d7 60 q)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cro",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/478/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 (on-policy R-gen, 55 personas \u00d7 60 q)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cro",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/478/plans/v3.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 (on-policy R-gen, 55 personas \u00d7 60 q)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cro",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/478/plans/v4.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 (on-policy R-gen, 55 personas \u00d7 60 q)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cro",
+        "after_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/478/plans/v5.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 1 (on-policy R-gen, 55 personas \u00d7 60 q)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cro",
+        "after_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/479/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Stage-1 train (1 cell, 2 seeds, sequential \u2014 1 GPU available' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) wit",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/483/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "3 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'recipe-(b): vLLM gen (~3.5k greedy, \u22641024 tok) + TF mean-poo' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/completed/483/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "3 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'recipe-(b): vLLM gen (~3.5k greedy, \u22641024 tok) + TF mean-poo' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/completed/483/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "3 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'recipe-(b): vLLM gen (~3.5k greedy, \u22641024 tok) + TF mean-poo' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with n",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/completed/492/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'smoke-phase per-cell train+eval (1 ep, count=2)' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated c",
+        "after_detail": "3 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/492/plans/v3.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row \"Wave 0 \u2014 A0' re-eval\" basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/507/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval",
+          "inf-70b"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 3 (72B predictor extraction, base only) \u2014 standalone f' basis names H100; row '**Total (co-location default, Phase 5 fires)**' basis names H100; row ",
+        "after_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/515/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 2 SocioT scoring (~20,400 completions \u00d7 10 GPT-2 forwa' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with ",
+        "after_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/516/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase B SFT warm arm' basis names H100 but resolved intent(s) route ['A100'] under auto (GCP INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row",
+        "after_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/522/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Phase 2: H100 JS matrix sample + cross-persona teacher-force' basis names H100 but resolved intent(s) route ['L4'] under auto (GCP INTENT_TO_MACHINE) with ",
+        "after_detail": "3 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/608/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'train remaining 11 cells' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/completed/608/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'train remaining 11 cells' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/completed/608/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "5 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'train remaining 11 cells' basis names A100-80 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-GPU scaling in the",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/completed/628/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Smoke cells + parity probes' basis names H100; row 'Legacy-rig arm train + dual-slot G-eval (32 adapters, 34 col' basis names H100; row 'Reuse-arm negative",
+        "after_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/completed/628/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "ft-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "row 'Smoke cells + parity probes' basis names H100; row 'Legacy-rig arm train + dual-slot G-eval (32 adapters, 34 col' basis names H100; row 'Reuse-arm negative",
+        "after_detail": "9 table row(s); no unscaled cross-GPU basis vs routed ['H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/followups_running/823/plans/v1.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "6 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 3: TF extraction B1+B2+C (GPU A100-80)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cross-G",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/followups_running/823/plans/v2.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 3: TF extraction A\u2032+B1+B2+C (GPU A100-80)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cros",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/followups_running/823/plans/v3.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 3: TF extraction A\u2032+B1+B2+C (GPU A100-80)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cros",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/followups_running/823/plans/v4.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 3: TF extraction A\u2032+B1+B2+C (GPU A100-80)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cros",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/followups_running/823/plans/v5.md",
+        "check": "c26",
+        "before": "PASS",
+        "after": "WARN",
+        "intents": [
+          "lora-7b"
+        ],
+        "families_old": [
+          "A100"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "7 table row(s); no unscaled cross-GPU basis vs routed ['A100']",
+        "after_detail": "row 'Phase 3: TF extraction A\u2032+B1+B2+C (GPU A100-80)' basis names A100 but resolved intent(s) route ['H100'] under the runpod auto lane head with no stated cros",
+        "predicted_before": "PASS",
+        "predicted_after": "WARN"
+      },
+      {
+        "plan": "tasks/running/2389/plans/v1.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "cpu-bigmem",
+          "inf-70b"
+        ],
+        "families_old": [
+          "CPU"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "row 'P2 anchors (14,040 rollouts + pipelined V_a + margin)' basis names H100 but resolved intent(s) route ['CPU'] under auto (GCP INTENT_TO_MACHINE) with no sta",
+        "after_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['CPU', 'H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/running/2389/plans/v2.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "cpu-bigmem",
+          "eval",
+          "inf-70b"
+        ],
+        "families_old": [
+          "CPU",
+          "L4"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "row 'P2 anchors (14,040 rollouts + pipelined V_a + margin)' basis names H100 but resolved intent(s) route ['CPU', 'L4'] under auto (GCP INTENT_TO_MACHINE) with ",
+        "after_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['CPU', 'H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      },
+      {
+        "plan": "tasks/running/2389/plans/v3.md",
+        "check": "c26",
+        "before": "WARN",
+        "after": "PASS",
+        "intents": [
+          "cpu-bigmem",
+          "eval",
+          "inf-70b"
+        ],
+        "families_old": [
+          "CPU",
+          "L4"
+        ],
+        "families_new": [
+          "CPU",
+          "H100"
+        ],
+        "before_detail": "row 'P2 anchors (14,040 rollouts + pipelined V_a + margin)' basis names H100 but resolved intent(s) route ['CPU', 'L4'] under auto (GCP INTENT_TO_MACHINE) with ",
+        "after_detail": "12 table row(s); no unscaled cross-GPU basis vs routed ['CPU', 'H100']",
+        "predicted_before": "WARN",
+        "predicted_after": "PASS"
+      }
+    ],
+    "c27-disarm": [
+      {
+        "plan": "tasks/awaiting_promotion/1689/plans/v4.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1689/plans/v5.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1689/plans/v6.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1689/plans/v7.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1689/plans/v8.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1689/plans/v9.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/1979/plans/v4.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation capture') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (cont",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/667/plans/v1.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "debug",
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation-extraction') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (c",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/667/plans/v2.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "debug",
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation-extraction') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (c",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/667/plans/v3.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/667/plans/v4.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/744/plans/v1.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/744/plans/v2.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/761/plans/v1.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation-capture') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (cont",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v1.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v2.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/810/plans/v3.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v1.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v15.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v16.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v17.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation store') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (contex",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v2.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v23.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('activation capture') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (cont",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v3.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/awaiting_promotion/825/plans/v4.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('residual-stream') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      },
+      {
+        "plan": "tasks/followups_running/2476/plans/v1.md",
+        "check": "c27",
+        "before": "FAIL",
+        "after": "PASS",
+        "intents": [
+          "eval"
+        ],
+        "families_old": [
+          "L4"
+        ],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "capture vocabulary ('hidden-state') with a >=7B model while the plan books the eval (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane (context: '",
+        "after_detail": "armed, no under-floor intent exists: every GPU intent in the runpod-head mirror resolves to >=40 GB HBM (a future small-HBM lane re-arms the offending set autom"
+      }
+    ],
+    "new-key-arming": [
+      {
+        "plan": "tasks/completed/488/plans/v1.md",
+        "check": "c26",
+        "before": "SKIP",
+        "after": "PASS",
+        "intents": [
+          "inf-70b"
+        ],
+        "families_old": [],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "no resolvable --intent token \u2014 routed machine unknown (auto-lane GPU cannot be inferred)",
+        "after_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['H100']"
+      },
+      {
+        "plan": "tasks/completed/488/plans/v2.md",
+        "check": "c26",
+        "before": "SKIP",
+        "after": "PASS",
+        "intents": [
+          "inf-70b"
+        ],
+        "families_old": [],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "no resolvable --intent token \u2014 routed machine unknown (auto-lane GPU cannot be inferred)",
+        "after_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['H100']"
+      },
+      {
+        "plan": "tasks/completed/489/plans/v1.md",
+        "check": "c26",
+        "before": "SKIP",
+        "after": "PASS",
+        "intents": [
+          "inf-70b"
+        ],
+        "families_old": [],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "no resolvable --intent token \u2014 routed machine unknown (auto-lane GPU cannot be inferred)",
+        "after_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['H100']"
+      },
+      {
+        "plan": "tasks/completed/489/plans/v2.md",
+        "check": "c26",
+        "before": "SKIP",
+        "after": "PASS",
+        "intents": [
+          "inf-70b"
+        ],
+        "families_old": [],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "no resolvable --intent token \u2014 routed machine unknown (auto-lane GPU cannot be inferred)",
+        "after_detail": "10 table row(s); no unscaled cross-GPU basis vs routed ['H100']"
+      },
+      {
+        "plan": "tasks/completed/489/plans/v3.md",
+        "check": "c26",
+        "before": "SKIP",
+        "after": "PASS",
+        "intents": [
+          "inf-70b"
+        ],
+        "families_old": [],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "no resolvable --intent token \u2014 routed machine unknown (auto-lane GPU cannot be inferred)",
+        "after_detail": "11 table row(s); no unscaled cross-GPU basis vs routed ['H100']"
+      },
+      {
+        "plan": "tasks/completed/489/plans/v4.md",
+        "check": "c26",
+        "before": "SKIP",
+        "after": "PASS",
+        "intents": [
+          "inf-70b"
+        ],
+        "families_old": [],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "no resolvable --intent token \u2014 routed machine unknown (auto-lane GPU cannot be inferred)",
+        "after_detail": "13 table row(s); no unscaled cross-GPU basis vs routed ['H100']"
+      },
+      {
+        "plan": "tasks/completed/489/plans/v5.md",
+        "check": "c26",
+        "before": "SKIP",
+        "after": "PASS",
+        "intents": [
+          "inf-70b"
+        ],
+        "families_old": [],
+        "families_new": [
+          "H100"
+        ],
+        "before_detail": "no resolvable --intent token \u2014 routed machine unknown (auto-lane GPU cannot be inferred)",
+        "after_detail": "13 table row(s); no unscaled cross-GPU basis vs routed ['H100']"
+      }
+    ],
+    "unexplained": []
+  }
+}

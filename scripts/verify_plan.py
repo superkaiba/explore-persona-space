@@ -5111,7 +5111,11 @@ def _c26_routed_intent_gpu(
             router_src = _C26_ROUTER_SRC_PATH.read_text(encoding="utf-8")
         if gpu_src is None:
             gpu_src = _C26_GPU_HEURISTICS_SRC_PATH.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
+        # UnicodeDecodeError subclasses ValueError, NOT OSError — an
+        # undecodable byte in either source would otherwise escape both
+        # arms and crash the MODULE-SCOPE mirror bind (#1388 class; #2514
+        # round-2 blocker 1). Same fail-open arm, never a crash.
         _c26_note(f"c26 mirror sources unreadable ({exc}) — using the static runpod fallback")
         return dict(_C26_RUNPOD_FALLBACK_INTENT_GPU), "runpod"
     try:
