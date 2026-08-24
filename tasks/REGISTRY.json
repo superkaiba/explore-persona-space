@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2552,
+  "highest_id": 2553,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11967,6 +11967,13 @@
       "path": "tasks/proposed/2552",
       "status": "proposed",
       "title": "Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder"
+    },
+    "2553": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2553",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a spec-freshness SPECS omits .gitleaksignore \u2014 the sibling-file arm stages sibling scripts it cannot commit"
     },
     "256": {
       "has_clean_result": false,
