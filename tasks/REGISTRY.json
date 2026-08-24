@@ -11921,8 +11921,8 @@
       "goal": "(1) In CoT-trained models, measure R2 and acc@1 for four maps \u2014 post-context\u2192answer, post-context\u2192CoT, post-context\u2192CoT+answer, post-CoT\u2192answer \u2014 on a corpus that DOES versus DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained model's context vector can predict the POST-CoT-trained model's post-</think> answer state, and how the fitted map changes across the CoT-training step, using a matched same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/2546",
-      "status": "approved",
+      "path": "tasks/running/2546",
+      "status": "running",
       "title": "Can the context\u2192answer map predict the POST-CoT answer, and how does CoT training change the map?"
     },
     "2547": {
