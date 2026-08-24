@@ -188,3 +188,29 @@ paragraph and the Concerns-to-persist bracket. Also carry the reconcile's
 trigger-likelihood rationale with a BOTH-directions moot note ("moot once the
 check exists": no discounting a closure gap on unlikely-trigger grounds, no
 escalating a closed item on consequence grounds).
+
+**Docstring-only closure of the twin's OWN concern + read-only probe
+sanction (#2327 r3, 2026-08-24):** two composable deltas. (a) When a
+concern the twin itself raised (and re-marked verified-open) is closed
+DOCSTRING-ONLY by a binding orchestrator scope decision (gate deliberately
+KEPT), compose a SETTLED SCOPE block barring re-argument of the kept gate,
+and make the closure contract DISCLOSURE-ACCURACY: VERIFIED-CLOSED iff
+(i) every qualified surface accurately describes the real gate behavior,
+(ii) a composer-directed SWEEP finds zero residual overclaim on any OTHER
+surface, (iii) zero runtime change (the hunks must be docstring/comment-
+only). Frame the prior overclaim as the exact defect class the round
+closes, so the accuracy hunt has teeth without reopening the scope call.
+(b) When a fix rests on an EMPIRICAL git rc/stderr-grammar probe and the
+twin's sandbox runs the SAME git version (attest it), sanction READ-ONLY
+git probes against the REAL repo (rev-parse --verify --quiet on real/
+nonexistent paths, git -C /tmp for the not-a-repo cell) instead of the
+scratch-repo carve-out — no write mode needed; require Codex to say which
+cells are probe-grounded vs reasoned. Also: since concerns' latest events
+are `addressed` (open-only EMPTY), a same-id CONCERN:: row IS the
+sanctioned reopen mechanism — state that explicitly (the no-re-emission
+ban applies only to still-OPEN rows), and pin re-raise severities per-id
+(NIT reopens at NIT). Give the one genuine behavior change an INVERSION
+check: the narrowing must not convert a previously-correct classification
+into a degraded verdict in any normally-reachable state — trace the
+exception consumer (main()'s except → rc → caller line) rather than
+trusting the marker's description.
