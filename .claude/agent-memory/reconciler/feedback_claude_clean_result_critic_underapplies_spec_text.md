@@ -125,6 +125,12 @@ DISCARD class AC (#2223 r4/fold-r2, PASS): **harmful-content sanitized-placehold
 
 Re-confirmed (2nd datapoint after #2330): "fixed in the plan before the run" / "plan-fixed" = sanctioned temporal-honesty register, DISCARD — doubly so when the identical register is byte-present in the PASSed pre-fold body. Re-confirmed class U tail: 83-word fresh bullet (< 100 hard tier, acknowledged) → tightening CONCERN, never the Codex hard-FAIL; pre-fold bullets out of scope via the fold diff. Lens 11 severity split re-confirmed: per-ARM bars fully showing the claim's units (0-of-18 read) with per-turn aggregation underneath = partial coverage → CONCERN (add the literal `Per-unit exemption:` token) — not #923's zero-coverage REVISE; check 59's forward-only ≥2353 gate is corroborating calibration evidence, not a lens discharge.
 
+## #2474 crc r3 addendum (2026-08-24, postnorm fold — APPROVE; all 3 Codex CONCERNs narrowed to bounded edits)
+
+Class-Z sibling (4th+ datapoint): **"the figure must PLOT the heading's number"** — no SPEC clause; three-beat beat 1 binds the what-is-plotted to the FIGURE ("exactly what the figure shows"), not the heading, and SPEC 1229 prescribes numbers IN headings. When the heading's load-bearing value (a loo delta whose CI excludes zero) is carried by an in-result TABLE right below the figure, it is NOT the #2330 "anchored only by LINKED panels" REVISE class — grade CONCERN, fix with one what-is-plotted sentence naming the table as carrier; never sanction figure regeneration. Per-unit dots covering the PLOTTED cut but not the heading's other-cut aggregate = the #2223 partial-coverage CONCERN split again.
+
+Takeaways-staleness call: **pre-norm/primary-convention champion values are NOT stale when a robustness fold CONFIRMS them** (diagnostic delta CIs straddle zero) — the rolling synthesis correctly keeps the primary values + a "surviving <fold>" clause; a Codex edit swapping in the diagnostic-convention values (and dropping the bullet's actual claim) is rejected with an explicit Do-NOT line. The upholdable residue is parenthetical MISATTRIBUTION (a separate arm's change attached as the survival evidence) — fix by re-scoping the parenthetical, not by value swap.
+
 Related: [[feedback_claude_underclasses_silent_failures]] (same over-trust of mechanical signals in code review); [[feedback_cross_loop_ci_conflict]].
 
 ## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
