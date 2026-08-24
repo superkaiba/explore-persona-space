@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2538,
+  "highest_id": 2539,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11866,6 +11866,13 @@
       "path": "tasks/planning/2538",
       "status": "planning",
       "title": "Step 10d merge-conflict-recovery block omits gh pr ready, so a recovery-path merge dies on the draft precondition and misroutes to the Failure bullet"
+    },
+    "2539": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2539",
+      "status": "proposed",
+      "title": "Step 10d lint gate outer timeout fence is a launch-time constant while inner mapped-leg fences derive from TG_T \u2014 gate kills itself"
     },
     "256": {
       "has_clean_result": false,
