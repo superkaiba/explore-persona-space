@@ -24,9 +24,20 @@ crashes the compose instead of shipping stale rubrics. Also confirm
 `git log -1` + clean `git status` on the three sources vs the base
 prompt's mtime before trusting containment.
 
-**How to apply:** #2476 recipes at `/tmp/codex-2476-crc{4,5}-compose.py`
-(crc5 = latest; ran clean 2026-08-23 r5, incl. a fresh dismissal row +
-envelope execution-error assert).
+**How to apply:** #2476 recipes at `/tmp/codex-2476-crc{4,5,6}-compose.py`
+(crc6 = latest; ran clean 2026-08-24 r6 = fold re-gate round, incl. the
+fold-figure /tmp extraction + composer attestations).
+
+**Status-folder path staleness (crc6, 2026-08-24):** the reuse base
+embeds the task's ABSOLUTE body/plan paths in THREE places — the header
+BODY/PLAN lines AND the Lens 13 patched plan-path pointer (which quotes
+the header path verbatim mid-lens). A task that changed status folders
+between rounds (`interpreting` → `followups_running` when a fold round
+started) leaves all three stale; re-derive via `task.py find` and rep1
+each, and keep `tasks/<old-status>/<N>` in the stale-string sweep so a
+missed occurrence crashes the compose (that sweep is what caught the
+Lens 13 one). The old interpretation /tmp filename is a fourth same-class
+slot.
 Round-specific spans to replace: PRIOR CRITIQUE SUMMARIES block (ends
 at `\n\nAll paths above`), ROUND-N SCOPE + BINDING DISMISSALS block
 (ends at the `=== INLINED` banner), the three envelopes (BEGIN..END
