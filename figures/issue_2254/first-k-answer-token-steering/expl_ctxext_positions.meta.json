@@ -1,8 +1,9 @@
 {
-  "figure": "expl_h4_pre_vs_shuffled",
+  "figure": "expl_ctxext_positions",
   "git_commit": "ebbeb565",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2254/first-k-answer-token-steering/expl_h4_pre_vs_shuffled.meta.json",
     "figures/issue_2254/first-k-answer-token-steering/expl_h4_pre_vs_shuffled.png",
     "figures/issue_2254/first-k-answer-token-steering/expl_perq_clouds.meta.json",
     "figures/issue_2254/first-k-answer-token-steering/expl_perq_clouds.png",
@@ -10,7 +11,7 @@
     "figures/issue_2254/first-k-answer-token-steering/hero1_position_bars.png"
   ],
   "inputs": [
-    "reads/verdict_lattice.json",
+    "reads/fraction_of_ceiling.json",
     "steer/delta_score_percell.json"
   ]
 }

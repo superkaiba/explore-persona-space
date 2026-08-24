@@ -1,11 +1,9 @@
 {
   "figure": "hero1_position_bars",
-  "git_commit": "a39baedf",
+  "git_commit": "ebbeb565",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_hook_mechanics.json",
-    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_reduce_figures.json",
-    "eval_results/issue_2254/first-k-answer-token-steering/stage_inputs/staged_inputs.json"
+    "figures/issue_2254/first-k-answer-token-steering/hero1_position_bars.png"
   ],
   "inputs": [
     "steer/delta_score_percell.json",
