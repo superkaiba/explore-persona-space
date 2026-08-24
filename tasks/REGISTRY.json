@@ -10259,8 +10259,8 @@
     "2328": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2328",
-      "status": "approved",
+      "path": "tasks/running/2328",
+      "status": "running",
       "title": "workflow-fix: review/compose briefs check marker presence against the WORKING TREE, so a transient stash-cycle read produces a false marker-destroyed escalation"
     },
     "2329": {
