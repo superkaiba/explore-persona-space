@@ -278,6 +278,39 @@ Behaviours:
   WARN-only sibling's regime — while the binding gates are
   baseline-subtracted, so a false positive reddens only the introducing
   round (#1388 contained).
+* ``--check-shared-tmp-name`` (also bundled into the no-flags default
+  run): walk every ``*.py`` and ``*.sh`` under ``scripts/`` and ``src/``
+  (``tests/`` deliberately NOT scanned — lint fixtures and the harness
+  control legitimately embed the banned literal) and FAIL on any line
+  deriving a sidecar TEMP path from the destination's own name — six
+  regex arms checked per line in the order A, C, D, B, E, F (example
+  spellings here are DEFUSED so this bullet never self-matches): A
+  attribute concat (``X.name`` joined with a fixed ``".tmp"`` literal),
+  C bare-identifier concat (a lone ``name`` joined with ``".tmp"``), D
+  generic concat (ANY left operand joined with ``".tmp"``, minus the
+  ``.suffix``-derived class, which stays follow-up scope), B the braced
+  ``X.name`` interpolation directly followed by ``.tmp`` with
+  literal-only continuation, E the generic-stem f-string (an f-prefixed
+  opening quote, then an interpolation, optional literal text, then
+  ``.tmp`` with literal-only continuation), F the prefix form (an
+  f-prefixed quote opening directly with ``.tmp_`` then an
+  interpolation) — arm qualifiers bind to their OWN matched occurrence
+  (a ``.suffix`` concat excludes only itself, never a sibling concat on
+  the same line; a plain-string brace template never arms E/F) — E and F
+  exempt on a same-line ``getpid(`` / ``uuid4(`` process-varying token.
+  A fixed ``<name>.tmp`` temp name is PROCESS-SHARED: two concurrent
+  writers of the same destination collide mid-``os.replace`` and one
+  crashes ``FileNotFoundError`` at the replace stage (#2329 r3). Remedy:
+  ``explore_persona_space.atomic_io.atomic_replace`` (process-unique
+  temp + atomic replace). Waive a legitimate site (e.g. the temp-
+  DIRECTORY publish idiom) with ``# SHARED_TMP_EXEMPT: <reason>``
+  (reason >= 10 chars) in a LEXICAL comment on the hit line (a
+  waiver-shaped string literal never waives) or on the
+  immediately-preceding comment-only line; the batch-0 residual is
+  frozen in ``SHARED_TMP_LEGACY_ALLOWLIST`` (a hit in an allowlisted
+  file passes; an allowlisted file with ZERO hits WARNs ``stale
+  allowlist entry``, never FAILs — the ratchet direction, judged only
+  over the scanned scope under files-mode; #2336 shrinks it per batch).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -953,6 +986,25 @@ Behaviours:
   fence-scoped: prose inline-code recipes, ``#``-commented instruction
   lines inside fences, untagged fences, and the placeholder-substitution
   false-PASS direction are NAMED residuals (see the check docstring).
+* ``--check-issue-skill-fence-wt-binding`` (also bundled into the no-flags
+  default run): scan every ``bash``/``sh``/``shell``-tagged OR UNTAGGED
+  fenced block in ``.claude/skills/issue/SKILL.md`` +
+  ``.claude/skills/issue/steps/*.md`` and FAIL any fence referencing
+  ``$WT`` (``"$WT"`` / ``${WT}`` / bare ``$WT``) that neither (a) binds
+  in-fence (a ``WT=`` assignment line, or a non-comment ``eval "$(bash
+  scripts/step10d_guards.sh <N> --guard prelude)"`` line) nor (b) carries
+  the literal ``wt-binding:`` annotation token (the #2306 D2
+  caller/prelude-dependent convention). ``git -C ""`` and ``cd ""`` are
+  SILENT NO-OPS (rc=0), so an extracted fence with unbound ``$WT``
+  retargets every worktree op at the SHARED repo root (#2293: the Step 10d
+  safe-case merge fence destroyed a valid lint-gate verdict this way). A
+  bare ``cd "$WT" ||`` guard is deliberately NOT accepted (``cd ""``
+  succeeds, so the guard passes with ``WT`` unbound). FAIL names file,
+  fence start line, and the remedy pair. FAIL-CLOSED on scan inputs: a
+  missing ``SKILL.md`` / missing-or-empty ``steps/`` dir and every
+  unreadable enumerated scan file are each a named lint ERROR — an input
+  the check could not inspect never contributes to a PASS
+  (wt-lint-read-fail-open).
 * ``--check-bare-commit-pathspec`` (also bundled into the no-flags default
   run): scan every ``bash``/``sh``/``shell``-tagged fenced block in
   ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` +
@@ -990,6 +1042,16 @@ Behaviours:
   persist" items, zero were persisted, and the round-2 prior-concerns
   gate walked an empty ledger; token-presence pins strengthened per the
   round-1 ``durability-pin-token-presence-gaps`` concern).
+* ``--check-force-push-policy`` (also bundled into the no-flags default
+  run): pin the #2313 force-push ruling at its definition site —
+  ``.claude/rules/auto-continuation.md`` STATE-TO-``blocked`` criterion 2
+  (region-anchored on the criterion-2 bullet, up to criterion 3; must keep
+  the literal ``--force-with-lease`` token, the ``NO autonomous
+  carve-out`` token, the pointer to the force-free ``Rewritten-branch
+  landing route`` (18-step-10d.md, #2312), and the
+  precedent-reconciliation issue ids #2171/#1999 vs #2181/#2318 — the ban
+  is the correct reading; the mention COUNT is deliberately NOT pinned,
+  it drifts).
 * ``--check-codex-composer-memory-commit`` (also bundled into the no-flags
   default run): pin the #2473 codex-composer agent-memory same-turn commit
   duty in ``.claude/rules/codex-composer-common.md`` — the "Your own
@@ -12562,9 +12624,14 @@ def _build_root_guard_fixture(tmp: Path) -> None:
     )
 
 
-def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
+def _iter_bash_fences(
+    text: str, *, tags: frozenset[str] = _ROOT_GUARD_BASH_TAGS
+) -> Iterator[tuple[int, str, str]]:
     """Yield ``(opener_lineno_1based, preceding_nonblank_line, block_text)``
-    for every ``bash``/``sh``/``shell``-tagged fenced block in ``text``.
+    for every ``bash``/``sh``/``shell``-tagged fenced block in ``text``
+    (override *tags* to widen the tag set — e.g. include ``""`` so untagged
+    fences are yielded too, the ``check_issue_skill_fence_wt_binding``
+    scope, #2306).
 
     PARITY-TOGGLE PARSER RULE (#1176 acceptance criterion 8): outside a
     fence, ANY fence line (tagged or bare, ``` or ~~~) OPENS one; inside a
@@ -12606,7 +12673,7 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
                 continue
             if token == fence_token:
                 # Same-token fence line closes (tag ignored on close).
-                if fence_tag in _ROOT_GUARD_BASH_TAGS:
+                if fence_tag in tags:
                     yield opener_lineno, preceding, "\n".join(block_lines)
                 in_fence = False
                 prev_nonblank = line
@@ -12618,7 +12685,7 @@ def _iter_bash_fences(text: str) -> Iterator[tuple[int, str, str]]:
             block_lines.append(line)
         elif line.strip():
             prev_nonblank = line
-    if in_fence and fence_tag in _ROOT_GUARD_BASH_TAGS:
+    if in_fence and fence_tag in tags:
         # Unterminated trailing fence: yield what was collected.
         yield opener_lineno, preceding, "\n".join(block_lines)
 
@@ -12902,6 +12969,139 @@ def check_git_recipes_root_guard(  # noqa: C901 -- flat fail-loud ladder + per-f
                     f"error, not a verdict — #1610) ({first!r})."
                 )
         return errors
+
+
+# --check-issue-skill-fence-wt-binding (#2306): git -C "" AND cd "" are both
+# SILENT NO-OPS (rc=0 — verified at plan time), so a /issue-skill fence using
+# `git -C "$WT"` / `cd "$WT"` with $WT unbound silently retargets every
+# worktree op at the SHARED repo root when extracted as a standalone script —
+# the shape the Step 10d recipes themselves prescribe (#2293: the safe-case
+# merge fence compared a certified sha against root `main` HEAD and destroyed
+# a valid lint-gate verdict). Python string data only: this check scans
+# .claude/skills/issue/**.md, never scripts/**, so these constants cannot
+# self-flag.
+_WT_FENCE_TAGS = frozenset({"bash", "sh", "shell", ""})
+_WT_REF_RE = re.compile(r"\$(\{WT\}|WT\b)")
+_WT_BIND_RE = re.compile(r"^\s*WT=")
+_WT_PRELUDE_TOKEN = "--guard prelude"
+_WT_ANNOTATION_TOKEN = "wt-binding:"
+
+
+def _issue_skill_fence_files(root: Path) -> tuple[list[Path], list[str]]:
+    """The ``check_issue_skill_fence_wt_binding`` scan set: the /issue skill
+    router + its step bodies (the #2306 fence surface).
+
+    Returns ``(files, errors)``. FAIL-CLOSED (wt-lint-read-fail-open): the
+    /issue skill family existing is this check's precondition, so a missing
+    ``SKILL.md``, a missing/empty ``steps/`` dir, AND any glob-matched
+    ``steps/*.md`` entry that is not a readable regular file (broken symlink /
+    non-regular entry) each append a named lint ERROR instead of silently
+    narrowing the target list — scanning nothing must never read as PASS.
+    """
+    files: list[Path] = []
+    errors: list[str] = []
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if skill.is_file():
+        files.append(skill)
+    else:
+        errors.append(
+            "check_issue_skill_fence_wt_binding: missing scan input "
+            ".claude/skills/issue/SKILL.md — the /issue skill family is this "
+            "check's precondition; a PASS that inspected nothing is fail-open "
+            "(#2306 wt-lint-read-fail-open)."
+        )
+    steps = root / ".claude" / "skills" / "issue" / "steps"
+    raw_matches = sorted(steps.glob("*.md")) if steps.is_dir() else []
+    for p in raw_matches:
+        if p.is_file():
+            files.append(p)
+        else:
+            rel = p.relative_to(root).as_posix()
+            errors.append(
+                f"{rel}: check_issue_skill_fence_wt_binding: scan input is "
+                f"not a readable regular file (broken symlink / non-regular "
+                f"entry) — fail-closed: a glob-matched input the check "
+                f"cannot inspect must never contribute to a PASS "
+                f"(#2306 wt-lint-read-fail-open)."
+            )
+    if not raw_matches:
+        reason = "missing" if not steps.is_dir() else "empty (no *.md step bodies)"
+        errors.append(
+            f"check_issue_skill_fence_wt_binding: scan input "
+            f".claude/skills/issue/steps/ is {reason} — the /issue skill "
+            f"family is this check's precondition; a PASS that inspected "
+            f"nothing is fail-open (#2306 wt-lint-read-fail-open)."
+        )
+    return files, errors
+
+
+def _wt_fence_is_covered(block: str) -> bool:
+    """True when a ``$WT``-referencing fence body either binds in-fence or
+    carries the ``wt-binding:`` annotation token (the #2306 D1/D2 pair).
+
+    A binding is (a) a ``WT=`` assignment at line start, or (b) a NON-comment
+    ``eval`` line invoking ``step10d_guards.sh <N> --guard prelude``. A bare
+    ``cd "$WT" ||`` guard is deliberately NOT accepted: ``cd ""`` succeeds
+    (rc=0, cwd unchanged), so that guard passes with ``WT`` unbound.
+    """
+    for line in block.split("\n"):
+        if _WT_BIND_RE.match(line):
+            return True
+        stripped = line.lstrip()
+        if not stripped.startswith("#") and "eval" in line and _WT_PRELUDE_TOKEN in line:
+            return True
+        if _WT_ANNOTATION_TOKEN in line:
+            return True
+    return False
+
+
+def check_issue_skill_fence_wt_binding(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any ``bash``/``sh``/``shell``-tagged OR UNTAGGED fenced block in
+    ``.claude/skills/issue/SKILL.md`` + ``.claude/skills/issue/steps/*.md``
+    that references ``$WT`` (``"$WT"`` / ``${WT}`` / bare ``$WT``) without
+    either (a) an in-fence binding — a ``WT=`` assignment line, or a
+    non-comment ``eval "$(bash scripts/step10d_guards.sh <N> --guard
+    prelude)"`` line — or (b) the literal ``wt-binding:`` annotation token
+    (the #2306 D2 convention declaring the fence caller/prelude-dependent,
+    with the standalone-extraction prepend named in the same comment).
+
+    Untagged fences are in scope so a future shell fence added without a
+    language tag cannot escape silently (zero such ``$WT`` fences exist at
+    HEAD). FAIL names file, fence start line, and the remedy pair.
+
+    FAIL-CLOSED on scan inputs (wt-lint-read-fail-open): a missing
+    ``SKILL.md`` / missing-or-empty ``steps/`` dir and every unreadable
+    enumerated scan file each append a named lint ERROR — an input the check
+    could not inspect must never contribute to a PASS.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    files, errors = _issue_skill_fence_files(root)
+    for path in files:
+        rel = path.relative_to(root).as_posix()
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:  # unreadable input: named ERROR (fail-closed)
+            errors.append(
+                f"{rel}: check_issue_skill_fence_wt_binding: unreadable scan "
+                f"input ({exc}) — fail-closed: a file the check could not "
+                f"inspect must never read as PASS (#2306 wt-lint-read-fail-open)."
+            )
+            continue
+        for opener_lineno, _preceding, block in _iter_bash_fences(text, tags=_WT_FENCE_TAGS):
+            if not _WT_REF_RE.search(block):
+                continue
+            if _wt_fence_is_covered(block):
+                continue
+            errors.append(
+                f"{rel}:{opener_lineno}: fence references $WT with no in-fence binding and "
+                f'no \'wt-binding:\' annotation — git -C "" / cd "" are silent no-ops that '
+                f"retarget the SHARED repo root when the fence is extracted standalone "
+                f"(#2306/#2293). Remedy: insert the fence-local binding block (REPO_ROOT=...; "
+                f'WT="$REPO_ROOT/.claude/worktrees/issue-<N>"; [ -n "$WT" ] && '
+                f'[ -d "$WT" ] || exit 1), or annotate the fence\'s first comment line(s) '
+                f"with 'wt-binding: caller — ...' naming the binding shell."
+            )
+    return errors
 
 
 # --check-bare-commit-pathspec (#1648): a fenced `git commit` recipe with no
@@ -15028,6 +15228,113 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
                     f"names {ledger_line!r} (#2326) — an empty concerns "
                     f"ledger would pass vacuously with no visible record."
                 )
+    return errors
+
+
+def check_force_push_policy_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2313 force-push ruling is absent from its definition
+    site — .claude/rules/auto-continuation.md, STATE-TO-``blocked``
+    criterion 2.
+
+    Task #2313 resolved the policy question #2312 deferred: branch (B) —
+    no `/issue` path may force-push, and the ban COVERS
+    ``--force-with-lease`` on the session's OWN issue branch after its own
+    mid-flight rebase (the case recorded practice diverged on: #2171/#1999
+    read the lease form as the correct landing; #2181/#2318 recorded their
+    own use of it as a policy violation — the correct reading). Before
+    #2313 the ruling existed only ~3,377 lines deep in the Step 10d
+    landing-route prose, reachable solely by a session already executing
+    Step 10d; ``grep -r -- --force-with-lease .claude/rules/`` returned
+    ZERO hits. Region-anchored on the criterion-2 bullet (up to the
+    criterion-3 bullet), the region must keep:
+
+    (1) the literal ``--force-with-lease`` token (acceptance A1 — the
+        ruling stays grep-findable under .claude/rules/);
+    (2) the ``NO autonomous carve-out`` token — the ban admits no
+        autonomous exception; relaxing it is a USER grant made by amending
+        the criterion itself;
+    (3) the pointer to the sanctioned force-free alternative — the
+        ``Rewritten-branch landing route`` section of
+        .claude/skills/issue/steps/18-step-10d.md (#2312) — so a future
+        edit cannot keep the ban while dropping the alternative, the shape
+        that would leave a session with no sanctioned landing;
+    (4) the precedent-reconciliation issue ids on BOTH sides of the
+        divergent record (#2171, #1999, #2181, #2318). The ids are pinned,
+        NEVER the mention COUNT — the count grows whenever another task's
+        marker names the flag (#2313 plan v3 SF1).
+
+    Loss of EITHER region anchor (the criterion-2 start bullet or the
+    criterion-3 end bullet) is a LOUD error, never a silent region
+    widening — a lost end anchor falling open to EOF would let a renamed
+    criterion 3 plus a relocated ruling false-PASS (r2 hardening,
+    concern ``force-push-pin-end-anchor-fail-open``).
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None (canonical repo root; behavioral subprocess tests may point the
+    check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled
+    into the no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    rule = root / ".claude" / "rules" / "auto-continuation.md"
+    if not rule.is_file():
+        return [
+            f"{rule}: missing — the #2313 force-push ruling must live in "
+            f"auto-continuation.md STATE-TO-blocked criterion 2."
+        ]
+    text = rule.read_text(encoding="utf-8")
+    start_anchor = "2. **Outside-the-worktree state mutation**"
+    end_anchor = "3. **Public API contract change**"
+    start = text.find(start_anchor)
+    if start == -1:
+        return [
+            f"{rule}: lost the criterion-2 anchor {start_anchor!r} (#2313) — "
+            f"the force-push ruling is region-anchored on that bullet; if "
+            f"the criterion was renumbered/renamed, update "
+            f"check_force_push_policy_lens alongside it."
+        ]
+    end = text.find(end_anchor, start)
+    if end == -1:
+        return [
+            f"{rule}: lost the criterion-3 anchor {end_anchor!r} (#2313) — "
+            f"the force-push ruling's region is bounded by that bullet, and "
+            f"a lost end anchor must fail LOUD rather than silently widen "
+            f"the region to EOF (fail-open: a relocated ruling would false-"
+            f"PASS); if criterion 3 was renumbered/renamed, update "
+            f"check_force_push_policy_lens alongside it."
+        ]
+    region = text[start:end]
+    errors: list[str] = []
+    if "--force-with-lease" not in region:
+        errors.append(
+            f"{rule}: criterion 2 no longer carries the literal "
+            f"'--force-with-lease' (#2313) — the force-push ruling must "
+            f"stay grep-findable under .claude/rules/ (acceptance A1)."
+        )
+    if "NO autonomous carve-out" not in region:
+        errors.append(
+            f"{rule}: criterion 2 lost the 'NO autonomous carve-out' token "
+            f"(#2313) — the ban admits no autonomous exception; relaxing it "
+            f"is a user grant made by amending the criterion."
+        )
+    if "Rewritten-branch landing route" not in region:
+        errors.append(
+            f"{rule}: criterion 2 lost the pointer to the force-free "
+            f"'Rewritten-branch landing route' (18-step-10d.md, #2312) — a "
+            f"ban without its sanctioned alternative strands a gate-PASSed "
+            f"task with no landing (#2313)."
+        )
+    missing_ids = [i for i in ("#2171", "#1999", "#2181", "#2318") if i not in region]
+    if missing_ids:
+        errors.append(
+            f"{rule}: criterion 2 lost the precedent-reconciliation issue "
+            f"id(s) {', '.join(missing_ids)} (#2313) — the divergent record "
+            f"(#2171/#1999 vs #2181/#2318) must stay reconciled at the "
+            f"definition site."
+        )
     return errors
 
 
@@ -17207,19 +17514,38 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
     # 100_300 (#2158, 97,590 B).
     "issue/steps/09-step-5.md": 121_500,
-    # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
-    # per-leg out/scratch isolation, +1,211 B); corridor-max
-    # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
-    "issue/steps/10-step-6.md": 145_400,
-    "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
-    # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
-    # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =
-    # 297_000, headroom 2,791 — clears guard_skill_doc_headroom.sh's 2,000 B
-    # warn floor. Re-measure + re-set at Step 10d against the MERGED tree
-    # (concurrent sessions edit this file).
-    # Prior: 292_100 (#2246 post-rebase, 289,354 B) / 290_900 (#2428).
-    "issue/steps/18-step-10d.md": 297_000,
+    # measured 149,017 B @ #2263 r8 2026-08-22 (parent-reuse refusal prose
+    # states the FULL #2161 guard predicate — the defaulting conjunct
+    # included: with a live issue worktree on a non-main branch a bare
+    # dispatch LAUNCHES on the defaulted branch, it does not refuse;
+    # +560 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 151_200 (#2263 r7, 148,457 B) / 151_000 (#2263 r6, 148,238 B) /
+    # 150_500 (#2263 r4, 147,791 B) / 149_500 (#2263 r3, 146,704 B) /
+    # 148_300 (#2263 r2, 145,553 B) / 147_400 (#2263 r1, 144,671 B) /
+    # 145_400 (#2350, 142,643 B) / 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 151_800,
+    # measured 250,132 B @ #2315 Step 10d 2026-08-24 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100 = 252_900, headroom 2,768 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
+    # caps measured only their own side: #2315 r3's 1b FATAL arm per-cause
+    # remedy split (249,179 B) and #2306's Step 9c gate fences (244,047 B)
+    # landed on the same file concurrently.
+    # Prior: 251_900 (#2315 r3, 249,179 B) / 246_800 (#2306, 244,047 B) /
+    # 251_800 (#2315 r2, 249,059 B) / 250_200 (#2315 r1, 247,430 B) /
+    # 245_300 (242,521 B).
+    "issue/steps/13-step-9.md": 252_900,
+    # measured 299,213 B @ #2306 2026-08-23 (fence-local $WT/$REPO_ROOT D1
+    # bindings on the 4 extraction-prescribed fences + wt-binding annotations
+    # on 12 caller-dependent fences + the line-2791 malformed-fence-close
+    # split, +5,004 B); corridor-max
+    # ((measured+2_800)//100)*100 = 302_000, headroom 2,787 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Re-measure + re-set
+    # at Step 10d against the MERGED tree (concurrent sessions edit this
+    # file).
+    # Prior: 297_000 (#2260, 294,209 B) / 292_100 (#2246 post-rebase,
+    # 289,354 B) / 290_900 (#2428).
+    "issue/steps/18-step-10d.md": 302_000,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
@@ -19114,6 +19440,359 @@ def check_lane_order_adjective(repo_root: Path | None = None) -> list[str]:
     return list(report["findings"])  # type: ignore[arg-type]
 
 
+# ── --check-shared-tmp-name (#2336; the process-shared atomic-write temp-name class)
+# Six predicate arms, checked per line in the order A, C, D, B, E, F with
+# per-line dedupe (a line is a hit if ANY arm matches; the first matching
+# arm attributes it). Regexes verbatim from the approved plan (#2336 v3
+# §4 step 5); landing-day yields recorded there.
+# arm A — attribute concat: destination `.name` joined with a fixed
+# `".tmp"` literal (122 lines / 78 files). (Comment spellings in this
+# block are DEFUSED so the scanner never self-matches its own docs.)
+SHARED_TMP_ARM_A_RE = re.compile(r"""\.name\s*\+\s*(?P<q>["'])\.tmp(?P=q)""")
+# arm B — the braced `X.name` interpolation directly followed by `.tmp`,
+# an f-string with NO interpolation between `.tmp` and
+# the closing quote (a trailing interpolation is presumed process-varying;
+# the 4 cross-line-token safe writers, 8 lines / 6 files).
+SHARED_TMP_ARM_B_RE = re.compile(r"""\{[A-Za-z_][A-Za-z0-9_.\[\]:'"()]*\.name\}\.tmp(?![^"']*\{)""")
+# arm C — bare-identifier concat: a lone `name` joined with `".tmp"`
+# (issue1901 shape, 3 lines / 1 file).
+SHARED_TMP_ARM_C_RE = re.compile(r"""(?<![\w.])name\s*\+\s*(?P<q>["'])\.tmp(?P=q)""")
+# arm D — generic concat: ANY left operand joined with `".tmp"` that is
+# neither arm A
+# nor arm C and not the `.suffix`-derived class (which stays follow-up
+# scope; 7 lines / 7 files).
+SHARED_TMP_ARM_D_RE = re.compile(r"""\+\s*(?P<q>["'])\.tmp(?P=q)""")
+SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE = re.compile(r"""\.suffix\s*\+\s*(?P<q>["'])\.tmp(?P=q)""")
+# arm E — generic-stem f-string: an f-prefixed opening quote (f/rf/fr,
+# either case order — the f-string requirement lives IN the arm, bound to
+# the matched string, replacing the retired line-global f-string detector
+# whose unrelated-f-string false positive was the round-1
+# shared-tmp-predicate-context-binding concern), then any non-closing-quote
+# run, then an interpolation, optionally followed by literal text, then
+# `.tmp` with literal-only continuation; only when arm B did not match;
+# EXEMPT on a same-line `getpid(` / `uuid4(` process-varying token
+# (31 lines).
+SHARED_TMP_ARM_E_RE = re.compile(
+    r"""(?<![A-Za-z0-9_])(?:[fF][rR]?|[rR][fF])(?P<q>["'])"""
+    r"""(?:(?!(?P=q)).)*\{[^{}]*\}[^"'{}]*\.tmp(?![^"']*\{)"""
+)
+# arm F — prefix-form f-string (an f-prefixed quote opening directly with
+# `.tmp_` then an interpolation; same in-arm f-prefix binding as arm E —
+# a plain-string `.tmp_` + brace .format template does NOT match), same
+# E-style exemption (37 lines; exempts the 3 pid-suffixed temp-DIR
+# writers).
+SHARED_TMP_ARM_F_RE = re.compile(r"""(?<![A-Za-z0-9_])(?:[fF][rR]?|[rR][fF])["']\.tmp_\{""")
+SHARED_TMP_WAIVER_RE = re.compile(r"#\s*SHARED_TMP_EXEMPT:\s*(?P<reason>.*\S)")
+SHARED_TMP_WAIVER_MIN_REASON_CHARS = 10
+
+
+def _shared_tmp_line_hit(line: str) -> bool:
+    """True when *line* matches any of the six shared-tmp arms (order
+    A, C, D, B, E, F; per-line dedupe — first match wins). Arm qualifiers
+    bind to their OWN matched occurrence (round-2 fix of the
+    shared-tmp-predicate-context-binding concern): arm D excludes only the
+    ``.suffix``-derived OCCURRENCE — a second, non-``.suffix`` concat on
+    the same line still hits — and arms E/F carry the f-string prefix
+    requirement inside their own regexes, so a plain-string template does
+    not hit and an unrelated f-string elsewhere on the line does not arm
+    them. Arms E/F stay exempt when the line carries a ``getpid(`` /
+    ``uuid4(`` process-varying token (line-scoped by design — a pre-`.tmp`
+    process-varying interpolation is by construction on the matched
+    line)."""
+    if SHARED_TMP_ARM_A_RE.search(line):
+        return True
+    if SHARED_TMP_ARM_C_RE.search(line):
+        return True
+    suffix_excluded_ends = {m.end() for m in SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE.finditer(line)}
+    if any(m.end() not in suffix_excluded_ends for m in SHARED_TMP_ARM_D_RE.finditer(line)):
+        return True
+    if SHARED_TMP_ARM_B_RE.search(line):
+        return True
+    if "getpid(" in line or "uuid4(" in line:
+        return False
+    if SHARED_TMP_ARM_E_RE.search(line):
+        return True
+    return bool(SHARED_TMP_ARM_F_RE.search(line))
+
+
+def _shared_tmp_lexical_comment_start(line: str) -> int | None:
+    """Index of the first ``#`` OUTSIDE any string literal on *line*, else
+    ``None`` — the anchor for the same-line waiver channel (round-2 fix of
+    the shared-tmp-waiver-string-spoof concern): an exemption-shaped STRING
+    literal (``note = "# SHARED_TMP_EXEMPT: ..."``) is not a comment and
+    must not switch off the ratchet. Single-char quote tracking with
+    backslash-escape skipping — deliberately simple (per-line scope; the
+    scanned corpus is Python + sh-heredoc lines)."""
+    quote: str | None = None
+    i = 0
+    n = len(line)
+    while i < n:
+        ch = line[i]
+        if quote is None:
+            if ch in "\"'":
+                quote = ch
+            elif ch == "#":
+                return i
+        elif ch == "\\":
+            i += 1
+        elif ch == quote:
+            quote = None
+        i += 1
+    return None
+
+
+def _shared_tmp_waiver_present(lines: list[str], idx: int) -> bool:
+    """True when ``# SHARED_TMP_EXEMPT: <reason>`` (reason >=
+    :data:`SHARED_TMP_WAIVER_MIN_REASON_CHARS` chars) sits in a LEXICAL
+    comment on the hit line itself (at/after the first ``#`` outside any
+    string literal — a waiver-shaped string literal never waives) or on
+    the immediately-preceding COMMENT-ONLY line (already lexically a
+    comment; channel unchanged)."""
+
+    def _ok(text: str) -> bool:
+        m = SHARED_TMP_WAIVER_RE.search(text)
+        return bool(m and len(m.group("reason").strip()) >= SHARED_TMP_WAIVER_MIN_REASON_CHARS)
+
+    comment_start = _shared_tmp_lexical_comment_start(lines[idx])
+    if comment_start is not None and _ok(lines[idx][comment_start:]):
+        return True
+    prev = idx - 1
+    return prev >= 0 and lines[prev].lstrip().startswith("#") and _ok(lines[prev])
+
+
+# Batch-0 seed (#2336, plan v3 §4 step 5): the full landing-day residual of
+# the check's OWN scanner with allowlist=() over scripts/ + src/ (208 hit
+# lines / 118 files at seed time) — NEVER derived from a plain grep. Each
+# migration batch shrinks this tuple by exactly the batch's migrated files
+# IN THE SAME COMMIT; stale entries WARN. Close-out gate (plan §7 / A11):
+# the task terminates only when this tuple is EMPTY.
+_SHARED_TMP_SEED_REASON = "batch-0 seed — unsafe shared-tmp file-writer pending migration"
+_SHARED_TMP_DIR_IDIOM_REASON = (
+    "batch-0 seed — §4(g) temp-DIRECTORY idiom site (also carries migratable file-writer"
+    " lines); waiver-or-defer disposition in batch 2, never recipe-migration"
+)
+SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = (
+    ("scripts/issue1073_capture.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1090_fu6.py", _SHARED_TMP_DIR_IDIOM_REASON),
+    ("scripts/issue1092_build_corpus.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1092_spread_combined_fig.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1112_dispatch.py", _SHARED_TMP_DIR_IDIOM_REASON),
+    ("scripts/issue1315_dispatch.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1335_run.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1415_hooked_decomp.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1415_position_profile.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1415_run_phase1.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1417_run.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_densesae_fullwidth.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_early_layer.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_error_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_matryoshka_tier.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_reconstruct_scratch.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1586_dispatch.py", _SHARED_TMP_DIR_IDIOM_REASON),
+    ("scripts/issue1689_derived_vs_free.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_dvf_fold_digest.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_fit_ladder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_lambda_recheck.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_user_slot_gen_a1.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1738_crossed_reads.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1738_multiturn_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_bareq_score.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_compliance_full.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_compliance_pilot.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_holdout_rung.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_k1_floor.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_natpv.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_newarm_box.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_newarm_collect.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_pack.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_pilot_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_reconstruct_contexts.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_rejudge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_rescore_ood.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_rescore_ood_armfill.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_pod.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_regen.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_rescore.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_rescore_stage.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_stage.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_trait_rejudge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1768_capture.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_common.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_describe_axes.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_evidence_builder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_passB_launch.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_phase0_mechanical.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_validate.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1775_common.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1887_lambda_audit.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1895_subspaces.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1901_boundary_token_control.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1901_paper_densify_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1934_recover_1773_labels.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1941_fr_diag.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1947_datagen.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1947_localization_panel.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1947_worker.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_ctx2ctx_fit.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_extended_decomp.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_loco_pooled.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_phase_a.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_pool_specialize.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_pooled_tier_ladder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_remap_pair_nulls.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_resume.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_specialization_ladder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2091_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_phase0.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_rev_reduce.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_run.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_genfreeze.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_mapshift.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_run.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2202_failchar.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2202_metric_zoo.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_capture.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_followup_basegen_map.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_lib.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2224_followup_r1.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2224_probe_refit.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2329_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2329_mapshift.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2333_run.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2476_turnavg_sae.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2477_base_coherence.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue540_jsrb_predictor.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue541_geometry_extract.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue779_ffc_n1m_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue779_l26_recovery_dispatch.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue779_n1m_readout_dispatch.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue823_ladder_fits.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/artifacts/recipe.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/eval/callbacks.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue2329/bank2329.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/arms.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/capture.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/corpus_staging.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/dv_build.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/generation.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/mem_guard.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/sentinels.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_952/run_952.py", _SHARED_TMP_SEED_REASON),
+    (
+        "src/explore_persona_space/experiments/neg_setpoint_601/capability_probe.py",
+        _SHARED_TMP_SEED_REASON,
+    ),
+    (
+        "src/explore_persona_space/experiments/neg_setpoint_601/rowtype_ce_probe.py",
+        _SHARED_TMP_SEED_REASON,
+    ),
+    ("src/explore_persona_space/train/sft.py", _SHARED_TMP_SEED_REASON),
+)
+
+
+def check_shared_tmp_name(
+    *,
+    root: Path | None = None,
+    allowlist: tuple[tuple[str, str], ...] | None = None,
+    warn_sink: list[str] | None = None,
+) -> list[str]:
+    """Walk every ``*.py`` and ``*.sh`` under ``scripts/`` and ``src/`` and
+    FAIL on any line deriving a sidecar TEMP path from the destination's
+    own name (six arms — see the ``SHARED_TMP_ARM_*`` block above).
+
+    Rationale: a fixed ``<name>.tmp`` temp name is PROCESS-SHARED — two
+    concurrent writers of the same destination collide mid-``os.replace``
+    and one crashes ``FileNotFoundError`` at the replace stage (#2329 r3).
+    Remedy: ``explore_persona_space.atomic_io.atomic_replace``
+    (process-unique temp + atomic replace). ``tests/`` is deliberately NOT
+    scanned — lint fixtures and the harness control legitimately embed the
+    banned literal.
+
+    ``root`` (default: the repo root, ``EPS_WORKFLOW_LINT_REPO_ROOT``
+    honored) and ``allowlist`` (default: the module constant
+    :data:`SHARED_TMP_LEGACY_ALLOWLIST`, resolved at CALL time so the
+    bundling test's monkeypatch is honored) are the unit-test hooks — the
+    discovery test walks a temp repo through THIS function, the same
+    entrypoint + walk the no-flags dispatch invokes with defaults. A hit
+    in an allowlisted file passes; an allowlisted file with ZERO hits (or
+    missing) WARNs ``stale allowlist entry`` (never FAILs — the ratchet
+    direction) via ``warn_sink`` when provided, else stderr — under
+    files-mode scoping (#2235) the staleness judgment covers only
+    allowlist entries INSIDE the scanned scope (an out-of-scope entry was
+    never scanned, so a stale WARN there would be false). Waiver:
+    ``# SHARED_TMP_EXEMPT: <reason>`` (reason >= 10 chars) in a LEXICAL
+    comment on the hit line (a waiver-shaped string literal never waives)
+    or on the immediately-preceding comment-only line. Bundled into the
+    no-flags default run.
+    """
+    if root is None:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    if allowlist is None:
+        allowlist = SHARED_TMP_LEGACY_ALLOWLIST
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    allowlisted = {path for path, _reason in allowlist}
+    errors: list[str] = []
+    files_with_hits: set[str] = set()
+    for sub in ("scripts", "src"):
+        base = root / sub
+        if not base.exists():
+            continue
+        candidates = sorted(p for p in base.rglob("*") if p.suffix in (".py", ".sh"))
+        for f in _files_scope_filter(candidates):
+            if not f.is_file():
+                continue
+            try:
+                text = f.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as exc:
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-shared-tmp-name skipped unreadable {f}: {exc}\n"
+                )
+                continue
+            lines = text.splitlines()
+            hit_idxs = [idx for idx, line in enumerate(lines) if _shared_tmp_line_hit(line)]
+            if not hit_idxs:
+                continue
+            rel = f.relative_to(root).as_posix()
+            files_with_hits.add(rel)
+            if rel in allowlisted:
+                continue
+            errors.extend(
+                f"{rel}:{idx + 1}: process-shared atomic-write temp name "
+                f"(use explore_persona_space.atomic_io.atomic_replace; #2336)"
+                for idx in hit_idxs
+                if not _shared_tmp_waiver_present(lines, idx)
+            )
+    for path, _reason in allowlist:
+        if _FILES_SCOPE is not None and path not in _FILES_SCOPE:
+            # Files-mode (#2235) scopes the walk to a payload subset: an
+            # out-of-scope allowlisted file was never scanned this run, so
+            # its staleness is unknowable here — a stale WARN would be a
+            # false "remove it" instruction (round-2 fix of the
+            # shared-tmp-stale-warn-files-mode concern). Full walks own
+            # stale-entry hygiene.
+            continue
+        if path not in files_with_hits:
+            _warn(
+                f"--check-shared-tmp-name: stale allowlist entry {path} — zero "
+                f"shared-tmp hits on the current tree (migrated or deleted); "
+                f"remove it from SHARED_TMP_LEGACY_ALLOWLIST"
+            )
+    return errors
+
+
 # `--check-plan-version-immutability` (#2123): a persisted
 # ``tasks/**/plans/v<K>.md`` is immutable — an amendment requires a NEW
 # version file via ``task.py new-plan-version``, never an in-place edit.
@@ -19659,6 +20338,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
     "check_codex_composer_memory_commit": lambda wf: check_codex_composer_memory_commit_lens(),
     "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
+    "check_force_push_policy": lambda wf: check_force_push_policy_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
     "check_smoke_output_hygiene": lambda wf: check_smoke_output_hygiene(),
@@ -19680,6 +20360,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_scripts_import_guard": lambda wf: check_scripts_import_guard(),
     "check_upload_or_true": lambda wf: check_upload_or_true(),
     "check_git_recipes_root_guard": lambda wf: check_git_recipes_root_guard(),
+    "check_issue_skill_fence_wt_binding": (lambda wf: check_issue_skill_fence_wt_binding()),
     "check_bare_commit_pathspec": lambda wf: check_bare_commit_pathspec(),
     "check_asw_docstring_pass_count": lambda wf: check_asw_docstring_pass_count(),
     "check_skill_bang_backtick": lambda wf: check_skill_bang_backtick(),
@@ -19694,6 +20375,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
         lambda wf: _run_warn_only(check_no_unannotated_gcp_pin_guidance)
     ),
     "check_lane_order_adjective": lambda wf: check_lane_order_adjective(),
+    "check_shared_tmp_name": lambda wf: check_shared_tmp_name(),
 }
 
 # Classification of every dispatch-chain check (plan §4 B2). The task-body
@@ -19815,6 +20497,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
     "check_codex_composer_memory_commit": CheckScope("global", (".claude/",)),
     "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
+    "check_force_push_policy": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
     "check_smoke_output_hygiene": CheckScope("global", (".claude/",)),
@@ -19825,6 +20508,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_lens_coverage": CheckScope("global", (".claude/rules/",)),
     "check_section_reference_pointers": CheckScope("global", (".claude/",)),
     "check_git_recipes_root_guard": CheckScope("global", (".claude/", "CLAUDE.md")),
+    "check_issue_skill_fence_wt_binding": CheckScope("global", (".claude/skills/issue/",)),
     "check_bare_commit_pathspec": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_skill_bang_backtick": CheckScope("global", (".claude/skills/",)),
     "check_agents_note_argv_verdict": CheckScope("global", (".claude/agents/",)),
@@ -19844,6 +20528,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_lane_order_adjective": CheckScope(
         "global", (".claude/", "CLAUDE.md", LANE_ORDER_ROUTER_REL)
     ),
+    "check_shared_tmp_name": CheckScope("path-local", ("scripts/", "src/")),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
@@ -20692,6 +21377,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-force-push-policy",
+        action="store_true",
+        help="FAIL if the #2313 force-push ruling is absent from "
+        ".claude/rules/auto-continuation.md STATE-TO-blocked criterion 2 "
+        "(region-anchored on the criterion-2 bullet, up to criterion 3): "
+        "the literal --force-with-lease token, the NO-autonomous-carve-out "
+        "token, the pointer to the force-free Rewritten-branch landing "
+        "route (18-step-10d.md, #2312), and the precedent-reconciliation "
+        "issue ids on both sides of the divergent record (#2171/#1999 vs "
+        "#2181/#2318 — the ids are pinned, never the mention count, which "
+        "drifts). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-verdict-round-anchor",
         action="store_true",
         help="FAIL if the #2136 verdict-round freshness anchor is absent "
@@ -21091,6 +21789,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "run.",
     )
     parser.add_argument(
+        "--check-issue-skill-fence-wt-binding",
+        action="store_true",
+        help="Scan every bash/sh/shell-tagged OR untagged fenced block in "
+        ".claude/skills/issue/SKILL.md + .claude/skills/issue/steps/*.md "
+        "and FAIL any fence referencing $WT that neither binds in-fence "
+        "(a WT= assignment, or a non-comment eval of "
+        "'step10d_guards.sh <N> --guard prelude') nor carries the literal "
+        '\'wt-binding:\' annotation token. git -C "" and cd "" are '
+        "silent no-ops, so an extracted fence with unbound $WT retargets "
+        "the SHARED repo root (#2306/#2293). A bare 'cd \"$WT\" ||' guard "
+        "is NOT accepted. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-bare-commit-pathspec",
         action="store_true",
         help="Verify no bash/sh/shell-tagged fenced block in the workflow "
@@ -21250,6 +21961,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "out of scope (true historical statements). Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-shared-tmp-name",
+        action="store_true",
+        help="FAIL (#2336): flag process-shared atomic-write temp-name "
+        "derivations in *.py/*.sh under scripts/ and src/ (six arms: "
+        "attribute-.name / bare-name / generic concats of a fixed .tmp "
+        "literal minus the .suffix class; the braced-.name-then-.tmp "
+        "and generic-stem f-string shapes and the .tmp_-prefixed "
+        "interpolation form; the f-string arms exempt on a same-line "
+        "getpid()/uuid4() token). A fixed <name>.tmp sidecar is "
+        "PROCESS-SHARED: concurrent writers of one destination "
+        "collide mid-os.replace (#2329 r3); use "
+        "explore_persona_space.atomic_io.atomic_replace. Legacy "
+        "offenders are frozen in SHARED_TMP_LEGACY_ALLOWLIST (stale "
+        "entries WARN, never FAIL); waive a legitimate site with "
+        "'# SHARED_TMP_EXEMPT: <reason >= 10 chars>' on the hit line or "
+        "the immediately-preceding comment-only line. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.files:
@@ -21353,6 +22083,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_cvd_scoped_gpu_verdict_lens
         or args.check_codex_composer_memory_commit
         or args.check_codex_concerns_persistence
+        or args.check_force_push_policy
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
         or args.check_stale_label_disposition
@@ -21380,6 +22111,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_scripts_import_guard
         or args.check_upload_or_true
         or args.check_git_recipes_root_guard
+        or args.check_issue_skill_fence_wt_binding
         or args.check_bare_commit_pathspec
         or args.check_marker_scalar_integrity
         or args.check_poller_marker_consumers
@@ -21391,6 +22123,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
         or args.check_lane_order_adjective
+        or args.check_shared_tmp_name
     )
 
     errors: list[str] = []
@@ -21533,6 +22266,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_codex_composer_memory_commit_lens())
     if args.check_codex_concerns_persistence or no_flags:
         errors.extend(check_codex_concerns_persistence_lens())
+    if args.check_force_push_policy or no_flags:
+        errors.extend(check_force_push_policy_lens())
     if args.check_verdict_round_anchor or no_flags:
         errors.extend(check_verdict_round_anchor())
     if args.check_smoke_blind_spots:
@@ -21584,6 +22319,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_or_true())
     if args.check_git_recipes_root_guard or no_flags:
         errors.extend(check_git_recipes_root_guard())
+    if args.check_issue_skill_fence_wt_binding or no_flags:
+        errors.extend(check_issue_skill_fence_wt_binding())
     if args.check_bare_commit_pathspec or no_flags:
         errors.extend(check_bare_commit_pathspec())
     if args.check_asw_docstring_pass_count or no_flags:
@@ -21622,6 +22359,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # introducing round (#1388 contained). K1 downgrade lever: wrap in
         # _run_warn_only and record why.
         errors.extend(check_lane_order_adjective())
+    if args.check_shared_tmp_name or no_flags:
+        errors.extend(check_shared_tmp_name())
 
     if errors:
         for err in errors:
