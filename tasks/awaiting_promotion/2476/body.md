@@ -4,7 +4,8 @@ title: 'The context-to-answer map''s coarse-over-specific predictability gradien
   fall below the alive floor, and retrieval stays coarse-tier-concentrated (MODERATE
   confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-08-22T20:08:40Z'
 has_clean_result: true
 parent_id: 1482
