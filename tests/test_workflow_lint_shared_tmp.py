@@ -162,14 +162,30 @@ PREDICATE_ROWS: tuple[tuple[str, str, bool], ...] = (
         'tmp = dest + ".tmp"; note = "# SHARED_TMP_EXEMPT: this is not a comment"',
         True,
     ),
+    # ------------------------------------------------------------------
+    # Round-3 rows (#2336 R2 — plan §4 step 5 FN-profile entry (j)): arm
+    # E's per-line scan stops at an ESCAPED same-quote (a quote CHAR at
+    # regex level), pinning BOTH probed directions.
+    # ------------------------------------------------------------------
+    # leading side: an escaped quote between the opening quote and the
+    # interpolation hides the interpolation from arm E -> documented MISS
+    # (false negative); binds only when the temp NAME itself embeds a
+    # literal quote character (measured 0 such writers in the tree).
+    ("E_escquote_leading_documented_miss", 'tmp = f"say \\"hi\\" {name}.tmp"', False),
+    # trailing side: an escaped quote between `.tmp` and a TRAILING
+    # interpolation hides that interpolation from the exemption lookahead
+    # -> the line is FLAGGED (fail-closed false positive; waiver escape).
+    ("E_escquote_trailing_fails_closed", 'tmp = f"{a}.tmp\\"{b}"', True),
 )
 
 
 def test_predicate_table_row_count() -> None:
     """Round-1 table (25 rows) + 7 round-2 rows (per-occurrence binding,
-    plain-string E/F templates, the waiver string-literal spoof)."""
-    assert len(PREDICATE_ROWS) == 32
-    assert len({row_id for row_id, _line, _hit in PREDICATE_ROWS}) == 32
+    plain-string E/F templates, the waiver string-literal spoof) + 2
+    round-3 rows (the arm-E escaped-quote direction split, FN-profile
+    entry (j))."""
+    assert len(PREDICATE_ROWS) == 34
+    assert len({row_id for row_id, _line, _hit in PREDICATE_ROWS}) == 34
 
 
 @pytest.mark.parametrize(
@@ -314,7 +330,10 @@ def test_files_mode_scoped_run_emits_zero_stale_warns(
     the scanned scope (they were never scanned — staleness is unknowable,
     and the WARN's "remove it" instruction would be false), while a
     full-walk run over the same tree still reports the genuinely stale
-    entry."""
+    entry. Round-3 half (#2336 R1): an IN-scope stale entry still DOES
+    WARN under files-mode — without this direction, a form-drift in
+    ``_files_scope_rel`` that excluded everything would zero every
+    files-mode stale WARN with the suite green."""
     _plant(tmp_path, "scripts/inscope.py", "x = 1\n")
     monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
     monkeypatch.delenv("EPS_WORKFLOW_LINT_REPO_ROOT", raising=False)
@@ -327,6 +346,20 @@ def test_files_mode_scoped_run_emits_zero_stale_warns(
     errors = check_shared_tmp_name(root=tmp_path, allowlist=allowlist, warn_sink=warns)
     assert errors == []
     assert warns == [], f"files-mode run stale-WARNed an out-of-scope allowlist entry:\n{warns}"
+
+    # files-mode, IN-scope stale entry (scanned this run, zero hits): the
+    # stale WARN still fires — the positive direction of the round-2 fix.
+    warns_inscope: list[str] = []
+    errors_inscope = check_shared_tmp_name(
+        root=tmp_path,
+        allowlist=(("scripts/inscope.py", "already migrated — stale, in scope"),),
+        warn_sink=warns_inscope,
+    )
+    assert errors_inscope == []
+    assert len(warns_inscope) == 1, (
+        f"files-mode run failed to stale-WARN an IN-scope allowlist entry:\n{warns_inscope}"
+    )
+    assert "stale allowlist entry scripts/inscope.py" in warns_inscope[0]
 
     # full walk (scope off): the same stale entry IS reported.
     monkeypatch.setattr(wl, "_FILES_SCOPE", None)
