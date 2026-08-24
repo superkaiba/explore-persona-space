@@ -1081,6 +1081,36 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   (spans = brief + lensitems + plan + empty prior; digit-free scaffold —
   counts as words, "the balanced-pool control values" instead of numbers).
 
+- **WARN-only-detector plan with a brief-BOLDED central claim (#2327 round
+  one, alternatives on the Step 5a cap-coherence detector): when the brief
+  bolds ONE central claim ("that a WARN-only detector materially reduces the
+  cost of this failure class"), mandate a dedicated `### Central-claim
+  adjudication` section (HOLDS | HOLLOW | PARTIAL + strongest evidence,
+  quote-the-command) placed BEFORE the per-question answers**, and give the
+  WARN-actionability question its empirical instrument explicitly: bounded
+  greps over task event logs for the EXISTING advisory lines the same block
+  already prints (`grep -rl 'spec-freshness' tasks/completed/*/events.jsonl |
+  head` → do subsequent round actions ever reference them?) — the
+  acted-on-in-practice probe is the dormant-advisory-consumer item (57-A/74-H)
+  made empirical. Brief's must-adjudicate merge-remedy question pairs with
+  the #2269 inversion clause on the plan's must-ask fences (auto-merge is
+  must-ask; "if genuinely REQUIRED, say so as Must Fix — that IS the re-plan
+  trigger"). Enumerated alternative-cause states walked per state with
+  HANDLED | MISLEADS-RECOVERABLE | MISLEADS-FATAL labels; scope-creep arm
+  labeled REQUIRED | DEFENSIBLE | CREEP. Read discipline: ban git fetch
+  (origin/main IS the diffed population) + pytest + the full no-flags lint
+  run (plan measured its timeout), permit the fast scoped size check. The
+  spec's own SNAPSHOT-NOTE extensions for detector plans: quoted plan line
+  numbers = plan-time snapshots (read-pinning posture), history-count deltas
+  on a moving window = expected drift, design-rule-mishandles-a-probed-state
+  = still a finding. Numcheck PASS first try at ~73 KB (spans = briefnote +
+  lensitems + plan + empty prior; digit-free scaffold; unsigned
+  both-sides-guard atoms + comma-grouping first + isfinite literal-keep +
+  collect-all + registry leg from repo root; version-suffixed workspace keyed
+  to PLAN version). Self-test note: `983_400` underscore-grouped numerics are
+  atom-free under both-sides guards (the `_` is a word char) — symmetric, safe
+  anywhere.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
@@ -1088,6 +1118,96 @@ hyphen-digit scaffold atoms above.
 **How to apply:** any codex-critic spawn whose brief supplies its own lens
 list and/or targets a `kind: infra` / workflow-fix plan; the REVISE-round
 bullet for any round-2+ re-review brief with rejected-findings guards.
+- **Census-justified detector plan, standard statistics lens + brief
+  seven-question translation (#2327 round one, the Step 5a cap-coherence
+  half-sync detector): when the brief's core framing is "the design decision
+  rests on a measurement", compose a digit-free FOUR-FOLD measurement
+  translation in the lens bridge** — (i) the design-fork estimator (the
+  precision figure behind rejecting the general commit-grain form), (ii) the
+  shipped arms' asserted-vs-measured firing claims, (iii) the acceptance
+  fixtures as the certifying instruments, (iv) the cost/fence/kill-threshold
+  figures as a fleet-wide sizing measurement — and extend the snapshot note
+  with a git-CENSUS population-drift arm (re-derived commit counts differing
+  from plan/fact-check figures = expected drift; an estimator/population
+  defect holding under BOTH counts = finding; the #2246 worktree-membership
+  form, re-derived for history censuses). Brief's numbered questions ride
+  verbatim as the briefnote span (they carry every digit incl. the
+  fact-check's HIGHER re-derived counts); output = `### Answers to the
+  review questions` (SOUND|CONCERN|MUST-FIX|UNVERIFIED; UNVERIFIED would-be
+  blockers file under Nice to Have naming the settling probe) + the
+  brief-ordered Must-Fix vs Nice-to-Have numbered split + the Rating line
+  LAST (the brief ordered "end with a verdict line rating MEASUREMENT
+  ONLY"). Read discipline: ban git fetch (the census population), pytest
+  (planned tests don't exist), and the full no-flags lint run (the plan's
+  own recorded timeout under fleet load); PERMIT re-running the plan's
+  scoped rev-list / no-walk-log census + wc -c / cap-constant greps with
+  quote-the-command grounding. Gags that fit: fail-closed conversions (the
+  task Goal's own disjunction sanctions WARN and the must-ask list bars
+  fail-closed — judge that the advisory contract is honored and MEASURED,
+  never that it should be stricter) + the plan's recorded scope declines. A
+  brief question phrased as a meta-instruction ("instruct the reviewer to
+  sample...") may be minimally rephrased to direct address — span = prompt
+  by cat-assembly, so digit balance is unaffected. Numcheck PASS first try
+  at ~113 KB with ZERO scaffold-cleared atoms (spans = briefnote + plan +
+  lensitems + empty prior; "#<taskid>"/"Step 5a"/"Step 10d"/"v2" are
+  scaffold-safe under both-sides guards; the digit-bearing step FILENAMEs
+  stayed span-side). Sibling-lens composers appended their entries to this
+  memory file concurrently in the same round — insert before the Related
+  footer and commit by explicit path in the same turn.
+
+- **Guard-bypass alternatives compose (#2328 round one, marker-status
+  false-destruction plan): when the brief's translation is "alternative
+  PATHS by which the failure mode recurs anyway" over a PROSE-GUARD +
+  OPT-IN-HELPER plan, extend the #2152 shape with disposition SUB-LABELS —
+  FATAL | RESIDUAL (named in plan) | RESIDUAL (unnamed) | NO-FINDING — and
+  license at most ONE minimal disclosure-line Must Fix for an unnamed
+  residual whose silence materially overstates the protection (everything
+  else RESIDUAL → Concerns).** Rename the concerns section to "implementer /
+  code reviewer" (infra, no analyzer). Brief-supplied numbered press points
+  ride verbatim as the press span; 1:1 sharpeners in brackets inside a
+  press item (here: a TOCTOU/staleness clause on the verdict-attackability
+  question — "does anything bind verdict time to action time?") work
+  digit-free. Read-discipline additions for a helper-that-does-not-exist-yet
+  plan: ban running the PLANNED subcommand by name alongside pytest;
+  encourage the enumeration press point with bounded greps
+  (events.jsonl/list_events/latest-marker readers, exclude worktrees) +
+  quote-the-grep grounding. Settled block from the plan's own
+  orchestrator-ruled scope boundary (list_events repointing) + the priced-out
+  lesson, with the "judge the residual handling, not the cut" carve-out.
+  Numcheck PASS first try at ~69 KB, fully digit-free scaffold (spans =
+  inputs + press + lensitems + plan + body + empty prior; run from repo
+  root — cwd=/tmp WARN-degrades the registry leg, the #2422 gotcha).
+
+- **State-classifier helper plan (three-source marker-presence read), standard
+  methodology lens + brief five-question translation (#2328 round one): when
+  the plan ships a CLASSIFIER whose one verdict word licenses a dangerous
+  action (`absent` unlocks re-append), write the infra bar's first clause as
+  the dangerous-direction test** ("a false `absent` re-creates the founding
+  hazard with the new tool's authority behind it") and fold these earned
+  sharpeners 1:1 into the brief's questions: (i) the PRE-LEDGER TOCTOU window
+  — walk the writer's append→commit-attempt→ledger-write sequence for a
+  moment where ALL evidence sources read empty on a healthy in-flight post,
+  and ask whether the dangerous verdict's guidance carries a
+  re-read-before-acting arm; (ii) FILTER-SCOPE AMBIGUITY — an optional filter
+  (note-contains/version) defined for one source but ambiguous over a
+  TRUNCATED/blind second source is itself a finding if a reasonable
+  implementer writes the dangerous variant; (iii) replay-test STAGING
+  fidelity — a monkeypatched-commit reconstruction only reproduces the stash
+  state if the patch point leaves the row UNSTAGED (checkout reverts to
+  index), so direct the twin at WHERE staging happens relative to the patch;
+  (iv) worktree-stale-HEAD folded into the brief's fallback-chain question
+  (frozen worktree HEAD + empty ledger → `absent` for a row committed on
+  main after branching — conservative vs confidently-wrong split mandated in
+  the answer). Read discipline extends self-referentially: ban ALL mutating
+  task.py subcommands BY NAME (the plan's subject is marker posting) while
+  permitting read-only view/find/latest-marker + `git show HEAD:` probes.
+  Anchor-uniqueness question pairs each P-item with the pin TEST the plan
+  claims is compatible ("does it only presence-check the heading, or pin
+  adjacency the insert breaks?"). Numcheck PASS first try at ~148 KB (spans
+  = inputs + questions + lensitems + plan + body + empty prior; digit-free
+  scaffold — "§4.1"/"§4.3"/"§11"/":1371"/"8735"/"60 chars" confined to the
+  questions span; "P1-P6"/"T1"/"v1"/"Step 9c" atom-free under both-sides
+  guards; registry leg from repo root; version-suffixed workspace).
 
 Related: [[plan-path-missing-read-from-main]],
 [[stale-tmp-files-across-plan-versions]].
