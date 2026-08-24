@@ -1,0 +1,11 @@
+{
+ "t_dual_cell_s": 1.8660724982619286,
+ "t_primal_cell_s": 13.088341612368822,
+ "n_dual_cells": 280,
+ "n_primal_cells": 1005,
+ "boot_allowance_s": 600.0,
+ "projected_wall_h": 3.9656343388733353,
+ "planned_wall_h": 3.0,
+ "abort_factor": 2.0,
+ "pass": true
+}

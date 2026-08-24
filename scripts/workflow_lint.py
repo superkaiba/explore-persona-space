@@ -17525,11 +17525,17 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 148_300 (#2263 r2, 145,553 B) / 147_400 (#2263 r1, 144,671 B) /
     # 145_400 (#2350, 142,643 B) / 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 151_800,
-    # measured 244,047 B @ #2306 2026-08-23 (Step 9c gate fences: wt-binding
-    # annotations + strengthened [ -n/-d ] cd guards, +1,526 B); corridor-max
-    # ((measured+2_800)//100)*100 = 246_800, headroom 2,753.
-    # Prior: 245_300 (242,521 B).
-    "issue/steps/13-step-9.md": 246_800,
+    # measured 250,132 B @ #2315 Step 10d 2026-08-24 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100 = 252_900, headroom 2,768 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
+    # caps measured only their own side: #2315 r3's 1b FATAL arm per-cause
+    # remedy split (249,179 B) and #2306's Step 9c gate fences (244,047 B)
+    # landed on the same file concurrently.
+    # Prior: 251_900 (#2315 r3, 249,179 B) / 246_800 (#2306, 244,047 B) /
+    # 251_800 (#2315 r2, 249,059 B) / 250_200 (#2315 r1, 247,430 B) /
+    # 245_300 (242,521 B).
+    "issue/steps/13-step-9.md": 252_900,
     # measured 299,213 B @ #2306 2026-08-23 (fence-local $WT/$REPO_ROOT D1
     # bindings on the 4 extraction-prescribed fences + wt-binding annotations
     # on 12 caller-dependent fences + the line-2791 malformed-fence-close
