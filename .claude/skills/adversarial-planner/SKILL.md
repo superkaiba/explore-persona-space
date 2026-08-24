@@ -443,7 +443,63 @@ Run the structural verifier against the plan version just persisted:
   genuinely dispatching N-wide through the fence instead adds `--gpus <N>`
   to it, or re-costs the §9 walls at the realized width — a
   `--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow
-  run; #2276, incident #2225 v9).
+  run; #2276, incident #2225 v9), and
+  `N/A — no sampled exactness claims` (check 64 — the exactness vocabulary
+  is incidental or quotes an incident/sibling, not this plan's own sampled
+  exactness premise; a plan with a genuine sampled exactness claim instead
+  verifies it at full grain, or restates it as a bound — "no deviation
+  observed in N of M" — and softens the assert; #2163), and
+  `N/A — no smoke fixture size claim` (check 65 — the smoke-size
+  vocabulary is incidental / quotes an incident, not this plan's own
+  fixture-size claim; a plan genuinely claiming a smoke-fixture row floor
+  instead states a floor at or below the realized fixture minimum, or
+  budgets the producing-script change; #2178, incident #1336 v16), and
+  `N/A — no fixture-producing script change needed` (check 66 — the
+  contradicted floor is deliberate / already remediated elsewhere; a plan
+  genuinely needing regenerated fixtures instead names the producing
+  script in its modified-file list; #2178), and
+  `N/A — no smoke run` (checks 65 + 66 — the dedicated no-smoke-run
+  declaration route: a plan declaring it runs no pre-launch smoke has no
+  smoke fixtures in scope, so both checks SKIP even when a claim-shaped
+  line is present — the declaration wins; check 11's canonical
+  `N/A — no dry-run smoke` standalone form is recognized the same way;
+  #2178 round 2), and
+  `N/A — no test-retest gate` (check 67 — the retest/κ vocabulary is
+  incidental or quotes an incident, not this plan's own registered
+  test-retest κ demotion gate; a plan genuinely registering the gate
+  instead runs the retest at the parent instrument's sampling temperature,
+  or re-grounds the κ threshold for a deterministic surface; #2204,
+  incident #2202 v1), and
+  `N/A — no absolute-margin decision gate` (check 68 — declare only when
+  the plan genuinely registers no absolute-pp reduction margin: the
+  pp-margin/baseline vocabulary is incidental or quotes an
+  incident/sibling), and
+  `N/A — harvested percentage baseline is unrelated to this absolute-margin gate`
+  (check 68 — the plan DOES register an absolute-pp margin but every
+  %-stated baseline in the plan concerns a different quantity; prefer
+  stating the gate's true baseline in % form so the harvest sees it;
+  #2228, incident #2203 v12), and
+  `N/A — no armed re-gen trigger` (check 69 — the re-gen arming vocabulary
+  is incidental or quotes an incident/sibling, not this plan's own armed
+  cap-hit re-generation trigger; a plan genuinely arming the trigger
+  instead states the doubled-cap arithmetic max_model_len − 2×cap ≥ the
+  stated prompt bound and sizes the regen engine to fit; #2269, incident
+  #2221 v9), and
+  `N/A — harvested max_model_len pin is unrelated to the armed re-gen stage`
+  (check 69 — the plan DOES arm a re-gen trigger but every harvested
+  max_model_len pin belongs to a different engine/stage; prefer stating
+  the regen stage's own pin so the harvest sees it; #2269), and
+  `N/A — no judge-pilot gate` (check 70 — the pilot vocabulary is
+  incidental or quotes an incident/sibling without registering a gate; a
+  plan genuinely registering a judge-pilot gate instead sizes per-arm
+  effective draws to ≥ floor(1/parse-fail threshold) + 1 — 51 at 2% — or
+  declares `allow_subresolution_pilot` on the gate line; #2299, incident
+  #2162 v7), and
+  `N/A — harvested pilot sizing is historical or belongs to a different gate`
+  (check 70 — the harvested threshold/draws/arms pairing is a superseded
+  quote the parser guard misses, a cross-item pairing, or an aggregate
+  threshold upgraded by a neighboring per-arm token; prefer stating the
+  gate's own sizing so the harvest sees it; #2299).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -547,6 +603,22 @@ the reused `delta_tf/<mix>/pos.jsonl`; realized grain was exactly 20 rows/mix, a
 plan-derived 40-row hard floor killed the launch). State the verdict per counted
 file (GRAIN-CONFIRMED <n> rows / WRONG / UNVERIFIED).
 
+For EACH assumption asserting an EXACT identity — zero variance, `n_distinct == 1`,
+byte-identical, "every row", "no exceptions", `max|…| = 0` exactly, "all pairwise … =
+1.000000" — run the EXACTNESS-CLAIM GRAIN CHECK: (1) identify the claim's evidence GRAIN
+(rows / shards / units actually examined) and the POPULATION grain the plan applies it
+to; report both explicitly, as a ratio. (2) When grain < population AND the plan converts
+the claim into a runtime assert, a hard-coded constant, or a stated deviation from a
+standing rule, the verdict is GRAIN-MISMATCH (BLOCKING): a sample only ever establishes
+"no counterexample observed in N of M", never "zero counterexamples exist", so the assert
+crashes at the first full-population read if any deviation exists (#2163: byte-identity
+asserted from 706 of 142,000 rows — 0.5% — died rc=1 on 258 deviating rows, after
+provisioning). Name BOTH remedies: verify at full grain NOW (often cheap — it is exactly
+the read the asserting phase already performs), or restate the assumption as a bound
+("no deviation observed in N of M rows") AND soften the assert to the invariant the
+bound supports. (3) Value claims and non-assert-bearing exactness claims are EXEMPT —
+this lens is not a confidence-downgrade tax on measured numbers.
+
 DO NOT trust the plan's reasoning. DO NOT trust your own training data for version-specific
 claims (API signatures, library features, default values). SEARCH and READ to verify.
 
@@ -571,10 +643,13 @@ Common traps to watch for:
 - "The reused file has ~N rows" — for a count that feeds a floor / sizing / quota /
   draw, download at the pin and COUNT; an assumed grain range is the #1900 crash
   class (assumed 50-300/mix, realized 20)
+- "EVERY row is identical / n_distinct == 1" from a sample — that is a BOUND, not an
+  identity; check the grain ratio before the plan hard-asserts it at full grain (#2163)
 ```
 
 **After the Verifier returns:**
 - If ANY assumption is WRONG: fix it in the plan before proceeding to the Critic. A plan built on wrong facts will waste the Critic's time.
+- If any exactness claim is GRAIN-MISMATCH (BLOCKING): fix the plan before Phase 2 — verify at full grain, or restate as a bound + soften the assert.
 - If assumptions are UNVERIFIED: note them as risks. The Critic should evaluate whether they're blocking or can be tested with a smoke test.
 - If all CONFIRMED: proceed to the Critic.
 
@@ -805,7 +880,7 @@ the skip itself is the confirmed no-show.
 - Present the merged critique to the planner for revision.
 
 The reconciler may NOT add findings beyond what either reviewer raised. Round
-counter does NOT increment for reconciler invocations (per-reviewer cap = 5 rounds).
+counter does NOT increment for reconciler invocations (per-reviewer cap = 10 rounds).
 
 ### Phase 3: Revise (Back to Planner Agent or Main Thread)
 
@@ -838,13 +913,13 @@ conclusion-changing bar in `critic.md`, round-1 Must-Fix items are concrete
 and specific — the planner integrates them and ships. Rounds 2 and 3 of the
 critic loop fire only in the narrow cases below, because each extra round
 both costs compute AND tends to accrete additions that wouldn't have made
-the conclusion-changing bar on their own. The cap is still 5 total
+the conclusion-changing bar on their own. The cap is still 10 total
 revision rounds in case re-critique IS warranted.
 
-Note (#784): the `critic` site's cap-5 loop terminates at the USER
+Note (#784): the `critic` site's cap-10 loop terminates at the USER
 PLAN-APPROVAL gate — the user is the final critic. It never ships past
 or pivots on its own, so the surface-real-residual terminal that the
-other three iterating sites gained at cap-5 (code-reviewer / interp /
+other three iterating sites gained in #784 (code-reviewer / interp /
 clean-result) is ALREADY the critic site's behavior: at the cap, the
 revised plan + the round-N critique are handed to the user at the
 approval gate, consistent with #784's surface-not-ship intent. No new
@@ -1002,6 +1077,9 @@ for lens, codex_agent_out in (("methodology", m_codex),
         continue
     cfg = parse_codex_dispatch_config(codex_agent_out)  # extract Prompt file / Expected output file
     # Bg-dispatch in a SINGLE message so all 3 Codex runs proceed concurrently.
+    # Safe against the shared codex-companion jobs index: codex_task.py itself
+    # serializes spawn+confirm on a repo-keyed lock (#2323) — do NOT re-sequence
+    # this dispatch to sequential.
     # The orchestrator continues with other turn-local work; the harness
     # delivers a notification on each bg-Bash exit. End the current turn
     # if no other work is in flight rather than blocking on TaskOutput
@@ -1096,7 +1174,10 @@ dispatch configs, the orchestrator bg-dispatches `scripts/codex_task.py` for
 each in a single message (3 parallel bg-Bash calls). Per-lens reconciler runs
 only on Claude-vs-Codex disagreement and is also in-context (no GitHub
 markers). Worst case per round: 6 critics + 3 Codex bg-dispatches + 3
-reconcilers = 12 invocations.
+reconcilers = 12 invocations. The single-message parallel dispatch stays the
+required shape: `codex_task.py` itself serializes each spawn+confirm window on
+the repo-keyed dispatch lock (#2323), so concurrent dispatches no longer race
+the shared codex-companion jobs index — never re-sequence them to sequential.
 
 **Dispatch ordering guards (both bit on 2026-06-09, #545):** (a) bg-dispatch
 `codex_task.py` ONLY after the wrapper's completion notification — and gate
@@ -1125,7 +1206,7 @@ in as a post-park plan v2.
 - **Never skip the Verifier.** Wrong assumptions propagate through the entire pipeline. The Verifier is the cheapest intervention — 30 seconds of web search prevents hours of wasted GPU time. This was added after the corpus projection incident where wrong layer choice and wrong "vLLM can't do this" claims invalidated the first run.
 - **Never skip the Critics.** The 3-lens parallel critique catches more than any single critic. Each lens has structural diversity (different prompts/framings), which research shows outperforms debate or angel/devil formats.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
-- **Max 5 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
+- **Max 10 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.
 - **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink. The persist REFUSES an amendment-shaped version — a thin delta (< 40% of its predecessor) carrying an amendment-marker phrase ("AMENDMENT of vJ" / "PORTS FROM vJ" / "unchanged from vJ") with no own `Estimated GPU-hours (total):` declaration — because three consumers assume every `plans/v{K}.md` is self-contained: subagent briefs handed `plans/plan.md`, `verify_plan.py --issue`, and the Step-2c GPU-hours read (#2255). Remedy: compose a FULL plan (base + delta merged into one self-contained document) and re-persist; the deliberate escape is `--allow-amendment`, which obligates RESTATING the `Estimated GPU-hours (total):` line inside the amendment and handing base+delta together in every brief (`verify_plan --issue` composes them automatically). The persist auto-aligns a self-declared `# Plan v<K>` first-heading version to the assigned version at write time (#1745), so a freshly-persisted plan cannot WARN on c40 for a stale header. Never re-persist a plan solely to retitle its header — that burns a plan version for zero content change (the #1715 churn loop); prefer version-neutral headers (`# Plan — task #<N>: …`) for new drafts. A scripted edit gates its persist on verified edit success — `&&`-chain edit
 → verify → persist, abort loudly on failure (§ Edit-success gate).

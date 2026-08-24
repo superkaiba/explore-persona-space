@@ -737,7 +737,7 @@ whose workload wedges without the EXIT trap firing — stays `RUNNING` with
 async predicate matches and the run bills until a HUMAN manually pivots to
 `--backend runpod`. Closing this (escalating a frozen non-terminal phase
 past a drain-timeout to a terminal wedged state) is a pending
-`kind: infra` follow-up. (See also the #491 `bufio.Scanner: token too
+`kind: infra` follow-up. (See also the `bufio.Scanner: token too
 long` zombie in `.claude/rules/gotchas.md`, a sibling hung-but-RUNNING
 mode recoverable in place via SSH relaunch.)
 
@@ -779,7 +779,9 @@ finalize_failed_artifacts_ok, wedged}) and
 launch reclaims + creates fresh (skip/delete sets pinned identical,
 `tests/test_gcp_backend.py`, #632; a guest-attribute probe failure raises
 `GcpProbeError` — never a reconnect, never a delete, #535). Relaunch
-contract (the #491 SSH-relaunch recipe in `.claude/rules/gotchas.md`): a
+contract (the SSH-relaunch recovery in the `.claude/rules/gotchas.md`
+GCE metadata-script-runner bufio-zombie entry, #908/#935 — the full
+relaunch mechanics survive in that entry's git history): a
 manual same-VM relaunch MUST re-publish `eps/phase=workload` BEFORE
 resuming work, and a relaunch on a VM whose first workload published
 `done` must re-publish within the done-grace window (or touch the

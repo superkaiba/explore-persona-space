@@ -1,9 +1,19 @@
 ---
 name: multi-position-replace-hook-trap
-description: "#2094/#2162 patching rig: PositionEditHook forbids mode='replace' with >1 position/row (hooks.py assert); the l3j 'multi-position precedent' actually ran as add_full_state_patch — check any plan claiming joint multi-position replace"
+description: "#2094/#2162 patching rig: PositionEditHook historically forbade mode='replace' with >1 position/row — RESOLVED on main (tbmp generalization, commit 215d120dee): replace now accepts ANY position set. Still grep the assert when a plan pins an OLD sha or a pre-tbmp branch"
 metadata:
   type: feedback
 ---
+
+**STATUS UPDATE (2026-08-16, verified against origin/main):** the trap below
+is RESOLVED on current main — the #2162 tbmp round (commit `215d120dee`,
+"turn-boundary multipatch — hooks fix") generalized `PositionEditHook`:
+hooks.py's module docstring now reads `mode in {"add", "replace"} at ANY
+position SET`, and `arm_batch` asserts only non-empty/duplicate-free
+position lists per row (verified by grep on origin/main). The trap still
+applies to plans that pin a PRE-tbmp sha or import from a stale branch —
+grep the assert at the PINNED revision, not just main. The validated fix
+shape below is the historical record of how the relaxation was accepted.
 
 Any plan on the #2094/#2162 activation-patching rig that declares a JOINT
 multi-position patch with `mode="replace"` is claiming a code behavior the

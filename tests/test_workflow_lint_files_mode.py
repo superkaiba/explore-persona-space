@@ -137,6 +137,20 @@ def _make_tree(tmp_path: Path) -> Path:
     (tree / ".claude").mkdir()
     shutil.copy2(_LINT, tree / "scripts" / "workflow_lint.py")
     shutil.copy2(_REPO_ROOT / ".claude" / "workflow.yaml", tree / ".claude" / "workflow.yaml")
+    # The copied linter reads its agent-spec grandfather caps from this data
+    # file at IMPORT time (#1718 moved them out of a Python dict literal so
+    # concurrent cap raises edit different lines and merge cleanly). A hermetic
+    # tree must supply it for the same reason it supplies workflow.yaml: the
+    # module hard-fails without it BY DESIGN — the fail-loud posture is pinned
+    # by test_workflow_lint_agent_spec_caps.py (a silent empty caps map would
+    # un-grandfather every spec and flip WARN-under-cap into FAIL-uncapped
+    # fleet-wide), so the fixture models the dependency rather than the loader
+    # tolerating its absence.
+    (tree / ".claude" / "config").mkdir()
+    shutil.copy2(
+        _REPO_ROOT / ".claude" / "config" / "agent_spec_size_caps.txt",
+        tree / ".claude" / "config" / "agent_spec_size_caps.txt",
+    )
     return tree
 
 

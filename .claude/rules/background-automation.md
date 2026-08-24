@@ -175,9 +175,21 @@ mechanism as `cron_pod_audit.sh`).
 Reaps idle auto-generated worktrees under `.claude/worktrees/` — only when
 not held by a live process, not an `issue-<N>` at a non-terminal status,
 older than a 6h grace (1h when the holding filesystem is ≥90% full,
-`EPM_WORKTREE_DISK_PRESSURE_PCT`), and with no uncommitted tracked
-changes. Human-named worktrees are never touched; `issue-<N>-<suffix>`
-follow-up worktrees ARE in scope (mapped to issue N). For done-and-merged
+`EPM_WORKTREE_DISK_PRESSURE_PCT`), with no uncommitted tracked
+changes, and — issue worktrees only (#2246) — only when the THREE-VALUED
+unmerged-branch probe does not read unmerged: merged ⇔ the HEAD sha
+appears in an `epm:merged` note, OR (UNSUFFIXED `issue-<N>` worktrees
+ONLY) the newest `epm:merged` timestamp is STRICTLY newer than HEAD's
+committer epoch (tz-aware), OR the patch-id count vs `origin/main` is 0.
+An unmerged read KEEPS (`branch carries commits not reachable from
+origin/main (unmerged)`), and a probe FAILURE (None) is preserved as its
+OWN keep reason (`unmerged-branch probe failed (fail toward keep)`) —
+fail-toward-retention, never collapsed to falsy. The timestamp arm is
+DISABLED for suffixed `issue-<N>-<slug>` siblings: they share the task's
+ONE events file, so a sibling round's task-grained merge marker must
+never alias this branch's verdict. Human-named worktrees are never
+touched; `issue-<N>-<suffix>` follow-up worktrees ARE in scope (mapped to
+issue N). For done-and-merged
 (`completed`/`archived`/`awaiting_promotion`) issue worktrees, `--apply`
 additionally kills orphaned codex `app-server` holder pids (exact-pid,
 cmdline re-verified before each signal; never when a real holder is
@@ -449,6 +461,44 @@ outcome records the stamp. Residuals: check→spawn→record is a TOCTOU
 (pacing, not exclusion — bounded ~2 coincident cold loads);
 crash-recovery, capacity-retry, campaign, and manual spawns are accepted
 UNPACED sources.
+
+*Dispatch-loop freshness + cap re-check guards (#2142).* Four guards in
+BOTH dispatch loops (drain + proposed-infra sweep) close the demonstrated
+duplicate-spawn races (#1771/#1997/#1988/#1992: owner signals 26-59s old
+at re-dispatch; plus one 6-spawns > cap-5 over-dispatch). (1) *Post-stagger
+lease re-check* inside `_dispatch_infra_drain`: the caller-loop lease check
+runs BEFORE the up-to-60s stagger sleep, so immediately before the spawn
+subprocess the lease FILE is re-read — a fresh lease returns
+`"suppressed"` (the M1b no-booking no-op: no attempt, no backoff, no
+marker), never `"failed"`, which would consume the 1h backoff and stretch
+a crashed lease-winner's recovery from TTL + one tick to ~70 min.
+(2) *Registration-freshness skip*: a candidate whose `issue-<N>.json` /
+`manual-issue-<N>.json` is younger than `EPM_DISPATCH_REG_FRESH_S`
+(default 600s; `0` disables the guard) is presumed OWNED by a just-spawned
+session and skipped with NO attempt — a POSITIVE override of the staleness
+rule's `- stale` subtraction; a present-but-garbled registration reads
+maximally fresh (age 0.0, fail-closed — deliberately NOT
+`dispatch_lease_fresh`'s mtime-with-TTL convention). (3) *Owner-activity
+skip* (same window): a NON-watcher marker younger than the window is
+evidence a live session is working the task even with no registration or
+lease (the #1997 progress-note channel); the watcher's OWN dispatch
+sentinels are excluded, so its dispatch notes can never suppress its own
+retries — and the drain loop additionally gains the sweep's #843 M3
+dispatch-sentinel guard it previously lacked. (4) *Per-spawn cap
+re-check*: once ANY dispatch attempt has happened this pass (keyed on
+attempted-any, NOT spawned-count — a failed/suppressed first attempt still
+elapsed its stagger window), live occupancy is RE-READ before every
+further spawn and the candidate skips when `len(live) + pending +
+dispatched >= limit`. The `+ dispatched` term deliberately counts this
+pass's own in-batch spawns (a just-dispatched task stays `proposed` for
+minutes — invisible to both live occupancy and pass-start pending), and
+`limit` deliberately honors the #1853 urgent bonus in the sweep
+(`cap + urgent_bonus` for urgent candidates — a bare-`cap` re-check would
+revoke the sanctioned overflow mid-batch; the drain uses plain `cap`). A
+`None` mid-batch occupancy read fail-closes the REMAINDER of the batch (no
+further dispatches this tick, mirroring the pass-level guard). The
+re-check NARROWS the cap race (the verdict is still up to one stagger
+window stale at the spawn); it does not close it.
 
 *Predicate-hold auto-promotion (#633 follow-on).* Before dispatch, the
 pass promotes any `holds` entry matching the PM's
@@ -997,7 +1047,7 @@ sidecar `.claude/cache/verdict-disagree-observer-events.jsonl` + one
 deduped push; **NO task marker** (the flag's consumer is a human).
 Fire-once dedup key `(issue, role, round_label)` in
 `~/.eps-autonomous/verdict-disagree-observer.json`. Known benign-fire
-class: a Step 5c-bis mechanical-contract-only strip / cap-5
+class: a Step 5c-bis mechanical-contract-only strip / cap-10
 all-stripped-continue resolves a PASS-vs-FAIL round without a reconciler
 and flags by design (the FAIL marker's `**Blocker tags:**` line is the
 one-glance disambiguator). Coverage: latest-round-only; Tier-2 evidence
@@ -1225,6 +1275,57 @@ every spawn arm.
   respawn generation (~60-75 min in); (g) the
   `EPM_AUTH_OUTAGE_FRESH_DEATH_MIN` band is clamped ≥45 min.
 
+**Daemon-liveness pass (#2140, `daemon_liveness_pass`; ESCALATE-ONLY).**
+Makes a Happy-daemon OUTAGE loud on the tick the spawn lanes start
+skipping (origin: 2026-08-04T21:13Z → 04:30Z, a 3h17m outage in which
+every spawn lane no-oped with only stdout lines and detection was a human
+opening a PM session; the only pre-existing daemon-outage escalation,
+`decide_daemon_blocked_escalation` #845c, needs a respawn-worthy stalled
+session to exist first, so a stall-free outage escalated nothing). Runs on
+EVERY tick in BOTH daemon states, immediately after the tick's single
+retry-probe and BEFORE the auth-outage guard, consuming the
+already-computed `daemon_reachable` as a kwarg — never a second probe.
+**Predicate** (`decide_daemon_liveness_escalation`, pure, singleton state
+`~/.eps-autonomous/daemon-liveness.json`, every field re-validated with
+`isinstance` failing toward "no escalation" — worst case ONE delayed
+escalation, never a spurious one): the 2nd consecutive unreachable tick
+(`DAEMON_LIVENESS_THRESHOLD`, ~20 min at the 10-min cron) OPENS the
+episode; a persisting outage re-alerts every
+`EPM_DAEMON_LIVENESS_REALERT_MIN` (60 min — the #2140 3h17m window yields
+~4 alerts, not 20); the first reachable tick after an escalated episode
+fires ONE recovery event naming the measured outage duration (stamped at
+the FIRST unreachable tick), then state resets. **Channels, split by event
+class:** `open` + `recovered` ride the IMMEDIATE `telegram_push.sh`
+direct-send carve-out (`_telegram_push_urgent`; test override
+`EPM_TELEGRAM_PUSH_URGENT_SCRIPT`) — the 3x/day digest's worst-case
+latency (~8h) exceeds the very outage this pass exists to catch, and the
+digest's usual "tick-side PushNotification is the second channel" premise
+fails here because tick sessions spawn through the down daemon; `realert`
+stays on the digest queue (`_telegram_push`). Every event also appends one
+sidecar row (`.claude/cache/daemon-liveness-events.jsonl`); the alert is
+ACTIONABLE — it names the suppressed-work counts (autonomous `issue-*.json`
+registrations + the infra-drain queue's `ripe_oldest_first` depth, each
+read fail-soft to `?`) and the exact LOGIN-SHELL recovery command
+(`bash -lc 'happy daemon status; happy daemon start'`). **Storm guard:**
+state is saved BEFORE any emit and a failed save suppresses the push
+(stderr + sidecar only) — a save-after-emit order would recompute the
+threshold crossing and re-fire the open push every tick of a persistent
+save failure. **ESCALATE-ONLY is a hard invariant** (pinned by
+`tests/test_autonomous_session_watch_daemon_liveness.py::test_daemon_liveness_pass_never_restarts_or_mutates`):
+the pass never restarts the daemon, never stops/spawns a session, never
+posts a task marker, never mutates task status. A RESTART arm is
+deliberately OUT of v1 (recorded in the #2140 plan): the daemon is a
+manually-started orphaned node process with NO systemd unit, its
+durability hinges on a LOGIN-shell start (the § tmux socket-dir contract
+item 6 — a cron-started daemon risks the #1466 second-tmux-server
+split-brain), and `_daemon_reachable()`'s conservative contract means
+probe-false ≠ process-dead, so an unguarded start would double-daemon a
+hung-but-alive one; a future restart arm is a separate opt-in task
+(login-shell-invoked, gated on positive proof the recorded
+`daemon.state.json` pid is gone, per-day-capped). Kill switch
+`EPM_DISABLE_DAEMON_LIVENESS_PASS=1`; `--daemon-liveness-only` runs just
+this pass (pair with `--dry-run` for a zero-write live smoke).
+
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 
 The heavy active-task footprint (every `issue-<N>` worktree + its
@@ -1271,7 +1372,12 @@ rate-limited `vm_disk_guard.py --apply --ignore-threshold --no-push
 `EPM_VM_DISK_SUBFLOOR_GIB` (interval
 `EPM_VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S`, 1800s; kill switch
 `EPM_DISABLE_SUBFLOOR_RECLAIM=1`) — VM-root only; the data disk stays
-escalate-only.
+escalate-only. Since #2141 below-floor DECLINES are loud too — a stderr
+skip line naming the blocking predicate every declined tick (all subfloor
+log lines carry the lowercase greppable `subfloor` token), a throttled
+`action: "skipped"` sidecar row for kill-switched episodes — and the
+watcher's daily log gains a UTC-date symlink alias whenever the local and
+UTC dates differ.
 
 **Non-canonical caches + the /workspace hub-cache arm (#911).** The
 guard's tier (b) ALSO sweeps NON-CANONICAL issue-keyed caches — top-level

@@ -449,7 +449,10 @@ gate the plan retains:
   in prior-issue evidence of the construct. A gate whose sign predicts the
   opposite of what every prior run of this construct produced, or whose
   threshold no past result of this construct would itself have passed, is
-  a defect — it guarantees a false FAIL by construction.
+  a defect — it guarantees a false FAIL by construction. This clause is
+  vacuous when NO prior null values exist for the construct — exactly the
+  #1491 shape; the `**Measured calibration basis for NULL-statistic gates
+  (#1491).**` sub-section below is its measure-when-no-prior completion.
 - Self-check the whole gate set is **jointly satisfiable** before
   shipping: no two gates may demand contradictory outcomes (e.g. one
   requires `Δ ≥ +x` and another `Δ ≤ −y`) on the SAME measurement at the
@@ -503,6 +506,36 @@ construction (#2061: corpus `n_built` was quoted where realized turnstore
 rows was the fit's denominator; likely 5 of 7 combos degenerate under the
 #1887 refusal; caught only post-smoke at the cost of an
 `epm:strategy-pivot` + plans v11→v13, ~2.6 h).
+
+**Measured calibration basis for NULL-statistic gates (#1491).** Any
+pre-registered numeric gate whose thresholded quantity is computed from a
+NULL / permutation / shuffle / scrambled-label draw MUST cite a MEASURED
+calibration basis: a 1-cell pilot computing THAT null statistic through the
+PRODUCTION entrypoint at production `n`/`d`/`h` shape — named command +
+cell + the realized null value(s), with the gate band set relative to
+them. Prefer ≥3 draws, or state the dispersion allowance when the band is
+set off fewer (a measured value plus an asserted margin is the within-rung
+form of the same trap — #1491's first fix carried a ~3× margin and still
+fired). Two mechanisms make any asserted constant wrong: (1) a refit null
+is strictly negative under the `1 − SS_res/SS_tot` held-out convention —
+state WHICH R² convention the gate reads; the squared-correlation form
+does sit near 0 — with −d/(n−d−1)-scale magnitude, and (2) null depth is
+non-monotone in the shape parameters (deepest near the interpolation
+threshold `n ≈ d` / `n ≈ h`), so a ladder sweeping `n` or width calibrates
+PER RUNG or the gate is advisory. Not yet materialized at plan time ⇒ mark
+the band `inferred — re-calibrate at first null draw` and name the
+pre-gate re-calibration step (the measured-`n_train` escape's shape).
+Declare each null-side gate `advisory` (DEFAULT: log the realized value +
+expected band, continue, surface in the run digest) or `hard-abort` —
+hard-abort is opt-in and the plan must ARGUE it (name the downstream claim
+that would be invalid and why analysis-time rejection is worse; a
+null-side abort discards the OBSERVED arm too, the expensive half). Full
+recipe + carve-outs (purely observed-side predicates, analytic
+distributions, advisory log lines with nothing branching):
+`.claude/rules/selection-symmetric-nulls.md` § Gate thresholds on a NULL
+statistic. (#1491: `abs(r2_null) < 0.05` on a shuffle-refit null —
+realized −1 to −4 — hard-aborted all 8 shards on an 8×H200 pod; the
+asserted `-3.0` floor died the same way at the next rung.)
 
 ## 9. Resources & Parallelism
 
@@ -700,7 +733,7 @@ pod; the follow-up round improvised the "DEFERRED + gap-listed" rows this
 block mechanizes), and #1773 (the inverse direction: a GCE pass crashed
 loading VM-produced outputs never HF-uploaded — one provision+boot cycle
 burned). This is the plan-time mechanization of the
-`gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
+`gotchas.md` cross-machine upload-set bullet (#1482/#1535, rules (i)-(iv)).
 
 Render as a fenced YAML block, one entry per phase that reads another
 phase's outputs (the block NAME stays `off_pod_phases:` for back-compat
@@ -1046,6 +1079,18 @@ Worked example pair:
 - **Wrong:** the same row with `How to verify: the p1 assert will catch it` — that IS the production crash (#1768).
 
 Plan-time critics reviewing §12 check that every row matching the three-conjunct trigger carries the smoke-slice probe routing (prose-only enforcement, the #1287 precedent).
+
+### Exactness-claim grain (#2163)
+
+**Trigger:** a §12 row that asserts an EXACT identity — zero variance, `n_distinct == 1`, byte-identical, "every row", "no exceptions", `max|…| = 0` exactly — whose evidence is a SAMPLE (fewer rows / shards / units examined than the population the plan applies the claim to), when the plan converts the claim into a runtime assert, a hard-coded constant, or a stated deviation from a standing rule.
+
+**The duty:** state the claim's evidence GRAIN and the POPULATION grain explicitly, as a ratio. Then EITHER verify the claim at full grain BEFORE approval (often cheap — it is exactly the read the asserting phase already performs) OR restate the assumption as a BOUND ("no deviation observed in N of M rows") AND soften the assert to the invariant the bound supports. A sample only ever establishes "no counterexample observed in N of M", never "zero counterexamples exist" — widening 1 shard → 10 shards raises coverage, not the KIND of claim. Deferring verification to the production assert ("Phase 0 re-asserts it over the full store") is the failure mode, not a verification: the assert IS the crash.
+
+**Exemptions:** value claims (a λ, a byte count, a key set) with sampled sources, and exactness claims no assert / constant / stated deviation rests on — this sub-rule is not a confidence-downgrade tax on measured numbers.
+
+**Worked example (#2163):** A11 asserted `n_distinct_rows = 1` / byte-identity at `Confidence: High (measured)` from a 10-shard probe (706 of 142,000 rows — 0.5%), and the plan registered a Phase-0 full-store assert on it. Full-grain truth: 258 deviating rows (4 distinct vectors, all within cosine 0.99989) — the substantive conclusion survived; the literal premise and the assert built on it were both false. Cost: a pod launch cycle, a plan revision (v6), and a crash-fix round.
+
+Sibling boundary: § Real-corpus structural assumptions above routes STRUCTURAL premises to a smoke-time full-grain probe; this sub-rule is the assert-side sibling — it binds at PLAN time, before any smoke exists, whenever the exactness premise is already sampled-grounded and assert-bound. Mechanical companion: `verify_plan.py` c64 (WARN-only); behavioral gate: the Phase 1.5 fact-checker EXACTNESS-CLAIM GRAIN CHECK (adversarial-planner SKILL.md).
 
 ### General shape
 

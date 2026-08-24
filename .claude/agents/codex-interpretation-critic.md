@@ -65,7 +65,7 @@ Your brief contains:
 - `interpretation_marker_path` — path on disk where the orchestrator wrote
   the latest `epm:interpretation v<n>` body for Codex to read.
 - `revision_round` — 1-indexed integer; matches the `v<n>` of the marker
-  you post. Cap 5 per reviewer; rounds 4-5 typically arrive as
+  you post. Cap 10 per reviewer; rounds 4+ typically arrive as
   delta-scoped re-reviews after a reconciler-bound REVISE, but an
   agreed or unioned REVISE also produces them — compose delta-scoped
   only when the brief carries a delta scope note (workflow.yaml

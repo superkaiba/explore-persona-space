@@ -70,7 +70,7 @@ source conditionally instead — `if [ -f ./.env ]; then set -a; . ./.env;
 set +a; fi`, never unconditional sourcing inside the `&&`-chain of a
 command whose exit code is classified — because the GCE lane exports
 tokens via its startup script and has NO `.env` file (see
-`.claude/rules/gotchas.md`; incident #923).
+`.claude/rules/pod-side-reporting.md`; incident #923).
 
 ## Agent Roles
 

@@ -118,7 +118,10 @@ section wins on invocation form.
    to `per-arm-resolution:` rows ONLY>` | `PASS_AUTHORIZED_STUB
    arms_stubbed=<comma-list>` (*self-tag this INSTEAD of `PASS_PARTIAL` when
    every FALLBACK-rowed arm is named verbatim (backticked, column 1) in the
-   CURRENT plan's `### Authorized smoke stubs` block — read `plans/plan.md`;
+   CURRENT plan's `### Authorized smoke stubs` block — read the plan at the
+   canonical absolute path
+   `$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)/plans/plan.md`,
+   never the worktree-relative `plans/plan.md` (frozen at base, #2422);
    when the block is absent or covers only some FALLBACK arms, post
    `PASS_PARTIAL` (Step 6d.0's `task.py check-authorized-stub` refuses a
    mis-tagged grant, so tagging without coverage only buys a bounce)*) |
@@ -235,6 +238,17 @@ section wins on invocation form.
 
 - **Work only inside the worktree.** Never edit files outside
   `.claude/worktrees/issue-<N>`.
+- **Read-pinning under external churn (#2158; #1336 death #9).** A shared
+  worktree is the EXPECTED shape for pre-split multi-unit rounds — a
+  concurrent session may land commits mid-flight. Record BASE_SHA
+  (`git rev-parse HEAD`) at round start. When a target file changes
+  underneath you, do NOT re-read the live file repeatedly — pin reads to
+  `git show <BASE_SHA>:<path>`, finish your edit against that snapshot,
+  take ONE bounded provenance probe
+  (`git log --oneline <BASE_SHA>..HEAD -- <path>`), and reconcile at
+  commit time. An unbounded re-read loop on a churning 1,000+-line file
+  is the #1336 autocompact-thrash shape. Full protocol:
+  `.claude/rules/cross-session-writer-arbitration.md`.
 - **All edits on the local VM, never on pods.** Pods receive code via
   `git pull`; you commit + push from the worktree.
 - **Follow existing patterns.** Hydra for config (never argparse), `uv` for
@@ -806,6 +820,14 @@ never hand-extended from a short SHA, truncated-then-extended, or
 reconstructed from memory. Downstream relaunch briefs, ancestry probes,
 and markers re-cite these SHAs (#1586 r7: a hand-extended "full" SHA had
 to be rev-parse-corrected before the relaunch brief).
+
+**Mechanically enforced (#2309):** `task.py post-marker` REFUSES an
+`epm:experiment-implementation` note that carries a report header but lacks any
+lettered `### (a)`-`(d)` H3 (escape: `--allow-nonconforming-report
+"<reason >= 10 chars>"`, recorded on the event row as `report_shape_waiver`;
+`part=K/N` chunks are exempt). The opening `## Implementation Report — round <n>`
+H2 is load-bearing for the refusal — a headerless report draws only the advisory
+WARN.
 
 ```markdown
 <!-- epm:experiment-implementation v<n> -->

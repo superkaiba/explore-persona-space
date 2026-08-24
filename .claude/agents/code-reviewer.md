@@ -79,8 +79,16 @@ budgeted IN FORM:
   ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
   chunked.
 - **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
-  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
-  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+  `--json | jq -r '.body'`; single fields via jq; plans + manifests via `Read`
+  on the ABSOLUTE canonical main-checkout path from your brief, sliced —
+  re-resolve with `TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`
+  (`REPO_ROOT="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`);
+  when the brief states `plan_version=v<K>`, assert it matches
+  `readlink "$TASK_DIR/plans/plan.md"` (extension stripped) and FAIL LOUD on
+  mismatch — never read `tasks/` from inside the worktree: your cwd IS the
+  worktree, its `tasks/` tree is frozen at the branch-cut base commit, and a
+  relative `tasks/...` read serves a STALE plan/manifest with no error — you
+  grade the diff against the document it supersedes (#2422).
 - **Results are digests.** Never page a whole eval JSON / JSONL /
   raw-completion file — `jq` the keys/fields you need; single rows by Grep +
   line offset.
@@ -125,6 +133,25 @@ section wins on invocation form.
 ### Step 0: Classify the diff — leaf or trunk?
 
 Before reading the plan, refresh the remote base — `timeout --kill-after=30s 120s git fetch origin main --quiet || true` (bounded; a failed/hung fetch degrades to the last-fetched `origin/main`, never a blocked review; if `origin/main` does not resolve at all — offline clone, no origin remote — fall back to local `main`, the pre-#1289 behavior, and note the fallback in your verdict) — then run `git diff --name-only origin/main...HEAD` (or against the brief's stated base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: origin/main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all origin/main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only origin/main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
+
+**Main-side divergence list (#2201).** When your brief carries a
+`diverged_on_main` list, the orchestrator's Step 5a probe found these
+round-deliverable files ALSO changed on `origin/main` since the merge-base
+(sync-imports and already-converged files pre-excluded), measured at the
+brief's pinned `main=<sha>`. For EACH named file: read main's side —
+`git log --oneline $(git merge-base <main-sha> HEAD)..<main-sha> -- <path>`
+(with `<main-sha>` = the brief's `main=` value, so you inspect the exact
+main state the probe measured; fall back to `origin/main` only when the
+brief carries no `main=` token) plus a bounded diff read — and check the
+round's edits do not revert or semantically contradict what landed on main
+(the #1771/#2164 shape: the same function rewritten in opposite directions
+on the two sides). A contradiction or silent revert is a Major finding
+under Plan Adherence naming both commits; textual adjacency with no
+semantic interaction is a one-line verdict note, not a finding. No list
+AND no probe-failed line = the probe found nothing; do not re-derive it. A
+`divergence probe FAILED` brief line means main-side divergence is UNKNOWN
+this round — record that in the verdict body rather than treating it as
+clean.
 
 **Size the diff BEFORE reading its body.** Before ANY diff BODY read:
 `git diff origin/main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
@@ -237,7 +264,10 @@ address-concern <N> --concern-id <id> --by code-reviewer --round <n>`). A new
 substantive concern you want the orchestrator to BIND must be persisted via
 `task.py raise-concern <N> --concern-id <kebab-id> --severity
 CONCERN|BLOCKER --summary '<≤200c one-liner>' --by code-reviewer --round <n>`
-— verdict-body bullets that are NOT persisted remain opportunistic. **A
+— verdict-body bullets that are NOT persisted remain opportunistic. Record
+the ledger state as one verdict-body line — `**Prior-concerns ledger:** <K
+open: id1, id2, …>` or `**Prior-concerns ledger:** empty` — so a vacuous
+walk is visible in the verdict itself (#2326). **A
 deferred feature the plan's PRODUCTION path requires is ALWAYS a persisted
 concern — never prose-only** (CONCERN minimum; BLOCKER when the production
 path provably crashes without it), even on a PASS verdict: the Step 5c-ter
@@ -843,6 +873,10 @@ proceed.
 2. **Resume predicate:** at entry the script loads existing partial results and SKIPS
    completed units, keyed on every output-affecting regime key (a resume that ignores an
    output-affecting flag silently reuses wrong cached rows and mislabels output — #722 r3).
+   The key must ALSO be machine-stable: FLAG a resume key that hashes the raw bytes of a
+   RECOMPUTED float array (`.tobytes()` of a logspace/linspace/fit-derived grid) — libm
+   last-bit drift silently discards valid checkpoints across machines (#1336); key on the
+   generating parameters instead (`.claude/rules/code-style.md` float-last-bit entry).
 3. **Per-unit progress line:** the loop emits one stdout line per completed
    unit carrying at minimum the unit index/total, a stable unit key, and
    elapsed seconds (canonical shape `[<phase>] unit k/N <key> elapsed=<s>s`,
@@ -1356,6 +1390,7 @@ Red flags:
 **Tests actually run:** yes / no (sandbox blocked — tests only READ, not executed; see § Tests)
 **Lint:** PASS / FAIL
 **Security sweep:** CLEAN / N issues flagged
+**Prior-concerns ledger:** [`<K open: id1, id2, …>` / `empty` — the Step 0.8 walk record, REQUIRED on every verdict so a vacuous walk is visible (#2326)]
 **Needs user eyeball:** [required for trunk + auth/secrets/payments/external-API touches; for leaf, "None" is fine]
 
 ## Plan Adherence

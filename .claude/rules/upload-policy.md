@@ -236,7 +236,77 @@ name-set diff; a FAIL row flips the verifier verdict), upload-verifier
 Step 2.10, and the terminate guard's
 `outroot=<swept-clean|residue-committed|none>` attestation token —
 `pod.py terminate` refuses a `kind: experiment` teardown whose latest
-PASS note lacks it.
+PASS note lacks it. **Cross-leg content disambiguation (#2359):** the
+git arm is issue-scoped but not LEG-scoped, so on a multi-leg issue a
+sibling leg's committed same-named file could silently cover this leg's
+unpersisted file (#2333: leg-B's `upload_done.json`, sha256 `0a052e8b…`,
+read `outroot_residue: OK` off leg-A's committed `6f43c93d…` copy). A
+basename resolving ONLY via the git arm is therefore content-checked —
+git blob sha1 vs the committed candidate(s) when the disk bytes are
+locally readable (size equality as the cheap first pass; a mismatch is
+residue → FAIL naming both paths), and a pod-side listing row with no
+local bytes degrades to WARN carrying the literal token
+`outroot-residue-basename-git-only` (a byte-check duty for the
+verifier's exploratory pass, never a silent OK; residue FAIL dominates).
+Honestly-named residual: HF prefixes are leg-scoped by CALLER CONVENTION
+(`issue<N>_<slug>/…`), not by construction, and carry no content check —
+a caller passing an issue-wide multi-leg HF prefix re-opens the same
+cross-leg basename hole through the HF arm; scope each `--hf-prefix` to
+the leg under verification.
+
+**Realized row counts — the WITHIN-FILE sibling of the residue check
+above (#2148).** The residue check binds DISK to the upload filters and
+Step 2.9 binds the committed tree to the source tree, both at FILE
+grain; this binds the CONTENT of a present file to the run's input-side
+declaration. #2091 PASSed every file-level check while ~25% of rows were
+missing INSIDE present files, because the count check read the
+producer's `capture_rows` — the expectation echoed back. A producer's
+self-reported count field is NEVER the gate quantity (#2091's fields
+were wrong in BOTH directions: `capture_rows` over-reported pre-repair;
+`n_rows_captured` under-reports post-repair). The gate quantity is the
+DISTINCT count of the FULL row identity (unit key + any draw/rollout
+index) counted from the store's own `row_index*.jsonl` files: a healthy
+repaired store legitimately holds more lines than rows (a matching count
+is not a matching set applies WITHIN files too), and a unit-key-only
+count is satisfied by partial per-unit coverage. Producer duty: a store
+carrying a per-row index writes an index row for EVERY captured row (the
+per-row co-write is what makes the index a stronger proxy than any
+aggregate count field), and a resume path that adopts a partial shard
+recomputes its offset from that shard's realized line count, never from
+a nominal shard size. Enforcement:
+`scripts/verify_uploads.py::check_realized_row_counts` (`--expected-rows`
++ `--row-index-distinct-key`; shortfall/surplus FAIL, exemptions always
+a visible WARN), upload-verifier Step 2.11, and the terminate guard's
+`rows=<reconciled|no-declared-count|n/a>` attestation token — `pod.py
+terminate` refuses a `kind: experiment` teardown whose latest PASS note
+lacks it.
+
+**Realized row counts — the WITHIN-FILE sibling of the residue check
+above (#2148).** The residue check binds DISK to the upload filters and
+Step 2.9 binds the committed tree to the source tree, both at FILE
+grain; this binds the CONTENT of a present file to the run's input-side
+declaration. #2091 PASSed every file-level check while ~25% of rows were
+missing INSIDE present files, because the count check read the
+producer's `capture_rows` — the expectation echoed back. A producer's
+self-reported count field is NEVER the gate quantity (#2091's fields
+were wrong in BOTH directions: `capture_rows` over-reported pre-repair;
+`n_rows_captured` under-reports post-repair). The gate quantity is the
+DISTINCT count of the FULL row identity (unit key + any draw/rollout
+index) counted from the store's own `row_index*.jsonl` files: a healthy
+repaired store legitimately holds more lines than rows (a matching count
+is not a matching set applies WITHIN files too), and a unit-key-only
+count is satisfied by partial per-unit coverage. Producer duty: a store
+carrying a per-row index writes an index row for EVERY captured row (the
+per-row co-write is what makes the index a stronger proxy than any
+aggregate count field), and a resume path that adopts a partial shard
+recomputes its offset from that shard's realized line count, never from
+a nominal shard size. Enforcement:
+`scripts/verify_uploads.py::check_realized_row_counts` (`--expected-rows`
++ `--row-index-distinct-key`; shortfall/surplus FAIL, exemptions always
+a visible WARN), upload-verifier Step 2.11, and the terminate guard's
+`rows=<reconciled|no-declared-count|n/a>` attestation token — `pod.py
+terminate` refuses a `kind: experiment` teardown whose latest PASS note
+lacks it.
 
 **Regenerating a published artifact in place requires a version-bumped path or
 a regeneration note (#922/#779).** Re-uploading / reconstructing an
@@ -726,30 +796,59 @@ of helper, and the 403 stays fail-loud, but do not mistake the guard for
 fleet-wide coverage. Overflow-repo artifacts are PRIVATE — reached
 auth-required and pointer-mediated, never as canonical-path equivalents.
 
-**File-count limit (100k) — reactive overflow fallback (#1108).** HF
-hard-rejects any push that would put a repo over 100,000 git files (the
-canonical model repo sits at the limit; #1090's rejected c5 push).
-`hub._upload` catches that rejection on a MODEL-repo upload and retries the
-identical upload against the private overflow repo (`DEFAULT_OVERFLOW_REPO`),
-then emits the #564 routing event (`reason: "file-count-limit-reactive"`) and
-writes the `OVERFLOW_POINTER.json` breadcrumb at the canonical path. **Default
-ON** (kill switch `EPM_HF_FILECOUNT_FALLBACK=0`): unlike the #564 byte-quota
-routing (default-OFF because a pre-emptive reroute can divert a would-succeed
-push), this fires only AFTER the server refused the canonical push. Detection
-is message-substring based; a changed rejection shape degrades to the
-fail-soft `""` — never a wrong reroute. A TEMPORARY DURABILITY fallback
-pending the user's file-count triage, NOT a transparent successor to
-canonical storage — overflow artifacts are PRIVATE and pointer-mediated.
-**i528-family caveat:** a persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`)
-that previously failed LOUD at the gate now proceeds on a VERIFIED private
-overflow landing — an EXTERNAL launcher that verifies CANONICAL paths fails
-LATER (at its own verify); such launchers should set
-`EPM_HF_FILECOUNT_FALLBACK=0`. A concurrent user-side freeing between
-rejection and retry is harmless (lands on overflow with a pointer; the next
-upload takes the canonical path again). **Scope:** `repo_type="model"` via
-`upload_model` → `_upload` only — the ~1M-file DATA repo empirically still
-accepts pushes, and direct-`HfApi` per-issue scripts, `upload_dir_sharded`,
-and `_upload_folder_filtered` are named residuals outside this fallback.
+**Repo-wide git file-count cap — reactive overflow fallback (#1108, extended
+by #2304).** HF hard-rejects any push that would put a repo over its
+repo-wide git file cap — 100k observed on the model repo (#1090's rejected
+c5 push), 1,000,000 on the DATA repo (#2162:
+`superkaiba1/explore-persona-space-data` hit the cap live; a 1-file push is
+refused exactly like a 1,000-file push). The shared helper
+`hub._filecount_overflow_retry` catches that rejection on a model- OR
+dataset-repo upload — single-file/dir via `hub._upload` AND bulk via
+`hub._upload_folder_filtered` — and retries the identical upload against the
+private overflow repo (`DEFAULT_OVERFLOW_REPO`), then emits the #564 routing
+event (`reason: "file-count-limit-reactive"`) and writes the
+`OVERFLOW_POINTER.json` breadcrumb at the canonical path (typed to the
+canonical repo's own `repo_type` as of #2304). **Default ON** (kill switch
+`EPM_HF_FILECOUNT_FALLBACK=0` — zero new side effects when off, sentinel
+writes included): unlike the #564 byte-quota routing (default-OFF because a
+pre-emptive reroute can divert a would-succeed push), this fires only AFTER
+the server refused the canonical push. Detection is message-substring based;
+a changed rejection shape degrades to the fail-soft `""` — never a wrong
+reroute. Every enabled refusal ALSO appends an observed-count sentinel row
+(`hf-filecount-observed.jsonl`: env `EPM_HF_FILECOUNT_SENTINEL_PATH` →
+`/workspace/logs/` → `~/.cache/explore_persona_space/`), which preflight
+surfaces as a WARN-only `HF file-count:` line — the cheap early-warning
+signal (#2304 diagnosis: a naive `list_repo_files` count on the 1M-file repo
+timed out at 120 s, so no live count probe may sit on a launch-blocking
+path). **Pointer-unwritable degradation — consumer-side consequence
+(#2304):** while the canonical repo is AT its cap the pointer breadcrumb
+CANNOT be written (it is itself a new file), so on the actual triggering
+condition there is NO pointer to follow: a consumer resolving artifacts by
+path convention (e.g. `stage_hub_prefix(DEFAULT_DATASET_REPO,
+"issueN_<slug>/raw_completions/")`) finds NOTHING at the canonical prefix
+and misses LOUDLY (prefix 404 / fail-loud staging), never stale data. Do NOT
+assume the pointer is always available: the discoverable record is the
+truthful returned URL (`upload_raw_completions_to_data_repo` returns the
+bulk upload's OWN base URL — the overflow repo when rerouted, #2304's
+return-mapping fix) persisted in run digests/markers, plus the DISTINCT
+event row (`reason: "overflow-pointer-unwritable-filecount-cap"`) in the
+routing-event JSONL the orchestrator drains into an `epm:` marker. A
+TEMPORARY DURABILITY fallback pending the user's file-count triage, NOT a
+transparent successor to canonical storage — overflow artifacts are PRIVATE
+and pointer-mediated (when the pointer is writable). **i528-family caveat:**
+a persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`) that previously failed
+LOUD at the gate now proceeds on a VERIFIED private overflow landing — an
+EXTERNAL launcher that verifies CANONICAL paths fails LATER (at its own
+verify); such launchers should set `EPM_HF_FILECOUNT_FALLBACK=0`. A
+concurrent user-side freeing between rejection and retry is harmless (lands
+on overflow with a pointer; the next upload takes the canonical path again).
+**Scope:** `repo_type in ("model", "dataset")` via `_upload` AND
+`_upload_folder_filtered` — hence `upload_model`, `upload_dataset`,
+`upload_raw_completions_to_data_repo`, and every per-issue
+`hub._upload_folder_filtered` caller. Named residuals OUTSIDE this fallback:
+direct-`HfApi` per-issue scripts, and `upload_dir_sharded` (which has its
+own #1034 proactive overflow routing + generalized pointer writer; reactive
+filecount coverage there is a possible follow-up, not built).
 
 **Per-DIRECTORY file-count cap (10k/dir) — PACK many-small-file trees before
 upload (#1190/#1739).** The Hub ALSO rejects any single COMMIT staging
@@ -846,6 +945,92 @@ policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
   The #825 intra-run ordering bullet (main body above) binds v2 unchanged:
   an expensive extraction store uploads before — or concurrent with — any
   long fit/analysis phase that consumes it.
+
+## Absence checks (#2442)
+
+**An absence check must use a call that can FAIL on a wrong location.** The
+#2329 incident, two calls against the SAME repo + prefix, opposite outcomes:
+
+- `list_repo_files(repo_id, repo_type="dataset")` + a client-side
+  `startswith(<prefix>)` filter → rc=0, prints `0`;
+- `list_repo_tree(repo_id, path_in_repo=<same nonexistent prefix>,
+  repo_type="dataset")` → `EntryNotFoundError` (HTTP 404).
+
+Why: the client-side filter is a local string operation over a listing
+produced for a different question — the prefix never reaches the server — so
+"prefix holds nothing" and "prefix does not exist" are indistinguishable by
+construction. A full listing + filter is acceptable ONLY for counting WITHIN
+a prefix already proven to exist.
+
+**The silent-empty roster** — calls that LOOK like existence checks and are
+not, each with the assert that rescues it (semantics verified on the pinned
+`huggingface_hub` 0.36.2):
+
+- `get_paths_info(repo_id, [paths])` — a missing path is OMITTED from the
+  returned list without raising (its `Raises:` block names only
+  `RepositoryNotFoundError` / `RevisionNotFoundError`). Rescue: assert the
+  requested path is IN the returned set.
+- `file_exists(repo_id, filename)` — returns False not only for a missing
+  file but ALSO for a wrong `repo_id` / `repo_type` / `revision` (it catches
+  `RepositoryNotFoundError`, `EntryNotFoundError`, AND
+  `RevisionNotFoundError` into one `False`), which makes the § Relocated
+  codebase traps instruction "NEVER wave through a `RepositoryNotFoundError`
+  / wrong-revision 404" unactionable THROUGH `file_exists` — it never shows
+  you one. Rescue: assert the repo + revision resolve first, or read the
+  error via a call that raises.
+- `hub.list_hf_files_under_path` / `hub.list_hf_entries_under_path`
+  (`src/explore_persona_space/orchestrate/hub.py`) — return `[]` on an
+  absent path BY DESIGN (correct for their staging callers); never use them
+  as absence primitives. Use `hub.assert_hf_prefix_exists` (below).
+- `list_repo_files` + a client-side filter — the #2329 case above (the
+  standing anti-pattern exemplar:
+  `src/explore_persona_space/experiments/issue_823/run_823.py:1359`).
+
+**The raising primitive:** `hub.assert_hf_prefix_exists(api, repo_id, prefix,
+repo_type=..., revision=...)` returns the file count at/under the prefix and
+RAISES when it does not exist — a scoped server-side `list_repo_tree`
+materialized inside a `retry_transient` thunk (a 429/5xx is retried, never
+misread as absence), with an `EntryNotFoundError` falling back to ONE retried
+`file_exists` probe so an exact FILE path returns 1 (the tree endpoint 404s
+on file paths too — the #939 kind-confusion; same fallback shape as
+`list_hf_entries_under_path`).
+
+**HF-specific precision:** on a git-backed repo there are no empty
+directories — a tree prefix exists iff ≥1 file lives under it. The scoped
+call's 404 therefore covers BOTH "wrong guess" AND "nothing persisted yet";
+the two are disambiguated by the parent-prefix positive control, not by the
+404 itself (the § Relocated codebase traps path-args entry already treats a
+pre-upload prefix 404 as expected — never read a 404 alone as proof the
+guess was wrong). The wrong-path-vs-empty-path framing stays exact for the
+LOCAL legs (`ls`/`find` fail on a missing dir, succeed-empty on an empty
+one); this is its HF refinement.
+
+**Parent-prefix positive control (the no-raising-call fallback):** when no
+raising call fits, list the PARENT prefix and assert it returns non-zero
+before reading a child's zero as meaningful. This is how #2329 was actually
+resolved — listing `ladder/`'s children showed no `grid`, which located the
+real path.
+
+**The lazy-generator trap is load-bearing here:** per the #779 entry in
+§ Relocated codebase traps below, the 404 raises at ITERATION, not at the
+call — a `try/except` around the call catches nothing, and an absence check
+built that way silently degrades to the very failure mode this section bans.
+Materialize (`list(...)`) INSIDE the guard.
+
+**The #2329 layout trap (why the wrong guess happens):** the grid store was
+split across `issue2329_q35rerun/analysis_tensors/ladder/` and
+`issue2329_q35rerun/raw_completions/ladder/` — NEITHER named for the round
+label, with the rollout TEXT under `raw_completions/` per this rule's own
+upload table — so "the grid store" was NOT under the tree holding every
+other ladder artifact. A prefix guess that looks obviously right is often
+wrong here.
+
+**Throughput vs correctness:** the bar on a bare `list_repo_files` against
+the ~1M-file data repo (>90 s timeout, #833 — § Relocated codebase traps
+below) is a THROUGHPUT reason to scope; this section's rationale is
+CORRECTNESS — a scoped call fails on a wrong location where the full listing
++ filter cannot, on a repo of any size. The two are orthogonal: on a small
+repo the full listing is fast and still wrong as an absence check.
 
 ## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
 

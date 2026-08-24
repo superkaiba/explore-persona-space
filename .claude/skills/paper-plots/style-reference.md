@@ -12,15 +12,18 @@ issue body, not the figure file), see
 
 ## Style variants
 
-`set_paper_style(target)` accepts three targets. Pick by destination —
+`set_paper_style(target)` accepts four targets. Pick by destination —
 the rest of this file documents the invariants that apply across all
-variants; per-variant overrides are tabled below.
+variants; per-variant overrides are tabled below. The `iclr` target has
+its own full section — "Paper (ICLR) target" at the bottom of this file —
+and is MANDATORY for figures destined for the Overleaf paper.
 
 | Target | Use for | Figsize | Font | Background | Grid | Legend | Title |
 |---|---|---|---|---|---|---|---|
 | `neurips` | Paper figures (NeurIPS / ICML / ICLR) — narrow column, dense, camera-ready | 5.5 × 3.4 | DejaVu Sans (no LaTeX) | white | both axes, alpha 0.25 | framed | centered, regular |
 | `generic` | Same as `neurips` but slightly larger canvas | 6.0 × 4.0 | DejaVu Sans | white | both axes, alpha 0.25 | framed | centered, regular |
 | `blog` | clean-result bodies + mentor-update slides + LessWrong / Anthropic-blog posts | 6.5 × 4.0 | Inter (with Source Sans 3 / Helvetica Neue / Arial / DejaVu Sans fallbacks) | off-white outer (#FAFAFA) over white plotting area | y-axis only, #EEEEEE | frameless | left-aligned, semibold |
+| `iclr` | The ICLR context-answer-map paper (Overleaf) — see "Paper (ICLR) target" below | 5.5 × 3.4 | Times-alike serif (Times New Roman → TeX Gyre Termes → Nimbus Roman → Liberation Serif; fail-loud, never DejaVu Serif) | white, opaque | off | frameless | centered, regular |
 
 The `blog` variant is the default for clean-result bodies + mentor
 slides. The `neurips` variant is the default for paper figures. There
@@ -259,3 +262,83 @@ Non-obvious examples:
 - Legend LOC: pick the location that obscures the fewest data points; never
   rely on `best` for published figures (it flips between runs).
 - Inside-axes > outside-axes unless the legend occupies > 25% of panel area.
+---
+
+## Paper (ICLR) target — context-answer-map paper
+
+The `"iclr"` target is MANDATORY for any figure destined for the Overleaf
+paper (the context-answer-map ICLR submission). For EPS paper figures, this
+skill + `src/explore_persona_space/analysis/paper_plots.py` take precedence
+over the generic `dataviz` skill.
+
+### Author at final size — never rescale in LaTeX
+
+The ICLR style file's `\textwidth` is 5.5 in. Figures are authored AT the
+size they print and included in LaTeX WITHOUT a `width=` rescale — rescaling
+silently changes every realized font size on the page. Exactly two
+sanctioned widths:
+
+| Helper | Size (inches) | Use for |
+|---|---|---|
+| `figsize_iclr_full(height_frac=0.618)` | 5.5 × 3.4 | Full-textwidth figures (the default) |
+| `figsize_iclr_half()` | 2.75 × 1.70 | Side-by-side minipage pairs |
+| `figsize_iclr_panels(ncols, height_in=None)` | 5.5 × (5.5/ncols × 0.618) | Full-textwidth multi-panel rows (full width; height defaults to one panel's golden-ratio height) |
+
+Sizes at final size: body / axis labels / titles 9 pt, ticks / legend
+7.5 pt — nothing below 7 pt anywhere. Font: Times-alike serif chain
+(Times New Roman → Times → TeX Gyre Termes → Nimbus Roman → Liberation
+Serif) with STIX mathtext; resolution FAILS LOUD when none of the chain is
+installed — never a silent DejaVu Serif fallback. White OPAQUE background
+everywhere (figure + axes + savefig; `savefig.transparent = False`). No
+grid, top/right spines off, frameless legend, Type-42 font embedding.
+
+### `PAPER_COLORS` — one colour = one meaning PAPER-WIDE
+
+Stricter than the per-writeup one-color-one-meaning rule: these assignments
+hold across EVERY figure in the paper. Bind colours by CONCEPT via
+`paper_color(<concept>)` (raises `KeyError` naming the valid keys on a
+miss — no silent default), never by prop-cycle position.
+
+| Concept | Hex | Meaning |
+|---|---|---|
+| `instruct` | `#0072B2` blue | instruct model / the paper's featured arm |
+| `base` | `#E69F00` orange | base (pretrained) model |
+| `identity_bias` | `#009E73` green | identity-plus-bias baseline |
+| `neural_map` | `#D55E00` vermilion | MLP / neural map variants |
+| `oracle_answer` | `#CC79A7` purple | real-answer oracle |
+| `persona_vector` | `#56B4E9` sky blue | persona-vector method |
+| `null` | `#999999` gray | null / random / pathological arms |
+| `reference` | `#000000` black | ground truth / reference lines |
+
+### Hatch ban + heatmap discipline
+
+- **Hatching is BANNED** under the `iclr` target. Encode distinctions via
+  colour + marker/linestyle, or reduced alpha + a caption note.
+- **Heatmaps:** `viridis` for sequential data; `RdBu_r` for diverging data
+  (centered on the natural zero). Side-by-side COMPARABLE panels MUST share
+  one colour scale (same `vmin`/`vmax`, one shared colorbar) — per-panel
+  auto-scaling makes the cross-panel read meaningless.
+
+### Regenerating legacy figures for the paper
+
+- Strip on-canvas methodology text, issue numbers, and per-bar value labels
+  into the LaTeX caption (consistent with the standing
+  no-caption-block-inside-the-plot rule).
+- EXTEND the figure's EXISTING generating script with a `--style iclr` flag
+  — never a parallel one-off regeneration script.
+- Write paper variants BESIDE the originals via `EPS_PLOT_STEM_SUFFIX`
+  (e.g. `_iclr`); NEVER overwrite stems other writeups reference.
+
+### Output naming + Overleaf handoff
+
+Paper figures land at `figures/paper/<slug>.{pdf,png,meta.json}` in the EPS
+repo (`savefig_paper(fig, "<slug>", dir="figures/paper/")`), and the PDF is
+copied into the Overleaf clone's `figures/` directory
+(`~/overleaf-6a59c927/figures/` for the context-answer-map paper) — then
+commit + push the Overleaf clone (Thomas reads only in Overleaf).
+
+### Captions
+
+Every error bar's caption states the ESTIMATOR (mean / median /
+proportion), the INTERVAL TYPE (95% bootstrap CI / Wald CI / ±1 SEM across
+seeds), and n. A bar missing any of the three is an unreadable claim.

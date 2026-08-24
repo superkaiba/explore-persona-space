@@ -55,6 +55,8 @@ import re
 import sys
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _HERE = Path(__file__).resolve().parent
 _SCRIPTS = _HERE.parent / "scripts"
 if str(_SCRIPTS) not in sys.path:
@@ -367,8 +369,7 @@ def test_live_skill_md_additive_checkout_is_dash_c_qualified() -> None:
     override. Located by CONTENT ANCHOR (the flag-tolerant ``xargs ... -a``
     list-file prefix), never by line number (the fence drifts). Also guards
     against a future SKILL.md edit reintroducing the unqualified fence."""
-    skill = _REPO / ".claude" / "skills" / "issue" / "SKILL.md"
-    text = skill.read_text(encoding="utf-8")
+    text = issue_skill_text()
     # The `checkout issue-<N> --` conjunct pins the CHECKOUT fence line
     # specifically — the sibling `git commit -m "...: surgical additive
     # checkout ..."` fence line also carries the xargs prefix + the word

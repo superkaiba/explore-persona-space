@@ -46,6 +46,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SKILL = _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 _IMPLEMENTER = _REPO_ROOT / ".claude" / "agents" / "implementer.md"
@@ -81,7 +83,7 @@ def _has_contiguous_base_main_invocation(region: str) -> bool:
 
 def _step4b_brief_region() -> str:
     return _region(
-        _SKILL.read_text(encoding="utf-8"),
+        issue_skill_text(),
         "Brief passed to the implementer:",
         "**TDD mode (opt-in).**",
         label="SKILL.md Step 4b brief region",
@@ -231,7 +233,7 @@ def test_code_reviewer_carries_gate_scope_line_check():
 
 def test_skill_5cbis_strip_recipe_covers_gate_scope():
     region = _region(
-        _SKILL.read_text(encoding="utf-8"),
+        issue_skill_text(),
         "**5c-bis. Mechanical-contract-only FAIL strip",
         "**5c-ter.",
         label="SKILL.md Step 5c-bis strip recipe",

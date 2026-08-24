@@ -42,6 +42,50 @@ inline the round's `epm:progress stage=free-analysis-followup` dispatch note as
 the round contract (there is no per-round plan version; plan vK is parent
 conventions only).
 
+**Variant (#2333 cr9ater = marker v7, 2026-08-18): 9a-ter round AFTER the
+interpretation gate closed on a task whose loop rounds hit cap-5 + a
+post-cap greenlit r6.** Marker numbering continues task-wide (v7 after the
+loop's v1–v6); frame explicitly "NOT round 7 of the loop; rounds 1–6 are
+ADJUDICATED". The round contract is the `epm:progress` note whose text
+LEADS "9a-ter free-analysis round DISPATCH" (fetch by exact version from
+events.jsonl — there is no `stage=` token; grep the lead phrase). When the
+brief hands a FOCUSED lens set, compose tight (~28 KB: contract envelope +
+report placeholder + 6 anchored lenses + adapted verdict tail) — no full
+rubric; adapt Blocker-tags to `substantive | data-access-blocked |
+git-provenance` (the #2203 tag set) and pre-declare 0.5/0.55/0.6/4.6 N/A so
+Codex cannot manufacture marker objections. PROBE the committed output
+JSONs at compose time: the brief's flip shorthand can be coarser than the
+artifact (brief: "q35 bstart banked → natural-opening-indeterminate"; the
+JSON showed samewave NO-flip + banked-only flip) — hand the exact committed
+flip flags/CIs neutrally with a verify-don't-assume instruction, and pin
+`generated_at` vs JSON-commit timestamps for the regeneration-integrity
+lens. Open ledger rows (all main-pipeline scope) get regression-duty-ONLY
+framing + one named look-hardest row where the diff grazes a concern's
+neighborhood (donor STAGING edit vs the generate-side donor-cache concern).
+
+**Variant (#823 P-Gen ladder round, 2026-08-19): the placeholder pattern
+also fires on a 9b PAID/GPU same-issue follow-up round, not only 9a-ter.**
+After the round-1 implementer died to autocompact thrash and was respawned
+micro-scoped, its report existed only in-session — `latest-marker` returned
+the PARENT's July v5 marker (round-mismatched; never inline it) and the
+race re-probe + epm:results probe + branch-events probe all confirmed no
+round marker. Placeholder + "ORCHESTRATOR ACTION REQUIRED" return applies
+unchanged. Three additions: (a) the smoke-arch marker CAN be round-matched
+even when the impl marker is absent (the respawned implementer posted v5
+naming the unit) — inline it, and route its DISCLOSED pending-harvest leg
+(batch in_progress inside SLA; synthetic probes for assert/selection fns)
+via Step 0.6 as present-but-limited/CONCERNS, never `smoke-run-missing`
+fabrication; (b) when the brief hands a SPEC SLICE (thrash-killed prior
+agent; "use the slice, not the ~120KB plan"), inline the slice as the
+authoritative plan envelope AND instruct Codex not to open the full plan
+or the ~111KB parent driver (bounded greps of the parent allowed for
+parity claims only); (c) brief-enumerated registered requirements get a
+dedicated `## Registered requirements` verdict-body section with an
+INDEPENDENT-recompute duty — e.g. "confirm the asserts catch
+persona(i,k)=(i+1) mod k by your own arithmetic; a shifted modulo
+PRESERVES per-persona counts, so count/balance asserts alone cannot catch
+it" — never trusting the smoke-arch marker's "FIRED" claims.
+
 **Variant (#2203 full-rerun-bugfix CJK-producer review, 2026-08-11): a
 follow-up ANALYSIS commit with NO marker and NO orchestrator-held report.**
 When the round's target is a post-rerun analysis-producer commit landed by
@@ -61,3 +105,23 @@ new file, quote the plan's few relevant rows in a
 90KB plan, and pre-empt legitimate cross-round set differences the parity
 check would trip on (parent stats had 16 phase2 arms vs the round's 24 —
 parity is shape/keys/value-forms, never arm-set equality).
+
+**Variant (#823 P-Gen v13 amendment round, 2026-08-20): orchestrator LANDING
+NOTE as the round record — inline directly, no placeholder.** When the
+implementer orphans its turn (uncommitted payload, #2041 shape) and the
+ORCHESTRATOR lands the commit + records it as an `epm:progress` note (v108:
+landed SHA, requirement→test table, lint-gate blob-sha certification), that
+note IS the durable round record: inline it in the standard IMPLEMENTATION
+envelope (no `{{placeholder}}`, no ORCHESTRATOR-ACTION return), state
+"absence of a per-round impl marker is BY DESIGN", and invalidate BOTH Step
+0.5 `marker-shape` AND Step 0.6 `smoke-run-missing` in the prompt + the
+Blocker-tags bracket (round evidence = lint-gate PASS + committed fixtures;
+coverage gaps route `substantive`). Plan handling when the brief orders
+BY-PATH + no-inline but the worktree plans/ is frozen at an older version
+(v10 symlink vs binding v13 on main): copy the canonical plan to /tmp and
+reference BOTH the /tmp copy (primary) and the main-root absolute path
+(fallback), bar worktree `tasks/` reads explicitly, give sed line-window
+anchors for the binding sections, and make plan-lens BLOCKED genuine only
+after BOTH paths fail. Sentinel when no impl marker exists and prior codex
+sentinels are task-numbered: max existing posted codex version + 1 (here
+v6), mapping stated in the return.

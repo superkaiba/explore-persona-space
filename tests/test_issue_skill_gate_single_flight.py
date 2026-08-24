@@ -17,6 +17,7 @@ exit-inversion pointer.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
 from tests.test_issue_skill_inline_gate_pin import _gate_section
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -27,7 +28,7 @@ PROBE_ISSUE_FORM = 'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe 
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def test_step9c_single_flight_statement_present_and_precedes_launch():

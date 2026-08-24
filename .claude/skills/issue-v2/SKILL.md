@@ -233,7 +233,7 @@ uv run python scripts/task.py post-marker <N> epm:plan-revision-log \
 ```
 
 This log is Thomas's audit surface for post-approval drift (surfaced in chat +
-the sessions digest). Re-run the panel on the revised plan. **Round cap 5**;
+the sessions digest). Re-run the panel on the revised plan. **Round cap 10**;
 reconciler invocations do not count.
 
 **RESURFACE / BLOCK triggers — the ONLY ways a human re-enters after approval.**
@@ -257,7 +257,7 @@ silently, NEVER pivot-loop past the cap.**
   These are what the approval protected → **re-park at `plan_pending`** (re-run
   Step 2); do not let a material change land silently on an approved plan.
 - **(d) Round cap hit with an unresolved SUBSTANTIVE (non-mechanical-strip)
-  blocker** — the panel reached round 5 and a substantive blocker remains.
+  blocker** — the panel reached round 10 and a substantive blocker remains.
   Interactive: surface; autonomous: `epm:failure` + block. (Apply the mechanical
   strip once more at the cap; a residual that is all mechanical → PASS, proceed.)
 - **(e) REJECT-level verdict** — a critic or reconciler judges the plan
@@ -286,6 +286,16 @@ per-cell loop, no single-GPU vLLM on an N-GPU pod), and all API calls route
 through `src/explore_persona_space/llm/api_dispatch.py`. These are authoring
 obligations; the panel below VERIFIES them.
 
+**Worktree-safe task-state paths in every Step 4 brief (#2422):** the plan
+AND `artifacts/planned_manifest.json` are named by ABSOLUTE canonical
+main-checkout paths resolved at compose time
+(`TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`), with
+`plan_version=v<K>` (the extensionless readlink of `plans/plan.md`) stated
+in the brief; never read `tasks/` from inside the worktree (frozen at
+base — a stale manifest makes the manifest-completeness verdict grade a
+superseded document). Full contract: v1 `04-step-2.md` § "Worktree-safe
+task-state paths" + Step 5 § "Both reviewers see the same brief".
+
 **TDD conditional gate** (`gates.tdd_gate`) — fires when the plan body has
 `### TDD: yes`; `.claude/skills/issue/SKILL.md` § "Step 4b" applies verbatim
 (implementer posts `epm:proposed-tests v<n>` (omit --version; the CLI derives max+1), EXITs awaiting `epm:approve-tests v1`;
@@ -308,7 +318,7 @@ review):** when LIVE, skip the `codex-code-reviewer` twin spawn;
 no-show fallback (applied verbatim here).
 
 Ensemble decision, reconciler on disagreement, mechanical-strip, and **round cap
-5** are IDENTICAL to v1 (`.claude/skills/issue/SKILL.md` § "Step 5: Code review
+10** are IDENTICAL to v1 (`.claude/skills/issue/SKILL.md` § "Step 5: Code review
 loop" + CLAUDE.md § Codex ensemble review apply verbatim, with the v2 panel
 substituted). At the cap with a substantive residual: interactive → surface;
 autonomous → `epm:failure` + block. Also apply Step 5.bis pre-dispatch checks
@@ -460,17 +470,17 @@ Conclusion and next steps):
   retitles to `# Result: <claim>` + optional confidence tag at TLDR time) and
   the `<!-- report-v1 -->` sentinel right after the H1.
 
-**7d. methodology-critic loop (cap 5).** Spawn `methodology-critic`: it traces
+**7d. methodology-critic loop (cap 10).** Spawn `methodology-critic`: it traces
 every Motivation / Methodology claim (the shared section AND every per-result
 `**Methodology**` block, including the embedded metrics rationale) to ground
 truth (configs, code, artifact counts, `adapter_config.json`,
 dashboard row counts; links resolve at the pinned SHA). On findings, the orchestrator re-runs the methodology-writer to fix them
 (trigger-dense task: failed-claims list by file/marker reference, per the same
-rule section) and re-spawns the critic. Post `epm:methodology-check` per round. Round cap 5;
+rule section) and re-spawns the critic. Post `epm:methodology-check` per round. Round cap 10;
 at the cap with a substantive residual, interactive → surface, autonomous →
 `epm:failure` + block.
 
-**7e. report-verifier loop (cap 5).** Set status to `reviewing` (= report
+**7e. report-verifier loop (cap 10).** Set status to `reviewing` (= report
 verification under v2). Spawn `report-verifier`: it (a) recomputes ≥1 plotted
 value per figure from source JSON via the manifest's transform recipe; (b)
 checks captions match the plotted data and axes/legends are complete; (c)
@@ -501,17 +511,18 @@ confirms it covers EVERY produced captions.json view. On findings,
 re-run the plotter / methodology-writer / assembly as needed (trigger-dense
 task: findings list by file/marker reference, per the same rule section) and
 re-verify. Post
-`epm:report-verified` on PASS. Round cap 5; at the cap with a substantive
+`epm:report-verified` on PASS. Round cap 10; at the cap with a substantive
 residual, interactive → surface, autonomous → `epm:failure` + block.
 
 **7f. Write body + park.** After `verify_report.py --mode generation` PASSes
 (figures were committed + pinned at Step 7b), write the report body and park:
 
 ```bash
-# --allow-goal-drop is DELIBERATE: the report-v1 skeleton carries `## Motivation:`,
-# not `## Goal` (the `goal:` frontmatter is preserved by set_body), so the Goal-H2
-# drop guard (#1112) must be explicitly overridden here.
-uv run python scripts/task.py set-body <N> --file <report-draft>.md --snapshot --allow-goal-drop
+# The Goal-H2 drop guard (#1112) AUTO-EXEMPTS a `workflow: v2` report body (#2197):
+# the positional `<!-- report-v1 -->` sentinel + the task's `workflow: v2` frontmatter
+# are the discriminator, so no --allow-goal-drop is needed here (the flag is retained
+# only for non-report deliberate drops; `goal:` frontmatter is preserved by set_body).
+uv run python scripts/task.py set-body <N> --file <report-draft>.md --snapshot
 uv run python scripts/task.py set-title <N> "Experiment: <one-line question>"   # Thomas retitles to "Result: <claim>" (+ confidence tag) at promote
 uv run python scripts/task.py set-clean-result <N>                              # accepts the report-v1 sentinel
 uv run python scripts/task.py post-marker <N> epm:report --note "report-v1 generated + verified; awaiting Thomas TLDR"

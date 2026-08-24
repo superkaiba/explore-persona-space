@@ -3,6 +3,8 @@
 - [Statistics Lens Prompting](feedback_statistics_lens.md) — core rules + standing carve-outs + cross-design patterns (C5, lattice walks, burden-of-proof, degeneracy arithmetic) + per-family sub-questions + kind:infra reframes (full id catalog: entry § Index-row generations)
 - [Alternatives Lens Prompting](feedback_alternatives_lens.md) — core rules + cross-design patterns + labeled sub-question sets per family (22–29a) + infra claimed-protection reframes (full id catalog: entry § Index-row generations)
 - [Plan path missing — read from main ref](feedback_plan_path_missing_read_from_main.md) — detached repo-root HEAD hides the plan; `git show main:...` read-only recovery
+- [Numeric-gate SHA overflow](feedback_numeric_gate_sha_overflow.md) — hex revision pins parse as sci-notation → inf; guard canon() with isfinite, keep literal token
 - [Stale tmp files across plan versions](feedback_stale_tmp_files_across_plan_versions.md) — prefer version-suffixed tmp paths; else mv stale output aside before returning dispatch config
 - [Delta-scoped amendment rounds](feedback_delta_scoped_amendment_rounds.md) — verbatim scope note; do-not-relitigate guard; cross-boundary headline check; variant briefs; followup-label tmp suffix
 - [Plan tmp harness trailer](feedback_plan_tmp_harness_trailer.md) — /tmp plan files may end with the planner's agentId+usage trailer; sed-strip before inlining
+- [Custom infra-lens composition](feedback_custom_infra_lens_composition.md) — orchestrator-supplied lens sets: inline verbatim, cat-assemble from span files, digit-free scaffold, infra bar phrasing (#2324)

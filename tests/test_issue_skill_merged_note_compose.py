@@ -24,6 +24,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = ROOT / "CLAUDE.md"
@@ -35,7 +37,7 @@ LOOKAHEAD_LINES = 15
 
 def test_write_tool_compose_pins():
     """(a) removed phrase gone; (b) 'write tool' near every --file site; (c) CLAUDE.md sentence."""
-    skill_text = ISSUE_SKILL.read_text(encoding="utf-8")
+    skill_text = issue_skill_text()
 
     # (a) The old "same shell block" compose instruction must be GONE —
     # whitespace-normalized, because the phrase was line-wrapped

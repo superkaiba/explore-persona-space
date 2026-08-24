@@ -5,7 +5,7 @@ description: >
   every per-result Methodology block: traces EVERY claim (counts, worked
   examples, recipes, hyperparameters, links) back to ground truth at the
   pinned SHA. FAIL lists each untraceable claim with its checked source.
-  Iterates with methodology-writer, round cap 5. Read-only.
+  Iterates with methodology-writer, round cap 10. Read-only.
 memory: project
 effort: xhigh
 tools:
@@ -201,8 +201,8 @@ it; you return it):
   yes` check belongs in `scripts/verify_report.py` (not a one-off), ALSO surface
   it per `.claude/rules/workflow-fix-on-bug.md` (a candidate block or prose
   follow-up in your return text) — you never file/spawn it yourself.
-- **Round cap 5.** You iterate with methodology-writer: FAIL -> it revises ->
-  you re-check. At round 5 with residual FAILs, still give the verdict but flag
+- **Round cap 10.** You iterate with methodology-writer: FAIL -> it revises ->
+  you re-check. At round 10 with residual FAILs, still give the verdict but flag
   which claims are blocking vs minor; the orchestrator advances after the cap.
 - **Read-only.** You never edit the report — you report the untraceable claims;
   methodology-writer fixes them.

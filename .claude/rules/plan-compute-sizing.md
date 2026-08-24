@@ -13,6 +13,55 @@ These recipes are the planner-specific §9 sizing blocks (relocated from
 each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
+### §9 planned_wall_h cell grammar
+
+Every `planned_wall_h` cell is read by ONE shared parser
+(`src/explore_persona_space/plan_wall_budget.py`, imported by both
+`poll_pipeline.py` — the #873 phase-ETA tripwire budget — and
+`verify_plan.py` check c47). The grammar below is drift-pinned row-by-row
+against that parser by
+`tests/test_plan_wall_budget.py::test_doc_grammar_table_matches_parser`
+(#2179); edit table and parser together or the pin FAILs.
+
+| cell | parses as |
+|---|---|
+| `6` | 6.0 |
+| `1.5` | 1.5 |
+| `~7.1` | 7.1 |
+| `(1.5)` | 1.5 |
+| `**≤24 (SLA)**` | 24.0 |
+| `≤24 calendar` | 24.0 |
+| `<0.1` | 0.1 |
+| `2–24 calendar` | 24.0 |
+| `1.5-2` | 2.0 |
+| `4–8 (free-tier worst 18)` | 8.0 |
+| `5.9 / 6.8 / 3.6 (A1/A2/A3)` | 5.9 |
+| `≥2` | disabled |
+| `>2` | disabled |
+| `TBD` | disabled |
+| `n=800 rows` | disabled |
+
+- **Bare float = hours.** A cosmetic NON-ALPHANUMERIC prefix (`(`, `~`,
+  `**`, `+`, the `≤`/`<` signs) is ignored; any LETTER before the first
+  digit makes the cell unparseable (a row count / issue id / RAM bound is
+  never a phantom wall hour), and `≥`/`>` reject (below).
+- **`≤X` / `<X` parse as X** — the calendar-latency convention: a phase
+  that genuinely elapses up to a bound inside the run's wall (a Batch-API
+  judge wave's SLA) writes `≤24 calendar`; the `calendar` token is human
+  documentation — the parser contributes the upper bound because the run
+  really elapses that wall, so the fence must cover it.
+- **A leading range `A–B` parses as `max(A, B)`** — the UPPER bound
+  (en dash, ASCII hyphen, or em dash; optional spaces; decimal endpoints).
+  The tripwire budget is a FENCE, so a range contributes its worst case:
+  the lower bound understates the fence and false-fires on healthy runs
+  (#2162: `2–24 calendar` parsed as 2.0). Trailing prose after the range
+  is ignored, never scanned for more numbers, and a slash arm-listing
+  (`5.9 / 6.8 / 3.6`) is NOT a range — it keeps the first-number read.
+- **`≥X` / `>X` disable LOUDLY** — a lower bound has no derivable fence
+  contribution, so the cell is unparseable and the WHOLE budget disables
+  (the #2172 never-a-partial-sum fail-safe), exactly as `TBD` / prose do.
+  Put conditionality in the `basis` cell, never the wall cell.
+
 **Activation-capture HBM sizing.** If any phase captures hidden states on a
 7B model (residual streams at one-or-more layers, online activation
 accumulation, per-token activation dumps), the chosen intent MUST clear ≥40
@@ -740,9 +789,10 @@ wrong fix; `.claude/rules/vectorize-many-cell-fits.md`).
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
 lane the backend router will most likely route. Under the standing
-fellows-first `auto` default (#2028 — GCP provisioning disabled) that is
-the fellows H200 cluster, then the free SLURM lanes, with RunPod's H100
-intent table as the terminal rung; the GCP intent mapping
+runpod-first `auto` default (#2054/#2059; #2028: GCP provisioning
+disabled) that is RunPod's H100 intent table, then the fellows H200
+cluster, then the free DRAC/Mila SLURM lanes, with a terminal RunPod
+retry rung; the GCP intent mapping
 (`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
 `lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
 `eval`/`debug` → 1× L4) applies only under the rollback flip. A basis
@@ -751,7 +801,9 @@ measured on a different GPU must be scaled with a stated per-step rate
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
 into ~34h). Mechanically backstopped (WARN-only, heuristic) by
 `verify_plan.py` c26; the semantic adequacy of a stated scaling factor
-stays critic-owned. Then reconcile the WORST-CASE wall — base phases PLUS every
+stays critic-owned. (c26's routed-machine mirror is GCP-era and tracked
+separately — a c26 WARN on a runpod-costed bare-`auto` plan is expected
+until that mirror is updated.) Then reconcile the WORST-CASE wall — base phases PLUS every
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
 (`--instance-termination-action=DELETE` + `--max-run-duration`,

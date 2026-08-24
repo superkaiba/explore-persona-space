@@ -407,17 +407,19 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     plan's §4 "N/A — no multi-arm band-simultaneity gate" satisfies this item).
 13. **Compute projection costed on the routed machine + GCP fence reconcile + store-heavy IO sizing (verify §9).** The
     plan's §9 compute table must cost each row's `planned_wall_h` / `basis` on the machine the
-    backend router will ACTUALLY provision — under the standing fellows-first `auto` default
-    (#2028: GCP provisioning disabled) that is the fellows H200 cluster, then the free SLURM
-    lanes, with RunPod's H100 intent table as the terminal rung (the GCP `INTENT_TO_MACHINE`
-    mapping in `src/explore_persona_space/backends/gcp.py` applies only under the rollback
+    backend router will ACTUALLY provision — under the standing runpod-first `auto` default
+    (#2054/#2059; #2028: GCP provisioning disabled) that is RunPod's H100 intent table, then
+    the fellows H200 cluster, then the free DRAC/Mila SLURM lanes, with a terminal RunPod
+    retry rung (the GCP `INTENT_TO_MACHINE` mapping in
+    `src/explore_persona_space/backends/gcp.py` applies only under the rollback
     flip) — with any basis measured on a different GPU scaled by a stated per-step rate; and
     reconcile the WORST-CASE wall (base phases PLUS every conditional / extension phase riding the
     same provision) against the GCP lane's auto-delete fence (`--instance-termination-action=DELETE`
     + `--max-run-duration`, default 7d — the FLEX_START ceiling, #741) — per planner.md §9 "Cost
     wall-time against the machine the router will ACTUALLY provision". REVISE when (i) a wall-time
-    basis is premised on a machine the router won't route (e.g. H100 numbers under the GCP-first
-    auto default) with no stated cross-GPU scaling, or (ii) worst-case wall on the routed machine
+    basis is premised on a machine the router won't route (e.g. fellows-H200 numbers under the
+    runpod-first auto default, or A100 numbers premised on the rollback-only GCP lane) with no
+    stated cross-GPU scaling, or (ii) worst-case wall on the routed machine
     approaches the routed lane's fence (the GCP `--max-run-duration` default is 7d — the FLEX_START
     ceiling, #741 — but a plan may deliberately set a SHORTER fence via
     `spec.extra["max_run_duration"]`, in which case reconcile against THAT value) and the plan
@@ -652,21 +654,24 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     FAN-OUT POD-NAME EXTENSION (#2237, from incident #2054): when §9
     fans `N > 1` CONCURRENT pods for ONE issue, ALSO verify the plan
     names a mechanism that mints N DISTINCT pod names on the lane it
-    actually routes to. REVISE when the plan names NONE of: per-pod
+    actually routes to. REVISE when the plan names NONE of: per-launch
+    `dispatch_issue.py launch --lane-suffix <slug>` (alias
+    `--name-suffix`; honored on GCP + SLURM + RunPod since #2145 — one
+    DISTINCT slug per shard); per-pod
     `pod.py provision --name-suffix <slug>` calls; a single pod with N
-    in-pod workers; a name-isolating lane (`--lane-suffix`, honored on
-    GCP + SLURM only); or explicit serialization. Conclusion-changing
-    because RunPod pod names are per-issue (`pod-<N>`,
-    `backends/runpod.py:264`) with no suffix parameter and
-    `--lane-suffix` excludes the RunPod lane, so N concurrent
-    same-issue launches collide — and the dangerous branch is silent
+    in-pod workers; or explicit serialization. Conclusion-changing
+    because a SUFFIX-LESS RunPod launch mints the per-issue name
+    (`pod-<N>`, `backends/runpod.py` `_runpod_pod_name` defaults
+    `name_suffix=None`), so N concurrent same-issue launches WITHOUT
+    distinct suffixes collide — and the dangerous branch is silent
     co-location of all N shards on ONE pod, which invalidates every
     per-shard wall/RSS projection the plan booked while still producing
     plausible-looking output. The prior extensions' escapes do NOT
     cover this one (their triggers are per-pod disk accumulation and
     same-prefix staging topology; only the escape list below governs
-    it). Escapes: a single-pod phase; a fan-out on a lane whose names
-    isolate; a plan whose N pods are provisioned by named per-pod
+    it). Escapes: a single-pod phase; a fan-out whose per-shard
+    launches carry DISTINCT suffixes (any lane — all honor the suffix
+    since #2145); a plan whose N pods are provisioned by named per-pod
     calls; a phase row explicitly serialized (`sequential`, "one at a
     time"); `kind: infra|batch|survey` exempt. Plan-time pod-naming
     check only, never a mid-run gate. Mechanical backstop (WARN-only,
@@ -1016,6 +1021,24 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     shared-B̄ structure; a missing split-half reliability report on a sampled
     difference-vector leg (with a fix registered) is a binding Concern, not a
     REVISE.
+    ALSO verify null-statistic gate calibration: a registered gate reading a
+    NULL / permutation / shuffle-derived quantity whose threshold is an
+    asserted constant with NO measured calibration basis (a 1-cell pilot of
+    that null through the production entrypoint at production `n`/`d` shape,
+    or a cited prior measured null value for the same construct + shape) is
+    a REVISE — unsatisfiable-by-construction risk: a refit null is strictly
+    negative (−d/(n−d−1)-scale under the `1 − SS_res/SS_tot` convention,
+    never ≈ 0) with depth non-monotone in the shape parameters, so no
+    constant is portable across a ladder (the null-side sibling of this
+    item's Band-vs-ceiling arm and of item 3's joint-satisfiability bar;
+    `selection-symmetric-nulls.md` § Gate thresholds on a NULL statistic).
+    A null-side condition defaults to ADVISORY logging — a HARD-ABORT
+    null-side gate with no stated argument (the downstream claim invalidated
+    + why analysis-time rejection is worse) is likewise a REVISE; an
+    advisory null-side log line with nothing branching on it is not
+    (#1491: `abs(r2_null) < 0.05` on a shuffle-refit null with realized
+    values −1 to −4 hard-aborted all 8 shards; the asserted `-3.0` floor
+    then died at the 1.5B rung on realized −3.40 … −3.80).
 12. **Re-cost on power-raising recommendations (same round).** Any recommendation in YOUR review
     that raises statistical power parameters — permutation/null draws B, bootstrap N, seeds, cells,
     folds, samples-per-cell — MUST, in the SAME round, re-cost every affected §9 compute row: state
@@ -1165,6 +1188,55 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     with no measured-rate projections (no coverage/yield/sizing line
     multiplying an empirical rate against a population) writes
     "N/A — no measured-rate projections".
+18. **Matched-covariate support (support-restricted companion for degenerate
+    matching covariates).** Fires when a headline statistic is matched /
+    partialled / stratified on a covariate — an activity-matched partial
+    correlation, a covariate-matched contrast, a stratified permutation
+    test — and that matching covariate is DEGENERATE on the analysis sample.
+    Canonical definitions: the **tied fraction** of a matching covariate is
+    the modal-value share of the complete-case analysis sample — the fraction
+    of the rows the headline is computed over holding the covariate's single
+    most frequent value (value-agnostic: zero-inflation is the common case,
+    but a covariate tied at any other value is equally degenerate);
+    **threshold**: tied fraction > 0.5 ⇒ DEGENERATE — the modal block is the
+    majority, so the rank transform is one giant tie there, the partial
+    removes nothing on those rows, and the stratified permutation
+    concentrates in a single stratum; "matched for X" silently stops being
+    true for most of the sample while the statistic stays valid AS a
+    statistic and the selection-symmetric null band, exchangeability, and
+    positive controls all pass (`selection-symmetric-nulls.md` polices the
+    NULL side; this item polices the SUPPORT of the matching covariate
+    itself); **support** = the complement of the modal tie block;
+    **support-restricted companion** = the same headline statistic recomputed
+    on the support rows only, reported alongside the full-pool value. REVISE
+    a plan/body whose matched headline has a degenerate matching covariate
+    (tied fraction > 0.5) and NO registered support-restricted companion —
+    the companion is reported ALONGSIDE the full-pool value, with the
+    narration attributing the effect to whichever population carries it; a
+    strong null-band margin does not discharge this item. AUDIT GRAIN: per
+    HEADLINE STATISTIC, never one artifact-level scalar — complete-case
+    samples differ across DVs in one artifact (#2163: the `carried` DV at
+    n=13,282 is already effectively support-restricted while its siblings
+    sit at n=128,450). Degenerate limit: at tied fraction ≈ 1.0 the support
+    is (near-)empty and the companion is uncomputable — the remedy is
+    dropping or replacing the matching covariate, not a companion read.
+    Producer-side mechanics: matched artifacts record `match_tie_fraction`
+    (computed on the complete-case sample) and, when degenerate, the
+    `*_on_support` companion fields or a per-population block —
+    `analysis/matched_support.py` (`tied_fraction` / `tie_profile` /
+    `support_mask` / `audit_matched_artifact`) is the canonical helper, and
+    #2163's `population_partials.json` is the reference per-population
+    shape. Worked example (#2163): an activity-matched partial-Spearman
+    headline (max |partial| 0.239 vs a 0.0092 selection-symmetric band — a
+    26× margin; matching covariate `lasttoken_count`) was carried by the
+    ~117.8k-feature never-active block where the covariate is identically 0
+    (tied fraction 0.897 on the complete-case n=128,450): both named
+    predictors are ~0 on the ~13.3k-feature support (`proj_var` −0.243 full
+    → −0.003 on-support; `scaffold_frac` sign-flips −0.210 → +0.015), and
+    the corroborating `A_W` +0.038 sign-flip sat unread in the same
+    committed JSON. N/A escape: no matched / partialled / stratified
+    headline, or tied fraction ≤ 0.5 — write "N/A — matching covariate
+    non-degenerate (tied fraction <X> on n=<N>)".
 
 ### Alternative Explanations lens
 

@@ -19,6 +19,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL_MD = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 
 # A prescribed guard-exit command block: `post-marker <N> epm:progress
@@ -31,7 +33,7 @@ _BLOCK_RE = re.compile(
 
 def _note_payloads() -> list[str]:
     """Extract the ``--note`` payloads of every prescribed guard-exit block."""
-    return _BLOCK_RE.findall(SKILL_MD.read_text(encoding="utf-8"))
+    return _BLOCK_RE.findall(issue_skill_text())
 
 
 def test_exactly_two_guard_exit_breadcrumb_blocks():
@@ -64,7 +66,7 @@ def test_by_identity_count_matches_block_count():
     # Every `--by issue-session-guard` occurrence in the skill must be one of
     # the two prescribed blocks — a bare mention posting under that identity
     # without the prescribed note shape would evade the payload pins above.
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert text.count("--by issue-session-guard") == 2, (
         "expected exactly the two prescribed guard-exit command blocks"
     )
@@ -75,7 +77,7 @@ def test_stale_wake_registration_probe_is_fail_soft():
     # FAIL-SOFT — a missing registration file is the NORMAL case, and a
     # bare `ls`/`cat` on an absent path exits non-zero, cancelling
     # parallel sibling tool calls (5+ sessions, 2026-07-09).
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert "~/.eps-autonomous/manual-issue-<N>.json 2>/dev/null || true" in text, (
         "stale-wake registration probe lost its fail-soft form"
     )

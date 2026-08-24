@@ -29,6 +29,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SKILL = _REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -44,7 +46,7 @@ _REMOVED_MANUAL_ADD = 'git -C "$WT" add <each resolved file>'
 
 
 def _skill_text() -> str:
-    return _SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _recovery_region(text: str) -> str:

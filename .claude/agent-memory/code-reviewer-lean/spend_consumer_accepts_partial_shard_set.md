@@ -31,3 +31,13 @@ set to diff against (e.g. a selection_meta `missing` list), not a weaker
 gate. Sibling family: [[count-gate-starved-by-resume-skip]] (the INVERSE:
 over-strict fresh-count gate), [[presence-redrive-blesses-stale-mirror]]
 (presence-only remote check), [[sentinel-path-outside-drain-glob]].
+
+**Conditional-wave variant (#2225 fu2 R1, Minor):** a file-presence-gated
+CONDITIONAL read ("skip + not_computable if the triggered wave's cells are
+absent" — legitimate for pre-harvest reruns) that treats PARTIAL presence
+(1..n−1 of a fixed n-file window) identically to full absence mislabels a
+half-landed harvest as "not yet landed" and rc=0s past it. Pre-harvest is
+exactly 0-of-n, so the cheap fix is `0 < len(missing) < n ⇒ raise`. Grade
+Minor (not Major) when no wrong number ships AND the skip is disclosed
+(log with missing count + not_computable entries + a summary-line count);
+Major when a gate/spend/selection artifact is written from the partial set.

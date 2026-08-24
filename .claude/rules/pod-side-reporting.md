@@ -156,7 +156,16 @@ pod-side dispatchers. A card-less sentinel that only declares
 `wandb_*` hints) is rescued by `verify_uploads.py`'s synthesis fallback
 (`_card_from_provenance`, #599), but that synthesis is a safety net, NOT
 the producer contract — emit the explicit card so the verifier's
-hf_model / wandb_run rows resolve mechanically. **When training logs to
+hf_model / wandb_run rows resolve mechanically. **Card-interior `phase`
+is phase IDENTITY, not lifecycle state (#2194):** the sentinel
+ENVELOPE's top-level `phase` (`{"phase": "done"}`) is lifecycle-STATE
+vocabulary, while a `phase` key INSIDE a reproducibility card / metadata
+block — a sibling of `git_commit` — is the card's pipeline-stage
+IDENTITY slug (`"stage2-upload"`), validated at write time as a
+best-effort fence against the lifecycle vocabulary (placement is the
+primary separation); convention + writer helper:
+`.claude/rules/code-style.md` § Dirty-tree flag
+(`as_metadata_dict(prov, phase=...)`). **When training logs to
 WandB, the card's `wandb_run_path` (entity/project) or `wandb_run_names`
 (or a name prefix) + `wandb_project` are MANDATORY fields, not optional
 extras** — a card declaring only `adapter_paths` forces entity/project

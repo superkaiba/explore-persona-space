@@ -27,6 +27,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -41,7 +43,7 @@ _PROXIMITY_CHARS = 1500
 
 
 def test_skillmd_carries_fellows_still_waiting_contract():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = issue_skill_text()
 
     # (1) the third exit-75 producer's literal reason token.
     assert "free_lane_park_budget_reached" in text, (

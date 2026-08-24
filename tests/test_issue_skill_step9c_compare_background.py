@@ -16,6 +16,8 @@ prose-only anchor cannot mask a missing recipe token.
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude/skills/issue/SKILL.md"
 
 # Each entry: (region-name, anchor string that begins the region, region-len).
@@ -81,7 +83,7 @@ def _region(text: str, anchor: str, length: int) -> str:
 
 def test_all_five_gate_sites_use_detached_launcher():
     """Every launch site carries the setsid launcher + pid capture + harvest+rc breadcrumb."""
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     for name, anchor, length in _REGIONS:
         region = _region(text, anchor, length)
         assert "setsid" in region, f"[{name}] missing setsid launcher"
@@ -109,7 +111,7 @@ def test_broken_splice_shape_is_absent():
     where pytest runs FOREGROUND inside the $( ) capture and the outer bg-Bash
     still dies at the 600s tool cap. The § Harvest NEVER-splice rule (this file
     is that rule's pin). Both spacings (`2>&1 ;` and `2>&1;`) are matched."""
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     for splice in _BROKEN_SPLICES:
         assert splice not in text, (
             f"broken splice `{splice}` (top-level `;` after `2>&1` followed by "
@@ -119,7 +121,7 @@ def test_broken_splice_shape_is_absent():
 
 def test_step1d_foreground_prescription_gone():
     """Historical: the pre-#1197 foreground compare shapes must stay gone."""
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     assert "short/bounded foreground" not in text
     assert "COMPARE_OUT=$(uv run python" not in text  # old command substitution
 
@@ -140,7 +142,7 @@ def test_stale_inline_completion_trigger_gone():
     must be gone file-wide; each of the four gate completion-reads instead
     carries the detached-semantics replacement (launcher completion is NOT
     the done signal; missing rc + LIVE probe match = STILL RUNNING)."""
-    text = _norm(SKILL.read_text(encoding="utf-8"))
+    text = _norm(issue_skill_text())
     assert _STALE_INLINE_TRIGGER not in text, (
         "the inline-era 'harness notifies' completion trigger is the #2005 r1 M1 "
         "stale-prose bug — the detached gate's launcher completes in seconds"
@@ -158,12 +160,29 @@ def test_step1d_compare_completion_read_pins():
     """Re-pins the two 1d coverage strings the retired inline-shape test
     carried (#2005 r1 m2): the stale compare-triplet reap at launch, and the
     missing-rc NEVER-record-PASS rule in the completion-read."""
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     region = _region(text, "Run compare as a DETACHED background", 10000)
     assert "rm -f /tmp/step9c-compare-issue-<N>.json" in region, (
         "1d must reap the stale compare triplet before launching"
     )
     assert "NEVER record PASS" in region, "1d's missing-rc branch must forbid recording PASS"
+
+
+def test_scan_violation_setdiff_prose_pin():
+    """#2316: the 1d COMPARE_RC=1 semantics prose documents the violation-set
+    diff for registered whole-repo scan nodes — the registry name, the NEW
+    routing token, the additive JSON field, and the loud parse-failure warn.
+    Window 14000: the COMPARE_RC bullets sit ~10.9-11.4k chars after the 1d
+    anchor (past the 7500/10000 launcher windows above)."""
+    text = issue_skill_text()
+    region = _region(text, "Run compare as a DETACHED background", 14000)
+    for token in (
+        "VIOLATION_SET_SCAN_NODES",
+        "SCAN-NEW-VIOLATION",
+        "scan_violation_diffs",
+        "SCAN-SETDIFF-UNPARSEABLE",
+    ):
+        assert token in region, f"1d COMPARE_RC=1 prose missing #2316 token {token!r}"
 
 
 def test_basetemp_reap_inside_rc_exists_branch():
@@ -174,7 +193,7 @@ def test_basetemp_reap_inside_rc_exists_branch():
     to the end of the block only ONE bare `fi` line remained; the fixed
     layout closes the reap-if AND the outer rc-exists if (two `fi` lines)."""
 
-    text = SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     blocks = [
         b
         for b in text.split("```")
