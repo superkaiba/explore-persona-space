@@ -58,6 +58,7 @@ load_dotenv()  # shared-VM thread caps BEFORE the numpy/scipy imports (sibling p
 
 import argparse  # noqa: E402
 import json  # noqa: E402
+import math  # noqa: E402
 import pathlib  # noqa: E402
 import subprocess  # noqa: E402
 import sys  # noqa: E402
@@ -268,13 +269,40 @@ def load_mixture_diffs(
     return MixtureDiffs(np.asarray(layers), per_arm)
 
 
+DEGENERATE_OFFSET_VERDICT = "degenerate-zero-between-persona-energy"
+
+
 def offset_bias_control(energy: float, k: int, measured_excess: float) -> dict:
     """Is the excess error on identical targets the shared-map offset, or real degradation?
 
     Shared-map-plus-constant-offset predicts an excess of ``||p_bar||^2 ~= energy / k``.
     Coefficient-absorption predicts an excess on the order of ``energy`` itself.
+
+    Degenerate input: ``energy == 0.0`` exactly is a legitimate tiny-fixture shape
+    (a diff group population with zero persona != 0 rows makes
+    ``mixture_energy_from_group_diffs`` return exactly 0.0) — both ratios are then
+    undefined and the control is uninformative REGARDLESS of ``measured_excess``
+    (both hypotheses predict zero excess at E == 0), so there is deliberately no
+    separate sub-case for ``measured_excess == 0``: the ratios are reported as
+    None (json null), energy + measured_excess stay real floats, and the verdict
+    names the degeneracy (``DEGENERATE_OFFSET_VERDICT``). Never a fabricated /
+    epsilon-floored ratio. A negative or NaN energy is broken upstream input and
+    raises. At production shape the fits driver escalates the degenerate verdict
+    to a designed halt (issue823_ladder_ext_fits.enforce_paired_nondegenerate);
+    this function only reports.
     """
+    if not energy >= 0.0:  # catches negative AND NaN — broken upstream summary
+        raise ValueError(f"between-persona mean-shift energy must be >= 0, got {energy!r}")
     predicted_offset_only = energy / k
+    if predicted_offset_only == 0.0:  # exact zero (or subnormal-underflow) energy
+        return {
+            "between_persona_mean_shift_energy": float(energy),
+            "predicted_excess_if_shared_map_offset_only": float(predicted_offset_only),
+            "measured_excess": float(measured_excess),
+            "ratio_measured_over_offset_only_prediction": None,
+            "ratio_measured_over_full_energy": None,
+            "verdict": DEGENERATE_OFFSET_VERDICT,
+        }
     ratio_vs_offset_only = measured_excess / predicted_offset_only
     ratio_vs_full_energy = measured_excess / energy
     if ratio_vs_offset_only < 2.0:
@@ -396,6 +424,14 @@ def main() -> None:
             diff = pool_res - ref_res  # > 0 means the pooled map is WORSE on identical targets
             lo, hi = paired_bootstrap(diff, n_boot, BOOT_SEED + layer)
             wil = wilcoxon(pool_res, ref_res)
+            # Zero-variance paired diffs (pool_res == ref_res exactly, the identical-fit
+            # degenerate shape) give se == 0 in scipy's normal approximation -> NaN
+            # statistic/p past the exact-method n range (measured: p=1.0 at n=4 but
+            # p=nan at n>=25 on scipy 1.17.1). Report None + a named flag instead of
+            # emitting a bare NaN token into the JSON; the flag key is ONLY added when
+            # degenerate, so healthy-path output bytes are unchanged.
+            wil_stat, wil_p = float(wil.statistic), float(wil.pvalue)
+            wilcoxon_degenerate = not (math.isfinite(wil_stat) and math.isfinite(wil_p))
 
             # Representativeness: the reference arm's own error on the shared subset vs the
             # whole mask. A large gap would mean the i-mod-K subset is not a typical slice.
@@ -411,8 +447,8 @@ def main() -> None:
                 "mean_paired_diff_ci95": [lo, hi],
                 "median_paired_diff": float(np.median(diff)),
                 "frac_contexts_pooled_worse": float((diff > 0).mean()),
-                "wilcoxon_statistic": float(wil.statistic),
-                "wilcoxon_p": float(wil.pvalue),
+                "wilcoxon_statistic": wil_stat if math.isfinite(wil_stat) else None,
+                "wilcoxon_p": wil_p if math.isfinite(wil_p) else None,
                 # Same subset, same targets: own-denominator R2 differs from common-denominator
                 # R2 only through ss_tot, which is the denominator effect made explicit.
                 "r2_shared_subset_own_denominator": {
@@ -435,6 +471,9 @@ def main() -> None:
                     float(diff.mean()),
                 ),
             }
+            if wilcoxon_degenerate:
+                # only-when-degenerate key: healthy-path output bytes stay unchanged
+                per_layer[f"L{layer}"]["wilcoxon_degenerate"] = True
             if mixture is not None:
                 per_layer[f"L{layer}"].update(
                     full_ratio_bootstrap(
@@ -501,24 +540,38 @@ def main() -> None:
         for layer, behavior in READ_OUT_LAYERS.items():
             c = r["per_layer"][f"L{layer}"]
             lo, hi = c["mean_paired_diff_ci95"]
+            wil_txt = (
+                "degenerate (zero-variance diffs)"
+                if c["wilcoxon_p"] is None
+                else f"{c['wilcoxon_p']:.3g}"
+            )
             print(
                 f"  L{layer} ({behavior:13s}) "
                 f"ss_res ratio {c['ss_res_ratio_pooled_over_ref']:.4f} | "
                 f"mean diff {c['mean_paired_diff']:+.1f} [{lo:+.1f}, {hi:+.1f}] | "
                 f"pooled worse in {c['frac_contexts_pooled_worse']:.1%} | "
-                f"wilcoxon p={c['wilcoxon_p']:.3g} | "
+                f"wilcoxon p={wil_txt} | "
                 f"R2 common-denom ref {c['r2_shared_subset_common_denominator']['ref']:.3f} "
                 f"vs pooled {c['r2_shared_subset_common_denominator']['pooled']:.3f} | "
                 f"ss_tot ratio {c['ss_tot_ratio_pooled_over_ref']:.3f}"
             )
             o = c["offset_bias_control"]
-            print(
-                f"        offset-bias control: E={o['between_persona_mean_shift_energy']:.1f} "
-                f"E/k={o['predicted_excess_if_shared_map_offset_only']:.1f} "
-                f"measured={o['measured_excess']:.1f} "
-                f"(x{o['ratio_measured_over_offset_only_prediction']:.1f} vs E/k, "
-                f"{o['ratio_measured_over_full_energy']:.2f} of E) -> {o['verdict']}"
-            )
+            if o["ratio_measured_over_full_energy"] is None:
+                print(
+                    f"        offset-bias control: "
+                    f"E={o['between_persona_mean_shift_energy']:.1f} "
+                    f"measured={o['measured_excess']:.1f} "
+                    f"-> {o['verdict']} (ratios undefined at E == 0)"
+                )
+            else:
+                print(
+                    f"        offset-bias control: "
+                    f"E={o['between_persona_mean_shift_energy']:.1f} "
+                    f"E/k={o['predicted_excess_if_shared_map_offset_only']:.1f} "
+                    f"measured={o['measured_excess']:.1f} "
+                    f"(x{o['ratio_measured_over_offset_only_prediction']:.1f} vs E/k, "
+                    f"{o['ratio_measured_over_full_energy']:.2f} of E) -> {o['verdict']}"
+                )
             if c.get("rho_ci95") is not None:
                 frlo, frhi = c["rho_ci95"]
                 unstable = " UNSTABLE" if c["rho_ci95_unstable"] else ""

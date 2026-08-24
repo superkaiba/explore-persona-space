@@ -49,6 +49,11 @@ written — `_fits_complete.json` only on full success):
   rc 20  solver-parity terminal     (Gate D contingency FAIL / kill path 5)
   rc 21  banked-continuity FAIL     (Gate E / kill path 6 — rig seam)
   rc 22  companion-manifest set-check violation (kill path 8)
+  rc 24  degenerate paired read at production shape (zero between-persona
+         energy — broken inputs / rig seam; SMOKE-INFORMATIONAL under --smoke.
+         Realized-vs-plan addition, round v20: the smoke-attempt-4
+         ZeroDivisionError made a NAMED designed halt out of an anonymous
+         crash; rc 23 is unit 3's RC_GATE_B_WALL)
 
 Resume: `_fits_complete.json` is written ATOMICALLY (tmp + rename) after every
 step succeeds and carries the plan-registered fingerprint (rung-mask shas incl.
@@ -113,6 +118,7 @@ from explore_persona_space.orchestrate.provenance import (  # noqa: E402
 from scripts import issue779_fitter_fair_comparison as FFC  # noqa: E402
 from scripts import issue823_ladder_ext_capture as EXTCAP  # noqa: E402
 from scripts import issue823_ladder_fits as LF  # noqa: E402
+from scripts import issue823_shared_persona_paired as SPP  # noqa: E402  # verdict const only
 from scripts.issue823_ladder_common import (  # noqa: E402
     correlated_floor_from_groups,
     mixture_energy_from_group_diffs,
@@ -178,16 +184,21 @@ RC_FITS_WALL = 19
 RC_SOLVER_PARITY = 20
 RC_BANKED_CONTINUITY = 21
 RC_RAND_MANIFEST = 22
+RC_PAIRED_DEGENERATE = 24  # 23 is unit 3's RC_GATE_B_WALL
 
 RC_TABLE: dict[int, str] = {
     RC_FITS_WALL: "Gate C fits-wall abort: projected battery wall > 2x the section-9 row",
     RC_SOLVER_PARITY: "Gate D terminal: solver parity FAIL on the canonical contingency too",
     RC_BANKED_CONTINUITY: "Gate E banked-continuity FAIL (rig seam, never a finding)",
     RC_RAND_MANIFEST: "companion-manifest set-check violation (nesting/sizes/strata)",
+    RC_PAIRED_DEGENERATE: (
+        "degenerate paired read at production shape: zero between-persona energy "
+        "(broken inputs — rig seam, never a finding)"
+    ),
 }
 # rcs owned by the sibling drivers (kept disjoint; asserted in tests):
 #   unit 2 (issue823_ladder_ext_gen): 3, 6, 7, 8, 9, 10, 11
-#   unit 3 (issue823_ladder_ext_capture): 4, 12-18
+#   unit 3 (issue823_ladder_ext_capture): 4, 12-18, 23
 #   parent (issue823_ladder_fits): 5, 6, 7 (its own process space)
 
 _halt = EXTCAP._halt  # one designed-halt implementation for the whole round
@@ -616,8 +627,19 @@ def enforce_contingency_parity(records: list[dict], eval_dir: pathlib.Path, rung
 # ── Gate E (banked bridge) ────────────────────────────────────────────────────
 
 
+def _finite_number(x) -> bool:
+    """True for a real finite int/float (bool excluded — True aliases 1)."""
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
 def bridge_loader_compare(got: dict, banked: dict, rtol: float = BRIDGE_LOADER_RTOL) -> dict:
-    """Compare ratio_measured_over_full_energy across arms x read-out layers."""
+    """Compare ratio_measured_over_full_energy across arms x read-out layers.
+
+    A non-numeric ratio (None from the paired script's degenerate zero-energy
+    branch, or any wrong-typed value) is a clean per-row FAIL — recorded with
+    both values, never a coerced number and never a TypeError crash; Gate E's
+    enforce turns it into the designed rc-21 halt.
+    """
     rows = []
     ok = True
     for k_key, arm_block in sorted(banked["arms"].items()):
@@ -626,7 +648,11 @@ def bridge_loader_compare(got: dict, banked: dict, rtol: float = BRIDGE_LOADER_R
             have = got["arms"][k_key]["per_layer"][l_key]["offset_bias_control"][
                 "ratio_measured_over_full_energy"
             ]
-            match = bool(np.isclose(have, want, rtol=rtol, atol=0.0))
+            match = bool(
+                _finite_number(want)
+                and _finite_number(have)
+                and np.isclose(have, want, rtol=rtol, atol=0.0)
+            )
             ok = ok and match
             rows.append(
                 {"arm": k_key, "layer": l_key, "banked": want, "rerun": have, "pass": match}
@@ -1725,6 +1751,54 @@ def run_paired_script(
         raise RuntimeError(f"paired script exited 0 but wrote no output at {out_path}")
 
 
+def enforce_paired_nondegenerate(
+    paired_path: pathlib.Path, eval_dir: pathlib.Path, which: str, smoke: bool
+) -> None:
+    """Production designed halt (rc 24) on a degenerate offset-bias control.
+
+    ``energy == 0.0`` at production shape (48k contexts, real persona spread)
+    means broken inputs — an empty persona != 0 diff group population or
+    identical per-persona vectors: a rig seam, never a finding — so the driver
+    halts with a report instead of shipping None ratios downstream. At smoke
+    shape the degeneracy is a legitimate tiny-fixture outcome (a shared-first
+    capped mask can carry zero persona != 0 rows): SMOKE-INFORMATIONAL warn +
+    continue, per the driver's gate-calibration convention.
+    """
+    obj = json.loads(paired_path.read_text())
+    degen = []
+    for k_key, arm_block in sorted(obj.get("arms", {}).items()):
+        for l_key, cell in sorted(arm_block.get("per_layer", {}).items()):
+            o = cell.get("offset_bias_control")
+            if isinstance(o, dict) and o.get("verdict") == SPP.DEGENERATE_OFFSET_VERDICT:
+                degen.append(
+                    {
+                        "arm": k_key,
+                        "layer": l_key,
+                        "between_persona_mean_shift_energy": o.get(
+                            "between_persona_mean_shift_energy"
+                        ),
+                        "measured_excess": o.get("measured_excess"),
+                    }
+                )
+    if not degen:
+        return
+    if smoke:
+        logger.warning(
+            "SMOKE-INFORMATIONAL degenerate offset-bias control at %s (%d cells) — "
+            "zero between-persona energy is a legitimate tiny-fixture shape",
+            which,
+            len(degen),
+        )
+        return
+    _halt(
+        RC_PAIRED_DEGENERATE,
+        eval_dir / "ext_paired_degenerate_report.json",
+        {"which": which, "paired_json": str(paired_path), "cells": degen},
+        f"degenerate paired read at production shape ({which}) — zero between-persona "
+        "energy means broken inputs (rig seam), refusing to ship the ladder",
+    )
+
+
 # ── P2-ext boundary ladder ────────────────────────────────────────────────────
 
 
@@ -2704,6 +2778,7 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
                 n_boot=n_boot,
                 full_ratio_ci=True,
             )
+            enforce_paired_nondegenerate(paired_out, eval_dir, f"{tag}/{label}", args.smoke)
 
             knn_block = rf.knn
             rung_block = {

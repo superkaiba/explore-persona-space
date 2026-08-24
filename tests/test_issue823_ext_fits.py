@@ -1,6 +1,6 @@
 """CPU tests for scripts/issue823_ladder_ext_fits.py (#823 origin-ladder-more-contexts, unit 4).
 
-Covers: the designed-halt rc table (19-22, disjoint from the sibling drivers'),
+Covers: the designed-halt rc table (19-22 + 24, disjoint from the sibling drivers'),
 dual/primal/canonical three-way solver agreement on toy fixtures (n > d AND
 n < d), parity of `solve_capped` against the parent's named reference
 `LF.gcv_solve_dof_capped`, the dof-cap refusal path, Gate C projection
@@ -114,7 +114,7 @@ def _make_rungfit(tag: str, label: str, train_ids, eval_ids, seed: int = 3) -> F
 
 
 def test_rc_table_distinct_and_disjoint_from_siblings():
-    assert set(FITS.RC_TABLE) == {19, 20, 21, 22}
+    assert set(FITS.RC_TABLE) == {19, 20, 21, 22, 24}
     assert (
         len(
             {
@@ -122,14 +122,17 @@ def test_rc_table_distinct_and_disjoint_from_siblings():
                 FITS.RC_SOLVER_PARITY,
                 FITS.RC_BANKED_CONTINUITY,
                 FITS.RC_RAND_MANIFEST,
+                FITS.RC_PAIRED_DEGENERATE,
             }
         )
-        == 4
+        == 5
     )
     sibling_rcs = {int(k) for k in EXTCAP.RC_TABLE}
     assert not (set(FITS.RC_TABLE) & sibling_rcs)
-    # parent driver reserves 5/6/7; unit 2 reserves 3, 6-11 — all below 19.
+    # parent driver reserves 5/6/7; unit 2 reserves 3, 6-11 — all below 19;
+    # unit 3's RC_GATE_B_WALL holds 23, so the degenerate-paired rc is 24.
     assert min(FITS.RC_TABLE) > 18
+    assert FITS.RC_PAIRED_DEGENERATE == 24 and EXTCAP.RC_GATE_B_WALL == 23
 
 
 def test_cross_driver_rc_disjointness_from_module_constants():
@@ -341,6 +344,70 @@ def test_bridge_loader_compare_and_rc21(tmp_path):
 def test_bridge_refit_compare_abs_tolerance():
     assert FITS.bridge_refit_compare({"L14": 0.80}, {"L14": 0.771})["pass"]  # |d| = 0.029
     assert not FITS.bridge_refit_compare({"L14": 0.90}, {"L14": 0.771})["pass"]
+
+
+def test_bridge_loader_compare_none_ratio_fails_clean_not_typeerror():
+    """A degenerate (None) ratio in either side is a per-row FAIL with both values
+    recorded — never a np.isclose TypeError crash (round-v20 consumer tolerance)."""
+    rec = FITS.bridge_loader_compare(_banked_like(None), _banked_like(0.771))
+    assert not rec["pass"]
+    assert rec["rows"][0]["rerun"] is None and rec["rows"][0]["banked"] == 0.771
+    assert not FITS.bridge_loader_compare(_banked_like(0.771), _banked_like(None))["pass"]
+    # bool-int aliasing guard: True must never compare as 1.0
+    assert not FITS.bridge_loader_compare(_banked_like(True), _banked_like(1.0))["pass"]
+
+
+# ── Degenerate paired read (rc 24) ───────────────────────────────────────────
+
+
+def _paired_json_with_verdict(path: pathlib.Path, verdict: str) -> pathlib.Path:
+    obj = {
+        "arms": {
+            "k16": {
+                "per_layer": {
+                    "L14": {
+                        "offset_bias_control": {
+                            "verdict": verdict,
+                            "between_persona_mean_shift_energy": 0.0,
+                            "measured_excess": 0.0,
+                        }
+                    }
+                }
+            }
+        }
+    }
+    path.write_text(json.dumps(obj))
+    return path
+
+
+def test_enforce_paired_nondegenerate_smoke_warns_production_halts_rc24(tmp_path):
+    degen = _paired_json_with_verdict(tmp_path / "degen.json", SPP.DEGENERATE_OFFSET_VERDICT)
+    # smoke: SMOKE-INFORMATIONAL warn, no raise (legitimate tiny-fixture shape)
+    FITS.enforce_paired_nondegenerate(degen, tmp_path, "primary/5000", smoke=True)
+    # production: designed rc-24 halt with a report
+    with pytest.raises(SystemExit) as ei:
+        FITS.enforce_paired_nondegenerate(degen, tmp_path, "primary/5000", smoke=False)
+    assert ei.value.code == FITS.RC_PAIRED_DEGENERATE == 24
+    rep = json.loads((tmp_path / "ext_paired_degenerate_report.json").read_text())
+    assert rep["rc"] == 24 and rep["verdict"] == "DESIGNED-HALT"
+    assert rep["cells"] == [
+        {
+            "arm": "k16",
+            "layer": "L14",
+            "between_persona_mean_shift_energy": 0.0,
+            "measured_excess": 0.0,
+        }
+    ]
+    assert _no_sentinels(tmp_path)
+
+
+def test_enforce_paired_nondegenerate_healthy_noop(tmp_path):
+    healthy = _paired_json_with_verdict(
+        tmp_path / "healthy.json", "consistent-with-shared-map-offset"
+    )
+    FITS.enforce_paired_nondegenerate(healthy, tmp_path, "primary/5000", smoke=False)
+    FITS.enforce_paired_nondegenerate(healthy, tmp_path, "primary/5000", smoke=True)
+    assert not (tmp_path / "ext_paired_degenerate_report.json").exists()
 
 
 # ── Companion ladder (rc 22) ─────────────────────────────────────────────────
