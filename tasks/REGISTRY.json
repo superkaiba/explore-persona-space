@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2516,
+  "highest_id": 2517,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11712,6 +11712,13 @@
       "path": "tasks/proposed/2516",
       "status": "proposed",
       "title": "workflow-fix: reclaim LESSONS.md index headroom \u2014 aggregate cap is ~60 B from blocking every new rule file"
+    },
+    "2517": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2517",
+      "status": "proposed",
+      "title": "verify_task_body Lens-14/check-64 substring false-positive: HTML comments inside Takeaways count as concern acknowledgment"
     },
     "256": {
       "has_clean_result": false,
