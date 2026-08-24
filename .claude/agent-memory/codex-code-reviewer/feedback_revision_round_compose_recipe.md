@@ -1505,6 +1505,31 @@ replace, then count `{rnd}`); when envelopes embed via f-string into ONE part,
 token totals sum the four PARTS only (parts_total helper, embedded counts as
 diagnostic labels only) — summing parts AND their embeddings double-counts.
 
+**FAIL+FAIL-union fix round with a PARTIALLY-persisted union + addressed-not-open
+ledger (#2378 r14, 2026-08-24):** composes #2332 (both verdicts inlined
+tag-stripped as acceptance contracts; no reconciler, no r13 fence) + #2371
+(implementer ran address-concern 30-45 s AFTER its marker: pin the ledger
+snapshot to the BATCH end, not the impl ts, and swap the parallel-twin guard to
+"assert zero REVIEWER-actor rows postdate the impl ts") + #1092-r4 pseudo-IDs.
+Novel deltas: (a) check each prior verdict's `CONCERN::` row FORM at compose
+time — the Claude r13 rows used the non-grammar `CONCERN:: id=<x> severity=<y>`
+shape, so the forwarder persisted NONE of them; the two ids the orchestrator's
+brief also omitted became pseudo-IDs (`r13-claude-<id>`) with the inlined
+verdict text as contract (the #2155 parse-failure shape observed on the OTHER
+twin's marker — flag to orchestrator, never fix the ledger yourself). (b) A
+fix-engaged figure that MATCHES the prior round's own claim (kept=10,000/10,000
+appeared in BOTH r13 and r14 verifications) is a non-discriminator — say so in
+the creditability duty and name the round-only observables instead. (c)
+Marker-prose accuracy nits found at compose time (caller line 825 vs post-image
+828; probe legs attributed to fits-probe but living in ladder.py:832/851) are
+attested NEUTRALLY as prose nits with the substance-claim verified separately.
+(d) Accounting structure: totals sum TOP-LEVEL parts {substituted head, rubric,
+tail} only; `head_authored(tok) = head.count - sum(embedded.count)` gives the
+assertable authored counts (asserting on the UNsubstituted template undercounts
+everything substituted in — hit live). (e) A posted twin verdict can carry the
+"Codex session ID" footer INSIDE the events.jsonl note — strip after the FIRST
+closing tag before inlining (re-confirmed #2147-cr4).
+
 **Multi-cause gate-trip fix round with an implementer SELF-RAISED concern
 (#2378 r13, 2026-08-24):** three deltas on the r10 designed-gate-trip shape.
 (a) When the diagnosis decomposes into NUMBERED causes and the impl marker's
