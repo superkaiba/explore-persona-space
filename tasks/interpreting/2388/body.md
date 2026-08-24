@@ -5,7 +5,7 @@ title: Answer correctness is predictable from the context vector before generati
 kind: experiment
 tags: []
 created_at: '2026-08-19T16:45:16Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1739
 origin_prompt: 'I want to run an experiment to test if answer correctness is predictable
   from the context vector, and then whether our mapping can help to predict it. Help
