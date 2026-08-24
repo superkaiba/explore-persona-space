@@ -4,6 +4,7 @@ title: 'Fix stale fellows-first auto-default text in critic-lens-reference.md + 
 kind: infra
 tags:
 - workflow-fix
+- duplicate
 created_at: '2026-08-16T19:22:15Z'
 has_clean_result: false
 origin_prompt: 'efficiency-critic prose follow-up during #2329 CRITIQUE round 2 (2026-08-16):
