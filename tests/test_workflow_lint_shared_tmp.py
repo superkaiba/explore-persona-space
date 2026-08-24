@@ -31,8 +31,11 @@ files-mode stale-WARN scoping):
    no_flags`` pattern; the test NAME is load-bearing — scripts/
    verify_plan.py matches ``test_[a-z0-9_]*bundled_in_no_flags``);
 4. branch tests: stale allowlist entry WARNs (never FAILs), a files-mode
-   scoped run emits ZERO stale WARNs for out-of-scope entries while the
-   full walk still reports them, an allowlisted file with hits passes, a
+   scoped run — scope derived through the PRODUCTION ``_files_scope_rel``
+   derivation, with a planted in-scope offender proving the scoped walk
+   actually SCANNED (#2336 r4) — emits ZERO stale WARNs for out-of-scope
+   entries and still WARNs an in-scope stale entry, while the full walk
+   reports the out-of-scope one; an allowlisted file with hits passes, a
    short (<10 char) waiver reason does NOT waive, the
    preceding-comment-line waiver form, and the live-tree invariant (zero
    errors + zero stale WARNs under the seeded
@@ -325,47 +328,78 @@ def test_stale_allowlist_entry_warns_never_fails(tmp_path: Path) -> None:
 def test_files_mode_scoped_run_emits_zero_stale_warns(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Round-2 fix (concern shared-tmp-stale-warn-files-mode): a files-mode
-    run scoped to ONE file must not stale-WARN allowlist entries OUTSIDE
-    the scanned scope (they were never scanned — staleness is unknowable,
-    and the WARN's "remove it" instruction would be false), while a
-    full-walk run over the same tree still reports the genuinely stale
-    entry. Round-3 half (#2336 R1): an IN-scope stale entry still DOES
-    WARN under files-mode — without this direction, a form-drift in
-    ``_files_scope_rel`` that excluded everything would zero every
-    files-mode stale WARN with the suite green."""
+    """Round-2 fix (concern shared-tmp-stale-warn-files-mode), reworked in
+    round 4 (concern shared-tmp-r1-inscope-stale-test-hollow): the files-mode
+    scope is derived through the PRODUCTION producer ``_files_scope_rel`` —
+    the same function ``_run_files_mode`` uses to build ``_FILES_SCOPE``
+    (payload normalization) and ``_files_scope_filter`` uses for membership —
+    never a hand-formed frozenset. A form-drift in ``_files_scope_rel``
+    (e.g. a ``./`` prefix) then breaks the match against the RAW allowlist
+    string the stale-WARN scoping keys on (``path not in _FILES_SCOPE``) and
+    turns the in-scope direction below red. A planted in-scope OFFENDER
+    asserting EXACTLY ONE error proves the scoped walk actually SCANNED
+    in-scope files — a stale-WARN assertion alone cannot distinguish
+    "scanned, no hits" from "never scanned". Directions: (1) an out-of-scope
+    stale entry is silent under files-mode; (2) an IN-scope stale entry
+    still WARNs; (3) the full walk (scope off) reports the stale entry.
+    NOT covered here: ``_run_files_mode``'s own payload loop (absolute-path
+    refusal, ``normpath``, the import closure) — this test injects the
+    derived scope directly; the source-level pin below ties the exercised
+    producer to that runner."""
     _plant(tmp_path, "scripts/inscope.py", "x = 1\n")
+    _plant(tmp_path, "scripts/offender.py", 'tmp = dest + ".tmp"\n')
     monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
     monkeypatch.delenv("EPS_WORKFLOW_LINT_REPO_ROOT", raising=False)
     allowlist = (("scripts/gone.py", "already migrated — genuinely stale"),)
 
-    # files-mode: scope = the one payload file; the stale entry is out of
-    # scope -> zero WARNs, zero errors.
-    monkeypatch.setattr(wl, "_FILES_SCOPE", frozenset({"scripts/inscope.py"}))
+    # Source-level: the files-mode runner really derives its payload scope
+    # through the producer exercised here — if this moves, re-point the test.
+    src = Path(wl.__file__).read_text(encoding="utf-8")
+    assert "rel = _files_scope_rel(Path(stripped))" in src, (
+        "_run_files_mode no longer derives its payload scope via "
+        "_files_scope_rel — re-point this test at the new producer"
+    )
+
+    # Scope derived through the PRODUCTION derivation, not a hand-formed
+    # frozenset: a drifted _files_scope_rel output mismatches the raw
+    # allowlist keys in the stale-WARN scoping below.
+    scope = frozenset(
+        wl._files_scope_rel(tmp_path / "scripts" / name) for name in ("inscope.py", "offender.py")
+    )
+    monkeypatch.setattr(wl, "_FILES_SCOPE", scope)
+
+    # files-mode: the stale entry is out of scope -> zero WARNs; the planted
+    # in-scope offender yields EXACTLY ONE error, proving the scoped walk
+    # enumerated + scanned in-scope files (closes the vacuous-assert hole).
     warns: list[str] = []
     errors = check_shared_tmp_name(root=tmp_path, allowlist=allowlist, warn_sink=warns)
-    assert errors == []
+    assert errors == [f"scripts/offender.py:1: {FAILURE_TAIL}"], (
+        f"files-mode run did not scan the in-scope offender (enumeration broken):\n{errors}"
+    )
     assert warns == [], f"files-mode run stale-WARNed an out-of-scope allowlist entry:\n{warns}"
 
     # files-mode, IN-scope stale entry (scanned this run, zero hits): the
-    # stale WARN still fires — the positive direction of the round-2 fix.
+    # stale WARN still fires. Under a _files_scope_rel form-drift the derived
+    # scope keys stop matching the raw allowlist string and THIS assertion
+    # goes red (the round-4 mutation gate).
     warns_inscope: list[str] = []
     errors_inscope = check_shared_tmp_name(
         root=tmp_path,
         allowlist=(("scripts/inscope.py", "already migrated — stale, in scope"),),
         warn_sink=warns_inscope,
     )
-    assert errors_inscope == []
+    assert errors_inscope == [f"scripts/offender.py:1: {FAILURE_TAIL}"]
     assert len(warns_inscope) == 1, (
         f"files-mode run failed to stale-WARN an IN-scope allowlist entry:\n{warns_inscope}"
     )
     assert "stale allowlist entry scripts/inscope.py" in warns_inscope[0]
 
-    # full walk (scope off): the same stale entry IS reported.
+    # full walk (scope off): the same stale entry IS reported, and the
+    # offender is still found (the walk itself is scope-independent).
     monkeypatch.setattr(wl, "_FILES_SCOPE", None)
     warns_full: list[str] = []
     errors_full = check_shared_tmp_name(root=tmp_path, allowlist=allowlist, warn_sink=warns_full)
-    assert errors_full == []
+    assert errors_full == [f"scripts/offender.py:1: {FAILURE_TAIL}"]
     assert len(warns_full) == 1
     assert "stale allowlist entry scripts/gone.py" in warns_full[0]
 
