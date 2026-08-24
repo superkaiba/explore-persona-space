@@ -95,6 +95,7 @@ import issue1901_paper_densify as PD  # noqa: E402
 
 from explore_persona_space.analysis import mapping_baselines as MB  # noqa: E402
 from explore_persona_space.analysis.null_battery import shrunk_cholesky_from_cov  # noqa: E402
+from explore_persona_space.atomic_io import savez_atomic  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.preflight import assert_out_root_headroom  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
@@ -742,10 +743,8 @@ def _job_c_whiten(args, X, Y, pool_rows, whiten_npz: Path, dev):
     cov, mu_a = _blocked_mean_cov(Y, pool_rows, dev, WHITEN_BLOCK, "c2-cov")
     ell = shrunk_cholesky_from_cov(cov, WHITEN_LAMBDA)
     mu_c = _blocked_mean(X, pool_rows, dev, WHITEN_BLOCK, "c2-mu-c")
-    whiten_npz.parent.mkdir(parents=True, exist_ok=True)
-    tmp = whiten_npz.with_name(whiten_npz.stem + ".tmp.npz")  # np.savez appends .npz otherwise
-    np.savez(
-        tmp,
+    savez_atomic(  # process-unique temp + handle write (np.savez .npz-append trap; #2336)
+        whiten_npz,
         mu_A=mu_a,
         mu_C=mu_c,
         L=ell,
@@ -753,7 +752,6 @@ def _job_c_whiten(args, X, Y, pool_rows, whiten_npz: Path, dev):
         n_train=int(len(pool_rows)),
         pool_sha256=pool_sha,
     )
-    os.replace(tmp, whiten_npz)
     logger.info("[job-c] whiten stats written: %s (n_train=%d)", whiten_npz, len(pool_rows))
     return mu_a, ell, pool_sha
 
@@ -790,15 +788,12 @@ def _whitened_battery(pred_te, y_te, mu_a, ell, k: int) -> dict:
 
 def _save_pred_npz(preds_dir: Path, stem: str, pred_te, te_rows, meta: dict) -> None:
     """fp16 test-pool predictions, atomically written (plan §10 HF artifact)."""
-    preds_dir.mkdir(parents=True, exist_ok=True)
-    tmp = preds_dir / f"{stem}.tmp.npz"  # suffix stays .npz (np.savez append trap)
-    np.savez(
-        tmp,
+    savez_atomic(  # process-unique temp + handle write (np.savez .npz-append trap; #2336)
+        preds_dir / f"{stem}.npz",
         pred_fp16=np.asarray(pred_te, dtype=np.float16),
         rows=np.asarray(te_rows, dtype=np.int64),
         **{k: str(v) for k, v in meta.items()},
     )
-    os.replace(tmp, preds_dir / f"{stem}.npz")
 
 
 def _dense_fingerprint(args, *, n, source, sel_name, sel_sha, store_revision, arm, seeds) -> dict:
@@ -1338,7 +1333,12 @@ def run_job_c(args, dev, out_path: Path) -> dict:
         hf_prefix = "issue1901_mlpdense/" + (
             "smoke/analysis_tensors" if smoke else "analysis_tensors"
         )
-        hub._upload(preds_dir, C.HF_DATA_REPO, "dataset", hf_prefix)
+        base_url = hub._upload(preds_dir, C.HF_DATA_REPO, "dataset", hf_prefix)
+        if not base_url:
+            raise RuntimeError(
+                f"HF upload returned no path for {preds_dir} -> {hf_prefix} — "
+                "silent durability loss (upload-policy.md tracked gap); fix credentials/paths"
+            )
         expected = [f"{hf_prefix}/{name}" for name in realized_npz] + [
             f"{hf_prefix}/{whiten_npz.name}"
         ]
