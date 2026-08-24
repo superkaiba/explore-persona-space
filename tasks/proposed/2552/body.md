@@ -18,12 +18,21 @@ origin_prompt: 'I want to rerun their thing and then first see if our mapping pr
   means banked; k=200 twin in, nested/attribution out; judge = sonnet-4-6 everywhere,
   user override; exploratory category ranking; spawn --auto)'
 workflow: v1
+goal: 'Determine (1, exploratory) how the context→answer map''s per-feature predictability
+  of turn-averaged SAE features ranks across the five Der et al. (arXiv 2606.28548)
+  schema categories (content/form/voice/function/meta) on the #2476 matryoshka SAEs
+  (k=100 + k=200) and on a faithful flat replication of Der et al.''s recipe; (2)
+  whether that replication (BatchTopK 32,768/k=128 on banked layer-19 turn means +
+  their full judged evaluation, judge claude-sonnet-4-6 no-prefill) reproduces their
+  discrimination-vs-coverage inversion; and (3) which feature properties (schema categories
+  + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability,
+  via a forward-selection partial-out ladder as the headline figure.'
 ---
 # Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder
 
 ## Goal
 
-Three linked questions at turn-averaged SAE grain (layer 19, Qwen2.5-7B-Instruct, banked 963k-conversation LMSYS/WildChat whole-answer means):
+Determine (1, exploratory) how the context→answer map's per-feature predictability of turn-averaged SAE features ranks across the five Der et al. (arXiv 2606.28548) schema categories (content/form/voice/function/meta) on the #2476 matryoshka SAEs (k=100 + k=200) and on a faithful flat replication of Der et al.'s recipe; (2) whether that replication (BatchTopK 32,768/k=128 on banked layer-19 turn means + their full judged evaluation, judge claude-sonnet-4-6 no-prefill) reproduces their discrimination-vs-coverage inversion; and (3) which feature properties (schema categories + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability, via a forward-selection partial-out ladder as the headline figure.
 
 1. **Category-level map predictability (exploratory).** Rank the five Der et al. (arXiv 2606.28548) schema categories (content, form, voice, function, meta) by how well the context→answer map predicts the turn-averaged SAE features assigned to each, with intervals; no pre-registered ordering (explicit user choice: exploratory only). Read on BOTH the in-house matryoshka turn-averaged SAEs (#2476, k=100 primary + k=200 twin, banked per-feature R²) and the faithful replication below. This upgrades the #1482/#2476 coarse-over-specific gradient to a category-level description.
 2. **Faithful replication of the Der et al. instrument and judgment.** Train their exact SAE recipe (flat BatchTopK, d_sae 32,768, k=128, turn-averaged LMSYS activations, layer 19) and rerun their full judged evaluation: auto-interp descriptions from each feature's top-25 activating turns; per-turn structured summaries under the 24-field / 5-category schema copied verbatim from their Appendix D; 10-way matching (discrimination); pairwise coverage ranking. Reproduction target: their qualitative inversion (per-token more discriminative; turn-averaged better coverage, 87.9% average pairwise win in the paper).
