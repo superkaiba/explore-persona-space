@@ -1804,9 +1804,24 @@ def run_pipeline(args: argparse.Namespace) -> dict:
 
 
 def _write_json(path: Path, obj: dict) -> None:
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, sort_keys=True))
-    tmp.replace(path)
+    """Atomic JSON write with a PROCESS-UNIQUE temp name in the destination's
+    own directory (#2336: a fixed ``<name>.tmp`` is process-shared — two
+    concurrent writers of one destination collide mid-``os.replace``); on any
+    failure the temp is best-effort unlinked and the ORIGINAL exception
+    propagates."""
+    import os
+    import uuid
+
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp")
+    try:
+        tmp.write_text(json.dumps(obj, indent=2, sort_keys=True))
+        tmp.replace(path)
+    except BaseException:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("[corpus] temp cleanup failed for %s", tmp)
+        raise
 
 
 # ---------------------------------------------------------------------------

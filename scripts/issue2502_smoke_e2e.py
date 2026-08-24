@@ -221,7 +221,11 @@ def leg_corpus(args) -> None:
     rc = CP.main([*common, "--upload", "--upload-prefix", f"{SMOKE_PREFIX}/context_corpus"])
     assert rc == 0, f"build rc={rc}"
     report = json.loads((out_dir / "dedup_report.json").read_text())
-    corpus = [json.loads(ln) for ln in (out_dir / "corpus.jsonl").read_text().splitlines()]
+    # split("\n"), never .splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False JSON strings shred records under splitlines (#950).
+    corpus = [
+        json.loads(ln) for ln in (out_dir / "corpus.jsonl").read_text().split("\n") if ln.strip()
+    ]
 
     # --- planted-outcome assertions (MF-K two-stage dedup) -------------------
     dd = report["dedup"]
@@ -258,7 +262,9 @@ def leg_corpus(args) -> None:
     # --- fingerprint-gated resume re-run (staged files reused) ---------------
     rc = CP.main(common)
     assert rc == 0
-    corpus2 = [json.loads(ln) for ln in (out_dir / "corpus.jsonl").read_text().splitlines()]
+    corpus2 = [
+        json.loads(ln) for ln in (out_dir / "corpus.jsonl").read_text().split("\n") if ln.strip()
+    ]
     assert [r["context_sha"] for r in corpus2] == [r["context_sha"] for r in corpus], (
         "fingerprint-resume rebuild must be byte-stable on context shas"
     )
