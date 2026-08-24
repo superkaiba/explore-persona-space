@@ -35,9 +35,19 @@ exact-set verify -> local purge; gen rollout TEXT always persists
 (``<raw-prefix>/chunkNNNN.jsonl``); capture tensors persist per chunk under
 ``<out-prefix>/<chunk>/`` (one upload_folder commit per chunk, ~30 files);
 ``.capture_done`` sentinel uploads LAST. Resume: StageLedger (regime-keyed on
-generating parameters) + ONE scoped HF listing per phase (cross-pod resume).
+generating parameters, same-workdir) + ONE scoped HF listing per phase, gated
+by a remote ``regime.json`` digest under EACH phase prefix (shard fields
+excluded) — a presence-skip is honored ONLY after the remote digest matches
+this invocation's regime (cross-pod resume; r1 review g2 Major 1).
 Cap-hit fraction (finish_reason=="length") is reported in gen_meta.json +
-capture_meta.json with the >2% regen trigger named.
+capture_meta.json; >2% is a DESIGNED HALT: a durable cap_hit_report json
+(affected context ids per chunk) uploads under the raw prefix and the process
+exits rc=EXIT_CAP_HIT (7) BEFORE capture — the plan's >=2x-cap regen runs
+against FRESH prefixes (the regime digest forbids in-place mixing). Think-leak
+policy (#2378 classifier port, g2 Major 2): a completion containing
+``<think>`` is FLAGGED at gen (``think_leak`` on the persisted row — rollout
+text always persists) and DROPPED at capture (excluded from tensors +
+rows.json); counts ride gen_meta + capture_meta.
 
 Content hygiene: corpus/context text is NEVER printed — logs carry digests,
 counts, and chunk keys only.
@@ -81,6 +91,7 @@ SEED = 42
 TEMPERATURE = 1.0
 TOP_P = 0.95
 CAP_HIT_THRESHOLD = 0.02  # >2% per-model cap-hit => regen at >=2x cap (plan trigger)
+EXIT_CAP_HIT = 7  # designed cap-hit halt rc (report artifact + distinct rc; rc=7 precedent)
 GEN_CHUNK_MAX_BYTES = 9_500_000  # non-LFS text budget per chunk file (upload-policy)
 
 # --- MF-A pins, ported verbatim from issue-2378 @ 25187c4e9a9f (issue2378_common.py) ---
@@ -335,14 +346,25 @@ def assert_chat_template(tok, *, disable_thinking: bool) -> str:
 
 
 def render_prompt_ids(tok, text: str, *, disable_thinking: bool) -> list[int]:
-    """Render ONE user turn to prompt token ids (add_generation_prompt=True)."""
+    """Render ONE user turn to prompt token ids (add_generation_prompt=True).
+
+    Under the Model-B empty-<think> contract the EMPTY_THINK literal is
+    asserted on EVERY render (plan §4 P1 "on every render" — r1 review g2
+    Minor 4), not only the phase-start probe. Content hygiene: the error
+    carries a digest, never the context text.
+    """
     kwargs = {"enable_thinking": False} if disable_thinking else {}
-    ids = tok.apply_chat_template(
-        [{"role": "user", "content": text}],
-        tokenize=True,
-        add_generation_prompt=True,
-        **kwargs,
-    )
+    msgs = [{"role": "user", "content": text}]
+    if disable_thinking:
+        rendered = tok.apply_chat_template(
+            msgs, tokenize=False, add_generation_prompt=True, **kwargs
+        )
+        if EMPTY_THINK not in rendered:
+            raise RuntimeError(
+                "chat template contract violated on render (context "
+                f"{text_digest(text)}): empty think block {EMPTY_THINK!r} absent"
+            )
+    ids = tok.apply_chat_template(msgs, tokenize=True, add_generation_prompt=True, **kwargs)
     return [int(x) for x in ids]
 
 
@@ -375,8 +397,14 @@ def enforce_model_env(args) -> None:
                 f"banned distribution {dist!r} installed — #2378 requires it ABSENT "
                 "(py3.11 flashinfer TypeError class)"
             )
+    # AUTHORITATIVE assignment (issue2378_common.py:80-88: "the pin always wins") —
+    # a setdefault would let an inherited VLLM_USE_FLASHINFER_SAMPLER=1 defeat the
+    # pin and reproduce the exact #2378 crash class (r1 review g2 Major 3).
     for k, v in LAUNCH_ENV_PINS.items():
-        os.environ.setdefault(k, v)
+        prev = os.environ.get(k)
+        if prev is not None and prev != v:
+            print(f"[env] OVERRIDING inherited {k}={prev!r} with pin {v!r} (#2378)", flush=True)
+        os.environ[k] = v
     print(f"[env] pod2378-venv pins OK: {MODEL_VENV_PINS}; env pins {LAUNCH_ENV_PINS}", flush=True)
 
 
@@ -501,7 +529,13 @@ def fetch_repo_file(repo_path: str, dest_root: Path, *, what: str) -> Path:
 
 
 def load_corpus_rows(args, work: Path) -> list[dict]:
-    """Fetch corpus.jsonl (u1's output) and return the shard-filtered row list."""
+    """Fetch corpus.jsonl (u1's output) and return the shard-filtered row list.
+
+    Validates the required fields of EVERY selected row here — BEFORE any
+    engine/model init (r1 review Codex finding; validate-before-init) — and
+    refuses duplicate context_ids (the capture tensor index is id-keyed).
+    Content hygiene: errors name field + index, never row text.
+    """
     local = fetch_repo_file(
         f"{args.corpus_prefix}/corpus.jsonl", work / "corpus_dl", what="corpus-download"
     )
@@ -517,8 +551,23 @@ def load_corpus_rows(args, work: Path) -> list[dict]:
             f"empty corpus selection (num_shards={args.num_shards} "
             f"shard_index={args.shard_index} limit={args.limit}) — fail loud"
         )
+    seen_ids: set[str] = set()
+    for i, row in enumerate(rows):
+        for f in ("context_id", "context_sha", "text"):
+            v = row.get(f)
+            if not isinstance(v, str) or not v:
+                raise RuntimeError(
+                    f"[corpus] selected row {i}: field {f!r} missing/empty — "
+                    "u1 corpus contract violation (validate-before-init)"
+                )
+        if row["context_id"] in seen_ids:
+            raise RuntimeError(
+                f"[corpus] duplicate context_id {row['context_id']} in shard selection"
+            )
+        seen_ids.add(row["context_id"])
     print(
-        f"[corpus] {len(rows)} rows selected (shard {args.shard_index}/{args.num_shards})",
+        f"[corpus] {len(rows)} rows selected + validated "
+        f"(shard {args.shard_index}/{args.num_shards})",
         flush=True,
     )
     return rows
@@ -576,6 +625,56 @@ def capture_regime(args, template_sha: str) -> dict:
     return reg
 
 
+# Shards share one remote digest per prefix: shard identity fields are excluded
+# from the cross-pod regime comparison (r1 review g2 Major 1 fix spec).
+REGIME_SHARD_FIELDS = ("num_shards", "shard_index")
+
+
+def _strip_shard_fields(regime: dict) -> dict:
+    """Regime minus shard-identity fields (shards of one run share a digest)."""
+    return {k: v for k, v in regime.items() if k not in REGIME_SHARD_FIELDS}
+
+
+def ensure_remote_regime(prefix: str, regime: dict, work: Path, *, write_if_absent: bool) -> None:
+    """Cross-pod regime gate for every HF-presence resume path (g2 Major 1).
+
+    The local StageLedger protects only same-workdir reruns; before ANY
+    presence-skip against ``prefix`` the remote artifacts must be proven to
+    have been produced under THIS regime. ``{prefix}/regime.json`` is written
+    on the phase's first run (``write_if_absent=True`` — producer side);
+    a consumer (``write_if_absent=False``) fails loud when it is absent.
+    Mismatch (shard fields excluded) fails loud naming the differing keys —
+    the remedy is a FRESH prefix, mirroring the StageLedger message. Regime
+    values are generating parameters only (machine-stable; gotchas.md
+    float-recompute rule).
+    """
+    dest = f"{prefix}/regime.json"
+    want = _strip_shard_fields(regime)
+    if hf_missing_of([dest], scope=prefix):
+        if not write_if_absent:
+            raise RuntimeError(
+                f"[regime] {dest} absent — remote artifacts have no regime digest; "
+                "run the producing phase (post-fix) first, or use a fresh prefix"
+            )
+        p = work / f"regime_pub_{hashlib.sha256(dest.encode('utf-8')).hexdigest()[:8]}.json"
+        atomic_write_json(p, {"regime": want, "meta": run_metadata()})
+        upload_single_file(p, dest)
+        print(f"[regime] published {dest}", flush=True)
+        return
+    local = fetch_repo_file(dest, work / "regime_dl", what=f"regime({prefix})")
+    have = json.loads(local.read_text(encoding="utf-8"))["regime"]
+    local.unlink()
+    if have != want:
+        diff = sorted(k for k in set(have) | set(want) if have.get(k) != want.get(k))
+        raise RuntimeError(
+            f"[regime] mismatch at {dest} on keys {diff}: "
+            f"remote {[(k, have.get(k)) for k in diff]} vs "
+            f"requested {[(k, want.get(k)) for k in diff]} — remote artifacts were "
+            "produced under a DIFFERENT regime; use a fresh prefix (never mix in place)"
+        )
+    print(f"[regime] verified {dest}", flush=True)
+
+
 # --------------------------------------------------------------------------
 # Phase: gen (P1)
 # --------------------------------------------------------------------------
@@ -599,14 +698,132 @@ def build_engine(args):
     )
 
 
+def _is_think_leak(row: dict) -> bool:
+    """#2378 ``_classify_answer_row`` think-leak port (g2 Major 2).
+
+    Trusts the gen-time ``think_leak`` flag when present; otherwise recomputes
+    the substring check on the persisted completion text (defensive — works on
+    any chunk row regardless of writer vintage).
+    """
+    flag = row.get("think_leak")
+    if flag is not None:
+        return bool(flag)
+    return "<think>" in (row.get("completion") or "")
+
+
 def count_chunk_stats(path: Path) -> dict:
     """Recount a gen chunk file's stats (cross-pod resume path for gen_meta)."""
-    n = cap = gen_tok = 0
+    n = cap = leak = gen_tok = 0
+    cap_ids: list[str] = []
     for row in iter_jsonl(path):
         n += 1
-        cap += 1 if row.get("cap_hit") else 0
+        if row.get("cap_hit"):
+            cap += 1
+            cap_ids.append(str(row.get("context_id")))
+        leak += 1 if _is_think_leak(row) else 0
         gen_tok += int(row.get("n_gen_tokens", 0))
-    return {"n_rows": n, "n_cap_hit": cap, "n_gen_tokens_sum": gen_tok, "n_len_drops": None}
+    return {
+        "n_rows": n,
+        "n_cap_hit": cap,
+        "n_think_leak": leak,
+        "n_gen_tokens_sum": gen_tok,
+        "cap_hit_ids": cap_ids,
+    }
+
+
+def cap_hit_halt(
+    args, work: Path, frac: float, n_cap: int, n_rows: int, cap_ids_by_chunk: dict
+) -> None:
+    """DESIGNED cap-hit halt (g2 Major-family blocker #4): durable report + rc=7.
+
+    Uploads ``cap_hit_report{suffix}.json`` (affected context ids per chunk +
+    the regen recipe) under the raw prefix, then terminates rc=EXIT_CAP_HIT so
+    the plan's mandatory >=2x-cap regen can never silently no-op and capture
+    never runs on a >2%-capped corpus. os._exit is safe here: all durables
+    (chunks, gen_meta, this report) are upload-verified before the exit.
+    """
+    report = {
+        "verdict": "cap_hit_regen_required",
+        "cap_hit_fraction": frac,
+        "cap_hit_threshold": CAP_HIT_THRESHOLD,
+        "n_cap_hit": n_cap,
+        "n_rows": n_rows,
+        "max_new_tokens": args.max_new_tokens,
+        "regen_max_new_tokens": 2 * args.max_new_tokens,
+        "regen_recipe": (
+            f"re-run --phase gen with --max-new-tokens {2 * args.max_new_tokens} against "
+            "FRESH --raw-prefix/--out-prefix (the regime digest forbids in-place mixing), "
+            "then point capture at the fresh prefixes"
+        ),
+        "affected_context_ids_by_chunk": cap_ids_by_chunk,
+        "meta": run_metadata(),
+    }
+    p = work / f"cap_hit_report{name_suffix(args)}.json"
+    atomic_write_json(p, report)
+    upload_single_file(p, f"{args.raw_prefix}/cap_hit_report{name_suffix(args)}.json")
+    print(
+        f"[cap-hit] HALT rc={EXIT_CAP_HIT}: fraction {frac:.4f} > {CAP_HIT_THRESHOLD} — "
+        f"report uploaded; plan trigger: regen at max_new_tokens={2 * args.max_new_tokens}",
+        flush=True,
+    )
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(EXIT_CAP_HIT)
+
+
+def reuse_remote_gen_meta(args, work: Path, keys: list[str], regime: dict) -> dict | None:
+    """No-op-resume fast path (g2 Minor 7): reuse the remote gen_meta.
+
+    When THIS run generated nothing, a remote gen_meta covering every chunk key
+    under the SAME (shard-stripped) regime replaces the ~N-chunk recount
+    re-download. The cap-hit gate still fires from the reused fraction (#4).
+    Returns the remote meta on reuse, else None (fall through to recount).
+    """
+    dest = f"{args.raw_prefix}/gen_meta{name_suffix(args)}.json"
+    if hf_missing_of([dest], scope=args.raw_prefix):
+        return None
+    local = fetch_repo_file(dest, work / "genmeta_dl", what="gen-meta(reuse)")
+    meta = json.loads(local.read_text(encoding="utf-8"))
+    local.unlink()
+    per_chunk = meta.get("per_chunk") or {}
+    if set(per_chunk) != set(keys):
+        return None
+    if _strip_shard_fields(meta.get("regime") or {}) != _strip_shard_fields(regime):
+        return None
+    frac = float(meta.get("cap_hit_fraction", 0.0))
+    print(f"[gen] resume: remote gen_meta reused (cap-hit fraction={frac:.4f})", flush=True)
+    if frac > CAP_HIT_THRESHOLD:
+        cap_ids = {k: s.get("cap_hit_ids", []) for k, s in per_chunk.items() if s.get("n_cap_hit")}
+        cap_hit_halt(
+            args, work, frac, int(meta.get("n_cap_hit", 0)), int(meta.get("n_rows", 0)), cap_ids
+        )
+    return meta
+
+
+def require_gen_complete(args, work: Path) -> dict:
+    """Capture-entry gate (#4 defensive leg): gen must be COMPLETE and un-capped.
+
+    Fetches the shard's gen_meta; absent => gen never finished its accounting —
+    fail loud. ``regen_required`` => the same designed rc=EXIT_CAP_HIT halt as
+    the gen side (capture may be launched standalone on a different pod, so the
+    gen-side halt alone does not protect this entry).
+    """
+    dest = f"{args.raw_prefix}/gen_meta{name_suffix(args)}.json"
+    if hf_missing_of([dest], scope=args.raw_prefix):
+        raise RuntimeError(f"[capture] {dest} absent — gen phase incomplete; run --phase gen first")
+    local = fetch_repo_file(dest, work / "genmeta_dl", what="gen-meta(capture-gate)")
+    meta = json.loads(local.read_text(encoding="utf-8"))
+    local.unlink()
+    if meta.get("regen_required"):
+        print(
+            f"[cap-hit] capture HALT rc={EXIT_CAP_HIT}: gen_meta regen_required=true "
+            f"(fraction={meta.get('cap_hit_fraction')}) — regen at >=2x cap first",
+            flush=True,
+        )
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(EXIT_CAP_HIT)
+    return meta
 
 
 def write_gen_meta(
@@ -614,11 +831,16 @@ def write_gen_meta(
     work: Path,
     keys: list[str],
     stats: dict,
-    len_drops: list[dict],
     template_sha: str,
     regime: dict,
 ) -> None:
-    """Assemble + upload gen_meta.json (cap-hit fraction over EVERY chunk)."""
+    """Assemble + upload gen_meta.json (cap-hit fraction over EVERY chunk).
+
+    Chunks not generated this run are recounted from HF; the remote regime
+    digest (verified at phase entry, BEFORE any presence-skip) guarantees they
+    were produced under this same regime — so stamping ``regime`` here is
+    provenance-correct (g2 Major 1). >2% cap-hit => designed halt (#4).
+    """
     for key in keys:
         if key in stats:
             continue
@@ -629,6 +851,7 @@ def write_gen_meta(
         local.unlink()
     n_rows = sum(s["n_rows"] for s in stats.values())
     n_cap = sum(s["n_cap_hit"] for s in stats.values())
+    n_leak = sum(s.get("n_think_leak", 0) for s in stats.values())
     frac = n_cap / max(1, n_rows)
     meta = {
         "model": args.model,
@@ -638,7 +861,8 @@ def write_gen_meta(
         "cap_hit_fraction": frac,
         "cap_hit_threshold": CAP_HIT_THRESHOLD,
         "regen_required": frac > CAP_HIT_THRESHOLD,
-        "n_length_drops_this_run": len(len_drops),
+        "n_think_leak": n_leak,
+        "think_leak_policy": "flagged at gen (rollout text persisted); dropped at capture",
         "template_sha16": template_sha,
         "regime": regime,
         "per_chunk": stats,
@@ -647,20 +871,14 @@ def write_gen_meta(
     p = work / f"gen_meta{name_suffix(args)}.json"
     atomic_write_json(p, meta)
     upload_single_file(p, f"{args.raw_prefix}/gen_meta{name_suffix(args)}.json")
-    if len_drops:
-        dp = work / f"length_drops{name_suffix(args)}.json"
-        atomic_write_json(dp, {"drops": len_drops, "meta": run_metadata()})
-        upload_single_file(dp, f"{args.raw_prefix}/length_drops{name_suffix(args)}.json")
     print(
-        f"[cap-hit] fraction={frac:.4f} ({n_cap}/{n_rows}) threshold={CAP_HIT_THRESHOLD}",
+        f"[cap-hit] fraction={frac:.4f} ({n_cap}/{n_rows}) threshold={CAP_HIT_THRESHOLD}; "
+        f"think_leak={n_leak}",
         flush=True,
     )
     if frac > CAP_HIT_THRESHOLD:
-        print(
-            "[cap-hit] WARNING: exceeds 2% — plan trigger: re-generate capped rows at "
-            f">=2x cap ({2 * args.max_new_tokens})",
-            flush=True,
-        )
+        cap_ids = {k: s.get("cap_hit_ids", []) for k, s in stats.items() if s.get("n_cap_hit")}
+        cap_hit_halt(args, work, frac, n_cap, n_rows, cap_ids)
 
 
 def phase_gen(args, spec) -> None:
@@ -682,6 +900,9 @@ def phase_gen(args, spec) -> None:
     chunks = [rows[i : i + args.chunk_size] for i in range(0, len(rows), args.chunk_size)]
     keys = [chunk_key(args, ci) for ci in range(len(chunks))]
     regime = gen_regime(args, template_sha)
+    # g2 Major 1: the remote digest gates EVERY presence-skip below — verified
+    # (or first-run published) BEFORE the HF listing is consulted.
+    ensure_remote_regime(args.raw_prefix, regime, work, write_if_absent=True)
     ledger = StageLedger(work / f"gen_ledger{name_suffix(args)}.json", regime)
     stats_path = work / f"gen_stats{name_suffix(args)}.json"
     stats: dict = json.loads(stats_path.read_text()) if stats_path.exists() else {}
@@ -691,22 +912,22 @@ def phase_gen(args, spec) -> None:
     eos_id = tok.eos_token_id
     llm = None
     sp = None
-    total_len_drops: list[dict] = []
+    n_generated = 0
     t0 = time.time()
     for ci, chunk_rows in enumerate(chunks):
         key = keys[ci]
         if ledger.is_done(key):
             continue
         if dests[key] not in hf_missing:
-            print(f"[gen] {key}: present on HF — resume-skip", flush=True)
+            print(f"[gen] {key}: present on HF — resume-skip (regime verified)", flush=True)
             ledger.mark_done(key)
             continue
         rendered = []
-        len_drops = []
+        over_budget = []
         for row in chunk_rows:
             pids = render_prompt_ids(tok, row["text"], disable_thinking=args.disable_thinking)
             if len(pids) > budget:
-                len_drops.append(
+                over_budget.append(
                     {
                         "context_id": row["context_id"],
                         "context_sha": row["context_sha"],
@@ -715,13 +936,15 @@ def phase_gen(args, spec) -> None:
                 )
                 continue
             rendered.append((row, pids))
-        if len(len_drops) > 0.05 * len(chunk_rows):
+        if over_budget:
+            # g2 blocker #2: u1's corpus is JOINT dual-tokenizer filtered, so ANY
+            # per-model length drop is a corpus/render contract violation — there
+            # is no drop tolerance (the old <=5% tolerate path is removed).
             raise RuntimeError(
-                f"[gen] {key}: {len(len_drops)}/{len(chunk_rows)} rows over token budget "
-                f"{budget} — systematic template/tokenizer mismatch, fail loud"
+                f"[gen] {key}: {len(over_budget)}/{len(chunk_rows)} rows over token "
+                f"budget {budget} (first: {over_budget[0]}) — joint dual-tokenizer "
+                "corpus contract violated, fail loud"
             )
-        if not rendered:
-            raise RuntimeError(f"[gen] {key}: empty selection after length filter — fail loud")
         if llm is None:
             llm = build_engine(args)
             from vllm import SamplingParams
@@ -738,7 +961,9 @@ def phase_gen(args, spec) -> None:
             raise RuntimeError(f"[gen] {key}: vLLM returned {len(outs)} != {len(rendered)}")
         local = work / f"{key}.jsonl"
         n_cap = 0
+        n_leak = 0
         gen_tok_sum = 0
+        cap_ids: list[str] = []
         with local.open("w", encoding="utf-8") as fh:
             for (row, pids), out in zip(rendered, outs):
                 o = out.outputs[0]
@@ -748,7 +973,13 @@ def phase_gen(args, spec) -> None:
                     comp_ids.pop()
                     stripped = True
                 cap_hit = o.finish_reason == "length"
-                n_cap += 1 if cap_hit else 0
+                if cap_hit:
+                    n_cap += 1
+                    cap_ids.append(row["context_id"])
+                # g2 Major 2 (#2378 _classify_answer_row port): flag at gen —
+                # rollout text ALWAYS persists (upload policy); capture drops.
+                think_leak = "<think>" in o.text
+                n_leak += 1 if think_leak else 0
                 gen_tok_sum += len(comp_ids)
                 rec = {
                     "context_id": row["context_id"],
@@ -768,6 +999,7 @@ def phase_gen(args, spec) -> None:
                     "finish_reason": o.finish_reason,
                     "cap_hit": cap_hit,
                     "eos_stripped": stripped,
+                    "think_leak": think_leak,
                 }
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
         sz = local.stat().st_size
@@ -781,10 +1013,11 @@ def phase_gen(args, spec) -> None:
         stats[key] = {
             "n_rows": len(rendered),
             "n_cap_hit": n_cap,
+            "n_think_leak": n_leak,
             "n_gen_tokens_sum": gen_tok_sum,
-            "n_len_drops": len(len_drops),
+            "cap_hit_ids": cap_ids,
         }
-        total_len_drops.extend(len_drops)
+        n_generated += 1
         atomic_write_json(stats_path, stats)
         ledger.mark_done(key)
         progress("gen", ci + 1, len(chunks), key, t0)
@@ -793,7 +1026,14 @@ def phase_gen(args, spec) -> None:
 
         _reap_vllm_engine(llm)
         llm = None
-    write_gen_meta(args, work, keys, stats, total_len_drops, template_sha, regime)
+    if n_generated == 0 and reuse_remote_gen_meta(args, work, keys, regime) is not None:
+        # g2 Minor 7: pure no-op resume — remote gen_meta reused, no recount
+        # re-downloads (cap-hit gate already applied inside the reuse helper).
+        print("[phase=gen] done (resume; gen_meta reused)", flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
+    write_gen_meta(args, work, keys, stats, template_sha, regime)
     print("[phase=gen] done", flush=True)
     sys.stdout.flush()
     sys.stderr.flush()
@@ -947,7 +1187,7 @@ def capture_chunk(
 
     recs: list[_Rec] = []
     gen_by_id: dict[str, dict] = {}
-    drops = {"empty_completion": 0}
+    drops = {"empty_completion": 0, "think_leak": 0}
     for row in gen_rows:
         cid = row["context_id"]
         text = ctx_lookup.get(cid)
@@ -966,6 +1206,12 @@ def capture_chunk(
         if not comp_ids:
             drops["empty_completion"] += 1
             continue
+        if _is_think_leak(row):
+            # g2 Major 2 policy: leaked-CoT completions never enter v_x — the
+            # row is excluded from tensors + rows.json (text stays in the gen
+            # chunk on HF for audit); counted here and in capture_meta.
+            drops["think_leak"] += 1
+            continue
         full = prompt_ids + comp_ids
         if len(full) > args.max_model_len:
             raise RuntimeError(f"row {cid}: full sequence {len(full)} > {args.max_model_len}")
@@ -979,6 +1225,10 @@ def capture_chunk(
     cx = {k: np.zeros((n, hdim), dtype=np.uint16) for k in range(1, n_layers + 1)}
     vx = {k: np.zeros((n, hdim), dtype=np.uint16) for k in range(1, n_layers + 1)}
     idx_of = {r.context_id: i for i, r in enumerate(recs)}
+    if len(idx_of) != len(recs):
+        # g2 Minor 6: a duplicate context_id would write one tensor row twice
+        # and leave another all-zeros — refuse instead.
+        raise RuntimeError(f"chunk {key}: duplicate context_id among {len(recs)} capture rows")
     batches = _pack_batches(
         recs, batch_tokens=args.batch_tokens, max_batch_rows=args.max_batch_rows
     )
@@ -1030,6 +1280,7 @@ def capture_chunk(
     gen_stats = {
         "n_gen_rows": len(gen_rows),
         "n_cap_hit": sum(1 for g in gen_rows if g.get("cap_hit")),
+        "n_think_leak": sum(1 for g in gen_rows if _is_think_leak(g)),
     }
     rows_doc = {
         "key": key,
@@ -1050,6 +1301,36 @@ def capture_chunk(
     }
 
 
+GEN_ROW_REQUIRED_STR = ("context_id", "context_sha", "prompt_sha", "completion")
+
+
+def validate_gen_rows(key: str, gen_rows: list[dict], ctx_lookup: dict) -> None:
+    """Schema-validate one gen chunk BEFORE any model load (g2/Codex finding).
+
+    Every required field of every row is checked pre-init so a malformed chunk
+    fails in seconds, never after the heavy HF model load. Content hygiene:
+    errors carry key + row index + field name (+ sha-derived ids), never text.
+    """
+    for i, row in enumerate(gen_rows):
+        for f in GEN_ROW_REQUIRED_STR:
+            v = row.get(f)
+            if not isinstance(v, str) or (f != "completion" and not v):
+                raise RuntimeError(
+                    f"[capture-preflight] {key} row {i}: field {f!r} missing/empty/non-str"
+                )
+        ids = row.get("completion_token_ids")
+        if not isinstance(ids, list) or not all(isinstance(x, int) for x in ids):
+            raise RuntimeError(
+                f"[capture-preflight] {key} row {i} ({row['context_id']}): "
+                "completion_token_ids missing or non-int"
+            )
+        if row["context_id"] not in ctx_lookup:
+            raise RuntimeError(
+                f"[capture-preflight] {key} row {i}: context_id {row['context_id']} "
+                "absent from corpus shard selection"
+            )
+
+
 def phase_capture(args, spec) -> None:
     """P2: teacher-forced capture (cx_last + vx, all post-block layers), per-chunk."""
     print("[phase=capture] start", flush=True)
@@ -1063,7 +1344,15 @@ def phase_capture(args, spec) -> None:
     ctx_lookup = {r["context_id"]: r["text"] for r in rows}
     n_chunks = (len(rows) + args.chunk_size - 1) // args.chunk_size
     keys = [chunk_key(args, ci) for ci in range(n_chunks)]
+    # g2 Major 1: verify the GEN artifacts' remote regime (consumer side — the
+    # digest must already exist) BEFORE any gen chunk is trusted, and gate this
+    # phase's own out_prefix (producer side) BEFORE any presence-skip.
+    ensure_remote_regime(
+        args.raw_prefix, gen_regime(args, template_sha), work, write_if_absent=False
+    )
+    require_gen_complete(args, work)  # #4 defensive: refuse a regen_required corpus
     regime = capture_regime(args, template_sha)
+    ensure_remote_regime(args.out_prefix, regime, work, write_if_absent=True)
     ledger = StageLedger(work / f"capture_ledger{name_suffix(args)}.json", regime)
     exp_by_key = {k: capture_expected(args, k, spec["n_layers"]) for k in keys}
     all_expected = [p for ps in exp_by_key.values() for p in ps]
@@ -1075,19 +1364,34 @@ def phase_capture(args, spec) -> None:
         f"{len(pending)} pending",
         flush=True,
     )
+    # Validate-before-init (g2/Codex finding): fetch + schema-validate EVERY
+    # pending gen chunk BEFORE the heavy HF model load; files stay on disk so
+    # the capture loop re-reads them without re-downloading.
+    gen_paths: dict[str, Path] = {}
+    for key in pending:
+        gen_local = fetch_repo_file(
+            f"{args.raw_prefix}/{key}.jsonl", work / "gen_dl", what=f"gen-chunk({key})"
+        )
+        gen_rows_v = list(iter_jsonl(gen_local))
+        if not gen_rows_v:
+            raise RuntimeError(f"gen chunk {key} is empty — fail loud")
+        validate_gen_rows(key, gen_rows_v, ctx_lookup)
+        gen_paths[key] = gen_local
+        del gen_rows_v
     summaries: dict[str, dict] = {}
     if pending:
+        print(
+            f"[capture] preflight OK: {len(pending)} pending gen chunks schema-validated "
+            "pre-model-load",
+            flush=True,
+        )
         mctx = load_model_ctx(args, spec, tok)
         t0 = time.time()
         for ci, key in enumerate(keys):
             if ledger.is_done(key) or key in complete_on_hf:
                 continue
-            gen_local = fetch_repo_file(
-                f"{args.raw_prefix}/{key}.jsonl", work / "gen_dl", what=f"gen-chunk({key})"
-            )
+            gen_local = gen_paths[key]
             gen_rows = list(iter_jsonl(gen_local))
-            if not gen_rows:
-                raise RuntimeError(f"gen chunk {key} is empty — fail loud")
             stage_dir = work / f"stage_{key}"
             if stage_dir.exists():
                 shutil.rmtree(stage_dir)
@@ -1130,11 +1434,20 @@ def phase_capture(args, spec) -> None:
         "n_empty_completion_drops": sum(
             s["drops"].get("empty_completion", 0) for s in summaries.values()
         ),
+        "n_think_leak_drops": sum(s["drops"].get("think_leak", 0) for s in summaries.values()),
     }
+    # Producer contract for the downstream fits/reliability unit: exact chunk
+    # keys + per-chunk counts + the COMPLETE captured layer set + the full
+    # expected-file enumeration (repo paths under out_prefix).
+    layers = list(range(1, spec["n_layers"] + 1))
     meta = {
         "model": args.model,
         "totals": totals,
         "regime": regime,
+        "chunk_keys": keys,
+        "layers": layers,
+        "layer_map": "L{k} = hidden_states[k] = output of decoder block k-1 (0-indexed)",
+        "expected_files": [p for k in keys for p in exp_by_key[k]],
         "per_chunk": summaries,
         "meta": run_metadata(),
     }
@@ -1144,7 +1457,17 @@ def phase_capture(args, spec) -> None:
     # Sentinel uploads LAST (phase-done contract for downstream fits units).
     sentinel_name = ".capture_done" if args.num_shards == 1 else f".capture_done{name_suffix(args)}"
     sp = work / f"capture_done{name_suffix(args)}.json"
-    atomic_write_json(sp, {"done": True, "totals": totals, "meta": run_metadata()})
+    atomic_write_json(
+        sp,
+        {
+            "done": True,
+            "totals": totals,
+            "chunk_keys": keys,
+            "layers": layers,
+            "capture_meta": f"capture_meta{name_suffix(args)}.json",
+            "meta": run_metadata(),
+        },
+    )
     upload_single_file(sp, f"{args.out_prefix}/{sentinel_name}")
     print(f"[capture] totals: {json.dumps(totals)}", flush=True)
     print("[phase=capture] done", flush=True)
@@ -1174,6 +1497,16 @@ def phase_all(args) -> int:
         cmd = [sys.executable, os.path.abspath(__file__), *cleaned, "--phase", ph]
         print(f"[phase=all] launching subprocess --phase {ph}", flush=True)
         proc = subprocess.run(cmd, env={**os.environ}, check=False)
+        if proc.returncode == EXIT_CAP_HIT:
+            # Designed stop (#4), not a crash: propagate the distinct rc so the
+            # dispatcher routes it as the plan's cap-hit regen trigger; capture
+            # never runs on a >2%-capped corpus.
+            print(
+                f"[phase=all] --phase {ph} HALT rc={EXIT_CAP_HIT} (cap-hit regen required; "
+                "cap_hit_report uploaded) — designed stop, remaining phases not run",
+                flush=True,
+            )
+            return EXIT_CAP_HIT
         if proc.returncode != 0:
             raise RuntimeError(f"--phase {ph} subprocess exited rc={proc.returncode}")
         print(f"[phase=all] --phase {ph} rc=0", flush=True)
@@ -1187,7 +1520,8 @@ def phase_all(args) -> int:
 
 
 def run_self_test() -> int:
-    """Synthetic unit checks: bf16 codec, MF-F asserts, packing, ledger regime."""
+    """Synthetic unit checks: codec, MF-F asserts, packing, ledger regime,
+    think-leak classifier, regime shard-strip, gen-row preflight validation."""
     import tempfile
 
     import torch
@@ -1247,6 +1581,36 @@ def run_self_test() -> int:
         try:
             StageLedger(lp, {"a": 2})
             raise AssertionError("regime mismatch not caught")
+        except RuntimeError:
+            pass
+    n_pass += 1
+    # 8. think-leak classifier (g2 Major 2 port): flag wins; text fallback works.
+    assert _is_think_leak({"completion": "x <think> y"})
+    assert not _is_think_leak({"completion": "clean answer"})
+    assert not _is_think_leak({"think_leak": False, "completion": "<think>"})
+    assert _is_think_leak({"think_leak": True, "completion": "clean"})
+    n_pass += 1
+    # 9. Regime shard-strip: exactly the shard-identity fields are excluded.
+    reg = {"a": 1, "num_shards": 4, "shard_index": 2}
+    assert _strip_shard_fields(reg) == {"a": 1}
+    n_pass += 1
+    # 10. Gen-row preflight validation: good row passes; bad rows raise.
+    good = {
+        "context_id": "c1",
+        "context_sha": "s1",
+        "prompt_sha": "p1",
+        "completion": "",
+        "completion_token_ids": [1, 2],
+    }
+    validate_gen_rows("t", [good], {"c1": "x"})
+    for bad, lookup in (
+        (dict(good, prompt_sha=None), {"c1": "x"}),  # missing required field
+        (dict(good, completion_token_ids="oops"), {"c1": "x"}),  # non-list ids
+        (good, {}),  # context_id absent from corpus selection
+    ):
+        try:
+            validate_gen_rows("t", [bad], lookup)
+            raise AssertionError("bad gen row not caught")
         except RuntimeError:
             pass
     n_pass += 1
@@ -1346,6 +1710,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--work-dir", default="/workspace/issue2502_gen_capture")
     ap.add_argument(
         "--limit", type=int, default=None, help="cap corpus rows AFTER shard filter (smoke slices)"
+    )
+    ap.add_argument(
+        "--rows",
+        type=int,
+        dest="limit",
+        help="alias for --limit (plan §4.8/§9 smoke command shape uses --rows)",
     )
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument(
