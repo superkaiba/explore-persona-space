@@ -24,6 +24,12 @@ round-2: ``gh pr merge 1527 --rebase`` ran against the round-1 PR, exited
 - ready-before-merge adjacency in every executable merge block (#2538), with
   the copy-source snippets section as the sole pinned exemption
   (exact-heading, globally bounded to one merge form).
+- the recovery classification echo's FULL draft arm (error string AND its
+  ``gh pr ready <PR>`` remedy, scoped to the ``MERGE FAILED post-push`` echo
+  line) plus the recovery snapshot-before-ready ordering
+  (gate < PRE_STATE < PRE_MERGED_AT < probe echo < ready < merge)
+  (#2538 round 2: concerns recovery-draft-arm-pin,
+  recovery-ready-probe-order-pin).
 """
 
 from __future__ import annotations
@@ -251,20 +257,55 @@ def test_snippets_exemption_total_bounded_globally() -> None:
 
 
 def test_recovery_ready_between_verdict_gate_and_merge() -> None:
-    # #2538 site pin: the recovery block's ready call sits AFTER the
-    # three-conjunct verdict conditional (inside its pass branch) and BEFORE
-    # the --squash merge.
+    # #2538 site pin, extended in round 2 (concern recovery-ready-probe-order-pin,
+    # raised by BOTH reviewers): the ready call sits AFTER the three-conjunct
+    # verdict conditional AND after the full pre-merge snapshot (PRE_STATE
+    # binding, PRE_MERGED_AT derivation, the probe echo), and BEFORE the
+    # --squash merge. Pinning ready only relative to the gate would let a
+    # future edit hoist the ready call above the snapshot with the test still
+    # green; a ready-triggered mergeability recompute captured as the
+    # pre-attempt state makes the unchanged #1897 landing verification reject
+    # a genuinely fresh landing.
     block = _recovery_block()
     gate = block.find("grep -qxE 'pass|skip-artifact-only'")
+    pre_state = block.find("PRE_STATE=$(gh pr view <PR> --json mergeable,state,mergedAt")
+    pre_merged_at = block.find("PRE_MERGED_AT=${PRE_STATE##* }")
+    probe = block.find('echo "$PRE_STATE"')
     ready = block.find("gh pr ready <PR>")
     merge = block.find("if gh pr merge <PR> --squash --delete-branch=false; then")
-    assert -1 < gate < ready < merge, (gate, ready, merge)
+    assert -1 < gate < pre_state < pre_merged_at < probe < ready < merge, (
+        gate,
+        pre_state,
+        pre_merged_at,
+        probe,
+        ready,
+        merge,
+    )
+
+
+# The realized bytes of the draft arm inside the `MERGE FAILED post-push`
+# classification echo: the echo lives inside a double-quoted shell string, so
+# the inner quotes appear escaped (\") in the file text.
+_DRAFT_ARM_FRAGMENT = (
+    '(draft) \\"Pull Request is still a draft\\" -> gh pr ready <PR>, '
+    "then re-enter this SAME conditional ONCE"
+)
+
+
+def _merge_failed_classification_line(block: str) -> str:
+    """The single `MERGE FAILED post-push` classification echo line of the block."""
+    lines = [ln for ln in block.split("\n") if "MERGE FAILED post-push" in ln]
+    assert len(lines) == 1, f"expected exactly one classification echo line, got {len(lines)}"
+    return lines[0]
 
 
 def test_recovery_classification_names_draft_arm() -> None:
-    # #2538: the recovery failure classification names the draft error with
-    # the ready + bounded same-conditional re-entry remedy, so a future ready
-    # omission degrades to a named retry instead of the terminal arm.
-    block = _recovery_block()
-    assert "Pull Request is still a draft" in block
-    assert "re-enter this SAME conditional ONCE" in block
+    # #2538 round 2 (concern recovery-draft-arm-pin): the draft error string
+    # occurs TWICE in the recovery block (the ready-call comment and the
+    # classification echo), so a whole-block substring check is satisfied by
+    # the comment alone and says nothing about the echo. Pin the echo LINE and
+    # the FULL arm (error string AND the `gh pr ready <PR>` remedy AND the
+    # bounded same-conditional re-entry), so dropping the ready action from
+    # the classification fails this test.
+    line = _merge_failed_classification_line(_recovery_block())
+    assert _DRAFT_ARM_FRAGMENT in line, line
