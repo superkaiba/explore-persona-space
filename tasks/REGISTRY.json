@@ -12053,12 +12053,12 @@
       "title": "workflow-fix: gate single-flight probe counts a long-lived watcher carrying the gate pattern as a live gate, so the spec's own probe-keyed wait makes the next relaunch refuse against no gate"
     },
     "2564": {
-      "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction cos(\u0394\u0302,\u0394), magnitude calibration vs the map's global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity/identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
+      "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/2564",
       "status": "proposed",
-      "title": "Controlled minimal-pair battery: does the context\u2192answer map predict the DIFFERENCE in answer vectors, per instruction axis?"
+      "title": ""
     },
     "257": {
       "has_clean_result": false,

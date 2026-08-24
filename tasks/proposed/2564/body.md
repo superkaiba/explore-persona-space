@@ -1,3 +1,15 @@
+---
+goal: 'On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair
+  battery (one token-matched instruction or query manipulation per pair, no crossing)
+  across instruction axes (persona, format, lexical-marker, stance, content-constraint,
+  register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction)
+  and query axes (content, form), measure how faithfully the frozen #779 context-end
+  ridge map predicts the DIFFERENCE between paired answer representations — per axis:
+  direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity
+  cosine, and split-half reliability — against an identity+bias delta baseline, a
+  paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine
+  which kinds of context information the map carries faithfully vs distorts.'
+---
 # Controlled minimal-pair battery: does the context→answer map predict the DIFFERENCE in answer vectors, per instruction axis?
 
 ## Provenance
@@ -15,7 +27,7 @@ Originating design (interactive session with Thomas, 2026-08-24), decision recor
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations — per axis: direction cos(Δ̂,Δ), magnitude calibration vs the map's global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability — against an identity/identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.
+On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations — per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability — against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.
 
 ## Design
 
