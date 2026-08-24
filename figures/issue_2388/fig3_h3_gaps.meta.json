@@ -1,135 +1,197 @@
 {
-  "commit": "a822434a+dirty",
-  "render_id": "c071d6073b8f427d",
-  "git_commit": "a822434aed9bf198fe334bb6e288337de9d8ec1f",
-  "git_dirty": true,
-  "git_dirty_paths": [
-    "scripts/issue2388_analyzer_figs.py"
-  ],
-  "git_argv0_state": "untracked",
-  "git_argv0_path": "scripts/issue2388_analyzer_figs.py",
-  "created": "2026-08-24T13:49:29Z",
-  "figsize": [
-    10.6,
-    3.6
-  ],
-  "points": [
-    {
-      "x": -0.19,
-      "Mapped minus direct gap (Spearman rho)": 0.1081,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 0.81,
-      "Mapped minus direct gap (Spearman rho)": 0.063,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 1.81,
-      "Mapped minus direct gap (Spearman rho)": 0.03,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 0.19,
-      "Mapped minus direct gap (Spearman rho)": -0.0025583651615325165,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 1.19,
-      "Mapped minus direct gap (Spearman rho)": -0.0035306154766463482,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 2.19,
-      "Mapped minus direct gap (Spearman rho)": 0.018598735504314345,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "category": "Sycophancy",
-      "Mapped minus direct gap (Spearman rho)": -0.0025583651615325165,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "category": "Evil",
-      "Mapped minus direct gap (Spearman rho)": -0.0035306154766463482,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "category": "Hallucination",
-      "Mapped minus direct gap (Spearman rho)": 0.018598735504314345,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "category": "Correctness",
-      "Mapped minus direct gap (Spearman rho)": 0.012155453018821871,
-      "_kind": "bar",
-      "_group": 2
-    }
-  ],
-  "n_series": 3,
-  "total_points": 10,
-  "text": {
-    "suptitle": null,
-    "fig_texts": [],
-    "axes": [
-      {
-        "title_left": "Stage 1: persona gaps at the 2,500 anchor",
-        "ylabel": "Mapped minus direct gap (Spearman rho)",
-        "legend_labels": [
-          "Banked (uncapped GCV)",
-          "Capped recompute (dof cap 0.9)"
-        ],
-        "xticklabels": [
-          "Sycophancy",
-          "Evil",
-          "Hallucination"
-        ],
-        "yticklabels": [
-          "\u22120.02",
-          "0.00",
-          "0.02",
-          "0.04",
-          "0.06",
-          "0.08",
-          "0.10",
-          "0.12"
-        ]
-      },
-      {
-        "title_left": "Stage 2: matched capped 2,500 anchor",
-        "ylabel": "Mapped minus direct gap (Spearman rho)",
-        "xticklabels": [
-          "Sycophancy",
-          "Evil",
-          "Hallucination",
-          "Correctness"
-        ],
-        "yticklabels": [
-          "\u22120.005",
-          "0.000",
-          "0.005",
-          "0.010",
-          "0.015",
-          "0.020"
-        ]
-      }
-    ],
-    "series": [
-      "Banked (uncapped GCV)",
-      "Capped recompute (dof cap 0.9)"
-    ]
+ "commit": "9a93174d+dirty",
+ "render_id": "fbfeac4af26f4f8b",
+ "git_commit": "9a93174db72db488221335a3f1a8f22e4fa746de",
+ "git_dirty": true,
+ "git_dirty_paths": [
+  "figures/issue_2388/fig3_h3_gaps.meta.json",
+  "figures/issue_2388/fig3_h3_gaps.pdf",
+  "figures/issue_2388/fig3_h3_gaps.png",
+  "scripts/issue2388_analyzer_figs.py"
+ ],
+ "git_argv0_state": null,
+ "created": "2026-08-24T15:42:30Z",
+ "figsize": [
+  10.6,
+  3.6
+ ],
+ "points": [
+  {
+   "x": -0.19,
+   "Mapped minus direct gap (Spearman rho)": 0.1081,
+   "_kind": "bar",
+   "_group": 0,
+   "series": "ax1: banked (uncapped GCV)",
+   "unit": "sycophancy"
   },
-  "formats_written": [
-    "png",
-    "pdf"
+  {
+   "x": 0.81,
+   "Mapped minus direct gap (Spearman rho)": 0.063,
+   "_kind": "bar",
+   "_group": 0,
+   "series": "ax1: banked (uncapped GCV)",
+   "unit": "evil"
+  },
+  {
+   "x": 1.81,
+   "Mapped minus direct gap (Spearman rho)": 0.03,
+   "_kind": "bar",
+   "_group": 0,
+   "series": "ax1: banked (uncapped GCV)",
+   "unit": "hallucination"
+  },
+  {
+   "x": 0.19,
+   "Mapped minus direct gap (Spearman rho)": -0.0025583651615325165,
+   "_kind": "bar",
+   "_group": 1,
+   "series": "ax1: capped recompute (dof cap 0.9)",
+   "unit": "sycophancy"
+  },
+  {
+   "x": 1.19,
+   "Mapped minus direct gap (Spearman rho)": -0.0035306154766463482,
+   "_kind": "bar",
+   "_group": 1,
+   "series": "ax1: capped recompute (dof cap 0.9)",
+   "unit": "evil"
+  },
+  {
+   "x": 2.19,
+   "Mapped minus direct gap (Spearman rho)": 0.018598735504314345,
+   "_kind": "bar",
+   "_group": 1,
+   "series": "ax1: capped recompute (dof cap 0.9)",
+   "unit": "hallucination"
+  },
+  {
+   "category": "Sycophancy\n(ceiling 0.96)",
+   "Mapped minus direct gap (Spearman rho)": -0.0025583651615325165,
+   "_kind": "bar",
+   "_group": 2,
+   "series": "ax2: capped 2,500 anchor gap",
+   "unit": "sycophancy"
+  },
+  {
+   "category": "Evil\n(ceiling 0.95)",
+   "Mapped minus direct gap (Spearman rho)": -0.0035306154766463482,
+   "_kind": "bar",
+   "_group": 2,
+   "series": "ax2: capped 2,500 anchor gap",
+   "unit": "evil"
+  },
+  {
+   "category": "Hallucination\n(ceiling 0.96)",
+   "Mapped minus direct gap (Spearman rho)": 0.018598735504314345,
+   "_kind": "bar",
+   "_group": 2,
+   "series": "ax2: capped 2,500 anchor gap",
+   "unit": "hallucination"
+  },
+  {
+   "category": "Correctness\n(ceiling 0.97)",
+   "Mapped minus direct gap (Spearman rho)": 0.022874181261210103,
+   "_kind": "bar",
+   "_group": 2,
+   "series": "ax2: capped 2,500 anchor gap",
+   "unit": "correctness"
+  },
+  {
+   "x": 0.0,
+   "Mapped minus direct gap (Spearman rho)": -0.0068,
+   "series": "ax2: largest banked legacy anchor",
+   "_kind": "scatter",
+   "_group": 3,
+   "unit": "sycophancy"
+  },
+  {
+   "x": 1.0,
+   "Mapped minus direct gap (Spearman rho)": 0.0218,
+   "series": "ax2: largest banked legacy anchor",
+   "_kind": "scatter",
+   "_group": 3,
+   "unit": "evil"
+  },
+  {
+   "x": 2.0,
+   "Mapped minus direct gap (Spearman rho)": 0.0078,
+   "series": "ax2: largest banked legacy anchor",
+   "_kind": "scatter",
+   "_group": 3,
+   "unit": "hallucination"
+  },
+  {
+   "x": 3.0,
+   "Mapped minus direct gap (Spearman rho)": 0.016401476837581752,
+   "series": "ax2: largest banked legacy anchor",
+   "_kind": "scatter",
+   "_group": 3,
+   "unit": "correctness"
+  }
+ ],
+ "n_series": 4,
+ "total_points": 14,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "Persona gaps at 2,500: banked vs capped",
+    "ylabel": "Mapped minus direct gap (Spearman rho)",
+    "legend_labels": [
+     "Banked (uncapped GCV)",
+     "Capped recompute (dof cap 0.9)"
+    ],
+    "xticklabels": [
+     "Sycophancy",
+     "Evil",
+     "Hallucination"
+    ],
+    "yticklabels": [
+     "\u22120.02",
+     "0.00",
+     "0.02",
+     "0.04",
+     "0.06",
+     "0.08",
+     "0.10",
+     "0.12"
+    ]
+   },
+   {
+    "title_left": "Capped 2,500 anchor per DV (context-end cells)",
+    "ylabel": "Mapped minus direct gap (Spearman rho)",
+    "legend_labels": [
+     "Largest banked anchor (8k evil, 16k others)",
+     "Capped 2,500 anchor"
+    ],
+    "xticklabels": [
+     "Sycophancy\n(ceiling 0.96)",
+     "Evil\n(ceiling 0.95)",
+     "Hallucination\n(ceiling 0.96)",
+     "Correctness\n(ceiling 0.97)"
+    ],
+    "yticklabels": [
+     "\u22120.010",
+     "\u22120.005",
+     "0.000",
+     "0.005",
+     "0.010",
+     "0.015",
+     "0.020",
+     "0.025"
+    ]
+   }
+  ],
+  "series": [
+   "Banked (uncapped GCV)",
+   "Capped recompute (dof cap 0.9)",
+   "Capped 2,500 anchor",
+   "Largest banked anchor (8k evil, 16k others)"
   ]
+ },
+ "formats_written": [
+  "png",
+  "pdf"
+ ]
 }

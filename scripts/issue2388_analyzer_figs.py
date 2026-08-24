@@ -180,22 +180,44 @@ def fig2_mapped_minus_direct() -> None:
 
 
 def fig3_h3_gaps() -> None:
-    """H3: banked-vs-capped stage-1 gaps + matched-anchor gap panel."""
+    """H3: banked-vs-capped stage-1 gaps + matched-anchor gap panel.
+
+    v2 (revision round): the correctness-side gaps are aggregated at the
+    plan-pinned row filter (variant == context_end, matching the persona
+    side's cell_filter) instead of the variant-mixed mean; each DV's
+    attenuation ceiling (train-pool variance decomposition) rides its tick
+    label; open diamonds mark each DV's largest banked legacy anchor.
+    """
     gap = json.loads((ER.parent / "issue_2388" / "h3_recompute" / "gap_report.json").read_text())
     stage1 = gap["recompute_gaps"]
     banked = {"sycophancy": 0.1081, "evil": 0.063, "hallucination": 0.03}
     behaviors = ["sycophancy", "evil", "hallucination"]
 
-    # correctness-side gap at the same capped 2,500 anchor (parent-exact rig)
+    # correctness-side gap at the same capped 2,500 anchor (parent-exact rig),
+    # variant-matched to the persona side's context_end cell_filter
     h3 = json.loads((ER / "fits" / "qa" / "h3_parent_exact.json").read_text())
     import collections
 
     agg: dict = collections.defaultdict(list)
     for r in h3["rows"]:
+        if r.get("variant") != "context_end":
+            continue
         agg[(r["stage2_leg"], r["arm"])].append(r["rho_frozen"])
     corr_gap = {
         leg: st.mean(agg[(leg, "arm7_map_ridge_pred")]) - st.mean(agg[(leg, "arm4_ridge_ctx")])
         for leg in ["capped2500", "legacy8000", "legacy16000"]
+    }
+
+    # train-pool attenuation ceilings (variance decomposition; rates via
+    # beta-binomial, graded 0-100 DVs via the same decomposition over the
+    # K-rollout mean) — recomputed by the analyzer from the banked labeling files
+    ceilings = {"sycophancy": 0.96, "evil": 0.95, "hallucination": 0.96, "correctness": 0.97}
+    # largest banked legacy anchor per DV (evil: 8,000; others: 16,000)
+    legacy = {
+        "sycophancy": -0.0068,
+        "evil": 0.0218,
+        "hallucination": 0.0078,
+        "correctness": corr_gap["legacy16000"],
     }
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.6, 3.6))
@@ -214,17 +236,33 @@ def fig3_h3_gaps() -> None:
     ax1.axhline(0.0, color="black", lw=0.8)
     ax1.set_xticks(x, [b.capitalize() for b in behaviors])
     ax1.set_ylabel("Mapped minus direct gap (Spearman rho)")
-    ax1.set_title("Stage 1: persona gaps at the 2,500 anchor")
+    ax1.set_title("Persona gaps at 2,500: banked vs capped")
     ax1.legend(fontsize=8)
 
-    labels2 = [b.capitalize() for b in behaviors] + ["Correctness"]
+    order = behaviors + ["correctness"]
+    labels2 = [
+        f"{'Correctness' if b == 'correctness' else b.capitalize()}\n(ceiling {ceilings[b]:.2f})"
+        for b in order
+    ]
     vals2 = [stage1[b]["headline_gap"] for b in behaviors] + [corr_gap["capped2500"]]
     colors2 = ["#1f77b4"] * 3 + ["#ff7f0e"]
-    ax2.bar(np.arange(4), vals2, 0.55, color=colors2)
+    ax2.bar(np.arange(4), vals2, 0.55, color=colors2, label="Capped 2,500 anchor")
+    ax2.scatter(
+        np.arange(4),
+        [legacy[b] for b in order],
+        marker="D",
+        s=28,
+        facecolors="none",
+        edgecolors="#444444",
+        linewidths=1.5,
+        label="Largest banked anchor (8k evil, 16k others)",
+        zorder=3,
+    )
     ax2.axhline(0.0, color="black", lw=0.8)
     ax2.set_xticks(np.arange(4), labels2)
     ax2.set_ylabel("Mapped minus direct gap (Spearman rho)")
-    ax2.set_title("Stage 2: matched capped 2,500 anchor")
+    ax2.set_title("Capped 2,500 anchor per DV (context-end cells)")
+    ax2.legend(fontsize=8)
     savefig_paper(fig, "fig3_h3_gaps", dir=OUT)
     plt.close(fig)
 

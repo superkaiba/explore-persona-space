@@ -1,0 +1,21 @@
+{
+ "observed_rung0_rho_at_dev_selected": 0.6414493225747735,
+ "null_max": 0.45288135929961254,
+ "null_mean": 0.1245852359751951,
+ "null_q95": 0.31021606616663605,
+ "n_null": 200,
+ "p_value": 0.004975124378109453,
+ "selection_axes": "basis {ambient,pca16,pca48,pca128} x layer {0..27}; per-column re-selection on dev, read at rung0; lambda selected inside each fit (dof-capped GCV)",
+ "arm": "arm_ctx",
+ "budget": "full",
+ "draw": 0,
+ "note": "full-budget draws 0-2 are identical fits (same inputs_sha); draw 0 shown",
+ "source": [
+  "issue2388_correctness/fits/qa/nulls/arm_ctx__Lfull_draw0__ambient.npz",
+  "issue2388_correctness/fits/qa/nulls/arm_ctx__Lfull_draw0__pca16.npz",
+  "issue2388_correctness/fits/qa/nulls/arm_ctx__Lfull_draw0__pca48.npz",
+  "issue2388_correctness/fits/qa/nulls/arm_ctx__Lfull_draw0__pca128.npz"
+ ],
+ "hf_revision": "55b9b8847f97ce7064c9b110cf1ee4ef76a94f70",
+ "description": "Selection-matched group-permutation null read for the full-label context-probe headline: per null column, re-select (basis x layer) by dev rho, read rung0 rho; column 0 is the observed fit. Recomputed from the persisted per-draw npz matrices."
+}
