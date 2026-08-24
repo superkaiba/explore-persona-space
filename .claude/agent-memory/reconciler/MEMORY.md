@@ -64,7 +64,7 @@
 - [Best-effort upload made load-bearing](feedback_claude_misses_besteffort_upload_made_loadbearing.md) — warn-only upload + ephemeral teardown (#613)
 - [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg new AND prior literals before believing ✓
 - [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes yourself (#897)
-- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection probes (#2329 r2)
+- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection + producer-drift probes; execute the Mechanizable claim (#2329 r2, #2336 r3)
 - [Self-referential replay gate needs independent anchor](feedback_self_referential_replay_gate_needs_independent_anchor.md) — prediction inputs read from the artifact under validation ⇒ agreement entailed; probe falsifiability by input mutation (#2514 r2)
 
 ## Codex code-review overreach (PASS-leaning calibration)
