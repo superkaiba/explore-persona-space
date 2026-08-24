@@ -139,7 +139,7 @@ Training-time in-context demos gated a trained marker's argmax emission at the d
 
 **3.8 Does the RL context-self-update change generalization vs SFT?** <!-- q:regime-rl-vs-sft -->
 Under SFT the context is fixed and only the assistant turn bears loss; under RL the model rolls out its own continuation and those rollouts define the gradient, so the context-update couples into the weight-update.
-> **Belief:** Untested in-house; the coupling plausibly changes how an update at one cell propagates, so every SFT generalization result may need an RL replication before it can be trusted as regime-general. **Confidence:** LOW. **Evidence:** #1902.
+> **Belief:** Untested in-house; the coupling plausibly changes how an update at one cell propagates, so every SFT generalization result may need an RL replication before it can be trusted as regime-general. **Confidence:** LOW. **Evidence:** #1902, #2544.
 
 **3.9 If you train on a SET of (C, B) cells, what predicts leakage to a new (C′, B′)?** <!-- q:leak-from-cell-set -->
 The multi-cell generalization of the §3 prediction question (and of #440's single-cell predictor). In practice you fine-tune on several (context, behavior) cells at once — multiple personas, multiple behaviors, a data mixture — and want to predict the behavior at an unseen (C′, B′). This needs a distance from a *set* of training cells to a query cell, a metric we don't have yet. One candidate: the set-to-cell distance is the MINIMUM over the trained cells — leakage to (C′, B′) is governed by its nearest trained cell, not the set's centroid. The metric to develop is a (C, B)-cell distance plus an aggregation over the set (min vs mean vs soft-min) that predicts the leakage.
@@ -155,7 +155,7 @@ One account: a persona is just a collection of behaviors, and a context shows th
 > **Belief:** Persona structure is real but fragile: Qwen's default identity prompt is a distinct persona slot, yet any SFT (LoRA or full, EM or benign) collapses persona geometry to near-degenerate, and the marker is a representational handle rather than a behavioral one. **Confidence:** MODERATE. **Evidence:** #123, #120, #237, #225, #623, #651, #931.
 
 **4.2 How does a contextual model differ from the base model?** <!-- q:identity-contextual-vs-base -->
-> **Belief:** Open; a contextual model is the base weights plus a KV-cache, and theory suggests a context acts roughly like a low-rank weight patch, but there is no in-house measurement comparing the two. **Confidence:** LOW. **Evidence:** #563, #491, #650, #653, #697, #823, #825, #833, #952, #1112, #1315, #1335, #1336, #1345, #1072, #1417, #1689, #1768, #1902, #1947, #1979.
+> **Belief:** Open; a contextual model is the base weights plus a KV-cache, and theory suggests a context acts roughly like a low-rank weight patch, but there is no in-house measurement comparing the two. **Confidence:** LOW. **Evidence:** #563, #491, #650, #653, #697, #823, #825, #833, #952, #1112, #1315, #1335, #1336, #1345, #1072, #1417, #1689, #1768, #1902, #1947, #1979, #2544.
 
 **4.3 Is behavior-distance just context-distance through the B ↦ C_B map?** <!-- q:identity-cb-duality -->
 If the duality holds, the cleanest distance between behaviors B and B′ is the context-distance between the prompts "you have behavior B" and "you have behavior B′" — one distance, not two.

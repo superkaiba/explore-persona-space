@@ -24,6 +24,9 @@ goal: 'Date the formation of the context→answer activation map along a 15-rung
   against matched nulls, to find the token count past which the final map is already
   present up to a change of coordinates; (4) the in-context-substitution curve, 4-shot
   minus 0-shot diagonal at every rung, with query-block-only context pooling.'
+relates_to:
+- identity-contextual-vs-base
+- regime-rl-vs-sft
 ---
 # How the context→answer map forms across pretraining (Olmo 3 7B checkpoint ladder)
 
