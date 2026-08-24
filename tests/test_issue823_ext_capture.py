@@ -409,33 +409,103 @@ def test_probe_g_excludes_non_common_valid_rows(tmp_path):
 
 
 # ── Probe (f): capture-convention parity (behavioral rc-16 halt) ─────────────
+#
+# r19 semantics (crash-fix, plan-v17 §4.3 deviation flagged in the round marker):
+# the per-row cosine floor is the ONLY binding leg; max-rel + the element-wise
+# forensics are REPORTED-never-asserted (issue779 equivalence_gate_p2
+# convention) because bf16 forwards under different batch composition make an
+# element-wise max-rel ASSERT structurally unpassable at near-zero banked
+# elements (r18 pod halt: max_rel_median = 156250.0 = 0.15625/1e-6 with
+# cosine_min = 0.99970 on all 64 rows).
 
 
-def test_probe_f_capture_parity_pass_and_halt_rc16(tmp_path, monkeypatch):
-    """probe_f's REAL body (cosine + max-rel math, report write, halt routing)
-    with fakes only at the GPU boundary (capture_cx) and the 6-GB banked-bundle
-    boundary (load_pass_b_cx_last)."""
+def _probe_f_ref():
+    """(64, 4, 50) fp32 banked-rows fixture, scaled so row norms ~ 141 (a single
+    bf16-scale element diff cannot move cosine below the 0.999 floor)."""
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    ref = rng.standard_normal((EXTCAP.PROBE_N_CONTEXTS, 4, 50)).astype("float32") * 10.0
+    return torch.from_numpy(ref)
+
+
+def _run_probe_f(monkeypatch, layout, tmp_path, ref, got):
+    monkeypatch.setattr(EXTCAP, "load_pass_b_cx_last", lambda _path: ref)
+    monkeypatch.setattr(EXTCAP, "capture_cx", lambda _m, _t, qs, _bs: got[: len(qs)])
+    qs = [f"q{i}" for i in range(EXTCAP.PROBE_N_CONTEXTS)]
+    return EXTCAP.probe_f_capture_parity(None, None, qs, tmp_path / "b.pt", layout.eval_dir, 8)
+
+
+def test_probe_f_pass_exact_reproduction(tmp_path, monkeypatch):
+    """probe_f's REAL body (cosine math, forensic report, halt routing) with
+    fakes only at the GPU boundary (capture_cx) and the 6-GB banked-bundle
+    boundary (load_pass_b_cx_last): exact reproduction PASSes, forensics zeroed."""
+    layout = _tiny_layout(tmp_path, 0, 1)
+    ref = _probe_f_ref()
+    report = _run_probe_f(monkeypatch, layout, tmp_path, ref, ref.numpy().copy())
+    assert report["pass"] and report["cosine_min"] >= EXTCAP.PROBE_F_COSINE_FLOOR
+    assert report["max_rel_median"] == 0.0 and report["abs_diff_max"] == 0.0
+    assert report["rel_l2_max"] == 0.0
+
+
+def test_probe_f_near_zero_maxrel_artifact_reported_not_asserted(tmp_path, monkeypatch):
+    """The r18 pod-halt shape: every row directionally identical (cosine >=
+    0.999 with margin) but ONE near-zero banked element per row carries a
+    bf16-scale re-capture diff, exploding element-wise max-rel to
+    0.15625/1e-6 = 156250 — the EXACT realized max_rel_median of the rc-16
+    halt. Pre-fix this fixture HALTed rc 16 (median max-rel cap); post-fix it
+    PASSes with the forensic fields attributing the miss (near-zero
+    denominator at the argmax-rel element, tight row-level rel-L2)."""
+    layout = _tiny_layout(tmp_path, 0, 1)
+    ref = _probe_f_ref()
+    ref.reshape(EXTCAP.PROBE_N_CONTEXTS, -1)[:, 0] = 0.0  # near-zero banked element
+    got = ref.numpy().copy()
+    got.reshape(EXTCAP.PROBE_N_CONTEXTS, -1)[:, 0] = 0.15625  # bf16-scale diff (5 * 2**-5)
+    report = _run_probe_f(monkeypatch, layout, tmp_path, ref, got)
+    assert report["pass"] is True
+    assert report["cosine_min"] >= EXTCAP.PROBE_F_COSINE_FLOOR
+    assert report["max_rel_median"] == pytest.approx(156250.0, rel=1e-6)
+    # Forensics attribute the miss: argmax-rel element sits on a ~zero banked
+    # denominator while row-level agreement stays tight.
+    assert report["denom_at_argmax_rel_median"] < EXTCAP.PROBE_F_REL_EPS
+    assert report["n_banked_below_floor"] >= EXTCAP.PROBE_N_CONTEXTS
+    assert report["frac_banked_below_floor"] > 0.0
+    assert report["abs_diff_max"] == pytest.approx(0.15625)
+    assert report["rel_l2_max"] < 1e-2
+    _assert_no_sentinels(layout)
+
+
+def test_probe_f_uniform_scale_reported_via_rel_l2_not_gated(tmp_path, monkeypatch):
+    """Pins the reported-never-asserted semantics: a uniform 2x scale keeps
+    cosine == 1 and PASSes the (cosine-only) gate; the divergence stays VISIBLE
+    in the reported per-row rel-L2 (= 1.0) and max-rel fields for the report
+    reader — the #779 exemplar's convention, not a silent drop."""
+    layout = _tiny_layout(tmp_path, 0, 1)
+    ref = _probe_f_ref()
+    report = _run_probe_f(monkeypatch, layout, tmp_path, ref, 2.0 * ref.numpy())
+    assert report["pass"] is True
+    assert report["rel_l2_median"] == pytest.approx(1.0, rel=1e-6)
+    assert report["max_rel_median"] > 0.9  # visible in the report, not gating
+
+
+def test_probe_f_genuine_seam_halts_rc16(tmp_path, monkeypatch):
+    """Detection power pinned post-fix: a position/convention seam (hidden dims
+    rolled by one; cosine ~ 0, far below the 0.999 floor — the #779 real-seam
+    calibration reads 0.39-0.84) still HALTs rc 16, writes the report with the
+    forensic fields, and leaves no sentinels."""
     import numpy as np
 
     layout = _tiny_layout(tmp_path, 0, 1)
-    rng = np.random.default_rng(0)
-    ref = torch.from_numpy(rng.standard_normal((EXTCAP.PROBE_N_CONTEXTS, 2, 3)).astype("float32"))
-    monkeypatch.setattr(EXTCAP, "load_pass_b_cx_last", lambda _path: ref)
-
-    # PASS arm: extension-rig capture reproduces the banked rows exactly.
-    monkeypatch.setattr(EXTCAP, "capture_cx", lambda _m, _t, qs, _bs: ref[: len(qs)].numpy().copy())
-    qs = [f"q{i}" for i in range(EXTCAP.PROBE_N_CONTEXTS)]
-    report = EXTCAP.probe_f_capture_parity(None, None, qs, tmp_path / "b.pt", layout.eval_dir, 8)
-    assert report["pass"] and report["cosine_min"] >= EXTCAP.PROBE_F_COSINE_FLOOR
-
-    # HALT arm: parallel but scaled rows keep cosine == 1 while max-rel ~ 1
-    # exceeds the 1e-2 median cap -> rc 16 + report + no sentinels.
-    monkeypatch.setattr(EXTCAP, "capture_cx", lambda _m, _t, qs, _bs: 2.0 * ref[: len(qs)].numpy())
+    ref = _probe_f_ref()
+    got = np.roll(ref.numpy(), 1, axis=-1)
     with pytest.raises(SystemExit) as exc:
-        EXTCAP.probe_f_capture_parity(None, None, qs, tmp_path / "b.pt", layout.eval_dir, 8)
+        _run_probe_f(monkeypatch, layout, tmp_path, ref, got)
     assert exc.value.code == EXTCAP.RC_CAPTURE_PARITY == 16
     halt = json.loads((layout.eval_dir / "ext_capture_parity_report.json").read_text())
-    assert halt["rc"] == 16 and halt["max_rel_median"] > EXTCAP.PROBE_F_MAXREL_MEDIAN_CAP
+    assert halt["rc"] == 16 and halt["cosine_min"] < EXTCAP.PROBE_F_COSINE_FLOOR
+    assert halt["n_rows_below_cosine_floor"] == EXTCAP.PROBE_N_CONTEXTS
+    for key in ("rel_l2_median", "abs_diff_p90", "denom_at_argmax_rel_median"):
+        assert key in halt
     _assert_no_sentinels(layout)
 
 

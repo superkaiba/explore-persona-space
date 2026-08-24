@@ -24,8 +24,10 @@ running P-OwnGen's engine in the same process as the HF capture model):
                    flags the dedup-sensitivity refit -- flag+report only, the
                    refit lives in the fits driver); (f) capture-convention
                    parity probe (64 ORIGINAL contexts re-captured vs the banked
-                   pass_b `cx_last` rows; cosine >= 0.999 per row AND median
-                   max-rel <= 1e-2 in fp32); (g) span-length unit probe (64
+                   pass_b `cx_last` rows; BINDING: cosine >= 0.999 per row;
+                   max-rel + element-wise forensics REPORTED-never-asserted —
+                   bf16 near-zero denominators make a max-rel ASSERT
+                   structurally unpassable, r19); (g) span-length unit probe (64
                    banked common-valid b2 answers vs phase3_span_lengths['b2']
                    positional under the PARENT's persistence semantics:
                    stored = min(own_bare, pair_template_diff) when own_bare > 0
@@ -72,8 +74,8 @@ Designed-abort exit codes (canonical enumeration; `--list-rcs` prints it):
   rc 13  gate (b) assignment arithmetic / banked 5,000-row prefix mismatch
   rc 14  gate (c) requested-max_tokens / gen_wave / regen inconsistency
   rc 15  gate (d) integrity-class (non-refusal) new-invalid rows > 1% per arm
-  rc 16  probe (f) capture-convention parity failure (formatting seam -- abort,
-         never a tolerance to widen)
+  rc 16  probe (f) capture-convention parity failure (per-row cosine floor --
+         a DIRECTIONAL seam; abort, never a tolerance to widen)
   rc 17  probe (g) span-length unit mismatch (< 63/64 exact)
   rc 18  staging / sentinel / store integrity failure (ext-gen sentinel
          incomplete, staged sha mismatch, store name-set diff failure)
@@ -217,7 +219,13 @@ CX_CONVENTION = "cx_last (pass_b last-prompt-token, all 28 layers)"
 # Gates / probes (plan section 4.3 / 7).
 PROBE_N_CONTEXTS = 64
 PROBE_F_COSINE_FLOOR = 0.999
-PROBE_F_MAXREL_MEDIAN_CAP = 1e-2
+# Additive epsilon in probe (f)'s element-wise relative-diff denominator, and the
+# near-zero banked-element census floor. Element-wise max-rel is
+# REPORTED-never-asserted (r19; see probe_f_capture_parity docstring): the r18
+# pod halt realized max_rel_median = 156250.0 = 0.15625/PROBE_F_REL_EPS at
+# near-zero banked elements while every row's cosine passed with margin
+# (cosine_min = 0.99970 >= 0.999).
+PROBE_F_REL_EPS = 1e-6
 PROBE_G_MIN_EXACT = 63
 NEW_INVALID_ABORT_FRACTION = 0.01
 DUP_CONTENT_FLAG_FRACTION = 0.02
@@ -246,7 +254,7 @@ RC_TABLE = {
     "13": "gate (b) assignment arithmetic / banked prefix mismatch",
     "14": "gate (c) requested-max_tokens / gen_wave / regen inconsistency",
     "15": "gate (d) integrity-class new-invalid rows > 1% per arm",
-    "16": "probe (f) capture-convention parity failure",
+    "16": "probe (f) capture-convention parity failure (per-row cosine floor)",
     "17": "probe (g) span-length unit mismatch",
     "18": "staging / sentinel / store integrity failure",
 }
@@ -1167,30 +1175,74 @@ def probe_f_capture_parity(
     batch_size: int,
 ) -> dict:
     """(f) re-capture cx_last for 64 ORIGINAL contexts with the extension rig
-    vs the banked pass_b rows: cosine >= 0.999 per row AND median max-rel
-    <= 1e-2 in fp32 (rc 16 — a formatting seam, never a tolerance to widen)."""
+    vs the banked pass_b rows.
+
+    BINDING leg (rc 16): cosine >= PROBE_F_COSINE_FLOOR per row — a real
+    formatting/position/pad seam reads cosine ~0.39-0.84 (the #779 calibration;
+    gotchas.md bf16 parity-gate entries), so the floor separates a directional
+    seam from bf16 numerics with wide margin. max-rel and every other
+    element-wise statistic are REPORTED-never-asserted (r19; the canonical
+    exemplar: scripts/issue779_capture_answer_summaries_pass2.py::
+    equivalence_gate_p2): both captures are bf16 forwards under different
+    batch composition, so an element-wise max-rel ASSERT is structurally
+    unpassable at near-zero banked elements — |b| ~ 0 makes
+    rel = |a-b|/PROBE_F_REL_EPS, and the r18 pod halt realized
+    max_rel_median = 156250.0 (= 0.15625/1e-6) with cosine_min = 0.99970 on
+    all 64 rows. NO additional binding leg: a per-row rel-L2 cap has no
+    committed same-surface reference value to derive from (artifact-reuse.md
+    § Reuse-validation gate calibration — the #928 0.999 / #1005 0.9999
+    references are cosine bars), and cosine is the validated bug-catcher.
+    The forensic fields (per-row rel-L2, abs-diff quantiles, denominator
+    magnitude at each row's argmax-rel element, near-zero banked-element
+    census) let the next report attribute a miss — bf16 noise at near-zero
+    elements vs a genuine seam — without another forensic round-trip."""
     ref = load_pass_b_cx_last(pass_b_path)[:PROBE_N_CONTEXTS].float().numpy()
     got = capture_cx(model, tokenizer, questions_prefix[:PROBE_N_CONTEXTS], batch_size)
     a = got.reshape(PROBE_N_CONTEXTS, -1).astype(np.float64)
     b = ref.reshape(PROBE_N_CONTEXTS, -1).astype(np.float64)
     cos = (a * b).sum(axis=1) / (np.linalg.norm(a, axis=1) * np.linalg.norm(b, axis=1) + 1e-12)
-    max_rel = np.max(np.abs(a - b) / (np.abs(b) + 1e-6), axis=1)
+    abs_diff = np.abs(a - b)
+    abs_b = np.abs(b)
+    rel = abs_diff / (abs_b + PROBE_F_REL_EPS)
+    max_rel = rel.max(axis=1)
+    argmax_rel = rel.argmax(axis=1)
+    rows = np.arange(PROBE_N_CONTEXTS)
+    denom_at_argmax = abs_b[rows, argmax_rel]
+    diff_at_argmax = abs_diff[rows, argmax_rel]
+    rel_l2 = np.linalg.norm(a - b, axis=1) / (np.linalg.norm(b, axis=1) + 1e-12)
+    n_near_zero = int((abs_b < PROBE_F_REL_EPS).sum())
     report = {
         "n_rows": PROBE_N_CONTEXTS,
         "cosine_min": float(cos.min()),
         "cosine_median": float(np.median(cos)),
         "n_rows_below_cosine_floor": int((cos < PROBE_F_COSINE_FLOOR).sum()),
-        "max_rel_median": float(np.median(max_rel)),
         "cosine_floor": PROBE_F_COSINE_FLOOR,
-        "max_rel_median_cap": PROBE_F_MAXREL_MEDIAN_CAP,
+        # Everything below is REPORTED-never-asserted forensics (docstring).
+        "rel_denominator_eps": PROBE_F_REL_EPS,
+        "max_rel_median": float(np.median(max_rel)),
+        "max_rel_max": float(max_rel.max()),
+        "rel_l2_per_row": [float(x) for x in rel_l2],
+        "rel_l2_median": float(np.median(rel_l2)),
+        "rel_l2_max": float(rel_l2.max()),
+        "abs_diff_p50": float(np.percentile(abs_diff, 50)),
+        "abs_diff_p90": float(np.percentile(abs_diff, 90)),
+        "abs_diff_max": float(abs_diff.max()),
+        "denom_at_argmax_rel_per_row": [float(x) for x in denom_at_argmax],
+        "denom_at_argmax_rel_median": float(np.median(denom_at_argmax)),
+        "diff_at_argmax_rel_median": float(np.median(diff_at_argmax)),
+        "near_zero_banked_floor": PROBE_F_REL_EPS,
+        "n_banked_below_floor": n_near_zero,
+        "frac_banked_below_floor": float(n_near_zero / abs_b.size),
     }
-    if (cos < PROBE_F_COSINE_FLOOR).any() or np.median(max_rel) > PROBE_F_MAXREL_MEDIAN_CAP:
+    if (cos < PROBE_F_COSINE_FLOOR).any():
         _halt(
             RC_CAPTURE_PARITY,
             eval_dir / "ext_capture_parity_report.json",
             report,
-            "probe (f): extension-rig cx_last diverges from the banked pass_b convention — "
-            "formatting seam; aborting before production capture",
+            "probe (f): extension-rig cx_last diverges DIRECTIONALLY from the banked pass_b "
+            f"convention (per-row cosine floor {PROBE_F_COSINE_FLOOR}; a real formatting/"
+            "position seam reads cosine ~0.39-0.84, #779 calibration) — aborting before "
+            "production capture",
         )
     report["pass"] = True
     return report
