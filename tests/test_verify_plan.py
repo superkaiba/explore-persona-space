@@ -5192,15 +5192,25 @@ C26_920_ROW = (
 C26_778_PIN_LINE = (
     "\n- **Compute:** 1× H100 RunPod (`backend: runpod`, intent `eval`) for ~2–3 h (6,000\n"
 )
-# The founding-offender shape: WARN under `--intent lora-7b` (routed A100).
-C26_WARN_SHAPE = C26_INTENT_LORA7B + C26_HEADER + C26_V3_P1_ROW
+C26_INTENT_SWEEP_A100 = (
+    "\n**Spec:** 8 GPU, `--intent sweep-8g-a100` (8× A100-80, cells sharded — the one "
+    "A100-routed intent under the runpod head).\n"
+)
+# The founding-offender shape under the LIVE (runpod-head) mirror (#2514):
+# an H100 basis under `--intent sweep-8g-a100` (routed A100). The GCP-era
+# form of this shape (H100 basis under lora-7b, routed A100 THERE) is now
+# CORRECTLY costed — lora-7b routes H100 under the runpod head — and its
+# expected inversion to PASS is pinned by
+# test_c26_h100_basis_lora7b_now_passes.
+C26_WARN_SHAPE = C26_INTENT_SWEEP_A100 + C26_HEADER + C26_V3_P1_ROW
 
 
-def test_c26_h100_basis_auto_lora7b_warns():
-    # Acceptance criterion 2 (plan #1075 §1): the #1073 v3 P1 row under
-    # `--intent lora-7b` (auto → A100-80) with no scaling vocabulary and no
-    # routed-GPU mention in the row → WARN; the detail names the component
-    # cell, the offending token, the routed family, and BOTH remedies.
+def test_c26_h100_basis_vs_routed_a100_warns():
+    # Acceptance criterion 2 (plan #1075 §1, retargeted by #2514): the #1073
+    # v3 P1 row under an A100-routed intent (sweep-8g-a100 under the runpod
+    # head) with no scaling vocabulary and no routed-GPU mention in the row
+    # → WARN; the detail names the component cell, the offending token, the
+    # routed family, the lane head, and BOTH remedies.
     ok, by_id = _run(GOOD_PLAN + C26_WARN_SHAPE)
     r = by_id["c26_gpu_basis_routed_machine"]
     assert r.status == "WARN"
@@ -5208,8 +5218,19 @@ def test_c26_h100_basis_auto_lora7b_warns():
     assert "P1 greedy gen" in r.detail
     assert "H100" in r.detail
     assert "A100" in r.detail
+    assert "runpod" in r.detail  # the lane head, named (#2514 D4)
     assert "per-step rate" in r.detail  # remedy 1: stated scaling (#599 clause)
     assert "N/A — basis measured on the routed machine" in r.detail  # remedy 2
+
+
+def test_c26_h100_basis_lora7b_now_passes():
+    # #2514 expected inversion, pinned: the pre-#2514 founding WARN shape
+    # (H100 basis under `--intent lora-7b`) was judged against the GCP-era
+    # A100 routing; under the live runpod head lora-7b routes H100, so the
+    # SAME row is correctly costed → PASS (the #599-class inversion the
+    # mirror rebuild removes).
+    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + C26_V3_P1_ROW
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
 
 
 def test_c26_scaling_vocab_row_passes():
@@ -5220,7 +5241,7 @@ def test_c26_scaling_vocab_row_passes():
         "| 1.5 M tok at ≥ 3 k tok/s H100 basis, × 2–2.5 stated per-step rate to the "
         "routed lane |\n"
     )
-    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + row
+    plan = GOOD_PLAN + C26_INTENT_SWEEP_A100 + C26_HEADER + row
     assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
 
 
@@ -5233,7 +5254,7 @@ def test_c26_routed_gpu_also_named_in_row_passes():
         "| P1 greedy gen | 0.25 (H100) / 0.5–0.6 (A100, ×2–2.5) | same as wall "
         "| vLLM batched, chunk 500 | 1.5 M tok at ≥ 3 k tok/s (H100 Qwen-7B) |\n"
     )
-    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + row
+    plan = GOOD_PLAN + C26_INTENT_SWEEP_A100 + C26_HEADER + row
     assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
 
 
@@ -5247,22 +5268,38 @@ def test_c26_component_times_symbol_is_not_scaling_escape():
 
 
 def test_c26_matching_gpu_basis_passes():
-    # #920 v3 shape: A100-measured basis under `--intent capture-7b`
-    # (routed A100) — family match, no offender.
-    plan = GOOD_PLAN + "\n`--intent capture-7b` on the GCP lane.\n" + C26_HEADER + C26_920_ROW
+    # A100-measured basis under `--intent sweep-8g-a100` (routed A100 under
+    # the runpod head — the #2514 retarget of the GCP-era capture-7b shape)
+    # — family match, no offender.
+    plan = GOOD_PLAN + C26_INTENT_SWEEP_A100 + C26_HEADER + C26_920_ROW
     assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
 
 
-def test_c26_eval_intent_l4_vs_a100_basis_warns():
-    # Acceptance criterion 4: the #744 v2 shape — `--intent eval` routes L4
-    # under auto while the basis is an A100-measured forward (the routing
-    # later OOM'd; #752 created `capture-7b`).
+def test_c26_a100_basis_capture7b_now_warns():
+    # #2514 expected inversion, other direction: the #920 v3 shape — an
+    # A100-measured basis under `--intent capture-7b` — was a GCP-era family
+    # MATCH (capture-7b routed A100 there); under the runpod head capture-7b
+    # translates to eval -> 1x H100, so the A100 basis is now the very
+    # mis-costing c26 exists to flag → WARN.
+    plan = GOOD_PLAN + "\n`--intent capture-7b` on the auto lane.\n" + C26_HEADER + C26_920_ROW
+    _, by_id = _run(plan)
+    r = by_id["c26_gpu_basis_routed_machine"]
+    assert r.status == "WARN"
+    assert "A100" in r.detail
+    assert "H100" in r.detail
+
+
+def test_c26_eval_intent_h100_routed_vs_a100_basis_warns():
+    # Acceptance criterion 4, retargeted (#2514): the #744 v2 shape —
+    # `--intent eval` with an A100-measured basis. GCP-era it WARNed because
+    # eval routed L4; under the runpod head it STILL warns — eval routes
+    # 1x H100 and the A100 basis remains unscaled cross-GPU.
     plan = GOOD_PLAN + C26_INTENT_EVAL + C26_HEADER + C26_744_ROW
     _, by_id = _run(plan)
     r = by_id["c26_gpu_basis_routed_machine"]
     assert r.status == "WARN"
     assert "A100" in r.detail
-    assert "L4" in r.detail
+    assert "H100" in r.detail
 
 
 def test_c26_intent_h100_variant_passes():
@@ -5272,12 +5309,14 @@ def test_c26_intent_h100_variant_passes():
 
 
 def test_c26_multi_intent_union():
-    # Union semantics across ALL resolved intents: {lora-7b, eval} routes
-    # {A100, L4} — an H100 basis still WARNs; an A100 basis PASSes.
-    intents = "\nPhase 1: `--intent lora-7b`; phase 2: `--intent eval`.\n"
-    warn_plan = GOOD_PLAN + intents + C26_HEADER + C26_V3_P1_ROW
+    # Union semantics across ALL resolved intents (#2514 retarget):
+    # {sweep-8g-a100} alone routes {A100} — an H100 basis WARNs; ADDING
+    # `--intent eval` (routed H100 under the runpod head) puts H100 in the
+    # union and clears the same row.
+    warn_plan = GOOD_PLAN + C26_INTENT_SWEEP_A100 + C26_HEADER + C26_V3_P1_ROW
     assert _status(warn_plan, "c26_gpu_basis_routed_machine") == "WARN"
-    pass_plan = GOOD_PLAN + intents + C26_HEADER + C26_744_ROW
+    intents = "\nPhase 1: `--intent eval`; phase 2: `--intent sweep-8g-a100`.\n"
+    pass_plan = GOOD_PLAN + intents + C26_HEADER + C26_V3_P1_ROW
     assert _status(pass_plan, "c26_gpu_basis_routed_machine") == "PASS"
 
 
@@ -5379,7 +5418,7 @@ def test_c26_parallelism_cell_routed_gpu_does_not_escape():
     # zero conversion information — it must NOT escape an unscaled H100
     # basis (a whole-row escape would wrongly PASS this shape).
     row = "| P2 extraction | 0.6 | 0.6 | 1× A100-80 batch-8 forwards | H100 #779 measured |\n"
-    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + row
+    plan = GOOD_PLAN + C26_INTENT_SWEEP_A100 + C26_HEADER + row
     assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
 
 
@@ -5392,7 +5431,7 @@ def test_c26_annotated_basis_header_variant_parses():
         "\n| component | planned_wall_h | planned_gpu_h | parallelism | basis (measured) |\n"
         "|---|---|---|---|---|\n"
     )
-    plan = GOOD_PLAN + C26_INTENT_LORA7B + header + C26_V3_P1_ROW
+    plan = GOOD_PLAN + C26_INTENT_SWEEP_A100 + header + C26_V3_P1_ROW
     assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
 
 
@@ -5401,7 +5440,7 @@ def test_c26_bold_total_short_row_no_crash():
     # not IndexError at row[basis_col]; the sibling offender row is still
     # evaluated.
     table = C26_HEADER + C26_V3_P1_ROW + "| **Base total** | 4.2 |\n"
-    plan = GOOD_PLAN + C26_INTENT_LORA7B + table
+    plan = GOOD_PLAN + C26_INTENT_SWEEP_A100 + table
     assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
 
 
@@ -5420,11 +5459,11 @@ def test_c26_escape_regex_covers_all_mirror_families():
 
 def test_c26_prose_intent_form_resolves():
     # The #1073 v3:240 "Target pod preference" shape: the ONLY intent mention
-    # is the capitalized prose form ``Intent `lora-7b` `` (group 2 of
+    # is the capitalized prose form ``Intent `sweep-8g-a100` `` (group 2 of
     # _C26_INTENT_RE) — resolution must still work (non-SKIP).
     plan = (
         GOOD_PLAN
-        + "\nIntent `lora-7b` (1× A100-80 GCP / 1× H100 RunPod); explicitly NOT the L4 lane.\n"
+        + "\nIntent `sweep-8g-a100` (8× A100-80 on any lane that serves it).\n"
         + C26_HEADER
         + C26_V3_P1_ROW
     )
@@ -5443,18 +5482,209 @@ def test_c26_fenced_backend_runpod_pin_skips():
 
 
 def test_c26_intent_gpu_mirror_matches_backend():
-    # Drift guard (acceptance criterion 6): the static family-grain mirror
-    # equals the live GCP INTENT_TO_MACHINE — an intent add/change on the
-    # backend fails the full suite loudly (precedent:
-    # test_kind_enum_constants_match_canonical_code_kinds).
+    # Drift guard (#2514 acceptance criteria 1+6): the lane-head-derived
+    # mirror equals the LIVE router/gpu_heuristics composition (imports are
+    # legal under pytest; verify_plan itself stays hermetic — AST-read only),
+    # so an intent add / translation change / gpu_type change on the backend
+    # fails the full suite loudly, and the STATIC fail-open fallback is
+    # pinned to the same composition so its staleness window is one CI run
+    # (precedent: test_kind_enum_constants_match_canonical_code_kinds).
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    from explore_persona_space.backends.router import (
+        DEFAULT_AUTO_LANE_ORDER,
+        RUNPOD_CPU_INSTANCE_FOR_INTENT,
+        RUNPOD_INTENT_FOR_GCP_INTENT,
+        RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS,
+    )
+
+    gpu_spec = importlib.util.spec_from_file_location(
+        "gpu_heuristics_i2514", REPO_ROOT / "scripts" / "gpu_heuristics.py"
+    )
+    gpu_mod = importlib.util.module_from_spec(gpu_spec)
+    # sys.modules registration BEFORE exec: @dataclass resolves
+    # sys.modules[cls.__module__] at class creation.
+    sys.modules["gpu_heuristics_i2514"] = gpu_mod
+    gpu_spec.loader.exec_module(gpu_mod)
+
+    # Premise: the live head is runpod (#2054/#2028 — the composition below
+    # is the runpod-head one; a deliberate head reorder retargets this).
+    assert DEFAULT_AUTO_LANE_ORDER[0] == "runpod"
+    assert verify_plan._C26_LANE_HEAD == "runpod"
+    expected = {tok: "CPU" for tok in RUNPOD_CPU_INSTANCE_FOR_INTENT}
+    for tok in set(gpu_mod.INTENTS) | set(RUNPOD_INTENT_FOR_GCP_INTENT):
+        if tok not in expected:
+            rp = RUNPOD_INTENT_FOR_GCP_INTENT.get(tok, tok)
+            expected[tok] = verify_plan._c26_family(gpu_mod.INTENTS[rp].gpu_type)
+    for tok in RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS:
+        # Every deliberate-gap intent needs a deliberate D2-style family
+        # classification — a NEW gap token failing here forces the decision
+        # instead of a silent mirror hole.
+        assert tok in verify_plan._C26_GAP_INTENT_GPU, tok
+        expected.setdefault(tok, verify_plan._C26_GAP_INTENT_GPU[tok])
+    assert expected == verify_plan._C26_INTENT_GPU
+    assert expected == verify_plan._C26_RUNPOD_FALLBACK_INTENT_GPU
+
+
+def test_c26_gcp_branch_matches_backend():
+    # The RETAINED gcp-head branch (#2514 D1 forward-proofing for an explicit
+    # lane reorder) stays current vs gcp.INTENT_TO_MACHINE at family grain —
+    # the pre-#2514 drift guard, retargeted at the branch constant.
     sys.path.insert(0, str(REPO_ROOT / "src"))
     from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
 
     derived = {k: verify_plan._c26_family(v.gpu_kind) for k, v in INTENT_TO_MACHINE.items()}
-    assert derived == verify_plan._C26_INTENT_GPU
+    assert derived == verify_plan._C26_GCP_INTENT_GPU
 
 
-# ─── Check 27 — 7B activation capture vs eval/debug (L4) intent ────────────
+# Synthetic sources for the lane-head/mirror builder tests (#2514): minimal
+# router + gpu_heuristics shapes carrying exactly the four tables /
+# function the AST reader consumes.
+_SYNTH_GPU_SRC = """
+INTENTS = {
+    "eval": GpuSpec(gpu_type="H100", gpu_count=1, rationale="r"),
+    "lora-7b": GpuSpec(gpu_type="H100", gpu_count=1, rationale="r"),
+    "ft-70b": GpuSpec(gpu_type="H200", gpu_count=8, rationale="r"),
+}
+"""
+
+
+def _synth_router_src(returns: str, flag: str = "True") -> str:
+    return (
+        f"GCP_PROVISIONING_DISABLED: bool = {flag}\n"
+        'RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {"cpu-mid": "cpu3c-8-16"}\n'
+        'RUNPOD_INTENT_FOR_GCP_INTENT: dict[str, str] = {"eval": "eval", "lora": "lora-7b"}\n'
+        'RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS = frozenset({"eval-h100"})\n'
+        f"def _default_auto_lane_order():\n{returns}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("intent", "family"),
+    [
+        ("lora-7b", "H100"),
+        ("lora", "H100"),  # translation alias -> lora-7b
+        ("capture-7b", "H100"),  # translation -> eval -> 1x H100
+        ("ft-7b", "H100"),
+        ("eval", "H100"),
+        ("debug", "H100"),
+        ("lora-7b-h100", "H100"),
+        ("eval-h100", "H100"),  # D2: deliberate-gap key kept, classified H100
+        ("sweep-8g-a100", "A100"),
+        ("sweep-8g-h100", "H100"),
+        ("cpu-small", "CPU"),
+        ("cpu-mid", "CPU"),  # CPU short-circuit precedes the GPU resolver
+        ("cpu-bigmem", "CPU"),
+        ("inf-70b", "H100"),  # NEW key (RunPod-native intent, no GCP row)
+        ("ft-70b", "H200"),  # NEW key
+    ],
+)
+def test_c26_mirror_runpod_head_families(intent, family):
+    # The #2514 plan's rebuilt-mirror table, row by row, against the LIVE
+    # composed mirror (three-table resolution: CPU short-circuit ->
+    # RUNPOD_INTENT_FOR_GCP_INTENT translation -> INTENTS gpu_type at family
+    # grain; the D2 gap key rides _C26_GAP_INTENT_GPU).
+    assert verify_plan._C26_INTENT_GPU[intent] == family
+
+
+def test_c26_head_dispatch_ignores_gcp_provisioning_flag():
+    # #2514 D1 pin (trap 1): GCP_PROVISIONING_DISABLED = False (the #2028
+    # rollback) with the REAL two-branch rollback return STILL resolves
+    # eval -> H100 — the rollback re-inserts gcp as lane 3 while runpod
+    # keeps the head, so the mirror must NOT flip (a flag-keyed dispatch
+    # would wrongly return the gcp families here).
+    returns = (
+        "    if GCP_PROVISIONING_DISABLED:\n"
+        '        return ("runpod", "fellows", "nibi", "fir", "mila")\n'
+        '    return ("runpod", "fellows", "gcp", "nibi", "fir", "mila")\n'
+    )
+    mirror, head = verify_plan._c26_routed_intent_gpu(
+        router_src=_synth_router_src(returns, flag="False"), gpu_src=_SYNTH_GPU_SRC
+    )
+    assert head == "runpod"
+    assert mirror["eval"] == "H100"
+    assert mirror["lora"] == "H100"  # translation alias resolved
+    assert mirror["ft-70b"] == "H200"
+    assert mirror["cpu-mid"] == "CPU"
+    assert mirror["eval-h100"] == "H100"  # D2 gap key
+
+
+def test_c26_head_dispatch_gcp_first_resolves_gcp_families():
+    # #2514 D1 pin, other direction: a genuinely gcp-FIRST auto order
+    # resolves the retained GCP-era families (eval -> L4).
+    mirror, head = verify_plan._c26_routed_intent_gpu(
+        router_src=_synth_router_src('    return ("gcp", "runpod")\n'), gpu_src=_SYNTH_GPU_SRC
+    )
+    assert head == "gcp"
+    assert mirror == verify_plan._C26_GCP_INTENT_GPU
+    assert mirror["eval"] == "L4"
+
+
+def test_c26_mirror_fail_open_unparseable_router(capsys):
+    # D1 fail-open: an unparseable router source falls back to the STATIC
+    # runpod mirror with a stderr note — never a crash, never an empty
+    # mirror (verify_plan_text() must survive any router refactor).
+    mirror, head = verify_plan._c26_routed_intent_gpu(router_src="def (", gpu_src=_SYNTH_GPU_SRC)
+    assert mirror == verify_plan._C26_RUNPOD_FALLBACK_INTENT_GPU
+    assert head == "runpod"
+    assert "verify_plan: note:" in capsys.readouterr().err
+
+
+def test_c26_mirror_fail_open_missing_table(capsys):
+    # D1 fail-open: a router source missing one of the three tables composes
+    # None -> the static fallback, noted on stderr.
+    src = _synth_router_src('    return ("runpod", "fellows")\n').replace(
+        'RUNPOD_INTENT_FOR_GCP_INTENT: dict[str, str] = {"eval": "eval", "lora": "lora-7b"}\n',
+        "",
+    )
+    mirror, head = verify_plan._c26_routed_intent_gpu(router_src=src, gpu_src=_SYNTH_GPU_SRC)
+    assert mirror == verify_plan._C26_RUNPOD_FALLBACK_INTENT_GPU
+    assert head == "runpod"
+    assert "verify_plan: note:" in capsys.readouterr().err
+
+
+def test_c26_mirror_fail_open_unknown_lane_head(capsys):
+    # D1 fail-open: an unrecognized head (neither runpod nor gcp) fails OPEN
+    # to the runpod COMPOSITION (tables present and literal), never the gcp
+    # branch, never a crash — with a stderr note naming the head.
+    mirror, head = verify_plan._c26_routed_intent_gpu(
+        router_src=_synth_router_src('    return ("moon", "runpod")\n'), gpu_src=_SYNTH_GPU_SRC
+    )
+    assert head == "runpod"
+    assert mirror["eval"] == "H100"
+    assert "'moon'" in capsys.readouterr().err
+
+
+def test_c26_mirror_fail_open_undecodable_source(tmp_path, monkeypatch, capsys):
+    # #2514 round-2 blocker 1: UnicodeDecodeError from read_text subclasses
+    # ValueError, NOT OSError, so pre-fix it escaped both except arms and —
+    # because _C26_INTENT_GPU binds at MODULE SCOPE — made verify_plan.py
+    # unimportable fleet-wide (the #1388 class the plan registers as a kill
+    # criterion). An undecodable router source must take the SAME static
+    # runpod fallback as an unreadable one, with a stderr note.
+    bad = tmp_path / "router.py"
+    bad.write_bytes(b"\xff\xfe not utf-8 \x9c")
+    monkeypatch.setattr(verify_plan, "_C26_ROUTER_SRC_PATH", bad)
+    mirror, head = verify_plan._c26_routed_intent_gpu()
+    assert mirror == verify_plan._C26_RUNPOD_FALLBACK_INTENT_GPU
+    assert head == "runpod"
+    assert "verify_plan: note:" in capsys.readouterr().err
+
+
+def test_verify_plan_module_stays_hermetic_of_backend_imports():
+    # #2514 kill criterion: the mirror is AST-derived from SOURCE TEXT, never
+    # imported — verify_plan's module source must carry no router or
+    # gpu_heuristics import at any level. Documented exceptions untouched by
+    # this pin: the stdlib-only plan_wall_budget module-level shim (#2172)
+    # and c50's lazy in-check `backends.slurm` intent-default import (#2027).
+    src = (REPO_ROOT / "scripts" / "verify_plan.py").read_text(encoding="utf-8")
+    assert "backends.router import" not in src
+    assert "backends import router" not in src
+    assert "import explore_persona_space.backends" not in src
+    assert "import gpu_heuristics" not in src
+    assert "from gpu_heuristics" not in src
+
+
+# ─── Check 27 — 7B activation capture vs under-floor-HBM intent ────────────
 
 # Fixture shapes mirror the §4-calibrated corpus offenders (task #1093 plan):
 # tasks/followups_running/825/plans/v17.md (the founding false negative —
@@ -5463,6 +5693,13 @@ def test_c26_intent_gpu_mirror_matches_backend():
 # "1x A100-80 (GCP auto, --intent eval)" line is a false belief — GCP eval
 # routes L4), and the named near-miss FPs the keying clears (#375/#358
 # pod.py provision era, #522 wrapped --intent, #358 H100 prose).
+#
+# #2514 RETARGET: under the live runpod head the under-floor set is EMPTY
+# (eval/debug route 1x H100), so the founding-offender fixtures are kept
+# EXERCISED as small-HBM regressions through the gcp_era_mirror fixture
+# below — the forced gcp-era mapping drives the REAL check path (window
+# scan, absolution, FAIL branch). Live-head behavior (the explicit armed
+# PASS) is pinned by test_c27_empty_under_hbm_set_passes_not_silently_inert.
 C27_CAPTURE_BLOCK = (
     "\n### Phase 2 — representation read\n\n"
     "All-layer hidden-state capture over the context grid (response-avg), then "
@@ -5474,30 +5711,53 @@ C27_DISPATCH_FENCE = (  # the #825 v17 shape: the launch command lives in a fenc
     "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 825 "
     "--intent eval --workload-cmd 'bash scripts/issue825_capture.sh'\n```\n"
 )
-# The founding-offender shape: FAIL under kind=experiment.
+# The founding-offender shape: FAIL under kind=experiment WITH a small-HBM
+# mapping in force (gcp_era_mirror); the explicit armed PASS under the live
+# runpod head (empty under-floor set).
 C27_OFFENDER = GOOD_PLAN + C27_CAPTURE_BLOCK + C27_DISPATCH_FENCE
 
 
-def test_c27_825_v17_shape_fails():
-    # Acceptance criterion 1: capture vocabulary + a fenced dispatch line
-    # booking `--intent eval` (the #825 v17 founding false negative) → FAIL;
-    # the detail names the intent token, the L4 machine class, the
-    # capture-7b remedy, and the exact N/A escape phrase.
+@pytest.fixture
+def gcp_era_mirror(monkeypatch):
+    """Force the gcp-head mapping (dead under BOTH #2028 flag states, D1)
+    through the REAL check path, so c27's window/absolution/FAIL branches —
+    unreachable under the live runpod head's empty under-floor set — stay
+    exercised as small-HBM regressions (#2514 acceptance criterion 4-bis).
+    The check functions resolve these module globals at CALL time, so
+    monkeypatching them drives the production code path unmodified."""
+    under, big = verify_plan._c27_hbm_sets(verify_plan._C26_GCP_INTENT_GPU)
+    monkeypatch.setattr(verify_plan, "_C26_INTENT_GPU", dict(verify_plan._C26_GCP_INTENT_GPU))
+    monkeypatch.setattr(verify_plan, "_C26_LANE_HEAD", "gcp")
+    monkeypatch.setattr(verify_plan, "_C27_UNDER_HBM_INTENTS", under)
+    monkeypatch.setattr(verify_plan, "_C27_BIG_HBM_INTENTS", big)
+
+
+def test_c27_825_v17_shape_fails(gcp_era_mirror):
+    # Acceptance criterion 1, retargeted as a small-HBM regression (#2514):
+    # capture vocabulary + a fenced dispatch line booking `--intent eval`
+    # (the #825 v17 founding false negative) under the forced gcp-era
+    # mapping → FAIL; the detail names the intent token, the resolved family
+    # + HBM figure, the lane head, the floor, the capture-7b remedy, and the
+    # exact N/A escape phrase (D4 self-explaining message).
     ok, by_id = _run(C27_OFFENDER)
     r = by_id["c27_capture_intent_hbm"]
     assert r.status == "FAIL"
     assert not ok
     assert "eval" in r.detail
     assert "L4" in r.detail
+    assert "24" in r.detail  # the resolved family HBM figure
+    assert "gcp" in r.detail  # the lane head, named
+    assert "40" in r.detail  # the floor, named
     assert "capture-7b" in r.detail
     assert "N/A — no 7B activation capture" in r.detail
 
 
-def test_c27_744_a100_claim_still_fails():
+def test_c27_744_a100_claim_still_fails(gcp_era_mirror):
     # Acceptance criterion 2: the #744 v2 misbelief — "1x A100-80 (GCP
     # `auto`, `--intent eval`)" (the C26_INTENT_EVAL fixture IS that line
-    # verbatim). GCP eval NEVER provisions A100, so an A100 claim in the
-    # window must NOT skip (A100 is deliberately not a window-skip token).
+    # verbatim). Under a mapping where eval is under-floor, an A100 claim in
+    # the window must NOT skip (A100 is deliberately not a window-skip
+    # token).
     plan = GOOD_PLAN + C27_CAPTURE_BLOCK + C26_INTENT_EVAL
     assert _status(plan, "c27_capture_intent_hbm") == "FAIL"
 
@@ -5506,16 +5766,18 @@ def test_c27_no_capture_vocab_skips():
     assert _status(GOOD_PLAN + C27_INTENT_EVAL, "c27_capture_intent_hbm") == "SKIP"
 
 
-def test_c27_capture7b_intent_passes():
-    # Capture booked on the right intent, no L4 intent anywhere → PASS.
+def test_c27_capture7b_intent_passes(gcp_era_mirror):
+    # Capture booked on the right intent, no under-floor intent anywhere →
+    # PASS via the no-under-floor-booking branch (gcp-era mapping keeps the
+    # branch reachable; live-head plans reach the armed PASS earlier).
     plan = GOOD_PLAN + C27_CAPTURE_BLOCK + C27_INTENT_CAPTURE7B
     _, by_id = _run(plan)
     r = by_id["c27_capture_intent_hbm"]
     assert r.status == "PASS"
-    assert "no eval/debug intent" in r.detail
+    assert "no under-floor" in r.detail
 
 
-def test_c27_mixed_intents_big_absolution_passes():
+def test_c27_mixed_intents_big_absolution_passes(gcp_era_mirror):
     # Both `--intent capture-7b` and `--intent eval` booked: the capture
     # phase is presumed routed to the big intent (documented gap (a);
     # phase-to-intent routing stays critic-owned).
@@ -5561,18 +5823,21 @@ def test_c27_wrapped_podpy_provision_window_skips():
         "eval\n"
         "more prose\n"
     )
-    assert verify_plan._c27_gcp_l4_intent_windows(wrapped) == []
+    # Explicit gcp-era under set: under the live runpod head the set is
+    # empty and windows are trivially [] — the explicit arg keeps the
+    # window logic itself exercised (#2514).
+    assert verify_plan._c27_under_hbm_intent_windows(wrapped, frozenset({"eval", "debug"})) == []
 
 
-def test_c27_h100_prose_window_skips():
+def test_c27_h100_prose_window_skips(gcp_era_mirror):
     # The #358 prose shape: "1x H100 SXM (intent `eval`)" — an H100 token in
-    # the window is a RunPod-mapping claim, not a GCP L4 booking → the
-    # occurrence is window-skipped; with no other eval/debug booking → PASS.
+    # the window is a RunPod-mapping claim, not an under-floor booking → the
+    # occurrence is window-skipped; with no other under-floor booking → PASS.
     plan = GOOD_PLAN + C27_CAPTURE_BLOCK + "\nGPU: 1× H100 SXM (intent `eval`).\n"
     _, by_id = _run(plan)
     r = by_id["c27_capture_intent_hbm"]
     assert r.status == "PASS"
-    assert "no eval/debug intent" in r.detail
+    assert "no under-floor" in r.detail
 
 
 def test_c27_na_escape_passes():
@@ -5589,10 +5854,11 @@ def test_c27_na_escape_passes():
     assert "N/A" in r.detail
 
 
-def test_c27_quoted_na_phrase_does_not_escape():
+def test_c27_quoted_na_phrase_does_not_escape(gcp_era_mirror):
     # A mid-sentence quoted escape phrase (the pasted-bounce-brief
     # self-escape channel) is NOT a standalone declaration line and must not
-    # escape — the c13/c18/c24/c25/c26 anti-paste twin.
+    # escape — the c13/c18/c24/c25/c26 anti-paste twin (gcp-era mapping
+    # keeps the FAIL branch reachable, #2514).
     plan = (
         GOOD_PLAN
         + C27_CAPTURE_BLOCK
@@ -5602,10 +5868,11 @@ def test_c27_quoted_na_phrase_does_not_escape():
     assert _status(plan, "c27_capture_intent_hbm") == "FAIL"
 
 
-def test_c27_small_model_skips():
+def test_c27_small_model_skips(gcp_era_mirror):
     # 0.5B never matches the >=7B regex (also pins the decimal-tail
     # lookbehind end-to-end; the unit matrix is
-    # test_c27_model_size_threshold_semantics).
+    # test_c27_model_size_threshold_semantics). gcp-era mapping: the >=7B
+    # gate sits AFTER the window scan, unreachable at an empty under set.
     plan = GOOD_PLAN.replace("7B", "0.5B") + C27_CAPTURE_BLOCK + C27_INTENT_EVAL
     _, by_id = _run(plan)
     r = by_id["c27_capture_intent_hbm"]
@@ -5654,7 +5921,7 @@ def test_c27_kind_exempt_skips(kind):
     assert _status(C27_OFFENDER, "c27_capture_intent_hbm", kind=kind) == "SKIP"
 
 
-def test_c27_kind_analysis_warns():
+def test_c27_kind_analysis_warns(gcp_era_mirror):
     # analysis is IN scope but softens to WARN (the c12/c13/c18/c20
     # severity shape) — WARN never blocks.
     ok, by_id = _run(C27_OFFENDER, kind="analysis")
@@ -5664,26 +5931,72 @@ def test_c27_kind_analysis_warns():
 
 
 def test_c27_sets_derive_from_mirror():
-    # The offending + absolving sets are DERIVED from the c26 mirror (no
-    # second copy to drift; the mirror itself is drift-guarded by
-    # test_c26_intent_gpu_mirror_matches_backend). The partition assert
-    # (critique r1, methodology concern 1) forces a future mirror family to
-    # be deliberately classified: L4 | BIG | CPU == the whole mirror.
-    assert {"eval", "debug"} == verify_plan._C27_L4_INTENTS
-    assert {"capture-7b", "lora-7b", "ft-7b", "eval-h100"} <= verify_plan._C27_BIG_HBM_INTENTS
-    assert "cpu-mid" not in verify_plan._C27_BIG_HBM_INTENTS
+    # The offending + absolving sets DERIVE from the c26 mirror through the
+    # HBM-floor partition (#2514 D3 — no second copy to drift; the mirror
+    # itself is drift-guarded by test_c26_intent_gpu_mirror_matches_backend).
+    # Live runpod head: UNDER is empty, every GPU intent is BIG. gcp-era
+    # mapping: UNDER recovers exactly the L4 pair. Partition (critique r1
+    # lineage): UNDER | BIG | CPU == the whole mirror, on BOTH mirrors.
+    live_under, live_big = verify_plan._c27_hbm_sets(verify_plan._C26_INTENT_GPU)
+    assert live_under == verify_plan._C27_UNDER_HBM_INTENTS == frozenset()
+    assert live_big == verify_plan._C27_BIG_HBM_INTENTS
+    assert {"capture-7b", "lora-7b", "ft-7b", "eval-h100", "inf-70b", "ft-70b"} <= live_big
+    assert {"eval", "debug"} <= live_big  # the GCP-era L4 pair routes H100 now
+    assert "cpu-mid" not in live_big
     cpu = {i for i, f in verify_plan._C26_INTENT_GPU.items() if f == "CPU"}
-    assert verify_plan._C27_L4_INTENTS | verify_plan._C27_BIG_HBM_INTENTS | cpu == set(
-        verify_plan._C26_INTENT_GPU
+    assert live_under | live_big | cpu == set(verify_plan._C26_INTENT_GPU)
+    gcp_under, gcp_big = verify_plan._c27_hbm_sets(verify_plan._C26_GCP_INTENT_GPU)
+    assert gcp_under == {"eval", "debug"}
+    assert {"capture-7b", "lora-7b", "ft-7b", "eval-h100"} <= gcp_big
+    gcp_cpu = {i for i, f in verify_plan._C26_GCP_INTENT_GPU.items() if f == "CPU"}
+    assert gcp_under | gcp_big | gcp_cpu == set(verify_plan._C26_GCP_INTENT_GPU)
+
+
+def test_c27_empty_under_hbm_set_passes_not_silently_inert():
+    # #2514 acceptance criteria 3+4: under the LIVE runpod head the
+    # under-floor set is EMPTY and the founding-offender shape reaches an
+    # EXPLICIT armed PASS naming the floor + lane head — never a silent
+    # skip/no-op. Negative control: a mirror key whose family escapes every
+    # HBM bucket raises at the partition assert instead of being swallowed.
+    assert frozenset() == verify_plan._C27_UNDER_HBM_INTENTS
+    _, by_id = _run(C27_OFFENDER)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "PASS"
+    assert "armed" in r.detail
+    assert "40" in r.detail  # the floor, named
+    assert "runpod" in r.detail  # the lane head, named
+    with pytest.raises(AssertionError):
+        verify_plan._c27_hbm_sets({"eval": "B300-mystery"})
+
+
+def test_c27_fail_branch_refires_under_small_hbm_mapping(gcp_era_mirror):
+    # #2514 acceptance criterion 4-bis: the FAIL branch stays EXERCISED
+    # through the real check path under a forced small-HBM mapping — the D3
+    # "stays armed" claim is verified, not asserted. Builder half: a
+    # genuinely gcp-FIRST synthetic head resolves the gcp-era families
+    # (eval -> L4), which is exactly the mapping the fixture forces.
+    mirror, head = verify_plan._c26_routed_intent_gpu(
+        router_src=_synth_router_src('    return ("gcp", "runpod")\n'), gpu_src=_SYNTH_GPU_SRC
     )
+    assert head == "gcp"
+    assert mirror == verify_plan._C26_GCP_INTENT_GPU
+    under, _big = verify_plan._c27_hbm_sets(mirror)
+    assert under == {"eval", "debug"}
+    ok, by_id = _run(C27_OFFENDER)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "FAIL"
+    assert not ok
+    assert "L4" in r.detail and "24" in r.detail and "gcp" in r.detail
+    assert "40" in r.detail  # the floor, named (D4 self-explaining message)
 
 
-def test_c27_detail_does_not_self_retrigger():
-    # Self-DISARM safety, both directions (critique r1): the FAIL detail
-    # carries no H100/H200 token and no runpod-pin form (a pasted detail
-    # must never fire the window skip / RunPod pin and absolve an UN-fixed
-    # booking), and pasting it into a FIXED plan (capture booked on
-    # capture-7b) keeps the fixed plan PASSing.
+def test_c27_detail_does_not_self_retrigger(gcp_era_mirror):
+    # Self-DISARM safety, both directions (critique r1; gcp-era mapping
+    # keeps the FAIL detail producible, #2514): the FAIL detail carries no
+    # H100/H200 token and no runpod-pin form (a pasted detail must never
+    # fire the window skip / RunPod pin and absolve an UN-fixed booking),
+    # and pasting it into a FIXED plan (capture booked on capture-7b) keeps
+    # the fixed plan PASSing.
     _, by_id = _run(C27_OFFENDER)
     detail = by_id["c27_capture_intent_hbm"].detail
     assert not re.search(r"\b(H100|H200)\b", detail)
@@ -5694,7 +6007,7 @@ def test_c27_detail_does_not_self_retrigger():
     assert _status(pasted, "c27_capture_intent_hbm") == "PASS"
 
 
-def test_c27_pasted_detail_arms_vocab_on_nocapture_plan():
+def test_c27_pasted_detail_arms_vocab_on_nocapture_plan(gcp_era_mirror):
     # The S4 residual cell (critique r1, statistics — documented, accepted):
     # the detail necessarily names hidden-state capture (it states the
     # condition), so pasting it into a NO-capture plan with a legitimate
@@ -11150,10 +11463,12 @@ def test_c51_docstring_declares_eighth_read_exception():
     # read-exception preamble before.
     # Whitespace-normalized: the preamble is hard-wrapped, so the phrase
     # spans a line break in the source.
-    # (#2178: c65/c66 raise the disclosed-exception count to ten.)
+    # (#2178: c65/c66 raise the disclosed-exception count to ten;
+    # #2514: the c26/c27 mirror source-read raises it to eleven.)
     doc = " ".join((verify_plan.__doc__ or "").split())
-    assert "Ten disclosed read-only exceptions" in doc
+    assert "Eleven disclosed read-only exceptions" in doc
     assert "check 51" in doc
+    assert "c26/c27 routed-machine mirror" in doc  # the #2514 disclosure
 
 
 def test_c51_path_token_escaping_repo_root_is_dropped(tmp_path, monkeypatch):
