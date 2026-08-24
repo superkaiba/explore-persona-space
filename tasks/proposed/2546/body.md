@@ -9,13 +9,12 @@ origin_prompt: I want to design an experiment to check if our mapping does a lot
   on questions where CoT is in some sense NECESSARY. find a dataset/model/framework
   for this
 workflow: v1
-goal: In CoT-trained models (DeepSeek-R1-Distill-Qwen-7B primary, Qwen3-8B hybrid
-  secondary), measure how well the pre-CoT context vector v_C (last prompt token,
-  before any <think> token) predicts the post-</think> final-answer state v_A*, as
-  a graded function of the question's chain-of-thought necessity; and determine whether
-  any degradation is a genuine loss of answer-content predictability rather than an
-  artifact of answer length, answer-sampling noise, answer-template stereotypy, or
-  domain shift.
+goal: (1) In CoT-trained models, measure R2 and acc@1 for four maps — post-context→answer,
+  post-context→CoT, post-context→CoT+answer, post-CoT→answer — on a corpus that DOES
+  versus DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained
+  model's context vector can predict the POST-CoT-trained model's post-</think> answer
+  state, and how the fitted map changes across the CoT-training step, using a matched
+  same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).
 ---
 # Can the context→answer map predict the POST-CoT answer, and how does CoT training change the map?
 
@@ -36,12 +35,7 @@ computing the answer.
 
 ## Goal
 
-(1) In CoT-trained models, measure R² and acc@1 for four maps — post-context→answer,
-post-context→CoT, post-context→CoT+answer, post-CoT→answer — on a corpus that DOES versus
-DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained model's
-context vector can predict the POST-CoT-trained model's post-`</think>` answer state, and
-how the fitted map changes across the CoT-training step, using a matched same-geometry
-pre/post pair.
+(1) In CoT-trained models, measure R2 and acc@1 for four maps — post-context→answer, post-context→CoT, post-context→CoT+answer, post-CoT→answer — on a corpus that DOES versus DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained model's context vector can predict the POST-CoT-trained model's post-</think> answer state, and how the fitted map changes across the CoT-training step, using a matched same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).
 
 ---
 
