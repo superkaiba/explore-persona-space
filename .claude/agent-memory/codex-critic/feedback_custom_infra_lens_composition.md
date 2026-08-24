@@ -1297,5 +1297,33 @@ bullet for any round-2+ re-review brief with rejected-findings guards.
   with sed path edits only; scaffold fully digit-free — criterion ids A6/K4/B3
   atom-free under both-sides guards; "Phase 1.5" kept span-side).
 
+- **Skill-recipe merge-gate edit plan, standard methodology lens + brief
+  six-question translation (#2538 round one, the Step 10d recovery-block
+  `gh pr ready` insert): three moves that generalize.** (1) When the plan's
+  mechanical pin carries a red-before acceptance criterion and the edits are
+  UNAPPLIED at review time, the live tree IS the pre-fix file: direct the
+  twin to run the plan's own scanner code against the current composed skill
+  text (inline `uv run python -c` importing the plan-named text helper, with
+  a walk-by-hand fallback for write=false sandboxes), "test against the
+  plan's OWN code block, never your own improved variant". (2) Ban `gh` BY
+  NAME in the read discipline when the commands under review are PR
+  mutations (the #2246/#2263 fetch-ban move, applied to the gh CLI); ban
+  pytest (planned tests absent; existing pin literals grep-verifiable).
+  (3) A brief carrying approximate line numbers ("~") that drift from the
+  plan's own cites composes as a THREE-level precedence sentence in the
+  inputs span ("context < plan text < pinned file governs") with compose-time
+  verifications stated number-free-or-plan-sourced (the #2422
+  verify-and-correct move; here the brief's `PRE_MERGED_AT` name and the
+  plan's `PRE_STATE` name were BOTH real, verified via
+  `git show <pin>:<path>` grep before inlining). Also: byte-pinned tested
+  surfaces make the infra bar's protection-removal clause concrete (name the
+  predicate + landing-verification block as the WEAKEN/REMOVE targets), and
+  the brief-banned output patterns (em dashes, the invented-metaphor word,
+  the contrastive scaffold) ride as a "Prose rules for your output" block in
+  the tail. Numcheck PASS first try at ~130 KB (spans = briefnote +
+  lensitems + plan + body + empty prior; digit-free scaffold, question
+  numbers only; registry leg from repo root; orchestrator-named version-less
+  prompt path used directly since no stale tmp files existed).
+
 Related: [[plan-path-missing-read-from-main]],
 [[stale-tmp-files-across-plan-versions]].
