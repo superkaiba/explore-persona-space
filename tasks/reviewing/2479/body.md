@@ -17,6 +17,8 @@ goal: 'Establish or bound the closeness-to-assistant transfer gradient: assistan
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2479.md](https://github.com/superkaiba/explore-persona-space/blob/6f7a713bd41c6d178656d506c647e60f122711f2/docs/methodology/issue_2479.md) · [gist](https://gist.github.com/superkaiba/c3758850d0e4355e06eccc55e9f77814)
+
 ## Takeaways
 
 - Across all 16 story characters, the fraction of each character map's own held-out R² recovered by the transferred assistant-story operator rises with the frozen AI-likeness judge score: rank correlation +0.70, one-sided permutation p = 0.0021 against 10,000 character-label shuffles (null 95th percentile 0.42; n = 16). The verdict function fixed in the plan returns "Gradient established", with all four instrument gates passing; the claim is specific to variance-explained space.
