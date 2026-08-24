@@ -24,9 +24,12 @@ and renders:
                                 PRIMARY), rows grouped by regime class (H2).
   explore_*                     over-produced exploratory dump for the
                                 analyzer: kNN acc@k, LODO bars, map-vs-identity
-                                per-context deltas, raw err-vs-sst scatter,
-                                ceiling-vs-best-R^2, cap-hit fractions, dedup
-                                drop counts (plan S6 items b-h).
+                                per-context deltas, the predicted-vs-true
+                                first-PC scatter (plan S6 item e; rendered
+                                from fits/model{K}/firstpc_scatter.json — no
+                                tensor reload), ceiling-vs-best-R^2, cap-hit
+                                fractions, dedup drop counts (plan S6 items
+                                b-h).
 
 Conventions (paper-plots SKILL + interim register): colorblind-safe Wong
 palette; ONE color = ONE meaning across the whole dump (color = model for
@@ -87,6 +90,26 @@ def load_json(path: Path) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def nan_null(v) -> float:
+    """Committed P4/P3-rel JSONs are strict-JSON (#12: non-finite -> null);
+    map null/None back to NaN for numeric consumption."""
+    return float(v) if v is not None else float("nan")
+
+
+def farray(vals):
+    """np.float64 array from a strict-JSON list (null -> NaN)."""
+    import numpy as np
+
+    return np.asarray([nan_null(v) for v in vals], dtype=np.float64)
+
+
+def _finite_min(vals, *, default: float) -> float:
+    """min over the finite entries (strict-JSON nulls / NaN percentiles must
+    never poison an axis limit — a NaN ylim crashes at render)."""
+    finite = [float(v) for v in vals if v is not None and math.isfinite(v)]
+    return min(finite) if finite else default
+
+
 def model_inputs(fits_root: Path, key: str) -> tuple[dict, dict]:
     """(fits_summary, percontext_recon) for one model — REQUIRED, fail loud."""
     d = fits_root / "fits" / f"model{key}"
@@ -94,6 +117,15 @@ def model_inputs(fits_root: Path, key: str) -> tuple[dict, dict]:
         if not (d / name).exists():
             raise FileNotFoundError(f"required P4 artifact missing: {d / name}")
     return load_json(d / "fits_summary.json"), load_json(d / "percontext_recon.json")
+
+
+def firstpc_inputs(fits_root: Path, key: str) -> dict:
+    """firstpc_scatter.json for one model — REQUIRED (plan S6 item e: the
+    predicted-vs-true first-PC scatter is a plan-approved figure, #15)."""
+    p = fits_root / "fits" / f"model{key}" / "firstpc_scatter.json"
+    if not p.exists():
+        raise FileNotFoundError(f"required P4 artifact missing: {p}")
+    return load_json(p)
 
 
 def optional_input(path: str | None, *, explicit: bool, what: str, notes: list[str]):
@@ -118,27 +150,43 @@ def optional_input(path: str | None, *, explicit: bool, what: str, notes: list[s
 
 def layer_band_table(recon: dict, hs_list: list[int], *, draws: int, seed: int):
     """Per-layer pooled-R^2 bootstrap percentile bands (pointwise, frozen per
-    layer) + the SELECTION-INHERITED best-layer R^2 CI over ``hs_list``.
+    layer; TEST resamples) + the SELECTION-INHERITED best-layer R^2 CI over
+    ``hs_list`` (#9, MF-D): each draw RE-SELECTS the layer by argmax pooled
+    map R^2 on an independent VALIDATION resample (the production ``_select``
+    rule via ``FT._val_selected_cols``) and evaluates the selected column on
+    the TEST resample — selection never sees the scored partition, and a
+    test-side ``nanmax`` is exactly the bias this replaces.
 
     Vectorized: one (draws, n) multiplicity matrix @ (n, L) err/sst stacks
     (the subset-sum GEMM form of `.claude/rules/vectorize-many-cell-fits.md`;
-    reuses the u3 fit module's own bootstrap_counts/recon helpers so the
-    figure bands and the gate CIs share one convention)."""
+    reuses the u3 fit module's own bootstrap_counts/val-selection helpers so
+    the figure bands and the gate CIs share one convention). Draw order per
+    seed mirrors ``FT.paired_delta_bootstrap``: counts_val FIRST, counts_te
+    second, both from ONE generator."""
     import numpy as np
 
-    mats = FT.recon_arrays_from_file(recon, hs_list)
-    n = mats["err_map"].shape[0]
-    counts, _ = FT.bootstrap_counts(n, draws, seed)
+    mats_te = FT.recon_arrays_from_file(recon, hs_list)
+    mats_val = FT.recon_arrays_val_from_file(recon, hs_list)
+    rng = np.random.default_rng(seed)
+    counts_val = FT.bootstrap_counts(mats_val["err_map"].shape[0], draws, rng)
+    counts_te = FT.bootstrap_counts(mats_te["err_map"].shape[0], draws, rng)
     with np.errstate(divide="ignore", invalid="ignore"):
-        r2 = 1.0 - (counts @ mats["err_map"]) / (counts @ mats["sst"])
-    lo, hi = np.nanpercentile(r2, [2.5, 97.5], axis=0)
-    inherited_best = np.nanmax(r2, axis=1)
-    inh_ci = [float(x) for x in np.nanpercentile(inherited_best, [2.5, 97.5])]
+        r2_te = 1.0 - (counts_te @ mats_te["err_map"]) / (counts_te @ mats_te["sst"])
+    lo, hi = np.nanpercentile(r2_te, [2.5, 97.5], axis=0)
+    cand_cols = list(range(len(mats_te["hs"])))  # hs-sorted by construction
+    sel_cols = FT._val_selected_cols(mats_val, cand_cols, counts_val)
+    inherited = r2_te[np.arange(draws), sel_cols]
+    inh_ci = [float(x) for x in np.nanpercentile(inherited, [2.5, 97.5])]
     return {
-        "hs": mats["hs"],
+        "hs": mats_te["hs"],
         "lo": [float(x) for x in lo],
         "hi": [float(x) for x in hi],
         "inherited_best_ci": inh_ci,
+        "selection_basis": (
+            "per-draw argmax of VAL-resample pooled map R^2 over the candidate "
+            "set, evaluated on an independently drawn TEST resample (#9 MF-D)"
+        ),
+        "selected_hs_counts": FT._sel_histogram(sel_cols, mats_te["hs"]),
         "draws": draws,
     }
 
@@ -168,8 +216,8 @@ def fig_hero(models: dict, reliability: dict, args, manifest: dict):
         disp = summary["candidate_sets"]["all"] if key == "A" else summary["candidate_sets"]["h3"]
         rows = layer_rows(summary, disp)
         x = [r["hs"] / n_layers for r in rows]
-        y = [r["r2_test_map_pooled"] for r in rows]
-        y_id = [r["r2_test_id_pooled"] for r in rows]
+        y = [nan_null(r["r2_test_map_pooled"]) for r in rows]
+        y_id = [nan_null(r["r2_test_id_pooled"]) for r in rows]
         band = layer_band_table(recon, disp, draws=args.boot_draws, seed=BOOT_SEED)
         c = MODEL_COLOR[key]
         ax.plot(x, y, "-o", color=c, ms=3.5, lw=1.6, label=f"{MODEL_LABEL[key]} map")
@@ -185,7 +233,7 @@ def fig_hero(models: dict, reliability: dict, args, manifest: dict):
                 cell = per_layer.get(f"L{k:02d}")
                 if cell is not None:
                     xc.append(k / n_layers)
-                    yc.append(cell["ceiling_pooled"])
+                    yc.append(nan_null(cell["ceiling_pooled"]))
             if xc:
                 ax.plot(
                     xc,
@@ -201,30 +249,49 @@ def fig_hero(models: dict, reliability: dict, args, manifest: dict):
             recon, summary["candidate_sets"]["h3"], draws=args.boot_draws, seed=BOOT_SEED + 7
         )
         ci_lo, ci_hi = h3_band["inherited_best_ci"]
-        yv = sel_row["r2_test_map_pooled"]
-        ax.errorbar(
-            [sel_hs / n_layers],
+        yv = nan_null(sel_row["r2_test_map_pooled"])
+        xsel = sel_hs / n_layers
+        # MF-D: the CI is over the per-draw RE-SELECTED best-layer statistic
+        # and may legitimately exclude the frozen selected-layer point — draw
+        # the interval BY ENDPOINTS (never a centered errorbar, whose
+        # non-negative-offset contract would clamp/distort a point outside
+        # the interval; gotchas.md xerr/yerr entry).
+        if math.isfinite(ci_lo) and math.isfinite(ci_hi):
+            ax.plot([xsel, xsel], [ci_lo, ci_hi], "-", color=c, lw=1.4, zorder=5)
+            ax.plot(
+                [xsel, xsel],
+                [ci_lo, ci_hi],
+                linestyle="none",
+                marker="_",
+                ms=9,
+                mew=1.4,
+                color=c,
+                zorder=5,
+            )
+        ax.plot(
+            [xsel],
             [yv],
-            yerr=[[max(0.0, yv - ci_lo)], [max(0.0, ci_hi - yv)]],
-            fmt="*",
+            linestyle="none",
+            marker="*",
             color=c,
             ms=13,
             mec="black",
             mew=0.6,
-            capsize=4,
-            lw=1.4,
-            zorder=5,
+            zorder=6,
             label=f"{MODEL_LABEL[key]} selected layer (selection-inherited 95% CI)",
         )
-        y_min = min([y_min, *band["lo"], ci_lo])
+        y_min = _finite_min([y_min, *band["lo"], ci_lo], default=y_min)
         manifest["hero"] = manifest.get("hero", {})
         manifest["hero"][key] = {
             "displayed_hs": sorted(disp),
             "selected_h3_hs": sel_hs,
             "selection_inherited_best_r2_ci": h3_band["inherited_best_ci"],
+            "selection_basis": h3_band["selection_basis"],
+            "selected_hs_counts": h3_band["selected_hs_counts"],
             "band_semantics": "per-layer pointwise bootstrap 95% band (frozen per layer); "
-            "the selected-layer errorbar is the selection-inherited best-layer CI over "
-            "the H3 candidate set",
+            "the selected-layer interval is the selection-inherited best-layer CI over "
+            "the H3 candidate set (VAL-resample re-selection per draw, drawn by "
+            "endpoints; the star is the frozen selected-layer point estimate)",
         }
     ax.set_xlabel("relative depth (hidden-state index / n_layers)")
     ax.set_ylabel("pooled held-out R² (test partition)")
@@ -384,9 +451,9 @@ def fig_delta_hist(models: dict, manifest: dict):
         summary, recon = models[key]
         gate_hs = summary["selected"]["gate_hs"]
         arr = recon["layers"][f"L{gate_hs:02d}"]
-        err_map = np.asarray(arr["err_map"], dtype=np.float64)
-        err_id = np.asarray(arr["err_identity"], dtype=np.float64)
-        sst = np.asarray(arr["sst_pooled"], dtype=np.float64)
+        err_map = farray(arr["err_map"])
+        err_id = farray(arr["err_identity"])
+        sst = farray(arr["sst_pooled"])
         cls = np.asarray([str(c["regime_class"]) for c in recon["contexts"]])
         with np.errstate(divide="ignore", invalid="ignore"):
             delta = (err_id - err_map) / sst
@@ -411,34 +478,57 @@ def fig_delta_hist(models: dict, manifest: dict):
     return fig
 
 
-def fig_err_scatter(models: dict, manifest: dict):
+def fig_firstpc_scatter(models_fpc: dict, manifest: dict):
+    """Plan S6 item (e): predicted vs TRUE v_x first-PC coordinate, one point
+    per TEST context, colored by regime class — the raw per-unit companion to
+    the pooled-R^2 summary reads. Renders from the compact committed
+    ``fits/model{K}/firstpc_scatter.json`` (no tensor reload; #15)."""
     import matplotlib.pyplot as plt
     import numpy as np
 
-    fig, axes = plt.subplots(1, 2, figsize=(9.0, 4.0))
+    fig, axes = plt.subplots(1, 2, figsize=(9.0, 4.2))
     for ax, key in zip(axes, ("A", "B")):
-        summary, recon = models[key]
-        gate_hs = summary["selected"]["gate_hs"]
-        arr = recon["layers"][f"L{gate_hs:02d}"]
-        err = np.asarray(arr["err_map"], dtype=np.float64)
-        sst = np.asarray(arr["sst_pooled"], dtype=np.float64)
-        cls = [str(c["regime_class"]) for c in recon["contexts"]]
+        fpc = models_fpc[key]
+        true = farray(fpc["true_pc1"])
+        pred = farray(fpc["pred_pc1"])
+        n = len(fpc["true_pc1"])
+        if not (len(fpc["pred_pc1"]) == n == int(fpc["n"]) == len(fpc["regime_classes"])):
+            raise RuntimeError(
+                f"firstpc_scatter model{key}: length mismatch — n={fpc['n']}, "
+                f"true={len(fpc['true_pc1'])}, pred={len(fpc['pred_pc1'])}, "
+                f"classes={len(fpc['regime_classes'])}"
+            )
+        cls = [str(c) for c in fpc["regime_classes"]]
         for c in CLASS_ORDER:
             m = np.asarray([x == c for x in cls])
             if m.any():
-                ax.scatter(sst[m], err[m], s=9, alpha=0.65, color=class_color(c), label=c, lw=0)
-        pos = np.concatenate([sst[sst > 0], err[err > 0]])
-        lim_lo = max(1e-6, float(pos.min()) * 0.5) if pos.size else 1e-6
-        lim_hi = max(float(sst.max()), float(err.max()), lim_lo * 10) * 2.0
-        grid = np.geomspace(lim_lo, lim_hi, 32)
-        ax.plot(grid, grid, "k--", lw=0.9, label="err = SST (R²=0)")
-        ax.set_xscale("log")
-        ax.set_yscale("log")
-        ax.set_xlabel("per-context pooled SST (‖y − ȳ‖²)")
-        ax.set_ylabel("per-context map error (‖y − ŷ‖²)")
-        ax.set_title(f"{MODEL_LABEL[key]} @ gate layer hs={gate_hs}")
+                ax.scatter(true[m], pred[m], s=9, alpha=0.65, color=class_color(c), label=c, lw=0)
+        finite = np.concatenate([true[np.isfinite(true)], pred[np.isfinite(pred)]])
+        if finite.size:
+            lim_lo, lim_hi = float(finite.min()), float(finite.max())
+            pad = 0.05 * max(lim_hi - lim_lo, 1e-9)
+            lims = (lim_lo - pad, lim_hi + pad)
+            ax.plot(lims, lims, "k--", lw=0.9, label="predicted = true")
+            ax.set_xlim(lims)
+            ax.set_ylim(lims)
+        evr = fpc.get("explained_variance_ratio")
+        evr_txt = f"{evr:.2f}" if isinstance(evr, int | float) and math.isfinite(evr) else "n/a"
+        ax.set_xlabel("true v_x first-PC coordinate")
+        ax.set_ylabel("predicted v_x first-PC coordinate")
+        # Short title at reduced size — the full-form two-panel titles collide
+        # mid-figure at 9.0in width (smoke render check).
+        ax.set_title(f"{MODEL_LABEL[key]} @ hs={fpc['hs']}, PC1 EVR={evr_txt}", fontsize=10)
         ax.legend(fontsize=6.5)
-    manifest["err_scatter"] = {"note": "raw per-unit companion (below diagonal = R²>0)"}
+        manifest.setdefault("firstpc_scatter", {})[key] = {
+            "input": f"fits/model{key}/firstpc_scatter.json",
+            "x_field": "true_pc1",
+            "y_field": "pred_pc1",
+            "color_field": "regime_classes",
+            "n": fpc.get("n"),
+            "hs": fpc.get("hs"),
+            "explained_variance_ratio": evr,
+            "basis": fpc.get("basis"),
+        }
     return fig
 
 
@@ -452,7 +542,7 @@ def fig_ceiling_vs_best(models: dict, reliability: dict, decision, manifest: dic
     for j, key in enumerate(("A", "B")):
         summary, _ = models[key]
         sel_hs = summary["selected"]["h3_hs"]
-        best = summary["r2_at_h3_layer"]["map_pooled"]
+        best = nan_null(summary["r2_at_h3_layer"]["map_pooled"])
         rel = reliability.get(key)
         ceil = rel["per_layer"].get(f"L{sel_hs:02d}", {}).get("ceiling_pooled") if rel else None
         ax.bar(j - width / 2, best, width, color=MODEL_COLOR[key], label=None)
@@ -544,6 +634,7 @@ def render_all(args) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     notes: list[str] = []
     models = {k: model_inputs(fits_root, k) for k in ("A", "B")}
+    models_fpc = {k: firstpc_inputs(fits_root, k) for k in ("A", "B")}
     reliability = {}
     for key, path, explicit in (
         ("A", args.reliability_a, args.reliability_a is not None),
@@ -552,10 +643,13 @@ def render_all(args) -> dict:
         default = fits_root / "reliability" / f"model{key}" / "reliability_ceiling.json"
         p = path if path is not None else (str(default) if default.exists() else None)
         if p is None:
+            # Single note here; optional_input(None, ...) would append a duplicate.
             notes.append(f"reliability model{key}: {default} absent — ceiling lines skipped")
-        reliability[key] = optional_input(
-            p, explicit=explicit, what=f"reliability model{key}", notes=notes
-        )
+            reliability[key] = None
+        else:
+            reliability[key] = optional_input(
+                p, explicit=explicit, what=f"reliability model{key}", notes=notes
+            )
     decision = optional_input(
         args.decision
         if args.decision is not None
@@ -609,10 +703,10 @@ def render_all(args) -> dict:
 
     _save(fig_hero(models, reliability, args, manifest), "hero_matched_reldepth_r2", "hero")
     _save(fig_persource_matrix(models, manifest), "persource_r2_matrix", "persource_matrix")
-    _save(fig_knn(models, manifest), "explore_persource_knn", "knn")
+    _save(fig_knn(models, manifest), "explore_pooled_knn", "knn")
     _save(fig_lodo(models, manifest), "explore_lodo_bars", "lodo")
     _save(fig_delta_hist(models, manifest), "explore_delta_identity_hist", "delta_hist")
-    _save(fig_err_scatter(models, manifest), "explore_percontext_err_vs_sst", "err_scatter")
+    _save(fig_firstpc_scatter(models_fpc, manifest), "explore_firstpc_scatter", "firstpc_scatter")
     _save(
         fig_ceiling_vs_best(models, reliability, decision, manifest),
         "explore_ceiling_vs_bestr2",

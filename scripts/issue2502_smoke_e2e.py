@@ -22,7 +22,12 @@ boundaries mocked/redirected:
   (5) vLLM generation (P1) is POD-ONLY: the `gen` leg writes gen-chunk rows in
       `phase_gen`'s exact record schema (real tokenizer + real
       `render_prompt_ids`/`assert_chat_template`/`ids_sha16`) with synthetic
-      completion token ids sampled from each row's own prompt ids.
+      completion token ids sampled from each row's own prompt ids — and runs
+      the REAL u2 accounting around them: `gen_regime` + `ensure_remote_regime`
+      (raw-prefix digest published BEFORE any chunk upload) + `chunk_key` +
+      `count_chunk_stats` + `write_gen_meta`, so the capture leg's consumer
+      gates (regime verify + `require_gen_complete`) execute REAL against this
+      leg's artifacts.
 
 All HF writes land under ``issue2502_ctxmap_xgen/smoke_u4/`` — never the
 canonical run prefixes. Content hygiene: fixture texts are benign synthetic
@@ -54,7 +59,10 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-SMOKE_PREFIX = "issue2502_ctxmap_xgen/smoke_u4"
+# r2 subprefix: round-1 legs uploaded pre-revision artifacts under smoke_u4/
+# with NO regime digest; a fresh nested namespace keeps every regime /
+# completeness gate clean while staying confined to smoke_u4/ (hygiene rule).
+SMOKE_PREFIX = "issue2502_ctxmap_xgen/smoke_u4/r2"
 SMOKE_SOURCES = ("lmsys_chat_1m", "itw_jailbreak", "writingprompts")
 FIXTURE_SEED = 20260823
 GEN_SEED_MAIN = 42
@@ -186,6 +194,9 @@ def leg_corpus(args) -> None:
         yield from fixtures[key]
 
     CS._hf_stream = fake_hf_stream  # network/gated-read boundary (mock 1)
+    # u1's HfApi().dataset_info revision-pin seam (same network boundary as
+    # mock 1; corpus.py resolves the module global at both call sites).
+    CP._resolve_dataset_revision = lambda dataset_id: "smokerev"
 
     out_dir = Path(args.work) / "corpus"
     common = [
@@ -294,37 +305,67 @@ def leg_gen(args) -> None:
     Real tokenizer, real template assert, real render/sha helpers; completion
     token ids are sampled from each row's own prompt ids (in-vocab by
     construction; replicate seeds vary the sample -> across-replicate answer
-    variance for the reliability ICC)."""
+    variance for the reliability ICC). The REAL u2 accounting brackets the
+    writes: the raw-prefix regime digest is published FIRST (capture's
+    consumer-side `ensure_remote_regime(write_if_absent=False)` requires it)
+    and `write_gen_meta` runs LAST (capture's `require_gen_complete` gate +
+    the cap-hit fraction arithmetic run REAL — 2 planted cap hits over the
+    full smoke corpus stay under the 2% halt threshold)."""
     GC = _gc()
     from transformers import AutoTokenizer
 
     model_key = args.model_key
     seed = args.rep_seed if args.rep_seed is not None else GEN_SEED_MAIN
     prefixes = smoke_prefixes(model_key, args.rep_seed)
-    model = "Qwen/Qwen2.5-7B-Instruct" if model_key == "A" else "Qwen/Qwen3.5-9B"
-    disable = model_key == "B"
-    tok = AutoTokenizer.from_pretrained(model)
-    template_sha = GC.assert_chat_template(tok, disable_thinking=disable)
     work = Path(args.work) / f"gen_model{model_key}_seed{seed}"
     work.mkdir(parents=True, exist_ok=True)
+    a = GC.build_parser().parse_args(
+        [
+            "--phase",
+            "gen",
+            *_model_flags(model_key),
+            "--seed",
+            str(seed),
+            "--corpus-prefix",
+            prefixes["corpus"],
+            "--raw-prefix",
+            prefixes["raw"],
+            "--out-prefix",
+            prefixes["tensors"],
+            "--chunk-size",
+            str(CHUNK_SIZE),
+            "--work-dir",
+            str(work),
+        ]
+    )
+    disable = a.disable_thinking
+    tok = AutoTokenizer.from_pretrained(a.model)
+    template_sha = GC.assert_chat_template(tok, disable_thinking=disable)
+    regime = GC.gen_regime(a, template_sha)
+    GC.ensure_remote_regime(prefixes["raw"], regime, work, write_if_absent=True)
     local = GC.fetch_repo_file(
         f"{prefixes['corpus']}/corpus.jsonl", work / "corpus_dl", what="smoke-corpus"
     )
     rows = list(GC.iter_jsonl(local))
     chunks = [rows[i : i + CHUNK_SIZE] for i in range(0, len(rows), CHUNK_SIZE)]
+    keys = [GC.chunk_key(a, ci) for ci in range(len(chunks))]
     rng = random.Random(seed * 1000003 + (0 if model_key == "A" else 1))
     plant_main = args.rep_seed is None and model_key == "A"
     # Deterministic plants on TRAIN rows of chunk 0 (never test/val, so the
     # decide-phase + reliability-subset floors are untouched): the FIRST train
     # row gets an empty completion (capture's empty_completion drop branch),
-    # the next two get cap-hit rows (finish_reason=="length" accounting).
-    plant_empty_rj = plant_cap_rjs = None
+    # the next two get cap-hit rows (finish_reason=="length" accounting), the
+    # FOURTH gets think_leak=True (capture's think_leak drop branch).
+    plant_empty_rj = plant_leak_rj = None
+    plant_cap_rjs: set[int] = set()
     if plant_main:
         train_rjs = [rj for rj, r in enumerate(chunks[0]) if r.get("split") == "train"]
-        assert len(train_rjs) >= 3, "smoke corpus chunk0 needs >=3 train rows for plants"
-        plant_empty_rj, plant_cap_rjs = train_rjs[0], set(train_rjs[1:3])
+        assert len(train_rjs) >= 4, "smoke corpus chunk0 needs >=4 train rows for plants"
+        plant_empty_rj, plant_leak_rj = train_rjs[0], train_rjs[3]
+        plant_cap_rjs = set(train_rjs[1:3])
+    stats: dict[str, dict] = {}
     for ci, chunk_rows in enumerate(chunks):
-        key = f"chunk{ci:04d}"
+        key = keys[ci]
         out = work / f"{key}.jsonl"
         with out.open("w", encoding="utf-8") as fh:
             for rj, row in enumerate(chunk_rows):
@@ -351,14 +392,17 @@ def leg_gen(args) -> None:
                     "n_gen_tokens": len(comp_ids),
                     "finish_reason": "length" if cap_hit else "stop",
                     "cap_hit": cap_hit,
+                    "think_leak": bool(plant_main and ci == 0 and rj == plant_leak_rj),
                     "eos_stripped": False,
                 }
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        stats[key] = GC.count_chunk_stats(out)  # REAL recount, pre-unlink
         GC.upload_single_file(out, f"{prefixes['raw']}/{key}.jsonl")
         out.unlink()
+    GC.write_gen_meta(a, work, keys, stats, template_sha, regime)
     print(
         f"[smoke-gen] model {model_key} seed={seed}: {len(chunks)} chunks x <= {CHUNK_SIZE} rows "
-        f"-> {prefixes['raw']}",
+        f"-> {prefixes['raw']} (regime + gen_meta published)",
         flush=True,
     )
 
@@ -372,11 +416,13 @@ class FakeCaptureModel:
     """Signature-conformant stand-in for the HF model at the forward boundary.
 
     Mirrors the real call surface `model(input_ids=, attention_mask=,
-    output_hidden_states=, use_cache=, **lk)` and returns an object with
-    `.hidden_states` = tuple of n_layers+1 (b, t, H) bf16 tensors. Values are
-    a deterministic per-token embedding passed through a causal 16-token
-    window mean (context-keyed signal; replicate variance enters via the
-    sampled completion ids), layer-varied by a roll + scale."""
+    output_hidden_states=, use_cache=, **lk)` — including the explicit
+    `logits_to_keep` param, asserted ==1 so the smoke proves `forward_batch`
+    threads `mctx.lk` (#779) — and returns an object with `.hidden_states`
+    = tuple of n_layers+1 (b, t, H) bf16 tensors. Values are a deterministic
+    per-token embedding passed through a causal 16-token window mean
+    (context-keyed signal; replicate variance enters via the sampled
+    completion ids), layer-varied by a roll + scale."""
 
     VOCAB_BUCKETS = 4096
     WINDOW = 16
@@ -390,10 +436,17 @@ class FakeCaptureModel:
         self.emb = torch_mod.randn(self.VOCAB_BUCKETS, hidden, generator=g) * 0.7
 
     def __call__(
-        self, *, input_ids=None, attention_mask=None, output_hidden_states=False, use_cache=True
+        self,
+        *,
+        input_ids=None,
+        attention_mask=None,
+        output_hidden_states=False,
+        use_cache=True,
+        logits_to_keep=None,
     ):
         torch = self.torch
         assert output_hidden_states and not use_cache
+        assert logits_to_keep == 1, "forward_batch must thread mctx.lk logits_to_keep=1 (#779)"
         e = self.emb[input_ids % self.VOCAB_BUCKETS]  # (b, t, H) fp32
         e = e * attention_mask[..., None].to(e.dtype)
         cs = e.cumsum(1)
@@ -457,7 +510,9 @@ def leg_capture(args) -> None:
             n_layers=spec_["n_layers"],
             hidden=spec_["hidden"],
             pad_id=int(pad_id),
-            lk={},
+            # Exercise forward_batch's **mctx.lk threading (#779): the fake
+            # forward asserts it receives logits_to_keep=1.
+            lk={"logits_to_keep": 1},
         )
 
     GC.load_model_ctx = fake_load_model_ctx  # model/GPU boundary (mock 2)
@@ -467,6 +522,20 @@ def leg_capture(args) -> None:
             "[smoke-capture] enforce_model_env no-op (pod-venv pin boundary)", flush=True
         )
     GC.phase_capture(a, spec)
+    if args.rep_seed is None and model_key == "A":
+        # Planted-drop accounting (A main only — the leg that planted): read the
+        # REAL capture_meta from work_root (= <work-dir>/model{K}) and assert
+        # every planted drop/cap branch fired exactly once/twice.
+        meta = json.loads(
+            (Path(a.work_dir) / f"model{model_key}" / "capture_meta.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        t = meta["totals"]
+        assert t["n_empty_completion_drops"] == 1, t
+        assert t["n_think_leak_drops"] == 1, t
+        assert t["n_cap_hit"] == 2, t
+        print(f"[smoke-capture] planted-drop accounting OK: {t}", flush=True)
     print(f"[smoke-capture] model {model_key} seed={seed} OK -> {prefixes['tensors']}", flush=True)
 
 
@@ -506,7 +575,10 @@ def leg_rel_subset(args) -> None:
 
 def leg_rel_ceiling(args) -> None:
     RL = _patched_rl()
-    out_root = args.out_root or str(_REPO_ROOT / "eval_results" / "issue_2502")
+    # Smoke default is a SCRATCH out-root; the canonical committed
+    # eval_results/issue_2502 tree is explicit opt-in (--out-root) so an
+    # ordinary smoke can never overwrite committed artifacts.
+    out_root = args.out_root or str(Path(args.work) / "eval_results")
     argv = [
         "--phase",
         "ceiling",
@@ -514,6 +586,8 @@ def leg_rel_ceiling(args) -> None:
         args.model_key,
         "--rep-seeds",
         "43,44",
+        "--publish",
+        "none",
         "--work-dir",
         str(Path(args.work) / f"rel_ceiling_{args.model_key}"),
         "--out-root",

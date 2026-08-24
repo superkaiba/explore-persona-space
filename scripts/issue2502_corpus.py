@@ -75,8 +75,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-import numpy as np
-
 from explore_persona_space.experiments.issue_1739 import corpus_staging as CS
 from explore_persona_space.orchestrate import hub
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -1074,6 +1072,11 @@ def cross_with_bank(
     prefixes = sorted(prefixes, key=_context_sha)
     n_p, n_q = len(prefixes), len(queries)
     n_pairs = n_p * n_q
+    # Deferred: the ONLY numpy site — a module-top numpy import would freeze
+    # BLAS pools before main()'s load_dotenv() binds the shared-VM thread
+    # caps (#847 invariant, tests/test_shared_vm_thread_caps.py).
+    import numpy as np
+
     rng = np.random.default_rng(seed)
     order = rng.permutation(n_pairs)
     kept: list[dict] = []
