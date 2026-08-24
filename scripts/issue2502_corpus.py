@@ -26,6 +26,34 @@ torch/vLLM import chain that module carries; see the reimplemented
 ~0.5) would over-delete; the exact-Jaccard confirm is load-bearing. Fail loud
 if any source's post-dedup kept count is 0.
 
+Family 12 (plan §4 item 12) has TWO parts, both implemented here:
+  (a) Persona/system-prompt PREFIXES — ``proj-persona/PersonaHub`` (config
+      ``persona``) + ``nvidia/Nemotron-Personas-USA`` + ``fka/prompts.chat``
+      CROSSED with the fixed in-repo query bank ``wildchat_random_v1``
+      (``artifacts.banks.load_bank``; 600 toxic/redacted-screened real user
+      queries): composed context = ``<prefix>\\n\\n<query>``, seeded pairing
+      (the #1739 ``build_evil_cross`` pattern) — family budget ~4k;
+  (b) Domain fillers (Magicoder / NuminaMath / PubMedQA / ChatDoctor /
+      legalbench) marked ``topup=True``: they absorb the REMAINING budget to
+      exactly 150k after every non-filler source takes its realized yield
+      (``allocate_with_topup``); the big three carry generous staging caps so
+      the 150k target is structurally reachable.
+
+RESUME SOUNDNESS: every stage fingerprint is built by ONE shared builder
+(``_stage_fingerprint``) carrying every output-affecting key — the pinned
+upstream dataset REVISION (resolved once per dataset, also threaded into the
+stream so a resumed ``skip_scanned`` fast-forward reads the SAME bytes the
+checkpoint scanned), keep_cap, filters version, token budget + tokenizer ids,
+language filter, stream_cap, and the fallback flag — for the PRIMARY and the
+FALLBACK path alike. The within-source ``seen`` dedup set is re-seeded from
+matching partial checkpoints and from completed configs' pools, so a resume
+never re-admits duplicates of pre-crash kept rows.
+
+CROSS-MODEL TOKEN FILTER: the MAX-context-token filter rejects a row when its
+tokenized length exceeds the budget under EITHER model tokenizer (Qwen2.5-7B
+-Instruct AND Qwen3.5-9B), so both model arms consume the IDENTICAL corpus and
+gen_capture never needs a per-model drop.
+
 CONTENT HYGIENE (binding, `.claude/rules/trigger-dense-review.md`): several
 corpora are harmful-content / real-user / jailbreak banks. This module NEVER
 logs, prints, or persists item TEXT through any counts/report channel — the
@@ -37,6 +65,7 @@ classes, and field NAMES only.
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import json
 import logging
@@ -45,6 +74,8 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+
+import numpy as np
 
 from explore_persona_space.experiments.issue_1739 import corpus_staging as CS
 from explore_persona_space.orchestrate import hub
@@ -57,11 +88,19 @@ BUDGET = 150_000
 SEED = 42
 # Length filter (plan §4): MIN from #1739; MAX = a context-token budget so
 # every kept context + the 1024 gen cap + the 2048 re-gen headroom fits
-# max_model_len=8192 on BOTH engines.
+# max_model_len=8192 on BOTH engines. BOTH model tokenizers filter (a kept row
+# fits Model A AND Model B — the cross-model common-corpus contract).
 MIN_TEXT_CHARS = CS.MIN_TEXT_CHARS  # 16
 MAX_MODEL_LEN = 8192
 GEN_HEADROOM_TOKENS = 2048  # re-gen headroom the token budget must reserve
 TOKEN_MARGIN = 512  # chat-template + generation-prompt overhead margin
+DEFAULT_TOKENIZERS = ("Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen3.5-9B")
+# Fingerprint recipe versions (bumping either forces a restage of stale pools).
+KEEP_FILTERS_VERSION = "issue2502.keep.v2"  # v2: dual-tokenizer filter + pinned revision
+PREFIX_FILTERS_VERSION = "issue2502.prefix.v1"  # family-12 prefix staging (pre-cross)
+# Family-12 crossing (plan §4 item 12): fixed in-repo query bank + join.
+CROSS_QUERY_BANK = "wildchat_random"  # artifacts.banks name; 600 screened real queries
+CROSS_JOIN = "\n\n"  # composed context = prefix + CROSS_JOIN + query
 # Dedup (MF-K): the exact-Jaccard CONFIRM stage on top of the LSH candidates.
 NEAR_DUPE_NGRAM = 5  # char n-gram width (== issue1775_fold_check NEAR_DUPE_NGRAM)
 NEAR_DUPE_JACCARD = 0.8  # confirm threshold (== issue1775_fold_check NEAR_DUPE_JACCARD)
@@ -116,6 +155,14 @@ class SourceSpec:
     gated: bool = False
     # Optional fallback dataset id when the primary is a gated read failure.
     fallback_dataset_id: str | None = None
+    # Family-12 crossing (plan §4 item 12): when set, staged rows are
+    # persona/system-prompt PREFIXES crossed with this fixed in-repo query
+    # bank (artifacts.banks name); composed context = prefix + "\n\n" + query.
+    cross_query_bank: str | None = None
+    # Domain-filler top-up lever (plan §4 item 12: "remaining budget to
+    # 150k"): topup sources absorb the residual budget AFTER every non-topup
+    # source takes its realized yield (allocate_with_topup).
+    topup: bool = False
 
 
 def _regime_tags(spec: SourceSpec) -> dict[str, str]:
@@ -334,7 +381,7 @@ SOURCES: tuple[SourceSpec, ...] = (
         source_tag="riddle_sense",
         dataset_id="INK-USC/riddle_sense",
         regime_class=REGIME_IDIO,
-        realism_tier=2,
+        realism_tier=3,  # plan §4 names it in the tier-3/tier-4 minority (g1 m4)
         pre_dedup_cap=1_500,
         text_fields=("question",),
     ),
@@ -382,31 +429,64 @@ SOURCES: tuple[SourceSpec, ...] = (
         pre_dedup_cap=8_000,
         conv_fields=("messages",),
     ),
-    # 12. persona/system-prompt prefixes + domain fillers.
+    # 12a. persona/system-prompt PREFIXES crossed with the fixed query bank
+    # (plan §4 item 12: PersonaHub + Nemotron-Personas-USA + prompts.chat
+    # crossed with a fixed query bank — family budget ~4k; per-source caps sum
+    # to 4k). Schemas probe-verified 2026-08-23 via datasets-server /info:
+    # PersonaHub config `persona` field `persona` (200k rows); Nemotron
+    # default field `persona` (1M rows); prompts.chat default field `prompt`
+    # (2,134 rows).
     SourceSpec(
-        source_tag="persona_prefix",
+        source_tag="personahub_prefix",
         dataset_id="proj-persona/PersonaHub",
         regime_class=REGIME_NEAR,
         realism_tier=3,
-        pre_dedup_cap=4_000,
-        configs=("instruction",),
-        text_fields=("input persona", "synthesized text", "instruction"),
+        pre_dedup_cap=1_500,
+        configs=("persona",),
+        text_fields=("persona",),
+        cross_query_bank=CROSS_QUERY_BANK,
     ),
+    SourceSpec(
+        source_tag="nemotron_prefix",
+        dataset_id="nvidia/Nemotron-Personas-USA",
+        regime_class=REGIME_NEAR,
+        realism_tier=3,
+        pre_dedup_cap=1_500,
+        text_fields=("persona",),
+        cross_query_bank=CROSS_QUERY_BANK,
+    ),
+    SourceSpec(
+        source_tag="promptschat_prefix",
+        dataset_id="fka/prompts.chat",
+        regime_class=REGIME_NEAR,
+        realism_tier=2,
+        pre_dedup_cap=1_000,
+        text_fields=("prompt",),
+        cross_query_bank=CROSS_QUERY_BANK,
+    ),
+    # 12b. domain fillers (in-distribution corners) — the plan's "remaining
+    # budget to 150k" TOP-UP lever: topup=True + generous staging caps on the
+    # three large sources (Magicoder 75k / NuminaMath 860k / ChatDoctor 100k
+    # upstream rows), so under-realized weird/near sources cannot strand the
+    # corpus below 150k. pubmedqa (pqa_labeled: 1k rows) + legalbench
+    # (hearsay: ~95 rows) are yield-bound and cannot top up; caps stay modest.
     SourceSpec(
         source_tag="magicoder",
         dataset_id="ise-uiuc/Magicoder-OSS-Instruct-75K",
         regime_class=REGIME_ORDINARY,
-        realism_tier=2,
-        pre_dedup_cap=3_000,
+        realism_tier=3,  # LLM-generated synthetic corpus (data-realism tier 3; g1 m4)
+        pre_dedup_cap=15_000,
         text_fields=("problem", "instruction"),
+        topup=True,
     ),
     SourceSpec(
         source_tag="numinamath",
         dataset_id="AI-MO/NuminaMath-CoT",
         regime_class=REGIME_ORDINARY,
         realism_tier=2,
-        pre_dedup_cap=3_000,
+        pre_dedup_cap=15_000,
         text_fields=("problem", "question"),
+        topup=True,
     ),
     SourceSpec(
         source_tag="pubmedqa",
@@ -416,14 +496,16 @@ SOURCES: tuple[SourceSpec, ...] = (
         pre_dedup_cap=2_000,
         configs=("pqa_labeled",),
         text_fields=("question",),
+        topup=True,
     ),
     SourceSpec(
         source_tag="chatdoctor",
         dataset_id="lavita/ChatDoctor-HealthCareMagic-100k",
         regime_class=REGIME_ORDINARY,
         realism_tier=1,
-        pre_dedup_cap=3_000,
+        pre_dedup_cap=15_000,
         text_fields=("input", "instruction"),
+        topup=True,
     ),
     SourceSpec(
         source_tag="legalbench",
@@ -433,6 +515,7 @@ SOURCES: tuple[SourceSpec, ...] = (
         pre_dedup_cap=2_000,
         configs=("hearsay",),
         text_fields=("text", "question"),
+        topup=True,
     ),
 )
 
@@ -491,16 +574,19 @@ def extract_context(raw: dict, spec: SourceSpec) -> str | None:
 
 
 def _is_moderation_flagged(raw: dict) -> bool:
-    """Defensive moderation-flag detector for WildChat/LMSYS rows.
+    """Moderation-flag detector for WildChat/LMSYS rows (plan §5: the
+    ORDINARY vs NEAR-DISTRIBUTION split of families 1-2 is on the MODERATION
+    flag).
 
-    Checks the documented flag shapes (WildChat top-level `toxic`/`redacted`
-    bools; the per-turn-aligned `openai_moderation` list-of-dicts with a
-    `flagged` bool on both). Undetectable -> non-flagged (ordinary); the
-    ``--probe`` per-regime counts surface a field-name miss (flagged==0).
+    Keys ONLY on moderation verdicts — the top-level `toxic` bool and the
+    per-turn-aligned `openai_moderation` list-of-dicts' `flagged` bool.
+    `redacted` is PII-masking, NOT a moderation verdict, and deliberately does
+    NOT flag (g1 m5: PII-redacted-but-benign rows must stay ordinary).
+    Undetectable -> non-flagged (ordinary); the ``--probe`` per-regime counts
+    surface a field-name miss (flagged==0).
     """
-    for f in ("toxic", "redacted"):
-        if CS.parse_bool_field(raw.get(f)) and raw.get(f) is not None:
-            return True
+    if raw.get("toxic") is not None and CS.parse_bool_field(raw.get("toxic")):
+        return True
     mod = raw.get("openai_moderation")
     if isinstance(mod, list):
         for entry in mod:
@@ -520,30 +606,44 @@ def _row_language(raw: dict) -> str | None:
 
 
 class TokenLengthFilter:
-    """Reject contexts whose tokenized length exceeds the context-token budget.
+    """Reject contexts whose tokenized length exceeds the context-token budget
+    under EITHER model tokenizer (the cross-model common-corpus contract).
 
-    Budget = max_model_len - gen_headroom - margin (raw context text is a single
-    user turn; the chat-template + generation-prompt overhead lands inside the
-    margin, so the budget is conservative for BOTH engines). Lazy tokenizer load
-    — never imported by ``--import-check`` or the synthetic dry-run.
+    P0 filters against BOTH Qwen2.5-7B-Instruct AND Qwen3.5-9B (tokenizer_class
+    Qwen2Tokenizer — loads under the repo-standard transformers), keeping only
+    rows that fit BOTH budgets, so the two model arms consume the IDENTICAL
+    corpus and gen_capture's per-model token-budget drop can never fire
+    (codex round-1 BLOCKER cross-model-token-filter). Budget = max_model_len -
+    gen_headroom - margin (raw context text is a single user turn; the
+    chat-template + generation-prompt overhead lands inside the margin, so the
+    budget is conservative for both engines). Lazy tokenizer load — never
+    imported by ``--import-check`` or the synthetic ``--selfcheck``, which
+    injects fake ``_count_fns`` instead.
     """
 
-    def __init__(self, tokenizer_id: str, budget_tokens: int):
-        self.tokenizer_id = tokenizer_id
+    def __init__(self, tokenizer_ids: tuple[str, ...] | list[str], budget_tokens: int):
+        self.tokenizer_ids = tuple(tokenizer_ids)
+        if not self.tokenizer_ids:
+            raise ValueError("TokenLengthFilter needs >= 1 tokenizer id")
         self.budget_tokens = int(budget_tokens)
-        self._tok = None
+        # Injectable seam (selfcheck): list of text -> token-count callables.
+        self._count_fns: list[Callable[[str], int]] | None = None
 
-    @property
-    def tok(self):
-        if self._tok is None:
+    def _counters(self) -> list[Callable[[str], int]]:
+        if self._count_fns is None:
             from transformers import AutoTokenizer
 
-            self._tok = AutoTokenizer.from_pretrained(self.tokenizer_id)
-        return self._tok
+            def _mk(tok) -> Callable[[str], int]:
+                return lambda text: len(tok(text, add_special_tokens=False)["input_ids"])
+
+            self._count_fns = [
+                _mk(AutoTokenizer.from_pretrained(tid)) for tid in self.tokenizer_ids
+            ]
+        return self._count_fns
 
     def too_long(self, text: str) -> bool:
-        ids = self.tok(text, add_special_tokens=False)["input_ids"]
-        return len(ids) > self.budget_tokens
+        """True when the text exceeds the budget under ANY model tokenizer."""
+        return any(fn(text) > self.budget_tokens for fn in self._counters())
 
 
 def token_budget(max_model_len: int, gen_headroom: int, margin: int) -> int:
@@ -560,6 +660,103 @@ def token_budget(max_model_len: int, gen_headroom: int, margin: int) -> int:
 # Per-source staging (wraps CS._stream_stage; per-filter reject counters +
 # fingerprint-gated resume + fail-loud on kept==0 come for free).
 # ---------------------------------------------------------------------------
+
+
+@functools.cache
+def _resolve_dataset_revision(dataset_id: str) -> str:
+    """Pin the upstream HF dataset revision ONCE per (process, dataset).
+
+    The sha enters BOTH the resume fingerprint (a revision bump between crash
+    and resume ⇒ fingerprint mismatch ⇒ restage — never a silent stale reuse
+    and never a misaligned ``skip_scanned`` fast-forward) AND the
+    ``_hf_stream`` call (a resumed stream reads the SAME bytes the checkpoint
+    scanned). Fail loud — no fallback to un-pinned 'main' (g1 M2(a)).
+    """
+    from huggingface_hub import HfApi
+
+    info = hub.retry_transient(
+        lambda: HfApi().dataset_info(dataset_id), what=f"dataset_info:{dataset_id}"
+    )
+    sha = getattr(info, "sha", None)
+    if not isinstance(sha, str) or not sha:
+        raise RuntimeError(f"could not resolve dataset revision for {dataset_id!r}")
+    return sha
+
+
+def _stage_fingerprint(
+    spec: SourceSpec,
+    *,
+    dataset_id: str,
+    config: str | None,
+    revision: str,
+    fallback: bool,
+    keep_cap: int,
+    token_filter: TokenLengthFilter | None,
+    filter_language: bool,
+    stream_cap: int | None,
+) -> str:
+    """ONE fingerprint builder for primary AND fallback staging.
+
+    Carries every output-affecting key (g1 M2 + codex resume-regime-unbound):
+    dataset id + pinned REVISION, config/split/data_dir, filters version,
+    token budget + the tokenizer-id SET (the dual-tokenizer filter changes
+    which rows survive), language filter, KEEP_CAP (a probe-time cap raise
+    must restage, never no-op via complete-pool resume), stream_cap, and the
+    fallback flag. The fallback path uses the IDENTICAL key set by
+    construction (M2(c) fixed a fallback fingerprint that dropped the recipe
+    keys).
+    """
+    return CS._fingerprint(
+        ds=dataset_id,
+        revision=revision,
+        config=config,
+        split=spec.split,
+        data_dir=spec.data_dir,
+        filters=KEEP_FILTERS_VERSION,
+        token_budget=(token_filter.budget_tokens if token_filter else None),
+        tokenizers=(list(token_filter.tokenizer_ids) if token_filter else None),
+        language=("english" if (filter_language and spec.filter_language) else None),
+        keep_cap=keep_cap,
+        stream_cap=stream_cap,
+        fallback=fallback,
+    )
+
+
+def _seed_seen_from_partial(out_path: Path, fingerprint: str, seen: set[str]) -> int:
+    """Re-seed the within-source ``seen`` dedup set from a matching partial
+    checkpoint (g1 m1): ``_stream_stage``'s partial resume fast-forwards
+    ``skip_scanned`` rows WITHOUT re-running keep_fn, so without this seed a
+    post-resume duplicate of a pre-crash kept row is re-admitted and consumes
+    a keep-cap slot. Returns the number of seeded keys."""
+    partial = out_path.with_name(out_path.name + ".partial.jsonl")
+    pmeta = out_path.with_name(out_path.name + ".partial.meta.json")
+    n = 0
+    if partial.exists() and pmeta.exists():
+        meta = json.loads(pmeta.read_text())
+        if meta.get("fingerprint") == fingerprint:
+            for r in CS.read_jsonl(partial):
+                seen.add(CS.norm_text(r["text"]))
+                n += 1
+    return n
+
+
+def _access_error_types() -> tuple[type[BaseException], ...]:
+    """Exception classes that mean the PRIMARY dataset could not be ACCESSED
+    (gated 403 / missing repo / HF transport) — the ONLY classes the
+    gated-read fallback may catch (g1 m6: a broad ``except Exception`` was
+    silently rerouting the kept==0 fail-loud and genuine code bugs)."""
+    from datasets.exceptions import DataFilesNotFoundError, DatasetNotFoundError
+    from huggingface_hub.utils import GatedRepoError, HfHubHTTPError, RepositoryNotFoundError
+
+    # GatedRepoError/RepositoryNotFoundError subclass HfHubHTTPError; listed
+    # explicitly for greppability.
+    return (
+        GatedRepoError,
+        RepositoryNotFoundError,
+        HfHubHTTPError,
+        DatasetNotFoundError,
+        DataFilesNotFoundError,
+    )
 
 
 def _make_keep_fn(
@@ -609,6 +806,68 @@ def _make_keep_fn(
     return keep
 
 
+def _stage_one_config(
+    spec: SourceSpec,
+    out_dir: Path,
+    token_filter: TokenLengthFilter | None,
+    *,
+    config: str | None,
+    dataset_id: str,
+    fallback: bool,
+    keep_cap: int,
+    stream_cap: int | None,
+    filter_language: bool,
+    seen_committed: set[str],
+) -> tuple[list[dict], dict]:
+    """Stage ONE (source, config, dataset) attempt through ``CS._stream_stage``.
+
+    Resolves + pins the dataset revision (threaded into BOTH the fingerprint
+    and the stream), builds the shared fingerprint, and seeds the
+    within-source dedup set from COMPLETED configs' pools plus any matching
+    partial checkpoint — never from a failed prior attempt's in-memory state
+    (each attempt copies ``seen_committed``; g1 m1 fallback sibling).
+    """
+    revision = _resolve_dataset_revision(dataset_id)
+    fp = _stage_fingerprint(
+        spec,
+        dataset_id=dataset_id,
+        config=config,
+        revision=revision,
+        fallback=fallback,
+        keep_cap=keep_cap,
+        token_filter=token_filter,
+        filter_language=filter_language,
+        stream_cap=stream_cap,
+    )
+    suffix = "__fb" if fallback else ""
+    out_path = out_dir / "staged" / f"{spec.source_tag}__{config or 'default'}{suffix}.jsonl"
+    seen = set(seen_committed)
+    n_seeded = _seed_seen_from_partial(out_path, fp, seen)
+    if n_seeded:
+        logger.info(
+            "[stage] %s:%s: seeded %d dedup keys from partial checkpoint",
+            spec.source_tag,
+            config or "default",
+            n_seeded,
+        )
+    keep = _make_keep_fn(spec, config, dataset_id, token_filter, filter_language, seen)
+
+    def row_iter(cfg: str | None = config, dsid: str = dataset_id, rev: str = revision):
+        kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
+        return CS._hf_stream(dsid, cfg, spec.split, revision=rev, **kw)
+
+    label = f"{spec.source_tag}:{config or 'default'}" + (":fallback" if fallback else "")
+    return CS._stream_stage(
+        out_path=out_path,
+        fingerprint=fp,
+        row_iter_factory=row_iter,
+        keep_fn=keep,
+        keep_cap=keep_cap,
+        stream_cap=stream_cap,
+        log_label=label,
+    )
+
+
 def stage_source(
     spec: SourceSpec,
     out_dir: Path,
@@ -616,69 +875,258 @@ def stage_source(
     *,
     stream_cap: int | None,
     filter_language: bool,
+    seed: int,
 ) -> tuple[list[dict], dict[str, dict]]:
     """Stream every (config) of a source, filter+within-source-dedup, return
-    (kept_rows, {config: counters}). Gated-read fallback wired per spec."""
-    dataset_id = spec.dataset_id
+    (kept_rows, {config: counters}).
+
+    - Family-12 crossed sources (``cross_query_bank``) route to
+      ``_stage_crossed_source``.
+    - The keep-cap is CUMULATIVE across configs (plan §4 item 3: "keep-cap up
+      to N across all configs"; g1 m3): later configs get the REMAINING cap.
+    - The gated-read fallback catches ACCESS-class errors only (g1 m6); the
+      kept==0 fail-loud and genuine code bugs propagate. Once a config falls
+      back, later configs of the same source read the fallback dataset too.
+    """
+    if spec.cross_query_bank is not None:
+        return _stage_crossed_source(spec, out_dir, token_filter, stream_cap=stream_cap, seed=seed)
     all_rows: list[dict] = []
     counters: dict[str, dict] = {}
-    seen: set[str] = set()  # within-source normalized-text dedup, across configs
+    seen_committed: set[str] = set()  # dedup keys from COMPLETED configs' kept rows
+    use_fallback = False
     for config in spec.configs:
-        keep = _make_keep_fn(spec, config, dataset_id, token_filter, filter_language, seen)
-        label = f"{spec.source_tag}:{config or 'default'}"
-        fp = CS._fingerprint(
-            ds=dataset_id,
-            config=config,
-            split=spec.split,
-            data_dir=spec.data_dir,
-            filters="issue2502.keep.v1",
-            token_budget=(token_filter.budget_tokens if token_filter else None),
-            language=("english" if (filter_language and spec.filter_language) else None),
-            stream_cap=stream_cap,
-        )
-        out_path = out_dir / "staged" / f"{spec.source_tag}__{config or 'default'}.jsonl"
-
-        def row_iter(cfg: str | None = config, dsid: str = dataset_id):
-            kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
-            return CS._hf_stream(dsid, cfg, spec.split, **kw)
-
-        try:
-            rows, ctr = CS._stream_stage(
-                out_path=out_path,
-                fingerprint=fp,
-                row_iter_factory=row_iter,
-                keep_fn=keep,
-                keep_cap=spec.pre_dedup_cap,
+        remaining_cap = spec.pre_dedup_cap - len(all_rows)
+        if remaining_cap <= 0:
+            counters[config or "default"] = {"skipped_keep_cap_exhausted": 1}
+            continue
+        rows: list[dict] = []
+        ctr: dict = {}
+        if not use_fallback:
+            try:
+                rows, ctr = _stage_one_config(
+                    spec,
+                    out_dir,
+                    token_filter,
+                    config=config,
+                    dataset_id=spec.dataset_id,
+                    fallback=False,
+                    keep_cap=remaining_cap,
+                    stream_cap=stream_cap,
+                    filter_language=filter_language,
+                    seen_committed=seen_committed,
+                )
+            except _access_error_types() as exc:
+                if spec.fallback_dataset_id is None:
+                    raise
+                logger.warning(
+                    "[stage] %s:%s: primary access failed (%s); falling back to %s",
+                    spec.source_tag,
+                    config or "default",
+                    repr(exc)[:300],
+                    spec.fallback_dataset_id,
+                )
+                use_fallback = True
+        if use_fallback:
+            rows, ctr = _stage_one_config(
+                spec,
+                out_dir,
+                token_filter,
+                config=config,
+                dataset_id=spec.fallback_dataset_id,
+                fallback=True,
+                keep_cap=remaining_cap,
                 stream_cap=stream_cap,
-                log_label=label,
+                filter_language=filter_language,
+                seen_committed=seen_committed,
             )
-        except Exception as exc:  # noqa: BLE001 - gated-read fallback, fail loud otherwise
-            if spec.fallback_dataset_id is None:
-                raise
-            logger.warning(
-                "[stage] %s: primary read failed (%s); trying fallback %s",
-                label,
-                type(exc).__name__,
-                spec.fallback_dataset_id,
-            )
-            dataset_id = spec.fallback_dataset_id
-            keep = _make_keep_fn(spec, config, dataset_id, token_filter, filter_language, seen)
-            rows, ctr = CS._stream_stage(
-                out_path=out_dir / "staged" / f"{spec.source_tag}__{config or 'default'}__fb.jsonl",
-                fingerprint=CS._fingerprint(
-                    ds=dataset_id, config=config, fallback=True, stream_cap=stream_cap
-                ),
-                row_iter_factory=lambda cfg=config, dsid=dataset_id: CS._hf_stream(
-                    dsid, cfg, spec.split
-                ),
-                keep_fn=keep,
-                keep_cap=spec.pre_dedup_cap,
-                stream_cap=stream_cap,
-                log_label=f"{label}:fallback",
-            )
+        seen_committed.update(CS.norm_text(r["text"]) for r in rows)
         counters[config or "default"] = ctr
         all_rows.extend(rows)
     return all_rows, counters
+
+
+# ---------------------------------------------------------------------------
+# Family-12 crossing (plan §4 item 12): persona/system-prompt prefixes x the
+# fixed in-repo query bank (the #1739 ``build_evil_cross`` pattern).
+# ---------------------------------------------------------------------------
+
+
+def _cross_seed(seed: int, source_tag: str) -> int:
+    """Deterministic, machine-stable per-source crossing seed."""
+    return int(hashlib.sha256(f"{seed}:{source_tag}".encode()).hexdigest()[:8], 16)
+
+
+def _make_prefix_keep_fn(
+    spec: SourceSpec, seen: set[str]
+) -> Callable[[dict], tuple[dict | None, str | None]]:
+    """keep_fn for family-12 PREFIX staging: scalar text_fields extraction +
+    usable_text + within-source dedup ONLY — the token filter runs later on
+    the COMPOSED (prefix + query) text, the actual context."""
+
+    def keep(raw: dict) -> tuple[dict | None, str | None]:
+        text = None
+        for f in spec.text_fields:
+            v = raw.get(f)
+            if isinstance(v, str) and v.strip():
+                text = v
+                break
+        if text is None:
+            return None, "no_text_field"
+        reject = CS.usable_text(text)
+        if reject:
+            return None, reject
+        key = CS.norm_text(text)
+        if key in seen:
+            return None, "dup_text_within_source"
+        seen.add(key)
+        return {"text": text}, None
+
+    return keep
+
+
+def _stage_crossed_source(
+    spec: SourceSpec,
+    out_dir: Path,
+    token_filter: TokenLengthFilter | None,
+    *,
+    stream_cap: int | None,
+    seed: int,
+) -> tuple[list[dict], dict[str, dict]]:
+    """Family-12 construction (plan §4 item 12): stage persona/system-prompt
+    PREFIXES from the source, then CROSS them with the fixed in-repo query
+    bank, composing each context as ``<prefix>\\n\\n<query>``.
+
+    Prefix staging rides ``CS._stream_stage`` (revision-pinned fingerprint
+    resume + per-filter counters + kept>0 fail-loud). The crossing itself is
+    a PURE deterministic function of (staged prefixes, committed bank, seed,
+    cap) — recomputed each run, no extra checkpoint needed.
+    """
+    from explore_persona_space.artifacts import banks
+
+    if spec.cross_query_bank is None or len(spec.configs) != 1:
+        raise ValueError(f"{spec.source_tag}: crossed sources take a bank + exactly one config")
+    config = spec.configs[0]
+    revision = _resolve_dataset_revision(spec.dataset_id)
+    fp = CS._fingerprint(
+        ds=spec.dataset_id,
+        revision=revision,
+        config=config,
+        split=spec.split,
+        data_dir=spec.data_dir,
+        filters=PREFIX_FILTERS_VERSION,
+        keep_cap=spec.pre_dedup_cap,
+        stream_cap=stream_cap,
+    )
+    out_path = out_dir / "staged" / f"{spec.source_tag}__prefixes.jsonl"
+    seen_prefix: set[str] = set()
+    _seed_seen_from_partial(out_path, fp, seen_prefix)
+
+    def row_iter(cfg: str | None = config, dsid: str = spec.dataset_id, rev: str = revision):
+        kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
+        return CS._hf_stream(dsid, cfg, spec.split, revision=rev, **kw)
+
+    prefix_rows, prefix_ctr = CS._stream_stage(
+        out_path=out_path,
+        fingerprint=fp,
+        row_iter_factory=row_iter,
+        keep_fn=_make_prefix_keep_fn(spec, seen_prefix),
+        keep_cap=spec.pre_dedup_cap,
+        stream_cap=stream_cap,
+        log_label=f"{spec.source_tag}:prefixes",
+    )
+    queries = banks.load_bank(spec.cross_query_bank)
+    rows, cross_ctr = cross_with_bank(
+        [r["text"] for r in prefix_rows],
+        queries,
+        spec,
+        cap=spec.pre_dedup_cap,
+        seed=_cross_seed(seed, spec.source_tag),
+        token_filter=token_filter,
+    )
+    cross_ctr["bank"] = spec.cross_query_bank
+    cross_ctr["bank_sha"] = banks.bank_sha(spec.cross_query_bank)
+    return rows, {"prefixes": prefix_ctr, "cross": cross_ctr}
+
+
+def cross_with_bank(
+    prefixes: list[str],
+    queries: tuple[str, ...] | list[str],
+    spec: SourceSpec,
+    *,
+    cap: int,
+    seed: int,
+    token_filter: TokenLengthFilter | None,
+) -> tuple[list[dict], dict]:
+    """Seeded (prefix x query) cross, composed context = prefix + CROSS_JOIN
+    + query (the #1739 ``build_evil_cross`` pattern, adapted to the corpus
+    row schema).
+
+    Deterministic given (prefixes, queries, seed, cap): prefixes sort by
+    content sha (machine-stable, decoupled from stream order); pairs walk a
+    seeded permutation of the full n_p x n_q grid until ``cap`` composed rows
+    survive the filters (usable_text + dual-tokenizer budget + within-source
+    dedup). Fail loud on 0 kept rows.
+    """
+    if not prefixes or not queries:
+        raise RuntimeError(
+            f"{spec.source_tag}: empty prefixes ({len(prefixes)}) or bank ({len(queries)})"
+        )
+    prefixes = sorted(prefixes, key=_context_sha)
+    n_p, n_q = len(prefixes), len(queries)
+    n_pairs = n_p * n_q
+    rng = np.random.default_rng(seed)
+    order = rng.permutation(n_pairs)
+    kept: list[dict] = []
+    counters: dict = {"scanned": 0, "n_prefixes": n_p, "n_queries": n_q, "n_pairs": n_pairs}
+    seen: set[str] = set()
+    for flat in order:
+        if len(kept) >= cap:
+            break
+        counters["scanned"] += 1
+        pi, qi = divmod(int(flat), n_q)
+        text = f"{prefixes[pi]}{CROSS_JOIN}{queries[qi]}"
+        reject = CS.usable_text(text)
+        if reject:
+            counters[reject] = counters.get(reject, 0) + 1
+            continue
+        if token_filter is not None and token_filter.too_long(text):
+            counters["too_long_tokens"] = counters.get("too_long_tokens", 0) + 1
+            continue
+        key = CS.norm_text(text)
+        if key in seen:
+            counters["dup_text_within_source"] = counters.get("dup_text_within_source", 0) + 1
+            continue
+        seen.add(key)
+        kept.append(
+            {
+                "text": text,
+                "source_tag": spec.source_tag,
+                "dataset_id": spec.dataset_id,
+                "config": f"{spec.configs[0] or 'default'} x bank:{spec.cross_query_bank}",
+                "regime_class": spec.regime_class,
+                "realism_tier": spec.realism_tier,
+            }
+        )
+    if not kept:
+        rejects = {
+            k: v
+            for k, v in counters.items()
+            if k not in ("scanned", "n_prefixes", "n_queries", "n_pairs")
+        }
+        raise RuntimeError(
+            f"[cross] {spec.source_tag}: kept 0 composed rows after scanning "
+            f"{counters['scanned']} pairs (rejects={rejects}) — fail loud"
+        )
+    counters["n_kept"] = len(kept)
+    logger.info(
+        "[cross] %s: %d prefixes x %d bank queries -> kept %d composed contexts (scanned %d)",
+        spec.source_tag,
+        n_p,
+        n_q,
+        len(kept),
+        counters["scanned"],
+    )
+    return kept, counters
 
 
 # ---------------------------------------------------------------------------
@@ -775,7 +1223,13 @@ def dedup_contexts(rows: list[dict]) -> tuple[list[dict], dict]:
 def allocate_budget(yields: dict[str, int], caps: dict[str, int], budget: int) -> dict[str, int]:
     """Allocate `budget` across sources proportional to pre-dedup caps, capped
     by realized post-dedup yields; water-fill slack from yield-limited sources
-    to those with headroom. sum(alloc) == min(budget, sum(yields))."""
+    to those with headroom.
+
+    EXACT: sum(alloc) == min(budget, sum(yields)) — asserted. Grants FLOOR the
+    proportional want (never round: independent `round()` grants overshot the
+    budget by up to ~n_active/2 rows, g1 m2); the sub-1-row tail is handed out
+    1-by-1 in deterministic weight-descending order.
+    """
     total = sum(yields.values())
     if total <= budget:
         return dict(yields)
@@ -789,11 +1243,13 @@ def allocate_budget(yields: dict[str, int], caps: dict[str, int], budget: int) -
         grants: dict[str, int] = {}
         for t in active:
             want = remaining * caps.get(t, yields[t]) / wsum
-            grants[t] = min(int(round(want)), yields[t] - alloc[t])
+            # FLOOR, never round: sum(floors) <= remaining by construction.
+            grants[t] = min(int(want), yields[t] - alloc[t])
         granted = sum(g for g in grants.values() if g > 0)
         if granted <= 0:
-            # remaining < number of active sources: hand out 1 each, weight desc
-            for t in sorted(active, key=lambda x: -caps.get(x, yields[x])):
+            # Every floor is 0 => remaining < n_active: hand out 1 each in
+            # deterministic weight-descending (then name) order until spent.
+            for t in sorted(active, key=lambda x: (-caps.get(x, yields[x]), x)):
                 if remaining <= 0:
                     break
                 if alloc[t] < yields[t]:
@@ -805,7 +1261,29 @@ def allocate_budget(yields: dict[str, int], caps: dict[str, int], budget: int) -
                 alloc[t] += g
         remaining = budget - sum(alloc.values())
         active = {t for t in active if alloc[t] < yields[t]}
+    got, want_total = sum(alloc.values()), min(budget, total)
+    assert got == want_total, f"allocate_budget inexact: {got} != {want_total}"
     return alloc
+
+
+def allocate_with_topup(
+    yields: dict[str, int],
+    caps: dict[str, int],
+    topup_tags: set[str],
+    budget: int,
+) -> dict[str, int]:
+    """Plan §4 item 12 top-up lever: non-topup sources allocate FIRST (each
+    takes its realized yield when the non-topup total fits the budget, else
+    the cap-proportional trim); topup DOMAIN FILLERS then absorb exactly the
+    REMAINING budget to 150k, cap-proportionally, bounded by their realized
+    yields. Restores the "domain fillers — remaining budget to 150k" lever
+    the fixed per-source caps had removed (g1 M1)."""
+    base_yields = {t: y for t, y in yields.items() if t not in topup_tags}
+    top_yields = {t: y for t, y in yields.items() if t in topup_tags}
+    base_alloc = allocate_budget(base_yields, caps, budget)
+    remaining = budget - sum(base_alloc.values())
+    top_alloc = allocate_budget(top_yields, caps, max(0, remaining))
+    return {**base_alloc, **top_alloc}
 
 
 # ---------------------------------------------------------------------------
@@ -889,6 +1367,8 @@ def build_report(
         "post_dedup_per_source": post_dedup_per_source,
         "final_per_source": dict(final_per_source),
         "budget_allocation": allocation,
+        "budget_allocation_total": sum(allocation.values()),
+        "budget_shortfall": max(0, budget - sum(allocation.values())),
         "split_counts": dict(split_counts),
         "regime_class_counts": dict(regime_counts),
         "realism_tier_counts": {str(k): v for k, v in tier_counts.items()},
@@ -938,8 +1418,12 @@ def run_pipeline(args: argparse.Namespace) -> dict:
     token_filter = None
     if not args.no_token_filter:
         budget_tokens = token_budget(args.max_model_len, args.gen_headroom, args.token_margin)
-        token_filter = TokenLengthFilter(args.tokenizer, budget_tokens)
-        logger.info("[corpus] token filter: %s budget=%d tokens", args.tokenizer, budget_tokens)
+        token_filter = TokenLengthFilter(tuple(args.tokenizers), budget_tokens)
+        logger.info(
+            "[corpus] token filter (fit-BOTH-models): %s budget=%d tokens",
+            ",".join(token_filter.tokenizer_ids),
+            budget_tokens,
+        )
 
     # 1. Stage every source (streaming, checkpointed, fail-loud on kept==0).
     all_rows: list[dict] = []
@@ -952,6 +1436,7 @@ def run_pipeline(args: argparse.Namespace) -> dict:
             token_filter,
             stream_cap=args.stream_cap,
             filter_language=not args.no_language_filter,
+            seed=args.seed,
         )
         for r in rows:
             pre_dedup_per_source[r["source_tag"]] += 1
@@ -979,12 +1464,36 @@ def run_pipeline(args: argparse.Namespace) -> dict:
         dedup_report["n_confirmed_dropped"],
     )
 
-    # 3. Re-scale budget against realized per-source post-dedup yields.
-    caps = {}
+    # 3. Re-scale budget against realized per-source post-dedup yields:
+    # non-topup sources first, then the family-12 domain-filler top-up lever
+    # ("remaining budget to 150k", plan §4 item 12). A moderation-split
+    # family's weight is SPLIT across its substrata so the family carries its
+    # plan budget ONCE, not twice (g1 m3).
+    caps: dict[str, int] = {}
+    topup_tags: set[str] = set()
     for spec in sources:
-        for tag in _regime_tags(spec):
-            caps[tag] = spec.pre_dedup_cap
-    allocation = allocate_budget(dict(post_dedup_per_source), caps, args.budget)
+        tags = _regime_tags(spec)
+        for tag in tags:
+            caps[tag] = max(1, spec.pre_dedup_cap // len(tags))
+            if spec.topup:
+                topup_tags.add(tag)
+    allocation = allocate_with_topup(dict(post_dedup_per_source), caps, topup_tags, args.budget)
+    total_alloc = sum(allocation.values())
+    shortfall = max(0, args.budget - total_alloc)
+    # Budget-reachability gate: the FULL production build (all sources, no
+    # stream cap) must reach the 150k target — a shortfall past the top-up
+    # lever means realized yields collapsed and needs a re-plan, never a
+    # silently short corpus. Demoted to a log line on probe / subset /
+    # stream-capped (smoke) runs (gate-calibration parity, gotchas.md).
+    full_production_shape = args.sources is None and args.stream_cap is None
+    if shortfall > 0:
+        msg = (
+            f"[corpus] budget shortfall: allocation {total_alloc} < budget {args.budget} "
+            f"(shortfall {shortfall}) even after the domain-filler top-up lever"
+        )
+        if full_production_shape and not args.probe:
+            raise RuntimeError(msg + " — realized yields too low; surface for re-plan")
+        logger.info("%s (non-production shape: reported, not fatal)", msg)
 
     # 4. Every realized source_tag must resolve to a committed regime class.
     unknown = sorted({r["source_tag"] for r in deduped} - set(regime_table))
@@ -1080,6 +1589,132 @@ def _write_json(path: Path, obj: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Synthetic selfcheck (no network, no tokenizer download)
+# ---------------------------------------------------------------------------
+
+
+def run_selfcheck() -> None:
+    """Synthetic-fixture self-check of the PURE data-plane functions — no
+    network, no tokenizer download (fake count fns injected at the
+    ``TokenLengthFilter._count_fns`` seam). Raises on any failure."""
+    # 1. allocate_budget exactness (g1 m2 probe: independent round() grants
+    # overshot budget=5 to 6 on {10,10,10}).
+    alloc = allocate_budget({"a": 10, "b": 10, "c": 10}, {"a": 10, "b": 10, "c": 10}, 5)
+    assert sum(alloc.values()) == 5, alloc
+    for yields, budget in (
+        ({"a": 7, "b": 3}, 100),  # under budget -> yields verbatim
+        ({"a": 1000, "b": 1, "c": 500}, 900),
+        ({f"s{i}": 13 for i in range(35)}, 150),
+    ):
+        caps = {t: max(1, y) for t, y in yields.items()}
+        a = allocate_budget(dict(yields), caps, budget)
+        assert sum(a.values()) == min(budget, sum(yields.values())), (a, budget)
+        assert all(0 <= a[t] <= yields[t] for t in yields), a
+
+    # 2. topup lever: fillers absorb exactly the remaining budget (plan §4
+    # item 12 "remaining budget to 150k"); a base overshoot leaves them 0.
+    yields = {"base1": 50, "base2": 30, "fill1": 100, "fill2": 100}
+    caps = {"base1": 60, "base2": 40, "fill1": 100, "fill2": 50}
+    alloc = allocate_with_topup(yields, caps, {"fill1", "fill2"}, 150)
+    assert alloc["base1"] == 50 and alloc["base2"] == 30, alloc
+    assert alloc["fill1"] + alloc["fill2"] == 70 and sum(alloc.values()) == 150, alloc
+    alloc2 = allocate_with_topup(yields, caps, {"fill1", "fill2"}, 60)
+    assert sum(alloc2.values()) == 60 and alloc2["fill1"] == alloc2["fill2"] == 0, alloc2
+
+    # 3. dual-tokenizer JOINT filter: a row passing tokenizer A but exceeding
+    # the budget under tokenizer B is REJECTED (fit-BOTH-models semantics).
+    filt = TokenLengthFilter(("fake/a", "fake/b"), budget_tokens=10)
+    filt._count_fns = [lambda t: len(t.split()), lambda t: 3 * len(t.split())]
+    assert not filt.too_long("one two three")  # 3 and 9 both <= 10
+    assert filt.too_long("a b c d")  # 4 <= 10 under A but 12 > 10 under B
+
+    # 4. moderation flag: toxic flags; `redacted` alone must NOT (g1 m5).
+    assert _is_moderation_flagged({"toxic": True})
+    assert not _is_moderation_flagged({"redacted": True})
+    assert _is_moderation_flagged({"openai_moderation": [{"flagged": True}]})
+    assert not _is_moderation_flagged({"openai_moderation": [{"flagged": False}]})
+
+    # 5. family-12 crossing: composition shape, dedup, cap, determinism,
+    # composed-text token filter, kept==0 fail-loud.
+    spec = SourceSpec(
+        source_tag="selfcheck_prefix",
+        dataset_id="selfcheck/prefixes",
+        regime_class=REGIME_NEAR,
+        realism_tier=3,
+        pre_dedup_cap=8,
+        cross_query_bank="selfcheck_bank",
+    )
+    prefixes = [f"prefix persona number {i} with sufficient length" for i in range(6)]
+    queries = [f"synthetic query {j} of adequate length?" for j in range(5)]
+    rows1, ctr1 = cross_with_bank(list(prefixes), queries, spec, cap=8, seed=7, token_filter=None)
+    rows2, _ = cross_with_bank(list(prefixes), queries, spec, cap=8, seed=7, token_filter=None)
+    assert [r["text"] for r in rows1] == [r["text"] for r in rows2], "crossing not deterministic"
+    assert len(rows1) == 8 and ctr1["n_kept"] == 8, ctr1
+    assert all(CROSS_JOIN in r["text"] for r in rows1)
+    assert len({r["text"] for r in rows1}) == len(rows1), "crossed rows not unique"
+    filt2 = TokenLengthFilter(("fake/a",), budget_tokens=3)
+    filt2._count_fns = [lambda t: len(t.split())]
+    try:
+        cross_with_bank(list(prefixes), queries, spec, cap=8, seed=7, token_filter=filt2)
+        raise AssertionError("expected fail-loud on 0 kept crossed rows")
+    except RuntimeError as exc:
+        assert "kept 0 composed rows" in str(exc)
+
+    # 6. fingerprint regime keys: every output-affecting key flips the fp,
+    # and primary/fallback share ONE builder (g1 M2 / resume-regime-unbound).
+    base_spec = SOURCES[0]
+    filt3 = TokenLengthFilter(tuple(DEFAULT_TOKENIZERS), budget_tokens=100)
+    kw: dict = dict(
+        dataset_id="d",
+        config=None,
+        revision="r1",
+        fallback=False,
+        keep_cap=10,
+        token_filter=filt3,
+        filter_language=True,
+        stream_cap=None,
+    )
+    fp0 = _stage_fingerprint(base_spec, **kw)
+    for delta in (
+        {"revision": "r2"},
+        {"keep_cap": 11},
+        {"fallback": True},
+        {"token_filter": TokenLengthFilter(("only/one",), budget_tokens=100)},
+        {"stream_cap": 5},
+    ):
+        assert _stage_fingerprint(base_spec, **{**kw, **delta}) != fp0, delta
+
+    # 7. split + disjointness on synthetic rows (70/15/15 at n=100).
+    srows = [
+        {
+            "text": f"synthetic split row {i} with plenty of distinct words {i * 7}",
+            "source_tag": "s1",
+        }
+        for i in range(100)
+    ]
+    assign_splits(srows)
+    scounts: dict[str, int] = defaultdict(int)
+    for r in srows:
+        scounts[r["split"]] += 1
+    assert dict(scounts) == {"train": 70, "val": 15, "test": 15}, dict(scounts)
+    assert_split_disjoint(srows)
+
+    # 8. dedup: exact dup dropped (candidate + confirm), distinct kept.
+    d_rows = [
+        {"text": "the same exact duplicated context text for the dedup check", "source_tag": "s1"},
+        {"text": "the same exact duplicated context text for the dedup check", "source_tag": "s2"},
+        {"text": "a completely different context that must survive dedup here", "source_tag": "s1"},
+    ]
+    kept, rep = dedup_contexts(d_rows)
+    assert rep["n_kept"] == 2 and rep["n_confirmed_dropped"] == 1, rep
+
+    print(
+        "issue2502_corpus: selfcheck OK (allocation, topup, dual-tokenizer, "
+        "moderation-flag, crossing, fingerprint-keys, split, dedup)"
+    )
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -1106,9 +1741,12 @@ def build_argparser() -> argparse.ArgumentParser:
         help="Subset of source_tag(s) to build (default: all 12 families).",
     )
     p.add_argument(
-        "--tokenizer",
-        default="Qwen/Qwen2.5-7B-Instruct",
-        help="Tokenizer for the MAX-context-token filter.",
+        "--tokenizers",
+        nargs="+",
+        default=list(DEFAULT_TOKENIZERS),
+        help="ALL model tokenizers for the MAX-context-token filter; a kept "
+        "row must fit the budget under EVERY one (cross-model common-corpus "
+        "contract — default: both Model A and Model B).",
     )
     p.add_argument("--max-model-len", type=int, default=MAX_MODEL_LEN)
     p.add_argument("--gen-headroom", type=int, default=GEN_HEADROOM_TOKENS)
@@ -1145,6 +1783,12 @@ def build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="Argparse-attribute + helper-call-bind check, then exit (no work).",
     )
+    p.add_argument(
+        "--selfcheck",
+        action="store_true",
+        help="Synthetic-fixture self-check of the pure data-plane functions "
+        "(no network, no tokenizer download), then exit.",
+    )
     return p
 
 
@@ -1157,6 +1801,9 @@ def main(argv: list[str] | None = None) -> int:
 
         assert_args_attributes_defined(__file__)
         print("issue2502_corpus: import-check OK")
+        return 0
+    if args.selfcheck:
+        run_selfcheck()
         return 0
     run_pipeline(args)
     return 0
