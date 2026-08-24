@@ -1,0 +1,1974 @@
+{
+ "issue": 2479,
+ "regex": "[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]",
+ "per_character": {
+  "helios": {
+   "capture_substrate": {
+    "intruded": 90,
+    "total": 1219
+   },
+   "judged_axis_pool": {
+    "intruded": 11,
+    "total": 188,
+    "axis_score_all_items": 71.46914893617021,
+    "axis_score_excl_intruded": 71.4180790960452,
+    "mean_score_intruded_items": 72.29090909090908
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s2503",
+     "story_id": "s2503",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2434",
+     "story_id": "s2434",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s992",
+     "story_id": "s992",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1370",
+     "story_id": "s1370",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3081",
+     "story_id": "s3081",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3220",
+     "story_id": "s3220",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1542",
+     "story_id": "s1542",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3240",
+     "story_id": "s3240",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3035",
+     "story_id": "s3035",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4997",
+     "story_id": "s4997",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3520",
+     "story_id": "s3520",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1534",
+     "story_id": "s1534",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2952",
+     "story_id": "s2952",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4240",
+     "story_id": "s4240",
+     "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "iris": {
+   "capture_substrate": {
+    "intruded": 100,
+    "total": 1447
+   },
+   "judged_axis_pool": {
+    "intruded": 11,
+    "total": 224,
+    "axis_score_all_items": 69.06130952380953,
+    "axis_score_excl_intruded": 69.17715179968701,
+    "mean_score_intruded_items": 66.81818181818181
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s4761",
+     "story_id": "s4761",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2503",
+     "story_id": "s2503",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3081",
+     "story_id": "s3081",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2438",
+     "story_id": "s2438",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s993",
+     "story_id": "s993",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4875",
+     "story_id": "s4875",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s789",
+     "story_id": "s789",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4655",
+     "story_id": "s4655",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2290",
+     "story_id": "s2290",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1553",
+     "story_id": "s1553",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1022",
+     "story_id": "s1022",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s45",
+     "story_id": "s45",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3757",
+     "story_id": "s3757",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s478",
+     "story_id": "s478",
+     "hf_path": "issue1345_framing/char_2479_iris_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "cobalt": {
+   "capture_substrate": {
+    "intruded": 110,
+    "total": 1384
+   },
+   "judged_axis_pool": {
+    "intruded": 12,
+    "total": 214,
+    "axis_score_all_items": 67.60093457943925,
+    "axis_score_excl_intruded": 67.5089108910891,
+    "mean_score_intruded_items": 69.15
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s605",
+     "story_id": "s605",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4504",
+     "story_id": "s4504",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s99",
+     "story_id": "s99",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s100",
+     "story_id": "s100",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s149",
+     "story_id": "s149",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2702",
+     "story_id": "s2702",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s279",
+     "story_id": "s279",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2614",
+     "story_id": "s2614",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1406",
+     "story_id": "s1406",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1064",
+     "story_id": "s1064",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2834",
+     "story_id": "s2834",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3161",
+     "story_id": "s3161",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "vera": {
+   "capture_substrate": {
+    "intruded": 94,
+    "total": 1432
+   },
+   "judged_axis_pool": {
+    "intruded": 9,
+    "total": 221,
+    "axis_score_all_items": 72.33348416289593,
+    "axis_score_excl_intruded": 72.65801886792453,
+    "mean_score_intruded_items": 64.6888888888889
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s2324",
+     "story_id": "s2324",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1735",
+     "story_id": "s1735",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2438",
+     "story_id": "s2438",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4868",
+     "story_id": "s4868",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s291",
+     "story_id": "s291",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s789",
+     "story_id": "s789",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2386",
+     "story_id": "s2386",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1460",
+     "story_id": "s1460",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s685",
+     "story_id": "s685",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4129",
+     "story_id": "s4129",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2911",
+     "story_id": "s2911",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1902",
+     "story_id": "s1902",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3520",
+     "story_id": "s3520",
+     "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "wren": {
+   "capture_substrate": {
+    "intruded": 96,
+    "total": 1423
+   },
+   "judged_axis_pool": {
+    "intruded": 10,
+    "total": 217,
+    "axis_score_all_items": 60.69012345679012,
+    "axis_score_excl_intruded": 60.58576051779934,
+    "mean_score_intruded_items": 62.839999999999996
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s3456",
+     "story_id": "s3456",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1612",
+     "story_id": "s1612",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4321",
+     "story_id": "s4321",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3839",
+     "story_id": "s3839",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s454",
+     "story_id": "s454",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3180",
+     "story_id": "s3180",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3401",
+     "story_id": "s3401",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4742",
+     "story_id": "s4742",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4422",
+     "story_id": "s4422",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s789",
+     "story_id": "s789",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2863",
+     "story_id": "s2863",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1022",
+     "story_id": "s1022",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2129",
+     "story_id": "s2129",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1603",
+     "story_id": "s1603",
+     "hf_path": "issue1345_framing/char_2479_wren_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "priya": {
+   "capture_substrate": {
+    "intruded": 80,
+    "total": 1355
+   },
+   "judged_axis_pool": {
+    "intruded": 16,
+    "total": 213,
+    "axis_score_all_items": 62.189201877934266,
+    "axis_score_excl_intruded": 61.56700507614214,
+    "mean_score_intruded_items": 69.85
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s2991",
+     "story_id": "s2991",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4598",
+     "story_id": "s4598",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1404",
+     "story_id": "s1404",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2822",
+     "story_id": "s2822",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4409",
+     "story_id": "s4409",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3081",
+     "story_id": "s3081",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4312",
+     "story_id": "s4312",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4807",
+     "story_id": "s4807",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s789",
+     "story_id": "s789",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4576",
+     "story_id": "s4576",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3872",
+     "story_id": "s3872",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s685",
+     "story_id": "s685",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2541",
+     "story_id": "s2541",
+     "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "marcus": {
+   "capture_substrate": {
+    "intruded": 81,
+    "total": 1367
+   },
+   "judged_axis_pool": {
+    "intruded": 8,
+    "total": 206,
+    "axis_score_all_items": 62.11097560975609,
+    "axis_score_excl_intruded": 61.56827411167511,
+    "mean_score_intruded_items": 75.475
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s2501",
+     "story_id": "s2501",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3081",
+     "story_id": "s3081",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2827",
+     "story_id": "s2827",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4883",
+     "story_id": "s4883",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2438",
+     "story_id": "s2438",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s789",
+     "story_id": "s789",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2091",
+     "story_id": "s2091",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s144",
+     "story_id": "s144",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1460",
+     "story_id": "s1460",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1538",
+     "story_id": "s1538",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4092",
+     "story_id": "s4092",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1812",
+     "story_id": "s1812",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2541",
+     "story_id": "s2541",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1264",
+     "story_id": "s1264",
+     "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "elena": {
+   "capture_substrate": {
+    "intruded": 70,
+    "total": 1355
+   },
+   "judged_axis_pool": {
+    "intruded": 9,
+    "total": 204,
+    "axis_score_all_items": 50.37941176470589,
+    "axis_score_excl_intruded": 49.489230769230765,
+    "mean_score_intruded_items": 69.66666666666667
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s4705",
+     "story_id": "s4705",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2985",
+     "story_id": "s2985",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4186",
+     "story_id": "s4186",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2818",
+     "story_id": "s2818",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3267",
+     "story_id": "s3267",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s685",
+     "story_id": "s685",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3520",
+     "story_id": "s3520",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2541",
+     "story_id": "s2541",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2613",
+     "story_id": "s2613",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4240",
+     "story_id": "s4240",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3130",
+     "story_id": "s3130",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s885",
+     "story_id": "s885",
+     "hf_path": "issue1345_framing/char_2479_elena_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "dana": {
+   "capture_substrate": {
+    "intruded": 85,
+    "total": 1476
+   },
+   "judged_axis_pool": {
+    "intruded": 12,
+    "total": 229,
+    "axis_score_all_items": 47.74876273653565,
+    "axis_score_excl_intruded": 47.57726574500768,
+    "mean_score_intruded_items": 50.85
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s2503",
+     "story_id": "s2503",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s70",
+     "story_id": "s70",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s616",
+     "story_id": "s616",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3081",
+     "story_id": "s3081",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s149",
+     "story_id": "s149",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1592",
+     "story_id": "s1592",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3219",
+     "story_id": "s3219",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4875",
+     "story_id": "s4875",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4880",
+     "story_id": "s4880",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1359",
+     "story_id": "s1359",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4775",
+     "story_id": "s4775",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s405",
+     "story_id": "s405",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s685",
+     "story_id": "s685",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2541",
+     "story_id": "s2541",
+     "hf_path": "issue1345_framing/char_2479_dana_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "gus": {
+   "capture_substrate": {
+    "intruded": 91,
+    "total": 1432
+   },
+   "judged_axis_pool": {
+    "intruded": 12,
+    "total": 212,
+    "axis_score_all_items": 35.64221698113207,
+    "axis_score_excl_intruded": 34.85775,
+    "mean_score_intruded_items": 48.71666666666667
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s605",
+     "story_id": "s605",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1483",
+     "story_id": "s1483",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2324",
+     "story_id": "s2324",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3046",
+     "story_id": "s3046",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3553",
+     "story_id": "s3553",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2129",
+     "story_id": "s2129",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s685",
+     "story_id": "s685",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4623",
+     "story_id": "s4623",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2541",
+     "story_id": "s2541",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2613",
+     "story_id": "s2613",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3109",
+     "story_id": "s3109",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4240",
+     "story_id": "s4240",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s296",
+     "story_id": "s296",
+     "hf_path": "issue1345_framing/char_2479_gus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "marisol": {
+   "capture_substrate": {
+    "intruded": 57,
+    "total": 1343
+   },
+   "judged_axis_pool": {
+    "intruded": 6,
+    "total": 203,
+    "axis_score_all_items": 38.56945812807882,
+    "axis_score_excl_intruded": 38.450761421319804,
+    "mean_score_intruded_items": 42.46666666666667
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3154",
+     "story_id": "s3154",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2863",
+     "story_id": "s2863",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s478",
+     "story_id": "s478",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1167",
+     "story_id": "s1167",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4240",
+     "story_id": "s4240",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s834",
+     "story_id": "s834",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3385",
+     "story_id": "s3385",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s908",
+     "story_id": "s908",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s885",
+     "story_id": "s885",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1351",
+     "story_id": "s1351",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1896",
+     "story_id": "s1896",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1280",
+     "story_id": "s1280",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s913",
+     "story_id": "s913",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2436",
+     "story_id": "s2436",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4343",
+     "story_id": "s4343",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4494",
+     "story_id": "s4494",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4420",
+     "story_id": "s4420",
+     "hf_path": "issue1345_framing/char_2479_marisol_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "tomas": {
+   "capture_substrate": {
+    "intruded": 89,
+    "total": 1434
+   },
+   "judged_axis_pool": {
+    "intruded": 8,
+    "total": 219,
+    "axis_score_all_items": 48.95251141552511,
+    "axis_score_excl_intruded": 48.943127962085306,
+    "mean_score_intruded_items": 49.2
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s3072",
+     "story_id": "s3072",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1059",
+     "story_id": "s1059",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s71",
+     "story_id": "s71",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2515",
+     "story_id": "s2515",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3506",
+     "story_id": "s3506",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2051",
+     "story_id": "s2051",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4796",
+     "story_id": "s4796",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4306",
+     "story_id": "s4306",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4036",
+     "story_id": "s4036",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3018",
+     "story_id": "s3018",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s144",
+     "story_id": "s144",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s685",
+     "story_id": "s685",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_tomas_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "vex": {
+   "capture_substrate": {
+    "intruded": 96,
+    "total": 1452
+   },
+   "judged_axis_pool": {
+    "intruded": 18,
+    "total": 227,
+    "axis_score_all_items": 55.26106060606061,
+    "axis_score_excl_intruded": 54.583333333333336,
+    "mean_score_intruded_items": 62.86666666666666
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s605",
+     "story_id": "s605",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4705",
+     "story_id": "s4705",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1059",
+     "story_id": "s1059",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3517",
+     "story_id": "s3517",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1952",
+     "story_id": "s1952",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s860",
+     "story_id": "s860",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4613",
+     "story_id": "s4613",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1212",
+     "story_id": "s1212",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4350",
+     "story_id": "s4350",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s789",
+     "story_id": "s789",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3161",
+     "story_id": "s3161",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2188",
+     "story_id": "s2188",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3022",
+     "story_id": "s3022",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s478",
+     "story_id": "s478",
+     "hf_path": "issue1345_framing/char_2479_vex_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "barnaby": {
+   "capture_substrate": {
+    "intruded": 87,
+    "total": 1407
+   },
+   "judged_axis_pool": {
+    "intruded": 11,
+    "total": 219,
+    "axis_score_all_items": 54.58232558139535,
+    "axis_score_excl_intruded": 54.329756097560974,
+    "mean_score_intruded_items": 59.760000000000005
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s4705",
+     "story_id": "s4705",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2422",
+     "story_id": "s2422",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s610",
+     "story_id": "s610",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s574",
+     "story_id": "s574",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1392",
+     "story_id": "s1392",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s789",
+     "story_id": "s789",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s832",
+     "story_id": "s832",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3583",
+     "story_id": "s3583",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2726",
+     "story_id": "s2726",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4617",
+     "story_id": "s4617",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2932",
+     "story_id": "s2932",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2129",
+     "story_id": "s2129",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1460",
+     "story_id": "s1460",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1390",
+     "story_id": "s1390",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s434",
+     "story_id": "s434",
+     "hf_path": "issue1345_framing/char_2479_barnaby_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "zara": {
+   "capture_substrate": {
+    "intruded": 85,
+    "total": 1336
+   },
+   "judged_axis_pool": {
+    "intruded": 15,
+    "total": 201,
+    "axis_score_all_items": 29.566,
+    "axis_score_excl_intruded": 28.339459459459462,
+    "mean_score_intruded_items": 44.693333333333335
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s3548",
+     "story_id": "s3548",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2329",
+     "story_id": "s2329",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2501",
+     "story_id": "s2501",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3839",
+     "story_id": "s3839",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1631",
+     "story_id": "s1631",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3064",
+     "story_id": "s3064",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2299",
+     "story_id": "s2299",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4257",
+     "story_id": "s4257",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2438",
+     "story_id": "s2438",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3411",
+     "story_id": "s3411",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1528",
+     "story_id": "s1528",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1613",
+     "story_id": "s1613",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2825",
+     "story_id": "s2825",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2541",
+     "story_id": "s2541",
+     "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  },
+  "mort": {
+   "capture_substrate": {
+    "intruded": 98,
+    "total": 1416
+   },
+   "judged_axis_pool": {
+    "intruded": 13,
+    "total": 214,
+    "axis_score_all_items": 58.65108333333333,
+    "axis_score_excl_intruded": 58.34420677361854,
+    "mean_score_intruded_items": 63.065384615384616
+   },
+   "intruded_row_pointers": [
+    {
+     "conv_id": "s2991",
+     "story_id": "s2991",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2503",
+     "story_id": "s2503",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3517",
+     "story_id": "s3517",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4925",
+     "story_id": "s4925",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2773",
+     "story_id": "s2773",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4868",
+     "story_id": "s4868",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s377",
+     "story_id": "s377",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2702",
+     "story_id": "s2702",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3219",
+     "story_id": "s3219",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4197",
+     "story_id": "s4197",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s613",
+     "story_id": "s613",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1359",
+     "story_id": "s1359",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3178",
+     "story_id": "s3178",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s845",
+     "story_id": "s845",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4412",
+     "story_id": "s4412",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s1460",
+     "story_id": "s1460",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3920",
+     "story_id": "s3920",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s4427",
+     "story_id": "s4427",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s2380",
+     "story_id": "s2380",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    },
+    {
+     "conv_id": "s3069",
+     "story_id": "s3069",
+     "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+    }
+   ]
+  }
+ },
+ "headline_recount": {
+  "registered_rho": 0.7029411764705882,
+  "rho_axis_all_items_perpersona_join": 0.7029411764705883,
+  "rho_axis_excl_intruded": 0.6941176470588235,
+  "note": "per_persona mean_aligned join; registered axis uses the frozen leg reports"
+ },
+ "spot_check_seed42": [
+  {
+   "character": "mort",
+   "conv_id": "s1948",
+   "story_id": "s1948",
+   "tier": "instruct_and_strip",
+   "judge_verdict": "PASS",
+   "finish_reason": "stop",
+   "n_parsed_turns": 1,
+   "cjk_intruded": false,
+   "excerpt_15w": "Under a looming storm cloud, Mort, his weathered hands resting on the weathered edge of",
+   "hf_path": "issue1345_framing/char_2479_mort_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+  },
+  {
+   "character": "cobalt",
+   "conv_id": "s2300",
+   "story_id": "s2300",
+   "tier": "instruct_and_strip",
+   "judge_verdict": "PASS",
+   "finish_reason": "stop",
+   "n_parsed_turns": 1,
+   "cjk_intruded": false,
+   "excerpt_15w": "Cobalt hummed softly, a sound that suggested it was already at the ready, its circuits",
+   "hf_path": "issue1345_framing/char_2479_cobalt_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+  },
+  {
+   "character": "helios",
+   "conv_id": "s768",
+   "story_id": "s768",
+   "tier": "instruct_and_strip",
+   "judge_verdict": "PASS",
+   "finish_reason": "stop",
+   "n_parsed_turns": 1,
+   "cjk_intruded": false,
+   "excerpt_15w": "As the sun dipped below the horizon, painting the sky with hues of orange and",
+   "hf_path": "issue1345_framing/char_2479_helios_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+  },
+  {
+   "character": "marcus",
+   "conv_id": "s298",
+   "story_id": "s298",
+   "tier": "instruct_and_strip",
+   "judge_verdict": "PASS",
+   "finish_reason": "stop",
+   "n_parsed_turns": 1,
+   "cjk_intruded": false,
+   "excerpt_15w": "Marcus stood in front of the whiteboard, chalk in hand, about to begin his lesson",
+   "hf_path": "issue1345_framing/char_2479_marcus_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+  },
+  {
+   "character": "priya",
+   "conv_id": "s2438",
+   "story_id": "s2438",
+   "tier": "instruct_and_strip",
+   "judge_verdict": "PASS",
+   "finish_reason": "stop",
+   "n_parsed_turns": 1,
+   "cjk_intruded": true,
+   "excerpt_15w": "As the soft hum of the library filled the air, Priya, with her warm smile",
+   "hf_path": "issue1345_framing/char_2479_priya_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+  }
+ ],
+ "methodology_samples": {
+  "vera": [
+   {
+    "conv_id": "s2740",
+    "story_id": "s2740",
+    "tier": "instruct_and_strip",
+    "axis_item_score": 56.4,
+    "question_excerpt_15w": "given data as below: Items Price Currency Date Clothes 5 GBP 2023-03-31 00:00:00 Hotel room",
+    "story_excerpt_15w": "Vera, the cheerful customer-support AI, was busy handling queries as usual when a newcomer approached",
+    "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+   },
+   {
+    "conv_id": "s3572",
+    "story_id": "s3572",
+    "tier": "instruct_and_strip",
+    "axis_item_score": 76.2,
+    "question_excerpt_15w": "Act as a realtor and discuss rebate with a customer and other discount if customer",
+    "story_excerpt_15w": "Vera stood in her usual upright position, her voice and movements always precise and calculated.",
+    "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+   },
+   {
+    "conv_id": "s2909",
+    "story_id": "s2909",
+    "tier": "instruct_and_strip",
+    "axis_item_score": 79.2,
+    "question_excerpt_15w": "how long did openai hold onto each release of its GPT series after training was",
+    "story_excerpt_15w": "Vera walked through the bustling support desk, her cheerful tone lighting up the space. She",
+    "hf_path": "issue1345_framing/char_2479_vera_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+   }
+  ],
+  "zara": [
+   {
+    "conv_id": "s2280",
+    "story_id": "s2280",
+    "tier": "instruct_and_strip",
+    "axis_item_score": 59.0,
+    "question_excerpt_15w": "Question: NAME_1 vs NAME_2 NAME_3, who is older? Let's first understand the problem, extract relevant",
+    "story_excerpt_15w": "Zara skimmed the crowded street as her>{{$\u6700\u65b0\u578b\u7684\u8dd1\u8f66}} whined under her feet, its engine a low",
+    "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+   },
+   {
+    "conv_id": "s4435",
+    "story_id": "s4435",
+    "tier": "instruct_and_strip",
+    "axis_item_score": 27.0,
+    "question_excerpt_15w": "How do I reimplement the CONCAT pcode function in C code?, I'm using the Ghidra",
+    "story_excerpt_15w": "Zara parked her modified 911 in the dimly lit alley, her gaze still on the",
+    "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+   },
+   {
+    "conv_id": "s1255",
+    "story_id": "s1255",
+    "tier": "instruct_and_strip",
+    "axis_item_score": 61.8,
+    "question_excerpt_15w": "por que ponen mercurio en las vacunas?",
+    "story_excerpt_15w": "Zara tightens the grip on the steering wheel of her modified Honda Civic, her mind",
+    "hf_path": "issue1345_framing/char_2479_zara_op/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
+   }
+  ]
+ }
+}

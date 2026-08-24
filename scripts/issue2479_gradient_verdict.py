@@ -920,7 +920,12 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path, axis_draws: dict | No
         (
             "gradient_hero",
             lambda r: r["recovery_fraction"],
-            "Rung-4 recovery fraction (R2 rung-4 / R2 ceiling)",
+            "Rung-4 recovery fraction",
+        ),
+        (
+            "gradient_raw_rung4",
+            lambda r: r["rung4_r2"],
+            "Rung-4 held-out R2 (raw, unnormalized)",
         ),
         (
             "gradient_hero_acc1",
@@ -929,7 +934,7 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path, axis_draws: dict | No
                 if r["fraction_eligible"]
                 else None
             ),
-            "acc@1 recovery fraction (rung-4 / ceiling, euclidean)",
+            "acc@1 recovery fraction (euclidean)",
         ),
         (
             "gradient_hero_inserted",
@@ -941,7 +946,7 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path, axis_draws: dict | No
             lambda r: (
                 _safe_ratio(r["null4_r2"], r["ceiling_r2"]) if r["fraction_eligible"] else None
             ),
-            "Matched-capacity null rung-4 recovery fraction",
+            "Random-operator recovery fraction",
         ),
         (
             "closeness_context_vs_axis",
@@ -1120,7 +1125,7 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path, axis_draws: dict | No
         ax.set_xticklabels(
             [per_char[n]["display_name"] for n, _ in draw_recs], rotation=60, ha="right"
         )
-        ax.set_ylabel("AI-likeness judge score (per draw, 0-100)")
+        ax.set_ylabel("AI-likeness judge score")
         paths = pp.savefig_paper(fig, "axis_score_violins", dir=fig_dir)
         plt.close(fig)
         written["axis_score_violins"] = str(paths["png"])

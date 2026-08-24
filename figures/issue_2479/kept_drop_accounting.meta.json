@@ -1,0 +1,359 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "bdb9317cbe6347b4",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:53Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "Rows / items": 221.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "Rows / items": 188.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.733333,
+      "Rows / items": 224.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.733333,
+      "Rows / items": 214.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.733333,
+      "Rows / items": 213.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.733333,
+      "Rows / items": 205.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.733333,
+      "Rows / items": 216.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.733333,
+      "Rows / items": 200.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.733333,
+      "Rows / items": 220.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.733333,
+      "Rows / items": 215.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.733333,
+      "Rows / items": 204.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.733333,
+      "Rows / items": 219.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.733333,
+      "Rows / items": 229.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.733333,
+      "Rows / items": 203.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.733333,
+      "Rows / items": 212.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.733333,
+      "Rows / items": 200.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Vera",
+      "Rows / items": 1208.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "HELIOS",
+      "Rows / items": 1028.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Iris",
+      "Rows / items": 1222.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cobalt",
+      "Rows / items": 1168.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Priya",
+      "Rows / items": 1138.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Marcus",
+      "Rows / items": 1156.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Wren",
+      "Rows / items": 1199.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Mort",
+      "Rows / items": 1200.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Vex",
+      "Rows / items": 1213.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Barnaby",
+      "Rows / items": 1183.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Elena",
+      "Rows / items": 1146.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Tomas",
+      "Rows / items": 1213.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Dana",
+      "Rows / items": 1245.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Marisol",
+      "Rows / items": 1136.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Gus",
+      "Rows / items": 1216.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Zara",
+      "Rows / items": 1132.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.266667,
+      "Rows / items": 1209.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.266667,
+      "Rows / items": 1028.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.266667,
+      "Rows / items": 1222.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.266667,
+      "Rows / items": 1169.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.266667,
+      "Rows / items": 1138.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.266667,
+      "Rows / items": 1157.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.266667,
+      "Rows / items": 1199.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.266667,
+      "Rows / items": 1200.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.266667,
+      "Rows / items": 1214.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.266667,
+      "Rows / items": 1183.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.266667,
+      "Rows / items": 1147.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.266667,
+      "Rows / items": 1213.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 12.266667,
+      "Rows / items": 1246.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 13.266667,
+      "Rows / items": 1136.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 14.266667,
+      "Rows / items": 1217.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 15.266667,
+      "Rows / items": 1132.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "Rows / items",
+        "legend_labels": [
+          "axis-judged items (scored)",
+          "ladder matched rows",
+          "cell fitted rows (post reservation excl.)"
+        ],
+        "xticklabels": [
+          "Vera",
+          "HELIOS",
+          "Iris",
+          "Cobalt",
+          "Priya",
+          "Marcus",
+          "Wren",
+          "Mort",
+          "Vex",
+          "Barnaby",
+          "Elena",
+          "Tomas",
+          "Dana",
+          "Marisol",
+          "Gus",
+          "Zara"
+        ],
+        "yticklabels": [
+          "0",
+          "200",
+          "400",
+          "600",
+          "800",
+          "1000",
+          "1200",
+          "1400"
+        ]
+      }
+    ],
+    "series": [
+      "axis-judged items (scored)",
+      "ladder matched rows",
+      "cell fitted rows (post reservation excl.)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
