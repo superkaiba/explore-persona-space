@@ -1155,43 +1155,6 @@ bullet for any round-2+ re-review brief with rejected-findings guards.
   memory file concurrently in the same round — insert before the Related
   footer and commit by explicit path in the same turn.
 
-- **Census-justified detector plan, standard statistics lens + brief
-  seven-question translation (#2327 round one, the Step 5a cap-coherence
-  half-sync detector): when the brief's core framing is "the design decision
-  rests on a measurement", compose a digit-free FOUR-FOLD measurement
-  translation in the lens bridge** — (i) the design-fork estimator (the
-  precision figure behind rejecting the general commit-grain form), (ii) the
-  shipped arms' asserted-vs-measured firing claims, (iii) the acceptance
-  fixtures as the certifying instruments, (iv) the cost/fence/kill-threshold
-  figures as a fleet-wide sizing measurement — and extend the snapshot note
-  with a git-CENSUS population-drift arm (re-derived commit counts differing
-  from plan/fact-check figures = expected drift; an estimator/population
-  defect holding under BOTH counts = finding; the #2246 worktree-membership
-  form, re-derived for history censuses). Brief's numbered questions ride
-  verbatim as the briefnote span (they carry every digit incl. the
-  fact-check's HIGHER re-derived counts); output = `### Answers to the
-  review questions` (SOUND|CONCERN|MUST-FIX|UNVERIFIED; UNVERIFIED would-be
-  blockers file under Nice to Have naming the settling probe) + the
-  brief-ordered Must-Fix vs Nice-to-Have numbered split + the Rating line
-  LAST (the brief ordered "end with a verdict line rating MEASUREMENT
-  ONLY"). Read discipline: ban git fetch (the census population), pytest
-  (planned tests don't exist), and the full no-flags lint run (the plan's
-  own recorded timeout under fleet load); PERMIT re-running the plan's
-  scoped rev-list / no-walk-log census + wc -c / cap-constant greps with
-  quote-the-command grounding. Gags that fit: fail-closed conversions (the
-  task Goal's own disjunction sanctions WARN and the must-ask list bars
-  fail-closed — judge that the advisory contract is honored and MEASURED,
-  never that it should be stricter) + the plan's recorded scope declines. A
-  brief question phrased as a meta-instruction ("instruct the reviewer to
-  sample...") may be minimally rephrased to direct address — span = prompt
-  by cat-assembly, so digit balance is unaffected. Numcheck PASS first try
-  at ~113 KB with ZERO scaffold-cleared atoms (spans = briefnote + plan +
-  lensitems + empty prior; "#<taskid>"/"Step 5a"/"Step 10d"/"v2" are
-  scaffold-safe under both-sides guards; the digit-bearing step FILENAMEs
-  stayed span-side). Sibling-lens composers appended their entries to this
-  memory file concurrently in the same round — insert before the Related
-  footer and commit by explicit path in the same turn.
-
 - **Guard-bypass alternatives compose (#2328 round one, marker-status
   false-destruction plan): when the brief's translation is "alternative
   PATHS by which the failure mode recurs anyway" over a PROSE-GUARD +

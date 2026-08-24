@@ -98,19 +98,27 @@ lint-check diff whose payload is `.claude/skills/**` fence edits under a
    fleet gate, and an over-strict new check arm is itself a fleet-blocking
    false-FAIL class — so over-strictness findings weigh equal to bugs.
 
-**#2313 r1 (2026-08-23) sharpenings:** (i) brief-VERBATIM review questions can
-embed stale source line refs (`:16272` vs the worktree's actual 16374 for
-`_LESSONS_MAX_BYTES`) — keep the question verbatim (it is the brief's
-extraction contract) but add a compose-time-fact correction verifying the
-VALUE and naming the true line, plus a post-question steer to the substance;
-(ii) a `diverged_on_main` pin whose file content probes IDENTICAL to current
-origin/main simplifies the duty — state that fact so Codex knows main's whole
-concurrent delta is the pinned-sha-vs-merge-base diff and needs no further
-main-side walk; (iii) a brief-supplied judgment-call question (headroom-spend
-vs wording-tighten) composes with explicit routing: verdict-body answer +
-optional `CONCERN::` row, never a FAIL. Also validated again: crash-safety
-hypothesis duty (fact-8 stakes-both-directions wording) for a check wired
-into the no-flags default run.
+**#2336 r1 (2026-08-24) sharpening — donor-citation archaeology for
+verbatim-hoist claims:** when the plan pins a donor by (commit, line-range)
+for a "verbatim hoist except one change" claim, resolve BOTH at compose time
+— the range can match CURRENT origin/main while the pinned COMMIT has the
+function at a different line WITHOUT a later-landed guard (#2336: plan cited
+`issue2329_run.py:1404-1438 @ 27206c15d9`; at that commit the function sat at
+:1256 lacking the OSError→log guard, which landed in a later r3 commit).
+Attest the true archaeology, instruct Codex to diff against the CURRENT form
+(`git -C . show HEAD:<donor>` — verify worktree HEAD's copy is identical to
+origin/main's first), and pre-route the citation mismatch as PLAN imprecision
+(at most Minor), never an implementer defect. Without this, the twin either
+diffs against the wrong (guard-less) donor and false-FAILs the "one change"
+claim, or bloks on an unresolvable line range. Also from #2336 r1: a
+brief-supplied "adjudicate these N disclosed deviations" list composes as a
+dedicated `## Disclosed-deviation adjudications` output section with one
+grounded `**Adjudication (D<k>):** upheld|rejected — <file:line>` line each
+(the [[brief-named-concern-adjudication]] pattern, generalized to
+deviations); and stakes-both-directions for a fleet lint ratchet gains a
+third leg — CRASH-safety (a crash in the check wedges every session's gate,
+worse than over-strictness; the #2309 error-mode duty applies to lint-flag
+variants too).
 
 **#2309 r1 (2026-08-23) sharpening — `task.py post-marker`-path gate variant
 (diff adds validation on the LIVE marker-posting path, not a lint flag):**
@@ -128,3 +136,17 @@ EXCLUDED (the Codex marker template supersedes it) — assert
 check must tolerate ONE prose mention of `---BEGIN APPROVED PLAN BODY---`
 in the blocked-read paragraph (assert on the END token count + first-BEGIN
 position, not `count == 1`).
+**#2313 r1 (2026-08-23) sharpenings:** (i) brief-VERBATIM review questions can
+embed stale source line refs (`:16272` vs the worktree's actual 16374 for
+`_LESSONS_MAX_BYTES`) — keep the question verbatim (it is the brief's
+extraction contract) but add a compose-time-fact correction verifying the
+VALUE and naming the true line, plus a post-question steer to the substance;
+(ii) a `diverged_on_main` pin whose file content probes IDENTICAL to current
+origin/main simplifies the duty — state that fact so Codex knows main's whole
+concurrent delta is the pinned-sha-vs-merge-base diff and needs no further
+main-side walk; (iii) a brief-supplied judgment-call question (headroom-spend
+vs wording-tighten) composes with explicit routing: verdict-body answer +
+optional `CONCERN::` row, never a FAIL. Also validated again: crash-safety
+hypothesis duty (fact-8 stakes-both-directions wording) for a check wired
+into the no-flags default run.
+

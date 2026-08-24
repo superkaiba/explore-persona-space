@@ -104,18 +104,6 @@ set-compare against the per-arm-resolution rows + `arms_stubbed` ↔ FALLBACK-ro
 consistency; grammar-only miss with complete substance = Critical `marker-shape`
 with a one-line re-post fix, never `substantive`.
 
-**Argparse-choices drivers tempt PROSE-form registry lines (#2502 R1 g4).** A round
-whose drivers dispatch on argparse `choices=` (no `PHASES` dict) has no `source=`
-symbol to cite, and the implementer writes a free-prose "derived mechanically from
-each script's argparse choices via ..." line — `check-smoke-arch-registry` REFUSEs it
-(neither accepted form). The correct escape for this driver class is the
-`arm-registry: N/A — <reason>` form (reason may enumerate the per-script choices).
-Reviewer duty when the mechanical arm is down: verify arm substance yourself — grep
-each script's `choices=(...)` + standalone flag arms (`--probe`, `--self-test`) and
-set-compare against the per-arm-resolution rows + `arms_stubbed` ↔ FALLBACK-row
-consistency; grammar-only miss with complete substance = Critical `marker-shape`
-with a one-line re-post fix, never `substantive`.
-
 R2 closure (#2502 R2 g4): the N/A-form re-post landed checker-OK (rc=0) — the
 N/A reason tolerates an embedded derivation command AND dotted per-arm row keys
 (no members= to match). Residual pitfall realized: the enumeration counted one
