@@ -5,3 +5,4 @@
 - [Prior-round prompt reuse](feedback_prior_round_prompt_reuse.md) — r2+: compose from /tmp crc<r-1> prompt via span replacement + per-lens live-file currency asserts; frozen-list rule discharged mechanically.
 - [Fold-round context-file briefs](feedback_fold_round_context_file_briefs.md) — fold reviews: /tmp context brief → REVIEW CONTEXT block; extract brief-named markers to /tmp files; npz→composer-digest envelope; full-ledger envelope for self-discharged concerns; explicit brief round beats own-kind history.
 - [SPEC-inline `{{` false positive](feedback_spec_inline_brace_false_positive.md) — scope the Step-4 placeholder guard to envelope spans + composer-written parts; inlined SPEC.md carries literal `{{` rule text by design.
+- [Adjudicated concern-count override](feedback_adjudicated_concern_count_override.md) — Lens-14 verifier line unreliable two ways: #2530 count drop + #2535 footer-swallow; envelope verbatim + authoritative block + SPEC-judged placement.
