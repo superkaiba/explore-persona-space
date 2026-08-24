@@ -40,9 +40,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
+
+# SB-1(iv): gen_meta filenames under a raw prefix — unsharded ``gen_meta.json``
+# or per-shard ``gen_meta_sNNofMM.json`` (gen_capture.name_suffix contract).
+_GEN_META_RE = re.compile(r"/gen_meta(_s\d{2}of\d{2})?\.json$")
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SCRIPT_DIR.parent
@@ -243,12 +248,51 @@ def run_print_commands(args) -> None:
 # --------------------------------------------------------------------------
 
 
+def _gen_meta_paths(files: list[str]) -> list[str]:
+    """gen_meta*.json repo paths among ``files`` (unsharded + per-shard names)."""
+    return sorted(f for f in files if _GEN_META_RE.search("/" + f))
+
+
+def _bind_chunk_files(files: list[str], prefix: str, chunk_keys: set[str]) -> list[str]:
+    """SB-1(iv): bind the digest chunk-file set to EXACTLY the gen_meta keys.
+
+    ``files`` is the scoped listing of ``prefix``; the authoritative chunk set
+    is the union of gen_meta ``per_chunk`` keys (u2 contract: chunk file for
+    key k lives at ``{prefix}/{k}.jsonl``). REFUSES (a) any extra raw-row
+    JSONL under the prefix outside the key set — a stale/foreign chunk could
+    supply a spurious "distinct" digest unrelated to the captured tensors —
+    and (b) any expected chunk file missing from the listing. Returns the
+    bound repo paths in sorted order."""
+    if not chunk_keys:
+        raise RuntimeError(f"#13/SB-1(iv): empty gen_meta chunk-key set under {prefix}")
+    expected = {f"{prefix}/{k}.jsonl" for k in chunk_keys}
+    jsonls = {f for f in files if f.endswith(".jsonl")}
+    extras = sorted(jsonls - expected)
+    if extras:
+        raise RuntimeError(
+            f"#13/SB-1(iv): {len(extras)} raw .jsonl file(s) under {prefix} not in the "
+            f"gen_meta chunk-key set (head: {[Path(f).name for f in extras[:5]]}) — "
+            "stale/extra chunks can fake completion distinctness; refuse "
+            "(use a fresh prefix)"
+        )
+    missing = sorted(expected - jsonls)
+    if missing:
+        raise RuntimeError(
+            f"#13/SB-1(iv): {len(missing)}/{len(expected)} gen_meta chunk file(s) missing "
+            f"under {prefix} (head: {[Path(f).name for f in missing[:5]]})"
+        )
+    return sorted(expected)
+
+
 def completion_digests_for(prefix: str, work: Path) -> dict[str, list[str]]:
     """{context_id: [sha16(completion_token_ids) per gen row]} for ONE replicate.
 
-    Reads the replicate's raw gen-row chunk JSONLs under ``prefix`` (the u2
-    contract: gen rows carry the required ``completion_token_ids`` field).
-    Content hygiene: token ids are HASHED, never printed/logged."""
+    SB-1(iv): the chunk-file set is bound to EXACTLY the union of gen_meta
+    ``per_chunk`` keys under ``prefix`` via ``_bind_chunk_files`` — never a
+    glob union of whatever JSONLs sit under the prefix — so distinctness is
+    computed from precisely the chunks the capture consumed (gen rows carry
+    the required ``completion_token_ids`` field). Content hygiene: token ids
+    are HASHED, never printed/logged."""
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
@@ -258,12 +302,20 @@ def completion_digests_for(prefix: str, work: Path) -> dict[str, list[str]]:
         lambda: hub.list_hf_files_under_path(HfApi(), FT.HF_DATA_REPO, prefix, repo_type="dataset"),
         what=f"list({prefix})",
     )
-    skip = ("gen_meta", "regime", "cap_hit_report", "manifest")
-    chunk_files = sorted(
-        f for f in files if f.endswith(".jsonl") and not any(tok in Path(f).name for tok in skip)
-    )
-    if not chunk_files:
-        raise RuntimeError(f"#13: no gen-row jsonl chunks under {prefix}")
+    meta_paths = _gen_meta_paths(files)
+    if not meta_paths:
+        raise RuntimeError(
+            f"#13/SB-1(iv): no gen_meta*.json under {prefix} — gen incomplete; the "
+            "chunk-key set cannot be bound (never glob-union raw JSONLs)"
+        )
+    chunk_keys: set[str] = set()
+    for mp in meta_paths:
+        local_meta = GC.fetch_repo_file(mp, work / "gen_dl", what=f"gen_meta({Path(mp).name})")
+        per_chunk = json.loads(local_meta.read_text(encoding="utf-8")).get("per_chunk")
+        if not isinstance(per_chunk, dict) or not per_chunk:
+            raise RuntimeError(f"#13/SB-1(iv): {Path(mp).name} carries no per_chunk keys")
+        chunk_keys.update(per_chunk)
+    chunk_files = _bind_chunk_files(files, prefix, chunk_keys)
     digests: dict[str, list[str]] = {}
     for f in chunk_files:
         local = GC.fetch_repo_file(f, work / "gen_dl", what=f"gen({Path(f).name})")
@@ -583,6 +635,36 @@ def _toy_rep_stores(*, n=400, d=8, r=3, sigma_b=1.0, sigma_w=0.5, seed=0, drop_f
     return stores, ids, meta
 
 
+def _selfcheck_digest_binding() -> None:
+    """3c (SB-1(iv)): digest chunk set binds to gen_meta keys EXACTLY —
+    extras refuse, missing refuse, sharded meta names recognized."""
+    pfx = "ns/raw_completions/reliability/modelA/rep43"
+    base = [
+        f"{pfx}/gen_meta.json",
+        f"{pfx}/regime.json",
+        f"{pfx}/cap_hit_report.json",
+        f"{pfx}/chunk0000.jsonl",
+        f"{pfx}/chunk0001.jsonl",
+    ]
+    assert _gen_meta_paths(base) == [f"{pfx}/gen_meta.json"], _gen_meta_paths(base)
+    sharded = [f"{pfx}/gen_meta_s00of02.json", f"{pfx}/gen_meta_s01of02.json"]
+    assert _gen_meta_paths(sharded + base[1:]) == sorted(sharded)
+    assert _gen_meta_paths([f"{pfx}/not_gen_meta_x.json", f"{pfx}/regime.json"]) == []
+    keys = {"chunk0000", "chunk0001"}
+    bound = _bind_chunk_files(base, pfx, keys)
+    assert bound == [f"{pfx}/chunk0000.jsonl", f"{pfx}/chunk0001.jsonl"], bound
+    FT._expect_raise(
+        lambda: _bind_chunk_files(base + [f"{pfx}/chunk0002.jsonl"], pfx, keys),
+        "not in the gen_meta chunk-key set",
+    )
+    FT._expect_raise(
+        lambda: _bind_chunk_files([f for f in base if "chunk0001" not in f], pfx, keys),
+        "chunk file(s) missing",
+    )
+    FT._expect_raise(lambda: _bind_chunk_files(base, pfx, set()), "empty gen_meta chunk-key set")
+    print("[selfcheck] 3c SB-1(iv) digest-set binding (bind / extras / missing): OK", flush=True)
+
+
 def run_selfcheck(args) -> int:
     import copy
     import tempfile
@@ -679,6 +761,9 @@ def run_selfcheck(args) -> int:
     else:
         raise AssertionError("#13 missing-digest gate failed to fire")
     print("[selfcheck] #13 completion distinctness (pass / reject / missing): OK", flush=True)
+
+    # 3c. SB-1(iv): the digest chunk set is bound to EXACTLY gen_meta's keys.
+    _selfcheck_digest_binding()
 
     # 4. stratified subset: floors + totals + determinism + test-only
     rng = np.random.default_rng(3)

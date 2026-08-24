@@ -40,11 +40,19 @@ Key conventions (read before consuming outputs):
   predictions (~31 GB fp64 at n_val=n_te~22.5k, H=4096, 21 lambdas — over the
   pod RAM budget). Batched instead: the lambda scan (closed-form quadratic scan
   in the eigenbasis, all 21 lambdas at once) and the LODO axis (ONE shared
-  train/val reduction reused by every fold). The LAYER axis stays a
-  checkpointed loop: layers share no data (no common factorization exists),
-  each unit is one FLOP-bound BLAS-saturating fit, and the plan's across-layer
-  parallelism is the ``--layers`` shard axis. Measured basis: ``--phase
-  unitwall`` times ONE production-shape unit through the real entrypoint.
+  train/val reduction reused by every fold). The LAYER axis stays a serial
+  per-unit checkpointed loop (layers share no data — no common factorization
+  exists; each unit is one FLOP-bound BLAS-saturating fit), parallelized
+  ACROSS PODS via the race-safe ``--layers`` shard dispatch (r2 SB-2): every
+  shard invocation gets its OWN per-shard StageLedger file (no shared
+  last-writer-wins ledger), per-layer unit JSONs carry a ``regime_sha16``
+  stamp, shards publish cells to ``--shard-sync-prefix`` on the HF data repo
+  and ALWAYS partial-return, and the dedicated assembly invocation (no
+  ``--layers``) pulls + regime-verifies + ADOPTS the cells (a stale/foreign
+  stamp fails LOUD) before selection/LODO/kNN/assembly — so assembly runs
+  exactly once. ``--phase shardplan`` prints the exact dispatch. Measured
+  basis: ``--phase unitwall`` times ONE production-shape unit through the
+  real entrypoint.
 - Durability (#12): production ``fit``/``decide`` REQUIRE ``--publish`` —
   committed JSON artifacts are mirrored to the HF data repo (verified per
   file) and git-committed + pushed on the issue branch (LOUD degrade on
@@ -125,6 +133,10 @@ DEFAULT_TENSORS_PREFIX = {
 # HF mirror root for committed eval_results JSONs (#12): files land at
 # {PUBLISH_EVAL_MIRROR}/{path relative to --out-root}.
 PUBLISH_EVAL_MIRROR = "issue2502_ctxmap_xgen/eval_mirror"
+# #10/SB-2 cross-pod shard merge: shards publish per-layer cells under
+# {prefix}/percell_model{K}/L{k:02d}.json; the assembly invocation adopts them
+# after a per-cell regime_sha16 verify (_pull_shard_cells / _cell_complete).
+DEFAULT_SHARD_SYNC_PREFIX = "issue2502_ctxmap_xgen/fits_shards"
 
 _CHUNK_ROWS_RE = re.compile(r"/(?P<key>(?:s\d+_)?chunk\d{4})/(?P=key)__rows\.json$")
 _CHUNK_LAYER_RE = re.compile(r"/(?P<key>(?:s\d+_)?chunk\d{4})/(?P=key)__L(?P<k>\d{2})\.npz$")
@@ -1047,6 +1059,88 @@ def fit_regime(args, model_key: str, n_rows: int, keys_sha: str) -> dict:
     }
 
 
+def _regime_sha(regime: dict) -> str:
+    """Machine-stable sha16 of the fit regime (sorted-key JSON of generating
+    parameters — never recomputed floats; gotchas.md float-recompute rule)."""
+    return sha16(json.dumps(regime, sort_keys=True))
+
+
+def _shard_ledger_name(layer_subset: list[int]) -> str:
+    """Per-shard StageLedger filename (#10/SB-2 race safety).
+
+    Every ``--layers`` invocation gets its OWN ledger file, so concurrent
+    shards never share the non-locking last-writer-wins StageLedger —
+    disjointness by construction instead of file locking. The assembly
+    invocation (no ``--layers``) keeps the canonical ``ledger.json`` and
+    ADOPTS shard-produced cells via ``_cell_complete``."""
+    csv = ",".join(str(k) for k in layer_subset)
+    return f"ledger_shard_{layer_subset[0]:02d}-{layer_subset[-1]:02d}_{sha16(csv)[:8]}.json"
+
+
+def _cell_complete(percell: Path, cell: str, regime_sha: str) -> bool:
+    """True iff ``percell/{cell}.json`` exists AND carries THIS regime's sha16.
+
+    The shard->assemble merge predicate (#10/SB-2): a per-layer unit JSON is
+    adoptable by an invocation that did not fit it ONLY when its embedded
+    ``regime_sha16`` equals the adopting invocation's regime sha. A present
+    file with a MISSING or DIFFERENT stamp fails LOUD (StageLedger
+    regime-mismatch parity: never silently refit over foreign/stale state —
+    use a fresh work dir; never mix fit regimes in place)."""
+    p = percell / f"{cell}.json"
+    if not p.exists():
+        return False
+    have = json.loads(p.read_text(encoding="utf-8")).get("regime_sha16")
+    if have != regime_sha:
+        raise RuntimeError(
+            f"[shard-merge] {p.name}: regime_sha16={have!r} != current {regime_sha!r} — "
+            "stale/foreign per-layer cell in this work dir (SB-2 fail-loud; use a "
+            "fresh work dir / shard-sync prefix)"
+        )
+    return True
+
+
+def _shard_sync_dir(prefix: str, model_key: str) -> str:
+    """HF data-repo dir where --layers shards publish per-layer cells (#10)."""
+    return f"{prefix.rstrip('/')}/percell_model{model_key}"
+
+
+def _pull_shard_cells(args, model_key: str, percell: Path, all_set, regime_sha: str, work: Path):
+    """Adopt shard-published per-layer cells missing locally (#10/SB-2 merge).
+
+    ONE scoped listing of the shard-sync dir; every fetched cell's
+    ``regime_sha16`` is verified BEFORE it is placed into percell (a stale
+    remote cell fails LOUD — same predicate as ``_cell_complete``); present
+    local cells are stamp-verified, never overwritten. Returns the number of
+    adopted cells."""
+    GC = _gc()
+    sync_dir = _shard_sync_dir(args.shard_sync_prefix, model_key)
+    remote = set(GC.hf_prefix_files(sync_dir))  # absent prefix -> [] (fresh run)
+    pulled = 0
+    for k in all_set:
+        cell = f"L{k:02d}"
+        if _cell_complete(percell, cell, regime_sha):
+            continue  # local + regime-verified already
+        rp = f"{sync_dir}/{cell}.json"
+        if rp not in remote:
+            continue
+        local = GC.fetch_repo_file(rp, work / "shard_cells_dl", what=f"shard-cell({cell})")
+        doc = json.loads(local.read_text(encoding="utf-8"))
+        if doc.get("regime_sha16") != regime_sha:
+            raise RuntimeError(
+                f"[shard-merge] remote {rp}: regime_sha16={doc.get('regime_sha16')!r} != "
+                f"current {regime_sha!r} — stale shard-sync prefix (SB-2 fail-loud; "
+                "use a fresh --shard-sync-prefix)"
+            )
+        GC.atomic_write_json(percell / f"{cell}.json", doc)
+        pulled += 1
+    print(
+        f"[shard-merge] model {model_key}: adopted {pulled} remote cells "
+        f"({len(remote)} files listed under {sync_dir})",
+        flush=True,
+    )
+    return pulled
+
+
 def run_fit(args, store=None, model_key: str | None = None, sets_override: dict | None = None):
     """The fit phase for one model. ``store``/``model_key``/``sets_override``
     injectable (selfcheck seams; ``sets_override`` supplies toy candidate sets
@@ -1096,15 +1190,32 @@ def run_fit(args, store=None, model_key: str | None = None, sets_override: dict 
     rows_te = [rows[int(i)] for i in te]
     rows_val = [rows[int(i)] for i in val]
     keys_sha = sha16(",".join(store.chunk_keys()))
-    ledger = GC.StageLedger(
-        percell / "ledger.json", fit_regime(args, model_key, len(rows), keys_sha)
-    )
-    lambdas = N779.LAMBDAS_N50K
+    regime = fit_regime(args, model_key, len(rows), keys_sha)
+    regime_sha = _regime_sha(regime)
     layer_subset = sorted(int(x) for x in args.layers.split(",")) if args.layers else list(all_set)
     unknown = set(layer_subset) - set(all_set)
     if unknown:
         raise RuntimeError(f"--layers {sorted(unknown)} not in captured set {all_set}")
-    pending = [k for k in layer_subset if not ledger.is_done(f"L{k:02d}")]
+    # #10/SB-2: a --layers shard gets its OWN ledger file (concurrent shards
+    # never share the non-locking StageLedger); the assembly invocation keeps
+    # the canonical ledger.json and adopts shard cells via _cell_complete.
+    ledger_name = _shard_ledger_name(layer_subset) if args.layers else "ledger.json"
+    ledger = GC.StageLedger(percell / ledger_name, regime)
+    lambdas = N779.LAMBDAS_N50K
+    if args.shard_sync_prefix:
+        _pull_shard_cells(args, model_key, percell, all_set, regime_sha, work)
+    pending = [
+        k
+        for k in layer_subset
+        if not (ledger.is_done(f"L{k:02d}") or _cell_complete(percell, f"L{k:02d}", regime_sha))
+    ]
+    if not args.layers and args.shard_sync_prefix and pending:
+        print(
+            f"[shard-merge] WARNING: {len(pending)} layer cells still pending after the "
+            "shard pull — refitting SERIALLY in this assembly invocation (expected only "
+            "when shard invocations are incomplete)",
+            flush=True,
+        )
     print(
         f"[fit] model {model_key}: n={len(rows)} (tr={len(tr)}/val={len(val)}/te={len(te)}), "
         f"layers {len(all_set)} captured, {len(pending)} pending "
@@ -1121,25 +1232,58 @@ def run_fit(args, store=None, model_key: str | None = None, sets_override: dict 
         cell = f"L{k:02d}"
         if ledger.is_done(cell):
             continue
+        if _cell_complete(percell, cell, regime_sha):
+            ledger.mark_done(cell)  # adopt a regime-verified shard/prior cell (#10/SB-2)
+            continue
         X, Y = store.load_layer(k)
         if X.shape[0] != len(rows):
             raise RuntimeError(f"layer {cell}: {X.shape[0]} rows vs table {len(rows)}")
         unit, _ = fit_layer_unit(X, Y, tr, val, te, rows_te, k, lambdas, args.device)
         del X, Y
+        unit["regime_sha16"] = regime_sha  # #10/SB-2 merge-adoption stamp
         GC.atomic_write_json(percell / f"{cell}.json", unit)
         ledger.mark_done(cell)
+        if args.layers and args.shard_sync_prefix:
+            # Per-cell durability checkpoint for the cross-pod merge (upload
+            # verifies per file; ~minutes apart — no commit-throttle risk).
+            GC.upload_single_file(
+                percell / f"{cell}.json",
+                f"{_shard_sync_dir(args.shard_sync_prefix, model_key)}/{cell}.json",
+            )
         GC.progress(f"fit-{model_key}", j + 1, len(layer_subset), cell, t0)
 
-    done_all = [k for k in all_set if ledger.is_done(f"L{k:02d}")]
-    if set(done_all) != set(all_set):
-        if args.layers:
+    if args.layers and args.shard_sync_prefix:
+        # Resume-gap sweep: cells completed by a PRIOR run of this shard (in
+        # the ledger before the sync prefix was in play) still publish.
+        sync_dir = _shard_sync_dir(args.shard_sync_prefix, model_key)
+        expected = [f"{sync_dir}/L{k:02d}.json" for k in layer_subset]
+        gap = sorted(GC.hf_missing_of(expected, sync_dir))
+        for rp in gap:
+            GC.upload_single_file(percell / f"{Path(rp).stem}.json", rp)
+        if gap:
             print(
-                f"[fit] model {model_key}: layer shard complete "
-                f"({len(done_all)}/{len(all_set)} layers done); rerun without --layers "
-                "to finish selection + LODO + assembly",
-                flush=True,
+                f"[shard-merge] swept {len(gap)} resume-gap cell uploads -> {sync_dir}", flush=True
             )
-            return {"partial": True, "layers_done": done_all}
+
+    done_all = [
+        k
+        for k in all_set
+        if ledger.is_done(f"L{k:02d}") or _cell_complete(percell, f"L{k:02d}", regime_sha)
+    ]
+    if args.layers:
+        # #10/SB-2 race safety: a --layers shard ALWAYS partial-returns — even
+        # when adoption makes the full set locally visible — so assembly
+        # (selection/LODO/publish) runs EXACTLY once, in the dedicated
+        # no---layers invocation, never racing a sibling shard's finish.
+        print(
+            f"[fit] model {model_key}: layer shard complete "
+            f"({len(done_all)}/{len(all_set)} layers done); run the assembly "
+            "invocation (no --layers) to adopt shard cells + finish selection "
+            "+ LODO + assembly",
+            flush=True,
+        )
+        return {"partial": True, "layers_done": done_all}
+    if set(done_all) != set(all_set):
         raise RuntimeError(f"missing per-layer cells after loop: {set(all_set) - set(done_all)}")
 
     units = {k: json.loads((percell / f"L{k:02d}.json").read_text()) for k in all_set}
@@ -2138,6 +2282,55 @@ def run_unitwall(args) -> dict:
     return doc
 
 
+def run_shardplan(args) -> dict:
+    """#10/SB-2 launcher: print the race-safe sharded --layers dispatch.
+
+    Contiguous split of each model's hs set 1..n_layers into ``--shards``
+    worker invocations (ONE cpu-bigmem POD EACH — a per-layer unit is one
+    BLAS-saturating fit, so same-box sharding splits threads for ~no gain),
+    each publishing per-layer cells to ``--shard-sync-prefix``, plus the
+    assembly invocation (no ``--layers``) that pulls + regime-verifies +
+    adopts the shard cells, then runs selection/LODO/kNN/firstpc/assembly.
+    Run the assembly AFTER every shard prints its partial-return line."""
+    shards = max(1, int(args.shards))
+    keys = [args.model_key] if args.model_key else ["A", "B"]
+    publish = args.publish or "hf+git"
+    sync = args.shard_sync_prefix or DEFAULT_SHARD_SYNC_PREFIX
+    plan: dict = {"shards": shards, "sync_prefix": sync, "models": {}}
+    for key in keys:
+        hs = list(range(1, MODEL_N_LAYERS[key] + 1))
+        splits = [hs[i * len(hs) // shards : (i + 1) * len(hs) // shards] for i in range(shards)]
+        splits = [s for s in splits if s]
+        rel = f"eval_results/issue_2502/reliability/model{key}/reliability_ceiling.json"
+        shard_cmds = []
+        for chunk in splits:
+            csv = ",".join(str(k) for k in chunk)
+            shard_cmds.append(
+                f"uv run python scripts/issue2502_fits.py --phase fit --model-key {key} "
+                f"--layers {csv} --publish {publish} --shard-sync-prefix {sync} "
+                f"--reliability {rel}"
+            )
+        asm = (
+            f"uv run python scripts/issue2502_fits.py --phase fit --model-key {key} "
+            f"--publish {publish} --shard-sync-prefix {sync} --reliability {rel}"
+        )
+        plan["models"][key] = {"layers": splits, "shard_cmds": shard_cmds, "assembly_cmd": asm}
+        print(f"# model {key}: {len(splits)} layer shards (ONE cpu-bigmem pod each) + 1 assembly")
+        for si, cmd in enumerate(shard_cmds):
+            print(f"#   shard {si + 1}/{len(splits)} (hs {splits[si][0]}..{splits[si][-1]}):")
+            print(f"  {cmd}")
+        print("#   assembly — run AFTER all shards print their partial-return line:")
+        print(f"  {asm}")
+    print(
+        "# basis (#10): projected_wall = pooled_unit_wall_s x units-per-shard (shards run in "
+        "parallel) + assembly tail (lodo_shared_reductions_s + n_groups x lodo_fold_s + "
+        "selected-layer refit); measured values: fits/unitwall_n150000_d4096.json "
+        "(--phase unitwall)",
+        flush=True,
+    )
+    return plan
+
+
 # --------------------------------------------------------------------------
 # selfcheck (synthetic end-to-end; equivalence + reachable verdict branches)
 # --------------------------------------------------------------------------
@@ -2507,6 +2700,97 @@ def _selfcheck_pipeline(args, tmp: Path) -> None:
     print("[selfcheck] pipeline verdicts: base + Fails + REACHABLE Inconclusive: OK", flush=True)
 
 
+def _selfcheck_shard_assemble(args, tmp: Path) -> None:
+    """SB-2: shard->assemble merge EQUALS the serial full fit, adoption never
+    refits (mtime proof), per-shard ledgers are disjoint files, and a
+    stale-regime cell REFUSES adoption fail-loud. (The HF --shard-sync-prefix
+    transport is network-side; the e2e smoke exercises it for real — this
+    probe covers the local merge/adoption core.)"""
+    import copy
+
+    def _mk(sub: str):
+        a = copy.copy(args)
+        a.work_dir = str(tmp / sub / "work")
+        a.out_root = str(tmp / sub / "out")
+        a.pilot = False
+        a.layers = None
+        a.skip_lodo = False
+        a.lodo_groups = None
+        a.boot_draws = 200
+        a.knn_max_n = 64
+        a.device = "cpu"
+        a.tensors_prefix = None
+        a.publish = "none"
+        a.allow_missing_reliability = True
+        a.reliability = None
+        a.shard_sync_prefix = None
+        return a
+
+    def _science(fits_dir: Path) -> tuple[dict, dict]:
+        s = json.loads((fits_dir / "fits_summary.json").read_text())
+        r = json.loads((fits_dir / "percontext_recon.json").read_text())
+        s.pop("meta", None)
+        r.pop("meta", None)
+        return s, r
+
+    noise = {1: 0.8, 2: 0.15, 3: 0.5}
+    sets = {"all": [1, 2, 3], "gate": [1, 2, 3], "h3": [2, 3]}
+    store = _toy_store("A", [1, 2, 3], noise_by_hs=noise, seed=9)
+
+    a_serial = _mk("serial")
+    run_fit(a_serial, store=store, model_key="A", sets_override=sets)
+    serial_dir, _ = model_dirs(a_serial, "A")
+
+    a_shard = _mk("shard")
+    a_shard.layers = "1,2"
+    p1 = run_fit(a_shard, store=store, model_key="A", sets_override=sets)
+    assert p1.get("partial") is True and p1["layers_done"] == [1, 2], p1
+    a_shard2 = copy.copy(a_shard)
+    a_shard2.layers = "3"
+    p2 = run_fit(a_shard2, store=store, model_key="A", sets_override=sets)
+    assert p2.get("partial") is True and sorted(p2["layers_done"]) == [1, 2, 3], p2
+    shard_fits, shard_percell = model_dirs(a_shard, "A")
+    shard_ledgers = sorted(p.name for p in shard_percell.glob("ledger_shard_*.json"))
+    assert len(shard_ledgers) == 2, shard_ledgers  # per-shard ledger files, disjoint
+    assert not (shard_percell / "ledger.json").exists(), "assembly ledger before assembly"
+    mtimes = {p.name: p.stat().st_mtime_ns for p in shard_percell.glob("L*.json")}
+    assert len(mtimes) == 3, mtimes
+    a_asm = copy.copy(a_shard)
+    a_asm.layers = None
+    run_fit(a_asm, store=store, model_key="A", sets_override=sets)
+    after = {p.name: p.stat().st_mtime_ns for p in shard_percell.glob("L*.json")}
+    assert after == mtimes, "assembly REFIT shard cells instead of adopting them"
+    assert (shard_percell / "ledger.json").exists()
+    s1, r1 = _science(serial_dir)
+    s2, r2 = _science(shard_fits)
+    assert s1 == s2, "shard->assemble fits_summary != serial fits_summary"
+    assert r1 == r2, "shard->assemble percontext_recon != serial percontext_recon"
+
+    # Stale-regime cell refuses adoption (fail-loud, StageLedger parity).
+    a_stale = _mk("stale")
+    _, stale_percell = model_dirs(a_stale, "A")
+    stale_percell.mkdir(parents=True, exist_ok=True)
+    _gc().atomic_write_json(stale_percell / "L01.json", {"regime_sha16": "0" * 16})
+    _expect_raise(
+        lambda: run_fit(a_stale, store=store, model_key="A", sets_override=sets),
+        "regime_sha16",
+    )
+    # And a stamp-less legacy cell refuses too (missing stamp != this regime).
+    a_bare = _mk("bare")
+    _, bare_percell = model_dirs(a_bare, "A")
+    bare_percell.mkdir(parents=True, exist_ok=True)
+    _gc().atomic_write_json(bare_percell / "L02.json", {"fit_meta": {}})
+    _expect_raise(
+        lambda: run_fit(a_bare, store=store, model_key="A", sets_override=sets),
+        "regime_sha16",
+    )
+    print(
+        "[selfcheck] SB-2 shard->assemble == serial (science payload), adoption "
+        "mtime-stable, per-shard ledgers, stale/bare-cell refusals: OK",
+        flush=True,
+    )
+
+
 def run_selfcheck(args) -> int:
     import tempfile
 
@@ -2519,6 +2803,7 @@ def run_selfcheck(args) -> int:
         _selfcheck_sanitize(tmp)
         _selfcheck_equivalence(tmp)
         _selfcheck_resume_regime(args, tmp)
+        _selfcheck_shard_assemble(args, tmp)
         _selfcheck_pipeline(args, tmp)
     # Candidate-set derivation pins (production constants).
     assert h3_hs_set("B") == [4, 8, 12, 16, 20, 24, 28, 32]
@@ -2542,7 +2827,9 @@ def run_selfcheck(args) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--phase", choices=("fit", "decide", "unitwall", "selfcheck"), default="fit")
+    ap.add_argument(
+        "--phase", choices=("fit", "decide", "unitwall", "shardplan", "selfcheck"), default="fit"
+    )
     ap.add_argument("--model-key", choices=("A", "B"), default=None, help="fit phase: which model")
     ap.add_argument(
         "--tensors-prefix",
@@ -2559,6 +2846,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"with --pilot: exit rc={G1_GATE_RC} when the G1 gate FAILs (designed halt)",
     )
     ap.add_argument("--layers", default=None, help="comma hs subset (across-layer sharding)")
+    ap.add_argument(
+        "--shard-sync-prefix",
+        default=None,
+        help="#10/SB-2 cross-pod merge: HF data-repo prefix where --layers shard "
+        "invocations publish per-layer cells and the assembly invocation adopts "
+        "them (regime_sha16 verified per cell; see --phase shardplan)",
+    )
+    ap.add_argument("--shards", type=int, default=2, help="shardplan: layer shards per model (#10)")
     ap.add_argument("--skip-lodo", action="store_true")
     ap.add_argument("--lodo-groups", default=None, help="comma subset of lodo groups")
     ap.add_argument("--boot-draws", type=int, default=2000)
@@ -2611,6 +2906,8 @@ def main() -> int:
         rc = run_selfcheck(args)
     elif args.phase == "unitwall":
         run_unitwall(args)
+    elif args.phase == "shardplan":
+        run_shardplan(args)
     elif args.phase == "decide":
         if args.publish is None:
             raise SystemExit(

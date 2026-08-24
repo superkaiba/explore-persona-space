@@ -23,8 +23,10 @@ boundaries mocked/redirected:
       `phase_gen`'s exact record schema (real tokenizer + real
       `render_prompt_ids`/`assert_chat_template`/`ids_sha16`) with synthetic
       completion token ids sampled from each row's own prompt ids — and runs
-      the REAL u2 accounting around them: `gen_regime` + `ensure_remote_regime`
-      (raw-prefix digest published BEFORE any chunk upload) + `chunk_key` +
+      the REAL u2 accounting around them: `load_corpus_rows` (validation +
+      the SB-1(i) full-corpus content sha16) + the 3-arg `gen_regime` +
+      `ensure_remote_regime` (raw-prefix digest published BEFORE any chunk
+      upload; SB-1(iii) first-publication seal) + `chunk_key` +
       `count_chunk_stats` + `write_gen_meta`, so the capture leg's consumer
       gates (regime verify + `require_gen_complete`) execute REAL against this
       leg's artifacts.
@@ -59,10 +61,12 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-# r2 subprefix: round-1 legs uploaded pre-revision artifacts under smoke_u4/
-# with NO regime digest; a fresh nested namespace keeps every regime /
-# completeness gate clean while staying confined to smoke_u4/ (hygiene rule).
-SMOKE_PREFIX = "issue2502_ctxmap_xgen/smoke_u4/r2"
+# r3 subprefix: r2 artifacts carry the OLD 2-arg regime shape (no
+# corpus_content_sha16, num_shards stripped) and pre-seeded chunk files would
+# trip the SB-1(iii) first-publication seal; a fresh nested namespace keeps
+# every regime / completeness gate clean while staying confined to smoke_u4/
+# (hygiene rule).
+SMOKE_PREFIX = "issue2502_ctxmap_xgen/smoke_u4/r3"
 SMOKE_SOURCES = ("lmsys_chat_1m", "itw_jailbreak", "writingprompts")
 FIXTURE_SEED = 20260823
 GEN_SEED_MAIN = 42
@@ -341,12 +345,12 @@ def leg_gen(args) -> None:
     disable = a.disable_thinking
     tok = AutoTokenizer.from_pretrained(a.model)
     template_sha = GC.assert_chat_template(tok, disable_thinking=disable)
-    regime = GC.gen_regime(a, template_sha)
+    # Production order (RV3-u1 SB-1(i)): load_corpus_rows FIRST — its
+    # full-corpus content sha16 is a REQUIRED gen_regime input — then the
+    # 3-arg regime, then the remote-regime seal (all REAL u2 accounting).
+    rows, corpus_sha = GC.load_corpus_rows(a, work)
+    regime = GC.gen_regime(a, template_sha, corpus_sha)
     GC.ensure_remote_regime(prefixes["raw"], regime, work, write_if_absent=True)
-    local = GC.fetch_repo_file(
-        f"{prefixes['corpus']}/corpus.jsonl", work / "corpus_dl", what="smoke-corpus"
-    )
-    rows = list(GC.iter_jsonl(local))
     chunks = [rows[i : i + CHUNK_SIZE] for i in range(0, len(rows), CHUNK_SIZE)]
     keys = [GC.chunk_key(a, ci) for ci in range(len(chunks))]
     rng = random.Random(seed * 1000003 + (0 if model_key == "A" else 1))
@@ -623,7 +627,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--model-key", choices=("A", "B"), default=None)
     ap.add_argument("--rep-seed", type=int, default=None, help="reliability replicate seed")
-    ap.add_argument("--work", default="/tmp/issue2502-smoke-u4")
+    ap.add_argument("--work", default="/tmp/issue2502-smoke-u4-r3")
     ap.add_argument("--out-root", default=None, help="rel-ceiling: eval_results out-root")
     ap.add_argument("--import-check", action="store_true")
     return ap
