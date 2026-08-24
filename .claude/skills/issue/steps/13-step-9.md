@@ -3303,6 +3303,24 @@ suite directly and posts an `epm:test-verdict` event with the result.
       #   uv run python scripts/select_step9c_tests.py --emit-launcher --issue <N>
       # (pyproject.toml's `junit_family = "xunit1"` ini default (#2315 D0) is
       # the defense-in-depth backstop; the CLI flag stays authoritative.)
+      # xunit1 pre-launch refusal (#2315 D1) — runs UNCONDITIONALLY, before the
+      # launcher below. Route (1) verbatim copies leave the placeholder
+      # argument as-is (no pytest token = out of scope, so only the guard's
+      # built-in SELF-TEST gates the launch; exit 3 = the guard's own
+      # discrimination is broken -> FATAL, do NOT launch). Route (2)
+      # self-composition REPLACES the placeholder with the composed text.
+      # INPUT CONTRACT (load-bearing, #2315 r2): pass ONLY the composed
+      # LAUNCHER COMMAND TEXT — the single detached-launcher command you are
+      # about to execute below — NEVER this whole 1b block: the flag-set-
+      # fidelity comment above contains the literal `junit_family=xunit1`, so
+      # a whole-block input satisfies the check by reading its own
+      # documentation (vacuous PASS). Composed text embeds single quotes:
+      # write it to /tmp/step9c-launcher-issue-<N>.txt with the Write tool
+      # (never a heredoc, #2115) and swap the quoted placeholder argument for
+      # `-` plus a `< /tmp/step9c-launcher-issue-<N>.txt` stdin redirect.
+      # Exit 1 = the text carries --junitxml WITHOUT junit_family=xunit1:
+      uv run python scripts/select_step9c_tests.py --assert-launcher '<composed launcher command text — inert placeholder on a verbatim route-(1) copy>' \
+        || { echo "FATAL: composed launcher violates the xunit1 contract (--junitxml without -o junit_family=xunit1) or the guard self-test failed — fix the launcher text, or emit it mechanically (select_step9c_tests.py --emit-launcher --issue <N>); do NOT launch" >&2; exit 1; }
       S9C_FILES="<files>"
       # Splice-shape check (#2317) — the count check below validates
       # CARDINALITY only: unquoted word-splitting counts a newline list

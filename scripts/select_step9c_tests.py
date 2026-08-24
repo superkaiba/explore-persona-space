@@ -320,10 +320,11 @@ hand-composed PYTEST launcher: exit 1 when the text carries ``--junitxml``
 per-case ``file`` attributes, so ``step9c_baseline.py compare`` aborts
 ``has no file attribute`` / ``indeterminate: True`` (#2312) and the junit is
 unrepairable after the fact; exit 0 on a compliant launcher, on text with no
-``--junitxml`` / no ``pytest`` token, and on ``step9c_baseline.py`` consumer
-commands (compare CONSUMES the junit — exempt); exit 3 when the built-in
-self-test fails (verdict not rendered). Every output mode is mutually
-exclusive with every other (argparse exit 2).
+``--junitxml`` / no ``pytest`` token, and on text that is EXCLUSIVELY a
+``step9c_baseline.py`` consumer command (compare CONSUMES the junit — exempt;
+a combined producer+consumer text is judged on its pytest producer, #2315 r2);
+exit 3 when the built-in self-test fails (verdict not rendered). Every output
+mode is mutually exclusive with every other (argparse exit 2).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -2348,24 +2349,44 @@ _ASSERT_LAUNCHER_SELFTEST_NEG = "uv run pytest tests/test_selftest.py --junitxml
 _ASSERT_LAUNCHER_SELFTEST_NEG_ALIAS = (
     "uv run pytest tests/test_selftest.py --junit-xml=/tmp/selftest.xml"
 )
+# #2315 r2: a COMBINED text — a malformed pytest producer chained with a later
+# step9c_baseline.py consumer — must be judged on its producer, never exempted
+# by the consumer substring (the exemption narrowing below); the self-test pins
+# that discrimination so a regression refuses to render verdicts:
+_ASSERT_LAUNCHER_SELFTEST_NEG_COMBINED = (
+    "uv run pytest tests/test_selftest.py --junitxml=/tmp/selftest.xml && "
+    "uv run python scripts/step9c_baseline.py compare --junitxml /tmp/selftest.xml --pytest-rc 1"
+)
+
+# A pytest PRODUCER token: the standalone word `pytest` (a command word), not a
+# substring of a flag/path like `--pytest-rc` or `/tmp/step9c-pytest-issue-N.log`
+# — the step-1d compare invocation carries BOTH of those and must stay exempt
+# (#2315 r2). Word-ish boundaries only; deliberately NOT a shell tokenizer (the
+# substring-check design is plan-registered — this regex narrows the consumer
+# EXEMPTION, it does not re-tokenize the verdict checks below).
+_PYTEST_PRODUCER_RE = re.compile(r"(?<![\w/-])pytest(?![\w-])")
 
 
 def launcher_verdict(text: str) -> tuple[int, str]:
     """Judge composed launcher TEXT for the xunit1 contract (#2315 D1).
 
     Returns ``(rc, message)``: rc 0 = OK / exempt / out-of-scope, rc 1 =
-    REFUSED. Scope: PYTEST launcher text only — argv containing
-    ``step9c_baseline.py`` is EXEMPT (the step-1d compare invocation
-    legitimately carries ``--junitxml``: it CONSUMES the junit rather than
-    producing one), and text with no ``pytest`` token is out of scope. BOTH
-    pytest spellings are recognized — ``--junitxml`` and the hyphenated alias
-    ``--junit-xml`` (each in its ``=PATH`` and space-``PATH`` forms; the two
-    substring checks cover all four shapes).
+    REFUSED. Scope: PYTEST launcher text only — text that is EXCLUSIVELY a
+    ``step9c_baseline.py`` consumer command (contains ``step9c_baseline.py``
+    and NO standalone ``pytest`` producer token) is EXEMPT: the step-1d
+    compare invocation legitimately carries ``--junitxml`` (it CONSUMES the
+    junit rather than producing one). A COMBINED text holding both a pytest
+    producer and a consumer is judged on its producer (#2315 r2 — the coarse
+    any-substring exemption would have suppressed a malformed producer).
+    Text with no ``pytest`` token is out of scope. BOTH pytest spellings are
+    recognized — ``--junitxml`` and the hyphenated alias ``--junit-xml``
+    (each in its ``=PATH`` and space-``PATH`` forms; the two substring checks
+    cover all four shapes).
     """
-    if "step9c_baseline.py" in text:
+    if "step9c_baseline.py" in text and not _PYTEST_PRODUCER_RE.search(text):
         return 0, (
-            "exempt — step9c_baseline.py consumer command (compare CONSUMES the junit; "
-            "its --junitxml is not a pytest producer flag)"
+            "exempt — exclusively a step9c_baseline.py consumer command (no standalone "
+            "pytest producer token; compare CONSUMES the junit rather than producing one)"
         )
     if "pytest" not in text:
         return 0, "out of scope — no pytest token (not a pytest launcher)"
@@ -2390,13 +2411,15 @@ def _run_assert_launcher_mode(arg: str) -> int:
     pos_rc, _ = launcher_verdict(_ASSERT_LAUNCHER_SELFTEST_POS)
     neg_rc, _ = launcher_verdict(_ASSERT_LAUNCHER_SELFTEST_NEG)
     neg_alias_rc, _ = launcher_verdict(_ASSERT_LAUNCHER_SELFTEST_NEG_ALIAS)
-    if pos_rc != 0 or neg_rc != 1 or neg_alias_rc != 1:
+    neg_combined_rc, _ = launcher_verdict(_ASSERT_LAUNCHER_SELFTEST_NEG_COMBINED)
+    if pos_rc != 0 or neg_rc != 1 or neg_alias_rc != 1 or neg_combined_rc != 1:
         # The guard's own discrimination is broken — refuse to render a
         # verdict (a guard that cannot fail correctly is not a guard, #2314).
         print(
             "select_step9c_tests: FATAL — --assert-launcher self-test failed "
             f"(positive fixture rc={pos_rc}, expected 0; negative fixture rc={neg_rc}, "
             f"expected 1; hyphenated-alias negative fixture rc={neg_alias_rc}, "
+            f"expected 1; combined producer+consumer fixture rc={neg_combined_rc}, "
             "expected 1); verdict NOT rendered",
             file=sys.stderr,
         )
@@ -2435,9 +2458,11 @@ def render_launcher(tests: list[str], issue: int, timeout_s: int) -> str:
 
     Substitutes the SPACE-JOINED *tests* list for ``<files>``, *issue* for
     ``<N>``, and *timeout_s* for ``<T>`` in the canonical launcher template.
-    Fails loud on an empty list / non-positive issue or timeout, and asserts
-    no placeholder survives substitution (an unsubstituted placeholder is the
-    #1992-class trap the 1b cross-checks exist to catch — never emit one).
+    Fails loud on an empty list / non-positive issue or timeout, and RAISES
+    ``RuntimeError`` when a placeholder survives substitution (an
+    unsubstituted placeholder is the #1992-class trap the 1b cross-checks
+    exist to catch — never emit one; an explicit raise, not a bare ``assert``,
+    so ``python -O`` cannot strip the check — #2315 r2).
     """
     if not tests:
         raise ValueError("render_launcher: empty test list — refusing to emit a launcher")
@@ -2451,7 +2476,8 @@ def render_launcher(tests: list[str], issue: int, timeout_s: int) -> str:
         .replace("<T>", str(timeout_s))
     )
     for placeholder in ("<files>", "<N>", "<T>"):
-        assert placeholder not in out, f"render_launcher: unsubstituted {placeholder}"
+        if placeholder in out:
+            raise RuntimeError(f"render_launcher: unsubstituted {placeholder} — never emit it")
     return out
 
 
@@ -2598,10 +2624,12 @@ def main(argv: list[str] | None = None) -> int:
             "lacks per-case file attributes and step9c_baseline.py compare "
             "aborts 'has no file attribute' / indeterminate: True (#2312), "
             "unrepairable after the fact. Exit 0 on a compliant launcher, on "
-            "text with no --junitxml or no pytest token, and on "
-            "step9c_baseline.py consumer commands (compare CONSUMES the junit — "
-            "exempt). Exit 3 when the built-in self-test fails (verdict not "
-            "rendered). Mutually exclusive with every other output mode."
+            "text with no --junitxml or no pytest token, and on text that is "
+            "EXCLUSIVELY a step9c_baseline.py consumer command (compare "
+            "CONSUMES the junit — exempt; a combined producer+consumer text "
+            "is judged on its pytest producer, #2315 r2). Exit 3 when the "
+            "built-in self-test fails (verdict not rendered). Mutually "
+            "exclusive with every other output mode."
         ),
     )
     parser.add_argument(
