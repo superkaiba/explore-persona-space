@@ -22,3 +22,35 @@ gates (they cannot produce a flip on identical inputs — a flip tracing to one 
 `unexplained` must surface), and do NOT re-run the full check (tautological). Tighten to BOTH
 sides: `before == predicted(old)` AND `after == predicted(new)`. Worked impl:
 `scripts/issue2514_c26c27_corpus_sweep.py::_predicted_c26` + `_c26_row_meta`.
+
+**NOT SUFFICIENT ON ITS OWN — the directional replay above was ALSO ruled a BLOCKER
+(#2514 round 2).** The replay reads its prediction inputs from the same config, parsers
+and regexes as production, so `predicted == realized` is ENTAILED whenever those helpers
+are byte-identical across the swept modules — which is the normal case. The gate stayed
+unfalsifiable: a wrong-but-self-consistent remap still scored zero unexplained. Worse than
+the B200 substitution the reviewer offered: an EMPTY/garbage new config (total capture
+loss — the failure the sweep exists to catch) produces `WARN->SKIP` flips that the replay
+predicts correctly on both sides and buckets as "expected-inversion", which is not even
+semantically an inversion.
+
+**Two additions the round-3 fix needed (both required):**
+
+1. **An anchor INDEPENDENT of the swept modules.** Pin the APPROVED old and new config as
+   hardcoded literal constants in the classifier, transcribed from the plan / the approved
+   change — never derived by importing or running the module under validation — and ASSERT
+   each leg's header config equals its approved constant BEFORE any bucketing. That is what
+   lets the gate reject a wrong config at all; the replay only ever detects check-code
+   divergence.
+2. **A direction conjunct.** Require the realized transition itself to be an inversion —
+   `(WARN,PASS)` or `(PASS,WARN)` — not merely predicted. Any other shape, `WARN->SKIP`
+   included, goes to `unexplained`.
+
+**The acceptance signal is FALSIFIABILITY, not agreement.** Matching prediction counts prove
+nothing about mapping correctness. Ship a NEGATIVE-CONTROL test — a before/after pair whose
+after header carries an unapproved remap (B200, empty config) with a self-consistent flipped
+row — and DEMONSTRATE it red against the PRIOR classifier (git-show scratch of the parent
+commit) and loud-refusing under the new one. Two rounds passed review on green tests plus
+matching counts; only the counterfactual input mutation settled it.
+
+Worked impl: `scripts/issue2514_c26c27_corpus_sweep.py::_APPROVED_LEG_REGIMES` +
+`_bucket_c26_flip`; controls in `tests/test_issue2514_corpus_sweep.py`.
