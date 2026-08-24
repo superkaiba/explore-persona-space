@@ -1,6 +1,6 @@
 {
-  "commit": "82a16cd2f5",
-  "created": "2026-08-24T02:51:45Z",
+  "commit": "25af31bd3a",
+  "created": "2026-08-24T03:57:58Z",
   "figsize": [
     12.600000000000001,
     3.2
@@ -8,145 +8,145 @@
   "points": [
     {
       "x": 0.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.4316527379000919,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.4316527379000919,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 1.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.42083377441527237,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.42083377441527237,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 2.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.4392968372138411,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.4392968372138411,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 3.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.30906527341123086,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.30906527341123086,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": 0.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.4908112028011593,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.4908112028011593,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.24190268868395548,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.24190268868395548,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.1950998079316294,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.1950998079316294,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 3.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.29219964010055055,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.29219964010055055,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.40357298415692755,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.40357298415692755,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.44332782406301957,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.44332782406301957,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.3755845816845631,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.3755845816845631,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.37556160438243336,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.37556160438243336,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.5872028420519712,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.5872028420519712,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 1.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.3674013190488765,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.3674013190488765,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.31380996063983074,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.31380996063983074,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.40883052238747436,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.40883052238747436,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 0.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.4694116842951536,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.4694116842951536,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.34022569127038493,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.34022569127038493,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.3646166174065816,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.3646166174065816,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 3.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.30959505174580726,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.30959505174580726,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 0.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.4765302902410607,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.4765302902410607,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 1.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.3627382594963018,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.3627382594963018,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.33768156097528923,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.33768156097528923,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 3.0,
-      "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)": 0.33905041840549927,
+      "per-seed flip term\n(half-in-domain minus generic)": 0.33905041840549927,
       "_kind": "line",
       "_group": 5
     },
@@ -303,12 +303,12 @@
     "axes": [
       {
         "title_left": "evil",
-        "ylabel": "per-seed \u0394\u03c1(f_u=0.5) \u2212 \u0394\u03c1(f_u=0)",
+        "ylabel": "per-seed flip term\n(half-in-domain minus generic)",
         "xticklabels": [
-          "ctx\nL=250",
-          "ctx\nL=2500",
-          "pfx\nL=250",
-          "pfx\nL=2500"
+          "context map\n250 labels",
+          "context map\n2,500 labels",
+          "prefix map\n250 labels",
+          "prefix map\n2,500 labels"
         ],
         "yticklabels": [
           "\u22120.1",
@@ -325,10 +325,8 @@
       {
         "title_left": "sycophancy",
         "xticklabels": [
-          "ctx\nL=250",
-          "ctx\nL=2500",
-          "pfx\nL=250",
-          "pfx\nL=2500"
+          "context map\n250 labels",
+          "context map\n2,500 labels"
         ],
         "yticklabels": [
           "\u22120.15",
@@ -345,10 +343,10 @@
       {
         "title_left": "hallucination",
         "xticklabels": [
-          "ctx\nL=250",
-          "ctx\nL=2500",
-          "pfx\nL=250",
-          "pfx\nL=2500"
+          "context map\n250 labels",
+          "context map\n2,500 labels",
+          "prefix map\n250 labels",
+          "prefix map\n2,500 labels"
         ],
         "yticklabels": [
           "\u22120.3",

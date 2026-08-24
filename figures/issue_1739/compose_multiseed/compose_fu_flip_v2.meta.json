@@ -1,6 +1,6 @@
 {
-  "commit": "82a16cd2f5",
-  "created": "2026-08-24T02:51:42Z",
+  "commit": "25af31bd3a",
+  "created": "2026-08-24T03:57:55Z",
   "figsize": [
     12.600000000000001,
     3.4
@@ -8,70 +8,70 @@
   "points": [
     {
       "x": -0.14,
-      "\u0394\u03c1 (map arm \u2212 context arm)": -0.13811718753612565,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": -0.13811718753612565,
       "error": 0.09614354436958497,
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 0.0,
-      "\u0394\u03c1 (map arm \u2212 context arm)": -0.25788298225366857,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": -0.25788298225366857,
       "error": 0.09944169848205509,
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 0.14,
-      "\u0394\u03c1 (map arm \u2212 context arm)": -0.2738734755350526,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": -0.2738734755350526,
       "error": 0.08267039478146075,
       "_kind": "errorbar",
       "_group": 2
     },
     {
       "x": 2.26,
-      "\u0394\u03c1 (map arm \u2212 context arm)": 0.3384131027049351,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": 0.3384131027049351,
       "error": 0.06898286252847402,
       "_kind": "errorbar",
       "_group": 3
     },
     {
       "x": 2.4,
-      "\u0394\u03c1 (map arm \u2212 context arm)": 0.10485527724263322,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": 0.10485527724263322,
       "error": 0.00933769590095937,
       "_kind": "errorbar",
       "_group": 4
     },
     {
       "x": 0.86,
-      "\u0394\u03c1 (map arm \u2212 context arm)": -0.13445593662005323,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": -0.13445593662005323,
       "error": 0.2216536097181504,
       "_kind": "errorbar",
       "_group": 5
     },
     {
       "x": 1.0,
-      "\u0394\u03c1 (map arm \u2212 context arm)": -0.2823919068040399,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": -0.2823919068040399,
       "error": 0.05097784881304342,
       "_kind": "errorbar",
       "_group": 6
     },
     {
       "x": 1.1400000000000001,
-      "\u0394\u03c1 (map arm \u2212 context arm)": -0.3130639877089595,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": -0.3130639877089595,
       "error": 0.04555053088634614,
       "_kind": "errorbar",
       "_group": 7
     },
     {
       "x": 3.26,
-      "\u0394\u03c1 (map arm \u2212 context arm)": 0.20322562435523595,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": 0.20322562435523595,
       "error": 0.17619755508263246,
       "_kind": "errorbar",
       "_group": 8
     },
     {
       "x": 3.4,
-      "\u0394\u03c1 (map arm \u2212 context arm)": 0.05665851160145936,
+      "Spearman-correlation difference\n(mapped-answer arm minus context arm)": 0.05665851160145936,
       "error": 0.03331508427464795,
       "_kind": "errorbar",
       "_group": 9
@@ -211,12 +211,12 @@
     "axes": [
       {
         "title_left": "evil (FLIP-CONFIRMED)",
-        "ylabel": "\u0394\u03c1 (map arm \u2212 context arm)",
+        "ylabel": "Spearman-correlation difference\n(mapped-answer arm minus context arm)",
         "xticklabels": [
-          "ctx\nf_u=0",
-          "pfx\nf_u=0",
-          "ctx\nf_u=0.5",
-          "pfx\nf_u=0.5"
+          "context map\ngeneric pool",
+          "prefix map\ngeneric pool",
+          "context map\nhalf in-domain",
+          "prefix map\nhalf in-domain"
         ],
         "yticklabels": [
           "\u22120.4",
@@ -234,10 +234,8 @@
       {
         "title_left": "sycophancy (INDETERMINATE)",
         "xticklabels": [
-          "ctx\nf_u=0",
-          "pfx\nf_u=0",
-          "ctx\nf_u=0.5",
-          "pfx\nf_u=0.5"
+          "context map\ngeneric pool",
+          "context map\nhalf in-domain"
         ],
         "yticklabels": [
           "\u22120.25",
@@ -258,10 +256,10 @@
           "L=8,000"
         ],
         "xticklabels": [
-          "ctx\nf_u=0",
-          "pfx\nf_u=0",
-          "ctx\nf_u=0.5",
-          "pfx\nf_u=0.5"
+          "context map\ngeneric pool",
+          "prefix map\ngeneric pool",
+          "context map\nhalf in-domain",
+          "prefix map\nhalf in-domain"
         ],
         "yticklabels": [
           "\u22120.6",

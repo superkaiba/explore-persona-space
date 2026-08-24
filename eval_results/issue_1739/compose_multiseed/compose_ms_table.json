@@ -5314,8 +5314,8 @@
   }
  },
  "provenance": {
-  "git_commit": "82a16cd2f5de9a1e5f46beb24e950346fb8a46d4",
-  "ts": "2026-08-24T02:51:36Z",
+  "git_commit": "25af31bd3ad5e9e248b9c15941e4328f22f7b3d0",
+  "ts": "2026-08-24T03:57:47Z",
   "argv": [
    "--results-root",
    "eval_results/issue_1739/compose_multiseed",
@@ -5342,9 +5342,9 @@
   }
  },
  "figure_captions": {
-  "compose_fu_flip_v2": "Headline \u0394\u03c1 (arm6 map-projection \u2212 arm2 context-native), seed mean \u00b1 95% t-CI (df = n_seeds \u2212 1) per (f_u group \u00d7 variant), L-anchor colored. f_u is the share of the FIXED 5,000-row compose pool drawn from behavior-eliciting labeled rows (dose-as-share, not additive pool growth); f_l = 0 (anchor-cell contexts excluded from the eliciting pool). Evil lacks (f_u=0.5, L=8000) by designed infeasibility.",
-  "compose_dose_curve": "Dose curve at L = 2,500, f_l = 0: seed-mean \u0394\u03c1 \u00b1 95% t-CI vs f_u, variants pooled. f_u is the share of the fixed 5,000-row pool from eliciting rows (dose-as-share). Evil lacks f_u = 1.0 (designed-infeasible: quota 5,000 vs ~3,968 available) and may conditionally lack f_u = 0.75; the pre-registered primary trend is f_u \u2264 0.5.",
-  "compose_ms_spaghetti": "Exploratory: per-seed anchor-cell flip terms \u0394\u03c1(f_u=0.5, f_l=0) \u2212 \u0394\u03c1(f_u=0, f_l=0) (thin gray lines, one per seed) with the seed mean (colored), per behavior."
+  "compose_fu_flip_v2": "Headline Spearman-correlation difference (mapped-answer arm minus context arm), seed mean with 95 percent t-interval (df = n_seeds \u2212 1) per pool-composition group and map variant, label-budget colored. The in-domain share is the fraction of the FIXED 5,000-row map-fitting pool drawn from behavior-eliciting labeled rows (dose-as-share, not additive pool growth); anchor-cell contexts are excluded from the eliciting pool. Sycophancy's prefix-map columns are omitted: designed-degenerate (no system prompt, constant prefix substrate). Evil lacks the half-in-domain 8,000-label cell by designed infeasibility.",
+  "compose_dose_curve": "Dose curve at 2,500 labels: seed-mean Spearman-correlation difference (mapped-answer arm minus context arm) with 95 percent t-interval vs the in-domain share of the fixed 5,000-row map-fitting pool (dose-as-share); variants pooled (sycophancy: context map only \u2014 prefix designed-degenerate). Evil lacks share 1.0 (designed-infeasible: quota 5,000 vs ~3,968 available); the pre-registered primary trend is share <= 0.5.",
+  "compose_ms_spaghetti": "Exploratory: per-seed anchor-cell flip terms (half-in-domain minus generic pool, at each label budget; thin gray lines, one per seed) with the seed mean (colored), per behavior. Sycophancy's prefix-map columns are omitted (designed-degenerate)."
  },
  "round_verdict": "MIXED",
  "figures": {

@@ -867,11 +867,27 @@ def render_figures(report: dict, fig_dir: Path) -> dict[str, str]:
             )
         ax.axhline(0.0, color="0.75", lw=0.8, zorder=0)
         ax.axvline(1.7, color="0.85", lw=0.8, zorder=0)
-        ax.set_xticks([0.0, 1.0, 2.4, 3.4])
-        ax.set_xticklabels(["ctx\nf_u=0", "pfx\nf_u=0", "ctx\nf_u=0.5", "pfx\nf_u=0.5"])
+        # Reader-facing group labels (crc r1 Lens 3); a designed-degenerate
+        # variant's tick positions are OMITTED outright — the caption names
+        # the exclusion, never an empty labeled gap (crc r1 Lens 13 /
+        # CLAUDE.md §8-bis: no on-canvas scope notes).
+        b_vars = behavior_variants(b)
+        tick_map = {
+            (0.0, "context_end"): (0.0, "context map\ngeneric pool"),
+            (0.0, "prefix_end"): (1.0, "prefix map\ngeneric pool"),
+            (0.5, "context_end"): (2.4, "context map\nhalf in-domain"),
+            (0.5, "prefix_end"): (3.4, "prefix map\nhalf in-domain"),
+        }
+        ticks = [tick_map[(f, v)] for f in (0.0, 0.5) for v in b_vars]
+        ax.set_xticks([t[0] for t in ticks])
+        ax.set_xticklabels([t[1] for t in ticks], fontsize=7)
         verdict = report["behaviors"][b].get("verdict", "")
         ax.set_title(f"{b} ({verdict})")
-        ax.set_ylabel("Δρ (map arm − context arm)" if b == behaviors[0] else "")
+        ax.set_ylabel(
+            "Spearman-correlation difference\n(mapped-answer arm minus context arm)"
+            if b == behaviors[0]
+            else ""
+        )
     handles = [
         plt.Line2D([], [], marker="o", ls="", color=c, label=f"L={ll:,}") for ll, c in lcol.items()
     ]
@@ -898,8 +914,8 @@ def render_figures(report: dict, fig_dir: Path) -> dict[str, str]:
             lo_e, hi_e = _clamped_yerr(y, lo, hi)
             ax.errorbar(x, y, yerr=[[lo_e], [hi_e]], fmt="none", color=bcol[b], capsize=2, lw=1.0)
     ax.axhline(0.0, color="0.75", lw=0.8, zorder=0)
-    ax.set_xlabel("f_u (eliciting share of the fixed pool)")
-    ax.set_ylabel("Δρ (map arm − context arm)")
+    ax.set_xlabel("in-domain share of the map-fitting pool")
+    ax.set_ylabel("Spearman-correlation difference\n(mapped-answer arm minus context arm)")
     ax.legend(frameon=False, fontsize=8)
     out = savefig_paper(fig, "compose_dose_curve", dir=fig_dir)
     plt.close(fig)
@@ -908,9 +924,12 @@ def render_figures(report: dict, fig_dir: Path) -> dict[str, str]:
     # ---- exploratory spaghetti: per-seed anchor-pair differences ----
     fig, axes = plt.subplots(1, max(1, len(behaviors)), figsize=(4.2 * len(behaviors), 3.2))
     axes = [axes] if len(behaviors) == 1 else list(axes)
-    anchor_cells = [(v, ll) for v in VARIANTS for ll in ANCHOR_BUDGETS]
-    labels = [f"{'ctx' if v == 'context_end' else 'pfx'}\nL={ll}" for v, ll in anchor_cells]
+    variant_word = {"context_end": "context map", "prefix_end": "prefix map"}
     for ax, b in zip(axes, behaviors):
+        # per-behavior anchor cells: a designed-degenerate variant's columns
+        # are omitted (crc r1 Lens 13; the caption names the exclusion)
+        anchor_cells = [(v, ll) for v in behavior_variants(b) for ll in ANCHOR_BUDGETS]
+        labels = [f"{variant_word[v]}\n{ll:,} labels" for v, ll in anchor_cells]
         contrast = report["behaviors"][b].get("flip_contrast") or {}
         per_seed_terms = report["behaviors"][b].get("per_seed_anchor_terms") or {}
         for s, terms in sorted(per_seed_terms.items()):
@@ -928,7 +947,9 @@ def render_figures(report: dict, fig_dir: Path) -> dict[str, str]:
         ax.set_xticks(range(len(anchor_cells)))
         ax.set_xticklabels(labels, fontsize=7)
         ax.set_title(b)
-        ax.set_ylabel("per-seed Δρ(f_u=0.5) − Δρ(f_u=0)" if b == behaviors[0] else "")
+        ax.set_ylabel(
+            "per-seed flip term\n(half-in-domain minus generic)" if b == behaviors[0] else ""
+        )
         _ = contrast
     out = savefig_paper(fig, "compose_ms_spaghetti", dir=fig_dir)
     plt.close(fig)
@@ -938,21 +959,26 @@ def render_figures(report: dict, fig_dir: Path) -> dict[str, str]:
 
 FIGURE_CAPTIONS = {
     "compose_fu_flip_v2": (
-        "Headline Δρ (arm6 map-projection − arm2 context-native), seed mean ± 95% t-CI "
-        "(df = n_seeds − 1) per (f_u group × variant), L-anchor colored. f_u is the share "
-        "of the FIXED 5,000-row compose pool drawn from behavior-eliciting labeled rows "
-        "(dose-as-share, not additive pool growth); f_l = 0 (anchor-cell contexts excluded "
-        "from the eliciting pool). Evil lacks (f_u=0.5, L=8000) by designed infeasibility."
+        "Headline Spearman-correlation difference (mapped-answer arm minus context arm), "
+        "seed mean with 95 percent t-interval (df = n_seeds − 1) per pool-composition group "
+        "and map variant, label-budget colored. The in-domain share is the fraction of the "
+        "FIXED 5,000-row map-fitting pool drawn from behavior-eliciting labeled rows "
+        "(dose-as-share, not additive pool growth); anchor-cell contexts are excluded from "
+        "the eliciting pool. Sycophancy's prefix-map columns are omitted: designed-degenerate "
+        "(no system prompt, constant prefix substrate). Evil lacks the half-in-domain "
+        "8,000-label cell by designed infeasibility."
     ),
     "compose_dose_curve": (
-        "Dose curve at L = 2,500, f_l = 0: seed-mean Δρ ± 95% t-CI vs f_u, variants pooled. "
-        "f_u is the share of the fixed 5,000-row pool from eliciting rows (dose-as-share). "
-        "Evil lacks f_u = 1.0 (designed-infeasible: quota 5,000 vs ~3,968 available) and may "
-        "conditionally lack f_u = 0.75; the pre-registered primary trend is f_u ≤ 0.5."
+        "Dose curve at 2,500 labels: seed-mean Spearman-correlation difference (mapped-answer "
+        "arm minus context arm) with 95 percent t-interval vs the in-domain share of the fixed "
+        "5,000-row map-fitting pool (dose-as-share); variants pooled (sycophancy: context map "
+        "only — prefix designed-degenerate). Evil lacks share 1.0 (designed-infeasible: quota "
+        "5,000 vs ~3,968 available); the pre-registered primary trend is share <= 0.5."
     ),
     "compose_ms_spaghetti": (
-        "Exploratory: per-seed anchor-cell flip terms Δρ(f_u=0.5, f_l=0) − Δρ(f_u=0, f_l=0) "
-        "(thin gray lines, one per seed) with the seed mean (colored), per behavior."
+        "Exploratory: per-seed anchor-cell flip terms (half-in-domain minus generic pool, at "
+        "each label budget; thin gray lines, one per seed) with the seed mean (colored), per "
+        "behavior. Sycophancy's prefix-map columns are omitted (designed-degenerate)."
     ),
 }
 
