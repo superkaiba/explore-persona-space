@@ -1,6 +1,7 @@
 ---
-title: Is answer correctness predictable from the context vector, and does the context-to-answer
-  map help?
+title: Answer correctness is predictable from the context vector before generation
+  on all four surfaces, and the context-to-answer map helps only at small label budgets
+  (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-19T16:45:16Z'
