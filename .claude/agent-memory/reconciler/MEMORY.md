@@ -4,6 +4,8 @@
 
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
+- [Twin brief excluded the disputed question](feedback_twin_brief_excluded_disputed_question.md) — PASS = non-coverage, not rebuttal; grep plan for post-spawn BINDING body addenda (#2546 r1)
+
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — recoverability never rescues a defective gate/kill/lattice; 35+ incidents
 - [Gate object-identity unchecked](feedback_claude_gate_object_identity_unchecked.md) — read the NAMED function; wrong object/phase inputs (#2329 r2)
 - [Gate-design flaw vs recoverable robustness read](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on misfire / barred amendment / capture loss
@@ -29,6 +31,8 @@
 - [Claims need the direct probe](feedback_claude_trusts_disk_assumption_framed_as_code_claim.md) (#724); [caller topology](feedback_claude_trusts_caller_topology_claims_without_wrapper_trace.md) (#868); [labeled split](feedback_claude_approves_labeled_split_over_disjoint_registries.md) — intersect registry keys (#901)
 
 ## Claude code-review misses (FAIL-leaning calibration)
+
+- [AST-scanner name-binding FP channel + kill-clause trigger-domain paraphrase](feedback_ast_scanner_name_binding_and_kill_clause_trigger_domain.md) — construct the same-name collision; execution-test tightenings for measured-identity; quote STOP clauses verbatim (#2537 r1)
 
 - [Concern closure graded against the LEDGER row, not the fix-sentence](feedback_concern_closure_graded_against_ledger_row_not_fix_sentence.md) — multi-part concern closed on the paraphrased half; diff round-added invariant prose vs the adjacent command (#2263 r3)
 - [Security sweep misses data-into-shell splices](feedback_claude_security_sweep_misses_data_into_shell_splice.md) — re-scan added fenced Bash yourself (#2241 r1)
@@ -64,7 +68,7 @@
 - [Best-effort upload made load-bearing](feedback_claude_misses_besteffort_upload_made_loadbearing.md) — warn-only upload + ephemeral teardown (#613)
 - [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg new AND prior literals before believing ✓
 - [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes yourself (#897)
-- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection probes (#2329 r2)
+- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection + producer-drift probes; execute the Mechanizable claim (#2329 r2, #2336 r3)
 - [Self-referential replay gate needs independent anchor](feedback_self_referential_replay_gate_needs_independent_anchor.md) — prediction inputs read from the artifact under validation ⇒ agreement entailed; probe falsifiability by input mutation (#2514 r2)
 
 ## Codex code-review overreach (PASS-leaning calibration)

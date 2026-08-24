@@ -109,6 +109,7 @@
 ## Infra-plan reviews
 - [Infra-plan checklist](feedback_infra_plan_review_checklist.md) — protection-illusion, choke-point greps, TOCTOU (#564-#884)
 - [Pytest collection-guard plans](feedback_pytest_collection_guard_plan_review.md) — -k matches filenames; additions-only diff ≠ set equality (#2217)
+- [Selector meta-test CLI ground truth](feedback_selector_meta_test_cli_ground_truth.md) — invariant-loop verify; safe-direction circularity + non-vacuity trace (#2537)
 - [Restore-at-setup probe timing](feedback_restore_at_setup_probe_timing.md) — collection_finish/teardown probes invariant under setup-restore guards (#2214)
 - [Rsync include-set](feedback_rsync_include_set_review.md) — consumer enum, replay, gitlink-blind (#2212)
 - [Kill-criterion grep override](feedback_kill_criterion_grep_matches_override_branch.md) — replay grep falsifiers (#2212)
