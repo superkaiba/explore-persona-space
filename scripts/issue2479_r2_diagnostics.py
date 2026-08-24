@@ -275,7 +275,7 @@ def main() -> None:
     for n in names:
         rows = [
             json.loads(line)
-            for line in (ITEMS_DIR / f"axis_items_{n}.jsonl").read_text().splitlines()
+            for line in (ITEMS_DIR / f"axis_items_{n}.jsonl").read_text().split("\n")
             if line.strip()
         ]
         intr_ids = {r["conv_id"] for r in rows if CJK_RE.search(str(r.get("answer", "")))}
