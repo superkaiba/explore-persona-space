@@ -15,6 +15,9 @@ goal: (1) In CoT-trained models, measure R2 and acc@1 for four maps — post-con
   model's context vector can predict the POST-CoT-trained model's post-</think> answer
   state, and how the fitted map changes across the CoT-training step, using a matched
   same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).
+relates_to:
+- spec-context-as-vector
+- identity-contextual-vs-base
 ---
 # Can the context→answer map predict the POST-CoT answer, and how does CoT training change the map?
 
