@@ -27,6 +27,8 @@ goal: 'Determine (1, exploratory) how the context→answer map''s per-feature pr
   discrimination-vs-coverage inversion; and (3) which feature properties (schema categories
   + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability,
   via a forward-selection partial-out ladder as the headline figure.'
+relates_to:
+- spec-context-as-vector
 ---
 # Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder
 
