@@ -1,0 +1,126 @@
+{
+  "commit": "a1e18f25",
+  "render_id": "8449ec7a27504579",
+  "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_floor_sweep.py",
+  "created": "2026-08-24T06:33:39Z",
+  "figsize": [
+    5.5,
+    1.6995
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "pooled Spearman(tier, R\u00b2)": -0.4494716390249301,
+      "series": "observed",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "pooled Spearman(tier, R\u00b2)": -0.6409020447286411,
+      "series": "observed",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "pooled Spearman(tier, R\u00b2)": -0.6914283079727201,
+      "series": "observed",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "pooled Spearman(tier, R\u00b2)": -0.69865245218099,
+      "series": "observed",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.11331121970302524,
+      "series": "observed",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.11751862658370833,
+      "series": "observed",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.020081002696557652,
+      "series": "observed",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 7,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "turn-averaged SAE, layer 19 (fresh instrument)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "pooled Spearman(tier, R\u00b2)",
+        "legend_labels": [
+          "null 2.5\u201397.5%",
+          "observed"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2"
+        ]
+      },
+      {
+        "title": "parent token-level SAE on turn averages, layer 20",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2"
+        ]
+      }
+    ],
+    "series": [
+      "observed",
+      "null 2.5\u201397.5%"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

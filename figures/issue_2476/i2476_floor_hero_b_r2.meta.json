@@ -1,0 +1,216 @@
+{
+  "commit": "a1e18f25",
+  "render_id": "d635a1f4f56c481e",
+  "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_floor_sweep.py",
+  "created": "2026-08-24T06:33:37Z",
+  "figsize": [
+    5.5,
+    1.133
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.4204905404343863,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.3772689574431455,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.30660763396442337,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": -0.026522337520163974,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": -0.037939534742344794,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": -0.05913440800341041,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.5531849954652982,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.47067039768258,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.31900129797527327,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": -0.007836537609448913,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": -0.0032838264029416697,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": -0.003612020421629447,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.6011933639863004,
+      "series": "map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.6263712233128673,
+      "series": "map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.5760155046597335,
+      "series": "map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.09968383707816603,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": -0.005229547631548703,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": -0.005229547631548703,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "coarsest (ids <2,048)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "median held-out R\u00b2",
+        "legend_labels": [
+          "map",
+          "identity+bias"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50"
+        ]
+      },
+      {
+        "title": "middle (2,048\u201316,383)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title": "finest (16,384\u201365,535)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "map",
+      "identity+bias"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

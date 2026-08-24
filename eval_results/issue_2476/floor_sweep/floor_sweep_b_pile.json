@@ -1,0 +1,208 @@
+{
+  "arm": "b_pile",
+  "exploratory": true,
+  "counts_note": "recomputed counts canonical (no banked reference; plan \u00a74 Q3a)",
+  "n_fit_rows": 24000,
+  "rows": [
+    {
+      "floor_rows": 240,
+      "floor_rows_effective": 240,
+      "n_alive": 314,
+      "alive_by_tier": {
+        "0": 261,
+        "1": 39,
+        "2": 14
+      },
+      "panel": {
+        "floor": 240,
+        "cap": 16384,
+        "seed": 14824,
+        "n_clearing_by_tier": {
+          "0": 261,
+          "1": 39,
+          "2": 14
+        },
+        "alloc_by_tier": {
+          "0": 261,
+          "1": 39,
+          "2": 14
+        },
+        "n_panel": 314,
+        "panel_tier_counts": {
+          "0": 261,
+          "1": 39,
+          "2": 14
+        },
+        "per_tier_floor_warn": [
+          0,
+          1,
+          2
+        ]
+      },
+      "panel_cap_bound": false,
+      "per_tier_median_r2_map": {
+        "0": 0.45655669442136004,
+        "1": 0.5573404488201035,
+        "2": 0.4126127004887162
+      },
+      "undefined_r2": {
+        "0": {
+          "n_alive": 261,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "1": {
+          "n_alive": 39,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "2": {
+          "n_alive": 14,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        }
+      },
+      "not_evaluable_census_only": false
+    },
+    {
+      "floor_rows": 120,
+      "floor_rows_effective": 120,
+      "n_alive": 458,
+      "alive_by_tier": {
+        "0": 341,
+        "1": 96,
+        "2": 21
+      },
+      "panel": {
+        "floor": 120,
+        "cap": 16384,
+        "seed": 14824,
+        "n_clearing_by_tier": {
+          "0": 341,
+          "1": 96,
+          "2": 21
+        },
+        "alloc_by_tier": {
+          "0": 341,
+          "1": 96,
+          "2": 21
+        },
+        "n_panel": 458,
+        "panel_tier_counts": {
+          "0": 341,
+          "1": 96,
+          "2": 21
+        },
+        "per_tier_floor_warn": [
+          0,
+          1,
+          2
+        ]
+      },
+      "panel_cap_bound": false,
+      "per_tier_median_r2_map": {
+        "0": 0.41480361459106774,
+        "1": 0.3251756249404237,
+        "2": 0.3557285763470779
+      },
+      "undefined_r2": {
+        "0": {
+          "n_alive": 341,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "1": {
+          "n_alive": 96,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "2": {
+          "n_alive": 21,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        }
+      },
+      "not_evaluable_census_only": false
+    },
+    {
+      "floor_rows": 60,
+      "floor_rows_effective": 60,
+      "n_alive": 697,
+      "alive_by_tier": {
+        "0": 452,
+        "1": 203,
+        "2": 42
+      },
+      "panel": {
+        "floor": 60,
+        "cap": 16384,
+        "seed": 14824,
+        "n_clearing_by_tier": {
+          "0": 452,
+          "1": 203,
+          "2": 42
+        },
+        "alloc_by_tier": {
+          "0": 452,
+          "1": 203,
+          "2": 42
+        },
+        "n_panel": 697,
+        "panel_tier_counts": {
+          "0": 452,
+          "1": 203,
+          "2": 42
+        },
+        "per_tier_floor_warn": [
+          0,
+          1,
+          2
+        ]
+      },
+      "panel_cap_bound": false,
+      "per_tier_median_r2_map": {
+        "0": 0.3249221644514451,
+        "1": 0.17125524372657341,
+        "2": 0.2786966309044679
+      },
+      "undefined_r2": {
+        "0": {
+          "n_alive": 452,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "1": {
+          "n_alive": 203,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "2": {
+          "n_alive": 42,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        }
+      },
+      "not_evaluable_census_only": false
+    }
+  ],
+  "metadata": {
+    "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+    "timestamp_utc": "2026-08-24T06:33:34.244769Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "fs-stats",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_floor_sweep.py"
+  }
+}

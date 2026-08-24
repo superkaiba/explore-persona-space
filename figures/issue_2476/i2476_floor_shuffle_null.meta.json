@@ -1,0 +1,277 @@
+{
+  "commit": "a1e18f25",
+  "render_id": "58c95e2f0cda427e",
+  "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_floor_sweep.py",
+  "created": "2026-08-24T06:33:41Z",
+  "figsize": [
+    5.5,
+    1.6995
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": -0.042097473144532715,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": -0.015960693359375,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": -0.00556182861328125,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": -0.003070831298828125,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.6251079033669263,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.6066485182164321,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.5915391709372131,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.5876398676632282,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.1313119636916356,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.17200907348666272,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.16566729444515227,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.16319792934993943,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2 (map)": 0.6667357361081003,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2 (map)": 0.0866486277125792,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2 (map)": 0.04875375920874059,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2 (map)": 0.0456387852775193,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": -0.05816650390625,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": -0.00833892822265625,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": -0.0023632049560546875,
+      "series": "shuffle-null p97.5",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.4204905404343863,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.3772689574431455,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.30660763396442337,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.5531849954652982,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.47067039768258,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.31900129797527327,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.6011933639863004,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.6263712233128673,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.5760155046597335,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "turn-averaged SAE, layer 19 (fresh instrument)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "median held-out R\u00b2 (map)",
+        "legend_labels": [
+          "shuffle-null p97.5",
+          "coarsest",
+          "middle",
+          "finest"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title": "parent token-level SAE on turn averages, layer 20",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "shuffle-null p97.5",
+      "coarsest",
+      "middle",
+      "finest"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

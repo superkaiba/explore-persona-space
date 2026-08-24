@@ -1,0 +1,311 @@
+{
+  "gates": {
+    "ga": {
+      "gate": "G-A",
+      "checks": {
+        "refit_rows_eq_ib_rows": true,
+        "refit_rows_eq_assembled_holdout": true,
+        "armb_score_rows_eq_m_split": true,
+        "armb_fit_rows_subset_m_fit": true,
+        "store_rows_eq_m_universe": true,
+        "armb_n_fit_eq_alive_b_n_fit": true
+      },
+      "verdict": "PASS"
+    },
+    "gc_b": {
+      "gate": "G-C",
+      "arm": "b",
+      "tol_rows": 3,
+      "max_abs_delta": 0,
+      "worst_features": [
+        {
+          "feat": 65528,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65529,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65530,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65531,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65532,
+          "banked": 0,
+          "recomputed": 0
+        }
+      ],
+      "per_floor_sym_diff": {
+        "240": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "120": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "60": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        }
+      },
+      "off_boundary_examples": [],
+      "verdict": "PASS",
+      "production": true
+    },
+    "gc_c": {
+      "gate": "G-C",
+      "arm": "c",
+      "tol_rows": 3,
+      "max_abs_delta": 0,
+      "worst_features": [
+        {
+          "feat": 65528,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65529,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65530,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65531,
+          "banked": 0,
+          "recomputed": 0
+        },
+        {
+          "feat": 65532,
+          "banked": 0,
+          "recomputed": 0
+        }
+      ],
+      "per_floor_sym_diff": {
+        "1200": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "600": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "300": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        },
+        "240": {
+          "n_sym_diff": 0,
+          "n_off_boundary": 0
+        }
+      },
+      "off_boundary_examples": [],
+      "verdict": "PASS",
+      "production": true
+    },
+    "gr_b": {
+      "gate": "G-R",
+      "arm": "b",
+      "predicate": "v7-quantile",
+      "n_features": 412,
+      "n_finite": 412,
+      "finiteness_pattern_equal": true,
+      "max_abs_delta_r2": 3.630942964671924e-05,
+      "share_within_2e3": 1.0,
+      "n_violators": 0,
+      "violators": [],
+      "perfeature_tol": 0.002,
+      "max_tol": 0.01,
+      "share_min": 0.99,
+      "median_tol": 0.001,
+      "median_min_tier_n": 10,
+      "tier_panel_n": {
+        "0": 387,
+        "1": 21,
+        "2": 4
+      },
+      "median_exempt_tiers": [
+        2
+      ],
+      "small_tier_deltas": {
+        "2": [
+          {
+            "feat": 32560,
+            "committed": 0.7450259422203604,
+            "recomputed": 0.7450259422203604,
+            "delta": 0.0
+          },
+          {
+            "feat": 38306,
+            "committed": 0.5760155046597335,
+            "recomputed": 0.5760155046597335,
+            "delta": 0.0
+          },
+          {
+            "feat": 51396,
+            "committed": 0.6263712233128673,
+            "recomputed": 0.6263712233128673,
+            "delta": 0.0
+          },
+          {
+            "feat": 56249,
+            "committed": 0.317540486130116,
+            "recomputed": 0.317551093168183,
+            "delta": 1.0607038066989816e-05
+          }
+        ]
+      },
+      "median_deltas": {
+        "map/t0": 4.9598433699005184e-06,
+        "ib/t0": 0.0,
+        "map/t1": 0.0,
+        "ib/t1": 0.0,
+        "map/t2": 0.0,
+        "ib/t2": 5.084992667825361e-06
+      },
+      "got_medians": {
+        "map/t0": 0.4204905404343863,
+        "ib/t0": -0.026522337520163974,
+        "map/t1": 0.5531849954652982,
+        "ib/t1": -0.007836537609448913,
+        "map/t2": 0.6011933639863004,
+        "ib/t2": 0.09968383707816603
+      },
+      "committed_medians": {
+        "map/t0": 0.4204855805910164,
+        "ib/t0": -0.026522337520163974,
+        "map/t1": 0.5531849954652982,
+        "ib/t1": -0.007836537609448913,
+        "map/t2": 0.6011933639863004,
+        "ib/t2": 0.0996787520854982
+      },
+      "verdict": "PASS",
+      "production": true
+    },
+    "gr_c": {
+      "gate": "G-R",
+      "arm": "c",
+      "predicate": "v7-quantile",
+      "n_features": 879,
+      "n_finite": 879,
+      "finiteness_pattern_equal": true,
+      "max_abs_delta_r2": 0.0028270363149560662,
+      "share_within_2e3": 0.9988623435722411,
+      "n_violators": 1,
+      "violators": [
+        {
+          "feat": 56641,
+          "committed": 0.6695627724230564,
+          "recomputed": 0.6667357361081003,
+          "delta": 0.0028270363149560662,
+          "fit_count": 1473
+        }
+      ],
+      "perfeature_tol": 0.002,
+      "max_tol": 0.01,
+      "share_min": 0.99,
+      "median_tol": 0.001,
+      "median_min_tier_n": 10,
+      "tier_panel_n": {
+        "0": 788,
+        "1": 88,
+        "2": 3
+      },
+      "median_exempt_tiers": [
+        2
+      ],
+      "small_tier_deltas": {
+        "2": [
+          {
+            "feat": 17355,
+            "committed": 0.8799020838070336,
+            "recomputed": 0.8798997259813539,
+            "delta": 2.3578256796996655e-06
+          },
+          {
+            "feat": 38698,
+            "committed": 0.6482739984006689,
+            "recomputed": 0.6482764849300737,
+            "delta": 2.4865294048215247e-06
+          },
+          {
+            "feat": 56641,
+            "committed": 0.6695627724230564,
+            "recomputed": 0.6667357361081003,
+            "delta": 0.0028270363149560662
+          }
+        ]
+      },
+      "median_deltas": {
+        "map/t0": 2.4741904081082566e-09,
+        "ib/t0": 8.377443594387302e-08,
+        "map/t1": 5.919191163716864e-06,
+        "ib/t1": 0.0,
+        "map/t2": 0.0028270363149560662,
+        "ib/t2": 0.0
+      },
+      "got_medians": {
+        "map/t0": 0.6251079033669263,
+        "ib/t0": -0.7655554703243268,
+        "map/t1": 0.1313119636916356,
+        "ib/t1": -5.133340711921773,
+        "map/t2": 0.6667357361081003,
+        "ib/t2": -0.47854755971582175
+      },
+      "committed_medians": {
+        "map/t0": 0.6251079008927359,
+        "ib/t0": -0.7655555540987627,
+        "map/t1": 0.1313060445004719,
+        "ib/t1": -5.133340711921773,
+        "map/t2": 0.6695627724230564,
+        "ib/t2": -0.47854755971582175
+      },
+      "verdict": "PASS",
+      "production": true
+    },
+    "gs": {
+      "gate": "G-S",
+      "assembled_shas": {
+        "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+        "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+        "sae_fit_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+        "sae_val_sha256": "8b3933c053ea8b8db11676d2585e4997db44b21c4e7a280e96d04381c0d680d9",
+        "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+        "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
+      },
+      "banked_shas": {
+        "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+        "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+        "sae_fit_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+        "sae_val_sha256": "8b3933c053ea8b8db11676d2585e4997db44b21c4e7a280e96d04381c0d680d9",
+        "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+        "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d"
+      },
+      "verdict": "PASS"
+    }
+  },
+  "metadata": {
+    "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+    "timestamp_utc": "2026-08-24T06:33:34.409386Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "fs-stats",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_floor_sweep.py"
+  }
+}

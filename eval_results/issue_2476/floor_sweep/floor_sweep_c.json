@@ -1,0 +1,1106 @@
+{
+  "arm": "c",
+  "floors_rows": [
+    1200,
+    600,
+    300,
+    240
+  ],
+  "n_fit_rows": 120000,
+  "registered_floor_rows": 1200,
+  "lattice_vector": [
+    {
+      "floor_rows": 1200,
+      "label": "Indeterminate",
+      "registered": true
+    },
+    {
+      "floor_rows": 600,
+      "label": "Gradient-holds",
+      "registered": false
+    },
+    {
+      "floor_rows": 300,
+      "label": "Gradient-holds",
+      "registered": false
+    },
+    {
+      "floor_rows": 240,
+      "label": "Gradient-holds",
+      "registered": false
+    }
+  ],
+  "lattice_note": "reported (registered at 1% only)",
+  "battery_seed": 24761,
+  "seeds_note": "battery_seed read from the committed tier_tests provenance at run time; identical seeds/draw counts across floors by design",
+  "n_perm": 10000,
+  "n_boot": 10000,
+  "alive_source": "banked counts (canonical; recomputed counts gate-only, plan \u00a711)",
+  "rows": [
+    {
+      "per_tier": {
+        "0": {
+          "n_alive": 788,
+          "median_r2_map": {
+            "n": 788,
+            "median": 0.6251079033669263,
+            "q25": 0.4753833660290719,
+            "q75": 0.7399316122900146
+          },
+          "ci95_median_map": [
+            0.6107975732300336,
+            0.6409761568581233
+          ],
+          "median_r2_ib": {
+            "n": 788,
+            "median": -0.7655554703243268,
+            "q25": -1.9017994167776509,
+            "q75": -0.133342318286723
+          },
+          "ci95_median_ib": [
+            -0.8698135159099286,
+            -0.6491965725175184
+          ],
+          "map_minus_ib_paired": {
+            "point": 1.390663373691253,
+            "ci95": [
+              1.2818974764959266,
+              1.486564875010542
+            ],
+            "n": 788
+          }
+        },
+        "1": {
+          "n_alive": 88,
+          "median_r2_map": {
+            "n": 88,
+            "median": 0.1313119636916356,
+            "q25": 0.048163350164287966,
+            "q75": 0.23219843482048624
+          },
+          "ci95_median_map": [
+            0.09953079490805539,
+            0.1589163090923384
+          ],
+          "median_r2_ib": {
+            "n": 88,
+            "median": -5.133340711921773,
+            "q25": -10.097965652664287,
+            "q75": -2.785147228772237
+          },
+          "ci95_median_ib": [
+            -6.799697799949167,
+            -3.738320512213277
+          ],
+          "map_minus_ib_paired": {
+            "point": 5.264652675613409,
+            "ci95": [
+              3.8980140898320528,
+              6.9118791829896
+            ],
+            "n": 88
+          }
+        },
+        "2": {
+          "n_alive": 3,
+          "median_r2_map": {
+            "n": 3,
+            "median": 0.6667357361081003,
+            "q25": 0.657506110519087,
+            "q75": 0.7733177310447271
+          },
+          "ci95_median_map": [
+            0.6482764849300737,
+            0.8798997259813539
+          ],
+          "median_r2_ib": {
+            "n": 3,
+            "median": -0.47854755971582175,
+            "q25": -3.158848113190623,
+            "q75": -0.4483514260898842
+          },
+          "ci95_median_ib": [
+            -5.839148666665425,
+            -0.41815529246394667
+          ],
+          "map_minus_ib_paired": {
+            "point": 1.145283295823922,
+            "ci95": [
+              1.145283295823922,
+              6.487425151595499
+            ],
+            "n": 3
+          }
+        }
+      },
+      "tier_diff_t0_minus_t2": {
+        "map": {
+          "point_t0_minus_t2": -0.04162783274117399,
+          "ci95": [
+            -0.26348164658111994,
+            -0.012680409816907323
+          ]
+        },
+        "ib": {
+          "point_t0_minus_t2": -0.28700791060850506,
+          "ci95": [
+            -0.41614018947975095,
+            5.146223067027906
+          ]
+        }
+      },
+      "permutation": {
+        "observed_pooled_spearman": -0.4494716390249301,
+        "perm_band_2p5_97p5": [
+          -0.18968297491696479,
+          -0.0694018325744242
+        ],
+        "n_perm": 10000,
+        "n_features": 879,
+        "n_strata": 5,
+        "verdict": "coarse-better",
+        "note": "tier labels permuted WITHIN activity strata; observed outside the central 95% band = two-sided p < 0.05 on that side (plan \u00a73 equivalence note)",
+        "perm_pct": 0.0,
+        "perm_seed": 4127938238730523238,
+        "strata": "quintile",
+        "cell_counts": {
+          "0_0": 126,
+          "0_1": 48,
+          "0_2": 2,
+          "1_0": 151,
+          "1_1": 24,
+          "1_2": 1,
+          "2_0": 165,
+          "2_1": 10,
+          "2_2": 0,
+          "3_0": 170,
+          "3_1": 6,
+          "3_2": 0,
+          "4_0": 176,
+          "4_1": 0,
+          "4_2": 0
+        }
+      },
+      "activity_tie_profile": {
+        "n_features": 879,
+        "n_unique_activity": 836,
+        "max_tie_fraction": 0.005688282138794084
+      },
+      "lattice_inputs": {
+        "perm_pct": 0.0,
+        "tier_diff_map_t0_minus_t2": -0.04162783274117399,
+        "raw_band_2p5_97p5": [
+          -0.18968297491696479,
+          -0.0694018325744242
+        ],
+        "observed_pooled_spearman": -0.4494716390249301
+      },
+      "rho_ceiling_abs": 0.5277625710501914,
+      "floor_rows": 1200,
+      "floor_frac_of_fit_rows": 0.01,
+      "registered_cell": true,
+      "undefined_r2": {
+        "0": {
+          "n_alive": 788,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "1": {
+          "n_alive": 88,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "2": {
+          "n_alive": 3,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        }
+      },
+      "not_evaluable_census_only": false,
+      "demotion_rule": "plan \u00a712 A13 + plan-approval stat-rec-2: >50% of a populated tier's alive features undefined-R2 (map read) on score rows => census-only at this floor (no lattice label; the boolean replaces it)",
+      "lattice_reported": "Indeterminate",
+      "lattice_note": "reported (registered at 1% only); this IS the registered 1% cell",
+      "n_te_rows": 20000,
+      "n_alive": 879,
+      "alive_by_tier": {
+        "0": 788,
+        "1": 88,
+        "2": 3
+      },
+      "panel": {
+        "floor": 1200,
+        "cap": 16384,
+        "seed": 14824,
+        "n_clearing_by_tier": {
+          "0": 788,
+          "1": 88,
+          "2": 3
+        },
+        "alloc_by_tier": {
+          "0": 788,
+          "1": 88,
+          "2": 3
+        },
+        "n_panel": 879,
+        "panel_tier_counts": {
+          "0": 788,
+          "1": 88,
+          "2": 3
+        },
+        "per_tier_floor_warn": [
+          0,
+          1,
+          2
+        ]
+      },
+      "trainmean_per_tier_median_r2": {
+        "0": -2.9211432623799105e-05,
+        "1": -4.021695103950673e-05,
+        "2": -0.0001973763300380238
+      },
+      "shuffle_null": {
+        "n_seeds": 20,
+        "advisory": true,
+        "train_mean_note": "constant predictor: row-shuffle null == observed (no draws)",
+        "per_read": {
+          "map": {
+            "p97_5": -0.042097473144532715,
+            "frac_above": 1.0
+          },
+          "ib": {
+            "p97_5": -0.3182189941406266,
+            "frac_above": 0.29579067121729236
+          }
+        }
+      },
+      "corpus_split": {
+        "lmsys": {
+          "n_rows": 10983,
+          "per_tier_median_r2_map": {
+            "0": 0.6120011830029182,
+            "1": 0.10866271364487745,
+            "2": 0.6637502049754418
+          }
+        },
+        "wildchat": {
+          "n_rows": 9017,
+          "per_tier_median_r2_map": {
+            "0": 0.5816540180159102,
+            "1": 0.09586834977942454,
+            "2": NaN
+          }
+        }
+      },
+      "registered_reference": {
+        "committed_perfeature": "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+        "committed_tests": "eval_results/issue_2476/turnavg/tier_tests_c.json",
+        "committed_medians": {
+          "map/t0": 0.6251079008927359,
+          "ib/t0": -0.7655555540987627,
+          "map/t1": 0.1313060445004719,
+          "ib/t1": -5.133340711921773,
+          "map/t2": 0.6695627724230564,
+          "ib/t2": -0.47854755971582175
+        },
+        "recomputed_medians": {
+          "map/t0": 0.6251079033669263,
+          "ib/t0": -0.7655554703243268,
+          "map/t1": 0.1313119636916356,
+          "ib/t1": -5.133340711921773,
+          "map/t2": 0.6667357361081003,
+          "ib/t2": -0.47854755971582175
+        },
+        "max_abs_delta_r2": 0.0028270363149560662,
+        "share_within_2e3": 0.9988623435722411,
+        "n_violators": 1,
+        "gr_verdict": "PASS"
+      }
+    },
+    {
+      "per_tier": {
+        "0": {
+          "n_alive": 992,
+          "median_r2_map": {
+            "n": 992,
+            "median": 0.6066485182164321,
+            "q25": 0.4501207326418415,
+            "q75": 0.7295717907746231
+          },
+          "ci95_median_map": [
+            0.5903364892569092,
+            0.6217006719183038
+          ],
+          "median_r2_ib": {
+            "n": 992,
+            "median": -0.9080518921823771,
+            "q25": -2.4537189530241643,
+            "q75": -0.21368632749017547
+          },
+          "ci95_median_ib": [
+            -1.0113823624546527,
+            -0.8016161323018438
+          ],
+          "map_minus_ib_paired": {
+            "point": 1.514700410398809,
+            "ci95": [
+              1.4156887197557857,
+              1.615220143907724
+            ],
+            "n": 992
+          }
+        },
+        "1": {
+          "n_alive": 314,
+          "median_r2_map": {
+            "n": 314,
+            "median": 0.17200907348666272,
+            "q25": 0.07452468734718828,
+            "q75": 0.2846971967316566
+          },
+          "ci95_median_map": [
+            0.14985835935961833,
+            0.1902488219243102
+          ],
+          "median_r2_ib": {
+            "n": 314,
+            "median": -4.768719999513176,
+            "q25": -8.297745732468423,
+            "q75": -2.5770645163889228
+          },
+          "ci95_median_ib": [
+            -5.540079191355138,
+            -4.22717813938456
+          ],
+          "map_minus_ib_paired": {
+            "point": 4.940729072999839,
+            "ci95": [
+              4.420886978885556,
+              5.711956441824357
+            ],
+            "n": 314
+          }
+        },
+        "2": {
+          "n_alive": 26,
+          "median_r2_map": {
+            "n": 26,
+            "median": 0.0866486277125792,
+            "q25": -0.00291162657799654,
+            "q75": 0.25132575200563045
+          },
+          "ci95_median_map": [
+            0.012929074612014757,
+            0.22896308747373262
+          ],
+          "median_r2_ib": {
+            "n": 26,
+            "median": -3.419547657024374,
+            "q25": -5.4667958690891885,
+            "q75": -0.6962514221274404
+          },
+          "ci95_median_ib": [
+            -5.171848202032239,
+            -0.8381584048162155
+          ],
+          "map_minus_ib_paired": {
+            "point": 3.506196284736953,
+            "ci95": [
+              0.989940013368486,
+              5.1612704428430884
+            ],
+            "n": 26
+          }
+        }
+      },
+      "tier_diff_t0_minus_t2": {
+        "map": {
+          "point_t0_minus_t2": 0.5199998905038529,
+          "ci95": [
+            0.37343963338598735,
+            0.5939437480335896
+          ]
+        },
+        "ib": {
+          "point_t0_minus_t2": 2.511495764841997,
+          "ci95": [
+            -0.10185499742605941,
+            4.175213801498352
+          ]
+        }
+      },
+      "permutation": {
+        "observed_pooled_spearman": -0.6409020447286411,
+        "perm_band_2p5_97p5": [
+          -0.30039909779291357,
+          -0.21732448942122595
+        ],
+        "n_perm": 10000,
+        "n_features": 1332,
+        "n_strata": 5,
+        "verdict": "coarse-better",
+        "note": "tier labels permuted WITHIN activity strata; observed outside the central 95% band = two-sided p < 0.05 on that side (plan \u00a73 equivalence note)",
+        "perm_pct": 0.0,
+        "perm_seed": 4127938238730523238,
+        "strata": "quintile",
+        "cell_counts": {
+          "0_0": 102,
+          "0_1": 146,
+          "0_2": 19,
+          "1_0": 154,
+          "1_1": 108,
+          "1_2": 4,
+          "2_0": 219,
+          "2_1": 44,
+          "2_2": 3,
+          "3_0": 253,
+          "3_1": 13,
+          "3_2": 0,
+          "4_0": 264,
+          "4_1": 3,
+          "4_2": 0
+        }
+      },
+      "activity_tie_profile": {
+        "n_features": 1332,
+        "n_unique_activity": 1153,
+        "max_tie_fraction": 0.0037537537537537537
+      },
+      "lattice_inputs": {
+        "perm_pct": 0.0,
+        "tier_diff_map_t0_minus_t2": 0.5199998905038529,
+        "raw_band_2p5_97p5": [
+          -0.30039909779291357,
+          -0.21732448942122595
+        ],
+        "observed_pooled_spearman": -0.6409020447286411
+      },
+      "rho_ceiling_abs": 0.7575117060213415,
+      "floor_rows": 600,
+      "floor_frac_of_fit_rows": 0.005,
+      "registered_cell": false,
+      "undefined_r2": {
+        "0": {
+          "n_alive": 992,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "1": {
+          "n_alive": 314,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "2": {
+          "n_alive": 26,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        }
+      },
+      "not_evaluable_census_only": false,
+      "demotion_rule": "plan \u00a712 A13 + plan-approval stat-rec-2: >50% of a populated tier's alive features undefined-R2 (map read) on score rows => census-only at this floor (no lattice label; the boolean replaces it)",
+      "lattice_reported": "Gradient-holds",
+      "lattice_note": "reported (registered at 1% only)",
+      "n_te_rows": 20000,
+      "n_alive": 1332,
+      "alive_by_tier": {
+        "0": 992,
+        "1": 314,
+        "2": 26
+      },
+      "panel": {
+        "floor": 600,
+        "cap": 16384,
+        "seed": 14824,
+        "n_clearing_by_tier": {
+          "0": 992,
+          "1": 314,
+          "2": 26
+        },
+        "alloc_by_tier": {
+          "0": 992,
+          "1": 314,
+          "2": 26
+        },
+        "n_panel": 1332,
+        "panel_tier_counts": {
+          "0": 992,
+          "1": 314,
+          "2": 26
+        },
+        "per_tier_floor_warn": [
+          0,
+          1,
+          2
+        ]
+      },
+      "trainmean_per_tier_median_r2": {
+        "0": -2.722116926778817e-05,
+        "1": -2.408861035574361e-05,
+        "2": -3.521944980122704e-05
+      },
+      "shuffle_null": {
+        "n_seeds": 20,
+        "advisory": true,
+        "train_mean_note": "constant predictor: row-shuffle null == observed (no draws)",
+        "per_read": {
+          "map": {
+            "p97_5": -0.015960693359375,
+            "frac_above": 0.9984984984984985
+          },
+          "ib": {
+            "p97_5": -0.35570678710937553,
+            "frac_above": 0.22372372372372373
+          }
+        }
+      },
+      "corpus_split": {
+        "lmsys": {
+          "n_rows": 10983,
+          "per_tier_median_r2_map": {
+            "0": 0.5933687919176173,
+            "1": 0.1684102491669932,
+            "2": 0.16786546369640704
+          }
+        },
+        "wildchat": {
+          "n_rows": 9017,
+          "per_tier_median_r2_map": {
+            "0": 0.5588769513716318,
+            "1": 0.1301592297808285,
+            "2": -0.010889496305451773
+          }
+        }
+      }
+    },
+    {
+      "per_tier": {
+        "0": {
+          "n_alive": 1137,
+          "median_r2_map": {
+            "n": 1137,
+            "median": 0.5915391709372131,
+            "q25": 0.4283039530229996,
+            "q75": 0.7242441816381767
+          },
+          "ci95_median_map": [
+            0.5753878227227442,
+            0.6085506923527721
+          ],
+          "median_r2_ib": {
+            "n": 1137,
+            "median": -1.0339488321867307,
+            "q25": -2.8317723449509287,
+            "q75": -0.2730949016246027
+          },
+          "ci95_median_ib": [
+            -1.1636720324644627,
+            -0.934753767977214
+          ],
+          "map_minus_ib_paired": {
+            "point": 1.6254880031239438,
+            "ci95": [
+              1.5329508229931632,
+              1.7485862253563738
+            ],
+            "n": 1137
+          }
+        },
+        "1": {
+          "n_alive": 696,
+          "median_r2_map": {
+            "n": 696,
+            "median": 0.16566729444515227,
+            "q25": 0.06829597980294205,
+            "q75": 0.3125958365434379
+          },
+          "ci95_median_map": [
+            0.15440157784844885,
+            0.18082179345640992
+          ],
+          "median_r2_ib": {
+            "n": 696,
+            "median": -4.640056824268339,
+            "q25": -8.546325936867392,
+            "q75": -2.3680138221002034
+          },
+          "ci95_median_ib": [
+            -5.199751890653216,
+            -4.231810048498409
+          ],
+          "map_minus_ib_paired": {
+            "point": 4.805724118713492,
+            "ci95": [
+              4.400168063524058,
+              5.372600467989782
+            ],
+            "n": 696
+          }
+        },
+        "2": {
+          "n_alive": 80,
+          "median_r2_map": {
+            "n": 80,
+            "median": 0.04875375920874059,
+            "q25": -0.0031954730432420253,
+            "q75": 0.17898684528487913
+          },
+          "ci95_median_map": [
+            0.0179219691781487,
+            0.10349892013582485
+          ],
+          "median_r2_ib": {
+            "n": 80,
+            "median": -3.9999887509145218,
+            "q25": -6.669185193437496,
+            "q75": -0.9539996886806368
+          },
+          "ci95_median_ib": [
+            -4.948433946138164,
+            -2.3243436508305892
+          ],
+          "map_minus_ib_paired": {
+            "point": 4.048742510123263,
+            "ci95": [
+              2.4397621999774084,
+              4.996928588944087
+            ],
+            "n": 80
+          }
+        }
+      },
+      "tier_diff_t0_minus_t2": {
+        "map": {
+          "point_t0_minus_t2": 0.5427854117284725,
+          "ci95": [
+            0.48530480041608914,
+            0.5786105392927757
+          ]
+        },
+        "ib": {
+          "point_t0_minus_t2": 2.966039918727791,
+          "ci95": [
+            1.3341358626559559,
+            3.9435417129335266
+          ]
+        }
+      },
+      "permutation": {
+        "observed_pooled_spearman": -0.6914283079727201,
+        "perm_band_2p5_97p5": [
+          -0.34935240065674905,
+          -0.28686216812992704
+        ],
+        "n_perm": 10000,
+        "n_features": 1913,
+        "n_strata": 5,
+        "verdict": "coarse-better",
+        "note": "tier labels permuted WITHIN activity strata; observed outside the central 95% band = two-sided p < 0.05 on that side (plan \u00a73 equivalence note)",
+        "perm_pct": 0.0,
+        "perm_seed": 4127938238730523238,
+        "strata": "quintile",
+        "cell_counts": {
+          "0_0": 85,
+          "0_1": 250,
+          "0_2": 46,
+          "1_0": 130,
+          "1_1": 231,
+          "1_2": 23,
+          "2_0": 216,
+          "2_1": 159,
+          "2_2": 8,
+          "3_0": 329,
+          "3_1": 50,
+          "3_2": 3,
+          "4_0": 377,
+          "4_1": 6,
+          "4_2": 0
+        }
+      },
+      "activity_tie_profile": {
+        "n_features": 1913,
+        "n_unique_activity": 1404,
+        "max_tie_fraction": 0.0036591740721380033
+      },
+      "lattice_inputs": {
+        "perm_pct": 0.0,
+        "tier_diff_map_t0_minus_t2": 0.5427854117284725,
+        "raw_band_2p5_97p5": [
+          -0.34935240065674905,
+          -0.28686216812992704
+        ],
+        "observed_pooled_spearman": -0.6914283079727201
+      },
+      "rho_ceiling_abs": 0.8612824817616733,
+      "floor_rows": 300,
+      "floor_frac_of_fit_rows": 0.0025,
+      "registered_cell": false,
+      "undefined_r2": {
+        "0": {
+          "n_alive": 1137,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "1": {
+          "n_alive": 696,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "2": {
+          "n_alive": 80,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        }
+      },
+      "not_evaluable_census_only": false,
+      "demotion_rule": "plan \u00a712 A13 + plan-approval stat-rec-2: >50% of a populated tier's alive features undefined-R2 (map read) on score rows => census-only at this floor (no lattice label; the boolean replaces it)",
+      "lattice_reported": "Gradient-holds",
+      "lattice_note": "reported (registered at 1% only)",
+      "n_te_rows": 20000,
+      "n_alive": 1913,
+      "alive_by_tier": {
+        "0": 1137,
+        "1": 696,
+        "2": 80
+      },
+      "panel": {
+        "floor": 300,
+        "cap": 16384,
+        "seed": 14824,
+        "n_clearing_by_tier": {
+          "0": 1137,
+          "1": 696,
+          "2": 80
+        },
+        "alloc_by_tier": {
+          "0": 1137,
+          "1": 696,
+          "2": 80
+        },
+        "n_panel": 1913,
+        "panel_tier_counts": {
+          "0": 1137,
+          "1": 696,
+          "2": 80
+        },
+        "per_tier_floor_warn": [
+          1,
+          2
+        ]
+      },
+      "trainmean_per_tier_median_r2": {
+        "0": -2.7232202841176445e-05,
+        "1": -2.52776349245476e-05,
+        "2": -2.8632195776423508e-05
+      },
+      "shuffle_null": {
+        "n_seeds": 20,
+        "advisory": true,
+        "train_mean_note": "constant predictor: row-shuffle null == observed (no draws)",
+        "per_read": {
+          "map": {
+            "p97_5": -0.00556182861328125,
+            "frac_above": 0.9864087820177732
+          },
+          "ib": {
+            "p97_5": -0.38623046875,
+            "frac_above": 0.17616309461578672
+          }
+        }
+      },
+      "corpus_split": {
+        "lmsys": {
+          "n_rows": 10983,
+          "per_tier_median_r2_map": {
+            "0": 0.5776308685189349,
+            "1": 0.16250508443807787,
+            "2": 0.04587955277248912
+          }
+        },
+        "wildchat": {
+          "n_rows": 9017,
+          "per_tier_median_r2_map": {
+            "0": 0.543925455081205,
+            "1": 0.1337311138124564,
+            "2": 0.030305687691343564
+          }
+        }
+      }
+    },
+    {
+      "per_tier": {
+        "0": {
+          "n_alive": 1178,
+          "median_r2_map": {
+            "n": 1178,
+            "median": 0.5876398676632282,
+            "q25": 0.4176236226649745,
+            "q75": 0.7227338459290945
+          },
+          "ci95_median_map": [
+            0.5696784499498895,
+            0.601202345513919
+          ],
+          "median_r2_ib": {
+            "n": 1178,
+            "median": -1.0506622820118445,
+            "q25": -2.902687578252863,
+            "q75": -0.28079550134406595
+          },
+          "ci95_median_ib": [
+            -1.2013880775985577,
+            -0.9540491871117255
+          ],
+          "map_minus_ib_paired": {
+            "point": 1.6383021496750727,
+            "ci95": [
+              1.543517802977425,
+              1.7795629332472962
+            ],
+            "n": 1178
+          }
+        },
+        "1": {
+          "n_alive": 842,
+          "median_r2_map": {
+            "n": 842,
+            "median": 0.16319792934993943,
+            "q25": 0.062038074274481464,
+            "q75": 0.30573808044899975
+          },
+          "ci95_median_map": [
+            0.15202770515716835,
+            0.1779258619322291
+          ],
+          "median_r2_ib": {
+            "n": 842,
+            "median": -4.523066875239721,
+            "q25": -8.54684904229786,
+            "q75": -2.33962239870323
+          },
+          "ci95_median_ib": [
+            -5.026590215295065,
+            -4.164317741811956
+          ],
+          "map_minus_ib_paired": {
+            "point": 4.68626480458966,
+            "ci95": [
+              4.3370466760056905,
+              5.193371612103675
+            ],
+            "n": 842
+          }
+        },
+        "2": {
+          "n_alive": 130,
+          "median_r2_map": {
+            "n": 130,
+            "median": 0.0456387852775193,
+            "q25": -0.0019334884564373156,
+            "q75": 0.15780316040773526
+          },
+          "ci95_median_map": [
+            0.020345272759918487,
+            0.06684902783721225
+          ],
+          "median_r2_ib": {
+            "n": 130,
+            "median": -4.669988914059674,
+            "q25": -8.440264199688754,
+            "q75": -1.6813576066445222
+          },
+          "ci95_median_ib": [
+            -5.839148666665425,
+            -3.873155149909165
+          ],
+          "map_minus_ib_paired": {
+            "point": 4.715627699337194,
+            "ci95": [
+              3.9254878485853184,
+              5.878088947765808
+            ],
+            "n": 130
+          }
+        }
+      },
+      "tier_diff_t0_minus_t2": {
+        "map": {
+          "point_t0_minus_t2": 0.5420010823857089,
+          "ci95": [
+            0.5169025955056639,
+            0.5678549140206299
+          ]
+        },
+        "ib": {
+          "point_t0_minus_t2": 3.6193266320478297,
+          "ci95": [
+            2.7848976390414872,
+            4.799007168331919
+          ]
+        }
+      },
+      "permutation": {
+        "observed_pooled_spearman": -0.69865245218099,
+        "perm_band_2p5_97p5": [
+          -0.3770550792021137,
+          -0.3202772962753707
+        ],
+        "n_perm": 10000,
+        "n_features": 2150,
+        "n_strata": 5,
+        "verdict": "coarse-better",
+        "note": "tier labels permuted WITHIN activity strata; observed outside the central 95% band = two-sided p < 0.05 on that side (plan \u00a73 equivalence note)",
+        "perm_pct": 0.0,
+        "perm_seed": 4127938238730523238,
+        "strata": "quintile",
+        "cell_counts": {
+          "0_0": 75,
+          "0_1": 274,
+          "0_2": 78,
+          "1_0": 128,
+          "1_1": 275,
+          "1_2": 30,
+          "2_0": 196,
+          "2_1": 215,
+          "2_2": 19,
+          "3_0": 355,
+          "3_1": 72,
+          "3_2": 3,
+          "4_0": 424,
+          "4_1": 6,
+          "4_2": 0
+        }
+      },
+      "activity_tie_profile": {
+        "n_features": 2150,
+        "n_unique_activity": 1462,
+        "max_tie_fraction": 0.0037209302325581397
+      },
+      "lattice_inputs": {
+        "perm_pct": 0.0,
+        "tier_diff_map_t0_minus_t2": 0.5420010823857089,
+        "raw_band_2p5_97p5": [
+          -0.3770550792021137,
+          -0.3202772962753707
+        ],
+        "observed_pooled_spearman": -0.69865245218099
+      },
+      "rho_ceiling_abs": 0.88047225174422,
+      "floor_rows": 240,
+      "floor_frac_of_fit_rows": 0.002,
+      "registered_cell": false,
+      "undefined_r2": {
+        "0": {
+          "n_alive": 1178,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "1": {
+          "n_alive": 842,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        },
+        "2": {
+          "n_alive": 130,
+          "n_undefined_r2_map": 0,
+          "n_undefined_r2_ib": 0,
+          "frac_undefined_map": 0.0
+        }
+      },
+      "not_evaluable_census_only": false,
+      "demotion_rule": "plan \u00a712 A13 + plan-approval stat-rec-2: >50% of a populated tier's alive features undefined-R2 (map read) on score rows => census-only at this floor (no lattice label; the boolean replaces it)",
+      "lattice_reported": "Gradient-holds",
+      "lattice_note": "reported (registered at 1% only)",
+      "n_te_rows": 20000,
+      "n_alive": 2150,
+      "alive_by_tier": {
+        "0": 1178,
+        "1": 842,
+        "2": 130
+      },
+      "panel": {
+        "floor": 240,
+        "cap": 16384,
+        "seed": 14824,
+        "n_clearing_by_tier": {
+          "0": 1178,
+          "1": 842,
+          "2": 130
+        },
+        "alloc_by_tier": {
+          "0": 1178,
+          "1": 842,
+          "2": 130
+        },
+        "n_panel": 2150,
+        "panel_tier_counts": {
+          "0": 1178,
+          "1": 842,
+          "2": 130
+        },
+        "per_tier_floor_warn": [
+          1,
+          2
+        ]
+      },
+      "trainmean_per_tier_median_r2": {
+        "0": -2.7125174074660308e-05,
+        "1": -2.626450057641172e-05,
+        "2": -2.692661197478685e-05
+      },
+      "shuffle_null": {
+        "n_seeds": 20,
+        "advisory": true,
+        "train_mean_note": "constant predictor: row-shuffle null == observed (no draws)",
+        "per_read": {
+          "map": {
+            "p97_5": -0.003070831298828125,
+            "frac_above": 0.9702325581395349
+          },
+          "ib": {
+            "p97_5": -0.3976928710937493,
+            "frac_above": 0.1641860465116279
+          }
+        }
+      },
+      "corpus_split": {
+        "lmsys": {
+          "n_rows": 10983,
+          "per_tier_median_r2_map": {
+            "0": 0.5711569720088345,
+            "1": 0.15473812378066182,
+            "2": 0.04049322496893837
+          }
+        },
+        "wildchat": {
+          "n_rows": 9017,
+          "per_tier_median_r2_map": {
+            "0": 0.537044651238839,
+            "1": 0.12677621402315775,
+            "2": 0.030305687691343564
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+    "timestamp_utc": "2026-08-24T06:33:26.581062Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "fs-stats",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_floor_sweep.py"
+  }
+}

@@ -1,0 +1,308 @@
+{
+  "commit": "a1e18f25",
+  "render_id": "14f1a723baed472e",
+  "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_floor_sweep.py",
+  "created": "2026-08-24T06:33:38Z",
+  "figsize": [
+    5.5,
+    1.133
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "alive features": 788.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "alive features": 992.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "alive features": 1137.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "alive features": 1178.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "alive features": 88.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "alive features": 314.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "alive features": 696.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "alive features": 842.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "alive features": 3.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "alive features": 26.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "alive features": 80.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "alive features": 130.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 387.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 529.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 657.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 21.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 56.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 130.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 4.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 7.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 13.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 261.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 341.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 452.0,
+      "series": "coarsest",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 39.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 96.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 203.0,
+      "series": "middle",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 14.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 21.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 42.0,
+      "series": "finest",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "turn-averaged SAE, layer 19 (fresh instrument)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "alive features",
+        "legend_labels": [
+          "coarsest",
+          "middle",
+          "finest"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      },
+      {
+        "title": "parent token-level SAE on turn averages, layer 20",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      },
+      {
+        "title": "pile-trained token-level SAE (exploratory)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ],
+    "series": [
+      "coarsest",
+      "middle",
+      "finest"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

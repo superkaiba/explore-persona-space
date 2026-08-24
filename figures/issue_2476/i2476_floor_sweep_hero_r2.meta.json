@@ -1,0 +1,258 @@
+{
+  "commit": "a1e18f25",
+  "render_id": "41170bb14e2644a6",
+  "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_floor_sweep.py",
+  "created": "2026-08-24T06:33:35Z",
+  "figsize": [
+    5.5,
+    1.133
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": 0.6251079033669263,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": 0.6066485182164321,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": 0.5915391709372131,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": 0.5876398676632282,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "median held-out R\u00b2": -0.7655554703243268,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "median held-out R\u00b2": -0.9080518921823771,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "median held-out R\u00b2": -1.0339488321867307,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "median held-out R\u00b2": -1.0506622820118445,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.1313119636916356,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.17200907348666272,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.16566729444515227,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.16319792934993943,
+      "series": "map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": -5.133340711921773,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": -4.768719999513176,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": -4.640056824268339,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": -4.523066875239721,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.6667357361081003,
+      "series": "map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0866486277125792,
+      "series": "map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.04875375920874059,
+      "series": "map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.0456387852775193,
+      "series": "map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": -0.47854755971582175,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": -3.419547657024374,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": -3.9999887509145218,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": -4.669988914059674,
+      "series": "identity+bias",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "coarsest (ids <2,048)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "median held-out R\u00b2",
+        "legend_labels": [
+          "map",
+          "identity+bias"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
+        ]
+      },
+      {
+        "title": "middle (2,048\u201316,383)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      },
+      {
+        "title": "finest (16,384\u201365,535)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22125.0",
+          "\u22122.5",
+          "0.0",
+          "2.5"
+        ]
+      }
+    ],
+    "series": [
+      "map",
+      "identity+bias"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

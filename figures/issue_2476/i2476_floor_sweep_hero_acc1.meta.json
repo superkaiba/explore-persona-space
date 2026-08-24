@@ -1,0 +1,308 @@
+{
+  "commit": "a1e18f25",
+  "render_id": "84c11dbfba414c7e",
+  "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_floor_sweep.py",
+  "created": "2026-08-24T06:33:36Z",
+  "figsize": [
+    5.5,
+    1.133
+  ],
+  "points": [
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "retrieval acc@1 (euclidean)": 0.70765,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "retrieval acc@1 (euclidean)": 0.70595,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "retrieval acc@1 (euclidean)": 0.70645,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "retrieval acc@1 (euclidean)": 0.70605,
+      "series": "map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "retrieval acc@1 (euclidean)": 0.2382,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "retrieval acc@1 (euclidean)": 0.244,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "retrieval acc@1 (euclidean)": 0.24765,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "retrieval acc@1 (euclidean)": 0.24765,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "alive floor (% of fit rows)": 0.0,
+      "retrieval acc@1 (euclidean)": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "retrieval acc@1 (euclidean)": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.00105,
+      "series": "map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.00405,
+      "series": "map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.00805,
+      "series": "map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.0088,
+      "series": "map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.00345,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.01335,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.02235,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.0252,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "alive floor (% of fit rows)": 0.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.0001,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 0.0003,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.0004,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.00065,
+      "series": "map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 0.0,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.5,
+      "y": 5e-05,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.25,
+      "y": 0.00065,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.2,
+      "y": 0.001,
+      "series": "ib",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "alive floor (% of fit rows)": 0.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "alive floor (% of fit rows)": 1.0,
+      "y": 5e-05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "coarsest (ids <2,048)",
+        "xlabel": "alive floor (% of fit rows)",
+        "ylabel": "retrieval acc@1 (euclidean)",
+        "legend_labels": [
+          "map",
+          "ib",
+          "chance"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-8}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      },
+      {
+        "title": "middle (2,048\u201316,383)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "title": "finest (16,384\u201365,535)",
+        "xlabel": "alive floor (% of fit rows)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$"
+        ]
+      }
+    ],
+    "series": [
+      "map",
+      "ib",
+      "chance"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
