@@ -374,9 +374,21 @@ def test_offset_bias_control_nonzero_energy_exact_prefix_parity():
             "verdict": verdict,
         }
 
-    # one triple per verdict class + a boundary-adjacent one
-    for e, k, me in ((5.1, 16, 0.3), (7.4, 16, 6.0), (10.0, 4, 6.1), (8.2, 2, 1.0)):
-        assert SP.offset_bias_control(e, k, me) == prefix_reference(e, k, me), (e, k, me)
+    # offset, full-energy x2, offset (boundary-adjacent), intermediate — the
+    # class-set assert below pins that ALL THREE healthy verdict classes are
+    # genuinely exercised (r7 reconciler: the prior fixtures never reached
+    # `intermediate`).
+    fixtures = ((5.1, 16, 0.3), (7.4, 16, 6.0), (10.0, 4, 6.1), (8.2, 2, 1.0), (10.0, 16, 3.0))
+    seen = set()
+    for e, k, me in fixtures:
+        got = SP.offset_bias_control(e, k, me)
+        assert got == prefix_reference(e, k, me), (e, k, me)
+        seen.add(got["verdict"])
+    assert seen == {
+        "consistent-with-shared-map-offset",
+        "excess-tracks-full-between-persona-energy",
+        "intermediate",
+    }
 
 
 # ── (f) sidecar loader validation ────────────────────────────────────────────
