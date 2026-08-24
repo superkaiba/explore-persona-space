@@ -1280,3 +1280,28 @@ def test_wrapper_failure_sentinel_write_failure_preserves_phase_rc(tmp_path):
     assert proc.returncode == 3, (proc.returncode, proc.stderr[-2000:])
     assert "failure-sentinel write failed (phase rc preserved)" in proc.stderr
     assert not list(ro_dir.glob("*.json"))  # the write really did fail
+
+
+def test_degenerate_variant_exclusion_registry():
+    """P3 designed-degenerate carve-out: sycophancy prefix_end is excluded
+    from contrast reads (constant prefix substrate — no system prompt), the
+    other behaviors keep the full variant grid, and the pair-coverage
+    denominator shrinks accordingly (never silently)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "cms_fold", REPO_ROOT / "scripts" / "issue1739_compose_ms_fold.py"
+    )
+    fold = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fold)
+
+    assert ("sycophancy", "prefix_end") in fold.DEGENERATE_VARIANTS
+    assert fold.behavior_variants("sycophancy") == ("context_end",)
+    assert fold.behavior_variants("evil") == ("context_end", "prefix_end")
+    assert fold.behavior_variants("hallucination") == ("context_end", "prefix_end")
+
+    seeds = (0, 1, 2, 3, 4)
+    contrast = fold.flip_contrast(
+        {}, seeds=seeds, variants=fold.behavior_variants("sycophancy")
+    )
+    assert contrast["pairs_expected"] == 1 * 2 * 5  # 1 variant x 2 anchors x 5 seeds

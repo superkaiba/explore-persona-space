@@ -53,6 +53,33 @@ _REPO_ROOT = _ensure_repo_root_on_syspath()
 HEADLINE_PAIR = ("arm6_map_proj_e1", "arm2_ctx_native")
 ANCHOR_BUDGETS = (250, 2500)  # §3 flip-contrast anchors (per variant)
 VARIANTS = ("context_end", "prefix_end")
+
+# Designed-degenerate variant columns (P3 diagnosis, 2026-08-24): sycophancy
+# contexts carry NO system prompt, so every context's "prefix" is the fixed
+# chat-template header — the prefix_end summaries collapse to ~2 unique rows
+# per 5,632 (pure batch-numerics jitter), scores computed on them are either
+# rank-degenerate (Spearman 0/0 -> NaN) or jitter noise, and a rerun
+# deterministically reproduces this. The whole (behavior, variant) column is
+# uninformative BY CONSTRUCTION, so it is excluded from the contrast /
+# lattice / sensitivity reads and RECORDED loud in the table entry — never a
+# silent drop. With one variant excluded the lattice anchor criterion
+# (>= 2 positive anchors) reads over 1 variant x 2 anchor budgets = 2
+# available anchors, i.e. it demands BOTH — a stated deviation, not a
+# weakening.
+DEGENERATE_VARIANTS: dict[tuple[str, str], str] = {
+    (
+        "sycophancy",
+        "prefix_end",
+    ): "no system prompt -> constant prefix substrate (~2 unique rows/5632; "
+    "cell scores are batch-numerics jitter, Spearman rank-degenerate)",
+}
+
+
+def behavior_variants(behavior: str) -> tuple[str, ...]:
+    """VARIANTS minus this behavior's designed-degenerate columns."""
+    return tuple(v for v in VARIANTS if (behavior, v) not in DEGENERATE_VARIANTS)
+
+
 CORE_LEVELS = ((0.0, 0.0), (0.5, 0.0), (0.5, 1.0))
 ABLATION_F_U = (0.1, 0.25, 0.75, 1.0)
 ABLATION_BUDGET = 2500
@@ -630,11 +657,20 @@ def arm_rho(row: dict, slug: str) -> float | None:
 
 
 def cell_class_table(
-    by_key: dict[tuple, dict], diag_union: dict, *, seeds: tuple[int, ...]
+    by_key: dict[tuple, dict],
+    diag_union: dict,
+    *,
+    seeds: tuple[int, ...],
+    degenerate_variants: tuple[str, ...] = (),
 ) -> list[dict]:
     """Per-(variant, f_u, f_l, L) table: seed-mean +- t-CI of the headline
     Delta, each seed's own bootstrap CI, per-arm frozen-rho seed means, the
-    arm13 shuffled-map margin, and the identity+bias map companions."""
+    arm13 shuffled-map margin, and the identity+bias map companions.
+
+    Classes whose variant is designed-degenerate (``DEGENERATE_VARIANTS``)
+    stay IN the table as flagged stat-free rows — the realized cells are
+    disclosed, their jitter-noise statistics are not serialized.
+    """
     classes: dict[tuple, list[tuple[int, dict]]] = {}
     for key, row in by_key.items():
         variant, f_u, f_l, budget_l, draw, seed = key
@@ -643,6 +679,20 @@ def cell_class_table(
     for cls, members in sorted(classes.items(), key=lambda kv: tuple(map(str, kv[0]))):
         variant, f_u, f_l, budget_l, draw = cls
         members.sort()
+        if variant in degenerate_variants:
+            out.append(
+                {
+                    "variant": variant,
+                    "f_u": f_u,
+                    "f_l": f_l,
+                    "budget_l": budget_l,
+                    "draw": draw,
+                    "seeds": [s for s, _ in members],
+                    "n_seeds": len(members),
+                    "designed_degenerate": True,
+                }
+            )
+            continue
         deltas = [headline_delta(r) for _, r in members if headline_delta(r) is not None]
         ci = t_ci(deltas)
         seed0 = next((r for s, r in members if s == 0), None)
@@ -795,6 +845,8 @@ def render_figures(report: dict, fig_dir: Path) -> dict[str, str]:
     }
     for ax, b in zip(axes, behaviors):
         for rowc in report["behaviors"][b]["cell_table"]:
+            if rowc.get("designed_degenerate"):
+                continue  # flagged stat-free rows (DEGENERATE_VARIANTS) carry no stats
             if (rowc["f_u"], rowc["f_l"]) not in ((0.0, 0.0), (0.5, 0.0)):
                 continue
             gx = xpos[(str(rowc["f_u"]), rowc["variant"])]
@@ -1063,12 +1115,31 @@ def main(argv: list[str] | None = None) -> int:
             rc = max(rc, 5)
             print(f"[fold] {b}: pool-meta MISSING for {len(meta_missing)} cells", flush=True)
 
-        contrast = flip_contrast(by_key, seeds=seeds)
+        b_variants = behavior_variants(b)
+        excluded_variants = [v for v in VARIANTS if v not in b_variants]
+        if excluded_variants:
+            n_excl = sum(1 for k in by_key if k[0] in excluded_variants)
+            entry["degenerate_variant_exclusion"] = {
+                "variants": excluded_variants,
+                "reason": {v: DEGENERATE_VARIANTS[(b, v)] for v in excluded_variants},
+                "n_cells_excluded": n_excl,
+                "anchor_criterion_note": (
+                    "lattice anchor criterion (>=2 positive) reads over "
+                    f"{len(b_variants) * len(ANCHOR_BUDGETS)} available anchors "
+                    "(both must be positive) — stated deviation from the 4-anchor grid"
+                ),
+            }
+            print(
+                f"[fold] {b}: designed-degenerate variant exclusion {excluded_variants} "
+                f"({n_excl} realized cells excluded from contrast/lattice reads)",
+                flush=True,
+            )
+        contrast = flip_contrast(by_key, seeds=seeds, variants=b_variants)
         entry["flip_contrast"] = {k: v for k, v in contrast.items() if k != "per_seed_C"}
         entry["flip_contrast"]["per_seed_C"] = contrast["per_seed_C"]
         # per-seed anchor terms for the spaghetti figure
         per_seed_terms: dict[int, dict[str, float]] = {}
-        for v in VARIANTS:
+        for v in b_variants:
             for ll in ANCHOR_BUDGETS:
                 for s in seeds:
                     k05 = (v, 0.5, 0.0, int(ll), 0, int(s))
@@ -1154,7 +1225,9 @@ def main(argv: list[str] | None = None) -> int:
                 for r in sens["rows"]
                 if r["delta_excl_overlap"] is not None and (c := r["cell"])
             }
-            contrast_excl = flip_contrast(by_key, seeds=seeds, delta_override=excl)
+            contrast_excl = flip_contrast(
+                by_key, seeds=seeds, variants=b_variants, delta_override=excl
+            )
             c_excl = t_ci([v for v in contrast_excl["per_seed_C"].values() if v is not None])
             sens_verdict = lattice_verdict(c_excl, contrast_excl["anchor_seedmean_delta05"])
             entry["sensitivity_lattice"] = {
@@ -1173,8 +1246,13 @@ def main(argv: list[str] | None = None) -> int:
         verdicts.append(verdict)
 
         entry["pool_overlap_pairwise"] = pairwise_pool_overlap(data["pool_meta"])
-        entry["dose_curve"] = dose_curve(by_key, seeds=seeds)
-        entry["cell_table"] = cell_class_table(by_key, data["diag"], seeds=seeds)
+        entry["dose_curve"] = dose_curve(by_key, seeds=seeds, variants=b_variants)
+        entry["cell_table"] = cell_class_table(
+            by_key,
+            data["diag"],
+            seeds=seeds,
+            degenerate_variants=tuple(v for v in VARIANTS if v not in b_variants),
+        )
 
         if b == "evil" and not banked_rows:
             # Loud-fail: the seed-0 reproduction duty must never silently skip

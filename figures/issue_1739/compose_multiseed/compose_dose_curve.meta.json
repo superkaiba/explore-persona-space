@@ -1,0 +1,171 @@
+{
+  "commit": "82a16cd2f5",
+  "created": "2026-08-24T02:51:43Z",
+  "figsize": [
+    4.6,
+    3.4
+  ],
+  "points": [
+    {
+      "f_u (eliciting share of the fixed pool)": 0.0,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.27013744452885424,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.1,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.14987052621183533,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.25,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.016471578167039497,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.5,
+      "\u0394\u03c1 (map arm \u2212 context arm)": 0.08075689442204628,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.75,
+      "\u0394\u03c1 (map arm \u2212 context arm)": 0.09377857209801424,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.0,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.1349872782429002,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.1,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.3381917335944401,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.25,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.24014554513884184,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.5,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.12823053509012827,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.75,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.06932437259902867,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 1.0,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.014036648236904481,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.0,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.17880509719203505,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.1,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.24942038158806817,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.25,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.23428855344958083,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.5,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.2102011540113541,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 0.75,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.17923780552847896,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "f_u (eliciting share of the fixed pool)": 1.0,
+      "\u0394\u03c1 (map arm \u2212 context arm)": -0.14008274426812348,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 17,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "f_u (eliciting share of the fixed pool)",
+        "ylabel": "\u0394\u03c1 (map arm \u2212 context arm)",
+        "legend_labels": [
+          "evil",
+          "sycophancy",
+          "hallucination"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2"
+        ]
+      }
+    ],
+    "series": [
+      "evil",
+      "sycophancy",
+      "hallucination"
+    ]
+  }
+}
