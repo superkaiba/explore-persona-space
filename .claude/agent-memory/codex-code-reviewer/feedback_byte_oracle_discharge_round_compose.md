@@ -52,3 +52,31 @@ recorded byte-identity / load-equality acceptance row (#2336 batches 3-5
 will re-land this shape, incl. the .pt spot check at the first torch.save
 batch). Related: [[single-blocker-fix-round-deviation-trace]],
 [[respawn-two-record-batch-compose]], [[gate-block remedy round compose]].
+
+**Second-generation addendum (#2336 r7, 2026-08-24)** — the fix-of-the-fix
+round (r6 FAIL+FAIL on one overlapping residual: a FALSE marker scoping
+clause + the .pt oracle it waived):
+
+6. **The bar shifts to the FAIL+FAIL union bodies + the ORIGINAL r1 rider
+   record** — inline all three verbatim (two verdict envelopes + the
+   r1 reconciler envelope; strip the codex output's trailing session-ID
+   lines). The intermediate r5 reconciler (v3) needs no own envelope: the
+   r6 verdicts quote its operative content. Discharge elements come from
+   the union Fix fields (both agreed), numbered E1-E5.
+7. **Composer independently re-derives the corrected factual claim** the
+   round exists to fix (here: 15 torch.save sites/8 files in the batch
+   commit — one awk/grep on `git show <payload-sha>`) and attests the
+   count + per-file breakdown; Codex re-derives with the same one command.
+   Falsity-withdrawal accuracy is its own duty element: explicit
+   withdrawal sentence + no "binds at a future batch" residue framing.
+8. **Drift-tolerant HEAD pin:** write "= HEAD at compose time; further
+   out-of-scope sync commits may land above it — not a finding", never a
+   bare "= HEAD" (sync commits land continuously on long-lived worktrees;
+   a moved HEAD otherwise reads as a contradiction of an attested fact).
+9. **Brief-cited main-tip SHA may be superseded at compose time** — re-run
+   the divergence probe at CURRENT origin/main, state both (probe verdict
+   unchanged ⇒ compose normally, flag the drift in the return).
+10. **Settled-vs-open ledger splits 3 ways now:** claimed-addressed-this-
+    round (full duties) / VERIFIED-ADDRESSED-at-prior-round (one
+    undisturbed-check status line, never re-adjudicated) / open
+    (status lines). torch is named NOT-stdlib for the probe carve-out.
