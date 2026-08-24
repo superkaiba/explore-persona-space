@@ -1,0 +1,1467 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-24T05:47:54Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "a39baedf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_hook_mechanics.json",
+    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_reduce_figures.json",
+    "eval_results/issue_2254/first-k-answer-token-steering/stage_inputs/staged_inputs.json"
+  ],
+  "behaviors": {
+    "evil": {
+      "evil__rb__lctx__L14__c4": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__t1__L14__c4": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__t2__L14__c4": {
+        "fraction_point": 0.0003376469608397056,
+        "fraction_ci": [
+          0.0,
+          0.0010598003710973615
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__t3__L14__c4": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__s13__L14__c4": {
+        "fraction_point": 0.041024105742024225,
+        "fraction_ci": [
+          0.008026411369705838,
+          0.0807467416340822
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__s15__L14__c4": {
+        "fraction_point": 0.08613373971020889,
+        "fraction_ci": [
+          0.03116583760803455,
+          0.15659225004365798
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__cmb__L14__c4": {
+        "fraction_point": 0.13880666560120294,
+        "fraction_ci": [
+          0.07130382936050922,
+          0.22773656821538077
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__aans__L14__c4": {
+        "fraction_point": 2.003090595181553,
+        "fraction_ci": [
+          1.776200928569251,
+          2.2801684641405595
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__lctx__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__t1__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__t2__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__t3__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__s13__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__s15__mid__c2": {
+        "fraction_point": 0.0028362344710535265,
+        "fraction_ci": [
+          0.0005581835471471337,
+          0.006520897690893991
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__cmb__mid__c2": {
+        "fraction_point": 0.03202243776603768,
+        "fraction_ci": [
+          0.007665064005611183,
+          0.07081595819839119
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rb__aans__mid__c2": {
+        "fraction_point": 1.9519370806143377,
+        "fraction_ci": [
+          1.7307207175058137,
+          2.2417889449949477
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__lctx__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__t1__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__t2__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__t3__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__s13__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__s15__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__cmb__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__aans__L17__c1": {
+        "fraction_point": 1.3040938568511946,
+        "fraction_ci": [
+          1.0690483538428601,
+          1.5538754791888354
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__lctx__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__t1__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__t2__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__t3__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__s13__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__s15__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__cmb__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__pre__aans__mid__c2": {
+        "fraction_point": 0.594433102007649,
+        "fraction_ci": [
+          0.45996098769023225,
+          0.7629316147161399
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__lctx__L14__c4": {
+        "fraction_point": 0.058075277264429355,
+        "fraction_ci": [
+          0.01565435022462023,
+          0.11746305591270226
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__t1__L14__c4": {
+        "fraction_point": 0.018908229807023513,
+        "fraction_ci": [
+          0.0,
+          0.05822098897729138
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__t2__L14__c4": {
+        "fraction_point": 0.000844117402099264,
+        "fraction_ci": [
+          0.0,
+          0.0026680705566215273
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__t3__L14__c4": {
+        "fraction_point": 0.0017219995002824983,
+        "fraction_ci": [
+          0.0,
+          0.005265069350252578
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__s13__L14__c4": {
+        "fraction_point": 0.08029244728768199,
+        "fraction_ci": [
+          0.0261193526371292,
+          0.1505321274442502
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__s15__L14__c4": {
+        "fraction_point": 0.17976324195105925,
+        "fraction_ci": [
+          0.09195613275594584,
+          0.2751982075980525
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__cmb__L14__c4": {
+        "fraction_point": 0.15673571922179133,
+        "fraction_ci": [
+          0.08620920311784222,
+          0.23130289760926434
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__aans__L14__c4": {
+        "fraction_point": 0.01202023180589352,
+        "fraction_ci": [
+          0.0,
+          0.033026495701997505
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__lctx__mid__c4": {
+        "fraction_point": 0.01816540649317616,
+        "fraction_ci": [
+          0.0010082112278295952,
+          0.04713173424868227
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__t1__mid__c4": {
+        "fraction_point": 0.0001688234804198528,
+        "fraction_ci": [
+          0.0,
+          0.0005429350753841811
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__t2__mid__c4": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__t3__mid__c4": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__s13__mid__c4": {
+        "fraction_point": 0.005908821814694847,
+        "fraction_ci": [
+          0.0,
+          0.015177043998682657
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__s15__mid__c4": {
+        "fraction_point": 0.0005064704412595584,
+        "fraction_ci": [
+          0.0,
+          0.0017197025064096395
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__cmb__mid__c4": {
+        "fraction_point": 0.04310063455118841,
+        "fraction_ci": [
+          0.012812909917776377,
+          0.08338286031809167
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__cxd__aans__mid__c4": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__lctx__L14__cm1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__t1__L14__cm1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__t2__L14__cm1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__t3__L14__cm1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__s13__L14__cm1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__s15__L14__cm1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__cmb__L14__cm1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__aans__L14__cm1": {
+        "fraction_point": 0.0001688234804198528,
+        "fraction_ci": [
+          0.0,
+          0.0005694476949221968
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__lctx__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__t1__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__t2__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__t3__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__s13__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__s15__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__cmb__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__rnd__aans__mid__c0p5": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__lctx__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__t1__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__t2__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__t3__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__s13__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__s15__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__cmb__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__aans__L17__c1": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__lctx__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__t1__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__t2__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__t3__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__s13__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__s15__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__cmb__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      },
+      "evil__shf__aans__mid__c2": {
+        "fraction_point": 0.0,
+        "fraction_ci": [
+          0.0,
+          0.0
+        ],
+        "denominator_point": 49.36122222222221,
+        "n_boot": 1000
+      }
+    },
+    "sycophancy": {
+      "sycophancy__rb__lctx__L14__c2": {
+        "fraction_point": 0.24857796463459864,
+        "fraction_ci": [
+          0.15672716113524163,
+          0.3309980770257896
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__t1__L14__c2": {
+        "fraction_point": 0.1689748979844194,
+        "fraction_ci": [
+          0.10457847604805103,
+          0.2612522580859926
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__t2__L14__c2": {
+        "fraction_point": 0.0858167429207369,
+        "fraction_ci": [
+          0.010190139540783554,
+          0.19142146955953895
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__t3__L14__c2": {
+        "fraction_point": 0.055881868018630695,
+        "fraction_ci": [
+          0.009485823200705318,
+          0.10762067144947574
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__s13__L14__c2": {
+        "fraction_point": 0.2762973496558262,
+        "fraction_ci": [
+          0.15283192276400304,
+          0.42078224345163906
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__s15__L14__c2": {
+        "fraction_point": 0.31426981575367874,
+        "fraction_ci": [
+          0.24054007740115282,
+          0.40467989292867124
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__cmb__L14__c2": {
+        "fraction_point": 0.6172766992292155,
+        "fraction_ci": [
+          0.5023563462194925,
+          0.7639567864575327
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__aans__L14__c2": {
+        "fraction_point": 2.018754379456741,
+        "fraction_ci": [
+          1.6631030333998833,
+          2.591585313024822
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__lctx__mid__c1": {
+        "fraction_point": 0.29463954494868316,
+        "fraction_ci": [
+          0.2095099161149477,
+          0.39105373654553943
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__t1__mid__c1": {
+        "fraction_point": 0.05340876303532421,
+        "fraction_ci": [
+          -0.004225479038172578,
+          0.11447044619031402
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__t2__mid__c1": {
+        "fraction_point": 0.05206916450269984,
+        "fraction_ci": [
+          0.021429680173550448,
+          0.07820749992664747
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__t3__mid__c1": {
+        "fraction_point": 0.03563332096780847,
+        "fraction_ci": [
+          -0.009908937848534406,
+          0.0827599357092486
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__s13__mid__c1": {
+        "fraction_point": 0.15326037673632575,
+        "fraction_ci": [
+          0.0957302110722676,
+          0.22487367321992854
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__s15__mid__c1": {
+        "fraction_point": 0.22400148386298996,
+        "fraction_ci": [
+          0.16694922635859852,
+          0.29561673681882344
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__cmb__mid__c1": {
+        "fraction_point": 0.35523061703969333,
+        "fraction_ci": [
+          0.29491162724684733,
+          0.4241051399577717
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rb__aans__mid__c1": {
+        "fraction_point": 2.2124809364824203,
+        "fraction_ci": [
+          1.6863069975347118,
+          3.038123344531288
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__lctx__L14__c1": {
+        "fraction_point": 0.10678661225835699,
+        "fraction_ci": [
+          0.05998083178137973,
+          0.1543914847908472
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__t1__L14__c1": {
+        "fraction_point": 0.008686781253864243,
+        "fraction_ci": [
+          -0.0327486027748403,
+          0.05106738746470103
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__t2__L14__c1": {
+        "fraction_point": 0.0010613742220024246,
+        "fraction_ci": [
+          -0.04311452456348657,
+          0.03666370286203848
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__t3__L14__c1": {
+        "fraction_point": 0.017548740777379307,
+        "fraction_ci": [
+          -0.05104349735217811,
+          0.06631735596517689
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__s13__L14__c1": {
+        "fraction_point": 0.1065289971559293,
+        "fraction_ci": [
+          0.0400921006215598,
+          0.1809176118030014
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__s15__L14__c1": {
+        "fraction_point": 0.12177981121965299,
+        "fraction_ci": [
+          0.0466220929794449,
+          0.20832362711640534
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__cmb__L14__c1": {
+        "fraction_point": 0.18530769547833975,
+        "fraction_ci": [
+          0.1352918471260769,
+          0.24292868171945237
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__aans__L14__c1": {
+        "fraction_point": 1.4597296071884915,
+        "fraction_ci": [
+          1.1902295496288697,
+          1.9137496386712796
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__lctx__mid__c1": {
+        "fraction_point": 0.105292444664276,
+        "fraction_ci": [
+          0.06020315273253955,
+          0.15705473066453426
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__t1__mid__c1": {
+        "fraction_point": 0.025328716870697862,
+        "fraction_ci": [
+          -0.0059037298009768265,
+          0.050585001104521625
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__t2__mid__c1": {
+        "fraction_point": -0.0005358394130496915,
+        "fraction_ci": [
+          -0.033045509270465734,
+          0.02565978696909708
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__t3__mid__c1": {
+        "fraction_point": -0.024494043938831873,
+        "fraction_ci": [
+          -0.08602668986748273,
+          0.013411198902622943
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__s13__mid__c1": {
+        "fraction_point": 0.023473888133217886,
+        "fraction_ci": [
+          -0.025660613228742427,
+          0.06411125837367834
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__s15__mid__c1": {
+        "fraction_point": 0.042691974774329226,
+        "fraction_ci": [
+          0.004620498643521195,
+          0.0871306001196234
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__cmb__mid__c1": {
+        "fraction_point": 0.1805160545731833,
+        "fraction_ci": [
+          0.12312888055163945,
+          0.2479747518499805
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__pre__aans__mid__c1": {
+        "fraction_point": 0.8783438440295123,
+        "fraction_ci": [
+          0.7001380416972355,
+          1.1340988016412836
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__lctx__L14__c2": {
+        "fraction_point": 0.586208317876427,
+        "fraction_ci": [
+          0.4551626689569763,
+          0.7698111320225124
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__t1__L14__c2": {
+        "fraction_point": 0.11477268043361774,
+        "fraction_ci": [
+          0.05956263713799577,
+          0.18446876400241352
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__t2__L14__c2": {
+        "fraction_point": 0.08210708544577718,
+        "fraction_ci": [
+          0.008492757222289657,
+          0.15601869365100549
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__t3__L14__c2": {
+        "fraction_point": 0.05026585878570537,
+        "fraction_ci": [
+          -0.02014528823594518,
+          0.11564403694983903
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__s13__L14__c2": {
+        "fraction_point": 0.6231503235645689,
+        "fraction_ci": [
+          0.4610737352408155,
+          0.8304340020032115
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__s15__L14__c2": {
+        "fraction_point": 0.6912637566464697,
+        "fraction_ci": [
+          0.560283972354738,
+          0.8990023177416315
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__cmb__L14__c2": {
+        "fraction_point": 1.0364679938996741,
+        "fraction_ci": [
+          0.8468646218450675,
+          1.3523431063956526
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__aans__L14__c2": {
+        "fraction_point": -0.036262986512900296,
+        "fraction_ci": [
+          -0.2147193209422938,
+          0.19361102127216956
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__lctx__mid__c4": {
+        "fraction_point": 1.0997382630559334,
+        "fraction_ci": [
+          0.8753176999642128,
+          1.429847917796767
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__t1__mid__c4": {
+        "fraction_point": 0.5463810230410948,
+        "fraction_ci": [
+          0.431303202946146,
+          0.6857364512056547
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__t2__mid__c4": {
+        "fraction_point": 0.3462140884547215,
+        "fraction_ci": [
+          0.24707156660195553,
+          0.5008205588634544
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__t3__mid__c4": {
+        "fraction_point": 0.28773546020361895,
+        "fraction_ci": [
+          0.18354943513754554,
+          0.41963210686211805
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__s13__mid__c4": {
+        "fraction_point": 0.7943097976175754,
+        "fraction_ci": [
+          0.6425215938835289,
+          0.9846637184508454
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__s15__mid__c4": {
+        "fraction_point": 0.8111063022958658,
+        "fraction_ci": [
+          0.6111251975468798,
+          1.122260816927417
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__cmb__mid__c4": {
+        "fraction_point": 1.29511355673715,
+        "fraction_ci": [
+          1.0595194545021338,
+          1.6351451844944012
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__cxd__aans__mid__c4": {
+        "fraction_point": -0.31611433988706145,
+        "fraction_ci": [
+          -0.5012637305309925,
+          -0.17938591988610578
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__lctx__L17__cm1": {
+        "fraction_point": 0.035169613783438476,
+        "fraction_ci": [
+          -0.011769610492370661,
+          0.08227704665690329
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__t1__L17__cm1": {
+        "fraction_point": 0.014045175384361707,
+        "fraction_ci": [
+          -0.017544541026398193,
+          0.047102164800499544
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__t2__L17__cm1": {
+        "fraction_point": 0.01739417171592273,
+        "fraction_ci": [
+          -0.022652785684163023,
+          0.050389887955188964
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__t3__L17__cm1": {
+        "fraction_point": 0.017085033593009367,
+        "fraction_ci": [
+          -0.021098504511712832,
+          0.056111268318293245
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__s13__L17__cm1": {
+        "fraction_point": 0.003843617328222279,
+        "fraction_ci": [
+          -0.03269419405749864,
+          0.03822455973510922
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__s15__L17__cm1": {
+        "fraction_point": 0.04665924735171687,
+        "fraction_ci": [
+          0.004082387576020187,
+          0.09255282902124479
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__cmb__L17__cm1": {
+        "fraction_point": 0.0799946416058695,
+        "fraction_ci": [
+          -0.006033763846680674,
+          0.16619902176639423
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__aans__L17__cm1": {
+        "fraction_point": 0.6996104859651291,
+        "fraction_ci": [
+          0.5122025541774133,
+          0.9084931481529742
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__lctx__mid__c1": {
+        "fraction_point": 0.00466798565599109,
+        "fraction_ci": [
+          -0.03718581027364778,
+          0.045087068096899066
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__t1__mid__c1": {
+        "fraction_point": -0.007027739994229388,
+        "fraction_ci": [
+          -0.052300015210523,
+          0.0326666165192026
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__t2__mid__c1": {
+        "fraction_point": -0.014962285149004571,
+        "fraction_ci": [
+          -0.06771264081839853,
+          0.023694333079396827
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__t3__mid__c1": {
+        "fraction_point": 0.010490086970858603,
+        "fraction_ci": [
+          -0.016343555269568776,
+          0.03597593567932823
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__s13__mid__c1": {
+        "fraction_point": -0.008264292485882632,
+        "fraction_ci": [
+          -0.07911930773344307,
+          0.04131553528084995
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__s15__mid__c1": {
+        "fraction_point": 0.015590865998928317,
+        "fraction_ci": [
+          -0.05058761333988851,
+          0.07524070876033016
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__cmb__mid__c1": {
+        "fraction_point": -0.005379003338691656,
+        "fraction_ci": [
+          -0.055471410348824364,
+          0.044981772639227965
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__rnd__aans__mid__c1": {
+        "fraction_point": 0.1081262107909814,
+        "fraction_ci": [
+          -0.007391729408183417,
+          0.22557025590744972
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__lctx__L14__c1": {
+        "fraction_point": 0.17222084827500922,
+        "fraction_ci": [
+          0.12194113964064317,
+          0.23381867313657395
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__t1__L14__c1": {
+        "fraction_point": 0.04392852726598241,
+        "fraction_ci": [
+          -0.025790539936747556,
+          0.11181605267837738
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__t2__L14__c1": {
+        "fraction_point": 0.01363299122047733,
+        "fraction_ci": [
+          -0.0417051146461786,
+          0.061119122700155334
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__t3__L14__c1": {
+        "fraction_point": 0.017239602654465995,
+        "fraction_ci": [
+          -0.004721767525529519,
+          0.042782678414801684
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__s13__L14__c1": {
+        "fraction_point": 0.11312394377808006,
+        "fraction_ci": [
+          0.05827112055826858,
+          0.18553146271050705
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__s15__L14__c1": {
+        "fraction_point": 0.1695931742302461,
+        "fraction_ci": [
+          0.11402302409588527,
+          0.23370023489239444
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__cmb__L14__c1": {
+        "fraction_point": 0.16227690532129754,
+        "fraction_ci": [
+          0.11522230828578445,
+          0.22327295308267506
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__aans__L14__c1": {
+        "fraction_point": 0.7760191253452045,
+        "fraction_ci": [
+          0.616259606145009,
+          0.990072875192813
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__lctx__mid__c1": {
+        "fraction_point": 0.15836115576439547,
+        "fraction_ci": [
+          0.10011819864595832,
+          0.23434775336416772
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__t1__mid__c1": {
+        "fraction_point": 0.0079654589670665,
+        "fraction_ci": [
+          -0.042600590155980785,
+          0.06353577195020946
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__t2__mid__c1": {
+        "fraction_point": -0.007130786035200565,
+        "fraction_ci": [
+          -0.03805922918151833,
+          0.022437859258297214
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__t3__mid__c1": {
+        "fraction_point": 0.0007522360990890587,
+        "fraction_ci": [
+          -0.029591703918875625,
+          0.02769380320459481
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__s13__mid__c1": {
+        "fraction_point": 0.008480689171922108,
+        "fraction_ci": [
+          -0.05313257444915016,
+          0.053413294237463355
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__s15__mid__c1": {
+        "fraction_point": -0.009552367998021546,
+        "fraction_ci": [
+          -0.06747427353427737,
+          0.034827403289877844
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__cmb__mid__c1": {
+        "fraction_point": 0.12693211326820827,
+        "fraction_ci": [
+          0.07354985809514875,
+          0.18859650730339556
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      },
+      "sycophancy__shf__aans__mid__c1": {
+        "fraction_point": 0.46889040023082307,
+        "fraction_ci": [
+          0.39913701960365106,
+          0.567996978294862
+        ],
+        "denominator_point": 32.348000000000006,
+        "n_boot": 1000
+      }
+    }
+  },
+  "denominator": "ceiling - alpha0 (both reused from the committed baseline)",
+  "ceiling_source": "eval_results/issue_2254/baseline_ceiling/judged_percell.json",
+  "boot": {
+    "n_boot_cell": 1000,
+    "n_boot_verdict": 2000,
+    "seed": 20254,
+    "estimator": "question-level paired cluster bootstrap (parent _boot_idx machinery)"
+  }
+}

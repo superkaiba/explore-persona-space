@@ -1,6 +1,6 @@
 ---
 name: registered-gate-quantity-substituted
-description: A decision gate's computed quantity silently swapped for a semantically-adjacent stricter proxy (donor-swap ceiling delta vs the registered 100−α0 headroom) — diff each gate's code against the plan's literal parenthetical definition (#2254 R1 g3)
+description: A decision gate's computed quantity OR disposition silently swapped — stricter adjacent proxy (#2254 R1 g3) or a registered PROCEED-with-survivors branch realized as a blocking abort + resume wedge (#2479 R1 g8); diff code against the plan's literal gate sentence
 metadata:
   type: feedback
 ---
@@ -34,6 +34,16 @@ denominator narrowing — a `np.nanmean` over per-unit stats lets a NaN unit
 (zero-variance rates = the broken-replication signature the gate guards
 against) drop out of the registered "mean over N units" and the gate can
 PASS on N−1 units with disclosure only in a sidecar field (#2379 R1 g4:
-Gate G1 `nanmean(rhos)` over 3 caps languages; Major). Sibling family:
+Gate G1 `nanmean(rhos)` over 3 caps languages; Major); (7) ALSO check the
+gate's DISPOSITION, not just its quantity — #2479 R1 g8: plan §7 registered
+the <12-survivors branch as "PROCEED with survivors … never an abort"
+(bounded-claim reporting downgrade), but the pod wrapper realized it as a
+blocking `exit 46` BEFORE the survivors' capture phase, and because the
+survivor count recomputes from durable done-files, every re-run re-halts —
+a deterministic wedge that strands the registered proceed path (the
+implementer's deviation note covered the gate's GRAIN but not the flip).
+Pull the plan's verbs (proceed/halt/abort/report) alongside the numbers; a
+disclosed grain deviation does not disclose a disposition flip. Sibling
+family:
 [[gate-threshold-vs-shard-config]] (gate dead from config drift; this one
 is gate ALIVE but wrong quantity/denominator).

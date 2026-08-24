@@ -202,6 +202,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.backends.slurm import WORKING_TREE_OVERLAY_PATHS
 from explore_persona_space.orchestrate.env import is_shared_vm_env
 from explore_persona_space.task_workflow import (
@@ -2025,9 +2026,11 @@ class _ScratchVerdictCache:
             return
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_name(self.path.name + ".tmp")
-            tmp.write_text(json.dumps(self._data, sort_keys=True))
-            os.replace(tmp, self.path)
+            # atomic_replace re-raises after its own temp cleanup, so this
+            # caller's except still catches — the §4(k) fail-soft contract
+            # is preserved (#2336 batch 1).
+            with atomic_replace(self.path) as tmp:
+                tmp.write_text(json.dumps(self._data, sort_keys=True))
             self._dirty = False
         except OSError:
             pass
@@ -2963,9 +2966,11 @@ def _save_slurm_src_escalation_state(path: Path, state: dict) -> None:
     error so a persistently unwritable state file is diagnosable."""
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_name(path.name + ".tmp")
-        tmp.write_text(json.dumps(state, sort_keys=True))
-        os.replace(tmp, path)
+        # atomic_replace re-raises after its own temp cleanup, so this
+        # caller's except still catches — the §4(k) fail-soft contract is
+        # preserved (#2336 batch 1).
+        with atomic_replace(path) as tmp:
+            tmp.write_text(json.dumps(state, sort_keys=True))
     except OSError as exc:
         print(
             f"  WARNING: writing slurm-src escalation dedup state failed "

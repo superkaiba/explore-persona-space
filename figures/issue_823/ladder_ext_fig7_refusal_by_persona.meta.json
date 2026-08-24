@@ -1,0 +1,305 @@
+{
+  "commit": "5e524624",
+  "render_id": "d97bf58c74a1412e",
+  "git_commit": "5e5246242033f6a914c6470b3f059717e0b0f4c1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_figures.py",
+  "created": "2026-08-24T06:25:07Z",
+  "figsize": [
+    7.0,
+    3.6
+  ],
+  "points": [
+    {
+      "persona (context id mod 16)": "0",
+      "refusal fraction": 0.020096762188314105,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "1",
+      "refusal fraction": 0.022701898027540007,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "2",
+      "refusal fraction": 0.025679196129512468,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "3",
+      "refusal fraction": 0.01786378861183476,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "4",
+      "refusal fraction": 0.03312244138444362,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "5",
+      "refusal fraction": 0.021585411239300335,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "6",
+      "refusal fraction": 0.4343133606252326,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "7",
+      "refusal fraction": 0.01935243766282099,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "8",
+      "refusal fraction": 0.017485119047619048,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "9",
+      "refusal fraction": 0.021577380952380952,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "10",
+      "refusal fraction": 0.013020833333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "11",
+      "refusal fraction": 0.02976190476190476,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "12",
+      "refusal fraction": 0.02418154761904762,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "13",
+      "refusal fraction": 0.020461309523809524,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "14",
+      "refusal fraction": 0.02269345238095238,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": "15",
+      "refusal fraction": 0.033854166666666664,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "persona (context id mod 16)": 0.0,
+      "refusal fraction": 0.06299999999999994,
+      "series": "parent banked overall (6.3%)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "persona (context id mod 16)": 1.0,
+      "refusal fraction": 0.06299999999999994,
+      "series": "parent banked overall (6.3%)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "persona (context id mod 16)": 0.0,
+      "refusal fraction": 0.021093023255813952,
+      "series": "k1 arm overall (extension)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "persona (context id mod 16)": 1.0,
+      "refusal fraction": 0.021093023255813952,
+      "series": "k1 arm overall (extension)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "persona (context id mod 16)": 0.0,
+      "refusal fraction": 0.0158,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 1.0,
+      "refusal fraction": 0.0168,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 2.0,
+      "refusal fraction": 0.0208,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 3.0,
+      "refusal fraction": 0.012,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 4.0,
+      "refusal fraction": 0.0256,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 5.0,
+      "refusal fraction": 0.016,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 6.0,
+      "refusal fraction": 0.4336,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 7.0,
+      "refusal fraction": 0.016,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 8.0,
+      "refusal fraction": 0.019230769230769232,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 9.0,
+      "refusal fraction": 0.01282051282051282,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 10.0,
+      "refusal fraction": 0.016025641025641024,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 11.0,
+      "refusal fraction": 0.019230769230769232,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 12.0,
+      "refusal fraction": 0.019230769230769232,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 13.0,
+      "refusal fraction": 0.009615384615384616,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 14.0,
+      "refusal fraction": 0.038461538461538464,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "persona (context id mod 16)": 15.0,
+      "refusal fraction": 0.028846153846153848,
+      "series": "parent per-persona",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "persona (context id mod 16)",
+        "ylabel": "refusal fraction",
+        "legend_labels": [
+          "parent banked overall (6.3%)",
+          "k1 arm overall (extension)",
+          "parent per-persona",
+          "extension rows (k16 arm)"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "parent banked overall (6.3%)",
+      "k1 arm overall (extension)",
+      "parent per-persona",
+      "extension rows (k16 arm)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

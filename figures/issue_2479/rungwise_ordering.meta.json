@@ -1,0 +1,115 @@
+{
+  "commit": "6bf3d38c+dirty",
+  "render_id": "21dfe1a79edc4788",
+  "git_commit": "6bf3d38cda287df55df10ff10d8fa21dc7d4ba9e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_r3_figfix.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_r3_figfix.py",
+  "created": "2026-08-24T08:39:57Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.7265,
+      "Transfer-ladder rung": 8.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.7588,
+      "Transfer-ladder rung": 7.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.7235,
+      "Transfer-ladder rung": 6.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.7029,
+      "Transfer-ladder rung": 5.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.6882,
+      "Transfer-ladder rung": 4.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.3471,
+      "Transfer-ladder rung": 3.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.8118,
+      "Transfer-ladder rung": 2.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.7353,
+      "Transfer-ladder rung": 1.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    },
+    {
+      "Rank correlation of rung recovery with the AI-likeness axis": 0.8088,
+      "Transfer-ladder rung": 0.0,
+      "series": "Rank correlation with the judged axis",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Rank correlation of rung recovery with the AI-likeness axis",
+        "ylabel": "Transfer-ladder rung",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ],
+        "yticklabels": [
+          "Direct (no refit)",
+          "Context offset",
+          "Answer offset",
+          "Bias refit (headline)",
+          "Global scale",
+          "Rotation",
+          "Context reparam.",
+          "Answer reparam.",
+          "Full affine remap"
+        ]
+      }
+    ],
+    "series": [
+      "Rank correlation with the judged axis"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

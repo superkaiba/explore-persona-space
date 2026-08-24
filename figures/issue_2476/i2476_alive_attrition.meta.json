@@ -1,0 +1,218 @@
+{
+  "commit": "064462df+dirty",
+  "render_id": "0d057e5914384e54",
+  "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2476/turnavg/bridge_b.npz",
+    "eval_results/issue_2476/turnavg/gates_p4.json",
+    "eval_results/issue_2476/turnavg/gates_p6.json",
+    "eval_results/issue_2476/turnavg/panel_b.json",
+    "eval_results/issue_2476/turnavg/panel_c.json",
+    "eval_results/issue_2476/turnavg/perfeature_b_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_inlier.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_pile.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_transfer.npz",
+    "eval_results/issue_2476/turnavg/preds_meta.json",
+    "eval_results/issue_2476/turnavg/recon_gate.json",
+    "eval_results/issue_2476/turnavg/regime.json",
+    "eval_results/issue_2476/turnavg/retrieval_b.json",
+    "eval_results/issue_2476/turnavg/retrieval_c.json",
+    "eval_results/issue_2476/turnavg/shuffle_null_b.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_b_pile.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_c.npz",
+    "eval_results/issue_2476/turnavg/tier_tests_b.json",
+    "eval_results/issue_2476/turnavg/tier_tests_c.json",
+    "eval_results/issue_2476/turnavg/train_log.json",
+    "figures/issue_2476/i2476_alive_attrition.meta.json",
+    "figures/issue_2476/i2476_alive_attrition.pdf",
+    "figures/issue_2476/i2476_alive_attrition.png",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.meta.json",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.pdf",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.png",
+    "figures/issue_2476/i2476_corpus_transfer.meta.json",
+    "figures/issue_2476/i2476_corpus_transfer.pdf",
+    "figures/issue_2476/i2476_corpus_transfer.png",
+    "figures/issue_2476/i2476_densein_profile.meta.json",
+    "figures/issue_2476/i2476_densein_profile.pdf",
+    "figures/issue_2476/i2476_densein_profile.png",
+    "figures/issue_2476/i2476_inlier_sensitivity.meta.json",
+    "figures/issue_2476/i2476_inlier_sensitivity.pdf",
+    "figures/issue_2476/i2476_inlier_sensitivity.png",
+    "figures/issue_2476/i2476_pile_twin.meta.json",
+    "figures/issue_2476/i2476_pile_twin.pdf",
+    "figures/issue_2476/i2476_pile_twin.png",
+    "figures/issue_2476/i2476_r2_ecdf.meta.json",
+    "figures/issue_2476/i2476_r2_ecdf.pdf",
+    "figures/issue_2476/i2476_r2_ecdf.png",
+    "figures/issue_2476/i2476_r2_vs_activity.meta.json",
+    "figures/issue_2476/i2476_r2_vs_activity.pdf",
+    "figures/issue_2476/i2476_r2_vs_activity.png",
+    "figures/issue_2476/i2476_retrieval_acc_at_k.meta.json",
+    "... 5 more"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_turnavg_sae.py",
+  "created": "2026-08-23T11:38:53Z",
+  "figsize": [
+    5.5,
+    3.399
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "alive-feature fraction (selected / candidate)": 0.384765625,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "alive-feature fraction (selected / candidate)": 0.006138392857142857,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "alive-feature fraction (selected / candidate)": 6.103515625e-05,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "alive-feature fraction (selected / candidate)": 0.18896484375,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "alive-feature fraction (selected / candidate)": 0.00146484375,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "alive-feature fraction (selected / candidate)": 8.138020833333333e-05,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "alive-feature fraction (selected / candidate)": 0.384765625,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "alive-feature fraction (selected / candidate)": 0.006138392857142857,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.8,
+      "alive-feature fraction (selected / candidate)": 6.103515625e-05,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.2,
+      "alive-feature fraction (selected / candidate)": 0.384765625,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8,
+      "alive-feature fraction (selected / candidate)": 0.006138392857142857,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.8,
+      "alive-feature fraction (selected / candidate)": 6.103515625e-05,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.20000000000000007,
+      "alive-feature fraction (selected / candidate)": 0.18896484375,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.2000000000000002,
+      "alive-feature fraction (selected / candidate)": 0.00146484375,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "alive-feature fraction (selected / candidate)": 8.138020833333333e-05,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.20000000000000007,
+      "alive-feature fraction (selected / candidate)": 0.18896484375,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.2000000000000002,
+      "alive-feature fraction (selected / candidate)": 0.00146484375,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.2,
+      "alive-feature fraction (selected / candidate)": 8.138020833333333e-05,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "alive-feature fraction (selected / candidate)",
+        "xticklabels": [
+          "coarsest\n(ids <2,048)",
+          "middle\n(2,048\u201316,383)",
+          "finest\n(16,384\u201365,535)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      }
+    ],
+    "series": [
+      "arm c (turn-avg SAE, L19)",
+      "arm b (chanind, L20)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

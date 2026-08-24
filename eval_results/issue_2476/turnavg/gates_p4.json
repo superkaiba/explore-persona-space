@@ -1,0 +1,20 @@
+{
+  "g4": {
+    "val_var_fve": 0.909269,
+    "val_l0": 98.96,
+    "floor": 0.5,
+    "n_val": 10000,
+    "verdict": "PASS"
+  },
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:23:22.489788Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "sae_train",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}

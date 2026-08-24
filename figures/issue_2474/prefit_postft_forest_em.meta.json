@@ -1,0 +1,343 @@
+{
+  "commit": "7249718b",
+  "render_id": "bdbbfc0f6d4c42a4",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:57:27Z",
+  "figsize": [
+    7.8,
+    13.8
+  ],
+  "points": [
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.043455913612974295,
+      "y": 39.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.04127966976264186,
+      "y": 38.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.06604747162022706,
+      "y": 37.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.1513754163788379,
+      "y": 36.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.18623962976988984,
+      "y": 35.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.061045211980130576,
+      "y": 34.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.10939112487100111,
+      "y": 33.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.09081527347781215,
+      "y": 32.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.16485404934407677,
+      "y": 31.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.2741861216056712,
+      "y": 30.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.015519969147490875,
+      "y": 29.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.061919504643962786,
+      "y": 28.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.06604747162022706,
+      "y": 27.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.1389336013340019,
+      "y": 26.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.16347700835356993,
+      "y": 25.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.24935417096968593,
+      "y": 24.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.2786377708978328,
+      "y": 23.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.28895768833849333,
+      "y": 22.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.31830310156372066,
+      "y": 21.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.28453276770399843,
+      "y": 20.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.06311454119979598,
+      "y": 19.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.14860681114551078,
+      "y": 18.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.14860681114551078,
+      "y": 17.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.11508678916473292,
+      "y": 16.0,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.06207987658996328,
+      "y": 15.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.16244234374373734,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.6914344685242518,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.20846233230134156,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.6189802984805903,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.658046691853611,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.22348755572386786,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.6130030959752322,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.4953560371517028,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.4976726017934395,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.09932780254394127,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.6094174551914731,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.3591331269349845,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.6955624355005159,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.6262380239234113,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.6477000457552837,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 40,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Emergent misalignment \u2014 base-model vs post-ft predictors",
+        "xlabel": "delta rho (base minus post-fine-tuning), level DV",
+        "xticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "Context vs inoc. \u2014 Bad medical advice",
+          "Context vs inoc. \u2014 Bad legal advice",
+          "Context vs inoc. \u2014 Bad security advice",
+          "Context vs inoc. \u2014 Extreme-sports advice",
+          "Context vs inoc. \u2014 Risky-financial advice",
+          "Pred. answer vs inoc. \u2014 Bad medical advice",
+          "Pred. answer vs inoc. \u2014 Bad legal advice",
+          "Pred. answer vs inoc. \u2014 Bad security advice",
+          "Pred. answer vs inoc. \u2014 Extreme-sports advice",
+          "Pred. answer vs inoc. \u2014 Risky-financial advice",
+          "Shift-only vs inoc. \u2014 Bad medical advice",
+          "Shift-only vs inoc. \u2014 Bad legal advice",
+          "Shift-only vs inoc. \u2014 Bad security advice",
+          "Shift-only vs inoc. \u2014 Extreme-sports advice",
+          "Shift-only vs inoc. \u2014 Risky-financial advice",
+          "Real answer vs inoc. \u2014 Bad medical advice",
+          "Real answer vs inoc. \u2014 Bad legal advice",
+          "Real answer vs inoc. \u2014 Bad security advice",
+          "Real answer vs inoc. \u2014 Extreme-sports advice",
+          "Real answer vs inoc. \u2014 Risky-financial advice",
+          "Context vs train ctx. \u2014 Bad medical advice",
+          "Context vs train ctx. \u2014 Bad legal advice",
+          "Context vs train ctx. \u2014 Bad security advice",
+          "Context vs train ctx. \u2014 Extreme-sports advice",
+          "Context vs train ctx. \u2014 Risky-financial advice",
+          "Pred. answer vs train ans. \u2014 Bad medical advice",
+          "Pred. answer vs train ans. \u2014 Bad legal advice",
+          "Pred. answer vs train ans. \u2014 Bad security advice",
+          "Pred. answer vs train ans. \u2014 Extreme-sports advice",
+          "Pred. answer vs train ans. \u2014 Risky-financial advice",
+          "Shift-only vs train ans. \u2014 Bad medical advice",
+          "Shift-only vs train ans. \u2014 Bad legal advice",
+          "Shift-only vs train ans. \u2014 Bad security advice",
+          "Shift-only vs train ans. \u2014 Extreme-sports advice",
+          "Shift-only vs train ans. \u2014 Risky-financial advice",
+          "Real answer vs train ans. \u2014 Bad medical advice",
+          "Real answer vs train ans. \u2014 Bad legal advice",
+          "Real answer vs train ans. \u2014 Bad security advice",
+          "Real answer vs train ans. \u2014 Extreme-sports advice",
+          "Real answer vs train ans. \u2014 Risky-financial advice"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "postft_forest",
+    "variant": "full",
+    "dv": "level",
+    "errorbar_definition": "95% bootstrap CI (percentile over valid draws; one shared trigger-index multiset per setting x variant, seeds in prefit_stats.json .seeds; xerr rendered as non-negative offsets clamped at 0 per repo errorbar convention); paired per-draw differences (shared trigger resample) vs the parent's committed post-ft predictor values",
+    "point_definition": "rho_base - rho_postft at the pinned layer"
+  }
+}

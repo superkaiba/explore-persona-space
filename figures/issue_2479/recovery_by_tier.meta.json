@@ -1,0 +1,203 @@
+{
+  "commit": "a533b7d8+dirty",
+  "render_id": "2390f0f8e89e43a7",
+  "git_commit": "a533b7d8e42eed8a965b1fde6a23838b26baf1e3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_r2_figfix.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2479_r2_figfix.py",
+  "created": "2026-08-24T07:31:56Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Rung-4 recovery fraction": 0.7404887517390131,
+      "label": "Vera",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Rung-4 recovery fraction": 0.8435740309910508,
+      "label": "Iris",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Rung-4 recovery fraction": 0.7968012714337306,
+      "label": "Cobalt",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Rung-4 recovery fraction": 0.7465800811373291,
+      "label": "Priya",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Rung-4 recovery fraction": 0.7288324790266634,
+      "label": "Marcus",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Rung-4 recovery fraction": 0.4231021038162017,
+      "label": "Mort",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Rung-4 recovery fraction": 0.43892915741581323,
+      "label": "Barnaby",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Rung-4 recovery fraction": 0.6491288959491927,
+      "label": "Elena",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Rung-4 recovery fraction": 0.7067377345573187,
+      "label": "Tomas",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Rung-4 recovery fraction": 0.5901906795887883,
+      "label": "Marisol",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Rung-4 recovery fraction": 0.6401474138847494,
+      "label": "Gus",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Rung-4 recovery fraction": 0.5918797820271154,
+      "label": "Zara",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Rung-4 recovery fraction": 0.8847591438863539,
+      "label": "HELIOS",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Rung-4 recovery fraction": 0.7387490224603009,
+      "label": "Wren",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Rung-4 recovery fraction": 0.5847753921796721,
+      "label": "Vex",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Rung-4 recovery fraction": 0.7018871300130723,
+      "label": "Dana",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Designed AI-likeness tier",
+        "ylabel": "Rung-4 recovery fraction",
+        "legend_labels": [
+          "New character",
+          "Tier anchor (reused from parent rig)"
+        ],
+        "annotations": [
+          "HELIOS",
+          "Iris",
+          "Cobalt",
+          "Vera",
+          "Priya",
+          "Wren",
+          "Marcus",
+          "Elena",
+          "Tomas",
+          "Dana",
+          "Gus",
+          "Marisol",
+          "Zara",
+          "Vex",
+          "Barnaby",
+          "Mort"
+        ],
+        "xticklabels": [
+          "Explicitly AI",
+          "Helpful professional",
+          "Ordinary human",
+          "Stylized non-AI"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "New character",
+      "Tier anchor (reused from parent rig)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

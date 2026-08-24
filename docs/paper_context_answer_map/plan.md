@@ -16,6 +16,20 @@ Three headline Results sections:
 - **Old C2 (causality/patching) DEMOTED** to appendix (`c2_context_vector.tex`);
   headline numbers feed Discussion ("map does not predict the patching shift",
   #1415/#2094; read-vs-steer split #2220/#2254).
+  - **F6 RESOLVED (Thomas, 2026-08-23): MOVED.** The patch-persistence paragraph +
+    figure that survived the demotion inside Results II are now in the appendix with
+    old C2 (Overleaf `f0f76ec`), placed immediately before the #2333 opening-token
+    qualification; the duplicated #2333 numbers were dropped from the moved paragraph.
+    Results II keeps a one-line qualified pointer to `app:causality`; figure label
+    `fig:c4-persistence` → `fig:c2-persistence` (PDF filename unchanged — its
+    generator `scripts/issue1415_hooked_decomp_figures.py` writes `c4_patch_persistence`).
+  - **COME BACK TO IT (open, Thomas):** (a) whether Results II keeps even the one-line
+    causal pointer or drops it entirely — the section's argument is correlational;
+    (b) contributions item 2 below still reads "causally load-bearing … uniquely among
+    slots", which predates the demotion and overstates what survives #2333 — Thomas's
+    rewrite, not an agent's (claims are his). Both notes also live inline in the
+    Overleaf tree (outline PLAN block for Results II + a `% THOMAS:` block in
+    `sections/results/c4_persona_universal.tex`).
 
 Experiment ledger from the outline (status 2026-08-22):
 - NEW: single generic-boundary-token control arm for the C1 scaling figure
@@ -63,6 +77,12 @@ Our main contributions are:
    character-relevant post-training stages, holds across turns and consistent-origin
    off-policy text, causally load-bearing (context-end patches carry persona/behavior
    into the answer, uniquely among slots).
+   ⟵ NEEDS THOMAS REWRITE (flagged 2026-08-23, critique F6): the "causally
+   load-bearing" clause predates the 2026-08-22 causality demotion and overstates
+   what survives #2333 (a 3-token prefill recovers 67% of the patch effect on format
+   cells; only 40% null-adjusted on Qwen3.5 language cells). Demoted form suggested by
+   the critique: "context-end patches move behavior 0.18–0.63 of a full swap, majority
+   opening-token-carried on format cells; the map does not predict the induced shift."
 3. Evidence for the persona selection model: persona-indexed and universal across
    chat, plain-text, and story-character framings up to a linear reparameterization.
 4. Applications: trains on unjudged text — probing the predicted answer vector beats

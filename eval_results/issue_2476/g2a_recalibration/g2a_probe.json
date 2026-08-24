@@ -1,0 +1,179 @@
+{
+  "k": 16,
+  "device": "cuda",
+  "gen_batch": 16,
+  "note": "G2a v2 attribution probe (#779 fp32 re-probe discipline; crash-fix r4). bf16 = production capture dtype rerun; fp32 = dtype override on the same tokenize/capture path. See _g2a_attribution_probe docstring.",
+  "rows": [
+    {
+      "row_idx": 614005,
+      "n_ans": 1024,
+      "stored_c20_cos": 0.9953972101211548,
+      "cos_bf16_vs_bank": 0.9953962723270758,
+      "cos_fp32_vs_bank": 0.9959509285448063,
+      "cos_bf16_vs_fp32": 0.9998529497161414,
+      "cos_bf16_vs_store_vbar20": 0.9999999828853245,
+      "delta_rerun_vs_stored": -9.377940789478956e-07
+    },
+    {
+      "row_idx": 610802,
+      "n_ans": 1024,
+      "stored_c20_cos": 0.9988155961036682,
+      "cos_bf16_vs_bank": 0.9988146472335458,
+      "cos_fp32_vs_bank": 0.9999278067554652,
+      "cos_bf16_vs_fp32": 0.9988875271915754,
+      "cos_bf16_vs_store_vbar20": 0.9999999823883843,
+      "delta_rerun_vs_stored": -9.488701223636653e-07
+    },
+    {
+      "row_idx": 450068,
+      "n_ans": 151,
+      "stored_c20_cos": 0.9988999962806702,
+      "cos_bf16_vs_bank": 0.998899069373913,
+      "cos_fp32_vs_bank": 0.9997891617448942,
+      "cos_bf16_vs_fp32": 0.9988004302740935,
+      "cos_bf16_vs_store_vbar20": 0.9999999791955806,
+      "delta_rerun_vs_stored": -9.269067571260337e-07
+    },
+    {
+      "row_idx": 180346,
+      "n_ans": 32,
+      "stored_c20_cos": 0.9989455938339233,
+      "cos_bf16_vs_bank": 0.9989445462098826,
+      "cos_fp32_vs_bank": 0.9997056411818441,
+      "cos_bf16_vs_fp32": 0.9979910536422779,
+      "cos_bf16_vs_store_vbar20": 0.999999975670497,
+      "delta_rerun_vs_stored": -1.0476240407397697e-06
+    },
+    {
+      "row_idx": 673199,
+      "n_ans": 43,
+      "stored_c20_cos": 0.9991121292114258,
+      "cos_bf16_vs_bank": 0.9991111446740087,
+      "cos_fp32_vs_bank": 0.9998392925224607,
+      "cos_bf16_vs_fp32": 0.9992877992401132,
+      "cos_bf16_vs_store_vbar20": 0.9999999754571577,
+      "delta_rerun_vs_stored": -9.84537417036968e-07
+    },
+    {
+      "row_idx": 860713,
+      "n_ans": 204,
+      "stored_c20_cos": 0.9991363286972046,
+      "cos_bf16_vs_bank": 0.9991351699107222,
+      "cos_fp32_vs_bank": 0.999776274427471,
+      "cos_bf16_vs_fp32": 0.9996007501043853,
+      "cos_bf16_vs_store_vbar20": 0.999999979113181,
+      "delta_rerun_vs_stored": -1.1587864824358363e-06
+    },
+    {
+      "row_idx": 458964,
+      "n_ans": 2,
+      "stored_c20_cos": 0.9992052912712097,
+      "cos_bf16_vs_bank": 0.9992043052662207,
+      "cos_fp32_vs_bank": 0.9997951563176678,
+      "cos_bf16_vs_fp32": 0.9991511737832659,
+      "cos_bf16_vs_store_vbar20": 0.99999999918971,
+      "delta_rerun_vs_stored": -9.860049889898193e-07
+    },
+    {
+      "row_idx": 334065,
+      "n_ans": 103,
+      "stored_c20_cos": 0.9992567300796509,
+      "cos_bf16_vs_bank": 0.9992556797285365,
+      "cos_fp32_vs_bank": 0.9994298878280672,
+      "cos_bf16_vs_fp32": 0.9998788149936003,
+      "cos_bf16_vs_store_vbar20": 0.9999999836533384,
+      "delta_rerun_vs_stored": -1.050351114417758e-06
+    },
+    {
+      "row_idx": 285707,
+      "n_ans": 15,
+      "stored_c20_cos": 0.9993326663970947,
+      "cos_bf16_vs_bank": 0.9993314437395663,
+      "cos_fp32_vs_bank": 0.9996121518430361,
+      "cos_bf16_vs_fp32": 0.9985872785451845,
+      "cos_bf16_vs_store_vbar20": 0.9999999827698243,
+      "delta_rerun_vs_stored": -1.222657528443527e-06
+    },
+    {
+      "row_idx": 419672,
+      "n_ans": 124,
+      "stored_c20_cos": 0.9993329644203186,
+      "cos_bf16_vs_bank": 0.9993319308146023,
+      "cos_fp32_vs_bank": 0.9997135074526482,
+      "cos_bf16_vs_fp32": 0.9993052517235246,
+      "cos_bf16_vs_store_vbar20": 0.999999975117254,
+      "delta_rerun_vs_stored": -1.0336057163495838e-06
+    },
+    {
+      "row_idx": 778866,
+      "n_ans": 454,
+      "stored_c20_cos": 0.9993374347686768,
+      "cos_bf16_vs_bank": 0.9993364055909826,
+      "cos_fp32_vs_bank": 0.9991511949107998,
+      "cos_bf16_vs_fp32": 0.9991485827637869,
+      "cos_bf16_vs_store_vbar20": 0.9999999851342228,
+      "delta_rerun_vs_stored": -1.0291776941784292e-06
+    },
+    {
+      "row_idx": 284328,
+      "n_ans": 56,
+      "stored_c20_cos": 0.9993515014648438,
+      "cos_bf16_vs_bank": 0.9993506637661101,
+      "cos_fp32_vs_bank": 0.9991187712090678,
+      "cos_bf16_vs_fp32": 0.9988095446405693,
+      "cos_bf16_vs_store_vbar20": 0.9999999820559964,
+      "delta_rerun_vs_stored": -8.376987336022879e-07
+    },
+    {
+      "row_idx": 298957,
+      "n_ans": 38,
+      "stored_c20_cos": 0.999355137348175,
+      "cos_bf16_vs_bank": 0.999354323482309,
+      "cos_fp32_vs_bank": 0.999638714339576,
+      "cos_bf16_vs_fp32": 0.998872990728995,
+      "cos_bf16_vs_store_vbar20": 0.9999999757836585,
+      "delta_rerun_vs_stored": -8.13865866033936e-07
+    },
+    {
+      "row_idx": 712146,
+      "n_ans": 354,
+      "stored_c20_cos": 0.9993892312049866,
+      "cos_bf16_vs_bank": 0.9993883247331837,
+      "cos_fp32_vs_bank": 0.9998093822856702,
+      "cos_bf16_vs_fp32": 0.9997252967204157,
+      "cos_bf16_vs_store_vbar20": 0.9999999839928408,
+      "delta_rerun_vs_stored": -9.064718028417573e-07
+    },
+    {
+      "row_idx": 671780,
+      "n_ans": 37,
+      "stored_c20_cos": 0.9993919730186462,
+      "cos_bf16_vs_bank": 0.9993910776603376,
+      "cos_fp32_vs_bank": 0.9994298147433652,
+      "cos_bf16_vs_fp32": 0.9997177032538316,
+      "cos_bf16_vs_store_vbar20": 0.9999999805294522,
+      "delta_rerun_vs_stored": -8.953583086057648e-07
+    },
+    {
+      "row_idx": 344078,
+      "n_ans": 57,
+      "stored_c20_cos": 0.9994485378265381,
+      "cos_bf16_vs_bank": 0.9994474861247652,
+      "cos_fp32_vs_bank": 0.9992574671119461,
+      "cos_bf16_vs_fp32": 0.9996270597477924,
+      "cos_bf16_vs_store_vbar20": 0.9999999823058464,
+      "delta_rerun_vs_stored": -1.051701772891711e-06
+    }
+  ],
+  "metadata": {
+    "git_commit": "17d0897df5038e440b110129fc64b72065da7c03",
+    "timestamp_utc": "2026-08-23T10:25:58.276109Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "recapture-g2a-probe",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}

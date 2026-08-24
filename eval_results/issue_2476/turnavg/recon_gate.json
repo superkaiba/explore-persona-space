@@ -1,0 +1,32 @@
+{
+  "g1": {
+    "committed": {
+      "full_test": 0.7541708417500046,
+      "holdout": 0.7242755664709597
+    },
+    "recomputed": {
+      "full_test": 0.7541704891052162,
+      "holdout": 0.7242757738340075
+    },
+    "abs_delta": {
+      "full_test": 3.526447883706041e-07,
+      "holdout": 2.0736304784385595e-07
+    },
+    "tol": {
+      "full_test": 0.002,
+      "holdout": 0.003
+    },
+    "verdict": "PASS"
+  },
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:26:16.413112Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "maps",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}

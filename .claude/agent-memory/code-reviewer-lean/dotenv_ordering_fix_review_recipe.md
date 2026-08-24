@@ -29,8 +29,21 @@ A dotenv-before-heavy-import ordering fix (the #847 / `test_no_new_torch_before_
 
 **Why:** validated #2254 R1 g4 — all three ran in ~4 tool calls; the parent
 chain happened to be clean (fleet.py is stdlib-only) but nothing else would
-have caught it dirty. Re-validated #2379 R1 g5 and #2477 R1 g2 (chain still
-clean both times).
+have caught it dirty. Re-validated #2379 R1 g5, #2477 R1 g2, and #2479 R1 g7
+(chain still clean all three times; #2479 hit the check-3 issue823 red +
+attribution recipe verbatim).
+
+**First DIRTY chain hit (#2502 R2 g4, 2026-08-23):** the entrypoint's OTHER
+module-top imports count as chain links, not just package `__init__`s —
+`issue2502_corpus.py` imports `experiments.issue_1739.corpus_staging`, whose
+OWN module top holds `import numpy` (line 35), so the deferral is
+runtime-defeated (numpy still pre-load_dotenv) while the test stays green.
+Disposition recipe: probe the offending module vs `origin/main`
+(`git diff --quiet origin/main -- <module>`); byte-identical ⇒
+pre-existing-on-trunk ⇒ record as an informational disclosure Minor (thread
+caps still bind via launch-env prefixes; the invariant's own-module-top
+scoping is deliberate), NEVER a round blocker or a demand to defer the
+shared-module import.
 
 **Check-3 nuance (#2477 R1 g2):** the one HEAD test run can come back RED on
 a PRE-EXISTING sibling offender (there: `issue823_shared_persona_paired.py`,

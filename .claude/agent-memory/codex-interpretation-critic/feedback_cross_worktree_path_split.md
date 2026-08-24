@@ -92,6 +92,17 @@ PRIMARY lens-7 source and demote the body's pinned HF tree to advisory
 liveness. Probe BOTH paths (`judge_inputs/`, `rawcomp_cache/`) before
 concluding raw text is HF-only.
 
+**`data/issue_<N>/axis_items/*.jsonl` — a third lens-7 local-text source
+(#2479 r1, 2026-08-23).** Judged-item experiments (a judge-scored axis over
+reserved items) stage per-character JSONL mirrors with
+`conv_id`/`question`/`answer`/`cell` fields under
+`<worktree>/data/issue_<N>/axis_items/`. When the raw stories are HF-only AND
+LMSYS-derived (firewalled), point lens 7 at this mirror for conv_id
+membership, CJK-regex counting, and sample-block verification — fully local —
+and defuse the network paragraph entirely (do-not-fetch: the HF links point
+at firewalled text). Probe all three local-source patterns before concluding
+raw text is HF-only: `judge_inputs/`, `rawcomp_cache/`, `axis_items/`.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw

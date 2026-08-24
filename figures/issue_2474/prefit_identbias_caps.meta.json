@@ -1,0 +1,170 @@
+{
+  "commit": "7249718b",
+  "render_id": "3bf1c01b234b4c8a",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:57:52Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "Pred. answer vs inoc.",
+      "Pooled Spearman rho (level DV)": -0.48135702184003454,
+      "error": 0.41837687510997057,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Shift-only vs inoc.",
+      "Pooled Spearman rho (level DV)": -0.5165595021659768,
+      "error": 0.4178938796976581,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pred. answer vs train ans.",
+      "Pooled Spearman rho (level DV)": 0.7350539441082519,
+      "error": 0.18398018181324005,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Shift-only vs train ans.",
+      "Pooled Spearman rho (level DV)": 0.751185378291806,
+      "error": 0.23634420335292816,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Pooled Spearman rho (level DV)": -0.45266339842378833,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Pooled Spearman rho (level DV)": -0.395466633496102,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Pooled Spearman rho (level DV)": -0.5959410336002133,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Pooled Spearman rho (level DV)": -0.506983006234643,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Pooled Spearman rho (level DV)": -0.42941226727259146,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Pooled Spearman rho (level DV)": -0.6132832329906958,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.7,
+      "Pooled Spearman rho (level DV)": 0.7851652401750802,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.7,
+      "Pooled Spearman rho (level DV)": 0.7468039430827678,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.7,
+      "Pooled Spearman rho (level DV)": 0.6731926490669077,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.7,
+      "Pooled Spearman rho (level DV)": 0.747306119579636,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.7,
+      "Pooled Spearman rho (level DV)": 0.6627884994859564,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.7,
+      "Pooled Spearman rho (level DV)": 0.8434615158098258,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Capitalization \u2014 fitted map vs identity+bias control",
+        "ylabel": "Pooled Spearman rho (level DV)",
+        "xticklabels": [
+          "Pred. answer vs inoc.",
+          "Shift-only vs inoc.",
+          "Pred. answer vs train ans.",
+          "Shift-only vs train ans."
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "identbias_paired",
+    "variant": "full",
+    "dv": "level",
+    "errorbar_definition": "95% bootstrap CI (percentile over valid draws; one shared trigger-index multiset per setting x variant, seeds in prefit_stats.json .seeds; xerr rendered as non-negative offsets clamped at 0 per repo errorbar convention)",
+    "control_definition": "shift-only = identity+learned-bias map applied in place of the fitted base map (mapping-baselines control, plan section 5)"
+  }
+}

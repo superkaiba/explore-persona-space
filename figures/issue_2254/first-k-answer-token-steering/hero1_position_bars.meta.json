@@ -1,0 +1,12 @@
+{
+  "figure": "hero1_position_bars",
+  "git_commit": "ebbeb565",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2254/first-k-answer-token-steering/hero1_position_bars.png"
+  ],
+  "inputs": [
+    "steer/delta_score_percell.json",
+    "reads/fraction_of_ceiling.json"
+  ]
+}

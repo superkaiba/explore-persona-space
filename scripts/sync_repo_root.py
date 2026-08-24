@@ -146,6 +146,7 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from explore_persona_space import task_workflow  # noqa: E402
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 
 # Sibling-path load of the shared lock opener (#2324 D1): a bare
 # `import lock_utils` breaks under the tests' spec_from_file_location import
@@ -1216,17 +1217,17 @@ def sweep(
 
 
 def _write_ledger(rescue_dir: Path, ledger: list[SweepAction]) -> None:
-    """Write the consolidated ``sweep-manifest.json`` rollup atomically
-    (tmp + ``os.replace``). The DURABLE per-action record is the journal
+    """Write the consolidated ``sweep-manifest.json`` rollup atomically via
+    the shared process-safe ``atomic_replace`` (pid+uuid temp +
+    ``os.replace``; #2336). The DURABLE per-action record is the journal
     (``_journal_append``, written before each action); this manifest is the
     human-facing audit rollup of the full run."""
     if not ledger:
         return
     rescue_dir.mkdir(parents=True, exist_ok=True)
     manifest = rescue_dir / "sweep-manifest.json"
-    tmp = manifest.with_name(manifest.name + ".tmp")
-    tmp.write_text(json.dumps([dataclasses.asdict(a) for a in ledger], indent=2))
-    os.replace(tmp, manifest)
+    with atomic_replace(manifest) as tmp:
+        tmp.write_text(json.dumps([dataclasses.asdict(a) for a in ledger], indent=2))
 
 
 def restore_swept(repo: Path, ledger: list[SweepAction], report: dict) -> None:

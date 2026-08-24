@@ -33,6 +33,11 @@ mtime) surfaced it.
 `.claude/agents/code-reviewer.md` AND `.claude/agents/codex-code-reviewer.md`
 (the composer's own spec — a template-side contract can change without the
 rubric changing) and fold any post-extraction template deltas into the
-fresh tail. Count-assert `CONCERN:: ` occurrences per-part (the grammar
-block itself contributes 4). Related: [[revision-round compose recipe]],
+fresh tail. Validate `CONCERN:: ` rows by CONTENT, not a fixed count: assert
+the grammar row (`^CONCERN:: <BLOCKER|CONCERN|NIT>`) is present INSIDE the
+template's `## Concerns to persist` section, plus zero line-start rows in
+the plan/marker envelopes — the line-start count varies with template
+wording (1 on #2514 r1, where `CONCERN:: none` sat mid-line in backticked
+prose; 4 on the #2333-era template), so a pinned count false-FAILs a valid
+compose. Related: [[revision-round compose recipe]],
 [[bypath-brief-frozen-events-resolution]].

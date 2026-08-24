@@ -1,0 +1,231 @@
+{
+  "commit": "7249718b",
+  "render_id": "7acf38a67d3e4d39",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:57:34Z",
+  "figsize": [
+    7.8,
+    9.0
+  ],
+  "points": [
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.3119008310682156,
+      "y": 23.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.272961266618354,
+      "y": 22.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.1635039227432737,
+      "y": 21.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.33414789047283283,
+      "y": 20.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.3835856616743307,
+      "y": 19.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.346843987809648,
+      "y": 18.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.2016155667249655,
+      "y": 17.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.2398642736862768,
+      "y": 16.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.2202602116575796,
+      "y": 15.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.2394746873204094,
+      "y": 14.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.2381669919974525,
+      "y": 13.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.3653040611052507,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.219722102661917,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.164335238533588,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -1.2533680468575916,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.14649833621715336,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.18754962661510421,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": 0.16396261241910637,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.1563746285463996,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.21470613363629565,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.0536031617524001,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.42632661887913154,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.37679653491903276,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "delta rho (base minus post-fine-tuning), level DV": -0.4051768403049069,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Capitalization \u2014 base-model vs post-ft predictors",
+        "xlabel": "delta rho (base minus post-fine-tuning), level DV",
+        "xticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ],
+        "yticklabels": [
+          "Context vs inoc. \u2014 French (caps)",
+          "Context vs inoc. \u2014 German (caps)",
+          "Context vs inoc. \u2014 Spanish (caps)",
+          "Pred. answer vs inoc. \u2014 French (caps)",
+          "Pred. answer vs inoc. \u2014 German (caps)",
+          "Pred. answer vs inoc. \u2014 Spanish (caps)",
+          "Shift-only vs inoc. \u2014 French (caps)",
+          "Shift-only vs inoc. \u2014 German (caps)",
+          "Shift-only vs inoc. \u2014 Spanish (caps)",
+          "Real answer vs inoc. \u2014 French (caps)",
+          "Real answer vs inoc. \u2014 German (caps)",
+          "Real answer vs inoc. \u2014 Spanish (caps)",
+          "Context vs train ctx. \u2014 French (caps)",
+          "Context vs train ctx. \u2014 German (caps)",
+          "Context vs train ctx. \u2014 Spanish (caps)",
+          "Pred. answer vs train ans. \u2014 French (caps)",
+          "Pred. answer vs train ans. \u2014 German (caps)",
+          "Pred. answer vs train ans. \u2014 Spanish (caps)",
+          "Shift-only vs train ans. \u2014 French (caps)",
+          "Shift-only vs train ans. \u2014 German (caps)",
+          "Shift-only vs train ans. \u2014 Spanish (caps)",
+          "Real answer vs train ans. \u2014 French (caps)",
+          "Real answer vs train ans. \u2014 German (caps)",
+          "Real answer vs train ans. \u2014 Spanish (caps)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "postft_forest",
+    "variant": "full",
+    "dv": "level",
+    "errorbar_definition": "95% bootstrap CI (percentile over valid draws; one shared trigger-index multiset per setting x variant, seeds in prefit_stats.json .seeds; xerr rendered as non-negative offsets clamped at 0 per repo errorbar convention); paired per-draw differences (shared trigger resample) vs the parent's committed post-ft predictor values",
+    "point_definition": "rho_base - rho_postft at the pinned layer"
+  }
+}

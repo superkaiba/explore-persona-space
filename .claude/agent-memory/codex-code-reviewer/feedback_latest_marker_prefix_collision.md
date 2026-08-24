@@ -18,3 +18,12 @@ no longer kind extends it), and the Claude one by filtering
 `events.jsonl` rows on `kind == "epm:code-review"` EXACTLY (path from
 `task.py find <N>`), taking the max version. Never trust two prefix fetches
 that return equal lengths — that is the collision signature.
+
+**Substring-grep variant (#823 r5cf, 2026-08-23):** a bare
+`grep 'smoke-architecture' events.jsonl` matches NOTE MENTIONS too — a
+code-review verdict body citing the string surfaced as an apparent
+"smoke-arch v15" when the true latest `epm:smoke-architecture-check` was
+v8 (kind-exact `latest-marker` fetch). Never resolve a marker's latest
+version from a substring grep over events.jsonl; resolve by kind-exact
+fetch (or JSON `kind ==` filtering), and byte-compare the fetched note
+against any reused template envelope before attesting "unchanged".
