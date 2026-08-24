@@ -26,6 +26,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -155,8 +156,11 @@ def process_cell(cell: str, rows: list[dict]) -> dict:
         "err_bat": err_bat,
         "bat_pids": np.asarray(bat_pids),
     }
-    np.savez(OUT / f"combined_arrays_{cell}.tmp.npz", **out)
-    (OUT / f"combined_arrays_{cell}.tmp.npz").replace(OUT / f"combined_arrays_{cell}.npz")
+    # Handle-form np.savez (numpy appends ".npz" to path-typed names lacking it;
+    # the yielded tmp ends ".tmp" — #2336 recipe edge (c)).
+    with atomic_replace(OUT / f"combined_arrays_{cell}.npz") as tmp:
+        with open(tmp, "wb") as fh:
+            np.savez(fh, **out)
     rho_n, p_n = spearmanr(spread_nat, err_nat)
     rho_b, p_b = spearmanr(spread_bat, err_bat)
     print(f"[done {cell}] nat rho={rho_n:+.3f} bat rho={rho_b:+.3f} (n_bat=50)", flush=True)
