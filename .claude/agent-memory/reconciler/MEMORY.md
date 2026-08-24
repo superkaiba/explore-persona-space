@@ -65,9 +65,11 @@
 - [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg new AND prior literals before believing ✓
 - [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes yourself (#897)
 - [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection probes (#2329 r2)
+- [Self-referential replay gate needs independent anchor](feedback_self_referential_replay_gate_needs_independent_anchor.md) — prediction inputs read from the artifact under validation ⇒ agreement entailed; probe falsifiability by input mutation (#2514 r2)
 
 ## Codex code-review overreach (PASS-leaning calibration)
 
+- [Plan-invariant prose vs the plan's own leg specs](feedback_codex_plan_invariant_prose_vs_leg_spec_definitions.md) — resolve "incomplete read" via the plan's operational definitions; test whose recovery the fix would brick (#2328 r1)
 - [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — check reachability arithmetic + grid-superset (#2356 r4)
 - [Env-override poisoning chain: trace every leg](feedback_codex_env_override_poisoning_chain_untraced_leg.md) — a leg outside the blast radius breaks the chain (#2479 r4)
 - [Step 3.75 marker-absent vs clean substance](feedback_step375_marker_absent_vs_verified_clean_substance.md) — 0-hit grep → marker-amendment CONCERN; split reviews omit the check (#2479 r4)
