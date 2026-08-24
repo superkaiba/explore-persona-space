@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2533,
+  "highest_id": 2534,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11831,6 +11831,13 @@
       "path": "tasks/proposed/2533",
       "status": "proposed",
       "title": "Ownership-probe recipe: cwd match is not ownership \u2014 a worktree-cwd sweep returns other sessions' transient subprocesses"
+    },
+    "2534": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2534",
+      "status": "proposed",
+      "title": "codex-interpretation-critic emits MAJOR/MINOR CONCERN:: severities the concerns ledger rejects, silently dropping the whole batch"
     },
     "256": {
       "has_clean_result": false,
