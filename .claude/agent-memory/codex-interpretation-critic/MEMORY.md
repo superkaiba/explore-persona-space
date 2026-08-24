@@ -22,3 +22,4 @@
 - [Lens-7 sanitized disposition for firewalled corpora](feedback_lens7_sanitized_activation_dv_disposition.md) — say the text firewall is the SANCTIONED disposition (not BLOCKED); score via coherence sub-checks; defuse the network paragraph
 - [Held clean-result draft is the caption fix target](feedback_heldbody_caption_fix_target.md) — fix-verification rounds: caption fixes live in /tmp/issue-<N>-clean-result-body-held.md; pass it explicitly
 - [CONCERN:: ledger grammar](feedback_concern_row_ledger_grammar.md) — always instruct `CONCERN:: <SEV> <kebab-id> <summary>`; pipe/key=value rows are validator-rejected
+- [Compose-time ledger snapshot + plan readlink](feedback_compose_time_ledger_snapshot.md) — inline open-concern ids into the prompt (Codex can't run task.py); readlink plan.md before labeling the inlined version
