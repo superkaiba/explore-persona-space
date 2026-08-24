@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2561,
+  "highest_id": 2562,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12037,6 +12037,13 @@
       "path": "tasks/proposed/2561",
       "status": "proposed",
       "title": "Step 10d lint gate: an unset WT silently certifies the WRONG tree and emits a benign-looking skip-artifact-only instead of failing loud"
+    },
+    "2562": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2562",
+      "status": "proposed",
+      "title": "Agent-memory per-file size ratchet + trim the 350KB codex-code-reviewer compose-recipe memory"
     },
     "257": {
       "has_clean_result": false,
