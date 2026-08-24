@@ -79,6 +79,18 @@ brief-cited orchestrator note carries imprecise line anchors (1068-1074 for
 a getattr at :1094), pin the exact anchors as compose-time facts so Codex
 cites its own.
 
+**/tmp compose scripts shadow-import trap (#2474 postnorm r2, 2026-08-23):**
+a compose script living in `/tmp` that imports a heavy installed package
+(`transformers` → sklearn → pandas → dateutil → `six`) dies on ANY stray
+`/tmp/<module>.py` (a rogue `/tmp/six.py` crashed the import chain with an
+unrelated FileNotFoundError) because Python prepends the SCRIPT'S OWN dir to
+sys.path. Before the installed-API import, strip it:
+`sys.path = [p for p in sys.path if p != "/tmp"]`. Same round also validated
+`inspect.getsourcelines(Cls)` (run via `uv run python` at the repo root) as a
+cheaper extraction than sed ranges for a short class (Qwen2RMSNorm, 19
+lines): version-assert `transformers.__version__` against the marker's claim
+and prefix each line with its real source line number.
+
 Related: [[whole-round-unsplit-compose]] (round-pinned sha-range diff when an
 out-of-scope spec-sync commit sits at HEAD), [[infra-wf-fix-lint-gate-compose]]
 (N/A-by-type + duty-discharge attestations for infra rounds),
