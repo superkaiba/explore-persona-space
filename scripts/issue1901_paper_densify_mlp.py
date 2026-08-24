@@ -21,12 +21,34 @@ batch 4096, max 300 epochs — the banked constants; NOTE the banked
 #1491 n=25k point used lr 1e-3 / max 50 epochs, a recipe seam recorded
 in the output meta), evaluated on the ladder's pinned test_1000.
 
-Per cell, both jobs report: pooled test R^2 + 95% bootstrap CI
+Job C — mlp-scaling-densify (#1901 follow-up round, plan v13 §4): one
+dense L19 scaling ladder, 8 fresh rungs {5k, 10k, 25k, 50k, 100k, 150k,
+250k, 500k} + the banked 963k apply point, with mlp_w8192 AND ridge fit
+on IDENTICAL train subsets per rung (scale7 rungs = seeded permutation
+prefixes of train_25k; n1m rungs = ``N1M.select_train`` lmsys draws
+under PYTHONHASHSEED=0 / --seed-b 0), plus the blockwise identity+bias
+baseline. Gates: G1 cross-store fold identity (scale7 val/test Y rows
+content-equal to the n1m pinned rows at L19, ≤2e-3 fp16-cast bound,
+abort on fail); G2 RECORDED three-state sel-sha comparison vs the
+banked bigN refits (PASS / FALLBACK-PARITY-PASS at --parity-tol /
+FAIL ⇒ halt — testable pure function ``_g2_gate``); G3 whitened-CSLS
+pool floor (n_pool ≥ K_CSLS+2). Every rung×arm cell reports the
+standard metrics (_cell_metrics) PLUS the task-locked whitened-CSLS
+battery (μ_A + shrunk-Cholesky(λ=0.1) whitening over the full 963,444
+non-val/test train-pool Y; CSLS k=10 primary, whitened-cosine
+diagnostic). Per-cell fingerprinted resume (sel_sha + code sha + store
+revision + PYTHONHASHSEED + seeds + recipe — field-for-field, never
+bare existence), checkpoint-per-cell perfit JSONs, fp16 test-pool
+prediction npz staged for HF ``issue1901_mlpdense/analysis_tensors/``.
+``--smoke-chunks 4`` = tiny-real smoke (rungs {1k scale7-prefix,
+2k n1m-lmsys}), full production path, ``*_smoke`` output names.
+
+Per cell, all jobs report: pooled test R^2 + 95% bootstrap CI
 (n_boot=1000), val R^2 on the pinned val_400, kNN retrieval
 (euclidean + cosine, ks=1/5/10/50, pinned test pool), and the
 closed-form identity+bias baseline (standing rule). Per-fit JSONs are
 written incrementally; aggregates rewritten atomically after every
-battery chunk.
+battery chunk / rung.
 
 Early-stop protocol note (rides every meta block): both banked trainers
 early-stop on an INTERNAL 10% split of the train rows; the pinned
@@ -39,9 +61,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 _SCRIPTS = Path(__file__).resolve().parent
@@ -55,14 +79,28 @@ load_dotenv()
 # Heavy imports AFTER load_dotenv() so the shared-VM thread caps (#847) bind
 # in-process (torch freezes its intra-op pool from OMP_NUM_THREADS at import).
 import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from huggingface_hub import HfApi  # noqa: E402
+from scipy.linalg import solve_triangular  # noqa: E402
 
 import issue779_common as C  # noqa: E402
 import issue779_ffc_n1m_fits as N1M  # noqa: E402
+import issue779_ffc_n1m_generate_capture as N1G  # noqa: E402
+import issue779_ffc_n50k_fits as N50  # noqa: E402
 import issue779_fitter_fair_comparison as FFC  # noqa: E402
 import issue779_percontext_recon as PR  # noqa: E402
 import issue1491_ladder_fits as LF  # noqa: E402
+import issue1901_metric_battery as BAT  # noqa: E402
+import issue1901_paper_densify as PD  # noqa: E402
 
 from explore_persona_space.analysis import mapping_baselines as MB  # noqa: E402
+from explore_persona_space.analysis.null_battery import shrunk_cholesky_from_cov  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
+from explore_persona_space.orchestrate.preflight import assert_out_root_headroom  # noqa: E402
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    as_metadata_dict,
+    git_provenance,
+)
 
 logger = logging.getLogger("issue1901_paper_densify_mlp")
 
@@ -92,6 +130,118 @@ EARLY_STOP_NOTE = (
     "(not the pinned val_400, which is the selection/reporting split) — reproduced verbatim "
     "for parity with the banked #779 anchors."
 )
+
+# ── Job C constants (plan v13 §4/§10) ───────────────────────────────────────────
+
+N1M_CAPTURE_PREFIX = f"{N1G.HF_PREFIX}/final_token_capture"
+PASS_B_STAGE_PREFIX = "issue779_monitoring/analysis_tensors/pass_b"
+WEIGHTS_L19_PREFIX = f"{BAT.WEIGHTS_PREFIX}/L19"  # issue779_monitoring/n1m_readout/weights/L19
+WHITEN_LAMBDA = 0.1  # task-locked shrinkage (issue2202 convention; plan §4 c2)
+WHITEN_BLOCK = 65_536  # fp64 accumulation block (rows) for the pool cov/mean passes
+IB_BLOCK = 65_536  # identity+bias blocked accumulation (plan §9 LARGEST-CELL keying)
+DENSE_SCALE7_MAX_N = 25_000  # rungs ≤ this fit on the scale7 store; larger on the n1m capture
+DENSE_ENDPOINT_NS = (50_000, 500_000)  # 3-seed MLP dispersion endpoints (plan §4 c3)
+MIXED1M_APPLY_TOL = 1e-3  # deterministic banked-weights apply parity (plan §7 kill criterion 3)
+# Advisory wall check after the first n1m rung (50k): plan §9 basis ≈ mlp ~60 s + ridge
+# + identity+bias/battery ⇒ ~120 s booked; >2× logs an advisory line (never aborts).
+PLAN_FIRST_N1M_RUNG_WALL_S = 120.0
+
+# G2 recorded selections (plan §4 c1; pasted from the committed bigN unit files —
+# eval_results/issue_1901/paper_densify/bign/lmsys_{150k,500k}.json unit_key.sel_sha256,
+# re-asserted against those files when present, _g2_recorded_shas below).
+G2_RECORDED_SEL_SHAS = {
+    "lmsys_150k": "fbba56ab7a5faa7cce015476593b2d8c36a9a6c6af3a690b07f865a08ec4a7f9",
+    "lmsys_500k": "f9ab1707b23d0677d25eae9ce41fce1559346728e819ee8bdc2baaa90c5c55fe",
+}
+BIGN_UNIT_DIR = FFC.PROJECT_ROOT / "eval_results" / "issue_1901" / "paper_densify" / "bign"
+BANKED_BIGN_JSON = (
+    FFC.PROJECT_ROOT
+    / "eval_results"
+    / "issue_1901"
+    / "paper_densify"
+    / "scaling_bigN_acc1_L19.json"
+)
+BANKED_LADDER_CELLS_JSON = (
+    FFC.PROJECT_ROOT / "eval_results" / "issue_1901" / "paper_densify" / "scaling_ladder_L19.json"
+)
+BANKED_MLP_SCALING_JSON = (
+    FFC.PROJECT_ROOT / "eval_results" / "issue_1901" / "paper_densify" / "mlp_scaling_L19.json"
+)
+BANKED_BATTERY_CONTEXT_JSON = (
+    FFC.PROJECT_ROOT / "eval_results" / "issue_1901" / "metric_battery" / "context_arm.json"
+)
+
+
+def _ladder_ridge_25k(d: dict) -> float:
+    """The banked #1901 ladder ridge cell at n_train=25,000 (prefix draw)."""
+    for cell in d["cells"]:
+        if cell.get("n_train") == 25_000 and cell.get("draw") == "prefix":
+            return float(cell["ridge"]["test_r2"])
+    raise KeyError("ladder n_train=25000 prefix ridge cell not found in scaling_ladder_L19.json")
+
+
+# (arm, n) -> (banked json path, extractor, pasted value, kind). kind semantics
+# (plan §4 c3 / §7): "fold-exact" halts on |Δ| > tol in production;
+# "sha-conditional" halts only when the rung's realized sel-sha matches the
+# recorded bigN selection (sel-sha-exact ⇒ fit-machinery drift, criterion-3
+# class); "statistical" is recorded, never a halt (different selection
+# realization is possible; G2 owns the mismatch disposition).
+DENSE_PARITY_ANCHORS = {
+    ("mlp", 5_000): (
+        BANKED_MLP_SCALING_JSON,
+        lambda d: d["per_n"]["5000"]["test_r2"],
+        0.6661844181705912,
+        "fold-exact",
+    ),
+    ("mlp", 10_000): (
+        BANKED_MLP_SCALING_JSON,
+        lambda d: d["per_n"]["10000"]["test_r2"],
+        0.6945270264582182,
+        "fold-exact",
+    ),
+    ("ridge", 25_000): (
+        BANKED_LADDER_CELLS_JSON,
+        _ladder_ridge_25k,
+        0.7250873308449972,
+        "fold-exact",
+    ),
+    ("mlp", 150_000): (
+        PD.BANKED_N1M_FITS,
+        lambda d: d["per_point"]["lmsys_150k"]["predictors"]["mlp_w8192"]["whole_map_r2"],
+        0.7880526998314361,
+        "statistical",
+    ),
+    ("mlp", 500_000): (
+        PD.BANKED_N1M_FITS,
+        lambda d: d["per_point"]["lmsys_500k"]["predictors"]["mlp_w8192"]["whole_map_r2"],
+        0.8074943555084623,
+        "statistical",
+    ),
+    ("ridge", 150_000): (
+        BANKED_BIGN_JSON,
+        lambda d: d["per_point"]["lmsys_150k"]["ridge"]["whole_map_r2"],
+        0.755515914218508,
+        "sha-conditional",
+    ),
+    ("ridge", 500_000): (
+        BANKED_BIGN_JSON,
+        lambda d: d["per_point"]["lmsys_500k"]["ridge"]["whole_map_r2"],
+        0.7609049151916738,
+        "sha-conditional",
+    ),
+}
+MIXED1M_APPLY_ANCHORS = {
+    "mlp": (
+        BANKED_BATTERY_CONTEXT_JSON,
+        lambda d: d["per_layer"]["19"]["arms"]["mlp_w8192"]["r2"]["point"],
+        0.8103576099860699,
+    ),
+    "ridge": (
+        PD.BANKED_N1M_FITS,
+        lambda d: d["per_point"]["mixed_1m"]["predictors"]["ridge"]["whole_map_r2"],
+        0.7541708417500051,
+    ),
+}
 
 
 def _git_sha() -> str:
@@ -327,12 +477,888 @@ def run_job_b(args, dev, out_path: Path) -> dict:
     return res
 
 
+# ── Job C: dense L19 scaling ladder (mlp-scaling-densify follow-up round) ───────
+
+
+@dataclass
+class GateVerdict:
+    """G2 verdict record (plan §4 c1). ``verdict`` ∈ {"PASS",
+    "FALLBACK-PARITY-PASS", "FAIL"}; ``downgrade_recorded`` is True exactly on
+    the fallback branch (sel-sha mismatch absorbed by statistical parity)."""
+
+    verdict: str
+    downgrade_recorded: bool
+    detail: dict
+
+
+def _g2_gate(
+    realized_shas: dict,
+    recorded_shas: dict,
+    refit_r2s: dict,
+    banked_r2s: dict,
+    tol: float,
+) -> GateVerdict:
+    """G2 RECORDED three-state comparison (plan §4 c1; pure + testable).
+
+    Per recorded point: realized ``select_train`` sel-sha vs the recorded bigN
+    sel-sha. All match ⇒ PASS. Any mismatch does NOT halt by itself — the
+    fallback predicate is statistical parity of the fresh ridge refits vs the
+    banked bigN R² at ``tol`` on EVERY recorded point ⇒ FALLBACK-PARITY-PASS
+    with ``downgrade_recorded=True``; a mismatch AND any parity breach ⇒ FAIL
+    (the caller halts — plan §7 kill criterion 2's two-part predicate).
+    """
+    detail: dict = {"tol": float(tol), "points": {}}
+    mismatched = []
+    for name in sorted(recorded_shas):
+        realized = realized_shas[name]
+        match = bool(realized == recorded_shas[name])
+        delta = abs(float(refit_r2s[name]) - float(banked_r2s[name]))
+        detail["points"][name] = {
+            "recorded_sel_sha256": recorded_shas[name],
+            "realized_sel_sha256": realized,
+            "sha_match": match,
+            "refit_r2": float(refit_r2s[name]),
+            "banked_r2": float(banked_r2s[name]),
+            "abs_delta": delta,
+            "parity_within_tol": bool(delta <= tol),
+        }
+        if not match:
+            mismatched.append(name)
+    detail["mismatched"] = mismatched
+    if not mismatched:
+        return GateVerdict("PASS", False, detail)
+    if all(p["parity_within_tol"] for p in detail["points"].values()):
+        return GateVerdict("FALLBACK-PARITY-PASS", True, detail)
+    return GateVerdict("FAIL", False, detail)
+
+
+def _g2_recorded_shas() -> dict:
+    """Recorded bigN selections — pasted constants, re-asserted against the
+    committed bign unit files when present (the _banked_parity_target pattern)."""
+    out = {}
+    for name, pasted in G2_RECORDED_SEL_SHAS.items():
+        p = BIGN_UNIT_DIR / f"{name}.json"
+        if p.exists():
+            got = json.loads(p.read_text())["unit_key"]["sel_sha256"]
+            assert got == pasted, (str(p), got, pasted)
+        out[name] = pasted
+    return out
+
+
+def _read_memtotal_gb() -> float:
+    """Host MemTotal in GB (1e9 bytes) from /proc/meminfo."""
+    for line in Path("/proc/meminfo").read_text().split("\n"):
+        if line.startswith("MemTotal:"):
+            return int(line.split()[1]) * 1024 / 1e9
+    raise RuntimeError("MemTotal not found in /proc/meminfo")
+
+
+def _stage_job_c(args, smoke: bool):
+    """Phase c0: stage capture + pass_b + banked weights under stage_root, with
+    a resume-aware fallocate headroom probe, the MemTotal floor, and the
+    realized-keys check on the banked weight payloads. Returns
+    (capture_dir, pass_b_path, weights_dir, store_revision)."""
+    stage_root: Path = args.stage_root
+    stage_root.mkdir(parents=True, exist_ok=True)
+
+    # Store revision recorded ONCE at stage time (resume fingerprint input; a
+    # fresh stage on a new pod re-records — plan §4 c3). NOT the repo head at
+    # fit time: the shared data repo advances constantly.
+    rev_file = stage_root / ".stage_revision.json"
+    if rev_file.exists():
+        store_revision = json.loads(rev_file.read_text())["revision"]
+    else:
+        info = hub.retry_transient(
+            lambda: HfApi().repo_info(C.HF_DATA_REPO, repo_type="dataset"),
+            what="data-repo revision probe",
+        )
+        store_revision = str(info.sha)
+        C.write_json_atomic(
+            rev_file,
+            {
+                "revision": store_revision,
+                "recorded_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            },
+        )
+    logger.info("[job-c] store revision (stage-time): %s", store_revision)
+
+    # MemTotal floor (plan §9: c1 assemble peaks ≈55 GB; the 963k cells key the
+    # ~100 GB floor). Production assert; smoke stages a partial pool — WARN only
+    # (gate-calibration parity: a production-scale host floor on a tiny smoke
+    # host would kill the very leg the smoke exists to exercise).
+    mem_gb = _read_memtotal_gb()
+    if mem_gb < 100.0:
+        msg = (
+            f"host MemTotal {mem_gb:.1f} GB < 100 GB floor (plan §9: c1 assemble ≈55 GB peak, "
+            "963k cells ≈28-32 GB resident)"
+        )
+        if smoke:
+            logger.warning("[job-c] %s — smoke mode, continuing on a partial pool", msg)
+        else:
+            raise RuntimeError(msg)
+
+    # Resume-aware headroom probe: pending (not-yet-staged) bytes only, so a
+    # resumed pod whose capture already occupies the quota is not dead-locked
+    # by a fresh-run-sized floor. fallocate canary catches MooseFS EDQUOT.
+    prefixes = [
+        (N1M_CAPTURE_PREFIX, args.smoke_chunks if smoke else None),
+        (PASS_B_STAGE_PREFIX, None),
+        (WEIGHTS_L19_PREFIX, None),
+    ]
+    pending = 0
+    for prefix, max_files in prefixes:
+        files = PD._list_prefix(prefix)
+        if max_files is not None:
+            files = files[:max_files]
+        pending += sum(
+            sz
+            for p, sz in files
+            if not ((stage_root / p).exists() and (stage_root / p).stat().st_size == sz)
+        )
+    if pending:
+        assert_out_root_headroom(stage_root, need_gb=pending / 1e9 * 1.2 + 2.0, phase="job-c-stage")
+
+    capture_dir = PD.stage_prefix(
+        N1M_CAPTURE_PREFIX,
+        stage_root,
+        max_files=(args.smoke_chunks if smoke else None),
+        workers=args.stage_workers,
+    )
+    passb_dir = PD.stage_prefix(PASS_B_STAGE_PREFIX, stage_root, workers=args.stage_workers)
+    weights_dir = PD.stage_prefix(WEIGHTS_L19_PREFIX, stage_root, workers=args.stage_workers)
+    # Realized-keys check on the banked weight payloads (plan §10 fitness (f);
+    # reuses the battery's apply_map-contract checker — mmap read, fail loud).
+    BAT._realized_keys_check(weights_dir / "mlp_w8192.pt", "mlp")
+    BAT._realized_keys_check(weights_dir / "ridge.pt", "ridge")
+    return capture_dir, passb_dir / "train_context_vectors.pt", weights_dir, store_revision
+
+
+def _assemble_n1m(args, capture_dir: Path, pass_b_path: Path):
+    """Phase c1 (n1m side): the exact bigN Namespace shim (every args.<attr>
+    N1M.assemble reads on every reachable branch — #1776 hand-built-Namespace
+    rule, mirrored from issue1901_paper_densify.phase_bign)."""
+    ns = argparse.Namespace(
+        pass_b=pass_b_path,
+        manifest_from_hf=True,
+        manifest_hf_prefix=N1G.HF_PREFIX,
+        out_dir=args.work_dir,
+        n1m_capture_dir=capture_dir,
+        fresh_stream=False,
+        hf_prefix=N1M_CAPTURE_PREFIX,
+        orig_dir=args.orig_dir,
+    )
+    args.work_dir.mkdir(parents=True, exist_ok=True)
+    X, Y, prov, r1_train, val, test, split = N1M.assemble(ns, layer=19)
+    pools = N1M._pool_rows(prov, r1_train, X.shape[0], val, test)
+    return X, Y, pools, val, test, split
+
+
+def _g1_fold_identity(asm: dict, Y_n1m: np.ndarray, val_ids, test_ids) -> dict:
+    """Gate G1 (plan §4 c1): the scale7 store's val/test Y rows must be
+    content-equal to the n1m capture's pinned rows at L19 — max |Δ| ≤ 2e-3
+    (fp16-cast bound; ≤1e-6 recorded when the store is not fp16-cast).
+    Abort (RuntimeError) on any id-set or content mismatch."""
+    rows = {}
+    worst = 0.0
+    for label, s7_rows, cis_key, n1m_ids in (
+        ("val", asm["val"], "val_400", val_ids),
+        ("test", asm["te"], "test_1000", test_ids),
+    ):
+        cis = np.asarray(asm["cis"][cis_key], dtype=np.int64)
+        ids = np.asarray(n1m_ids, dtype=np.int64)
+        if sorted(cis.tolist()) != sorted(ids.tolist()):
+            raise RuntimeError(
+                f"G1 FAIL: scale7 {cis_key} context-id set != n1m {label} id set "
+                f"(n_scale7={len(cis)}, n_n1m={len(ids)})"
+            )
+        pos = {int(c): i for i, c in enumerate(cis)}
+        order = np.array([pos[int(i)] for i in ids], dtype=np.int64)
+        a = np.asarray(asm["Y"][np.asarray(s7_rows)[order]], dtype=np.float64)
+        b = np.asarray(Y_n1m[ids], dtype=np.float64)
+        m = float(np.max(np.abs(a - b)))
+        rows[label] = {
+            "max_abs_diff": m,
+            "n": int(len(ids)),
+            "within_1e-6": bool(m <= 1e-6),
+        }
+        worst = max(worst, m)
+    verdict = {
+        "pass": bool(worst <= 2e-3),
+        "worst_max_abs_diff": worst,
+        "tol_fp16_cast": 2e-3,
+        "per_split": rows,
+    }
+    if not verdict["pass"]:
+        raise RuntimeError(f"G1 FAIL (cross-store fold identity): {json.dumps(verdict)}")
+    logger.info("[job-c] G1 PASS %s", json.dumps(verdict))
+    return verdict
+
+
+def _blocked_mean(arr, rows, dev, block: int, phase: str) -> np.ndarray:
+    """fp64 mean of arr[rows] accumulated in index blocks on ``dev``."""
+    rows = np.asarray(rows, dtype=np.int64)
+    d = arr.shape[1]
+    s = torch.zeros(d, dtype=torch.float64, device=dev)
+    n_chunks = (rows.size + block - 1) // block
+    t0 = time.time()
+    for k, i in enumerate(range(0, rows.size, block)):
+        xb = torch.as_tensor(np.asarray(arr[rows[i : i + block]]), dtype=torch.float64).to(dev)
+        s += xb.sum(dim=0)
+        print(f"[{phase}] unit {k + 1}/{n_chunks} elapsed={time.time() - t0:.1f}s", flush=True)
+    return (s / rows.size).cpu().numpy()
+
+
+def _blocked_mean_cov(arr, rows, dev, block: int, phase: str):
+    """fp64 (cov ddof=1, mean) of arr[rows], accumulated in index blocks on
+    ``dev`` (chunked_cov formula — issue2202_failchar convention; plan §4 c2)."""
+    rows = np.asarray(rows, dtype=np.int64)
+    n, d = rows.size, arr.shape[1]
+    assert n > 1, f"cov needs n > 1 rows, got {n}"
+    s = torch.zeros(d, dtype=torch.float64, device=dev)
+    q = torch.zeros((d, d), dtype=torch.float64, device=dev)
+    n_chunks = (n + block - 1) // block
+    t0 = time.time()
+    for k, i in enumerate(range(0, n, block)):
+        xb = torch.as_tensor(np.asarray(arr[rows[i : i + block]]), dtype=torch.float64).to(dev)
+        s += xb.sum(dim=0)
+        q += xb.T @ xb
+        print(f"[{phase}] unit {k + 1}/{n_chunks} elapsed={time.time() - t0:.1f}s", flush=True)
+    mu = s / n
+    cov = (q - n * torch.outer(mu, mu)) / (n - 1)
+    return cov.cpu().numpy(), mu.cpu().numpy()
+
+
+def _job_c_whiten(args, X, Y, pool_rows, whiten_npz: Path, dev):
+    """Phase c2: task-locked whitening stats over the train-pool answer states —
+    μ_A + shrunk-Cholesky L (λ=0.1) of the fp64 pool cov (plus μ_C for the
+    record). Resume keyed on the pool sel-sha + λ (never bare existence)."""
+    pool_sha = FFC._sha_ids(np.sort(np.asarray(pool_rows, dtype=np.int64)))
+    if whiten_npz.exists():
+        z = np.load(whiten_npz, allow_pickle=False)
+        if str(z["pool_sha256"]) == pool_sha and float(z["lam"]) == WHITEN_LAMBDA:
+            logger.info("[job-c] whiten stats resume-load (%s)", whiten_npz)
+            return np.asarray(z["mu_A"]), np.asarray(z["L"]), pool_sha
+        logger.info("[job-c] whiten stats stale (pool sha / lambda mismatch) — recomputing")
+    cov, mu_a = _blocked_mean_cov(Y, pool_rows, dev, WHITEN_BLOCK, "c2-cov")
+    ell = shrunk_cholesky_from_cov(cov, WHITEN_LAMBDA)
+    mu_c = _blocked_mean(X, pool_rows, dev, WHITEN_BLOCK, "c2-mu-c")
+    whiten_npz.parent.mkdir(parents=True, exist_ok=True)
+    tmp = whiten_npz.with_name(whiten_npz.stem + ".tmp.npz")  # np.savez appends .npz otherwise
+    np.savez(
+        tmp,
+        mu_A=mu_a,
+        mu_C=mu_c,
+        L=ell,
+        lam=WHITEN_LAMBDA,
+        n_train=int(len(pool_rows)),
+        pool_sha256=pool_sha,
+    )
+    os.replace(tmp, whiten_npz)
+    logger.info("[job-c] whiten stats written: %s (n_train=%d)", whiten_npz, len(pool_rows))
+    return mu_a, ell, pool_sha
+
+
+def _whitened_battery(pred_te, y_te, mu_a, ell, k: int) -> dict:
+    """Phase c4 whitened battery: z-whiten preds + pool (solve_triangular
+    against the shrunk-Cholesky L — the issue2202 convention), cosine matrix S,
+    CSLS (k=10 primary, ``issue1901_metric_battery.csls_scores``) + the
+    whitened-cosine-no-CSLS diagnostic; rank by −score with mid-rank ties
+    (``rank_matrix_for_cols`` convention) → acc@{1,5,10} + MRR."""
+    zq = solve_triangular(ell, (np.asarray(pred_te, np.float64) - mu_a).T, lower=True).T
+    zp = solve_triangular(ell, (np.asarray(y_te, np.float64) - mu_a).T, lower=True).T
+    n_pool = zp.shape[0]
+    assert n_pool >= k + 2, f"G3: n_pool={n_pool} < K_CSLS+2={k + 2}"
+    qn = zq / (np.linalg.norm(zq, axis=1, keepdims=True) + 1e-12)
+    pn = zp / (np.linalg.norm(zp, axis=1, keepdims=True) + 1e-12)
+    S = qn @ pn.T
+    out = {}
+    diag_cols = np.arange(n_pool)
+    for label, scores in (("whitened_csls", BAT.csls_scores(S, k=k)), ("whitened_cosine", S)):
+        R = BAT.rank_matrix_for_cols(-scores, diag_cols)
+        ranks = R[diag_cols, diag_cols]  # rank of each row's true target (pool == true)
+        out[label] = {
+            "acc_at_k": {int(kk): float((ranks <= kk).mean()) for kk in (1, 5, 10)},
+            "chance_at_k": {int(kk): float(kk / n_pool) for kk in (1, 5, 10)},
+            "median_rank": float(np.median(ranks)),
+            "mrr": float((1.0 / ranks).mean()),
+            "n_pool": int(n_pool),
+            "k_csls": int(k),
+            "whitening": {"lam": WHITEN_LAMBDA, "stats": "train-pool mu_A + shrunk-Cholesky L"},
+        }
+    return out
+
+
+def _save_pred_npz(preds_dir: Path, stem: str, pred_te, te_rows, meta: dict) -> None:
+    """fp16 test-pool predictions, atomically written (plan §10 HF artifact)."""
+    preds_dir.mkdir(parents=True, exist_ok=True)
+    tmp = preds_dir / f"{stem}.tmp.npz"  # suffix stays .npz (np.savez append trap)
+    np.savez(
+        tmp,
+        pred_fp16=np.asarray(pred_te, dtype=np.float16),
+        rows=np.asarray(te_rows, dtype=np.int64),
+        **{k: str(v) for k, v in meta.items()},
+    )
+    os.replace(tmp, preds_dir / f"{stem}.npz")
+
+
+def _dense_fingerprint(args, *, n, source, sel_name, sel_sha, store_revision, arm, seeds) -> dict:
+    """Per-cell resume fingerprint (plan §4 c3): field-for-field match ⇒ skip,
+    any mismatch ⇒ refit — never bare file existence. Keys are generating
+    parameters only (machine-stable; no recomputed-float hashing)."""
+    if arm == "mlp":
+        recipe = {
+            "width": MLP_WIDTH,
+            "lr": MLP_LR,
+            "weight_decay": FFC.MLP_WD,
+            "max_epochs": FFC.MLP_MAX_EPOCHS,
+            "patience": FFC.MLP_PATIENCE,
+            "batch": N1M.MLP_BATCH,
+            "trainer": "issue779_ffc_n1m_fits.fit_mlp",
+        }
+    elif arm == "ridge":
+        recipe = {
+            "lambda_grid": ["logspace", -3, 8, 23],
+            "ridge_block": int(args.ridge_block),
+            "selection": "val-lambda (primal, streaming)",
+        }
+    elif arm == "identity_bias":
+        recipe = {"estimator": "identity_bias_predict_blocked", "block": IB_BLOCK}
+    elif arm in ("mlp_apply", "ridge_apply"):
+        recipe = {"estimator": "banked-weights apply_map", "weights_prefix": WEIGHTS_L19_PREFIX}
+    else:
+        raise ValueError(f"unknown arm {arm!r}")
+    return {
+        "arm": arm,
+        "n": int(n),
+        "source": source,
+        "sel_name": sel_name,
+        "sel_sha256": sel_sha,
+        "code_sha": _git_sha(),
+        "store_revision": store_revision,
+        "pythonhashseed": os.environ.get("PYTHONHASHSEED"),
+        "seed": int(args.seed),
+        "seed_b": int(args.seed_b),
+        "seeds": [int(s) for s in seeds],
+        "recipe": recipe,
+        "smoke_chunks": int(args.smoke_chunks),
+        "layer": 19,
+    }
+
+
+def _load_resumed_cell(perfit_path: Path, fingerprint: dict):
+    """Fingerprinted resume: return the persisted cell iff its fingerprint
+    matches field-for-field; None otherwise (⇒ refit)."""
+    if not perfit_path.exists():
+        return None
+    prev = json.loads(perfit_path.read_text())
+    if prev.get("fingerprint") == fingerprint:
+        return prev
+    logger.info("[job-c] %s fingerprint mismatch — refitting", perfit_path.name)
+    return None
+
+
+def _rung_parity(arm: str, n: int, got_r2: float, tol: float, *, sha_match: bool, smoke: bool):
+    """Per-rung parity row vs the banked anchors (DENSE_PARITY_ANCHORS kinds)."""
+    key = (arm, int(n))
+    if key not in DENSE_PARITY_ANCHORS:
+        return None
+    path, extract, pasted, kind = DENSE_PARITY_ANCHORS[key]
+    want = PD._banked_parity_target(path, extract, pasted)
+    row = {
+        "cell": f"dense-{arm}-n{n}",
+        "got_r2": float(got_r2),
+        "banked_r2": float(want),
+        "tol": float(tol),
+        "kind": kind,
+        "pass": bool(abs(got_r2 - want) <= tol),
+    }
+    halt = kind == "fold-exact" or (kind == "sha-conditional" and sha_match)
+    if smoke:
+        logger.info("[job-c][parity] (smoke, informational) %s", row)
+    elif halt and not row["pass"]:
+        raise RuntimeError(f"PARITY GATE FAILED: {json.dumps(row)}")
+    else:
+        logger.info("[job-c][parity] %s %s", "PASS" if row["pass"] else "RECORDED-DELTA", row)
+    return row
+
+
+def run_job_c(args, dev, out_path: Path) -> dict:
+    smoke = args.smoke_chunks > 0
+    if os.environ.get("PYTHONHASHSEED") != "0":
+        raise RuntimeError(
+            "job c requires PYTHONHASHSEED=0 in the launcher env (N1M.select_train seeds "
+            "default_rng(seed + abs(hash(name)) % 1e6); the recorded G2 sel-shas were produced "
+            "under PYTHONHASHSEED=0 — plan §10 workload command)"
+        )
+    if not smoke:
+        missing_rungs = {150_000, 500_000} - set(args.dense_ns)
+        if missing_rungs:
+            raise RuntimeError(
+                f"--dense-ns must include 150000 and 500000 in production (G2 recorded-selection "
+                f"comparison needs their ridge refits); missing {sorted(missing_rungs)}"
+            )
+
+    C.phase("c0-stage")
+    capture_dir, pass_b_path, weights_dir, store_revision = _stage_job_c(args, smoke)
+    preds_dir = args.stage_root / ("analysis_tensors_smoke" if smoke else "analysis_tensors")
+    perfit_tag = "dense_smoke" if smoke else "dense"
+
+    C.phase("c1-assemble")
+    X, Y, pools, val, test, split = _assemble_n1m(args, capture_dir, pass_b_path)
+    n_lmsys = len(pools["lmsys"])
+    logger.info("[job-c] assembled n_rows=%d (lmsys pool %d)", X.shape[0], n_lmsys)
+    asm = LF._assemble_scale_layer(args.ladder_hf_prefix, 19, args.cache_dir)
+
+    gates: dict = {}
+    gates["G1"] = _g1_fold_identity(asm, Y, val, test)
+    k_csls = BAT.K_CSLS
+    gates["G3"] = {
+        "n_pool": int(len(test)),
+        "floor": k_csls + 2,
+        "pass": bool(len(test) >= k_csls + 2),
+    }
+    if not gates["G3"]["pass"]:
+        raise RuntimeError(f"G3 FAIL: n_pool={len(test)} < K_CSLS+2={k_csls + 2}")
+    recorded_shas = _g2_recorded_shas()
+
+    # Rung plan. Smoke replaces the rung set (plan §4: {1k scale7-prefix,
+    # 2k n1m-lmsys}) and treats its n1m rung as the seed-dispersion endpoint so
+    # the seedwise code path executes at tiny n (production endpoints 50k/500k).
+    if smoke:
+        rung_specs = [(1_000, "scale7"), (2_000, "n1m")]
+        endpoint_ns = {2_000}
+    else:
+        rung_specs = [
+            (int(n), "scale7" if n <= DENSE_SCALE7_MAX_N else "n1m")
+            for n in sorted(set(args.dense_ns))
+        ]
+        endpoint_ns = set(DENSE_ENDPOINT_NS) & {n for n, _ in rung_specs}
+        max_n1m = max((n for n, s in rung_specs if s == "n1m"), default=0)
+        if n_lmsys < max_n1m:
+            raise RuntimeError(
+                f"lmsys pool {n_lmsys} < largest n1m rung {max_n1m} — cannot realize the ladder"
+            )
+
+    s7_rng = np.random.default_rng(args.seed)
+    s7_perm = s7_rng.permutation(len(asm["tr"]))
+
+    C.phase("c2-whiten")
+    pool_full = np.sort(np.asarray(pools["full"], dtype=np.int64))
+    whiten_npz = preds_dir / ("whiten_stats_L19_smoke.npz" if smoke else "whiten_stats_L19.npz")
+    mu_a, ell, pool_sha = _job_c_whiten(args, X, Y, pool_full, whiten_npz, dev)
+
+    res: dict = {
+        "per_n": {},
+        "layer": 19,
+        "seed": int(args.seed),
+        "seed_b": int(args.seed_b),
+        "endpoint_seeds": [int(s) for s in args.endpoint_seeds],
+        "endpoint_ns": sorted(int(n) for n in endpoint_ns),
+        "smoke_chunks": int(args.smoke_chunks),
+        "pythonhashseed": os.environ.get("PYTHONHASHSEED"),
+        "store": {
+            "n1m_capture_prefix": N1M_CAPTURE_PREFIX,
+            "scale7_prefix": args.ladder_hf_prefix,
+            "weights_prefix": WEIGHTS_L19_PREFIX,
+            "store_revision": store_revision,
+            "stage_root": str(args.stage_root),
+        },
+        "split": split,
+        "whiten": {
+            "lam": WHITEN_LAMBDA,
+            "n_train": int(len(pool_full)),
+            "pool_sha256": pool_sha,
+            "stats_npz": str(whiten_npz.name),
+        },
+        "gates": gates,
+        "sel_shas": {},
+    }
+
+    def _flush():
+        res["gates"] = gates
+        C.write_json_atomic(out_path, res)
+
+    C.phase("c3-fits")
+    n_units = len(rung_specs) * 3 + 3  # 3 arms per dense rung + 963k apply×2 + ib
+    unit_k = 0
+    realized_shas: dict = {}
+    refit_ridge_r2s: dict = {}
+    first_n1m_wall: float | None = None
+
+    for n, source in rung_specs:
+        rung_t0 = time.time()
+        if source == "scale7":
+            if n > len(asm["tr"]):
+                raise RuntimeError(f"scale7 rung n={n} > train_25k pool {len(asm['tr'])}")
+            sub = np.sort(np.asarray(asm["tr"])[s7_perm[:n]])
+            sel_name = f"scale7_prefix_{n}"
+            sel_diag = {
+                "mode": "scale7-prefix",
+                "n_target": int(n),
+                "n_realized": int(len(sub)),
+                "subsample": "seeded permutation prefix of train_25k (default_rng(seed))",
+            }
+            Xs, Ys = asm["X"], asm["Y"]
+            val_idx, te_idx = asm["val"], asm["te"]
+        else:
+            sel_name = f"lmsys_{n // 1000}k"
+            sub, sel_diag = N1M.select_train(pools, sel_name, n, "lmsys", args.seed_b)
+            if not smoke and len(sub) != n:
+                raise RuntimeError(f"{sel_name}: realized train {len(sub)} != target {n}")
+            Xs, Ys = X, Y
+            val_idx, te_idx = val, test
+        sel_sha = FFC._sha_ids(sub)
+        res["sel_shas"][str(n)] = sel_sha
+        if sel_name in recorded_shas:
+            realized_shas[sel_name] = sel_sha
+        row: dict = {
+            "n_train": int(len(sub)),
+            "n_target": int(n),
+            "source": source,
+            "sel_name": sel_name,
+            "sel_sha256": sel_sha,
+            "selection": sel_diag,
+            "parity": {},
+        }
+        ev = np.concatenate([val_idx, te_idx])
+        n_val = len(val_idx)
+
+        # ── MLP arm (endpoints: extra seeds; plan §4 c3) ────────────────────
+        unit_k += 1
+        t0 = time.time()
+        seeds = [args.seed] + (list(args.endpoint_seeds) if n in endpoint_ns else [])
+        fp = _dense_fingerprint(
+            args,
+            n=n,
+            source=source,
+            sel_name=sel_name,
+            sel_sha=sel_sha,
+            store_revision=store_revision,
+            arm="mlp",
+            seeds=seeds,
+        )
+        perfit_name = f"{perfit_tag}_L19_n{n}_mlp.json"
+        cell = _load_resumed_cell(args.out_dir / "perfit" / perfit_name, fp)
+        if cell is None:
+            per_seed = {}
+            for s in seeds:
+                pred_ev, fit_meta = N1M.fit_mlp(
+                    Xs, Ys, sub, ev, MLP_WIDTH, MLP_LR, FFC.MLP_MAX_EPOCHS, N1M.MLP_BATCH, s, dev
+                )
+                pred_val, pred_te = pred_ev[:n_val], pred_ev[n_val:]
+                entry = _cell_metrics(
+                    pred_val, Ys[val_idx], pred_te, Ys[te_idx], args.n_boot, s + n
+                )
+                entry.update(_whitened_battery(pred_te, Ys[te_idx], mu_a, ell, k_csls))
+                entry["fit_meta"] = fit_meta
+                entry["seed"] = int(s)
+                stem = f"preds_L19_n{n}_mlp" + ("" if s == args.seed else f"_seed{s}")
+                _save_pred_npz(
+                    preds_dir,
+                    stem,
+                    pred_te,
+                    te_idx,
+                    {"n": n, "arm": "mlp", "seed": s, "source": source},
+                )
+                per_seed[str(s)] = entry
+            cell = dict(per_seed[str(args.seed)])
+            if len(seeds) > 1:
+                r2s = np.array([per_seed[str(s)]["test_r2"] for s in seeds])
+                acc1 = np.array([per_seed[str(s)]["whitened_csls"]["acc_at_k"][1] for s in seeds])
+                cell["seeds"] = per_seed
+                cell["seed_dispersion"] = {
+                    "seeds": [int(s) for s in seeds],
+                    "test_r2": {"std": float(r2s.std()), "range": float(r2s.max() - r2s.min())},
+                    "whitened_csls_acc1": {
+                        "std": float(acc1.std()),
+                        "range": float(acc1.max() - acc1.min()),
+                    },
+                }
+            cell["fingerprint"] = fp
+            _write_perfit(args.out_dir, perfit_name, cell)
+        row["mlp"] = cell
+        row["parity"]["mlp"] = _rung_parity(
+            "mlp", n, cell["test_r2"], args.parity_tol, sha_match=False, smoke=smoke
+        )
+        print(
+            f"[job-c] unit {unit_k}/{n_units} n={n} arm=mlp elapsed={time.time() - t0:.1f}s",
+            flush=True,
+        )
+
+        # ── Ridge arm (identical subset; plan §4 c3) ─────────────────────────
+        unit_k += 1
+        t0 = time.time()
+        fp = _dense_fingerprint(
+            args,
+            n=n,
+            source=source,
+            sel_name=sel_name,
+            sel_sha=sel_sha,
+            store_revision=store_revision,
+            arm="ridge",
+            seeds=[args.seed],
+        )
+        perfit_name = f"{perfit_tag}_L19_n{n}_ridge.json"
+        cell = _load_resumed_cell(args.out_dir / "perfit" / perfit_name, fp)
+        if cell is None:
+            pred_te_r, meta, _payload = N1M.fit_ridge_with_weights(
+                Xs, Ys, sub, val_idx, te_idx, N1M.LAMBDAS_N1M, dev, args.ridge_block
+            )
+            cell = {
+                "val_r2": float(meta["val_r2_at_selected"]),
+                "test_r2": float(PR._pooled_r2(pred_te_r, Ys[te_idx])),
+                "test_ci": FFC._bootstrap_recon_ci(
+                    pred_te_r, Ys[te_idx], args.n_boot, args.seed + n
+                ),
+                "knn": {
+                    m: MB.knn_retrieval(pred_te_r, Ys[te_idx], ks=KNN_KS, metric=m)
+                    for m in ("euclidean", "cosine")
+                },
+                "fit_meta": meta,
+            }
+            cell.update(_whitened_battery(pred_te_r, Ys[te_idx], mu_a, ell, k_csls))
+            _save_pred_npz(
+                preds_dir,
+                f"preds_L19_n{n}_ridge",
+                pred_te_r,
+                te_idx,
+                {"n": n, "arm": "ridge", "seed": args.seed, "source": source},
+            )
+            cell["fingerprint"] = fp
+            _write_perfit(args.out_dir, perfit_name, cell)
+        if sel_name in recorded_shas:
+            refit_ridge_r2s[sel_name] = cell["test_r2"]
+        row["ridge"] = cell
+        row["parity"]["ridge"] = _rung_parity(
+            "ridge",
+            n,
+            cell["test_r2"],
+            args.parity_tol,
+            sha_match=bool(sel_name in recorded_shas and sel_sha == recorded_shas[sel_name]),
+            smoke=smoke,
+        )
+        print(
+            f"[job-c] unit {unit_k}/{n_units} n={n} arm=ridge elapsed={time.time() - t0:.1f}s",
+            flush=True,
+        )
+
+        # ── identity+bias arm (blocked; plan §9 LARGEST-CELL keying) ─────────
+        unit_k += 1
+        t0 = time.time()
+        fp = _dense_fingerprint(
+            args,
+            n=n,
+            source=source,
+            sel_name=sel_name,
+            sel_sha=sel_sha,
+            store_revision=store_revision,
+            arm="identity_bias",
+            seeds=[args.seed],
+        )
+        perfit_name = f"{perfit_tag}_L19_n{n}_identity_bias.json"
+        cell = _load_resumed_cell(args.out_dir / "perfit" / perfit_name, fp)
+        if cell is None:
+            pred_ev_ib, bias = MB.identity_bias_predict_blocked(
+                Xs, Ys, sub, np.asarray(Xs[ev]), block=IB_BLOCK, return_bias=True
+            )
+            pred_val_ib, pred_te_ib = pred_ev_ib[:n_val], pred_ev_ib[n_val:]
+            cell = _cell_metrics(
+                pred_val_ib, Ys[val_idx], pred_te_ib, Ys[te_idx], args.n_boot, args.seed + n
+            )
+            cell.update(_whitened_battery(pred_te_ib, Ys[te_idx], mu_a, ell, k_csls))
+            cell["bias_vector"] = [float(v) for v in bias]
+            cell["fingerprint"] = fp
+            _write_perfit(args.out_dir, perfit_name, cell)
+        row["identity_bias"] = cell
+        print(
+            f"[job-c] unit {unit_k}/{n_units} n={n} arm=identity_bias "
+            f"elapsed={time.time() - t0:.1f}s",
+            flush=True,
+        )
+
+        row["wall_time_s"] = round(time.time() - rung_t0, 1)
+        res["per_n"][str(n)] = row
+        _flush()
+
+        if source == "n1m" and first_n1m_wall is None:
+            first_n1m_wall = row["wall_time_s"]
+            ratio = first_n1m_wall / PLAN_FIRST_N1M_RUNG_WALL_S
+            print(
+                f"[job-c][advisory] first n1m rung (n={n}) wall {first_n1m_wall:.0f}s vs plan "
+                f"{PLAN_FIRST_N1M_RUNG_WALL_S:.0f}s (ratio {ratio:.2f}x"
+                f"{'; >2x — compute-deviation class' if ratio > 2.0 else ''})",
+                flush=True,
+            )
+
+    # ── G2 verdict (after the 150k/500k ridge cells; plan §4 c1 / §7 crit. 2) ──
+    if smoke:
+        gates["G2"] = {
+            "verdict": "SMOKE-NOT-EVALUATED",
+            "downgrade_recorded": False,
+            "detail": {"note": "partial pool — recorded selections not realizable at smoke n"},
+        }
+    else:
+        banked_r2s = {
+            name: PD._banked_parity_target(*DENSE_PARITY_ANCHORS[("ridge", n_pt)][:3])
+            for name, n_pt in (("lmsys_150k", 150_000), ("lmsys_500k", 500_000))
+        }
+        g2 = _g2_gate(realized_shas, recorded_shas, refit_ridge_r2s, banked_r2s, args.parity_tol)
+        gates["G2"] = asdict(g2)
+        _flush()
+        if g2.verdict == "FAIL":
+            raise RuntimeError(f"G2 FAIL (recorded-selection comparison): {json.dumps(asdict(g2))}")
+        logger.info("[job-c] G2 %s %s", g2.verdict, json.dumps(g2.detail))
+    _flush()
+
+    # ── 963k point: banked-weights apply (both arms) + fresh blockwise ib ─────
+    n963 = int(len(pool_full))
+    rung_t0 = time.time()
+    ev = np.concatenate([val, test])
+    n_val = len(val)
+    sel_sha_963 = FFC._sha_ids(pool_full)
+    row = {
+        "n_train": n963,
+        "n_target": n963,
+        "source": "n1m",
+        "sel_name": "mixed_1m",
+        "sel_sha256": sel_sha_963,
+        "selection": {"mode": "full train pool (all non-val/test rows)"},
+        "parity": {},
+    }
+    res["sel_shas"][str(n963)] = sel_sha_963
+    x_ev = np.asarray(X[ev])
+    for arm, fname, payload_kind in (
+        ("mlp", "mlp_w8192.pt", "mlp"),
+        ("ridge", "ridge.pt", "ridge"),
+    ):
+        unit_k += 1
+        t0 = time.time()
+        fp = _dense_fingerprint(
+            args,
+            n=n963,
+            source="n1m",
+            sel_name="mixed_1m",
+            sel_sha=sel_sha_963,
+            store_revision=store_revision,
+            arm=f"{arm}_apply",
+            seeds=[args.seed],
+        )
+        perfit_name = f"{perfit_tag}_L19_n{n963}_{arm}.json"
+        cell = _load_resumed_cell(args.out_dir / "perfit" / perfit_name, fp)
+        if cell is None:
+            payload = torch.load(weights_dir / fname, map_location="cpu", weights_only=False)
+            assert payload.get("kind") == payload_kind, (fname, payload.get("kind"))
+            pred_ev_a = N1M.apply_map(payload, x_ev, dev)
+            del payload
+            pred_val_a, pred_te_a = pred_ev_a[:n_val], pred_ev_a[n_val:]
+            cell = _cell_metrics(pred_val_a, Y[val], pred_te_a, Y[test], args.n_boot, args.seed)
+            cell.update(_whitened_battery(pred_te_a, Y[test], mu_a, ell, k_csls))
+            cell["applied_banked_weights"] = f"{WEIGHTS_L19_PREFIX}/{fname}"
+            _save_pred_npz(
+                preds_dir,
+                f"preds_L19_n{n963}_{arm}",
+                pred_te_a,
+                test,
+                {"n": n963, "arm": f"{arm}_apply", "seed": args.seed, "source": "n1m"},
+            )
+            cell["fingerprint"] = fp
+            _write_perfit(args.out_dir, perfit_name, cell)
+        # Deterministic apply parity (≤1e-3; plan §7 crit. 3) — runs VERBATIM at
+        # smoke too: the pinned test rows ride the fully-staged pass_b bundle.
+        path, extract, pasted = MIXED1M_APPLY_ANCHORS[arm]
+        want = PD._banked_parity_target(path, extract, pasted)
+        row["parity"][arm] = PD._parity_check(
+            f"mixed1m-{arm}-apply", cell["test_r2"], want, MIXED1M_APPLY_TOL, smoke=False
+        )
+        row[arm] = cell
+        print(
+            f"[job-c] unit {unit_k}/{n_units} n={n963} arm={arm}_apply "
+            f"elapsed={time.time() - t0:.1f}s",
+            flush=True,
+        )
+
+    unit_k += 1
+    t0 = time.time()
+    fp = _dense_fingerprint(
+        args,
+        n=n963,
+        source="n1m",
+        sel_name="mixed_1m",
+        sel_sha=sel_sha_963,
+        store_revision=store_revision,
+        arm="identity_bias",
+        seeds=[args.seed],
+    )
+    perfit_name = f"{perfit_tag}_L19_n{n963}_identity_bias.json"
+    cell = _load_resumed_cell(args.out_dir / "perfit" / perfit_name, fp)
+    if cell is None:
+        pred_ev_ib, bias = MB.identity_bias_predict_blocked(
+            X, Y, pool_full, x_ev, block=IB_BLOCK, return_bias=True
+        )
+        pred_val_ib, pred_te_ib = pred_ev_ib[:n_val], pred_ev_ib[n_val:]
+        cell = _cell_metrics(pred_val_ib, Y[val], pred_te_ib, Y[test], args.n_boot, args.seed)
+        cell.update(_whitened_battery(pred_te_ib, Y[test], mu_a, ell, k_csls))
+        cell["bias_vector"] = [float(v) for v in bias]
+        cell["fingerprint"] = fp
+        _write_perfit(args.out_dir, perfit_name, cell)
+    row["identity_bias"] = cell
+    print(
+        f"[job-c] unit {unit_k}/{n_units} n={n963} arm=identity_bias "
+        f"elapsed={time.time() - t0:.1f}s",
+        flush=True,
+    )
+    row["wall_time_s"] = round(time.time() - rung_t0, 1)
+    res["per_n"][str(n963)] = row
+    _flush()
+
+    # Prediction-artifact completeness (plan §7: 2 per rung incl. 963k + the
+    # endpoint seedwise extras; 22 at the default production args).
+    n_expected = 2 * (len(rung_specs) + 1) + len(endpoint_ns) * len(args.endpoint_seeds)
+    realized_npz = sorted(p.name for p in preds_dir.glob("preds_L19_*.npz"))
+    if len(realized_npz) != n_expected:
+        raise RuntimeError(
+            f"prediction npz count {len(realized_npz)} != expected {n_expected}: {realized_npz}"
+        )
+    res["prediction_artifacts"] = {"n": len(realized_npz), "files": realized_npz}
+
+    res["meta"] = _meta_common(args)
+    res["meta"]["provenance"] = as_metadata_dict(git_provenance(), phase="job-c")
+    res["meta"]["whiten_convention"] = (
+        "z = solve_triangular(L, (v - mu_A).T, lower=True).T with L = shrunk Cholesky "
+        f"((1-lam)*cov + lam*diag, lam={WHITEN_LAMBDA}) of the fp64 train-pool answer cov "
+        "(issue2202_failchar convention); CSLS k=10 cross-domain "
+        "(issue1901_metric_battery.csls_scores)"
+    )
+    _flush()
+
+    C.phase("c5-upload")
+    if args.skip_hf_upload:
+        logger.info("[job-c] --skip-hf-upload: leaving %s unstaged to HF", preds_dir)
+    else:
+        hf_prefix = "issue1901_mlpdense/" + (
+            "smoke/analysis_tensors" if smoke else "analysis_tensors"
+        )
+        hub._upload(preds_dir, C.HF_DATA_REPO, "dataset", hf_prefix)
+        expected = [f"{hf_prefix}/{name}" for name in realized_npz] + [
+            f"{hf_prefix}/{whiten_npz.name}"
+        ]
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(), C.HF_DATA_REPO, expected, path_in_repo=hf_prefix
+        )
+        if missing:
+            raise RuntimeError(f"HF upload verify FAILED — missing {len(missing)}: {missing[:5]}")
+        res["hf_upload"] = {"prefix": hf_prefix, "n_files": len(expected), "verified": True}
+        _flush()
+
+    if not args.keep_stage:
+        PD._reap_stage(args.stage_root / N1G.HF_PREFIX)
+    return res
+
+
 def _ensure_pass_b(args) -> None:
     if args.pass_b_path.exists():
         return
     from huggingface_hub import hf_hub_download
-
-    from explore_persona_space.orchestrate import hub
 
     logger.info("[stage] downloading pass_b bundle from HF (%s)", PASS_B_HF_FILE)
     args.pass_b_path.parent.mkdir(parents=True, exist_ok=True)
@@ -350,7 +1376,7 @@ def _ensure_pass_b(args) -> None:
 
 def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--jobs", default="a,b", help="comma list from {a,b}")
+    ap.add_argument("--jobs", default="a,b", help="comma list from {a,b,c}")
     ap.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--n-boot", type=int, default=FFC.BOOT_N)
@@ -368,11 +1394,65 @@ def _parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--cache-dir", type=Path, default=FFC.PROJECT_ROOT / "data" / "issue_1901" / "hf_dl"
     )
+    # ── job c (mlp-scaling-densify) ────────────────────────────────────────────
+    ap.add_argument(
+        "--stage-root",
+        type=Path,
+        default=None,
+        help="job c: HF staging root (pod container/workspace disk); REQUIRED for --jobs c",
+    )
+    ap.add_argument(
+        "--work-dir",
+        type=Path,
+        default=None,
+        help="job c: scratch for manifest/stream caches (default <stage-root>/work)",
+    )
+    ap.add_argument("--orig-dir", type=Path, default=N50.DEFAULT_ORIG_DIR)
+    ap.add_argument(
+        "--seed-b", type=int, default=0, help="n1m selection seed (banked bigN refits ran 0)"
+    )
+    ap.add_argument(
+        "--dense-ns",
+        type=int,
+        nargs="+",
+        default=[5_000, 10_000, 25_000, 50_000, 100_000, 150_000, 250_000, 500_000],
+        help="job c dense rungs; <=25k fit on the scale7 store, larger on the n1m capture",
+    )
+    ap.add_argument(
+        "--endpoint-seeds",
+        type=int,
+        nargs="*",
+        default=[43, 44],
+        help="extra MLP seeds at the 50k/500k endpoints (seed-dispersion read)",
+    )
+    ap.add_argument(
+        "--smoke-chunks",
+        type=int,
+        default=0,
+        help="job c: >0 = tiny-real smoke (stage N capture chunks; rungs {1k scale7, 2k n1m})",
+    )
+    ap.add_argument("--ridge-block", type=int, default=N1M.RIDGE_BLOCK)
+    ap.add_argument("--stage-workers", type=int, default=8)
+    ap.add_argument(
+        "--keep-stage", action="store_true", help="do not delete the staged capture (smoke)"
+    )
+    ap.add_argument(
+        "--skip-hf-upload",
+        action="store_true",
+        help="job c: skip the c5 prediction-npz HF upload (local dev only)",
+    )
+    ap.add_argument("--import-check", action="store_true")
     return ap.parse_args()
 
 
 def main() -> int:
     args = _parse_args()
+    if args.import_check:
+        from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+        assert_args_attributes_defined(__file__)
+        print("[import-check] ok")
+        raise SystemExit(0)
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", force=True
     )
@@ -392,7 +1472,21 @@ def main() -> int:
         res_b = run_job_b(args, dev, out_b)
         res_b["meta"] = _meta_common(args)
         C.write_json_atomic(out_b, res_b)
+    if "c" in jobs:
+        if args.stage_root is None:
+            raise SystemExit("--stage-root is required for --jobs c")
+        if args.work_dir is None:
+            args.work_dir = args.stage_root / "work"
+        out_c = args.out_dir / (
+            "mlp_scaling_dense_L19_smoke.json"
+            if args.smoke_chunks > 0
+            else "mlp_scaling_dense_L19.json"
+        )
+        run_job_c(args, dev, out_c)
+        C.phase("done")
     logger.info("all jobs done in %.1fs", time.time() - t0)
+    sys.stdout.flush()
+    sys.stderr.flush()
     return 0
 
 
