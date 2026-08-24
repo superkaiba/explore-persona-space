@@ -10360,8 +10360,8 @@
     "2340": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2340",
-      "status": "planning",
+      "path": "tasks/approved/2340",
+      "status": "approved",
       "title": "verify_task_body: footer check for SHA-pinned GitHub links on named code/artifacts"
     },
     "2341": {
