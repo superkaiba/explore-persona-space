@@ -81,3 +81,4 @@
 - [named_tests ban hits tables](feedback_named_tests_ban_hits_tables.md) — "Wilcoxon" FAILs even in Methodology tables; sample preludes need literal cherry-picked/random-sample tokens. #2333.
 - [Never Edit body.md in place (stash race)](feedback_never_edit_body_in_place_stash_race.md) — in-place edits revert via #2015 race and set-body no-ops; off-root file + SHA landing check. #2333 r4.
 - [HF resolve URLs rejected in footer](feedback_hf_resolve_url_footer_rejected.md) — check 8 accepts only /tree|/blob|/raw|@<ref>; pinned resolve/ dashboard links go in Methodology. #2223 fold.
+- [Bar sidecars need generator-side series annotation](feedback_bar_sidecar_series_annotation.md) — savefig_paper bars drop per-row series; re-annotate from container order + jq-verify; Lens-14 clears via address-concern alone. #2479 r2.

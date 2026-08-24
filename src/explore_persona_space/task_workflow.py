@@ -4448,6 +4448,82 @@ def _audit_record_violation(
     return None
 
 
+# ─── Completion-report four-H3 contract (#2309) ────────────────────────────
+#
+# The implementer specs bind a four-lettered-H3 completion-report contract
+# (`### (a) What was done` … `### (d) Needs human eyeball`) on the two
+# round-report marker kinds. The predicate below is the SINGLE mechanical
+# implementation; `scripts/task.py::cmd_post_event` refuses a nonconforming
+# CLI post BEFORE the append (#2302 round 1: a missing `### (d)` cost a full
+# code-review ensemble round — marker-shape blockers are never
+# strip-eligible). Library-level `post_event` is deliberately NOT gated:
+# programmatic posters (the poll_pipeline / slurm_monitor sentinel drains,
+# whose `epm:results` rows are workload-results shaped) must be unaffected.
+
+COMPLETION_REPORT_KINDS = ("epm:results", "epm:experiment-implementation")
+
+# Both header forms are LIVE in the fleet and both kinds have historical
+# rows under each (implementer.md template: "## Completion Report";
+# experiment-implementer.md template: "## Implementation Report — round
+# <n>"; the 2026-08-23 audit measured 39 epm:experiment-implementation
+# rows under the Completion form and 29 epm:results rows under the
+# Implementation form). The contract is the four lettered H3s, not the
+# header wording — accept either form for BOTH kinds. Case-insensitive:
+# fleet rows include lowercase-`report` variants ("## Completion report —
+# task #2263 ...", "## Implementation report v2").
+_COMPLETION_REPORT_SIGNATURE = re.compile(
+    r"^##\s*(Completion|Implementation)\s+Report\b", re.MULTILINE | re.IGNORECASE
+)
+# Deliberately LENIENT on label text (presence of each lettered H3, not the
+# full label string), so minor label variations don't false-positive; the
+# #2302 v1 incident (no `(d)` line at all) is squarely caught.
+_COMPLETION_REPORT_SECTION = re.compile(r"^###\s*\(([a-d])\)", re.MULTILINE)
+# '=' form ONLY — the space alternative (`part 1/6`) matches ordinary prose
+# describing commit series (#76 v1), opening a silent refusal bypass.
+# Audit 2026-08-23: zero prose collisions among signature-bearing rows.
+_PART_TOKEN = re.compile(r"\bpart\s*=\s*\d+\s*/\s*\d+", re.IGNORECASE)
+
+
+def completion_report_violation(kind: str, note: str | None) -> list[str] | None:
+    """Return the list of missing section letters (``'a'``..``'d'``) for a
+    contract-bearing completion-report note, or ``None`` when the check
+    does not apply (non-contract kind; empty note; no completion-report
+    signature — e.g. a pod-sentinel results drain; a ``part=K/N``
+    multi-part chunk). An applicable, fully-conforming note returns ``[]``.
+
+    Pure function, no I/O. Applies iff ``kind`` is a contract kind AND the
+    note is non-empty AND it matches EITHER report-header signature
+    (``## Completion Report`` / ``## Implementation Report``) AND no
+    ``part=K/N`` token is present (a part >=2 chunk lacks the header and is
+    skipped by the signature gate automatically; a part-1 chunk may carry
+    the header but legitimately end before ``### (d)``).
+    """
+    if kind not in COMPLETION_REPORT_KINDS:
+        return None
+    if not note:
+        return None
+    if not _COMPLETION_REPORT_SIGNATURE.search(note):
+        return None
+    if _PART_TOKEN.search(note):
+        return None
+    present = set(_COMPLETION_REPORT_SECTION.findall(note))
+    return [letter for letter in "abcd" if letter not in present]
+
+
+def completion_report_advisory(kind: str, note: str | None) -> bool:
+    """True iff a CONTRACT-kind note matches NEITHER report-header form and
+    carries no ``part=K/N`` token — the CLI's soft no-signature ADVISORY
+    condition (#2309; keeps the header-evasion hole visible without any
+    refusal risk on the poller-drain class). Always False for non-contract
+    kinds. Pure function, no I/O."""
+    if kind not in COMPLETION_REPORT_KINDS:
+        return False
+    text = note or ""
+    if _COMPLETION_REPORT_SIGNATURE.search(text):
+        return False
+    return not _PART_TOKEN.search(text)
+
+
 # ─── Same-issue follow-up label grouping (#894) ────────────────────────────
 #
 # Distinct queued follow-ups share the marker KIND (`epm:followup-scope`)

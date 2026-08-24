@@ -1,0 +1,434 @@
+{
+ "what": "per-row retrieval ranks (pool = held-out true feature rows; mid-rank ties) for every tier x {map, identity+bias} x {euclidean, cosine} cell of retrieval_c.json / retrieval_b.json; rows_{c,b} give the conversation row ids in rank-array order",
+ "backend": "cpu float32 \u2014 the production convention's dtype (committed cells ran cuda fp32). Measured dtype sensitivity: cpu fp64 diverges from the committed aggregates by up to 1.18e-2 in sparse cosine cells only (tie-tolerance mid-ranking of equal-distance blocks; the retrieval-device-pin-residual near-tie class); fp32 reproduces every cell to the deltas below",
+ "fresh_arm_map_pred_source": "issue1482_error_analysis/analysis_tensors/percontext/refit_holdout__ridge__seed0.npz (the parent round's copy of the SAME EA.phase_p1_fit ridge refit; this run's own refit npz was not uploaded \u2014 G1-verified |dR2| <= 3.5e-7 vs the committed values, holdout_rows asserted identical to ib_c.npz rows, and the encode reproduces the committed per-feature R2 arrays to the max deltas below)",
+ "per_feature_r2_reproduction": {
+  "c/map": {
+   "max_abs_delta_r2": 0.002826041525073819,
+   "n_features": 879
+  },
+  "c/ib": {
+   "max_abs_delta_r2": 0.0008131548965630842,
+   "n_features": 879
+  },
+  "b/map": {
+   "max_abs_delta_r2": 7.4180434833648334e-06,
+   "n_features": 412
+  },
+  "b/ib": {
+   "max_abs_delta_r2": 0.00019884400003888913,
+   "n_features": 412
+  }
+ },
+ "acc_at_k_reproduction": {
+  "c/t0/map/euclidean": {
+   "acc@1": {
+    "recomputed": 0.70765,
+    "committed": 0.70765,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.8392,
+    "committed": 0.83925,
+    "delta": -5.0000000000105516e-05
+   },
+   "acc@10": {
+    "recomputed": 0.8737,
+    "committed": 0.8737,
+    "delta": 0.0
+   }
+  },
+  "c/t0/map/cosine": {
+   "acc@1": {
+    "recomputed": 0.75035,
+    "committed": 0.75035,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.8672,
+    "committed": 0.8672,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.8953,
+    "committed": 0.8953,
+    "delta": 0.0
+   }
+  },
+  "c/t0/ib/euclidean": {
+   "acc@1": {
+    "recomputed": 0.2382,
+    "committed": 0.2382,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.3862,
+    "committed": 0.3862,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.45435,
+    "committed": 0.45435,
+    "delta": 0.0
+   }
+  },
+  "c/t0/ib/cosine": {
+   "acc@1": {
+    "recomputed": 0.26915,
+    "committed": 0.26915,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.42245,
+    "committed": 0.42245,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.49065,
+    "committed": 0.49065,
+    "delta": 0.0
+   }
+  },
+  "c/t1/map/euclidean": {
+   "acc@1": {
+    "recomputed": 0.00105,
+    "committed": 0.00105,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.00435,
+    "committed": 0.00435,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0076,
+    "committed": 0.0076,
+    "delta": 0.0
+   }
+  },
+  "c/t1/map/cosine": {
+   "acc@1": {
+    "recomputed": 0.0021,
+    "committed": 0.0021,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.00675,
+    "committed": 0.00675,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0111,
+    "committed": 0.0112,
+    "delta": -9.99999999999994e-05
+   }
+  },
+  "c/t1/ib/euclidean": {
+   "acc@1": {
+    "recomputed": 0.00345,
+    "committed": 0.00345,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0109,
+    "committed": 0.0109,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0156,
+    "committed": 0.0156,
+    "delta": 0.0
+   }
+  },
+  "c/t1/ib/cosine": {
+   "acc@1": {
+    "recomputed": 0.00265,
+    "committed": 0.00265,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.00795,
+    "committed": 0.00795,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0123,
+    "committed": 0.0123,
+    "delta": 0.0
+   }
+  },
+  "c/t2/map/euclidean": {
+   "acc@1": {
+    "recomputed": 0.0001,
+    "committed": 0.0001,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.00075,
+    "committed": 0.00075,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.00135,
+    "committed": 0.00135,
+    "delta": 0.0
+   }
+  },
+  "c/t2/map/cosine": {
+   "acc@1": {
+    "recomputed": 0.0002,
+    "committed": 0.0002,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0003,
+    "committed": 0.0003,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.00075,
+    "committed": 0.00075,
+    "delta": 0.0
+   }
+  },
+  "c/t2/ib/euclidean": {
+   "acc@1": {
+    "recomputed": 0.0,
+    "committed": 0.0,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0,
+    "committed": 0.0,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0,
+    "committed": 0.0,
+    "delta": 0.0
+   }
+  },
+  "c/t2/ib/cosine": {
+   "acc@1": {
+    "recomputed": 0.0,
+    "committed": 0.0,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0,
+    "committed": 0.0,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0,
+    "committed": 0.0,
+    "delta": 0.0
+   }
+  },
+  "b/t0/map/euclidean": {
+   "acc@1": {
+    "recomputed": 0.3353333333333333,
+    "committed": 0.3353333333333333,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.5525,
+    "committed": 0.5525,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.6365,
+    "committed": 0.6365,
+    "delta": 0.0
+   }
+  },
+  "b/t0/map/cosine": {
+   "acc@1": {
+    "recomputed": 0.31783333333333336,
+    "committed": 0.31783333333333336,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.5355,
+    "committed": 0.5355,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.6205,
+    "committed": 0.6205,
+    "delta": 0.0
+   }
+  },
+  "b/t0/ib/euclidean": {
+   "acc@1": {
+    "recomputed": 0.13916666666666666,
+    "committed": 0.13916666666666666,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.26666666666666666,
+    "committed": 0.26666666666666666,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.3258333333333333,
+    "committed": 0.3258333333333333,
+    "delta": 0.0
+   }
+  },
+  "b/t0/ib/cosine": {
+   "acc@1": {
+    "recomputed": 0.15933333333333333,
+    "committed": 0.15933333333333333,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.2981666666666667,
+    "committed": 0.2981666666666667,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.363,
+    "committed": 0.363,
+    "delta": 0.0
+   }
+  },
+  "b/t1/map/euclidean": {
+   "acc@1": {
+    "recomputed": 0.0065,
+    "committed": 0.0065,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.029666666666666668,
+    "committed": 0.029666666666666668,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.050333333333333334,
+    "committed": 0.050333333333333334,
+    "delta": 0.0
+   }
+  },
+  "b/t1/map/cosine": {
+   "acc@1": {
+    "recomputed": 0.0065,
+    "committed": 0.0065,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.025666666666666667,
+    "committed": 0.025666666666666667,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.044833333333333336,
+    "committed": 0.044833333333333336,
+    "delta": 0.0
+   }
+  },
+  "b/t1/ib/euclidean": {
+   "acc@1": {
+    "recomputed": 0.0016666666666666668,
+    "committed": 0.0016666666666666668,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.005333333333333333,
+    "committed": 0.005333333333333333,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.01,
+    "committed": 0.01,
+    "delta": 0.0
+   }
+  },
+  "b/t1/ib/cosine": {
+   "acc@1": {
+    "recomputed": 0.0011666666666666668,
+    "committed": 0.0011666666666666668,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0036666666666666666,
+    "committed": 0.0036666666666666666,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0075,
+    "committed": 0.0075,
+    "delta": 0.0
+   }
+  },
+  "b/t2/map/euclidean": {
+   "acc@1": {
+    "recomputed": 0.0006666666666666666,
+    "committed": 0.0006666666666666666,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0033333333333333335,
+    "committed": 0.0033333333333333335,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.006333333333333333,
+    "committed": 0.006333333333333333,
+    "delta": 0.0
+   }
+  },
+  "b/t2/map/cosine": {
+   "acc@1": {
+    "recomputed": 0.0,
+    "committed": 0.0,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0008333333333333334,
+    "committed": 0.0008333333333333334,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0021666666666666666,
+    "committed": 0.0021666666666666666,
+    "delta": 0.0
+   }
+  },
+  "b/t2/ib/euclidean": {
+   "acc@1": {
+    "recomputed": 0.0003333333333333333,
+    "committed": 0.0003333333333333333,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0013333333333333333,
+    "committed": 0.0013333333333333333,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0025,
+    "committed": 0.0025,
+    "delta": 0.0
+   }
+  },
+  "b/t2/ib/cosine": {
+   "acc@1": {
+    "recomputed": 0.00016666666666666666,
+    "committed": 0.00016666666666666666,
+    "delta": 0.0
+   },
+   "acc@5": {
+    "recomputed": 0.0006666666666666666,
+    "committed": 0.0006666666666666666,
+    "delta": 0.0
+   },
+   "acc@10": {
+    "recomputed": 0.0013333333333333333,
+    "committed": 0.0013333333333333333,
+    "delta": 0.0
+   }
+  }
+ },
+ "worst_abs_acc_delta": 9.99999999999994e-05
+}

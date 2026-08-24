@@ -1,0 +1,93 @@
+{
+  "commit": "a18f3785+dirty",
+  "render_id": "8eea7602c50e4604",
+  "git_commit": "a18f378538792734c257a90a2cdc0292d0891dde",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2476_attrition_fig.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2476_attrition_fig.py",
+  "created": "2026-08-23T11:56:04Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "matryoshka tier (feature-id prefix)": -0.175,
+      "alive-feature fraction (selected / candidate)": 0.384765625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.825,
+      "alive-feature fraction (selected / candidate)": 0.006138392857142857,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.825,
+      "alive-feature fraction (selected / candidate)": 6.103515625e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 0.175,
+      "alive-feature fraction (selected / candidate)": 0.18896484375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 1.175,
+      "alive-feature fraction (selected / candidate)": 0.00146484375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "matryoshka tier (feature-id prefix)": 2.175,
+      "alive-feature fraction (selected / candidate)": 8.138020833333333e-05,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "matryoshka tier (feature-id prefix)",
+        "ylabel": "alive-feature fraction (selected / candidate)",
+        "legend_labels": [
+          "turn-averaged SAE, layer 19 (fresh instrument)",
+          "parent token-level SAE on turn averages, layer 20"
+        ],
+        "xticklabels": [
+          "coarsest\n(ids <2,048)",
+          "middle\n(2,048\u201316,383)",
+          "finest\n(16,384\u201365,535)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      }
+    ],
+    "series": [
+      "turn-averaged SAE, layer 19 (fresh instrument)",
+      "parent token-level SAE on turn averages, layer 20"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

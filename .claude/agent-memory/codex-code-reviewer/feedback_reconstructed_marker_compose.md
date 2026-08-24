@@ -50,3 +50,25 @@ central regression-pin question is unverifiable from a read-only sandbox.
 implementer report unrecoverable" provenance disclosure. Related:
 [[9ater-followup-round-report-placeholder]] (in-session placeholder variant),
 [[missing-impl-marker-probe-checklist]] (marker absent entirely).
+
+**#2315 r3 sharpenings (2026-08-24, second hit of the shape):**
+
+- **Composer-run ruff-policy pin substitutes for the reconstruction's
+  missing pin field.** A reconstruction on a LIVE_WORKFLOW_HELPERS diff
+  predictably lacks the Step 0.5 `(c)` ruff-policy pin-invocation field;
+  when the orchestrator's re-verification also skipped it, RUN the pin
+  yourself (`uv run pytest tests/test_ruff_policy.py -q` in the worktree,
+  seconds) and attest rc + count — the #1672 bare-ruff-green/pin-red hazard
+  is then empirically excluded and the absence composes as a neutral shape
+  fact instead of an open substantive question.
+- **Reused donor plan span gets a byte-identity assert.** When reusing the
+  prior round's `---BEGIN APPROVED PLAN BODY---` span verbatim, extract the
+  body between the envelope tokens and assert it equals the canonical
+  `plans/plan.md` (strip trailing newlines) — a plan amendment between
+  rounds otherwise ships silently stale (the #546 class, now caught
+  mechanically at reuse time, not only by the readlink probe).
+- **Reconstruction + self-authored-concern discharge compose together:** the
+  closure `addressed` row is posted by the ORCHESTRATOR as part of the
+  reconstruction (pre-review) — frame it explicitly as "the closure CLAIM
+  this review adjudicates, not settled truth", with NOT-ADDRESSED ⇒ the row
+  is PREMATURE + the one sanctioned same-id `CONCERN:: ` re-emission.

@@ -1,0 +1,192 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "dfa30017a13c4925",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:38Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "AI-likeness axis score (judge, 0-100)": 54.5823,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9055892899220711,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 67.6009,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9461005498221864,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 50.3794,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9308795042917122,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 35.6422,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9194280003826327,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 69.0613,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9571941625516164,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.111,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9318836069543268,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 38.5695,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9205082440731351,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 58.6511,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.900112637304953,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.1892,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9327788767774251,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 48.9525,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9130680688787753,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 72.3335,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9479328647931509,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 29.566,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9141544183735634,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 47.7488,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9230359005423516,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 71.4691,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.9630841330834211,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 55.2611,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.907252742575883,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 60.6901,
+      "cosine(char mean context vec, r4op mean context vec), L19": 0.935186773716321,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "AI-likeness axis score (judge, 0-100)",
+        "ylabel": "cosine(char mean context vec, r4op mean context vec), L19",
+        "legend_labels": [
+          "new character",
+          "anchor"
+        ],
+        "annotations": [
+          "Barnaby",
+          "Cobalt",
+          "Dana",
+          "Elena",
+          "Gus",
+          "HELIOS",
+          "Iris",
+          "Marcus",
+          "Marisol",
+          "Mort",
+          "Priya",
+          "Tomas",
+          "Vera",
+          "Vex",
+          "Wren",
+          "Zara"
+        ],
+        "xticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.89",
+          "0.90",
+          "0.91",
+          "0.92",
+          "0.93",
+          "0.94",
+          "0.95",
+          "0.96",
+          "0.97"
+        ]
+      }
+    ],
+    "series": [
+      "new character",
+      "anchor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,190 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "4f594984b59041fd",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:42Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "AI-likeness axis score (judge, 0-100)": 54.5823,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.8934523513460951,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 67.6009,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9855595605631723,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 50.3794,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9805423263954505,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 35.6422,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9564038827229883,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 69.0613,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9944967300078345,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.111,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9865334450939915,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 38.5695,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9209258464621823,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 58.6511,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.8988961263392959,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.1892,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9881055825707301,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 48.9525,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.977803504682333,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 72.3335,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9915142004691055,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 29.566,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9337187143500113,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 47.7488,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9796721236952515,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 71.4691,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9921925392664028,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 55.2611,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9502928248549949,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 60.6901,
+      "cosine(char mean answer vec, r4op mean answer vec), L19": 0.9867067713288831,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "AI-likeness axis score (judge, 0-100)",
+        "ylabel": "cosine(char mean answer vec, r4op mean answer vec), L19",
+        "legend_labels": [
+          "new character",
+          "anchor"
+        ],
+        "annotations": [
+          "Barnaby",
+          "Cobalt",
+          "Dana",
+          "Elena",
+          "Gus",
+          "HELIOS",
+          "Iris",
+          "Marcus",
+          "Marisol",
+          "Mort",
+          "Priya",
+          "Tomas",
+          "Vera",
+          "Vex",
+          "Wren",
+          "Zara"
+        ],
+        "xticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.88",
+          "0.90",
+          "0.92",
+          "0.94",
+          "0.96",
+          "0.98",
+          "1.00"
+        ]
+      }
+    ],
+    "series": [
+      "new character",
+      "anchor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

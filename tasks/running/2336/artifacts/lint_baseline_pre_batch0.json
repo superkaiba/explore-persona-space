@@ -1,0 +1,12 @@
+{
+  "task": 2336,
+  "purpose": "A7 pre-batch-0 no-flags workflow_lint failure-set baseline; later batch boundaries subtract these rows and assert the remainder names no #2336-touched file",
+  "source_sha": "5b3be37f356950599b5481572062ce9d51c8e7cf",
+  "generated_at": "2026-08-24T06:18:23+00:00",
+  "invocation": "workflow_lint.py (no flags), cwd=issue-2336 worktree",
+  "exit_code": 0,
+  "row_key": "(check, path, normalized_message) \u2014 ':<lineno>:' spans replaced with ':LINE:'",
+  "n_failure_rows": 0,
+  "rows": [],
+  "raw_failure_lines": []
+}

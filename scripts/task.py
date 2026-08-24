@@ -74,6 +74,8 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     address_concern,
     audit,
     check_authorized_stub,
+    completion_report_advisory,
+    completion_report_violation,
     create_task,
     defer_concern,
     duplicate_task_dirs,
@@ -728,12 +730,54 @@ def cmd_post_event(args: argparse.Namespace) -> None:
         # `post-marker ... --file - <<EOF` crashes on `Path("-").read_text()`
         # with FileNotFoundError (daily 2026-06-24 incident, #658).
         note = sys.stdin.read() if args.file == "-" else Path(args.file).read_text()
+    # #2309: mechanical four-H3 completion-report contract, checked on the
+    # RESOLVED note (--note and --file alike, the #2307 pattern) BEFORE
+    # post_event is called — a refusal appends NOTHING, so the deferred-
+    # commit contract (#1030) is untouched and there is no duplicated-
+    # marker risk. Library-level post_event is deliberately ungated
+    # (programmatic posters incl. the poller sentinel drains are
+    # unaffected). No normalization, no auto-fill: the fix stays authored.
+    waiver_reason = getattr(args, "allow_nonconforming_report", None)
+    if waiver_reason is not None and len(waiver_reason.strip()) < 10:
+        print(
+            "ERROR: task.py post-marker: --allow-nonconforming-report requires a "
+            f"real reason (>= 10 chars); got {len(waiver_reason.strip())}. "
+            "NOTHING was appended.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    missing = completion_report_violation(args.marker, note)
+    waiver_fields: dict[str, str] = {}
+    if missing:
+        if waiver_reason is None:
+            missing_pretty = ", ".join(f"({c})" for c in missing)
+            print(
+                f"ERROR: task.py post-marker {args.marker}: completion report is "
+                f"missing section(s) {missing_pretty}. This note carries a "
+                "completion-report header, so the four-H3 contract "
+                "(implementer.md § Report Format / experiment-implementer.md, "
+                "mechanized by #2309) requires ALL of:\n"
+                "  ### (a) What was done\n"
+                "  ### (b) Considered but not done\n"
+                "  ### (c) How to verify\n"
+                "  ### (d) Needs human eyeball\n"
+                "For an empty (d), the template wording is: "
+                '"None — confidence high across the diff."\n'
+                "NOTHING was appended — add the missing section(s) and re-post, "
+                "or bypass deliberately with --allow-nonconforming-report "
+                '"<reason >= 10 chars>" (recorded on the event row as '
+                "report_shape_waiver).",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
+        waiver_fields["report_shape_waiver"] = waiver_reason
     payload = post_event(
         args.number,
         args.marker,
         version=args.version,
         by=args.by,
         note=note,
+        **waiver_fields,
     )
     # The marker is appended once post_event returns; on the primary checkout
     # the bookkeeping commit may be DEFERRED (#1030) — post_event then logs an
@@ -821,6 +865,36 @@ def cmd_post_event(args: argparse.Namespace) -> None:
                 "(#2224/#2254). Do NOT re-post this marker — it was posted "
                 "successfully; post a CORRECTIVE marker carrying a "
                 "parseable followup_label instead.",
+                file=sys.stderr,
+            )
+    if completion_report_advisory(args.marker, note):
+        # Soft, CONDITIONAL hint (#2309): a contract-kind note with NEITHER
+        # report-header form and no part token. Deliberately soft-worded —
+        # many legitimate epm:results notes are run digests / workload
+        # results / Step-9c verdicts (the audit measured ~880 historical
+        # no-signature rows), so this must read as a hint, never an
+        # instruction to adopt a header the poster's spec forbids. Advisory
+        # only, post-success; guarded like its three siblings (the #537
+        # rc-contract class: a torn stderr must never flip the exit code
+        # post-commit).
+        if args.marker == "epm:results":
+            expected = "`## Completion Report` (epm:results / implementer.md)"
+        else:
+            expected = (
+                "`## Implementation Report — round <n>` "
+                "(epm:experiment-implementation / experiment-implementer.md)"
+            )
+            # (COMPLETION_REPORT_KINDS has exactly these two members; the
+            # advisory helper returns False for every other kind.)
+        with contextlib.suppress(OSError, ValueError):
+            print(
+                f"WARNING: task.py post-marker {args.marker}: this note carries no "
+                "completion-report header, so the #2309 four-H3 section check "
+                "did not apply. IF this was an implementer round report, the "
+                f"expected opening header is {expected} — that header is "
+                "load-bearing for the mechanical section check. If this is a "
+                "run digest / workload result / verdict or any other "
+                "non-report note, no action is needed.",
                 file=sys.stderr,
             )
     _safe_echo(
@@ -1844,6 +1918,18 @@ def main() -> None:
             ),
         )
         p.add_argument("--by", default="unknown")
+        p.add_argument(
+            "--allow-nonconforming-report",
+            default=None,
+            metavar="REASON",
+            help=(
+                "bypass the #2309 four-H3 completion-report refusal (a "
+                "report-header-bearing epm:results / "
+                "epm:experiment-implementation note missing a lettered "
+                "### (a)-(d) section); REASON (>= 10 chars) is recorded on "
+                "the event row as report_shape_waiver"
+            ),
+        )
         p.set_defaults(func=cmd_post_event)
 
     p = sub.add_parser("list-by-status", help="list tasks in a status (or all)")
