@@ -11737,8 +11737,8 @@
     "2520": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2520",
-      "status": "proposed",
+      "path": "tasks/archived/2520",
+      "status": "archived",
       "title": "verify_uploads.py residue git arm cannot see a suffixed round branch (issue-<N>-<slug>)"
     },
     "256": {
