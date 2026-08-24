@@ -150,6 +150,7 @@ payload = {
     "blocks_pipeline": blocks == "1",
     "note": f"{note} | ts={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}",
 }
+# SHARED_TMP_EXEMPT: single-writer sentinel: all 13 write_sentinel call sites (incl. run_leg's failure arm) run foreground in the one launcher process; the two backgrounded paths (run_gen_cell workers, p1_worker) never call write_sentinel: they report via per-cell done/yieldhalt files and an O_APPEND fatal list read after wait (#2479 r12)
 tmp = out + ".tmp"
 with open(tmp, "w") as f:
     json.dump(payload, f)

@@ -314,6 +314,7 @@ payload = {
         f"{per_cell.strip()} | ts={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}"
     ),
 }
+# SHARED_TMP_EXEMPT: single-writer sentinel: all 7 write_sentinel call sites run foreground in the one launcher process (backgrounded _wave_worker uses per-cell rc files behind a flock'd queue, never this sentinel); the only multi-invocation caller (issue2479_p1p4_launch.sh) serializes its iris/vex smoke calls through foreground run_leg and its P4 call in the same sequential main flow (#2479 r12)
 tmp = out + ".tmp"
 with open(tmp, "w") as f:
     json.dump(payload, f)

@@ -109,6 +109,7 @@ payload = {
     "blocks_pipeline": blocks == "1",
     "note": f"{note} | ts={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}",
 }
+# SHARED_TMP_EXEMPT: single-writer sentinel: fixed path, all 10 write_sentinel call sites run foreground in the one P5 launcher process (no backgrounded work in this script; the capture-marker probe's call sits in the || handler of a foreground command substitution); re-runs are sequential resumes via the driver's expected_outputs skip (#2479 r12)
 tmp = out + ".tmp"
 with open(tmp, "w") as f:
     json.dump(payload, f)
