@@ -1204,18 +1204,39 @@ def run_fit(args, store=None, model_key: str | None = None, sets_override: dict 
     lambdas = N779.LAMBDAS_N50K
     if args.shard_sync_prefix:
         _pull_shard_cells(args, model_key, percell, all_set, regime_sha, work)
+        if not args.layers:
+            # SB-4 fail-closed pre-assembly completeness gate: a dedicated
+            # assembly invocation NEVER refits cells. Incomplete shard state
+            # (a crashed/delayed shard, a not-yet-visible upload) refuses
+            # LOUD here — BEFORE the fit loop can build a fitting `pending`
+            # set — instead of silently reverting the assembly tail into the
+            # serial path while masking the shard failure (fail-fast rule;
+            # sibling gates: verify_complete #11, require_gen_complete).
+            missing = [
+                k
+                for k in all_set
+                if not (
+                    ledger.is_done(f"L{k:02d}") or _cell_complete(percell, f"L{k:02d}", regime_sha)
+                )
+            ]
+            if missing:
+                sync_dir = _shard_sync_dir(args.shard_sync_prefix, model_key)
+                raise RuntimeError(
+                    f"[shard-merge] assembly refused (SB-4 fail-closed): "
+                    f"{len(missing)}/{len(all_set)} layer cells missing after the shard "
+                    f"pull for model {model_key}: "
+                    f"{', '.join(f'L{k:02d}' for k in missing)} — listed {sync_dir} "
+                    "(an upload that landed but lists stale shows up here too). Wait "
+                    "for the incomplete shard invocation(s) to finish or re-run them "
+                    "(`--phase shardplan` prints the commands), then re-run this "
+                    "assembly. No cell is refitted in a sync-prefix assembly "
+                    "invocation."
+                )
     pending = [
         k
         for k in layer_subset
         if not (ledger.is_done(f"L{k:02d}") or _cell_complete(percell, f"L{k:02d}", regime_sha))
     ]
-    if not args.layers and args.shard_sync_prefix and pending:
-        print(
-            f"[shard-merge] WARNING: {len(pending)} layer cells still pending after the "
-            "shard pull — refitting SERIALLY in this assembly invocation (expected only "
-            "when shard invocations are incomplete)",
-            flush=True,
-        )
     print(
         f"[fit] model {model_key}: n={len(rows)} (tr={len(tr)}/val={len(val)}/te={len(te)}), "
         f"layers {len(all_set)} captured, {len(pending)} pending "
@@ -2703,9 +2724,11 @@ def _selfcheck_pipeline(args, tmp: Path) -> None:
 def _selfcheck_shard_assemble(args, tmp: Path) -> None:
     """SB-2: shard->assemble merge EQUALS the serial full fit, adoption never
     refits (mtime proof), per-shard ledgers are disjoint files, and a
-    stale-regime cell REFUSES adoption fail-loud. (The HF --shard-sync-prefix
-    transport is network-side; the e2e smoke exercises it for real — this
-    probe covers the local merge/adoption core.)"""
+    stale-regime cell REFUSES adoption fail-loud. SB-4: a sync-prefix assembly
+    invocation REFUSES incomplete shard state fail-closed (raise BEFORE any
+    fit, zero ``store.load_layer`` calls) and clears once complete. (The HF
+    --shard-sync-prefix transport is network-side; the e2e smoke exercises it
+    for real — here the listing is seam-substituted empty via ``_gc()``.)"""
     import copy
 
     def _mk(sub: str):
@@ -2784,9 +2807,55 @@ def _selfcheck_shard_assemble(args, tmp: Path) -> None:
         lambda: run_fit(a_bare, store=store, model_key="A", sets_override=sets),
         "regime_sha16",
     )
+
+    # SB-4 (round-3 blocker): a no---layers assembly WITH a sync prefix
+    # REFUSES incomplete shard state fail-closed — the raise names the missing
+    # layer + the listed sync dir and fires BEFORE any fit (zero
+    # store.load_layer calls). Only L01/L02 of the 3-layer set are
+    # published/adopted; the _gc() seam substitutes an empty HF listing so the
+    # local regime-stamped cells stand in for adopted shard state (regime
+    # excludes work_dir/out_root/sync-prefix, so copied stamps match).
+    a_part = _mk("partial")
+    a_part.shard_sync_prefix = "selfcheck/fits_shards"
+    _, part_percell = model_dirs(a_part, "A")
+    part_percell.mkdir(parents=True, exist_ok=True)
+    for cell in ("L01", "L02"):
+        doc = json.loads((shard_percell / f"{cell}.json").read_text())
+        _gc().atomic_write_json(part_percell / f"{cell}.json", doc)
+    GC = _gc()
+    real_listing = GC.hf_prefix_files
+    real_load_layer = store.load_layer
+    n_load = {"calls": 0}
+
+    def _counting_load_layer(k):
+        n_load["calls"] += 1
+        return real_load_layer(k)
+
+    GC.hf_prefix_files = lambda prefix: []  # seam: local-only, no network
+    store.load_layer = _counting_load_layer
+    try:
+        try:
+            run_fit(a_part, store=store, model_key="A", sets_override=sets)
+        except RuntimeError as e:
+            msg = str(e)
+            assert "L03" in msg and "percell_modelA" in msg, msg
+        else:
+            raise AssertionError("assembly ACCEPTED incomplete shard state (SB-4 fail-open)")
+        assert n_load["calls"] == 0, f"gate fired AFTER load_layer ({n_load['calls']} calls)"
+        # Completing the shard state clears the gate: the same sync-prefix
+        # assembly then adopts every cell and finishes (no false-fire wedge).
+        doc = json.loads((shard_percell / "L03.json").read_text())
+        _gc().atomic_write_json(part_percell / "L03.json", doc)
+        store.__dict__.pop("load_layer", None)
+        run_fit(a_part, store=store, model_key="A", sets_override=sets)
+    finally:
+        GC.hf_prefix_files = real_listing
+        store.__dict__.pop("load_layer", None)
     print(
         "[selfcheck] SB-2 shard->assemble == serial (science payload), adoption "
-        "mtime-stable, per-shard ledgers, stale/bare-cell refusals: OK",
+        "mtime-stable, per-shard ledgers, stale/bare-cell refusals; SB-4 "
+        "incomplete-shard sync-prefix assembly fail-closed (zero load_layer) "
+        "+ clears when complete: OK",
         flush=True,
     )
 
