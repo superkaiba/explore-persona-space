@@ -464,7 +464,11 @@ def test_probe_f_near_zero_maxrel_artifact_reported_not_asserted(tmp_path, monke
     report = _run_probe_f(monkeypatch, layout, tmp_path, ref, got)
     assert report["pass"] is True
     assert report["cosine_min"] >= EXTCAP.PROBE_F_COSINE_FLOOR
-    assert report["max_rel_median"] == pytest.approx(156250.0, rel=1e-6)
+    # Bit-exact: 0.15625 (= 5 * 2**-5) / 1e-6 is deterministic in fp64; an
+    # approx here would let an epsilon/formula drift pass while the r18
+    # comparability invariant silently broke.
+    assert report["max_rel_median"] == 156250.0
+    assert report["rel_denominator_eps"] == EXTCAP.PROBE_F_REL_EPS == 1e-6
     # Forensics attribute the miss: argmax-rel element sits on a ~zero banked
     # denominator while row-level agreement stays tight.
     assert report["denom_at_argmax_rel_median"] < EXTCAP.PROBE_F_REL_EPS
