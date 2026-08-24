@@ -82,3 +82,4 @@
 - [Never Edit body.md in place (stash race)](feedback_never_edit_body_in_place_stash_race.md) — in-place edits revert via #2015 race and set-body no-ops; off-root file + SHA landing check. #2333 r4.
 - [HF resolve URLs rejected in footer](feedback_hf_resolve_url_footer_rejected.md) — check 8 accepts only /tree|/blob|/raw|@<ref>; pinned resolve/ dashboard links go in Methodology. #2223 fold.
 - [Takeaways bullet <100-word HARD cap + lattice vocab](feedback_takeaways_bullet_hard_cap_and_lattice_vocab.md) — bullets ≥100 words hard-FAIL; rewrite plan "registered" vocabulary to plan-fixed/declared pre-draft. #2476 fold.
+- [New plot scripts need dotenv preamble](feedback_new_plot_scripts_need_dotenv_preamble.md) — load_dotenv() before module-top numpy/torch or the mapped thread-caps test FAILs; gate INCONCLUSIVE under load1>=20 is retryable. #2476 r8.
