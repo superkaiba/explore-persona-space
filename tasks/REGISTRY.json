@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2556,
+  "highest_id": 2557,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11995,6 +11995,13 @@
       "path": "tasks/proposed/2556",
       "status": "proposed",
       "title": "workflow-fix: lattice label-semantics truth-table + threshold-CI-policy check (c20 extension or sibling)"
+    },
+    "2557": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2557",
+      "status": "proposed",
+      "title": "Step 5a spec-freshness sync stages a CLAUDE.md whose workflow.yaml gate-key references cannot resolve, because CLAUDE.md is a FAMILY_OF singleton while .claude/workflow.yaml is in FAMILY_workflow"
     },
     "256": {
       "has_clean_result": false,
