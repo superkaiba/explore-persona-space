@@ -92,6 +92,23 @@ Two requirements on the k-shot arm:
 
 ### Cells
 
+**"Cross grid" defined.** Lay every capture cell out as a square whose rows index which checkpoint's *weights* run the forward pass (`m`) and whose columns index which checkpoint *wrote the answer text* (`s`). At 15 rungs that square holds 225 cells. Keep only the diagonal, one column (`s` = final base), and one row (`m` = final base), which trace a cross through the square:
+
+```
+                       answer text written by  →
+                 r0    r1    r2    r3   ...   FINAL
+        r0    [  D     .     .     .    ...     C   ]
+ w      r1    [  .     D     .     .    ...     C   ]
+ e      r2    [  .     .     D     .    ...     C   ]
+ i      r3    [  .     .     .     D    ...     C   ]
+ g      ...   [  .     .     .     .     D      C   ]
+ h    FINAL   [  R     R     R     R     R     DCR  ]
+ t
+ ↓
+```
+
+Down column `C` the tokens and their positions are byte-identical, so only the weights vary and any movement is representation change. Along row `R` the weights are identical, so only the text varies and any movement is answer predictability. The diagonal `D` is where both act together, which is why it cannot be read alone. The three lines share the bottom-right cell, so the count is 15 + 14 + 14 = 43 rather than 45.
+
 | Arm | Cells | Isolates |
 |---|---|---|
 | 0-shot diagonal (`m = s`) | 15 | each checkpoint's map on its own completions |
@@ -164,7 +181,7 @@ New code is confined to the k-shot render and its query-block pooling window, th
 
 ## Open decisions for the planner
 
-1. **MLP arm.** Assumed out, per the project's linear-by-default rule. #1902 ran both, and the originating post-training prompt asked for both, so this is a live question rather than a settled one.
+1. ~~**MLP arm.**~~ **Settled by the user 2026-08-24: no MLP.** Ridge only, every arm, per the project's linear-by-default rule. Do not reintroduce a nonlinear readout at plan time; #1902 having run both is not a precedent here.
 2. **Rung densification policy.** Round 1 is a locator. State up front what triggers a fill-in round and where.
 3. **Corpus size.** #1902's 18,000-row build intersected down to 16,391 usable rows across four sources. Across 15 rungs the shared non-degeneracy intersection will be smaller, so the row budget needs sizing against the n ≥ d floor before launch, not after.
 4. **Literature review.** Required before implementation, per the standing project rule. The nearest prior work is training-dynamics-of-representations on open checkpoint ladders (induction heads and in-context learning, Pythia-based dynamics work, Ai2's own OLMo analyses). Nothing found so far measures a context→answer activation map across a pretraining ladder, but that is an unverified impression and needs `/deep-lit-review` to settle.
