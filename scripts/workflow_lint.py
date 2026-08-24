@@ -15073,6 +15073,12 @@ def check_force_push_policy_lens(*, repo_root: Path | None = None) -> list[str]:
         NEVER the mention COUNT — the count grows whenever another task's
         marker names the flag (#2313 plan v3 SF1).
 
+    Loss of EITHER region anchor (the criterion-2 start bullet or the
+    criterion-3 end bullet) is a LOUD error, never a silent region
+    widening — a lost end anchor falling open to EOF would let a renamed
+    criterion 3 plus a relocated ruling false-PASS (r2 hardening,
+    concern ``force-push-pin-end-anchor-fail-open``).
+
     ``repo_root`` is a unit-test override hook; production callers pass
     None (canonical repo root; behavioral subprocess tests may point the
     check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled
@@ -15101,7 +15107,16 @@ def check_force_push_policy_lens(*, repo_root: Path | None = None) -> list[str]:
             f"check_force_push_policy_lens alongside it."
         ]
     end = text.find(end_anchor, start)
-    region = text[start:end] if end != -1 else text[start:]
+    if end == -1:
+        return [
+            f"{rule}: lost the criterion-3 anchor {end_anchor!r} (#2313) — "
+            f"the force-push ruling's region is bounded by that bullet, and "
+            f"a lost end anchor must fail LOUD rather than silently widen "
+            f"the region to EOF (fail-open: a relocated ruling would false-"
+            f"PASS); if criterion 3 was renumbered/renamed, update "
+            f"check_force_push_policy_lens alongside it."
+        ]
+    region = text[start:end]
     errors: list[str] = []
     if "--force-with-lease" not in region:
         errors.append(

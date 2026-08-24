@@ -21,7 +21,11 @@ up to criterion 3). Four required tokens:
 Five stripped-corpus fixtures (4 per-token strips + the missing-file case),
 each proving the check binds per-token rather than passing vacuously; plus
 the live-tree PASS bind and the two-part no-flags bundling pin (the
-tests/test_workflow_lint_codex_concerns_persistence.py precedent shape).
+tests/test_workflow_lint_codex_concerns_persistence.py precedent shape); plus
+the r2 lost-END-anchor regression fixture (concern
+``force-push-pin-end-anchor-fail-open``: criterion 3 renamed AND the ruling
+relocated below it must be ONE loud error, never a silent widen-to-EOF
+false PASS).
 """
 
 from __future__ import annotations
@@ -160,6 +164,33 @@ def test_lens_fails_on_lost_criterion_anchor(tmp_path: Path) -> None:
     errors = check_force_push_policy_lens(repo_root=tmp_path)
     assert len(errors) == 1
     assert "criterion-2 anchor" in errors[0]
+
+
+def test_lens_fails_on_lost_end_anchor(tmp_path: Path) -> None:
+    """r2 regression (concern ``force-push-pin-end-anchor-fail-open``):
+    criterion 3 RENAMED (end anchor lost) AND the ruling relocated BELOW
+    that boundary — the two-condition conjunction that escaped the r1
+    shape. Pre-fix, ``text.find(end_anchor, start)`` returned -1 and the
+    region silently widened to EOF, so all four tokens were found below
+    the boundary and the check returned 0 errors (false PASS — executed
+    2026-08-24 on the pre-fix tree). Post-fix the lost end anchor is ONE
+    loud error naming the criterion-3 anchor. The two bounding controls
+    are UNCHANGED and stay pinned by their own tests: relocation with the
+    anchor intact (``test_lens_is_region_anchored``, 4 errors) and
+    per-token deletion (``test_lens_fails_per_stripped_token``)."""
+    corpus = _rule_text(ruling_after_region=True).replace(
+        "3. **Public API contract change**",
+        "3. **Interface contract change**",
+    )
+    assert "3. **Public API contract change**" not in corpus  # rename engaged
+    assert "--force-with-lease" in corpus  # every token present in the FILE
+    rule = tmp_path / ".claude" / "rules" / "auto-continuation.md"
+    rule.parent.mkdir(parents=True, exist_ok=True)
+    rule.write_text(corpus, encoding="utf-8")
+    errors = check_force_push_policy_lens(repo_root=tmp_path)
+    assert len(errors) == 1, f"expected ONE end-anchor error, got: {errors}"
+    assert "criterion-3 anchor" in errors[0]
+    assert "auto-continuation.md" in errors[0]
 
 
 def test_lens_passes_on_live_tree(monkeypatch: pytest.MonkeyPatch) -> None:
