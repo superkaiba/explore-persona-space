@@ -1,25 +1,32 @@
 ---
 name: compose-time-ledger-snapshot
-description: Inline the compose-time open-concern ledger snapshot into the prompt; Codex cannot run task.py — and readlink plan.md before labeling the inlined plan version
+description: Ledger evidence is inlined for Codex (it cannot run task.py), but the list-concerns --open-only CLI count is ONE SIGNAL, never ground truth — when the count is adjudicated, inline the adjudication + a do-not-re-raise instruction; and readlink plan.md before labeling the inlined plan version
 metadata:
   type: feedback
 ---
 
-Two compose-time wins from #2254 r3 (2026-08-24):
+Compose-time lessons from #2254 r3 → r4 (2026-08-24):
 
-1. **Inline the open-concern ledger snapshot (ids + severities + one-line
-   summaries) into the prompt as compose-time ground truth.** Codex's sandbox
-   cannot run `task.py list-concerns` (branch-guard + uv unavailable), so a
-   "verify the body's open-concern acknowledgments" check is only scoreable
-   if the composer hands over the snapshot. Doing so surfaced a real
-   discrepancy pre-dispatch: the body claimed "nine remain open" and cited
-   `firstk-empty-regen-cap-policy-bypass` as open while the ledger showed 8
-   open and that id closed — turned into a concrete round-specific check with
-   quoted-line requirements.
-   **Why:** an unverifiable ledger claim otherwise degrades to prose-trusting.
-   **How to apply:** whenever the interpretation/body acknowledges concern ids,
-   run `list-concerns --open-only --json` at compose time and inline the id
-   set + count into a round-specific check.
+1. **Inline ledger EVIDENCE for Codex, but never present the
+   `list-concerns --open-only` count as ground truth.** Codex's sandbox
+   cannot run `task.py list-concerns` (branch-guard + uv unavailable), so
+   any concern-ledger check is only scoreable from composer-inlined
+   evidence. The r3 snapshot surfaced a body-vs-CLI discrepancy ("nine
+   open" vs CLI showing 8) — but the ADJUDICATION went AGAINST the CLI:
+   the `--open-only` view undercounts (a BLOCKER→CONCERN downgrade recorded
+   in progress markers, with no concern-addressed row, is open yet missed
+   by the CLI; bug filed as #2530). The twin's re-raise off the CLI count
+   was overruled on marker evidence.
+   **Why:** a CLI snapshot presented as ground truth converts a tool bug
+   into a spurious REVISE blocker that survives across rounds.
+   **How to apply:** (a) when the body acknowledges concern ids, inline the
+   CLI snapshot AS ONE SIGNAL alongside the marker-derived state
+   (progress-note downgrades, concern-addressed rows, latest code-review
+   markers still carrying the id); (b) when the orchestrator's brief says
+   the count was already adjudicated, inline the adjudication evidence +
+   an explicit OUT-OF-SCOPE / do-not-re-raise instruction instead of any
+   snapshot — an overruled prior-round finding re-raised is a discarded
+   finding that burns a round.
 
 2. **`readlink plans/plan.md` before labeling the inlined plan version.** An
    `ls | tail -5` of the plans dir showed v5–v9, but the symlink resolved to
