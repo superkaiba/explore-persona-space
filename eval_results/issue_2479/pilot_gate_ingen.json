@@ -1,0 +1,54 @@
+{
+  "issue": 2479,
+  "family": "ingen",
+  "passed": true,
+  "verdict": "PASS",
+  "failures": [],
+  "warnings": [],
+  "arms": {
+    "ingen": {
+      "n_items": 152,
+      "n_draws_per_item": 1,
+      "effective_draws": 152,
+      "n_truncated": 0,
+      "n_parse_failed": 3,
+      "parse_fail_rate": 0.019737,
+      "n_transport_lost": 0
+    }
+  },
+  "parse_fail_threshold": 0.02,
+  "min_effective_draws": 100,
+  "instrument": {
+    "builder_sha256": "d81e60de08265360d84cd782c8641c34238e4369e38edff0f61ed0046fa06d40",
+    "dispatch_route": "dispatcher-decided",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "parser_sha256": "6225e4814ded2499900338ac04cdfbd7eadc116e68efb905b2e2c13126fe3018",
+    "temperature": 0.0
+  },
+  "data_identity": {
+    "gen_module_sha256": "02bcc4c3b4504b35914d6190ce72bc98e9a71bb1e7ec07becbf5cf98258ed305",
+    "panel_manifest_sha256": "79a33ac9f7e1ce6cc0b45e02a5a7289a25e14a51f6386f6f04275ed9f54080f0",
+    "panel_sha256": "67ec9d3eaba8abd61967951d702dc73a14c1ddc07b7bddc80f3df69a63362438"
+  },
+  "characters_pooled": [
+    "Iris",
+    "Iris",
+    "Vex",
+    "Vex"
+  ],
+  "partials": [
+    "/workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris_op.json",
+    "/workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_iris.json",
+    "/workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex_op.json",
+    "/workspace/data/issue_2479/p0_pilot/ingen_partial_char_2479_vex.json"
+  ],
+  "metadata": {
+    "script": "scripts/issue2479_judge_pilots.py",
+    "created_utc": "2026-08-24T00:40:06Z",
+    "git_commit": "98dbe366064e6179e64620afd6fc1262a15e594b",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2479_judge_pilots.py"
+  }
+}
