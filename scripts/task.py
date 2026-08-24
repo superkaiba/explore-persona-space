@@ -89,6 +89,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     list_children,
     list_concerns,
     list_events,
+    marker_status,
     new_plan_version,
     open_async_ask,
     parse_followup_note_field,
@@ -1035,6 +1036,70 @@ def cmd_latest_marker(args: argparse.Namespace) -> None:
     _safe_print(json.dumps(ev, indent=2), context="task.py latest-marker")
 
 
+def cmd_marker_status(args: argparse.Namespace) -> None:
+    """#2328 three-source marker-presence read (HEAD blob + working tree +
+    deferral ledger, plus the commit/stash-window liveness probe).
+
+    rc lattice: 0 = present-committed / present-uncommitted / pending-deferred
+    (present-class); 4 = `absent`, reserved EXCLUSIVELY for a complete,
+    successful three-source read with zero matches and no live in-flight
+    signal; 5 = `unknown` (typed non-actionable — never rc 4, so no scripted
+    gate can mistake an operational failure or a live window for absence);
+    rc 2 = argparse usage error; rc 1 = unexpected crash / unknown task id.
+    Read-only: no lock, no commit, no status mutation."""
+    result = marker_status(
+        args.number, args.kind, note_contains=args.note_contains, version=args.version
+    )
+    ctx = "task.py marker-status"
+    if args.json:
+        _safe_print(json.dumps(result, indent=2), context=ctx)
+    else:
+        version_s = "any" if result["version"] is None else str(result["version"])
+        note_s = "none" if result["note_contains"] is None else str(result["note_contains"])
+        _safe_print(
+            f"verdict: {result['verdict']} — task #{result['task_id']} "
+            f"kind={result['kind']} version={version_s} note-contains={note_s} "
+            f"read-at={result['read_at']}",
+            context=ctx,
+        )
+        head = result["legs"]["head"]
+        _safe_print(
+            f"  head: {head['status']}  rows={head['n_rows']} matches={head['n_matches']} "
+            f"registry-fallback={head['registry_fallback_used']}",
+            context=ctx,
+        )
+        wt = result["legs"]["worktree"]
+        _safe_print(
+            f"  worktree: {wt['status']}  rows={wt['n_rows']} matches={wt['n_matches']}",
+            context=ctx,
+        )
+        led = result["legs"]["ledger"]
+        _safe_print(
+            f"  ledger: {led['status']}  rows={led['n_rows']} matches={led['n_matches']} "
+            f"malformed={led['n_malformed']}",
+            context=ctx,
+        )
+        for row in result["matches"]["ledger"]:
+            _safe_print(
+                f"  ledger match: ts={row['ts']} op={row['op']} message={row['message']!r} "
+                f"(version-blind; note/version filters not applied)",
+                context=ctx,
+            )
+        if result["inflight"]["probed"]:
+            _safe_print(
+                f"  in-flight probe: signals={result['inflight']['signals']} "
+                f"errors={result['inflight']['errors']}",
+                context=ctx,
+            )
+        if result["reasons"]:
+            _safe_print(f"  reasons: {result['reasons']}", context=ctx)
+        _safe_print(f"  guidance: {result['guidance']}", context=ctx)
+    if result["verdict"] == "absent":
+        sys.exit(4)
+    if result["verdict"] == "unknown":
+        sys.exit(5)
+
+
 def cmd_check_authorized_stub(args: argparse.Namespace) -> None:
     """Step 6d.0 mechanical grant for `PASS_AUTHORIZED_STUB` (#2171).
 
@@ -1966,6 +2031,31 @@ def main() -> None:
     p.add_argument("--prefix", default="epm:")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_list_markers)
+
+    p = sub.add_parser(
+        "marker-status",
+        help=(
+            "read-only marker-presence verdict over HEAD blob + working tree + "
+            "deferral ledger (#2328): present-committed/present-uncommitted/"
+            "pending-deferred rc 0, absent rc 4 (EXCLUSIVE: complete clean read, "
+            "no live commit/stash window), unknown rc 5 (non-actionable)"
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument("kind", help="marker kind, e.g. epm:results")
+    p.add_argument(
+        "--note-contains",
+        default=None,
+        help="tree-row filter: note substring (NOT applied to ledger rows)",
+    )
+    p.add_argument(
+        "--version",
+        type=int,
+        default=None,
+        help="tree-row filter: exact version (NOT applied to ledger rows)",
+    )
+    p.add_argument("--json", action="store_true", help="emit the full classification dict")
+    p.set_defaults(func=cmd_marker_status)
 
     for name in ("latest-marker", "latest-event"):
         p = sub.add_parser(name, help="show most recent event on a task")

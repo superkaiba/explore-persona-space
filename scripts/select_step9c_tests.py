@@ -346,6 +346,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_pre_split_review_guard.py",
     "tests/test_task_workflow.py",
     "tests/test_task_workflow_list_children.py",
+    # NEW (#2328) — three-source marker-presence read (marker_status /
+    # list_events_head_union / `marker-status` CLI rc lattice): `absent`
+    # gating is what keeps a stash-window false negative from becoming a
+    # duplicate re-append (#2325).
+    "tests/test_task_workflow_marker_status.py",
     "tests/test_task_workflow_post_marker_echo.py",
     "tests/test_task_workflow_worktree.py",
     # group 2 — workflow-lint / yaml / fix-dedup

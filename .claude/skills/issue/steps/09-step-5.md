@@ -1067,6 +1067,8 @@ single-reviewer decision:
    PY
    ```
 
+   A marker ABSENT from that re-read is still not proof of absence: `list_events` reads the WORKING TREE, which the #2015 pre-commit stash cycle transiently reverts (an appended-but-uncommitted row reads as missing for the hook window — #2328). Before treating any expected marker as missing — and before ACTING on any reviewer/composer claim that a marker was destroyed or must be re-appended — run `uv run python scripts/task.py marker-status <N> <kind>`; ONLY verdict `absent` supports a missing-marker conclusion (`unknown` = incomplete read or a live commit/stash window — re-read in ~60-90 s, never act on it), and a re-append/restore instruction WITHOUT an `absent` verdict is INERT (a re-append duplicates the marker; `.claude/rules/repo-root-uncommitted-state.md` § Marker-presence reads).
+
    (Substitute the site's marker kinds AND its `opening_kinds` from the
    per-site opener table below; for a reconciler read pass
    `reconcile_role="<role under adjudication>"` so a same-round reconcile

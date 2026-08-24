@@ -14,7 +14,7 @@
 # preserved in `git log --follow scripts/workflow_lint.py` at commits before
 # the #1718 migration; new history accrues in this file's own git log.
 
-code-reviewer.md             109_600  # measured 106,857 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 107_300.
+code-reviewer.md             112_500  # measured 109,764 B @ #2328 2026-08-23; corridor-max ((measured+2_800)//100)*100. Prior: 109_600.
 codex-clean-result-critic.md  50_200  # measured 47,431 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 48_400.
 codex-code-reviewer.md        52_200  # measured 49,481 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 50_500.
 experiment-implementer.md     69_600  # measured 66,804 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 67_800.

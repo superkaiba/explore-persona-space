@@ -75,6 +75,24 @@ names) as your final text. You never dispatch, never poll, never post
 markers — the orchestrator dispatches `scripts/codex_task.py` as bg Bash and
 posts the verdict marker from the output file.
 
+## Marker-presence reads (events.jsonl) — stash-window discipline (#2328)
+
+A marker row can sit appended-but-uncommitted for many minutes (deferred
+commit), and the #2015 pre-commit stash cycle transiently reverts unstaged
+rows for every fleet commit's hook window — a working-tree read inside that
+window shows the row MISSING. `task.py view` / `list-markers` / `latest-marker`
+all read the working tree. Therefore: never compose a prompt, finding, or
+instruction asserting a marker is missing / destroyed / needs restoration from
+a working-tree read alone. Run `uv run python scripts/task.py marker-status
+<N> <kind>` (HEAD ∪ working tree ∪ deferral ledger) and quote its verdict
+line — it echoes the queried task, kind, filters, and read time — in the
+composed text. A re-append/restore instruction is FORBIDDEN unless that
+verdict is `absent` — `pending-deferred` / `present-uncommitted` mean the row
+is durable and a re-append would DUPLICATE it (the #2325 near-miss), and
+`unknown` means the read was incomplete or a commit/stash window is live
+(re-read in ~60-90 s; never act on it). Full discipline:
+`.claude/rules/repo-root-uncommitted-state.md`.
+
 ## Your own agent-memory writes
 
 A memory lesson you save (`.claude/agent-memory/<your-agent>/…`) is a

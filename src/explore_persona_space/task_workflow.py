@@ -5763,6 +5763,606 @@ def has_event(task_id: int, kind: str) -> bool:
     return any(e["kind"] == kind for e in list_events(task_id))
 
 
+# ─── #2328: three-source marker-presence read (read-only) ────────────────────
+# A marker can sit appended-but-uncommitted for many minutes (deferred commit,
+# #1030), and the #2015 pre-commit stash cycle transiently reverts unstaged
+# rows for every fleet commit's hook window — so a working-tree read
+# (list_events / has_event / latest_event) inside that window shows the row
+# MISSING. On #2325 two reviewers concluded a marker was destroyed and nearly
+# duplicated it via re-append. The helpers below classify presence over HEAD
+# blob + working tree + deferral ledger, gating `absent` behind a
+# commit/stash-window liveness probe. Everything here is READ-ONLY.
+
+STASH_WINDOW_FRESH_SECS = 1800
+"""Freshness horizon (seconds) for pre-commit stash-window patch files.
+
+`~/.cache/pre-commit/patch<epoch>-<pid>` files are never deleted on success
+(25,855 accumulated at the 2026-08-23 census), so mtime freshness is only the
+SECONDARY filter — the pid-liveness + cwd-equality checks in
+`_inflight_window_probe` are the primary discriminators. Do not simplify to a
+global-mtime signal (the #2328 plan's MF-A probe measured a fresh file
+appearing about every 32 s fleet-wide)."""
+
+_PATCH_FILENAME_RE = re.compile(r"^patch(\d+)-(\d+)$")
+
+# op -> marker-kind refinement for deferral-ledger rows (#2328 MF-1).
+# post_event rows are matched on their commit-message prefix instead; ops
+# absent from this table match KIND-BLIND — conservative: withholds `absent`,
+# never invents presence of a specific kind. A trailing '-' entry is a prefix
+# (append_concern_event emits epm:concern-raised / -addressed / ...).
+_LEDGER_OP_KINDS: dict[str, tuple[str, ...]] = {
+    "create": ("epm:created",),
+    "set_goal": ("epm:goal-updated",),
+    "promote": ("epm:promoted",),
+    "append_concern_event": ("epm:concern-",),
+}
+
+
+def _marker_status_git(args: list[str]) -> tuple[int, str, str]:
+    """Run one read-only git command for the marker-presence path.
+
+    Returns (rc, stdout, stderr). Module-level so tests can monkeypatch it to
+    inject operational git failures — an operational failure must surface as
+    a leg ERROR (verdict `unknown`), never as an empty contribution (MF-3)."""
+    proc = subprocess.run(
+        ["git", "-C", str(repo_root()), *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def _parse_iso_dt(value: str) -> datetime:
+    """Parse an ISO-8601 timestamp ('Z' or offset form) to an aware datetime."""
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _head_blob_rows(relpath: str) -> tuple[str, list[dict[str, Any]], str | None]:
+    """Two-step HEAD read of one events.jsonl relpath.
+
+    Returns (status, rows, detail), status in {"ok-found", "ok-missing",
+    "error"}. `git show HEAD:<path>` cannot distinguish absent-from-tree from
+    operational failure by exit code alone, hence the `ls-tree` existence
+    probe first: rc 0 + non-empty output = exists; rc 0 + empty output =
+    VERIFIED-MISSING; rc != 0 = error (MF-3)."""
+    rc, out, err = _marker_status_git(["ls-tree", "HEAD", "--", relpath])
+    if rc != 0:
+        return "error", [], f"git ls-tree rc={rc}: {err.strip()[:300]}"
+    if not out.strip():
+        return "ok-missing", [], None
+    rc, out, err = _marker_status_git(["show", f"HEAD:{relpath}"])
+    if rc != 0:
+        return "error", [], f"git show rc={rc}: {err.strip()[:300]}"
+    return "ok-found", _iter_jsonl_text(out, source=f"HEAD:{relpath}"), None
+
+
+def _head_events_read(task_id: int, direct_relpath: str) -> dict[str, Any]:
+    """HEAD-blob read of a task's events.jsonl with REGISTRY fallback.
+
+    The direct relpath comes from the LIVE registry; after an UNCOMMITTED
+    status move (`git mv` staged or plain rename) that path does not exist at
+    HEAD while the marker still lives at the path HEAD's REGISTRY.json knew —
+    so a verified direct miss consults the HEAD registry copy and re-probes
+    its path. Registry misses are VERIFIED misses (rows []); parse or git
+    failures are leg errors. Returns {"status", "rows", "relpaths_read",
+    "registry_fallback_used", "detail"} with status in {"ok-found",
+    "ok-missing", "error"}."""
+    relpaths_read = [direct_relpath]
+    status, rows, detail = _head_blob_rows(direct_relpath)
+    if status != "ok-missing":
+        return {
+            "status": status,
+            "rows": rows,
+            "relpaths_read": relpaths_read,
+            "registry_fallback_used": False,
+            "detail": detail,
+        }
+
+    def _fallback(status: str, rows: list[dict[str, Any]], detail: str | None) -> dict[str, Any]:
+        return {
+            "status": status,
+            "rows": rows,
+            "relpaths_read": relpaths_read,
+            "registry_fallback_used": True,
+            "detail": detail,
+        }
+
+    reg_relpath = registry_path().relative_to(repo_root()).as_posix()
+    rc, out, err = _marker_status_git(["ls-tree", "HEAD", "--", reg_relpath])
+    if rc != 0:
+        return _fallback("error", [], f"git ls-tree(registry) rc={rc}: {err.strip()[:300]}")
+    if not out.strip():
+        return _fallback("ok-missing", [], "registry absent at HEAD (verified miss)")
+    rc, out, err = _marker_status_git(["show", f"HEAD:{reg_relpath}"])
+    if rc != 0:
+        return _fallback("error", [], f"git show(registry) rc={rc}: {err.strip()[:300]}")
+    try:
+        head_path = json.loads(out)["tasks"][str(task_id)]["path"]
+    except KeyError:
+        return _fallback("ok-missing", [], "task id absent from HEAD registry (verified miss)")
+    except (json.JSONDecodeError, TypeError) as exc:
+        return _fallback("error", [], f"HEAD registry unparseable: {type(exc).__name__}")
+    fb_relpath = f"{str(head_path).rstrip('/')}/events.jsonl"
+    if fb_relpath == direct_relpath:
+        return _fallback("ok-missing", [], "HEAD registry path equals the direct path")
+    relpaths_read.append(fb_relpath)
+    status, rows, detail = _head_blob_rows(fb_relpath)
+    return _fallback(status, rows, detail)
+
+
+def _worktree_events_read(events_path: Path) -> tuple[str, list[dict[str, Any]], str | None]:
+    """Working-tree read of events.jsonl.
+
+    ENOENT is VERIFIED-MISSING (status "ok-missing", rows []); any other
+    OSError is a leg error — verdict `unknown`, never an empty contribution
+    (MF-3)."""
+    try:
+        if not events_path.exists():
+            return "ok-missing", [], None
+        return "ok-found", _iter_jsonl(events_path), None
+    except OSError as exc:
+        return "error", [], f"{type(exc).__name__}: {exc}"
+
+
+def _deferral_ledger_rows() -> tuple[str, list[dict[str, Any]], int, str | None]:
+    """Read every row of the deferred-commits ledger (the #1030 sidecar).
+
+    Returns (status, rows, n_malformed, detail); status in {"ok-found",
+    "ok-missing", "error"}. DEFERRED_COMMITS_LOG is resolved from the module
+    attribute at CALL time (monkeypatchable). An absent ledger is
+    VERIFIED-EMPTY; any OSError is a leg error (MF-3)."""
+    path = DEFERRED_COMMITS_LOG
+    try:
+        if not path.exists():
+            return "ok-missing", [], 0, None
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return "error", [], 0, f"{type(exc).__name__}: {exc}"
+    rows: list[dict[str, Any]] = []
+    n_malformed = 0
+    for line in text.split("\n"):
+        if not line.strip():
+            continue
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError:
+            n_malformed += 1
+            continue
+        if isinstance(parsed, dict):
+            rows.append(parsed)
+        else:
+            n_malformed += 1
+    return "ok-found", rows, n_malformed, None
+
+
+def _ledger_row_matches(row: dict[str, Any], task_id: int, kind: str) -> bool:
+    """Paths-based deferral-row match — status-move-robust (#2328 MF-1).
+
+    Eligibility: the row's ``task_id`` matches AND any recorded path either
+    has the task's events-file shape (…/<id>/events.jsonl) or names the task
+    FOLDER itself (…/tasks/…/<id>) — `create` records the folder, not the
+    events file. Kind refinement: ``post_event`` rows match on the
+    commit-message prefix ``task #<id>: <kind>`` exactly or with the
+    ``' — '`` note delimiter (never a bare startswith, so ``epm:results``
+    cannot match ``epm:results-x``); other ops match via _LEDGER_OP_KINDS;
+    unmapped ops match KIND-BLIND (conservative). The caller's note/version
+    filters are NEVER applied to ledger rows (N7): a row carries no version
+    and only a 60-char note prefix inside its message."""
+    if row.get("task_id") != task_id:
+        return False
+    sid = str(task_id)
+    eligible = False
+    for p in row.get("paths") or []:
+        parts = [seg for seg in str(p).replace("\\", "/").split("/") if seg]
+        if len(parts) >= 2 and parts[-1] == "events.jsonl" and parts[-2] == sid:
+            eligible = True
+            break
+        if parts and parts[-1] == sid and "tasks" in parts[:-1]:
+            eligible = True
+            break
+    if not eligible:
+        return False
+    op = row.get("op")
+    if op == "post_event":
+        msg = str(row.get("message") or "")
+        prefix = f"task #{task_id}: {kind}"
+        return msg == prefix or msg.startswith(prefix + " — ")
+    entries = _LEDGER_OP_KINDS.get(str(op))
+    if entries is None:
+        return True
+    return any(kind.startswith(e) if e.endswith("-") else kind == e for e in entries)
+
+
+def _newest_head_commit_iso(relpaths: list[str]) -> tuple[str, str | None, str | None]:
+    """Newest committer date among HEAD commits touching any relpath (N8).
+
+    Returns (status, iso_or_None, detail); ("ok", None, None) when NO commit
+    ever touched the paths — a never-committed events file cannot make a
+    ledger row stale."""
+    newest: str | None = None
+    for rel in relpaths:
+        rc, out, err = _marker_status_git(["log", "-1", "--format=%cI", "HEAD", "--", rel])
+        if rc != 0:
+            return "error", None, f"git log rc={rc}: {err.strip()[:300]}"
+        val = out.strip().splitlines()[0].strip() if out.strip() else ""
+        if val and (newest is None or _parse_iso_dt(val) > _parse_iso_dt(newest)):
+            newest = val
+    return "ok", newest, None
+
+
+def _inflight_window_probe() -> tuple[list[str], list[str]]:
+    """Commit/stash-window liveness probe gating `absent` (#2328 MF-2/MF-A).
+
+    Signals:
+      commit-in-flight  — this repo's .git/index.lock exists (a commit is
+                          mid-flight; its stash window may open next).
+      stash-window-live — a fresh (<= STASH_WINDOW_FRESH_SECS mtime)
+                          pre-commit patch file whose owning pid is ALIVE
+                          with cwd EQUAL to this repo root (equality, not
+                          prefix). Dead-pid / other-repo patch files never
+                          fire; the patch dir accumulates forever (25,855
+                          files at census) so mtime alone is never a signal.
+
+    Returns (signals, errors). Fail-loud: an unparseable FRESH patch filename
+    or any probe OSError lands in errors — the caller maps errors to verdict
+    `unknown` (in-flight-probe-error), never to `absent` (MF-3). A file or
+    pid vanishing mid-probe is a dead window: no signal, no error."""
+    signals: list[str] = []
+    errors: list[str] = []
+
+    rc, out, err = _marker_status_git(["rev-parse", "--git-path", "index.lock"])
+    if rc != 0:
+        errors.append(f"index-lock probe failed: git rev-parse rc={rc}: {err.strip()[:200]}")
+    else:
+        lock = Path(out.strip())
+        if not lock.is_absolute():
+            lock = repo_root() / lock
+        try:
+            if lock.exists():
+                signals.append("commit-in-flight")
+        except OSError as exc:
+            errors.append(f"index-lock probe failed: {type(exc).__name__}: {exc}")
+
+    patch_home = os.environ.get("PRE_COMMIT_HOME")
+    patch_dir = Path(patch_home) if patch_home else Path.home() / ".cache" / "pre-commit"
+    entries: list[Path] = []
+    try:
+        if patch_dir.is_dir():
+            entries = list(patch_dir.iterdir())
+    except OSError as exc:
+        errors.append(f"patch-dir probe failed: {type(exc).__name__}: {exc}")
+    try:
+        repo_real: str | None = os.path.realpath(str(repo_root()))
+    except OSError as exc:  # pragma: no cover — realpath is non-strict
+        errors.append(f"repo-root realpath failed: {type(exc).__name__}: {exc}")
+        repo_real = None
+    now = time.time()
+    for entry in entries:
+        if not entry.name.startswith("patch"):
+            continue
+        signal, error = _probe_patch_file(entry, now, repo_real)
+        if error is not None:
+            errors.append(error)
+        if signal is not None:
+            signals.append(signal)
+            break
+    return signals, errors
+
+
+def _probe_patch_file(
+    entry: Path, now: float, repo_real: str | None
+) -> tuple[str | None, str | None]:
+    """Classify ONE pre-commit patch file for `_inflight_window_probe`.
+
+    Returns (signal, error), each None when absent: ("stash-window-live",
+    None) for a fresh file whose owning pid is alive with cwd EQUAL to this
+    repo root; (None, <error>) on an unparseable FRESH filename or a probe
+    OSError (fail-loud, MF-3); (None, None) for stale / dead-pid /
+    other-repo / vanished-mid-probe files (no window evidence)."""
+    name = entry.name
+    try:
+        mtime = entry.stat().st_mtime
+    except FileNotFoundError:
+        return None, None  # vanished mid-probe: no window evidence
+    except OSError as exc:
+        return None, f"patch-file stat failed: {name!r}: {type(exc).__name__}"
+    if now - mtime > STASH_WINDOW_FRESH_SECS:
+        return None, None
+    m = _PATCH_FILENAME_RE.match(name)
+    if m is None:
+        return None, f"unparseable fresh patch filename: {name!r}"
+    pid = int(m.group(2))
+    if not os.path.exists(f"/proc/{pid}"):
+        return None, None  # dead pid: no live window
+    try:
+        cwd_target = os.readlink(f"/proc/{pid}/cwd")
+    except (FileNotFoundError, ProcessLookupError):
+        return None, None  # died mid-probe: no signal
+    except OSError as exc:
+        return None, f"pid cwd probe failed: pid={pid}: {type(exc).__name__}"
+    if repo_real is not None and os.path.realpath(cwd_target) == repo_real:
+        return "stash-window-live", None
+    return None, None
+
+
+def list_events_head_union(task_id: int) -> dict[str, Any]:
+    """Read-only union of a task's events at HEAD and in the working tree.
+
+    Returns head_rows / worktree_rows / union_rows (HEAD order first, then
+    worktree-only rows appended; exact-row dedupe) plus per-leg statuses —
+    an operational git failure is leg status "error", NEVER an empty
+    contribution (#2328 MF-3; the caller must check the statuses). HEAD reads
+    carry the registry fallback of `_head_events_read`."""
+    events_path = find_task_path(task_id) / "events.jsonl"
+    direct_relpath = events_path.relative_to(repo_root()).as_posix()
+    head_read = _head_events_read(task_id, direct_relpath)
+    wt_status, wt_rows, wt_detail = _worktree_events_read(events_path)
+    union: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in [*head_read["rows"], *wt_rows]:
+        key = json.dumps(row, sort_keys=True, default=str)
+        if key not in seen:
+            seen.add(key)
+            union.append(row)
+    return {
+        "head_rows": head_read["rows"],
+        "worktree_rows": wt_rows,
+        "union_rows": union,
+        "head_status": head_read["status"],
+        "worktree_status": wt_status,
+        "head_relpaths_read": head_read["relpaths_read"],
+        "registry_fallback_used": head_read["registry_fallback_used"],
+        "head_detail": head_read["detail"],
+        "worktree_detail": wt_detail,
+    }
+
+
+_MS_GUIDANCE_UNKNOWN = (
+    "NON-ACTIONABLE: a source read failed or was incomplete, or a commit/stash "
+    "window is live in this repo. Re-read in ~60-90 s; never treat as absence, "
+    "never re-append."
+)
+
+
+def _tree_row_matches(
+    row: dict[str, Any],
+    kind: str,
+    note_contains: str | None,
+    version: int | None,
+) -> bool:
+    """True when a TREE events row matches ``kind`` plus the optional filters
+    (``note_contains`` substring, exact ``version``). Tree rows ONLY — ledger
+    rows are matched by ``_ledger_row_matches`` (version-blind, N7)."""
+    if row.get("kind") != kind:
+        return False
+    if version is not None and row.get("version") != version:
+        return False
+    return note_contains is None or note_contains in str(row.get("note") or "")
+
+
+def _tree_excerpt(row: dict[str, Any]) -> dict[str, Any]:
+    """Bounded excerpt of a matching TREE row (note truncated to 120 chars)."""
+    return {
+        "ts": row.get("ts"),
+        "kind": row.get("kind"),
+        "version": row.get("version"),
+        "by": row.get("by"),
+        "note": str(row.get("note") or "")[:120],
+    }
+
+
+def _ledger_excerpt(row: dict[str, Any]) -> dict[str, Any]:
+    """Bounded excerpt of a matching DEFERRAL-LEDGER row. Always carries the
+    ``version_blind`` + ``filters_not_applied_to_ledger`` flags (N7) so a
+    caller cannot mistake a ledger match for a filter-checked tree match."""
+    out = {
+        "ts": row.get("ts"),
+        "op": row.get("op"),
+        "message": str(row.get("message") or "")[:160],
+        "paths": [str(p) for p in (row.get("paths") or [])][:8],
+        "version_blind": True,
+        "filters_not_applied_to_ledger": True,
+    }
+    if "gitleaks_finding" in row:
+        out["gitleaks_finding"] = row["gitleaks_finding"]
+    return out
+
+
+def _classify_deferred(
+    led_matches: list[dict[str, Any]],
+    head_relpaths_read: list[str],
+    direct_relpath: str,
+    reasons: list[str],
+) -> tuple[str, str]:
+    """Classify a ledger-only match: ``pending-deferred`` vs ``unknown`` (N8).
+
+    A matching deferral row is LIVE unless it strictly predates the newest
+    HEAD commit touching the events file (then it was likely already swept
+    — or lost — and the classification is ``unknown`` + ``stale-ledger-row``
+    with a forensic exit, never ``absent``). Appends leg-error / staleness
+    reasons to ``reasons`` IN PLACE; returns ``(verdict, guidance)``."""
+    stale_status, newest_iso, stale_detail = _newest_head_commit_iso(head_relpaths_read)
+    if stale_status != "ok":
+        reasons.append(f"leg-error:head-staleness: {stale_detail}")
+        return "unknown", _MS_GUIDANCE_UNKNOWN
+    newest_dt = _parse_iso_dt(newest_iso) if newest_iso else None
+    live_rows: list[dict[str, Any]] = []
+    for row in led_matches:
+        is_stale = False
+        if newest_dt is not None:
+            try:
+                is_stale = newest_dt > _parse_iso_dt(str(row.get("ts") or ""))
+            except (ValueError, TypeError):
+                reasons.append(f"ledger-ts-unparseable: {row.get('ts')!r} treated as live")
+        if not is_stale:
+            live_rows.append(row)
+    if live_rows:
+        return "pending-deferred", (
+            "Absent from both trees but a LIVE deferral row matches: the "
+            "append is mid-stash-window or awaiting sweep. Re-read in "
+            "~60-90 s. NEVER re-append (a re-append DUPLICATES the marker "
+            "— the #2325 near-miss); if persistently absent, the rescue "
+            "surface is ~/.cache/pre-commit/patch* (#1806)."
+        )
+    reasons.append("stale-ledger-row")
+    oldest_ts = min((str(r.get("ts") or "") for r in led_matches), default="")
+    return "unknown", (
+        "Every matching deferral row PREdates the newest commit "
+        "touching the events file — likely already swept (or lost). "
+        f"Forensic exit: git log -p --since='{oldest_ts}' -- "
+        f"{direct_relpath} ; plus the ~/.cache/pre-commit/patch* "
+        "rescue surface (#1806). NON-ACTIONABLE as absence: never "
+        "re-append on this verdict."
+    )
+
+
+def marker_status(
+    task_id: int,
+    kind: str,
+    *,
+    note_contains: str | None = None,
+    version: int | None = None,
+) -> dict[str, Any]:
+    """Read-only marker-presence classification over three sources (#2328).
+
+    Sources: the HEAD blob (with REGISTRY fallback for uncommitted status
+    moves), the working tree, and the deferred-commits ledger — plus a
+    commit/stash-window liveness probe that gates `absent`.
+
+    Verdicts:
+      present-committed   — a matching row exists in the HEAD blob (durable).
+      present-uncommitted — a matching row exists in the working tree only
+                            (append landed; commit deferred/pending).
+      pending-deferred    — both trees miss, but a live (non-stale) deferral
+                            row matches: the append is mid-stash-window or
+                            awaiting sweep. NEVER re-append (a re-append
+                            DUPLICATES the marker — the #2325 near-miss).
+      unknown             — any source read failed or was incomplete, a
+                            commit/stash window is live in THIS repo, or the
+                            only ledger evidence predates the newest commit
+                            touching the file (stale-ledger-row: likely
+                            already swept, or lost — forensic exit in the
+                            guidance). NON-ACTIONABLE: re-read in ~60-90 s.
+      absent              — all three sources read completely and
+                            successfully, zero matches, no live in-flight
+                            signal. The ONLY verdict that can support a
+                            missing / destroyed / restore conclusion.
+
+    The ``note_contains`` / ``version`` filters apply to TREE rows only —
+    ledger rows are matched version-blind and note-truncation-tolerant (N7);
+    their excerpts carry ``version_blind`` +
+    ``filters_not_applied_to_ledger`` flags. Raises for an unknown task id
+    (a caller error — CLI rc 1, never `absent`)."""
+    events_path = find_task_path(task_id) / "events.jsonl"
+    direct_relpath = events_path.relative_to(repo_root()).as_posix()
+
+    reasons: list[str] = []
+
+    head_read = _head_events_read(task_id, direct_relpath)
+    head_matches = [
+        r for r in head_read["rows"] if _tree_row_matches(r, kind, note_contains, version)
+    ]
+    if head_read["status"] == "error":
+        reasons.append(f"leg-error:head: {head_read['detail']}")
+
+    wt_status, wt_rows, wt_detail = _worktree_events_read(events_path)
+    wt_matches = [r for r in wt_rows if _tree_row_matches(r, kind, note_contains, version)]
+    if wt_status == "error":
+        reasons.append(f"leg-error:worktree: {wt_detail}")
+
+    led_status, led_rows, n_malformed, led_detail = _deferral_ledger_rows()
+    led_matches = [r for r in led_rows if _ledger_row_matches(r, task_id, kind)]
+    if led_status == "error":
+        reasons.append(f"leg-error:ledger: {led_detail}")
+
+    inflight: dict[str, Any] = {"probed": False, "signals": [], "errors": []}
+
+    if reasons:
+        # Any leg error -> unknown (MF-3), regardless of matches elsewhere.
+        verdict = "unknown"
+        guidance = _MS_GUIDANCE_UNKNOWN
+    elif head_matches:
+        verdict = "present-committed"
+        guidance = "Marker present in the HEAD blob (durable). Nothing to do."
+    elif wt_matches:
+        verdict = "present-uncommitted"
+        guidance = (
+            "Append landed; the commit is deferred/pending. Do NOT re-post — "
+            "the next successful commit sweeps it (a re-post DUPLICATES the marker)."
+        )
+    elif led_matches:
+        verdict, guidance = _classify_deferred(
+            led_matches, head_read["relpaths_read"], direct_relpath, reasons
+        )
+    else:
+        signals, errors = _inflight_window_probe()
+        inflight = {"probed": True, "signals": signals, "errors": errors}
+        if errors:
+            reasons.append("in-flight-probe-error")
+            reasons.extend(signals)
+            verdict = "unknown"
+            guidance = _MS_GUIDANCE_UNKNOWN
+        elif signals:
+            reasons.extend(signals)
+            verdict = "unknown"
+            guidance = (
+                "A commit/stash window is LIVE in this repo — a working-tree "
+                "miss right now proves nothing. Re-read in ~60-90 s; never "
+                "treat as absence, never re-append."
+            )
+        else:
+            verdict = "absent"
+            guidance = (
+                "All three sources read completely and successfully with zero "
+                "matches and no live in-flight signal. If the marker was "
+                "expected within the last few minutes, take ONE delayed "
+                "re-read (~60-90 s) before acting even on this verdict."
+            )
+
+    return {
+        "verdict": verdict,
+        "task_id": task_id,
+        "kind": kind,
+        "note_contains": note_contains,
+        "version": version,
+        "read_at": _utcnow_iso(),
+        "legs": {
+            "head": {
+                "status": head_read["status"],
+                "n_rows": len(head_read["rows"]),
+                "n_matches": len(head_matches),
+                "relpaths_read": head_read["relpaths_read"],
+                "registry_fallback_used": head_read["registry_fallback_used"],
+                "detail": head_read["detail"],
+            },
+            "worktree": {
+                "status": wt_status,
+                "n_rows": len(wt_rows),
+                "n_matches": len(wt_matches),
+                "path": str(events_path),
+                "detail": wt_detail,
+            },
+            "ledger": {
+                "status": led_status,
+                "n_rows": len(led_rows),
+                "n_matches": len(led_matches),
+                "n_malformed": n_malformed,
+                "path": str(DEFERRED_COMMITS_LOG),
+                "detail": led_detail,
+            },
+        },
+        "matches": {
+            "head": [_tree_excerpt(r) for r in head_matches[:10]],
+            "worktree": [_tree_excerpt(r) for r in wt_matches[:10]],
+            "ledger": [_ledger_excerpt(r) for r in led_matches[:10]],
+        },
+        "inflight": inflight,
+        "reasons": reasons,
+        "guidance": guidance,
+    }
+
+
 # ─── Async session mode + durable asks (mission-control rung 0) ─────────────
 # CONTRACTS.md §1.2/§1.3/§2.2 (mission-control repo). Flag-gated: nothing in
 # this section changes behavior unless an `epm:ask` / `epm:session-mode`
@@ -9204,6 +9804,7 @@ __all__ = [
     "PLAN_GATE_CAP_ENV",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "REPO",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
+    "STASH_WINDOW_FRESH_SECS",
     "STATUSES",
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
@@ -9239,6 +9840,8 @@ __all__ = [
     "list_comments",
     "list_concerns",
     "list_events",
+    "list_events_head_union",
+    "marker_status",
     "new_plan_version",
     "parse_followup_note_field",
     "post_event",

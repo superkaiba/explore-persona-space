@@ -17349,21 +17349,22 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 118,770 B @ #2294 Step 10d 2026-08-22 RE-MEASURED against the
-    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
-    # ((measured+2_800)//100)*100 = 121_500, headroom 2,730 — clears
-    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
-    # caps were 120_700, each measuring only its own side: #2294's
-    # IMPLEMENTER-MARKER-MISSING guard branch (+797 B, 117,984 B) and #2472's
-    # composer-role lean-twin ladder extension (+786 B, 117,973 B) landed on
-    # the same file concurrently.
-    # Prior: 120_700 (#2294, 117,984 B) / 120_700 (#2472, 117,973 B) /
+    # measured 121,037 B @ #2328 2026-08-23 (the marker-presence
+    # durable-verdict paragraph — `marker-status` gates any missing-marker
+    # conclusion; +809 B); corridor-max ((measured+2_800)//100)*100 =
+    # 123_800, headroom 2,763 — clears guard_skill_doc_headroom.sh's
+    # 2,000 B warn floor.
+    # Prior: 121_500 (#2294 Step 10d merged-tree re-measure, 118,770 B —
+    # both sides' pre-merge caps 120_700: #2294's IMPLEMENTER-MARKER-MISSING
+    # guard branch +797 B and #2472's composer-role lean-twin ladder
+    # extension +786 B landed concurrently) / 120_700 (#2294, 117,984 B) /
+    # 120_700 (#2472, 117,973 B) /
     # 119_900 (#2241 Step 10d merged-tree re-measure, 117,187 B) / 113_400
     # (#2260, 110,622 B) / 113_100 (#2241 r4, 110,316 B) / 111_900 (#2241
     # r3, 109,181 B) / 110_300 (#2241 r2, 107,590 B) / 109_600 (#2241 r1,
     # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
     # 100_300 (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 121_500,
+    "issue/steps/09-step-5.md": 123_800,
     # measured 149,017 B @ #2263 r8 2026-08-22 (parent-reuse refusal prose
     # states the FULL #2161 guard predicate — the defaulting conjunct
     # included: with a live issue worktree on a non-main branch a bare

@@ -54,7 +54,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - pod-side-reporting.md — pod-side dispatcher/sentinel/poller code (incl. OWN-sentinel read-back), (re)launching ANY detached pod/VM workload, pushing result commits, or posting a continuation-runbook marker (verified-by: ran|read), or emitting a pod-side HOLD/gate park.
 - pods.md — you provision, size, SSH to, or terminate a pod (intent tables, `pod.py` surface, API hard requirements, preflight, crons).
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
-- repo-root-uncommitted-state.md — tracked files left modified/deleted-but-uncommitted at the shared repo root, root files reverting/resurrecting within seconds, or verifying a commit landed under concurrency (pre-commit stash race; SHA-blob landing check).
+- repo-root-uncommitted-state.md — tracked files left uncommitted at the shared root, files reverting/resurrecting in seconds, verifying a commit landed under concurrency, or a marker/events.jsonl row reading as missing (stash race; `task.py marker-status`).
 - research-pm-section-reference.md — the PM renders a STATUS part or runs the infra auto-dispatch items (pointer-loaded).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI; difference-vector legs sharing one SAMPLED baseline vs noise-free nulls; a numeric gate on a null statistic.

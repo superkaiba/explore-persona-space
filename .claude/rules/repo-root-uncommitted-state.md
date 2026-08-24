@@ -128,6 +128,55 @@ loss shape); patching vendored pre-commit is upgrade-fragile and forbidden;
 an auto-commit/auto-restore janitor can land mid-write inconsistent pairs
 or destroy sibling work — surfacing stays escalate-only.
 
+## Marker-presence reads (events.jsonl) — the false-destruction escalation (#2328)
+
+A task marker can sit appended-but-uncommitted in
+`tasks/<status>/<N>/events.jsonl` for many minutes (`task.py post-marker`
+exits 0 with a stderr ERROR + a `~/.task-workflow/deferred-commits.jsonl`
+row when the commit is deferred — 220 rows as of 2026-08-23; deferral is
+routine). While uncommitted, the row is exposed to the stash cycle above:
+a working-tree read inside a hook window shows the row MISSING.
+`task.py view` / `list-markers` / `latest-marker` and
+`task_workflow.list_events` / `has_event` ALL read the working tree.
+
+**The one correct presence check** is
+`uv run python scripts/task.py marker-status <N> <kind>` — a read-only
+four-verdict classification over HEAD blob ∪ working tree ∪ deferral
+ledger, plus a commit/stash-window liveness probe. Quote its verdict line
+(it echoes the queried task, kind, filters, and read time):
+
+- `present-committed` / `present-uncommitted` — the row exists; do nothing.
+- `pending-deferred` — absent from both trees but a live deferral row
+  exists: the append is mid-stash-window or awaiting sweep. Re-read in
+  ~60-90 s. NEVER re-append (a re-append DUPLICATES the marker — the
+  #2325 near-miss); if persistently absent, the rescue surface is
+  `~/.cache/pre-commit/patch*` (watcher pass 34, #1806).
+- `unknown` — a source read failed or was incomplete, a commit/stash
+  window is live in THIS repo (`.git/index.lock` present, or a fresh
+  `~/.cache/pre-commit/patch*` file whose owning pre-commit process is
+  still ALIVE with cwd at this repo root — dead-pid or other-repo patch
+  files never fire it), or the only ledger evidence predates the last
+  commit that touched the file (likely already swept — forensic exit:
+  `git log -p --since=<ledger ts> -- <events path>` plus the #1806
+  patch-file rescue surface). NON-ACTIONABLE: re-read in ~60-90 s; never
+  treat as absence.
+- `absent` — all three sources read completely and successfully, no
+  match, no live window. Only THIS verdict — never `unknown` — can
+  support a "marker missing / destroyed / restore" conclusion. If the
+  marker was expected within the last few minutes, take ONE delayed
+  re-read (~60-90 s) before acting even on `absent`.
+
+**Escalation guard:** an agent conclusion or instruction that a marker was
+destroyed / must be re-appended is INERT — not actionable by any
+orchestrator — unless it quotes a `marker-status` verdict of `absent`
+taken by the concluding agent. Two independent #2325 reviewers diagnosed
+"destruction" from working-tree reads; the row was never lost.
+
+**Post-marker stderr is the only deferral signal:** run every
+`task.py post-marker` with stderr VISIBLE — never `2>/dev/null` (#2325's
+orchestrator suppressed it on every post, which is why an 11-minute
+exposure went unnoticed).
+
 ## Files of record
 
 Task #2015 (plan + repro evidence); #1768 (the five red-handed reversions);
@@ -136,4 +185,5 @@ surfacing); #2182 (`sync_repo_root.py` autostash sibling); #897
 (`guard_repo_root_branch.sh` — structurally cannot see pre-commit's
 subprocess checkout); CLAUDE.md § Concurrent repo-root committers (the
 always-on summary); `.claude/skills/issue/SKILL.md` § 9a-ter
-"Uncommitted-exposure window" (the inline-round copy).
+"Uncommitted-exposure window" (the inline-round copy); #2328
+(marker-presence reads + the `marker-status` helper).
