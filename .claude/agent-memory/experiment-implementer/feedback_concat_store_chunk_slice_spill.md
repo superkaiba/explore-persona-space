@@ -34,3 +34,10 @@ claimed top-k-truncated leg can never sum past k*n_rows, so
 verify WHICH leg deviates by recomputing both legs from the banked artifacts
 (read-only, minutes) before accepting any mechanism theory; exact per-feature
 reproduction of the recorded gate numbers is the bar.
+(4) Sweep the WHOLE driver chain, not just the crashing file: the r3 fix
+sweep found ONE sibling in the parent driver (`_dense_companion_c` arm-c
+train_mean summed the same concat store unclamped — silent 2.4%-row holdout
+contamination of a baseline statistic, never a crash). Silent-statistic
+siblings hide behind the crashing instance; grep `range(0,` chain-wide and
+verify each loop's bound equals the sliced array's length. Fix commit
+8360a1d72ddc (`_recount_fit_active` / `_stream_fit_sum`, both test-pinned).
