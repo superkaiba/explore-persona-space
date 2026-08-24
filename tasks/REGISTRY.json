@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2535,
+  "highest_id": 2536,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11845,6 +11845,13 @@
       "path": "tasks/proposed/2535",
       "status": "proposed",
       "title": "verify_task_body.py Lens 14 ack source spans to EOF, so footer-only concern ids mechanically PASS"
+    },
+    "2536": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2536",
+      "status": "proposed",
+      "title": "issue-tick dies ImportError in any worktree whose src/ predates a task_workflow symbol (cwd not pinned to main)"
     },
     "256": {
       "has_clean_result": false,
