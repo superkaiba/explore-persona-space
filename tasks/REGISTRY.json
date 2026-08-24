@@ -11863,8 +11863,8 @@
     "2538": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2538",
-      "status": "approved",
+      "path": "tasks/running/2538",
+      "status": "running",
       "title": "Step 10d merge-conflict-recovery block omits gh pr ready, so a recovery-path merge dies on the draft precondition and misroutes to the Failure bullet"
     },
     "2539": {
