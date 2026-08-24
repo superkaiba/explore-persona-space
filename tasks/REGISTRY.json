@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2537,
+  "highest_id": 2538,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11859,6 +11859,13 @@
       "path": "tasks/proposed/2537",
       "status": "proposed",
       "title": "select_step9c_tests.py: feature-named consumer tests escape module mapping; over-wide sweep_scope label hides the gap"
+    },
+    "2538": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2538",
+      "status": "proposed",
+      "title": "Step 10d merge-conflict-recovery block omits gh pr ready, so a recovery-path merge dies on the draft precondition and misroutes to the Failure bullet"
     },
     "256": {
       "has_clean_result": false,
