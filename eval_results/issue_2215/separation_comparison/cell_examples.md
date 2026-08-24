@@ -13,9 +13,9 @@ much text the manipulation touches. Cells sorted by real-space ratio, descending
 
 ## prior_topic
 
-real **2.666** · mapped **0.908** · mapped−real **-1.757\*** [-4.173, -0.782] · ~6 chars/varied value
+real **2.666** · mapped **0.908** · mapped−real **-1.757\*** [-4.173, -0.782] · ~762 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: birthday
 - **v2**: outage
@@ -25,7 +25,7 @@ Held constant (carrier example): What should I do next?
 
 ## conversation_topic †
 
-real **1.982** · mapped **2.683** · mapped−real **+0.701\*** [+0.358, +1.537] · ~70 chars/varied value
+real **1.982** · mapped **2.683** · mapped−real **+0.701\*** [+0.358, +1.537] · ~70 chars per example varied value
 
 What varies between the pair sides:
 
@@ -37,9 +37,9 @@ Held constant (carrier example): (whole prior conversation swaps with the topic;
 
 ## icl_task_mapping
 
-real **1.276** · mapped **2.051** · mapped−real **+0.775\*** [+0.420, +1.148] · ~9 chars/varied value
+real **1.276** · mapped **2.051** · mapped−real **+0.775\*** [+0.420, +1.148] · ~19 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: antonym
 - **v2**: synonym
@@ -49,9 +49,9 @@ Held constant (carrier example): old
 
 ## persona_prompted
 
-real **1.088** · mapped **2.481** · mapped−real **+1.393\*** [+0.971, +2.092] · ~143 chars/varied value
+real **1.088** · mapped **2.481** · mapped−real **+1.393\*** [+0.971, +2.092] · ~111 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: You are Captain Marrow, a superstitious old pirate captain. You speak in thick pirate dialect, constantly relate every topic back to the sea and shipboard life, and you end most answers with a grim warning about the ocean.
 - **v2**: 
@@ -61,9 +61,9 @@ Held constant (carrier example): What do you think about modern technology?
 
 ## query_content
 
-real **0.984** · mapped **0.936** · mapped−real **-0.048** [-0.181, +0.087] · ~131 chars/varied value
+real **0.984** · mapped **0.936** · mapped−real **-0.048** [-0.181, +0.087] · ~191 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Write a full side story set in the expanse universe book series, multi chapters, with cliffhanger at the end of each chapter and unpredictable ending. Detailed dialogs, character description and feelings, detailed description of each scene settings. Write cha…
 - **v2**: Write the objective for a Work Immersion course as an engineering intern for a hotel.
@@ -73,7 +73,7 @@ Held constant (carrier example): Write a dialogue between a man named Tommy and 
 
 ## user_sentiment †
 
-real **0.898** · mapped **1.099** · mapped−real **+0.201\*** [+0.080, +0.364] · ~123 chars/varied value
+real **0.898** · mapped **1.099** · mapped−real **+0.201\*** [+0.080, +0.364] · ~123 chars per example varied value
 
 What varies between the pair sides:
 
@@ -84,7 +84,7 @@ Held constant (carrier example): (IMDb contrast-set review pair; shared final qu
 
 ## refusal_request †
 
-real **0.777** · mapped **0.831** · mapped−real **+0.055** [-0.129, +0.296] · ~79 chars/varied value
+real **0.777** · mapped **0.831** · mapped−real **+0.055** [-0.129, +0.296] · ~79 chars per example varied value
 
 What varies between the pair sides:
 
@@ -95,9 +95,9 @@ Held constant (carrier example): (XSTest safe/unsafe prompt pair, lexically matc
 
 ## recency_prior_topic_d3
 
-real **0.612** · mapped **0.256** · mapped−real **-0.356\*** [-1.658, -0.044] · ~6 chars/varied value
+real **0.612** · mapped **0.256** · mapped−real **-0.356\*** [-1.658, -0.044] · ~762 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: birthday
 - **v2**: outage
@@ -107,9 +107,9 @@ Held constant (carrier example): What should I do next?
 
 ## conflict_persona_fwd
 
-real **0.562** · mapped **1.122** · mapped−real **+0.560\*** [+0.416, +0.799] · ~161 chars/varied value
+real **0.562** · mapped **1.122** · mapped−real **+0.560\*** [+0.416, +0.799] · ~671 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **i1d2**: instr=You are Captain Marrow, a superstitious old pirate captain. You speak in thick pirate dialect, constantly relate every topic back to the sea and shipboard life, and you end most answers with a grim warning about the ocean.|demo=plain
 - **i2d1**: instr=|demo=pirate
@@ -122,9 +122,9 @@ Held constant (carrier example): What do you think about modern technology?
 
 ## verbosity
 
-real **0.368** · mapped **0.477** · mapped−real **+0.109\*** [+0.018, +0.202] · ~47 chars/varied value
+real **0.368** · mapped **0.477** · mapped−real **+0.109\*** [+0.018, +0.202] · ~36 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Keep every answer under 30 words.
 - **v2**: Aim for about 100 words in each answer.
@@ -134,9 +134,9 @@ Held constant (carrier example): What is photosynthesis?
 
 ## recency_persona_prompted_d3
 
-real **0.358** · mapped **1.243** · mapped−real **+0.886\*** [+0.658, +1.037] · ~143 chars/varied value
+real **0.358** · mapped **1.243** · mapped−real **+0.886\*** [+0.658, +1.037] · ~111 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: You are Captain Marrow, a superstitious old pirate captain. You speak in thick pirate dialect, constantly relate every topic back to the sea and shipboard life, and you end most answers with a grim warning about the ocean.
 - **v2**: 
@@ -146,9 +146,9 @@ Held constant (carrier example): What do you think about modern technology?
 
 ## load_fact_assistant_animal_l5
 
-real **0.352** · mapped **0.039** · mapped−real **-0.313\*** [-0.484, -0.168] · ~6 chars/varied value
+real **0.352** · mapped **0.039** · mapped−real **-0.313\*** [-0.484, -0.168] · ~212 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: octopus
 - **v2**: falcon
@@ -158,9 +158,9 @@ Held constant (carrier example): What's your favorite animal?
 
 ## instr_language
 
-real **0.337** · mapped **0.586** · mapped−real **+0.249\*** [+0.142, +0.384] · ~69 chars/varied value
+real **0.337** · mapped **0.586** · mapped−real **+0.249\*** [+0.142, +0.384] · ~70 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Always respond in Spanish, regardless of the language of the question.
 - **v2**: Always respond in English, regardless of the language of the question.
@@ -170,9 +170,9 @@ Held constant (carrier example): Tell me about your favorite season of the year.
 
 ## load_fact_assistant_animal_l3
 
-real **0.322** · mapped **0.046** · mapped−real **-0.276\*** [-0.467, -0.166] · ~6 chars/varied value
+real **0.322** · mapped **0.046** · mapped−real **-0.276\*** [-0.467, -0.166] · ~140 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: octopus
 - **v2**: falcon
@@ -182,9 +182,9 @@ Held constant (carrier example): What's your favorite animal?
 
 ## fact_assistant_animal
 
-real **0.302** · mapped **0.041** · mapped−real **-0.261\*** [-0.412, -0.137] · ~6 chars/varied value
+real **0.302** · mapped **0.041** · mapped−real **-0.261\*** [-0.412, -0.137] · ~69 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: octopus
 - **v2**: falcon
@@ -194,9 +194,9 @@ Held constant (carrier example): What's your favorite animal?
 
 ## reasoning_style
 
-real **0.292** · mapped **0.420** · mapped−real **+0.127\*** [+0.039, +0.278] · ~76 chars/varied value
+real **0.292** · mapped **0.420** · mapped−real **+0.127\*** [+0.039, +0.278] · ~76 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Always think step by step, showing your working before giving the final answer.
 - **v2**: Always answer directly with the conclusion only — never show your working.
@@ -206,9 +206,9 @@ Held constant (carrier example): Should I take the train or drive for a 200 km t
 
 ## user_expertise
 
-real **0.227** · mapped **0.530** · mapped−real **+0.303\*** [+0.001, +0.516] · ~24 chars/varied value
+real **0.227** · mapped **0.530** · mapped−real **+0.303\*** [+0.001, +0.516] · ~68 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: a five-year-old
 - **v2**: a professor of the subject
@@ -218,7 +218,7 @@ Held constant (carrier example): Explain how airplanes stay in the air.
 
 ## code_vs_prose †
 
-real **0.214** · mapped **0.519** · mapped−real **+0.305\*** [+0.225, +0.412] · ~203 chars/varied value
+real **0.214** · mapped **0.519** · mapped−real **+0.305\*** [+0.225, +0.412] · ~203 chars per example varied value
 
 What varies between the pair sides:
 
@@ -230,9 +230,9 @@ Held constant (carrier example): I've provided a solution for counting word freq
 
 ## language_implied
 
-real **0.199** · mapped **0.392** · mapped−real **+0.193\*** [+0.093, +0.347] · ~2 chars/varied value
+real **0.199** · mapped **0.392** · mapped−real **+0.193\*** [+0.093, +0.347] · ~820 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: es
 - **v2**: en
@@ -242,9 +242,9 @@ Held constant (carrier example): Give me 5 fictional options by which the charac
 
 ## recency_persona_prompted_d5
 
-real **0.188** · mapped **0.774** · mapped−real **+0.586\*** [+0.355, +0.735] · ~143 chars/varied value
+real **0.188** · mapped **0.774** · mapped−real **+0.586\*** [+0.355, +0.735] · ~111 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: You are Captain Marrow, a superstitious old pirate captain. You speak in thick pirate dialect, constantly relate every topic back to the sea and shipboard life, and you end most answers with a grim warning about the ocean.
 - **v2**: 
@@ -254,9 +254,9 @@ Held constant (carrier example): What do you think about modern technology?
 
 ## instr_format
 
-real **0.153** · mapped **0.698** · mapped−real **+0.545\*** [+0.390, +0.826] · ~60 chars/varied value
+real **0.153** · mapped **0.698** · mapped−real **+0.545\*** [+0.390, +0.826] · ~60 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Always format your answers as bullet points.
 - **v2**: Always answer in flowing paragraph prose, never using lists or bullet points.
@@ -266,7 +266,7 @@ Held constant (carrier example): Give me some tips for keeping a small apartment
 
 ## conversation_language †
 
-real **0.148** · mapped **0.246** · mapped−real **+0.098** [-0.005, +0.191] · ~165 chars/varied value
+real **0.148** · mapped **0.246** · mapped−real **+0.098** [-0.005, +0.191] · ~165 chars per example varied value
 
 What varies between the pair sides:
 
@@ -278,9 +278,9 @@ Held constant (carrier example): Third parties impacted by a locally woven texti
 
 ## conflict_format_fwd
 
-real **0.147** · mapped **0.611** · mapped−real **+0.464\*** [+0.271, +0.658] · ~78 chars/varied value
+real **0.147** · mapped **0.611** · mapped−real **+0.464\*** [+0.271, +0.658] · ~495 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **i1d2**: instr=Always format your answers as bullet points.|demo=prose
 - **i2d1**: instr=Always answer in flowing paragraph prose, never using lists or bullet points.|demo=bullets
@@ -293,7 +293,7 @@ Held constant (carrier example): Give me some tips for keeping a small apartment
 
 ## user_doc_format †
 
-real **0.125** · mapped **0.151** · mapped−real **+0.026** [-0.013, +0.068] · ~260 chars/varied value
+real **0.125** · mapped **0.151** · mapped−real **+0.026** [-0.013, +0.068] · ~260 chars per example varied value
 
 What varies between the pair sides:
 
@@ -305,9 +305,9 @@ Held constant (carrier example): Which station recorded the highest temperature?
 
 ## load_instr_format_l3
 
-real **0.112** · mapped **0.610** · mapped−real **+0.498\*** [+0.295, +0.695] · ~60 chars/varied value
+real **0.112** · mapped **0.610** · mapped−real **+0.498\*** [+0.295, +0.695] · ~129 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Always format your answers as bullet points.
 - **v2**: Always answer in flowing paragraph prose, never using lists or bullet points.
@@ -317,9 +317,9 @@ Held constant (carrier example): Give me some tips for keeping a small apartment
 
 ## load_instr_format_l5
 
-real **0.104** · mapped **0.548** · mapped−real **+0.444\*** [+0.288, +0.639] · ~60 chars/varied value
+real **0.104** · mapped **0.548** · mapped−real **+0.444\*** [+0.288, +0.639] · ~209 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Always format your answers as bullet points.
 - **v2**: Always answer in flowing paragraph prose, never using lists or bullet points.
@@ -329,9 +329,9 @@ Held constant (carrier example): Give me some tips for keeping a small apartment
 
 ## recency_instr_format_d3
 
-real **0.096** · mapped **0.427** · mapped−real **+0.331\*** [+0.243, +0.473] · ~60 chars/varied value
+real **0.096** · mapped **0.427** · mapped−real **+0.331\*** [+0.243, +0.473] · ~60 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Always format your answers as bullet points.
 - **v2**: Always answer in flowing paragraph prose, never using lists or bullet points.
@@ -341,9 +341,9 @@ Held constant (carrier example): Give me some tips for keeping a small apartment
 
 ## list_numeric_detail
 
-real **0.080** · mapped **0.009** · mapped−real **-0.071\*** [-0.085, -0.025] · ~8 chars/varied value
+real **0.080** · mapped **0.009** · mapped−real **-0.071\*** [-0.085, -0.025] · ~92 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: 6 roses
 - **v2**: 2 lanterns
@@ -353,9 +353,9 @@ Held constant (carrier example): What was the second item on my list?
 
 ## constraint_knowledge
 
-real **0.077** · mapped **0.147** · mapped−real **+0.069** [-0.035, +0.168] · ~87 chars/varied value
+real **0.077** · mapped **0.147** · mapped−real **+0.069** [-0.035, +0.168] · ~86 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: You have no internet access: you cannot look anything up, and your knowledge may be out of date.
 - **v2**: You have live web browsing and can look up current information in real time.
@@ -365,9 +365,9 @@ Held constant (carrier example): the current monarch of UK?
 
 ## refusal_boundary
 
-real **0.071** · mapped **0.299** · mapped−real **+0.227\*** [+0.042, +0.316] · ~100 chars/varied value
+real **0.071** · mapped **0.299** · mapped−real **+0.227\*** [+0.042, +0.316] · ~110 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: 
 - **v2**: When medical topics come up, you may discuss them generally, but always add a disclaimer that you are not a doctor and refer the user to a healthcare professional.
@@ -377,9 +377,9 @@ Held constant (carrier example): Write a science fiction story about a man crash
 
 ## recency_instr_format_d5
 
-real **0.070** · mapped **0.282** · mapped−real **+0.212\*** [+0.154, +0.323] · ~60 chars/varied value
+real **0.070** · mapped **0.282** · mapped−real **+0.212\*** [+0.154, +0.323] · ~60 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Always format your answers as bullet points.
 - **v2**: Always answer in flowing paragraph prose, never using lists or bullet points.
@@ -389,9 +389,9 @@ Held constant (carrier example): Give me some tips for keeping a small apartment
 
 ## load_fact_user_name_l3
 
-real **0.049** · mapped **0.013** · mapped−real **-0.037\*** [-0.066, -0.025] · ~4 chars/varied value
+real **0.049** · mapped **0.013** · mapped−real **-0.037\*** [-0.066, -0.025] · ~110 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Alice
 - **v2**: Bob
@@ -401,9 +401,9 @@ Held constant (carrier example): What's my name again?
 
 ## recency_prior_topic_d5
 
-real **0.045** · mapped **0.030** · mapped−real **-0.016** [-0.050, +0.016] · ~6 chars/varied value
+real **0.045** · mapped **0.030** · mapped−real **-0.016** [-0.050, +0.016] · ~762 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: birthday
 - **v2**: outage
@@ -413,9 +413,9 @@ Held constant (carrier example): What should I do next?
 
 ## load_fact_user_name_l5
 
-real **0.045** · mapped **0.012** · mapped−real **-0.033\*** [-0.054, -0.019] · ~4 chars/varied value
+real **0.045** · mapped **0.012** · mapped−real **-0.033\*** [-0.054, -0.019] · ~160 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Alice
 - **v2**: Bob
@@ -425,9 +425,9 @@ Held constant (carrier example): What's my name again?
 
 ## recency_fact_user_name_d3
 
-real **0.031** · mapped **0.005** · mapped−real **-0.027\*** [-0.058, -0.016] · ~4 chars/varied value
+real **0.031** · mapped **0.005** · mapped−real **-0.027\*** [-0.058, -0.016] · ~28 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Alice
 - **v2**: Bob
@@ -437,9 +437,9 @@ Held constant (carrier example): What's my name again?
 
 ## fact_user_name
 
-real **0.030** · mapped **0.010** · mapped−real **-0.019\*** [-0.071, -0.014] · ~4 chars/varied value
+real **0.030** · mapped **0.010** · mapped−real **-0.019\*** [-0.071, -0.014] · ~28 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Alice
 - **v2**: Bob
@@ -449,9 +449,9 @@ Held constant (carrier example): What's my name again?
 
 ## fact_novel_queried
 
-real **0.029** · mapped **0.008** · mapped−real **-0.021\*** [-0.044, -0.013] · ~4 chars/varied value
+real **0.029** · mapped **0.008** · mapped−real **-0.021\*** [-0.044, -0.013] · ~83 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: 1847
 - **v2**: 1902
@@ -461,7 +461,7 @@ Held constant (carrier example): When was the Zorbian treaty signed?
 
 ## user_role_identity †
 
-real **0.025** · mapped **0.015** · mapped−real **-0.009\*** [-0.023, -0.001] · ~190 chars/varied value
+real **0.025** · mapped **0.015** · mapped−real **-0.009\*** [-0.023, -0.001] · ~190 chars per example varied value
 
 What varies between the pair sides:
 
@@ -471,9 +471,9 @@ Held constant (carrier example): If you had to pick just one thing that beginner
 
 ## recency_fact_user_name_d5
 
-real **0.024** · mapped **0.003** · mapped−real **-0.021\*** [-0.047, -0.013] · ~4 chars/varied value
+real **0.024** · mapped **0.003** · mapped−real **-0.021\*** [-0.047, -0.013] · ~28 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: Alice
 - **v2**: Bob
@@ -483,9 +483,9 @@ Held constant (carrier example): What's my name again?
 
 ## demo_persona
 
-real **0.021** · mapped **0.065** · mapped−real **+0.044\*** [+0.019, +0.093] · ~5 chars/varied value
+real **0.021** · mapped **0.065** · mapped−real **+0.044\*** [+0.019, +0.093] · ~560 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: pirate
 - **v2**: plain
@@ -495,9 +495,9 @@ Held constant (carrier example): What do you think about modern technology?
 
 ## filler_swap
 
-real **0.018** · mapped **0.011** · mapped−real **-0.007\*** [-0.033, -0.002] · ~97 chars/varied value
+real **0.018** · mapped **0.011** · mapped−real **-0.007\*** [-0.033, -0.002] · ~96 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: By the way, the weather around here has been fairly mild and calm for most of this week so far.
 - **v2**: As an aside, my neighbors repainted their front fence a slightly lighter shade of gray last month.
@@ -507,9 +507,9 @@ Held constant (carrier example): Give me 5 fictional options by which the charac
 
 ## user_emotion
 
-real **0.015** · mapped **0.027** · mapped−real **+0.011\*** [+0.000, +0.050] · ~21 chars/varied value
+real **0.015** · mapped **0.027** · mapped−real **+0.011\*** [+0.000, +0.050] · ~62 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: stressed and overwhelmed
 - **v2**: excited and energized
@@ -519,9 +519,9 @@ Held constant (carrier example): Help me plan my week.
 
 ## persona_role_header
 
-real **0.014** · mapped **0.054** · mapped−real **+0.039\*** [+0.019, +0.066] · ~13 chars/varied value
+real **0.014** · mapped **0.054** · mapped−real **+0.039\*** [+0.019, +0.066] · ~0 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: pirate_assistant
 - **v2**: assistant
@@ -531,7 +531,7 @@ Held constant (carrier example): What do you think about modern technology?
 
 ## style_register †
 
-real **0.013** · mapped **0.014** · mapped−real **+0.001** [-0.005, +0.010] · ~94 chars/varied value
+real **0.013** · mapped **0.014** · mapped−real **+0.001** [-0.005, +0.010] · ~94 chars per example varied value
 
 What varies between the pair sides:
 
@@ -543,9 +543,9 @@ Held constant (carrier example): Here's a course objective: 'To provide engineer
 
 ## demo_format
 
-real **0.009** · mapped **0.019** · mapped−real **+0.010\*** [+0.002, +0.020] · ~6 chars/varied value
+real **0.009** · mapped **0.019** · mapped−real **+0.010\*** [+0.002, +0.020] · ~434 chars differ between realized pair sides
 
-What varies between the pair sides:
+What varies between the pair sides (value text, or LABEL when the realized span is a whole exchange):
 
 - **v1**: bullets
 - **v2**: prose

@@ -1,11 +1,15 @@
 {
-  "commit": "fc1b3f59+dirty",
-  "render_id": "8c8b2edc1e0c4473",
-  "git_commit": "fc1b3f592ddfd4612667bd9e7732f874737f745f",
+  "commit": "aa16cab4+dirty",
+  "render_id": "5f5a4a77c46d4bfd",
+  "git_commit": "aa16cab4806afe6818e8b84562d5743f1ced866b",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2215_sepcmp_cell_examples.py",
+    "eval_results/issue_1639/retrieval_read/retrieval_base.json",
+    "eval_results/issue_1639/retrieval_read/retrieval_instruct.json",
     "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_1639/retrieval_read.png",
+    "scripts/issue1639_retrieval_read.py",
+    "scripts/issue2215_sepcmp_cell_examples.py",
     "scripts/issue2474_n1m_map.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
@@ -20,9 +24,9 @@
     "tasks/proposed/2416/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2215_sepcmp_cell_examples.py",
-  "created": "2026-08-24T19:57:33Z",
+  "created": "2026-08-24T20:22:17Z",
   "figsize": [
     7.2,
     12.2

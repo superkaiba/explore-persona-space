@@ -123,6 +123,34 @@ def dbe_example(bank: dict, cell: str) -> tuple[dict[str, str], str]:
     raise KeyError(f"no dbe extractor for cell {cell!r}")
 
 
+def parent_realized_diff_chars(bank: dict, cell: str) -> int | None:
+    """Chars differing between one realized pair's sides (system+history+user turns).
+
+    The `values` dict holds LABELS for some parent cells (prior_topic:
+    "birthday"/"hiking") while the realized varied span is a whole exchange —
+    so the doc's size column must measure the realized diff, not label length.
+    """
+    ctxs = (
+        bank["contexts"] if isinstance(bank["contexts"], list) else list(bank["contexts"].values())
+    )
+    members = [x for x in ctxs if x["cell"] == cell]
+    if not members:
+        return None
+    car = members[0]["carrier"]
+    sides = [x for x in members if x["carrier"] == car]
+    if len(sides) < 2:
+        return None
+
+    def turns(x: dict) -> list[str]:
+        hist = [t["content"] for t in x.get("history", [])]
+        return [x.get("system") or "", *hist, x.get("user") or ""]
+
+    ta, tb = turns(sides[0]), turns(sides[1])
+    diff = sum((len(x) + len(y)) / 2 for x, y in zip(ta, tb) if x != y)
+    diff += sum(len(t) for t in ta[len(tb) :]) + sum(len(t) for t in tb[len(ta) :])
+    return int(diff)
+
+
 def render_figure(cells: list[dict]) -> None:
     import matplotlib.pyplot as plt
 
@@ -196,15 +224,31 @@ def main() -> None:
                 values, carrier = parent_example(parent_bank, cell)
         except KeyError as e:
             values, carrier = {"(no extractor)": str(e)}, ""
-        varied_chars = int(sum(len(v) for v in values.values()) / max(len(values), 1))
+        if battery == "dbe":
+            varied_chars = int(sum(len(v) for v in values.values()) / max(len(values), 1))
+            size_note = f"~{varied_chars} chars per example varied value"
+        else:
+            realized = parent_realized_diff_chars(parent_bank, cell)
+            size_note = (
+                f"~{realized} chars differ between realized pair sides"
+                if realized is not None
+                else "realized diff size unavailable"
+            )
         lines.append(f"## {cell}{' †' if battery == 'dbe' else ''}")
         lines.append("")
         lines.append(
             f"real **{r:.3f}** · mapped **{m:.3f}** · mapped−real **{ct['point']:+.3f}{star}** "
-            f"[{ct['ci_lo']:+.3f}, {ct['ci_hi']:+.3f}] · ~{varied_chars} chars/varied value"
+            f"[{ct['ci_lo']:+.3f}, {ct['ci_hi']:+.3f}] · {size_note}"
         )
         lines.append("")
-        lines.append("What varies between the pair sides:")
+        lines.append(
+            "What varies between the pair sides"
+            + (
+                " (value text, or LABEL when the realized span is a whole exchange):"
+                if battery != "dbe"
+                else ":"
+            )
+        )
         lines.append("")
         for vid, vtxt in values.items():
             lines.append(f"- **{vid}**: {vtxt}")
