@@ -15,6 +15,13 @@ Renders two figures from the committed ``gradient_verdict.json`` (zero GPU):
   accuracy of the transferred operator NEXT TO the identity-plus-learned-bias
   baseline (euclidean), so the result heading's 15-of-16 baseline reversal is
   actually visualized (round-2 sidecar carried only anchor-status series).
+- ``ladder_curves`` (clean-result round 3, ``--only ladder``) — RE-RENDER of
+  the per-character 9-rung recovery-curve companion with the SAME
+  plain-English rung map ``rungwise_ordering`` uses (the round-2 clean-result
+  critique's blocker: the prior render carried raw ``1_direct``-style config
+  slugs as x tick labels). Same data as the original
+  ``issue2479_gradient_verdict.py`` render — one curve per character, colored
+  by axis score, recovery fraction per rung.
 
 Anchor characters keep the accent color used by the earlier rounds; the
 identity-plus-learned-bias series keeps the round-2 baseline color
@@ -122,6 +129,59 @@ RUNG_LABELS = {
 NULL_Q95 = 0.4235  # headline 10,000-shuffle null 95th percentile (gradient_verdict.json)
 
 
+def _ladder_curves_figure(verdict_path: Path, fig_dir: Path) -> None:
+    """Re-render ladder_curves with plain-English rung tick labels.
+
+    Same data as the original issue2479_gradient_verdict.py render: one
+    recovery-fraction curve per eligible character across the 9 transfer
+    rungs, colored by the frozen AI-likeness axis score. Asserts every rung
+    key is in RUNG_LABELS so a raw config slug can never leak onto the
+    canvas (or into the savefig_paper sidecar).
+    """
+    per_char = json.loads(verdict_path.read_text())["per_character"]
+    recs = [
+        r
+        for r in per_char.values()
+        if r.get("fraction_eligible") and r.get("rung_order") and r.get("rung_r2_all")
+    ]
+    if not recs:
+        raise RuntimeError("no eligible characters with rung_r2_all + rung_order")
+    rung_order = recs[0]["rung_order"]
+    missing = [r for r in rung_order if r not in RUNG_LABELS]
+    assert not missing, f"rung keys without a plain-English label: {missing}"
+    fig, ax = plt.subplots(figsize=(7.5, 4.8))
+    cmap = plt.cm.viridis
+    scores = [r["axis_score"] for r in recs]
+    lo, hi = min(scores), max(scores)
+    span = (hi - lo) or 1.0
+    for r in sorted(recs, key=lambda q: q["axis_score"]):
+        ys = [
+            (r["rung_r2_all"].get(rung) / r["ceiling_r2"])
+            if (r["rung_r2_all"].get(rung) is not None and r["ceiling_r2"])
+            else float("nan")
+            for rung in rung_order
+        ]
+        ax.plot(
+            range(len(rung_order)),
+            ys,
+            marker="o",
+            ms=3,
+            lw=1.0,
+            color=cmap((r["axis_score"] - lo) / span),
+            label=r["display_name"],
+        )
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=lo, vmax=hi))
+    sm.set_array([])
+    fig.colorbar(sm, ax=ax, label="AI-likeness axis score (judge, 0-100)")
+    ax.set_xticks(range(len(rung_order)))
+    ax.set_xticklabels([RUNG_LABELS[r] for r in rung_order], rotation=30, ha="right", fontsize=8)
+    ax.set_xlabel("Transfer-ladder rung")
+    ax.set_ylabel("Recovery fraction (rung R² / ceiling R²)")
+    pp.savefig_paper(fig, "ladder_curves", dir=fig_dir)
+    plt.close(fig)
+    print(f"wrote {fig_dir / 'ladder_curves'}.png (+ pdf, meta.json)")
+
+
 def _rungwise_figure(fig_dir: Path) -> None:
     """Lollipop of rho(axis, rung recovery) per ladder rung (r3_diagnostics.json)."""
     diag = json.loads(Path("eval_results/issue_2479/r3_diagnostics.json").read_text())
@@ -132,8 +192,12 @@ def _rungwise_figure(fig_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
     ax.hlines(ys, 0, rhos, color="0.75", lw=1.0, zorder=2)
     ax.scatter(
-        rhos, ys, c=pp.paper_palette_role("primary"), s=48,
-        label="Rank correlation with the judged axis", zorder=3,
+        rhos,
+        ys,
+        c=pp.paper_palette_role("primary"),
+        s=48,
+        label="Rank correlation with the judged axis",
+        zorder=3,
     )
     ax.axvline(NULL_Q95, color="0.4", lw=0.8, ls="--")
     ax.axvline(0.0, color="0.85", lw=0.8)
@@ -152,12 +216,16 @@ def main() -> None:
         "--verdict", type=Path, default=Path("eval_results/issue_2479/gradient_verdict.json")
     )
     ap.add_argument("--fig-dir", type=Path, default=Path("figures/issue_2479"))
-    ap.add_argument("--only", choices=["all", "rungwise"], default="all")
+    ap.add_argument("--only", choices=["all", "rungwise", "ladder"], default="all")
     args = ap.parse_args()
 
     pp.set_paper_style("blog")
     if args.only == "rungwise":
         _rungwise_figure(args.fig_dir)
+        return
+    if args.only == "ladder":
+        args.fig_dir.mkdir(parents=True, exist_ok=True)
+        _ladder_curves_figure(args.verdict, args.fig_dir)
         return
     per_char = json.loads(args.verdict.read_text())["per_character"]
     names = sorted(per_char, key=lambda n: per_char[n]["axis_score"])
