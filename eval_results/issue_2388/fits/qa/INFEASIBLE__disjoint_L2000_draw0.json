@@ -1,0 +1,8 @@
+{
+ "cell": "disjoint_L2000_draw0",
+ "status": "infeasible",
+ "reason": "feasibility(v) GROUP grain: 1778 non-pool train rows < L=2000",
+ "eligible_rows": 1778,
+ "budget": 2000,
+ "note": "R13: row-grain pre-gen check (11009 >= 8000+2000) passed while the MF-G group-grain draw is infeasible; recorded manually at phase completion. Fix 653c1d9d1 adds the loud-skip pre-check."
+}

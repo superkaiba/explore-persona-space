@@ -1,0 +1,10 @@
+{
+ "linear__qa__fu1.npz": "5de074ea38c8",
+ "mlp__qa__fu1.pt": "527da7320e4b",
+ "linear__shared__fu0.npz": "063634461a91",
+ "mlp__shared__fu0.pt": "5a4b4191e507",
+ "linear__qa__fu05.npz": "6fe810f13383",
+ "mlp__qa__fu05.pt": "dbd450c7ca4e",
+ "linear__qa__additive.npz": "3475bec43a83",
+ "mlp__qa__additive.pt": "7c6da1c0014b"
+}
