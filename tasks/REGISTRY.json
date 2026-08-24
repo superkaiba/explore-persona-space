@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2518,
+  "highest_id": 2519,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11726,6 +11726,13 @@
       "path": "tasks/proposed/2518",
       "status": "proposed",
       "title": "bootstrap_pod.sh: install Times-alike serif fonts for pod-side paper figures"
+    },
+    "2519": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2519",
+      "status": "proposed",
+      "title": "tick_triage.py from main imports task_workflow symbols absent in worktree cwd resolution (open_async_ask ImportError)"
     },
     "256": {
       "has_clean_result": false,
