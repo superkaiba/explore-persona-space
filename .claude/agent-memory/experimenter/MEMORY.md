@@ -107,3 +107,4 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [Wrapper header is launch-arg ground truth](feedback_wrapper_header_is_launch_arg_ground_truth.md) — on plan-vs-wrapper launch-command mismatch, the wrapper's usage header wins (#1090 fu6 manifest-path crash)
 - [FETCH_HEAD clobbered by concurrent sessions](feedback_fetch_head_clobbered_by_concurrent_sessions.md) — never `git show FETCH_HEAD:` across calls at the shared root; pin reads to the SHA (#2223 ansfirst)
 - [HF LFS billing-403 recovery](feedback_hf_lfs_billing_403_no_upload_smoke.md) — 403 credit-recharge = external billing block; smoke --no-upload + non-LFS uploads stay on; user owns the billing fix
+- [Cold-venv preflight import-probe timeout](feedback_preflight_cold_venv_import_timeout.md) — uv.lock-changing checkout leaves the venv cold on MooseFS; spot-read discriminator, pre-warm imports, EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S=600 — never swap the pod

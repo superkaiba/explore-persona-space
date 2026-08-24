@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2513,
+  "highest_id": 2514,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10091,8 +10091,8 @@
     "2306": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2306",
-      "status": "running",
+      "path": "tasks/completed/2306",
+      "status": "completed",
       "title": "/issue Step 10d merge fence never binds $WT \u2014 git -C '' retargets every worktree op at the SHARED repo root (destroys a valid gate verdict; reaches a shared-root working-tree revert)"
     },
     "2307": {
@@ -10289,8 +10289,8 @@
     "2331": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2331",
-      "status": "proposed",
+      "path": "tasks/archived/2331",
+      "status": "archived",
       "title": "Fix stale fellows-first auto-default text in critic-lens-reference.md + plan-compute-sizing.md (live order is runpod-first, #2054)"
     },
     "2332": {
@@ -10325,8 +10325,8 @@
     "2336": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2336",
-      "status": "proposed",
+      "path": "tasks/planning/2336",
+      "status": "planning",
       "title": "Hoist a process-safe atomic-write helper into shared code and sweep the shared-tmp pattern out of scripts/"
     },
     "2337": {
@@ -11691,6 +11691,13 @@
       "path": "tasks/proposed/2513",
       "status": "proposed",
       "title": "Fix main-red tests/test_argcheck.py::test_bind_fleet_census_positive_coverage: issue2477_base_coherence.py api bindings not uniformly HfApi()"
+    },
+    "2514": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2514",
+      "status": "planning",
+      "title": "workflow-fix: verify_plan c26/c27 routed-machine mirror is GCP-era, inverts under runpod-first auto default"
     },
     "256": {
       "has_clean_result": false,
