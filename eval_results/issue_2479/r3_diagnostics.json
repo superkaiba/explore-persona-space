@@ -1,0 +1,276 @@
+{
+ "capture_intrusion_mediator": {
+  "intrusion_excluded_capture_refit_exists": false,
+  "note": "rates over the kept story rows the maps are fit on (cjk_audit.json capture_substrate); the committed CJK exclusion recounts cover the judged axis side only \u2014 no map was refit after excluding intruded capture rows",
+  "per_character_rate": {
+   "barnaby": 0.0618,
+   "cobalt": 0.0795,
+   "dana": 0.0576,
+   "elena": 0.0517,
+   "gus": 0.0635,
+   "helios": 0.0738,
+   "iris": 0.0691,
+   "marcus": 0.0593,
+   "marisol": 0.0424,
+   "mort": 0.0692,
+   "priya": 0.059,
+   "tomas": 0.0621,
+   "vera": 0.0656,
+   "vex": 0.0661,
+   "wren": 0.0675,
+   "zara": 0.0636
+  },
+  "rate_max": 0.0795,
+  "rate_min": 0.0424,
+  "rho_rate_axis": 0.5441,
+  "rho_rate_recovery": 0.3353
+ },
+ "characters": [
+  "barnaby",
+  "cobalt",
+  "dana",
+  "elena",
+  "gus",
+  "helios",
+  "iris",
+  "marcus",
+  "marisol",
+  "mort",
+  "priya",
+  "tomas",
+  "vera",
+  "vex",
+  "wren",
+  "zara"
+ ],
+ "equalized_n_sensitivity": {
+  "largest": {
+   "character": "mort",
+   "delta": 0.1239,
+   "equalized_recovery": 0.2992,
+   "full_n_recovery": 0.4231
+  },
+  "per_character_full_minus_equalized": {
+   "barnaby": -0.0465,
+   "cobalt": -0.0347,
+   "dana": -0.0093,
+   "elena": -0.0073,
+   "gus": 0.0052,
+   "helios": 0.0,
+   "iris": -0.004,
+   "marcus": -0.003,
+   "marisol": -0.0038,
+   "mort": 0.1239,
+   "priya": -0.0268,
+   "tomas": -0.0013,
+   "vera": -0.0063,
+   "vex": -0.0155,
+   "wren": -0.0556,
+   "zara": 0.0477
+  },
+  "second_largest_abs_delta": {
+   "wren": -0.0556
+  }
+ },
+ "headline_replay": {
+  "p_add_one": 0.0021,
+  "rho": 0.7029
+ },
+ "issue": 2479,
+ "retrieval_identity_vs_transfer": {
+  "cosine_identity_wins": 14,
+  "euclidean_identity_wins": 15,
+  "per_character": {
+   "barnaby": {
+    "acc1_ceiling": 0.1139,
+    "acc1_chance": 0.0042,
+    "acc1_identity_bias": 0.1646,
+    "acc1_identity_bias_cosine": 0.1814,
+    "acc1_rung4": 0.0549,
+    "acc1_rung4_cosine": 0.0802,
+    "axis_score": 54.5823
+   },
+   "cobalt": {
+    "acc1_ceiling": 0.094,
+    "acc1_chance": 0.0043,
+    "acc1_identity_bias": 0.0684,
+    "acc1_identity_bias_cosine": 0.0897,
+    "acc1_rung4": 0.0299,
+    "acc1_rung4_cosine": 0.0513,
+    "axis_score": 67.6009
+   },
+   "dana": {
+    "acc1_ceiling": 0.1406,
+    "acc1_chance": 0.004,
+    "acc1_identity_bias": 0.0803,
+    "acc1_identity_bias_cosine": 0.1084,
+    "acc1_rung4": 0.0442,
+    "acc1_rung4_cosine": 0.1165,
+    "axis_score": 47.7488
+   },
+   "elena": {
+    "acc1_ceiling": 0.0739,
+    "acc1_chance": 0.0043,
+    "acc1_identity_bias": 0.0696,
+    "acc1_identity_bias_cosine": 0.087,
+    "acc1_rung4": 0.0304,
+    "acc1_rung4_cosine": 0.0391,
+    "axis_score": 50.3794
+   },
+   "gus": {
+    "acc1_ceiling": 0.1025,
+    "acc1_chance": 0.0041,
+    "acc1_identity_bias": 0.1025,
+    "acc1_identity_bias_cosine": 0.1311,
+    "acc1_rung4": 0.0533,
+    "acc1_rung4_cosine": 0.0861,
+    "axis_score": 35.6422
+   },
+   "helios": {
+    "acc1_ceiling": 0.0631,
+    "acc1_chance": 0.0049,
+    "acc1_identity_bias": 0.0825,
+    "acc1_identity_bias_cosine": 0.1699,
+    "acc1_rung4": 0.199,
+    "acc1_rung4_cosine": 0.2476,
+    "axis_score": 71.4691
+   },
+   "iris": {
+    "acc1_ceiling": 0.098,
+    "acc1_chance": 0.0041,
+    "acc1_identity_bias": 0.0816,
+    "acc1_identity_bias_cosine": 0.1224,
+    "acc1_rung4": 0.0531,
+    "acc1_rung4_cosine": 0.0939,
+    "axis_score": 69.0613
+   },
+   "marcus": {
+    "acc1_ceiling": 0.1034,
+    "acc1_chance": 0.0043,
+    "acc1_identity_bias": 0.0948,
+    "acc1_identity_bias_cosine": 0.1509,
+    "acc1_rung4": 0.0388,
+    "acc1_rung4_cosine": 0.0776,
+    "axis_score": 62.111
+   },
+   "marisol": {
+    "acc1_ceiling": 0.1667,
+    "acc1_chance": 0.0044,
+    "acc1_identity_bias": 0.1886,
+    "acc1_identity_bias_cosine": 0.2325,
+    "acc1_rung4": 0.0877,
+    "acc1_rung4_cosine": 0.136,
+    "axis_score": 38.5695
+   },
+   "mort": {
+    "acc1_ceiling": 0.1042,
+    "acc1_chance": 0.0042,
+    "acc1_identity_bias": 0.1042,
+    "acc1_identity_bias_cosine": 0.1208,
+    "acc1_rung4": 0.0583,
+    "acc1_rung4_cosine": 0.0667,
+    "axis_score": 58.6511
+   },
+   "priya": {
+    "acc1_ceiling": 0.136,
+    "acc1_chance": 0.0044,
+    "acc1_identity_bias": 0.0965,
+    "acc1_identity_bias_cosine": 0.1404,
+    "acc1_rung4": 0.057,
+    "acc1_rung4_cosine": 0.0614,
+    "axis_score": 62.1892
+   },
+   "tomas": {
+    "acc1_ceiling": 0.0617,
+    "acc1_chance": 0.0041,
+    "acc1_identity_bias": 0.0329,
+    "acc1_identity_bias_cosine": 0.0617,
+    "acc1_rung4": 0.0165,
+    "acc1_rung4_cosine": 0.0494,
+    "axis_score": 48.9525
+   },
+   "vera": {
+    "acc1_ceiling": 0.095,
+    "acc1_chance": 0.0041,
+    "acc1_identity_bias": 0.062,
+    "acc1_identity_bias_cosine": 0.095,
+    "acc1_rung4": 0.0413,
+    "acc1_rung4_cosine": 0.0661,
+    "axis_score": 72.3335
+   },
+   "vex": {
+    "acc1_ceiling": 0.07,
+    "acc1_chance": 0.0041,
+    "acc1_identity_bias": 0.0823,
+    "acc1_identity_bias_cosine": 0.1029,
+    "acc1_rung4": 0.0288,
+    "acc1_rung4_cosine": 0.0288,
+    "axis_score": 55.2611
+   },
+   "wren": {
+    "acc1_ceiling": 0.1458,
+    "acc1_chance": 0.0042,
+    "acc1_identity_bias": 0.1,
+    "acc1_identity_bias_cosine": 0.1375,
+    "acc1_rung4": 0.075,
+    "acc1_rung4_cosine": 0.0875,
+    "axis_score": 60.6901
+   },
+   "zara": {
+    "acc1_ceiling": 0.0749,
+    "acc1_chance": 0.0044,
+    "acc1_identity_bias": 0.0749,
+    "acc1_identity_bias_cosine": 0.1057,
+    "acc1_rung4": 0.022,
+    "acc1_rung4_cosine": 0.0352,
+    "axis_score": 29.566
+   }
+  },
+  "rho_axis_identity_bias_acc1_fraction": -0.1681,
+  "rho_axis_identity_bias_acc1_raw": -0.1853
+ },
+ "rungwise_axis_ordering": {
+  "non_rotation_rho_max": 0.8118,
+  "non_rotation_rho_min": 0.6882,
+  "note": "recovery = rung R2 / own-map ceiling; same permutation machinery as the verdict",
+  "per_rung": {
+   "1_direct": {
+    "p_add_one": 0.0011,
+    "rho": 0.7265
+   },
+   "2_ctx_offset": {
+    "p_add_one": 0.0006,
+    "rho": 0.7588
+   },
+   "3_ans_offset": {
+    "p_add_one": 0.0013,
+    "rho": 0.7235
+   },
+   "4_bias_refit": {
+    "p_add_one": 0.0021,
+    "rho": 0.7029
+   },
+   "5_global_scale": {
+    "p_add_one": 0.002,
+    "rho": 0.6882
+   },
+   "6_rotation": {
+    "p_add_one": 0.0955,
+    "rho": 0.3471
+   },
+   "7_ctx_reparam": {
+    "p_add_one": 0.0002,
+    "rho": 0.8118
+   },
+   "8_ans_reparam": {
+    "p_add_one": 0.0013,
+    "rho": 0.7353
+   },
+   "9_full_AMB": {
+    "p_add_one": 0.0003,
+    "rho": 0.8088
+   }
+  },
+  "rotation_rho": 0.3471
+ }
+}
