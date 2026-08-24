@@ -11420,8 +11420,8 @@
       "goal": "Establish or bound the closeness-to-assistant transfer gradient: assistant-operator transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across >=12 characters; success = rank correlation with permutation band excluding zero.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2479",
-      "status": "interpreting",
+      "path": "tasks/reviewing/2479",
+      "status": "reviewing",
       "title": "Assistant-operator transfer recovery in held-out R\u00b2 rises with judged AI-likeness across 16 story characters (LOW confidence)"
     },
     "248": {
