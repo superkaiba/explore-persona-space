@@ -1,0 +1,1 @@
+{"ts": "2026-08-24T04:51:04Z", "event": "raised", "concern_id": "corpus-flip-taxonomy-overbroad", "severity": "BLOCKER", "summary": "Expected buckets can absorb unrelated c26/c27 flips and falsely clear the zero-unexplained kill criterion.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
