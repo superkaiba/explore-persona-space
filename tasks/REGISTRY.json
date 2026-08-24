@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2544,
+  "highest_id": 2545,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11909,6 +11909,13 @@
       "path": "tasks/proposed/2544",
       "status": "proposed",
       "title": "How the context\u2192answer map forms across pretraining (Olmo 3 7B checkpoint ladder)"
+    },
+    "2545": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2545",
+      "status": "proposed",
+      "title": "verify_task_body: HF file-count check page-cap reports 'unverified' inside a PASS line \u2014 full-pagination fallback for count claims on pinned tree links"
     },
     "256": {
       "has_clean_result": false,
