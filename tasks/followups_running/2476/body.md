@@ -1,8 +1,7 @@
 ---
-title: 'The context-to-answer map''s coarse-over-specific predictability gradient
-  does not reproduce in turn-averaged SAE bases: nearly all specific-tier features
-  fall below the alive floor, and retrieval stays coarse-tier-concentrated (MODERATE
-  confidence)'
+title: 'The fresh turn-averaged SAE''s indeterminate tier verdict is floor-local:
+  every looser alive floor reads coarse-over-specific because newly admitted specific-tier
+  features are poorly predicted (MODERATE confidence)'
 kind: experiment
 tags:
 - followup-auto
