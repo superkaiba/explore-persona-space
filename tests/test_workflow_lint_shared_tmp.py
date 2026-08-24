@@ -7,12 +7,17 @@ class: two concurrent writers of the same destination collide
 mid-``os.replace`` and one crashes ``FileNotFoundError`` at the replace
 stage (#2329 r3). Remedy: ``explore_persona_space.atomic_io.atomic_replace``.
 
-Covers, per plan #2336 v3 §4 step 5:
+Covers, per plan #2336 v3 §4 step 5 (+ the recorded round-2 amendment —
+per-occurrence arm binding, in-arm E/F f-prefix, lexical-comment waiver,
+files-mode stale-WARN scoping):
 
-1. the 25-row predicate regression table (arms A/B/C/D/E/F incl. the
-   deliberate v3 flip — ``fname + ".tmp"`` is non-C but HITS as arm D —
-   the two ``.suffix`` exclusions, the three arm-E ``getpid(``/``uuid4(``
-   exemptions, the arm-F exemption, and the dir-shape WAIVER row);
+1. the 32-row predicate regression table (the plan's 25 rows — arms
+   A/B/C/D/E/F incl. the deliberate v3 flip — ``fname + ".tmp"`` is non-C
+   but HITS as arm D — the two ``.suffix`` exclusions, the three arm-E
+   ``getpid(``/``uuid4(`` exemptions, the arm-F exemption, and the
+   dir-shape WAIVER row — plus 7 round-2 rows: per-occurrence arm-D
+   binding (semicolon + ruff-clean tuple forms), plain-string E/F
+   templates, and the waiver string-literal spoof);
 2. ``test_shared_tmp_discovery_walks_real_tree`` — the POSITIVE pin on
    production file discovery: the REAL entrypoint
    ``check_shared_tmp_name(root=tmp_repo, allowlist=())`` walks
@@ -25,10 +30,12 @@ Covers, per plan #2336 v3 §4 step 5:
    no-flags dispatch test (the ``test_check_jsonl_splitlines_bundled_in_
    no_flags`` pattern; the test NAME is load-bearing — scripts/
    verify_plan.py matches ``test_[a-z0-9_]*bundled_in_no_flags``);
-4. branch tests: stale allowlist entry WARNs (never FAILs), an
-   allowlisted file with hits passes, a short (<10 char) waiver reason
-   does NOT waive, the preceding-comment-line waiver form, and the
-   live-tree invariant (zero errors + zero stale WARNs under the seeded
+4. branch tests: stale allowlist entry WARNs (never FAILs), a files-mode
+   scoped run emits ZERO stale WARNs for out-of-scope entries while the
+   full walk still reports them, an allowlisted file with hits passes, a
+   short (<10 char) waiver reason does NOT waive, the
+   preceding-comment-line waiver form, and the live-tree invariant (zero
+   errors + zero stale WARNs under the seeded
    ``SHARED_TMP_LEGACY_ALLOWLIST``).
 """
 
@@ -126,12 +133,43 @@ PREDICATE_ROWS: tuple[tuple[str, str, bool], ...] = (
         "temp-DIRECTORY publish idiom, #2336 batch-2 disposition",
         False,
     ),
+    # ------------------------------------------------------------------
+    # Round-2 rows (concern shared-tmp-predicate-context-binding): arm
+    # qualifiers bind to the matched OCCURRENCE, not the whole line.
+    # ------------------------------------------------------------------
+    # single-occurrence controls (correct before and after the fix)
+    ("D_dest_single", 'a = dest + ".tmp"', True),
+    ("D_suffix_single", 'b = path.suffix + ".tmp"', False),
+    # the arm-D hole: a line-wide `.suffix` exclusion silenced a sibling
+    # non-`.suffix` concat on the same line (semicolon + ruff-clean tuple
+    # form — the tuple shows the hole does not depend on the E702-blocked
+    # semicolon)
+    ("D_mixed_semicolon", 'a = dest + ".tmp"; b = path.suffix + ".tmp"', True),
+    ("D_mixed_tuple", 'tmps = (dest + ".tmp", path.suffix + ".tmp")', True),
+    # arm F: a plain (non-f) string `.tmp_{...}` .format template is NOT
+    # this class — the f-prefix requirement lives in the arm itself
+    ("F_plain_string_template", 'template = ".tmp_{name}"', False),
+    # arm E: an unrelated f-string elsewhere on the line must not arm E
+    # against a plain-string brace template
+    ("E_unrelated_fstring", 'label = f"ok"; template = "{name}.tmp"', False),
+    # ------------------------------------------------------------------
+    # Round-2 row (concern shared-tmp-waiver-string-spoof): an
+    # exemption-shaped STRING LITERAL is not a comment and must not waive
+    # the same-line offender.
+    # ------------------------------------------------------------------
+    (
+        "WAIVER_string_spoof",
+        'tmp = dest + ".tmp"; note = "# SHARED_TMP_EXEMPT: this is not a comment"',
+        True,
+    ),
 )
 
 
-def test_predicate_table_has_25_rows() -> None:
-    assert len(PREDICATE_ROWS) == 25
-    assert len({row_id for row_id, _line, _hit in PREDICATE_ROWS}) == 25
+def test_predicate_table_row_count() -> None:
+    """Round-1 table (25 rows) + 7 round-2 rows (per-occurrence binding,
+    plain-string E/F templates, the waiver string-literal spoof)."""
+    assert len(PREDICATE_ROWS) == 32
+    assert len({row_id for row_id, _line, _hit in PREDICATE_ROWS}) == 32
 
 
 @pytest.mark.parametrize(
@@ -171,6 +209,20 @@ def test_arm_attribution_pins() -> None:
     # token is what passes them, not a regex non-match.
     assert wl.SHARED_TMP_ARM_E_RE.search('f"{CELL_DONE_SENTINEL}.{os.getpid()}.tmp"')
     assert wl.SHARED_TMP_ARM_F_RE.search('f".tmp_{arm_id}_{os.getpid()}"')
+    # round-2 in-arm f-prefix binding: plain-string templates do not
+    # RAW-match E/F, and an unrelated f-string on the line does not let E
+    # reach a plain-string brace template; upper/reversed prefixes match.
+    assert not wl.SHARED_TMP_ARM_F_RE.search('template = ".tmp_{name}"')
+    assert not wl.SHARED_TMP_ARM_E_RE.search('label = f"ok"; template = "{name}.tmp"')
+    assert wl.SHARED_TMP_ARM_F_RE.search('rf".tmp_{shard_path.name}"')
+    assert wl.SHARED_TMP_ARM_F_RE.search('FR".tmp_{shard_path.name}"')
+    assert wl.SHARED_TMP_ARM_E_RE.search('tmp = F"donors_{scheme}.tmp.pt"')
+    assert wl.SHARED_TMP_ARM_E_RE.search("tmp = fr'{part.stem}.tmp.npz'")
+    # round-2 per-occurrence arm-D binding at the regex level: the mixed
+    # line carries TWO D matches but only ONE `.suffix`-exclusion match.
+    mixed = 'a = dest + ".tmp"; b = path.suffix + ".tmp"'
+    assert len(list(wl.SHARED_TMP_ARM_D_RE.finditer(mixed))) == 2
+    assert len(list(wl.SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE.finditer(mixed))) == 1
 
 
 # --------------------------------------------------------------------------
@@ -252,6 +304,37 @@ def test_stale_allowlist_entry_warns_never_fails(tmp_path: Path) -> None:
     assert errors == []
     assert len(warns) == 1
     assert "stale allowlist entry scripts/gone.py" in warns[0]
+
+
+def test_files_mode_scoped_run_emits_zero_stale_warns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-2 fix (concern shared-tmp-stale-warn-files-mode): a files-mode
+    run scoped to ONE file must not stale-WARN allowlist entries OUTSIDE
+    the scanned scope (they were never scanned — staleness is unknowable,
+    and the WARN's "remove it" instruction would be false), while a
+    full-walk run over the same tree still reports the genuinely stale
+    entry."""
+    _plant(tmp_path, "scripts/inscope.py", "x = 1\n")
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    monkeypatch.delenv("EPS_WORKFLOW_LINT_REPO_ROOT", raising=False)
+    allowlist = (("scripts/gone.py", "already migrated — genuinely stale"),)
+
+    # files-mode: scope = the one payload file; the stale entry is out of
+    # scope -> zero WARNs, zero errors.
+    monkeypatch.setattr(wl, "_FILES_SCOPE", frozenset({"scripts/inscope.py"}))
+    warns: list[str] = []
+    errors = check_shared_tmp_name(root=tmp_path, allowlist=allowlist, warn_sink=warns)
+    assert errors == []
+    assert warns == [], f"files-mode run stale-WARNed an out-of-scope allowlist entry:\n{warns}"
+
+    # full walk (scope off): the same stale entry IS reported.
+    monkeypatch.setattr(wl, "_FILES_SCOPE", None)
+    warns_full: list[str] = []
+    errors_full = check_shared_tmp_name(root=tmp_path, allowlist=allowlist, warn_sink=warns_full)
+    assert errors_full == []
+    assert len(warns_full) == 1
+    assert "stale allowlist entry scripts/gone.py" in warns_full[0]
 
 
 def test_allowlisted_file_with_hits_passes(tmp_path: Path) -> None:

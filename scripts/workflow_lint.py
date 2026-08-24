@@ -290,22 +290,27 @@ Behaviours:
   generic concat (ANY left operand joined with ``".tmp"``, minus the
   ``.suffix``-derived class, which stays follow-up scope), B the braced
   ``X.name`` interpolation directly followed by ``.tmp`` with
-  literal-only continuation, E the generic-stem f-string (an
-  interpolation, optional literal text, then ``.tmp`` with literal-only
-  continuation), F the prefix form (a quoted ``.tmp_`` directly
-  followed by an interpolation) — E and F exempt on a same-line ``getpid(`` /
-  ``uuid4(`` process-varying token. A fixed ``<name>.tmp`` temp name is
-  PROCESS-SHARED: two concurrent writers of the same destination collide
-  mid-``os.replace`` and one crashes ``FileNotFoundError`` at the
-  replace stage (#2329 r3). Remedy:
+  literal-only continuation, E the generic-stem f-string (an f-prefixed
+  opening quote, then an interpolation, optional literal text, then
+  ``.tmp`` with literal-only continuation), F the prefix form (an
+  f-prefixed quote opening directly with ``.tmp_`` then an
+  interpolation) — arm qualifiers bind to their OWN matched occurrence
+  (a ``.suffix`` concat excludes only itself, never a sibling concat on
+  the same line; a plain-string brace template never arms E/F) — E and F
+  exempt on a same-line ``getpid(`` / ``uuid4(`` process-varying token.
+  A fixed ``<name>.tmp`` temp name is PROCESS-SHARED: two concurrent
+  writers of the same destination collide mid-``os.replace`` and one
+  crashes ``FileNotFoundError`` at the replace stage (#2329 r3). Remedy:
   ``explore_persona_space.atomic_io.atomic_replace`` (process-unique
   temp + atomic replace). Waive a legitimate site (e.g. the temp-
   DIRECTORY publish idiom) with ``# SHARED_TMP_EXEMPT: <reason>``
-  (reason >= 10 chars) on the hit line or the immediately-preceding
-  comment-only line; the batch-0 residual is frozen in
-  ``SHARED_TMP_LEGACY_ALLOWLIST`` (a hit in an allowlisted file passes;
-  an allowlisted file with ZERO hits WARNs ``stale allowlist entry``,
-  never FAILs — the ratchet direction; #2336 shrinks it per batch).
+  (reason >= 10 chars) in a LEXICAL comment on the hit line (a
+  waiver-shaped string literal never waives) or on the
+  immediately-preceding comment-only line; the batch-0 residual is
+  frozen in ``SHARED_TMP_LEGACY_ALLOWLIST`` (a hit in an allowlisted
+  file passes; an allowlisted file with ZERO hits WARNs ``stale
+  allowlist entry``, never FAILs — the ratchet direction, judged only
+  over the scanned scope under files-mode; #2336 shrinks it per batch).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -19335,54 +19340,98 @@ SHARED_TMP_ARM_C_RE = re.compile(r"""(?<![\w.])name\s*\+\s*(?P<q>["'])\.tmp(?P=q
 # scope; 7 lines / 7 files).
 SHARED_TMP_ARM_D_RE = re.compile(r"""\+\s*(?P<q>["'])\.tmp(?P=q)""")
 SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE = re.compile(r"""\.suffix\s*\+\s*(?P<q>["'])\.tmp(?P=q)""")
-# arm E — generic-stem f-string: an interpolation, optionally followed by
-# literal text, then `.tmp` with literal-only continuation; only when arm B
-# did not match; EXEMPT on a same-line `getpid(` / `uuid4(` process-varying
-# token (31 lines).
-SHARED_TMP_ARM_E_RE = re.compile(r"""\{[^{}]*\}[^"'{}]*\.tmp(?![^"']*\{)""")
-# arm F — prefix-form f-string (a quoted `.tmp_` directly followed by an
-# interpolation), same E-style exemption
-# (37 lines; exempts the 3 pid-suffixed temp-DIR writers).
-SHARED_TMP_ARM_F_RE = re.compile(r"""["']\.tmp_\{""")
-# Arm E fires only on f-string lines (an interpolation braces + `.tmp` on a
-# non-f-string line — a dict literal, a .format template — is not this
-# class). Prefix detector: optional r/R combined with f/F, either order.
-SHARED_TMP_FSTRING_LINE_RE = re.compile(r"""(?<![A-Za-z0-9_])[rR]?[fF][rR]?["']""")
+# arm E — generic-stem f-string: an f-prefixed opening quote (f/rf/fr,
+# either case order — the f-string requirement lives IN the arm, bound to
+# the matched string, replacing the retired line-global f-string detector
+# whose unrelated-f-string false positive was the round-1
+# shared-tmp-predicate-context-binding concern), then any non-closing-quote
+# run, then an interpolation, optionally followed by literal text, then
+# `.tmp` with literal-only continuation; only when arm B did not match;
+# EXEMPT on a same-line `getpid(` / `uuid4(` process-varying token
+# (31 lines).
+SHARED_TMP_ARM_E_RE = re.compile(
+    r"""(?<![A-Za-z0-9_])(?:[fF][rR]?|[rR][fF])(?P<q>["'])"""
+    r"""(?:(?!(?P=q)).)*\{[^{}]*\}[^"'{}]*\.tmp(?![^"']*\{)"""
+)
+# arm F — prefix-form f-string (an f-prefixed quote opening directly with
+# `.tmp_` then an interpolation; same in-arm f-prefix binding as arm E —
+# a plain-string `.tmp_` + brace .format template does NOT match), same
+# E-style exemption (37 lines; exempts the 3 pid-suffixed temp-DIR
+# writers).
+SHARED_TMP_ARM_F_RE = re.compile(r"""(?<![A-Za-z0-9_])(?:[fF][rR]?|[rR][fF])["']\.tmp_\{""")
 SHARED_TMP_WAIVER_RE = re.compile(r"#\s*SHARED_TMP_EXEMPT:\s*(?P<reason>.*\S)")
 SHARED_TMP_WAIVER_MIN_REASON_CHARS = 10
 
 
 def _shared_tmp_line_hit(line: str) -> bool:
     """True when *line* matches any of the six shared-tmp arms (order
-    A, C, D, B, E, F; per-line dedupe — first match wins). Arm D excludes
-    the ``.suffix``-derived class; arms E/F are exempt when the line
-    carries a ``getpid(`` / ``uuid4(`` process-varying token (a pre-`.tmp`
-    process-varying interpolation is by construction on the matched line)."""
+    A, C, D, B, E, F; per-line dedupe — first match wins). Arm qualifiers
+    bind to their OWN matched occurrence (round-2 fix of the
+    shared-tmp-predicate-context-binding concern): arm D excludes only the
+    ``.suffix``-derived OCCURRENCE — a second, non-``.suffix`` concat on
+    the same line still hits — and arms E/F carry the f-string prefix
+    requirement inside their own regexes, so a plain-string template does
+    not hit and an unrelated f-string elsewhere on the line does not arm
+    them. Arms E/F stay exempt when the line carries a ``getpid(`` /
+    ``uuid4(`` process-varying token (line-scoped by design — a pre-`.tmp`
+    process-varying interpolation is by construction on the matched
+    line)."""
     if SHARED_TMP_ARM_A_RE.search(line):
         return True
     if SHARED_TMP_ARM_C_RE.search(line):
         return True
-    if SHARED_TMP_ARM_D_RE.search(line) and not SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE.search(line):
+    suffix_excluded_ends = {m.end() for m in SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE.finditer(line)}
+    if any(m.end() not in suffix_excluded_ends for m in SHARED_TMP_ARM_D_RE.finditer(line)):
         return True
     if SHARED_TMP_ARM_B_RE.search(line):
         return True
     if "getpid(" in line or "uuid4(" in line:
         return False
-    if SHARED_TMP_FSTRING_LINE_RE.search(line) and SHARED_TMP_ARM_E_RE.search(line):
+    if SHARED_TMP_ARM_E_RE.search(line):
         return True
     return bool(SHARED_TMP_ARM_F_RE.search(line))
 
 
+def _shared_tmp_lexical_comment_start(line: str) -> int | None:
+    """Index of the first ``#`` OUTSIDE any string literal on *line*, else
+    ``None`` — the anchor for the same-line waiver channel (round-2 fix of
+    the shared-tmp-waiver-string-spoof concern): an exemption-shaped STRING
+    literal (``note = "# SHARED_TMP_EXEMPT: ..."``) is not a comment and
+    must not switch off the ratchet. Single-char quote tracking with
+    backslash-escape skipping — deliberately simple (per-line scope; the
+    scanned corpus is Python + sh-heredoc lines)."""
+    quote: str | None = None
+    i = 0
+    n = len(line)
+    while i < n:
+        ch = line[i]
+        if quote is None:
+            if ch in "\"'":
+                quote = ch
+            elif ch == "#":
+                return i
+        elif ch == "\\":
+            i += 1
+        elif ch == quote:
+            quote = None
+        i += 1
+    return None
+
+
 def _shared_tmp_waiver_present(lines: list[str], idx: int) -> bool:
     """True when ``# SHARED_TMP_EXEMPT: <reason>`` (reason >=
-    :data:`SHARED_TMP_WAIVER_MIN_REASON_CHARS` chars) sits on the hit line
-    itself or the immediately-preceding COMMENT-ONLY line."""
+    :data:`SHARED_TMP_WAIVER_MIN_REASON_CHARS` chars) sits in a LEXICAL
+    comment on the hit line itself (at/after the first ``#`` outside any
+    string literal — a waiver-shaped string literal never waives) or on
+    the immediately-preceding COMMENT-ONLY line (already lexically a
+    comment; channel unchanged)."""
 
     def _ok(text: str) -> bool:
         m = SHARED_TMP_WAIVER_RE.search(text)
         return bool(m and len(m.group("reason").strip()) >= SHARED_TMP_WAIVER_MIN_REASON_CHARS)
 
-    if _ok(lines[idx]):
+    comment_start = _shared_tmp_lexical_comment_start(lines[idx])
+    if comment_start is not None and _ok(lines[idx][comment_start:]):
         return True
     prev = idx - 1
     return prev >= 0 and lines[prev].lstrip().startswith("#") and _ok(lines[prev])
@@ -19553,9 +19602,13 @@ def check_shared_tmp_name(
     entrypoint + walk the no-flags dispatch invokes with defaults. A hit
     in an allowlisted file passes; an allowlisted file with ZERO hits (or
     missing) WARNs ``stale allowlist entry`` (never FAILs — the ratchet
-    direction) via ``warn_sink`` when provided, else stderr. Waiver:
-    ``# SHARED_TMP_EXEMPT: <reason>`` (reason >= 10 chars) on the hit
-    line or the immediately-preceding comment-only line. Bundled into the
+    direction) via ``warn_sink`` when provided, else stderr — under
+    files-mode scoping (#2235) the staleness judgment covers only
+    allowlist entries INSIDE the scanned scope (an out-of-scope entry was
+    never scanned, so a stale WARN there would be false). Waiver:
+    ``# SHARED_TMP_EXEMPT: <reason>`` (reason >= 10 chars) in a LEXICAL
+    comment on the hit line (a waiver-shaped string literal never waives)
+    or on the immediately-preceding comment-only line. Bundled into the
     no-flags default run.
     """
     if root is None:
@@ -19603,6 +19656,14 @@ def check_shared_tmp_name(
                 if not _shared_tmp_waiver_present(lines, idx)
             )
     for path, _reason in allowlist:
+        if _FILES_SCOPE is not None and path not in _FILES_SCOPE:
+            # Files-mode (#2235) scopes the walk to a payload subset: an
+            # out-of-scope allowlisted file was never scanned this run, so
+            # its staleness is unknowable here — a stale WARN would be a
+            # false "remove it" instruction (round-2 fix of the
+            # shared-tmp-stale-warn-files-mode concern). Full walks own
+            # stale-entry hygiene.
+            continue
         if path not in files_with_hits:
             _warn(
                 f"--check-shared-tmp-name: stale allowlist entry {path} — zero "
