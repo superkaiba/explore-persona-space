@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Ten disclosed read-only
+``epm:plan-verify`` marker — never this script). Eleven disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -45,7 +45,13 @@ newlines with an 8 MB per-file cap, scan ``scripts/*.py`` SOURCE TEXT
 constant / the fixture-dir token, and — when a pinned tip is cited and no
 earlier rung resolves — run ``git ls-tree`` plus up to 32 ``git cat-file``
 blob reads per glob token under check 42's retry/fail-open contract —
-read-only, no network, no import (#2178). Check 47 adds NO
+read-only, no network, no import (#2178); and the c26/c27 routed-machine
+mirror, ONCE at module import (not per check), reads the SOURCE TEXT of
+``src/explore_persona_space/backends/router.py`` +
+``scripts/gpu_heuristics.py`` and AST-derives the lane-head intent ->
+GPU-family mirror (~tens of ms) — read-only, no import, no network;
+unreadable / unparseable sources fail OPEN to a static fallback mirror
+with a stderr note (#2514). Check 47 adds NO
 read exception:
 its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
 stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
@@ -115,7 +121,7 @@ Check catalog (id — classification — kind scope)
   c26 GPU basis vs routed       WARN-only, conditional    experiment +
       machine                                             analysis
   c27 7B activation-capture     FAIL (experiment) / WARN  experiment +
-      vs eval/debug intent      (analysis), conditional   analysis
+      vs under-floor-HBM intent (analysis), conditional   analysis
   c28 decision-band precedent   WARN-only, conditional    experiment +
       coherence                                           analysis
   c29 deliberate fence vs §7    WARN-only, conditional    experiment +
@@ -470,6 +476,7 @@ Exit codes: 0 = PASS (WARNs allowed), 1 = at least one FAIL,
 from __future__ import annotations
 
 import argparse
+import ast
 import importlib.util
 import json
 import math
@@ -4818,12 +4825,79 @@ def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
 # ─── Check 26 — GPU basis vs routed machine (WARN-only, conditional) ────────
 # Mechanizes .claude/rules/plan-compute-sizing.md § "Cost wall-time against
 # the machine the router will ACTUALLY provision" (#599/#833/#1073 class).
-# STATIC MIRROR of backends/gcp.py::INTENT_TO_MACHINE at FAMILY grain,
-# drift-guarded by tests/test_verify_plan.py::
-# test_c26_intent_gpu_mirror_matches_backend — verify_plan_text() stays
-# hermetic (no project imports at module level; the only project import in
-# this file is the --issue-mode-local task_workflow resolver).
-_C26_INTENT_GPU: dict[str, str] = {
+# LANE-HEAD-DERIVED MIRROR (#2514): _C26_INTENT_GPU is rebuilt at module
+# import from the SOURCE TEXT of backends/router.py + scripts/gpu_heuristics.py
+# (AST-read, never imported — verify_plan_text() stays hermetic: the only
+# module-level project import is the stdlib-only plan_wall_budget shim
+# (#2172), and the only in-check project import is the --issue-mode-local
+# task_workflow resolver). The dispatch keys on the LANE HEAD — element 0 of
+# _default_auto_lane_order's returned tuple(s) — and on NOTHING ELSE: the
+# #2028 GCP_PROVISIONING_DISABLED flag heads BOTH builds with "runpod", so
+# keying on the flag would judge bases against A100/L4 under the rollback
+# while the router still provisions RunPod H100 first (the #599-class
+# inversion this rebuild removes; plan #2514 D1). runpod head composition:
+# token -> RUNPOD_INTENT_FOR_GCP_INTENT.get(token, token) ->
+# gpu_heuristics.INTENTS[.].gpu_type at family grain, with the
+# RUNPOD_CPU_INSTANCE_FOR_INTENT keys short-circuited to "CPU" (mirroring
+# resolve_cpu_intent running first on the real provision path) and the
+# deliberate-gap intents mapped by _C26_GAP_INTENT_GPU (D2). gcp head
+# (unreachable under BOTH flag states; forward-proofing for an explicit
+# reorder): the static GCP-era families, _C26_GCP_INTENT_GPU. Fail-open
+# (never a crash, never a silent empty mirror): unreadable / unparseable
+# sources, a missing table, an unrecognized head, or an unknown GPU family
+# fall back to _C26_RUNPOD_FALLBACK_INTENT_GPU with a "verify_plan: note:"
+# on stderr (stdout stays --json-clean). Drift guards (import-based, run
+# under pytest where project imports are legal):
+# tests/test_verify_plan.py::test_c26_intent_gpu_mirror_matches_backend
+# (live mirror + static fallback vs the imported router/gpu_heuristics
+# composition) and ::test_c26_gcp_branch_matches_backend (gcp branch vs
+# gcp.INTENT_TO_MACHINE) — fallback staleness is bounded to one CI run.
+
+
+def _c26_family(token: str) -> str:
+    """GPU family normalization: strip a trailing ``-<digits>`` HBM-size
+    suffix (``A100-80`` == ``A100-40`` == ``A100``; ``H100-80`` == ``H100``;
+    ``L4``/``CPU`` unchanged). A100-40-vs-A100-80 differences are
+    deliberately below the heuristic's grain."""
+    return re.sub(r"-\d+$", "", token)
+
+
+#: Per-family usable-HBM GB for the c27 capture floor (D3). Values are
+#: CONSERVATIVE (never above the card's real usable HBM), source-commented.
+_C26_FAMILY_HBM_GB: dict[str, int] = {
+    "L4": 24,  # NVIDIA L4 = 24 GB GDDR6 (the GCP g2-standard-4 eval/debug card)
+    # A100 -> 80 is HEAD-DEPENDENT and correct on the runpod head (the only
+    # A100 the runpod tables provision is sweep-8g-a100 = 8x A100-80). NOT
+    # universally safe: gcp.INTENT_A100_40_FALLBACK's A100-40 rungs (38 GiB
+    # usable) sit BELOW the 40 GB capture floor while _c26_family collapses
+    # -40/-80 to one "A100" family — a future LIVE gcp head needs per-head
+    # HBM values first (#2514 D3 named residual; the gcp branch is dead code
+    # under both #2028 flag states today).
+    "A100": 80,
+    "H100": 80,  # H100-80 (SXM/PCIe) — the only H100 the intent tables book
+    "H200": 141,  # H200 = 141 GB HBM3e
+    "B200": 180,  # conservative floor (the real card carries 192 GB)
+}
+
+#: Capture-HBM floor (GB) — plan-compute-sizing.md § "Activation-capture
+#: HBM sizing": a >=7B all-layer hidden-state capture needs >=40 GB HBM.
+_C27_CAPTURE_HBM_FLOOR_GB: int = 40
+
+#: D2 (#2514): family decisions for router deliberate-gap intents (members
+#: of RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS, absent from both RunPod
+#: tables). eval-h100 is 2x H100-80 on every lane that can serve it, so an
+#: H100-costed basis reads clean; its runpod-lane un-servability is a
+#: DISPATCH concern the router already fails loud on, not c26's question.
+#: A FUTURE gap token absent here gets NO mirror row (c26 SKIPs it as
+#: unresolvable) — the import-based drift guard forces a deliberate
+#: classification instead of a silent guess.
+_C26_GAP_INTENT_GPU: dict[str, str] = {"eval-h100": "H100"}
+
+#: The GCP-era family mirror — the gcp-HEAD branch of _c26_routed_intent_gpu
+#: (unreachable under both GCP_PROVISIONING_DISABLED states, D1) and the
+#: forced small-HBM mapping the c27 regression tests drive. Drift-guarded
+#: against gcp.INTENT_TO_MACHINE by test_c26_gcp_branch_matches_backend.
+_C26_GCP_INTENT_GPU: dict[str, str] = {
     "lora-7b": "A100",
     "lora": "A100",
     "capture-7b": "A100",
@@ -4839,13 +4913,245 @@ _C26_INTENT_GPU: dict[str, str] = {
     "sweep-8g-h100": "H100",
 }
 
+#: Fail-open target (D1): a STATIC copy of the runpod-head composition, used
+#: when the live sources are unreadable / unparseable / missing a table /
+#: carrying an unknown family. Staleness is bounded to one CI run by
+#: test_c26_intent_gpu_mirror_matches_backend (asserts this literal equals
+#: the freshly composed runpod mirror).
+_C26_RUNPOD_FALLBACK_INTENT_GPU: dict[str, str] = {
+    "eval": "H100",
+    "debug": "H100",
+    "lora-7b": "H100",
+    "lora": "H100",
+    "capture-7b": "H100",
+    "ft-7b": "H100",
+    "inf-70b": "H100",
+    "ft-70b": "H200",
+    "lora-7b-h100": "H100",
+    "eval-h100": "H100",
+    "sweep-8g-a100": "A100",
+    "sweep-8g-h100": "H100",
+    "cpu-small": "CPU",
+    "cpu-mid": "CPU",
+    "cpu-bigmem": "CPU",
+}
 
-def _c26_family(token: str) -> str:
-    """GPU family normalization: strip a trailing ``-<digits>`` HBM-size
-    suffix (``A100-80`` == ``A100-40`` == ``A100``; ``H100-80`` == ``H100``;
-    ``L4``/``CPU`` unchanged). A100-40-vs-A100-80 differences are
-    deliberately below the heuristic's grain."""
-    return re.sub(r"-\d+$", "", token)
+_C26_ROUTER_SRC_PATH = (
+    Path(__file__).resolve().parent.parent / "src/explore_persona_space/backends/router.py"
+)
+_C26_GPU_HEURISTICS_SRC_PATH = Path(__file__).resolve().parent / "gpu_heuristics.py"
+
+
+def _c26_note(msg: str) -> None:
+    """Stderr note for mirror fail-open events (stdout stays --json-clean)."""
+    print(f"verify_plan: note: {msg}", file=sys.stderr)
+
+
+def _c26_lane_head(tree: ast.Module) -> str | None:
+    """Head lane of the auto chain from ``_default_auto_lane_order``'s AST
+    (the ``workflow_lint.read_default_auto_lane_head`` shape): EVERY
+    ``return`` in the function must be a tuple literal whose element 0 is a
+    str constant, and ALL returns must AGREE on that head — the #2028 flag
+    flips only the TAIL, so agreement is the live shape, and a mixed-return
+    refactor yields None (the caller fails open) rather than a one-branch
+    guess. None on: absent function, no returns, a non-tuple /
+    non-literal-headed return, or disagreeing heads."""
+    fn = next(
+        (
+            n
+            for n in ast.walk(tree)
+            if isinstance(n, ast.FunctionDef) and n.name == "_default_auto_lane_order"
+        ),
+        None,
+    )
+    if fn is None:
+        return None
+    heads: set[str] = set()
+    saw_return = False
+    for node in ast.walk(fn):
+        if not isinstance(node, ast.Return):
+            continue
+        saw_return = True
+        val = node.value
+        if not (isinstance(val, ast.Tuple) and val.elts):
+            return None
+        head = val.elts[0]
+        if not (isinstance(head, ast.Constant) and isinstance(head.value, str)):
+            return None
+        heads.add(head.value)
+    if not saw_return or len(heads) != 1:
+        return None
+    return next(iter(heads))
+
+
+def _c26_module_assign(tree: ast.Module, name: str) -> ast.expr | None:
+    """Value expression of a module-level ``NAME = ...`` / ``NAME: T = ...``
+    assignment; None when absent."""
+    for node in tree.body:
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if node.target.id == name and node.value is not None:
+                return node.value
+        elif isinstance(node, ast.Assign):
+            for tgt in node.targets:
+                if isinstance(tgt, ast.Name) and tgt.id == name:
+                    return node.value
+    return None
+
+
+def _c26_str_dict(value: ast.expr | None) -> dict[str, str] | None:
+    """A ``{"k": "v", ...}`` dict literal of str constants; None otherwise
+    (any non-literal key/value, ``**`` unpacking, or a non-dict node)."""
+    if not isinstance(value, ast.Dict):
+        return None
+    out: dict[str, str] = {}
+    for k, v in zip(value.keys, value.values, strict=True):
+        if not (isinstance(k, ast.Constant) and isinstance(k.value, str)):
+            return None
+        if not (isinstance(v, ast.Constant) and isinstance(v.value, str)):
+            return None
+        out[k.value] = v.value
+    return out
+
+
+def _c26_str_collection(value: ast.expr | None) -> frozenset[str] | None:
+    """A ``frozenset({...})`` / set / list / tuple literal of str constants;
+    None otherwise."""
+    if isinstance(value, ast.Call) and isinstance(value.func, ast.Name):
+        if value.func.id == "frozenset" and len(value.args) == 1 and not value.keywords:
+            value = value.args[0]
+        else:
+            return None
+    if not isinstance(value, (ast.Set, ast.List, ast.Tuple)):
+        return None
+    out: set[str] = set()
+    for elt in value.elts:
+        if not (isinstance(elt, ast.Constant) and isinstance(elt.value, str)):
+            return None
+        out.add(elt.value)
+    return frozenset(out)
+
+
+def _c26_gpu_intents(tree: ast.Module) -> dict[str, str] | None:
+    """``gpu_heuristics.INTENTS`` at raw ``gpu_type`` grain: intent key ->
+    the ``GpuSpec(...)`` call's literal ``gpu_type`` keyword. None when the
+    dict, any key, or any ``gpu_type`` kwarg is not a literal."""
+    value = _c26_module_assign(tree, "INTENTS")
+    if not isinstance(value, ast.Dict):
+        return None
+    out: dict[str, str] = {}
+    for k, v in zip(value.keys, value.values, strict=True):
+        if not (isinstance(k, ast.Constant) and isinstance(k.value, str)):
+            return None
+        if not isinstance(v, ast.Call):
+            return None
+        gpu_type = next(
+            (
+                kw.value.value
+                for kw in v.keywords
+                if kw.arg == "gpu_type"
+                and isinstance(kw.value, ast.Constant)
+                and isinstance(kw.value.value, str)
+            ),
+            None,
+        )
+        if gpu_type is None:
+            return None
+        out[k.value] = gpu_type
+    return out
+
+
+def _c26_compose_runpod_mirror(
+    router_tree: ast.Module, gpu_tree: ast.Module
+) -> dict[str, str] | None:
+    """The runpod-head mirror from the three source tables (#2514): CPU
+    intents short-circuit to "CPU" (RUNPOD_CPU_INSTANCE_FOR_INTENT keys,
+    mirroring resolve_cpu_intent running first on the real provision path),
+    then token -> RUNPOD_INTENT_FOR_GCP_INTENT.get(token, token) ->
+    INTENTS[.].gpu_type at family grain, then the deliberate-gap intents via
+    _C26_GAP_INTENT_GPU (D2). None (caller falls back) when any table is
+    missing / non-literal or a translation target is absent from INTENTS."""
+    translation = _c26_str_dict(_c26_module_assign(router_tree, "RUNPOD_INTENT_FOR_GCP_INTENT"))
+    cpu_map = _c26_str_dict(_c26_module_assign(router_tree, "RUNPOD_CPU_INSTANCE_FOR_INTENT"))
+    gaps = _c26_str_collection(
+        _c26_module_assign(router_tree, "RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS")
+    )
+    intents = _c26_gpu_intents(gpu_tree)
+    if translation is None or cpu_map is None or gaps is None or intents is None:
+        return None
+    mirror: dict[str, str] = {tok: "CPU" for tok in cpu_map}
+    for tok in set(intents) | set(translation):
+        if tok in mirror:
+            continue
+        fam = intents.get(translation.get(tok, tok))
+        if fam is None:
+            return None
+        mirror[tok] = _c26_family(fam)
+    for tok in gaps:
+        if tok not in mirror and tok in _C26_GAP_INTENT_GPU:
+            mirror[tok] = _C26_GAP_INTENT_GPU[tok]
+    return mirror
+
+
+def _c26_routed_intent_gpu(
+    router_src: str | None = None, gpu_src: str | None = None
+) -> tuple[dict[str, str], str]:
+    """(mirror, lane-head label) for the LIVE auto-lane head (#2514 D1).
+
+    Dispatches on the lane HEAD only — never on GCP_PROVISIONING_DISABLED
+    (both flag states head with "runpod", so the #2028 rollback must NOT
+    flip the mirror). "gcp" head -> the static GCP-era families; any other
+    head (incl. None / unrecognized, noted on stderr) -> the runpod
+    composition, failing OPEN to _C26_RUNPOD_FALLBACK_INTENT_GPU when the
+    sources are unreadable / unparseable / missing a table / carrying a GPU
+    family with no _C26_FAMILY_HBM_GB row (which would escape the c27
+    partition). ``router_src`` / ``gpu_src`` default to this checkout's live
+    files (tests inject synthetic sources)."""
+    try:
+        if router_src is None:
+            router_src = _C26_ROUTER_SRC_PATH.read_text(encoding="utf-8")
+        if gpu_src is None:
+            gpu_src = _C26_GPU_HEURISTICS_SRC_PATH.read_text(encoding="utf-8")
+    except OSError as exc:
+        _c26_note(f"c26 mirror sources unreadable ({exc}) — using the static runpod fallback")
+        return dict(_C26_RUNPOD_FALLBACK_INTENT_GPU), "runpod"
+    try:
+        router_tree = ast.parse(router_src)
+        gpu_tree = ast.parse(gpu_src)
+    except SyntaxError as exc:
+        _c26_note(f"c26 mirror sources unparseable ({exc}) — using the static runpod fallback")
+        return dict(_C26_RUNPOD_FALLBACK_INTENT_GPU), "runpod"
+    head = _c26_lane_head(router_tree)
+    if head == "gcp":
+        return dict(_C26_GCP_INTENT_GPU), "gcp"
+    if head != "runpod":
+        _c26_note(
+            f"c26 lane head unresolvable/unrecognized ({head!r}) — failing open to the "
+            "runpod-head mirror"
+        )
+    mirror = _c26_compose_runpod_mirror(router_tree, gpu_tree)
+    if mirror is None:
+        _c26_note(
+            "c26 router/gpu_heuristics tables unreadable (missing/non-literal) — using the "
+            "static runpod fallback"
+        )
+        return dict(_C26_RUNPOD_FALLBACK_INTENT_GPU), "runpod"
+    unknown = sorted(
+        {fam for fam in mirror.values() if fam != "CPU" and fam not in _C26_FAMILY_HBM_GB}
+    )
+    if unknown:
+        _c26_note(
+            f"c26 composed mirror carries unknown GPU famil(ies) {unknown} (no "
+            "_C26_FAMILY_HBM_GB row) — using the static runpod fallback"
+        )
+        return dict(_C26_RUNPOD_FALLBACK_INTENT_GPU), "runpod"
+    return mirror, "runpod"
+
+
+#: Intent -> GPU family the LIVE auto-lane head provisions (lane-head-derived
+#: at module import, #2514; see the section comment above). _C26_LANE_HEAD
+#: rides the c26/c27 WARN/FAIL details so a firing names the mirror it
+#: judged against.
+_C26_INTENT_GPU, _C26_LANE_HEAD = _c26_routed_intent_gpu()
 
 
 # GPU family tokens ALLOWED in a basis cell trigger. L4/L40S deliberately
@@ -5006,20 +5312,22 @@ def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> 
     if len(offenders) > 3:
         shown += "; ..."
     return (
-        f"{shown} but resolved intent(s) route {sorted(routed)} under auto (GCP "
-        "INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row — a basis "
-        "measured on a different GPU must be scaled with a stated per-step rate "
-        "(plan-compute-sizing.md; #599: an H100-premised ~6.4h estimate ran ~34h on "
-        "the A100 auto-lane), or declare 'N/A — basis measured on the routed machine' "
-        "on its own line, unwrapped (no backticks/quotes)"
+        f"{shown} but resolved intent(s) route {sorted(routed)} under the {_C26_LANE_HEAD} "
+        "auto lane head with no stated cross-GPU scaling in the row — a basis measured on "
+        "a different GPU (incl. one deliberately costed on a non-head auto lane, e.g. the "
+        "fellows lane) must be scaled with a stated per-step rate (plan-compute-sizing.md; "
+        "#599: an H100-premised ~6.4h estimate ran ~34h on the A100 auto-lane), or declare "
+        "'N/A — basis measured on the routed machine' on its own line, unwrapped "
+        "(no backticks/quotes)"
     )
 
 
 def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional: a §9 compute-projection-table basis cell naming
     a GPU family (H100/H200/A100/B200) that differs from EVERY family the
-    plan's resolved --intent token(s) route under auto (static GCP
-    INTENT_TO_MACHINE mirror, _C26_INTENT_GPU), with no row-level escape.
+    plan's resolved --intent token(s) route under the LIVE auto-lane head
+    (the lane-head-derived _C26_INTENT_GPU mirror — runpod head as of
+    #2054/#2028; #2514), with no row-level escape.
     Mechanizes plan-compute-sizing.md § "Cost wall-time against the machine
     the router will ACTUALLY provision" (#599 ~6.4h -> ~34h; #1073 v3 -> v4).
     Row escapes: (a) the routed family named in a CONVERSION-BEARING cell —
@@ -5042,6 +5350,12 @@ def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
     below the family grain; a routed-family mention in the wall/basis
     cell escapes
     without a true conversion (conversion ADEQUACY stays critic-owned);
+    a plan deliberately costed on a NON-HEAD auto lane (e.g. the fellows
+    H200 SLURM lane, lane 2 of the chain) WARNs under the head-only mirror —
+    no fellows-pin skip branch exists (only _C26_RUNPOD_PIN_RE); the remedy
+    is one scaling-vocabulary word in the row or the standalone N/A phrase,
+    both named in the offender detail so the WARN is self-explaining
+    (#2514 D4);
     a standalone N/A declaration is document-wide (c24 /
     ``_standalone_na_declared`` family semantics), so it also clears any
     sibling offender row — the deliberate-override purpose of the phrase."""
@@ -5094,26 +5408,46 @@ def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c26_offender_detail(offenders, routed))
 
 
-# ─── Check 27 — 7B activation capture vs eval/debug (L4) intent ─────────────
+# ─── Check 27 — 7B activation capture vs under-floor-HBM intent ──────────────
 # Mechanizes .claude/rules/plan-compute-sizing.md § "Activation-capture HBM
-# sizing" (MUST-level): a 7B hidden-state capture phase needs >=40 GB HBM
-# (capture-7b / lora-7b, 1x A100-80); the GCP eval/debug default is a
-# 16-GB-class L4 (g2-standard-4) and OOMs mid-run (#666, #744). Founding
-# false negative: #825 plan v17 (--intent eval for a 7B all-layer capture)
-# PASSed 0 FAIL/0 WARN. Reuses c26's intent machinery — one parser, one
-# drift-guarded mirror (test_c26_intent_gpu_mirror_matches_backend).
+# sizing" (MUST-level): a >=7B hidden-state capture phase needs
+# >=_C27_CAPTURE_HBM_FLOOR_GB (40) GB HBM. The offending/absolving sets are
+# HBM-GB predicates over the lane-head-derived c26 mirror (#2514 D3 — the
+# former L4-family proxy re-expressed as the provider-independent property
+# it stood in for): UNDER = GPU intents whose family HBM sits below the
+# floor; BIG = GPU intents at/above it. Under the live runpod head UNDER is
+# EMPTY and the check reaches an explicit armed PASS (never a silent
+# no-op) — a future small-HBM lane re-fires it automatically. Founding
+# false negative: #825 plan v17 (--intent eval for a 7B all-layer capture,
+# GCP-era L4 routing) PASSed 0 FAIL/0 WARN; #666/#744 are the OOM
+# incidents. Reuses c26's intent machinery — one parser, one drift-guarded
+# mirror (test_c26_intent_gpu_mirror_matches_backend).
 
-# Offending + absolving intent sets, DERIVED from the c26 mirror.
-# BIG set derived by EXCLUSION (critique r1, Claude methodology concern 1):
-# a future mirror family (H200/B200 intent) lands in the absolution set
-# automatically instead of silently outside it (which would false-FAIL a
-# plan booking that big intent alongside a side eval phase). Test
-# test_c27_sets_derive_from_mirror's partition assert pins
-# L4 | BIG | CPU == the whole mirror.
-_C27_L4_INTENTS: frozenset[str] = frozenset(i for i, fam in _C26_INTENT_GPU.items() if fam == "L4")
-_C27_BIG_HBM_INTENTS: frozenset[str] = frozenset(
-    i for i, fam in _C26_INTENT_GPU.items() if fam not in ("L4", "CPU")
-)
+
+def _c27_hbm_sets(mirror: dict[str, str]) -> tuple[frozenset[str], frozenset[str]]:
+    """(under-floor, at-or-above-floor) GPU-intent partitions of ``mirror``
+    by _C26_FAMILY_HBM_GB vs _C27_CAPTURE_HBM_FLOOR_GB (D3). The BIG set
+    stays derived by EXCLUSION-style totality (critique r1 lineage): the
+    partition assert (UNDER | BIG | CPU == the whole mirror) makes a mirror
+    key whose family escapes every bucket — an unknown GPU family — raise
+    AssertionError instead of being silently swallowed (the builder's
+    fail-open family validation keeps the LIVE import-time call safe by
+    construction; the pytest negative control drives the raise directly)."""
+    under: set[str] = set()
+    big: set[str] = set()
+    cpu: set[str] = set()
+    for tok, fam in mirror.items():
+        if fam == "CPU":
+            cpu.add(tok)
+        elif fam in _C26_FAMILY_HBM_GB:
+            hbm_ok = _C26_FAMILY_HBM_GB[fam] >= _C27_CAPTURE_HBM_FLOOR_GB
+            (big if hbm_ok else under).add(tok)
+    escaped = set(mirror) - (under | big | cpu)
+    assert not escaped, f"mirror keys escape every HBM bucket (unknown family): {sorted(escaped)}"
+    return frozenset(under), frozenset(big)
+
+
+_C27_UNDER_HBM_INTENTS, _C27_BIG_HBM_INTENTS = _c27_hbm_sets(_C26_INTENT_GPU)
 
 # Capture-phase vocabulary (RAW scan — capture launch commands and store
 # rows legitimately live in fences/tables; the _c26_intents raw-scan
@@ -5139,7 +5473,7 @@ _C27_CAPTURE_RE = re.compile(
 # (17 >= 7 — a deliberate deviation from the r1 Codex test sketch, which
 # carried over the old whitelist's behavior). Token-count strings ("15B
 # tokens") can match — acceptable: the conjunction still needs capture
-# vocabulary + an un-skipped eval/debug booking, and the corpus re-scan
+# vocabulary + an un-skipped under-floor booking, and the corpus re-scan
 # gate (plan #1093 §13) binds on any regex change.
 _C27_MODEL_GE7B_RE = re.compile(r"(?i)(?<![\d.])\b(?:[7-9]|[1-9][0-9]+)(?:\.[0-9]+)?B\b")
 
@@ -5149,26 +5483,33 @@ _C27_MODEL_GE7B_RE = re.compile(r"(?i)(?<![\d.])\b(?:[7-9]|[1-9][0-9]+)(?:\.[0-9
 # for the pre-router plan corpus (#358/#375/#522 era).
 _C27_PODPY_PROVISION_RE = re.compile(r"(?i)\bpod\.py\s+provision\b")
 
-# Window-level big-GPU skip: an eval/debug token whose immediate context
-# names H100/H200 is a RunPod-mapping or explicit-override claim, not a
-# GCP L4 booking. A100 deliberately NOT in the skip set: GCP eval/debug
-# NEVER provisions A100 — an A100 claim next to an eval booking is exactly
-# the #744 misbelief this check exists to catch.
+# Window-level big-GPU skip: an under-floor token whose immediate context
+# names H100/H200 is a RunPod-mapping or explicit-override claim, not an
+# under-floor booking. A100 deliberately NOT in the skip set: no under-floor
+# intent ever provisions A100 — an A100 claim next to such a booking is
+# exactly the #744 misbelief this check exists to catch.
 _C27_WINDOW_BIGGPU_RE = re.compile(r"\b(H100|H200)\b")
 
 
-def _c27_gcp_l4_intent_windows(plan: str) -> list[tuple[str, str]]:
-    r"""``(token, window_snippet)`` for every eval/debug intent occurrence
-    plausibly booking the GCP/auto lane. The window is the PREVIOUS line
-    plus the line containing the match end — the previous line covers the
-    wrapped ``pod.py provision --issue N --intent\neval`` shape (#522 v1,
-    where ``--intent[=\s]+`` legitimately spans the newline). A window
-    carrying ``pod.py`` or an H100/H200 token is skipped (RunPod / explicit
-    big-GPU context)."""
+def _c27_under_hbm_intent_windows(
+    plan: str, under_intents: frozenset[str] | None = None
+) -> list[tuple[str, str]]:
+    r"""``(token, window_snippet)`` for every UNDER-floor intent occurrence
+    plausibly booking the auto lane (``under_intents`` defaults to the live
+    module-level _C27_UNDER_HBM_INTENTS, resolved at CALL time so the c27
+    regression tests can monkeypatch the gcp-era sets through the real check
+    path). The window is the PREVIOUS line plus the line containing the
+    match end — the previous line covers the wrapped
+    ``pod.py provision --issue N --intent\neval`` shape (#522 v1, where
+    ``--intent[=\s]+`` legitimately spans the newline). A window carrying
+    ``pod.py`` or an H100/H200 token is skipped (RunPod / explicit big-GPU
+    context)."""
+    if under_intents is None:
+        under_intents = _C27_UNDER_HBM_INTENTS
     out: list[tuple[str, str]] = []
     for m in _C26_INTENT_RE.finditer(plan):
         tok = m.group(1) or m.group(2)
-        if tok not in _C27_L4_INTENTS:
+        if tok not in under_intents:
             continue
         line_start = plan.rfind("\n", 0, m.start())
         prev_start = plan.rfind("\n", 0, line_start) if line_start != -1 else -1
@@ -5182,24 +5523,28 @@ def _c27_gcp_l4_intent_windows(plan: str) -> list[tuple[str, str]]:
 
 def check_capture_intent_hbm(plan: str, kind: str) -> CheckResult:
     """FAIL (experiment) / WARN (analysis), conditional: activation-capture
-    vocabulary + a >=7B model signal while an eval/debug (L4) intent is
-    booked on the GCP/auto lane. Skip ladder (permissive direction only):
+    vocabulary + a >=7B model signal while an under-floor-HBM GPU intent
+    (family HBM < _C27_CAPTURE_HBM_FLOOR_GB under the lane-head mirror) is
+    booked on the auto lane. Skip ladder (permissive direction only):
     kind gate -> vocab trigger -> standalone N/A escape -> RunPod pin
     (backend/--backend runpod OR pod.py provision, doc-wide: RunPod eval =
-    1x H100 80GB) -> no resolvable intent -> no un-windowed eval/debug
+    1x H100 80GB) -> no resolvable intent -> EMPTY under-floor set (explicit
+    armed PASS naming the floor + lane head — under the live runpod head no
+    under-floor intent exists, #2514 D3) -> no un-windowed under-floor
     occurrence -> big-HBM-intent absolution -> no >=7B signal.
     Known accepted gaps (all deliberate, critic-owned semantics):
     (a) a plan booking a big-HBM intent for training while the CAPTURE
-    phase books eval escapes via the absolution — phase-to-intent routing
-    stays critic-owned; (b) an eval occurrence whose window names H100/H200
-    (e.g. a basis-measured-on-H100 clause on the same line) escapes as if
-    pinned — c26 covers the basis side; (c) a doc-wide pod.py-provision pin
-    skips mixed-lane plans; (d) the >=7B signal matches "7b" inside intent
-    tokens (lora-7b) — a weak filter by design, the N/A phrase is the real
-    small-model out; (e) vocabulary from a REUSED store consumed by a CPU
-    phase still triggers — cleared by the no-L4-intent PASS, the
-    absolution, or the N/A phrase."""
-    cid, name = "c27_capture_intent_hbm", "7B capture vs eval/debug intent"
+    phase books an under-floor intent escapes via the absolution —
+    phase-to-intent routing stays critic-owned; (b) an under-floor
+    occurrence whose window names H100/H200 (e.g. a basis-measured-on-H100
+    clause on the same line) escapes as if pinned — c26 covers the basis
+    side; (c) a doc-wide pod.py-provision pin skips mixed-lane plans;
+    (d) the >=7B signal matches "7b" inside intent tokens (lora-7b) — a
+    weak filter by design, the N/A phrase is the real small-model out;
+    (e) vocabulary from a REUSED store consumed by a CPU phase still
+    triggers — cleared by the no-under-floor-intent PASS, the absolution,
+    or the N/A phrase."""
+    cid, name = "c27_capture_intent_hbm", "7B capture vs under-floor-HBM intent"
     if kind not in ("experiment", "analysis"):
         return _skip(cid, name, "kind-exempt: capture phases are an experiment|analysis plan shape")
     cap_hit = _C27_CAPTURE_RE.search(plan)
@@ -5213,37 +5558,50 @@ def check_capture_intent_hbm(plan: str, kind: str) -> CheckResult:
         )
     if not _c26_intents(plan):
         return _skip(cid, name, "no resolvable --intent token — routed machine unknown")
-    windows = _c27_gcp_l4_intent_windows(plan)
+    if not _C27_UNDER_HBM_INTENTS:
+        return _pass(
+            cid,
+            name,
+            f"armed, no under-floor intent exists: every GPU intent in the {_C26_LANE_HEAD}-head "
+            f"mirror resolves to >={_C27_CAPTURE_HBM_FLOOR_GB} GB HBM (a future small-HBM lane "
+            "re-arms the offending set automatically)",
+        )
+    windows = _c27_under_hbm_intent_windows(plan)
     if not windows:
         return _pass(
             cid,
             name,
-            "capture vocabulary present but no eval/debug intent booked on the GCP/auto lane",
+            f"capture vocabulary present but no under-floor (<{_C27_CAPTURE_HBM_FLOOR_GB} GB "
+            "HBM) intent booked on the auto lane",
         )
     big = sorted(_c26_intents(plan) & _C27_BIG_HBM_INTENTS)
     if big:
         return _pass(
             cid,
             name,
-            f">=40 GB-HBM intent also booked ({big}) — capture phase presumed routed there "
-            "(phase-to-intent routing stays critic-owned)",
+            f">={_C27_CAPTURE_HBM_FLOOR_GB} GB-HBM intent also booked ({big}) — capture phase "
+            "presumed routed there (phase-to-intent routing stays critic-owned)",
         )
     if not _C27_MODEL_GE7B_RE.search(plan):
         return _skip(cid, name, "no >=7B model signal — the HBM sizing rule is 7B-scoped")
     tok, snippet = windows[0]
+    fam = _C26_INTENT_GPU.get(tok, "unknown")
+    hbm = _C26_FAMILY_HBM_GB.get(fam, 0)
     verdict = _fail if kind == "experiment" else _warn
     return verdict(
         cid,
         name,
-        f"capture vocabulary ({cap_hit.group(0)!r}) with a >=7B model while the plan books the "
-        f"{tok} (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane "
-        f"(context: {snippet!r}) — >=7B hidden-state capture needs >=40 GB HBM "
-        "(#666/#744 OOM class; #825 v17 false negative): for a 7B-class model book capture-7b "
-        "(forward-pass-only) or lora-7b (phase also trains); a LARGER model needs a "
-        "correspondingly larger-HBM lane/backend (a multi-GPU intent or an explicit "
-        "large-GPU RunPod pin), never eval/debug — per plan-compute-sizing § "
-        "Activation-capture HBM sizing, or declare 'N/A — no 7B activation capture' "
-        "on its own line, unwrapped (no backticks/quotes)",
+        f"capture vocabulary ({cap_hit.group(0)!r}) with a >=7B model while the plan books "
+        f"the {tok} intent, which resolves to {fam} ({hbm} GB HBM) under the "
+        f"{_C26_LANE_HEAD} lane head (context: {snippet!r}) — below the "
+        f"{_C27_CAPTURE_HBM_FLOOR_GB} GB capture floor: >=7B hidden-state capture needs "
+        f">={_C27_CAPTURE_HBM_FLOOR_GB} GB HBM (#666/#744 OOM class; #825 v17 false "
+        "negative): for a 7B-class model book capture-7b (forward-pass-only) or lora-7b "
+        "(phase also trains); a LARGER model needs a correspondingly larger-HBM "
+        "lane/backend (a multi-GPU intent or an explicit large-GPU RunPod pin), never an "
+        "under-floor intent — per plan-compute-sizing § Activation-capture HBM sizing, or "
+        "declare 'N/A — no 7B activation capture' on its own line, unwrapped "
+        "(no backticks/quotes)",
     )
 
 

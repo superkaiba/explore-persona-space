@@ -801,9 +801,7 @@ measured on a different GPU must be scaled with a stated per-step rate
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
 into ~34h). Mechanically backstopped (WARN-only, heuristic) by
 `verify_plan.py` c26; the semantic adequacy of a stated scaling factor
-stays critic-owned. (c26's routed-machine mirror is GCP-era and tracked
-separately — a c26 WARN on a runpod-costed bare-`auto` plan is expected
-until that mirror is updated.) Then reconcile the WORST-CASE wall — base phases PLUS every
+stays critic-owned. Then reconcile the WORST-CASE wall — base phases PLUS every
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
 (`--instance-termination-action=DELETE` + `--max-run-duration`,
