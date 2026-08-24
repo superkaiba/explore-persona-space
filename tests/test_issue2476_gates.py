@@ -1438,3 +1438,179 @@ def test_arm_battery_emits_shuffle_null_per_registered_read(tmp_path):
     ret = json.loads((out / "retrieval_t.json").read_text())
     assert ret["tiers"]["0"]["map"]["euclidean"]["backend"]["device"] == "cpu"
     assert ret["dense_anchor"]["map"]["euclidean"]["backend"]["device"] == "cpu"
+
+
+# ── floor-sweep follow-up (scripts/issue2476_floor_sweep.py): G-C / G-R failure
+# semantics + the stat-rec-2 lattice-label suppression (plan-approval v2
+# binding recs; wrong-reference fixtures assert NONZERO exit — fail-loud) ────────
+
+import issue2476_floor_sweep as FS  # noqa: E402
+
+
+def test_fs_gate_counts_pass_within_tolerance(tmp_path):
+    banked = np.array([0, 5, 100, 1200, 2400], np.int64)
+    recomputed = banked + np.array([0, 1, -2, 3, -3], np.int64)
+    rec = FS._gate_counts(
+        recomputed,
+        banked,
+        (1200, 600),
+        arm="c",
+        production=True,
+        out_path=tmp_path / "gc.json",
+    )
+    assert rec["verdict"] == "PASS"
+    assert rec["max_abs_delta"] == 3
+    assert json.loads((tmp_path / "gc.json").read_text())["verdict"] == "PASS"
+
+
+def test_fs_gate_counts_boundary_flip_within_tolerance_passes(tmp_path):
+    # a feature flips across the floor but its banked count sits within +/-3 of
+    # it — the plan §7 sanctioned GPU-jitter case: sym-diff nonempty, PASS.
+    banked = np.array([1199, 1200, 50], np.int64)
+    recomputed = np.array([1202, 1197, 50], np.int64)
+    rec = FS._gate_counts(recomputed, banked, (1200,), arm="c", production=True)
+    assert rec["verdict"] == "PASS"
+    assert rec["per_floor_sym_diff"]["1200"]["n_sym_diff"] == 2
+    assert rec["per_floor_sym_diff"]["1200"]["n_off_boundary"] == 0
+
+
+def test_fs_gate_counts_wrong_reference_exits_nonzero(tmp_path):
+    # wrong-reference fixture (stat-concern-4): a 10-row count drift must
+    # fail-loud with a NONZERO exit and the FAIL record written FIRST.
+    banked = np.array([100, 1195, 4000], np.int64)
+    recomputed = np.array([100, 1205, 4000], np.int64)
+    with pytest.raises(SystemExit) as ei:
+        FS._gate_counts(
+            recomputed,
+            banked,
+            (1200,),
+            arm="c",
+            production=True,
+            out_path=tmp_path / "gc.json",
+        )
+    assert ei.value.code == FS.RC_GC != 0
+    rec = json.loads((tmp_path / "gc.json").read_text())
+    assert rec["verdict"] == "FAIL"
+    assert rec["max_abs_delta"] == 10
+
+
+def test_fs_gate_counts_smoke_is_informational_no_exit(tmp_path):
+    banked = np.array([100, 1195], np.int64)
+    recomputed = np.array([100, 1305], np.int64)  # way past tolerance
+    rec = FS._gate_counts(recomputed, banked, (1200,), arm="c", production=False)
+    assert rec["verdict"] == "INFORMATIONAL-smoke"
+
+
+def _fs_medians(v_map=0.5, v_ib=0.1):
+    return {
+        f"{read}/t{t}": (v_map if read == "map" else v_ib)
+        for read in ("map", "ib")
+        for t in (0, 1, 2)
+    }
+
+
+def test_fs_gate_repro_pass_within_tolerance(tmp_path):
+    want = np.array([0.6, 0.1, np.nan, -0.2])
+    got = want + np.array([1e-3, -1e-3, 0.0, 1.5e-3])
+    rec = FS._gate_repro(
+        got,
+        want,
+        _fs_medians(),
+        _fs_medians(0.5 + 5e-4, 0.1 - 5e-4),
+        arm="c",
+        production=True,
+        out_path=tmp_path / "gr.json",
+    )
+    assert rec["verdict"] == "PASS"
+    assert rec["finiteness_pattern_equal"] is True
+    assert rec["max_abs_delta_r2"] <= FS.GR_PERFEATURE_TOL
+
+
+def test_fs_gate_repro_wrong_perfeature_reference_exits_nonzero(tmp_path):
+    want = np.array([0.6, 0.1, 0.3])
+    got = want + np.array([0.0, 5e-3, 0.0])  # > 2e-3: not the parent's instrument
+    with pytest.raises(SystemExit) as ei:
+        FS._gate_repro(
+            got,
+            want,
+            _fs_medians(),
+            _fs_medians(),
+            arm="c",
+            production=True,
+            out_path=tmp_path / "gr.json",
+        )
+    assert ei.value.code == FS.RC_GR != 0
+    assert json.loads((tmp_path / "gr.json").read_text())["verdict"] == "FAIL"
+
+
+def test_fs_gate_repro_wrong_median_reference_exits_nonzero(tmp_path):
+    want = np.array([0.6, 0.1, 0.3])
+    with pytest.raises(SystemExit) as ei:
+        FS._gate_repro(
+            want.copy(),
+            want,
+            _fs_medians(0.5),
+            _fs_medians(0.51),  # |d|=0.01 > 1e-3
+            arm="b",
+            production=True,
+            out_path=tmp_path / "gr.json",
+        )
+    assert ei.value.code == FS.RC_GR != 0
+
+
+def test_fs_gate_repro_finiteness_drift_exits_nonzero(tmp_path):
+    want = np.array([0.6, np.nan, 0.3])
+    got = np.array([0.6, 0.2, 0.3])  # finite where the committed value is undefined
+    with pytest.raises(SystemExit) as ei:
+        FS._gate_repro(got, want, _fs_medians(), _fs_medians(), arm="c", production=True)
+    assert ei.value.code == FS.RC_GR
+
+
+def test_fs_gate_repro_smoke_is_informational_no_exit():
+    want = np.array([0.6, 0.1])
+    got = want + 0.5
+    rec = FS._gate_repro(got, want, _fs_medians(), _fs_medians(0.9), arm="c", production=False)
+    assert rec["verdict"] == "INFORMATIONAL-smoke"
+
+
+def _fs_stats_stub(label="Indeterminate"):
+    return {
+        "per_tier": {},
+        "tier_diff_t0_minus_t2": {},
+        "permutation": {},
+        "activity_tie_profile": {},
+        "lattice_verdict": label,
+        "lattice_inputs": {"perm_pct": 50.0, "tier_diff_map_t0_minus_t2": 0.1},
+        "rho_ceiling_abs": 0.9,
+    }
+
+
+def test_fs_demoted_floor_gets_no_lattice_label():
+    # [stat-rec-2]: >50% of a populated tier undefined on the MAP read => the
+    # per-floor row carries not_evaluable_census_only=True and NO lattice label.
+    r2_map = np.array([np.nan, np.nan, 0.5, 0.4, 0.3, 0.2])
+    tier = np.array([2, 2, 0, 0, 0, 0])
+    r2_map[np.where(tier == 2)[0][:2]] = np.nan  # tier-2: 2/2 undefined (>50%)
+    demo = FS._undefined_demotion(r2_map, r2_map, tier)
+    assert demo["not_evaluable_census_only"] is True
+    row = FS._finish_floor_row(
+        _fs_stats_stub("Gradient-holds"), demo, floor=240, n_fit=120_000, registered=False
+    )
+    assert row["not_evaluable_census_only"] is True
+    assert "lattice_reported" not in row
+    assert "lattice_note" not in row
+    assert row["lattice_inputs"]["perm_pct"] == 50.0  # inputs stay persisted as data
+
+
+def test_fs_healthy_floor_carries_reported_label_and_note():
+    r2_map = np.array([0.5, 0.4, 0.3, 0.2, 0.1, 0.05])
+    tier = np.array([0, 0, 1, 1, 2, 2])
+    demo = FS._undefined_demotion(r2_map, r2_map, tier)
+    assert demo["not_evaluable_census_only"] is False
+    row = FS._finish_floor_row(
+        _fs_stats_stub("Gradient-holds"), demo, floor=600, n_fit=120_000, registered=False
+    )
+    assert row["lattice_reported"] == "Gradient-holds"
+    assert row["lattice_note"] == FS.LATTICE_NOTE
+    reg = FS._finish_floor_row(_fs_stats_stub(), demo, floor=1200, n_fit=120_000, registered=True)
+    assert reg["registered_cell"] is True and "registered 1% cell" in reg["lattice_note"]
