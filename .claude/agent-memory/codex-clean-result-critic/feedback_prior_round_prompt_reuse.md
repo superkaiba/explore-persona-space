@@ -39,7 +39,10 @@ Round-specific spans to replace: PRIOR CRITIQUE SUMMARIES block (ends
 at `\n\nAll paths above`), ROUND-N SCOPE + BINDING DISMISSALS block
 (ends at the `=== INLINED` banner), the three envelopes (BEGIN..END
 inclusive, fresh Step 1d captures), the marker sentinel + Round
-heading, and the "re-runs on rounds N-10" window. Finish with a
+heading, and the "re-runs on rounds N-10" window. REVIEW-CONTEXT
+splice gotcha (#823 r7): the block's `(round N — ...)` header line can
+WRAP onto a second line, so never assert `lines[h+1] == sep` — locate
+the closing `=` sep within the next ~3 lines instead. Finish with a
 stale-string sweep (assert old round tokens absent). Note: the Step 4
 global `{{` scan legitimately hits ~6 lines of verbatim SPEC content
 (the spec's own no-`{{`-sentinel rules) — only the envelope-scoped
