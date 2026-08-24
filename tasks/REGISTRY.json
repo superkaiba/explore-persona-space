@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2513,
+  "highest_id": 2514,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11691,6 +11691,13 @@
       "path": "tasks/proposed/2513",
       "status": "proposed",
       "title": "Fix main-red tests/test_argcheck.py::test_bind_fleet_census_positive_coverage: issue2477_base_coherence.py api bindings not uniformly HfApi()"
+    },
+    "2514": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2514",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan c26/c27 routed-machine mirror is GCP-era, inverts under runpod-first auto default"
     },
     "256": {
       "has_clean_result": false,
