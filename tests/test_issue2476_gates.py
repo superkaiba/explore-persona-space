@@ -1543,6 +1543,25 @@ def test_fs_gate_counts_extra_merges_into_record_fail_path(tmp_path):
     assert rec2["verdict"] == "PASS" and rec2["sae_threshold"] == pytest.approx(0.5)
 
 
+def test_fs_gate_counts_extra_rejects_reserved_key_clobber(tmp_path):
+    """k200 r10 NIT: ``extra`` is caller diagnostics only — an extra key that
+    collides with a core record field (verdict/production/tol_rows/...) is
+    rejected loudly BEFORE the merge, never silently rewriting the gate's
+    persisted semantics."""
+    banked = np.array([100, 1195], np.int64)
+    with pytest.raises(AssertionError, match=r"reserved record keys.*'verdict'"):
+        FS._gate_counts(
+            banked,
+            banked,
+            (1200,),
+            arm="c",
+            production=True,
+            out_path=tmp_path / "gc.json",
+            extra={"verdict": "PASS", "sae_threshold": 0.5},
+        )
+    assert not (tmp_path / "gc.json").exists()  # rejected BEFORE any record write
+
+
 def _fs_medians(v_map=0.5, v_ib=0.1):
     return {
         f"{read}/t{t}": (v_map if read == "map" else v_ib)

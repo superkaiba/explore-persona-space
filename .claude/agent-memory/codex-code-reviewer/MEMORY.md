@@ -2,6 +2,7 @@
 
 <!-- This file is the MEMORY.md index for the codex-code-reviewer agent. -->
 
+- [union-fix ledger refetch + marker-repost U-item](feedback_union_fix_round_ledger_refetch_and_marker_repost.md) — re-fetch --open-only every compose (cr8 said 0 open, 12 were); marker-re-post U-item = inlined re-post + checker attestation; binary-verdict U-vs-M fence in the preamble (#2476 cr9)
 - [stale-base MB pin + fixture re-measure](feedback_stale_base_mb_pin_and_fixture_remeasure.md) — pin the resolved merge-base SHA when the brief flags phantom two-dot deletions; sibling-task verify_plan fixtures: probe worktree presence + identity, give live-run→static-trace ladder (#2204 r1)
 
 - [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block

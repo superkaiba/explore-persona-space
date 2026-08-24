@@ -27,6 +27,12 @@ seam incl. the k-aware leaf + regime key; the B1 revision-pin threading):
   regime-hash parity (U3), the warm pass-b provenance pin (U4), the durable
   densein DROP reason chain (U6), and the §3 manipulation check riding the
   lattice record + R7 digest (U7).
+- r10 strict verdict predicate (reconciler-required): PRODUCTION entry
+  requires the literal PASS on every required gate record (INFORMATIONAL-smoke
+  / unknown verdicts raise pre-heavy-work); SMOKE entry accepts
+  {PASS, INFORMATIONAL-smoke} and refuses anything else; plus the r10 NIT that
+  the parent regime manifest always records the RESOLVED sae_k while the hash
+  input stays legacy-conditional.
 
 Hermetic: no GPU, no network — external boundaries faked with
 ``unittest.mock.create_autospec`` (signature-conformant by construction).
@@ -334,14 +340,16 @@ def test_sae_k_resolution_and_leaf(tmp_path):
 
 
 def test_parent_regime_carries_sae_k_and_hash_flips(tmp_path):
-    """r8 U3: a DEFAULT budget omits the sae_k key entirely (pre-diff manifest
-    parity — banked k=100 out-roots stay resumable), an explicit --sae-k 100
-    resolves to the same production instrument and the same hash, and k=200
-    keys distinctly (a k=200 run can never resume a k=100 root)."""
+    """r8 U3 + r10 NIT: the RETURNED manifest always records the RESOLVED
+    budget (sae_k=100 at default/explicit-100 — provenance readers see the
+    realized instrument) while the HASH stays legacy-conditional: default and
+    explicit --sae-k 100 hash identically (banked k=100 out-roots stay
+    resumable), and k=200 keys distinctly (a k=200 run can never resume a
+    k=100 root)."""
     r0 = D._regime(_args(tmp_path, sae_k=0))
     r100 = D._regime(_args(tmp_path, sae_k=100))
     r2 = D._regime(_args(tmp_path, sae_k=200))
-    assert "sae_k" not in r0 and "sae_k" not in r100  # default/production budget: key omitted
+    assert r0["sae_k"] == r100["sae_k"] == 100  # r10: resolved provenance ALWAYS recorded
     assert r2["sae_k"] == 200
     assert r0["config_hash"] == r100["config_hash"]  # same resolved instrument, same regime
     assert r0["config_hash"] != r2["config_hash"]  # k=200 NEVER resumes a k=100 root
@@ -351,11 +359,18 @@ def test_parent_regime_default_hash_is_prediff_legacy_constant(tmp_path):
     """r8 U3 pin: the default-budget config_hash equals the PRE-diff hash as a
     literal constant (computed from the pre---sae-k _regime over the same
     fixture args at commit 1b93837e92~1), so every banked k=100 manifest
-    (parent + floor-sweep out-roots) resumes unrejected. Reconstruction arm:
-    hashing the returned base dict minus the derived keys reproduces it."""
+    (parent + floor-sweep out-roots) resumes unrejected. Reconstruction arm
+    mirrors the production hash rule: derived keys excluded, and sae_k
+    excluded from the hash input at the DEFAULT budget (r10 NIT: the returned
+    manifest carries it as provenance only — never in the legacy hash)."""
     r0 = D._regime(_args(tmp_path, sae_k=0))
     assert r0["config_hash"] == PREDIFF_DEFAULT_CONFIG_HASH
-    base = {k: v for k, v in r0.items() if k not in ("config_hash", "code_sha")}
+    assert r0["sae_k"] == D.SAE_K == 100  # provenance present, hash unchanged
+    base = {
+        k: v
+        for k, v in r0.items()
+        if k not in ("config_hash", "code_sha") and not (k == "sae_k" and v == D.SAE_K)
+    }
     got = hashlib.sha256(json.dumps(base, sort_keys=True).encode()).hexdigest()[:16]
     assert got == PREDIFF_DEFAULT_CONFIG_HASH
 
@@ -591,14 +606,68 @@ def test_require_upstream_gates_pass_records_no_exit(tmp_path):
 
 def test_require_upstream_gates_ignores_sanctioned_drop_record(tmp_path):
     """A sanctioned densein DROP (verdict DROPPED-companion) is NOT a gate FAIL
-    — downstream phases proceed (plan §7: drop, never a round abort)."""
-    args = _args(tmp_path)
+    — downstream phases proceed (plan §7: drop, never a round abort). The
+    densein_dropped key is NOT in _PHASE_REQUIRED_GATES, so the r10 strict
+    verdict predicate never loads it (no carve-out needed)."""
+    args = _args(tmp_path)  # production shape — the STRICTEST entry regime
     _write_gate_records(args, fail_key=None)
     (K._gates_dir(args) / "densein_dropped.json").write_text(
         json.dumps({"verdict": "DROPPED-companion", "reason_chain": "tb"})
     )
     K._require_upstream_gates(args, "stats")
     K._require_upstream_gates(args, "figures")
+
+
+# ── r10 strict verdict predicate (reconciler-required pre-launch hardening) ──────
+
+
+def test_production_entry_refuses_informational_smoke_record(tmp_path, monkeypatch):
+    """r10: at PRODUCTION entry every required record must be the literal PASS
+    — a smoke-demoted INFORMATIONAL-smoke gc_ii record raises pre-heavy-work
+    (a smoke-gated out-root can never launder into production results)."""
+    args = _args(tmp_path)  # production: smoke=False, max_chunks=0, smoke_rows=0
+    assert K._production(args)
+    _write_gate_records(args, fail_key=None)
+    (K._gates_dir(args) / "gc_ii.json").write_text(json.dumps({"verdict": "INFORMATIONAL-smoke"}))
+
+    def boom(*a, **k):
+        raise AssertionError("heavy path (_drv) reached over a non-PASS record (r10)")
+
+    monkeypatch.setattr(K, "_drv", boom)  # the first heavy step of every phase
+    with pytest.raises(RuntimeError, match=r"gc_ii.*'INFORMATIONAL-smoke'"):
+        K.PHASES["stats"](args)
+
+
+@pytest.mark.parametrize("smoke_entry", [False, True], ids=["production", "smoke"])
+def test_unknown_gate_verdict_refused_at_both_entries(tmp_path, monkeypatch, smoke_entry):
+    """r10: an unknown verdict (neither PASS/FAIL nor the smoke-informational
+    token) raises at BOTH production and smoke entry — never silently
+    accepted as 'not FAIL'."""
+    args = _args(tmp_path, smoke=smoke_entry)
+    assert K._production(args) is (not smoke_entry)
+    _write_gate_records(args, fail_key=None)
+    (K._gates_dir(args) / "gc_ii.json").write_text(json.dumps({"verdict": "MAYBE"}))
+
+    def boom(*a, **k):
+        raise AssertionError("heavy path (_drv) reached over an unknown verdict (r10)")
+
+    monkeypatch.setattr(K, "_drv", boom)
+    with pytest.raises(RuntimeError, match=r"gc_ii.*'MAYBE'"):
+        K.PHASES["stats"](args)
+
+
+def test_smoke_entry_accepts_informational_smoke_records(tmp_path):
+    """r10: at SMOKE entry INFORMATIONAL-smoke is an accepted verdict (the
+    smoke writers demote by design) — the loader returns for every phase."""
+    args = _args(tmp_path, smoke=True)
+    assert not K._production(args)
+    _write_gate_records(args, fail_key=None)
+    for key in ("gc_i", "gc_ii", "gc_iii"):
+        (K._gates_dir(args) / f"{key}.json").write_text(
+            json.dumps({"verdict": "INFORMATIONAL-smoke"})
+        )
+    for phase in ("sae_train", "densein", "census", "stats", "figures"):
+        K._require_upstream_gates(args, phase)
 
 
 # ── r8 U6: the densein DROP reason chain survives into gates_k200.json ───────────

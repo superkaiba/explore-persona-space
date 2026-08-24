@@ -246,9 +246,17 @@ def _require_upstream_gates(args, phase: str) -> None:
     G-C' FAIL can never be laundered by re-entering at a later ``--phase``
     (producing/uploading terminal results off a failed gate). A MISSING required
     record fails loud (the producing phase never completed on this out-root).
-    Verdict semantics: only the literal "FAIL" re-applies — smoke-demoted
-    records carry "INFORMATIONAL-smoke" and G-S/G-A bind at smoke through their
-    own writers, so this matches each gate's binding regime by construction."""
+    Verdict semantics (r10 strict predicate, reconciler-required): FAIL
+    re-applies the recorded rc at every entry; PRODUCTION entry additionally
+    requires the literal "PASS" on EVERY required record — a smoke-demoted
+    "INFORMATIONAL-smoke" (or any unknown verdict) raises pre-heavy-work, so a
+    smoke-gated out-root can never launder into production terminal results;
+    SMOKE entry accepts {"PASS", "INFORMATIONAL-smoke"} (the smoke writers
+    demote by design) and refuses anything else. The sanctioned densein DROP
+    record ("DROPPED-companion") lives under the NON-required
+    ``densein_dropped`` key and is never loaded here."""
+    production = _production(args)
+    accepted = ("PASS",) if production else ("PASS", "INFORMATIONAL-smoke")
     for key in _PHASE_REQUIRED_GATES.get(phase, ()):
         if key == "g4":
             # the parent's own leaf-local gate record (written FAIL included);
@@ -264,7 +272,8 @@ def _require_upstream_gates(args, phase: str) -> None:
                 "producing phase first (a downstream phase never enters off an ungated "
                 "out-root; r8 U2)"
             )
-        if rec.get("verdict") == "FAIL":
+        verdict = rec.get("verdict")
+        if verdict == "FAIL":
             rc = _GATE_RC[key]
             logger.error(
                 "[%s] recorded %s verdict FAIL — re-applying the original halt (rc=%d; r8 U2)",
@@ -273,6 +282,16 @@ def _require_upstream_gates(args, phase: str) -> None:
                 rc,
             )
             sys.exit(rc)
+        if verdict not in accepted:
+            entry = (
+                "production entry requires the literal PASS"
+                if production
+                else "smoke entry accepts only PASS / INFORMATIONAL-smoke"
+            )
+            raise RuntimeError(
+                f"[{phase}] required upstream gate record {key} carries verdict "
+                f"{verdict!r} — {entry} (r10 strict predicate; record: {rec_path})"
+            )
 
 
 def _parent_args(args, phase: str) -> SimpleNamespace:

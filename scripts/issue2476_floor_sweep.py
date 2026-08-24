@@ -370,6 +370,11 @@ def _gate_counts(
         "production": bool(production),
     }
     if extra:
+        # k200 r10 NIT: ``extra`` is caller diagnostics ONLY — it must never
+        # clobber a core record field (verdict/production/tol_rows/...), which
+        # would silently rewrite the gate's persisted semantics.
+        overlap = sorted(set(extra) & set(record))
+        assert not overlap, f"_gate_counts extra clobbers reserved record keys: {overlap}"
         record.update(extra)
     if out_path is not None:
         _write_json_atomic(out_path, record)

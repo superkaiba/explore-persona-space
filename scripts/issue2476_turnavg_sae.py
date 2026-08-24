@@ -320,21 +320,26 @@ def _regime(args) -> dict:
             "m_s_score_sha256": m_committed["realized"]["s_score_sha256"],
         },
     }
-    # --sae-k joins the hashed dict ONLY at a non-default RESOLVED budget
+    # --sae-k joins the HASH INPUT ONLY at a non-default RESOLVED budget
     # (k200 code-review r8 U3): the parent's + floor-sweep's pre-diff k=100
     # manifests were minted WITHOUT the key, so hashing a default-`0` (or an
     # explicit `100`, which resolves to the same production instrument) would
     # reject every banked k=100 out-root as a "different config" on any future
-    # resume/re-run. Default => key omitted, hash byte-identical to pre-diff;
-    # k=200 => key present, hash distinct (a k=200 run can never resume a
-    # k=100 root). Pinned by tests/test_issue2476_k200.py (legacy-parity
-    # constant + flip tests).
+    # resume/re-run. Default => key omitted from the hash, hash byte-identical
+    # to pre-diff; k=200 => key present, hash distinct (a k=200 run can never
+    # resume a k=100 root). Pinned by tests/test_issue2476_k200.py
+    # (legacy-parity constant + flip tests).
+    hash_base = dict(base)
     if _sae_k(args) != SAE_K:
-        base["sae_k"] = _sae_k(args)
-    cfg_hash = hashlib.sha256(json.dumps(base, sort_keys=True).encode()).hexdigest()[:16]
+        hash_base["sae_k"] = _sae_k(args)
+    cfg_hash = hashlib.sha256(json.dumps(hash_base, sort_keys=True).encode()).hexdigest()[:16]
     prov = git_provenance()
     code_sha = prov.commit_sha_full or prov.commit_sha or "unknown"
-    return {**base, "config_hash": cfg_hash, "code_sha": code_sha}
+    # r10 NIT (reconciler): the RETURNED manifest ALWAYS records the RESOLVED
+    # budget (sae_k=100 at default) — provenance readers see the realized
+    # instrument, while the hash input above stays legacy-conditional so
+    # banked k=100 manifests resume unrejected (config_hash-keyed comparison).
+    return {**base, "sae_k": _sae_k(args), "config_hash": cfg_hash, "code_sha": code_sha}
 
 
 def _wipe_stale(phase: str, stale_paths) -> None:
