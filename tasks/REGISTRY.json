@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2524,
+  "highest_id": 2525,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11768,6 +11768,13 @@
       "path": "tasks/proposed/2524",
       "status": "proposed",
       "title": "verify_task_body.py: sidecar short-series-label opaque-code check"
+    },
+    "2525": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2525",
+      "status": "proposed",
+      "title": "Fix three fleet-wide test invariants broken by sibling landings on main (ungated HF upload #1739, bind-census skips #2477, dangling import roots #2379/#2474)"
     },
     "256": {
       "has_clean_result": false,
