@@ -1,0 +1,15 @@
+{
+  "figure": "expl_perq_clouds",
+  "git_commit": "a39baedf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_hook_mechanics.json",
+    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_reduce_figures.json",
+    "eval_results/issue_2254/first-k-answer-token-steering/stage_inputs/staged_inputs.json"
+  ],
+  "inputs": [
+    "steer/delta_score_percell.json",
+    "judge/judged/*.json",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/baseline_ceiling/judged_percell.json"
+  ]
+}

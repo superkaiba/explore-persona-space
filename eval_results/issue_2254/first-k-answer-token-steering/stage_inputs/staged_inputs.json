@@ -1,19 +1,23 @@
 {
   "experiment": "issue2254_first_k_steering",
   "base_model": "Qwen/Qwen2.5-7B-Instruct",
-  "ts": "2026-08-23T10:59:41Z",
+  "ts": "2026-08-23T19:03:37Z",
   "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
-  "git_commit": "5e987357",
-  "git_dirty": false,
+  "git_commit": "a39baedf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_hook_mechanics.json",
+    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_reduce_figures.json"
+  ],
   "followup_label": "first-k-answer-token-steering",
   "staged_e1_assets": {
     "sycophancy": {
-      "path": "/workspace/explore-persona-space/data/issue_779/artifacts/sycophancy.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/data/issue_779/artifacts/sycophancy.json",
       "sha256": "998f4643666df9e5d2ed3def4275b839b3d40ea426079abf865279f034b2f212",
       "downloaded": true
     },
     "hallucination": {
-      "path": "/workspace/explore-persona-space/data/issue_779/artifacts/hallucination.json",
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/data/issue_779/artifacts/hallucination.json",
       "sha256": "053afaa273371d3806c744d5fb0aaf6fe3a983616f2052cd4d723ec14f843d5e",
       "downloaded": true
     }
