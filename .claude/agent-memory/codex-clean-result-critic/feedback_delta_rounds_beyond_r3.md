@@ -52,3 +52,28 @@ compose time and pass the /tmp path with a blob-identity attestation —
 the sandbox may deny git, and a delta commit that is ancestor-of-worktree
 + on origin/issue-<N> but NOT yet on origin/main is the NORMAL pre-merge
 state: attest it so the twin doesn't FAIL footer-link liveness on it.
+(6) BRIEF-NAMED "body" COMMIT IDS MAY BE LEDGER COMMITS (#2476 crc9,
+2026-08-24): the brief cited two ids as the body fix commits that were
+actually the concerns-ledger + interpretation-marker commits (they touch
+only events.jsonl/concerns.jsonl). Re-derive the true pair via
+`git log -- tasks/<status>/<N>/body.md` (last set-body BEFORE the prior
+round's verdict timestamps = reviewed base; latest set-body = fix commit),
+diff exactly those two, and CORRECT the brief's ids inside the prompt's
+attestation block so the twin doesn't hunt for body changes in marker
+commits. Sibling probe hazard: `git branch --contains <sha>` hangs
+minutes on this repo — use `timeout 30 git merge-base --is-ancestor`
+against origin/main, the worktree HEAD, and `git ls-remote --heads origin
+issue-<N>` instead.
+(7) TIGHT FIX-CONFIRMATION SHAPE (brief says "TIGHT ... not the full
+15-lens pass", #2476 crc9): no lens-reference or SPEC.md inline at all;
+five-envelope roster = verifier + audit + open-concerns + ROUND-8 CONCERN
+EVENT CHAINS (full raised/addressed chains for just the named ids —
+addressed concerns vanish from --open-only, and self-discharged
+`addressed_by: analyzer` dispositions get an explicit re-adjudicate
+instruction) + COMPOSER DELTA DIFF (the exact reviewed-base→current git
+diff as an envelope, with a per-hunk disposition section in the output
+template). Verdict grounds enumerated exhaustively (fix-not-applied /
+concern-not-addressed / delta-introduced regression / data-access-blocked);
+out-of-delta findings demoted to CONCERN:: rows. Whole-prompt `{{` scan
+is expected clean here (no SPEC inline), so run it un-scoped as a bonus
+guard.
