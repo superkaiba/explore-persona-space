@@ -1,0 +1,455 @@
+{
+ "acc1_identity_vs_rung4": {
+  "cosine_identity_wins": 14,
+  "cosine_rung4_wins": [
+   "dana",
+   "helios"
+  ],
+  "cosine_ties": [],
+  "euclidean_identity_wins": 15,
+  "euclidean_rung4_wins": [
+   "helios"
+  ],
+  "euclidean_ties": []
+ },
+ "characters": [
+  "barnaby",
+  "cobalt",
+  "dana",
+  "elena",
+  "gus",
+  "helios",
+  "iris",
+  "marcus",
+  "marisol",
+  "mort",
+  "priya",
+  "tomas",
+  "vera",
+  "vex",
+  "wren",
+  "zara"
+ ],
+ "design_band": [
+  "D",
+  "A",
+  "C",
+  "B",
+  "C",
+  "A",
+  "A",
+  "B",
+  "C",
+  "D",
+  "B",
+  "C",
+  "A",
+  "D",
+  "B",
+  "D"
+ ],
+ "equalized_n_largest_delta": {
+  "character": "mort",
+  "equalized_recovery": 0.2992,
+  "full_n_recovery": 0.4231
+ },
+ "headline_replay": {
+  "p_add_one": 0.0021,
+  "rho": 0.7029
+ },
+ "issue": 2479,
+ "judge_loss_accounting": {
+  "per_character": {
+   "barnaby": {
+    "band": "D",
+    "n_content_drop_draws": 1,
+    "n_fully_censored_items": 4,
+    "n_items": 219,
+    "n_items_with_api_refusal": 4,
+    "n_ok_draws": 1074,
+    "n_other_error_draws": 0,
+    "n_provider_api_refusal_draws": 20,
+    "n_scored_items": 215,
+    "n_unscored_items": 4
+   },
+   "cobalt": {
+    "band": "A",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 0,
+    "n_items": 214,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1066,
+    "n_other_error_draws": 4,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 214,
+    "n_unscored_items": 0
+   },
+   "dana": {
+    "band": "C",
+    "n_content_drop_draws": 1,
+    "n_fully_censored_items": 0,
+    "n_items": 229,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1142,
+    "n_other_error_draws": 2,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 229,
+    "n_unscored_items": 0
+   },
+   "elena": {
+    "band": "B",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 0,
+    "n_items": 204,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1020,
+    "n_other_error_draws": 0,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 204,
+    "n_unscored_items": 0
+   },
+   "gus": {
+    "band": "C",
+    "n_content_drop_draws": 1,
+    "n_fully_censored_items": 0,
+    "n_items": 212,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1059,
+    "n_other_error_draws": 0,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 212,
+    "n_unscored_items": 0
+   },
+   "helios": {
+    "band": "A",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 0,
+    "n_items": 188,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 939,
+    "n_other_error_draws": 1,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 188,
+    "n_unscored_items": 0
+   },
+   "iris": {
+    "band": "A",
+    "n_content_drop_draws": 1,
+    "n_fully_censored_items": 0,
+    "n_items": 224,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1114,
+    "n_other_error_draws": 5,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 224,
+    "n_unscored_items": 0
+   },
+   "marcus": {
+    "band": "B",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 1,
+    "n_items": 206,
+    "n_items_with_api_refusal": 1,
+    "n_ok_draws": 1024,
+    "n_other_error_draws": 1,
+    "n_provider_api_refusal_draws": 5,
+    "n_scored_items": 205,
+    "n_unscored_items": 1
+   },
+   "marisol": {
+    "band": "C",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 0,
+    "n_items": 203,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1015,
+    "n_other_error_draws": 0,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 203,
+    "n_unscored_items": 0
+   },
+   "mort": {
+    "band": "D",
+    "n_content_drop_draws": 2,
+    "n_fully_censored_items": 14,
+    "n_items": 214,
+    "n_items_with_api_refusal": 15,
+    "n_ok_draws": 996,
+    "n_other_error_draws": 1,
+    "n_provider_api_refusal_draws": 71,
+    "n_scored_items": 200,
+    "n_unscored_items": 14
+   },
+   "priya": {
+    "band": "B",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 0,
+    "n_items": 213,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1064,
+    "n_other_error_draws": 1,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 213,
+    "n_unscored_items": 0
+   },
+   "tomas": {
+    "band": "C",
+    "n_content_drop_draws": 1,
+    "n_fully_censored_items": 0,
+    "n_items": 219,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1088,
+    "n_other_error_draws": 6,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 219,
+    "n_unscored_items": 0
+   },
+   "vera": {
+    "band": "A",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 0,
+    "n_items": 221,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1101,
+    "n_other_error_draws": 4,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 221,
+    "n_unscored_items": 0
+   },
+   "vex": {
+    "band": "D",
+    "n_content_drop_draws": 1,
+    "n_fully_censored_items": 7,
+    "n_items": 227,
+    "n_items_with_api_refusal": 9,
+    "n_ok_draws": 1093,
+    "n_other_error_draws": 2,
+    "n_provider_api_refusal_draws": 39,
+    "n_scored_items": 220,
+    "n_unscored_items": 7
+   },
+   "wren": {
+    "band": "B",
+    "n_content_drop_draws": 2,
+    "n_fully_censored_items": 0,
+    "n_items": 217,
+    "n_items_with_api_refusal": 0,
+    "n_ok_draws": 1078,
+    "n_other_error_draws": 5,
+    "n_provider_api_refusal_draws": 0,
+    "n_scored_items": 216,
+    "n_unscored_items": 1
+   },
+   "zara": {
+    "band": "D",
+    "n_content_drop_draws": 0,
+    "n_fully_censored_items": 1,
+    "n_items": 201,
+    "n_items_with_api_refusal": 1,
+    "n_ok_draws": 1000,
+    "n_other_error_draws": 0,
+    "n_provider_api_refusal_draws": 5,
+    "n_scored_items": 200,
+    "n_unscored_items": 1
+   }
+  },
+  "totals": {
+   "n_api_refusal_draws_in_tier_D": 135,
+   "n_content_drop_draws": 10,
+   "n_fully_censored_items": 27,
+   "n_items_with_api_refusal": 30,
+   "n_other_error_draws": 32,
+   "n_provider_api_refusal_draws": 140,
+   "n_unscored_items": 28,
+   "n_unscored_items_in_tier_D": 26
+  }
+ },
+ "judged_answer_cjk_recount": {
+  "max_axis_shift": 0.824,
+  "max_axis_shift_character": "zara",
+  "note": "regex applied to the judge-consumed `answer` field; the committed cjk_audit.json judged_axis_pool counts scan the full `story` wrapper (a different substrate; both are real intrusion reads)",
+  "p_add_one": 0.0022,
+  "per_character": {
+   "barnaby": {
+    "axis_score_excl_intruded_answers": 54.1575,
+    "intruded_answers": 3,
+    "n_items": 219
+   },
+   "cobalt": {
+    "axis_score_excl_intruded_answers": 67.4324,
+    "intruded_answers": 4,
+    "n_items": 214
+   },
+   "dana": {
+    "axis_score_excl_intruded_answers": 47.1201,
+    "intruded_answers": 7,
+    "n_items": 229
+   },
+   "elena": {
+    "axis_score_excl_intruded_answers": 50.0189,
+    "intruded_answers": 3,
+    "n_items": 204
+   },
+   "gus": {
+    "axis_score_excl_intruded_answers": 34.8209,
+    "intruded_answers": 4,
+    "n_items": 212
+   },
+   "helios": {
+    "axis_score_excl_intruded_answers": 71.3834,
+    "intruded_answers": 7,
+    "n_items": 188
+   },
+   "iris": {
+    "axis_score_excl_intruded_answers": 69.1624,
+    "intruded_answers": 4,
+    "n_items": 224
+   },
+   "marcus": {
+    "axis_score_excl_intruded_answers": 61.8338,
+    "intruded_answers": 5,
+    "n_items": 206
+   },
+   "marisol": {
+    "axis_score_excl_intruded_answers": 38.3752,
+    "intruded_answers": 1,
+    "n_items": 203
+   },
+   "mort": {
+    "axis_score_excl_intruded_answers": 58.4123,
+    "intruded_answers": 3,
+    "n_items": 214
+   },
+   "priya": {
+    "axis_score_excl_intruded_answers": 61.777,
+    "intruded_answers": 9,
+    "n_items": 213
+   },
+   "tomas": {
+    "axis_score_excl_intruded_answers": 49.0249,
+    "intruded_answers": 2,
+    "n_items": 219
+   },
+   "vera": {
+    "axis_score_excl_intruded_answers": 72.3427,
+    "intruded_answers": 3,
+    "n_items": 221
+   },
+   "vex": {
+    "axis_score_excl_intruded_answers": 55.16,
+    "intruded_answers": 6,
+    "n_items": 227
+   },
+   "wren": {
+    "axis_score_excl_intruded_answers": 60.6698,
+    "intruded_answers": 3,
+    "n_items": 217
+   },
+   "zara": {
+    "axis_score_excl_intruded_answers": 28.7421,
+    "intruded_answers": 3,
+    "n_items": 201
+   }
+  },
+  "pooled_intruded_answers": 67,
+  "pooled_items": 3411,
+  "rho_excl_intruded_answers": 0.6941,
+  "zara_s2280": {
+   "answer_field_intruded": false,
+   "found": true
+  }
+ },
+ "prefix_arm": {
+  "ceiling_max": 0.0196,
+  "ceiling_min": -0.0007,
+  "floor": 0.05,
+  "n_below_floor": 16,
+  "per_character": {
+   "barnaby": 0.0041,
+   "cobalt": 0.0063,
+   "dana": 0.0153,
+   "elena": 0.0047,
+   "gus": 0.0031,
+   "helios": 0.0196,
+   "iris": 0.005,
+   "marcus": 0.0144,
+   "marisol": 0.0013,
+   "mort": -0.0001,
+   "priya": 0.0045,
+   "tomas": -0.0007,
+   "vera": 0.0017,
+   "vex": 0.0119,
+   "wren": 0.0162,
+   "zara": 0.0002
+  }
+ },
+ "rung6": {
+  "n_rung6_gt_rung4": 16,
+  "p_add_one": 0.0955,
+  "recovery_max": 0.9151,
+  "recovery_min": 0.7601,
+  "rho_axis": 0.3471
+ },
+ "story_substrate_max_axis_shift": {
+  "character": "zara",
+  "shift": 1.227
+ },
+ "tier_conditioned": {
+  "per_tier_rho_axis_recovery_n4": {
+   "A": -0.2,
+   "B": 0.8,
+   "C": 0.8,
+   "D": -0.8
+  },
+  "pooled_within_tier_rank_rho": 0.15,
+  "recovery_range_by_tier": {
+   "A": [
+    0.7405,
+    0.8848
+   ],
+   "B": [
+    0.6491,
+    0.7466
+   ],
+   "C": [
+    0.5902,
+    0.7067
+   ],
+   "D": [
+    0.4231,
+    0.5919
+   ]
+  },
+  "tier_ordinal_to_axis_rho": 0.7519,
+  "tier_ordinal_to_recovery": {
+   "null_q95": 0.4244,
+   "p_add_one": 0.0001,
+   "rho": 0.9216
+  },
+  "tiers_ABC_only_n12": {
+   "p_add_one": 0.0001,
+   "rho": 0.8951
+  }
+ },
+ "unscored_items_sensitivity": {
+  "affected_characters": [
+   "barnaby",
+   "marcus",
+   "mort",
+   "vex",
+   "wren",
+   "zara"
+  ],
+  "n_combos": 64,
+  "note": "axis rescored with every unscored item set to 0 or 100 per character (all extreme per-character assignments); headline rho recomputed each time",
+  "rho_max": 0.7118,
+  "rho_min": 0.6618
+ },
+ "verbatim_flatness_realized": {
+  "items_per_char_target": 100,
+  "n_scored_items_per_char": [
+   44
+  ],
+  "total_draws": 1760
+ }
+}
