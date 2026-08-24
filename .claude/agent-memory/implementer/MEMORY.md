@@ -69,3 +69,4 @@
 - [Doc uniqueness pins count INVOCATIONS](reference_doc_pin_invocation_counting.md) — count invocations on an executable view (comments stripped, continuations joined) over ANY-indent fences; mutate at the REAL anchor sites; claim only what the detector does (#2263 r7/r8)
 - [Exact-rule claims, not glosses](feedback_exact_rule_claims_not_glosses.md) — shipped text about a regex states the literal rule + off-rule cases w/ fail direction; "as bash would" glosses FAIL review; residual disclosures are claims too (#2263 r9)
 - [gotchas.md size-trim recipe](reference_gotchas_size_trim_recipe.md) — duplicate-collapse + cross-entry-repetition levers, keep fuN/crash-N disambiguators, pin surfaces to re-check, >500s lint fence
+- [Corpus-sweep flip taxonomy must be directional](feedback_corpus_sweep_flip_taxonomy_directional.md) — "expected" buckets predict per-unit verdicts from recorded tokens; set-difference predicates are vacuous under a wholesale remap (#2514 r2 blocker)
