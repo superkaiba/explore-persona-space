@@ -46,6 +46,8 @@ from pathlib import Path
 
 import psutil
 
+from explore_persona_space.atomic_io import atomic_replace
+
 # Default per-claim time-to-live: a phase's claim auto-expires after this many
 # seconds so a crashed / forgotten claim can never permanently reserve headroom.
 DEFAULT_TTL_S = 4 * 60 * 60  # 4h
@@ -117,11 +119,12 @@ def _load_ledger(ledger_path: Path) -> dict:
 
 
 def _atomic_write_ledger(ledger_path: Path, data: dict) -> None:
-    """Atomic JSON write (tmp in the same dir + ``os.replace``)."""
+    """Atomic JSON write via the shared process-safe ``atomic_replace``
+    (pid+uuid temp in the same dir + ``os.replace``; #2336). A write
+    failure PROPAGATES (this writer has no fail-soft contract)."""
     ledger_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = ledger_path.with_name(ledger_path.name + ".tmp")
-    tmp.write_text(json.dumps(data, indent=2, sort_keys=True))
-    os.replace(tmp, ledger_path)
+    with atomic_replace(ledger_path) as tmp:
+        tmp.write_text(json.dumps(data, indent=2, sort_keys=True))
 
 
 def _row_alive(row: dict, *, now: float, pid_alive: Callable[[int], bool]) -> bool:
