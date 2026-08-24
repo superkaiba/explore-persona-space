@@ -1,5 +1,6 @@
 ---
-title: Can the context→answer map predict the POST-CoT answer, in CoT-trained models?
+title: Can the context→answer map predict the POST-CoT answer, and how does CoT training
+  change the map?
 kind: experiment
 tags: []
 created_at: '2026-08-24T17:29:34Z'
