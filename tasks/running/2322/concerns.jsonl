@@ -1,1 +1,2 @@
 {"ts": "2026-08-24T00:00:14Z", "event": "raised", "concern_id": "live-job-interlock", "severity": "BLOCKER", "summary": "A >2h live job can age out of the busy set, and dispatch can race the unlocked final check-to-kill window.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-24T00:00:29Z", "event": "raised", "concern_id": "seam-body-coverage", "severity": "BLOCKER", "summary": "New run() and fetch_models() are stubbed without any test executing their real production bodies.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
