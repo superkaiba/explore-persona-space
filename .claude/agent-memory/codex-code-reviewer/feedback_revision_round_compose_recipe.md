@@ -2523,3 +2523,33 @@ verdict's `## Round-1 closure ledger`: one line per union item PLUS one per
 ledger-only concern row (here 16 + 3 = 19), with expected-status
 pre-adjudications ONLY for by-design rows (pod-parity STILL-BINDING-BY-DESIGN),
 never for contested fixes.
+
+**Twice-sustained-reconciler third round (#2514 r3, 2026-08-24):** when the
+same twin FAILed two rounds and a binding reconciler SUSTAINED the same
+defect class both times (a validation gate that cannot fail, one level
+deeper each round), compose r3 with: (a) the LATEST reconcile marker body
+inlined (tags stripped) as the BINDING ROUND CONTRACT — its "ROUND N
+MUST-FIX" list IS the closure-item set; the r1 reconciler compresses to
+history prose. (b) The central duty is anchor-independence phrased as
+HOW-OBTAINED, not does-it-exist: when the fix pins an "approved" constant
+(`_APPROVED_LEG_REGIMES`), instruct a per-row derivation check against the
+INLINED plan text / pre-task blob — a row not derivable from those sources
+is evidence of transcription from the code under test (hollow a third
+time); pair with the wrong-but-conforming-header duty (is the header the
+assert reads produced by the same module state that drives row
+production?) and an enumerate-don't-sample transition-matrix duty for any
+direction conjunct. (c) A brief-ordered independent re-run of
+negative-control tests on a no-uv twin composes as TWO ARMS: scratch-run
+primary (git-show the prior classifier to /tmp, named fixtures only, never
+the production corpus) + STATIC hand-trace fallback, with a dedicated
+`**Falsifiability check:** red-vs-r2-run | red-vs-r2-static-trace |
+NOT-VERIFIED` header line recording which arm ran; flag at return that
+dispatch write-mode decides the arm. (d) Ref-rot accounting when spec-sync
+commits bracket the round commit: the round commit's PARENT can itself be
+a sync commit — verify per-file the syncs touch no deliverable, then state
+"the scoped single-commit diff is still the pure round delta"; pin the
+whole ref table (brief-supplied) and translate the marker's HEAD~1 forms.
+(e) Both-directions honesty block names the THIRD-round hazard explicitly:
+do not manufacture a third FAIL because the history expects one; enumerate
+the remaining hollowness routes in the crux and say a clean close IS the
+anchored-and-falsifiable verdict.
