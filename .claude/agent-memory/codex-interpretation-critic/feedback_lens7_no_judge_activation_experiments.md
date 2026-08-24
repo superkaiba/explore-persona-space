@@ -22,5 +22,17 @@ local files + the exact recompute, state the advisory carve-out for HF
 paths, and give the structural-audit shape for any long-form text corpus.
 
 (Reconstructed 2026-08-18 from the MEMORY.md index hook after the original
-file went missing from disk — kept deliberately minimal; re-ground it with
-specifics the next time the situation recurs.)
+file went missing from disk.)
+
+Re-grounded 2026-08-23 (#2476 r1, per-feature SAE R²/retrieval DVs, zero
+generations anywhere): the working local-recompute enumeration was —
+(1) body's quoted spot-check rows found by direct feature-id lookup in the
+per-feature NPZs (rng-draw replication only a bonus); (2) recompute per-tier
+alive counts, medians, activity-matched medians, bridge Spearman/level-shift
+from NPZs; (3) re-route the registered verdict lattice from the tier_tests
+JSONs (perm-pct + tier-diff + CI); (4) literal
+`Language-intrusion scan: N/A — no on-policy generation` line. Also tell
+Codex the worktree venv python path (`.venv/bin/python`, confirm numpy
+importable at compose time) — NPZ reads are load-bearing and stdlib-only
+recipes don't cover them; genuinely-unavailable numpy routes to the
+denied-capability BLOCKED paragraph, not the network-advisory one.

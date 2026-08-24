@@ -1,0 +1,44 @@
+{
+  "smoke": false,
+  "tiny_model": false,
+  "max_chunks": 0,
+  "smoke_rows": 0,
+  "sae_dict": 0,
+  "sae_steps": 0,
+  "fit_n": 0,
+  "n_perm": 10000,
+  "n_boot": 10000,
+  "gen_batch": 16,
+  "hf_prefix": "issue2476_turnavg/analysis_tensors",
+  "skip_upload": false,
+  "device": "cuda",
+  "layer_c": 19,
+  "layers_b": [
+    19,
+    20
+  ],
+  "m_store_revision": "8b82eb975326774003512db1e7e542491edcd056",
+  "consolidate_chunks": 30,
+  "split_shas": {
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "train_full_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+    "holdout_sha256": "7957d689748eca218055f213082c1df444603ec2f1faa3f04b4004cee6f58622",
+    "sae_fit_sha256": "88d344675fbbca3a717cd8a0c6aa4fd893241a17098bd3173f6ae00b4d9a0fb8",
+    "m_s_fit_sha256": "9e397255da497a27dd136d639b35fb0126f618f1781ac30845b2368ee539d02d",
+    "m_s_score_sha256": "338310fa55fbea9c738520c26cb7dd029d48a8c981132aab2eddcae3621c1747"
+  },
+  "config_hash": "e8039b711914d5d5",
+  "code_sha": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:27:54.642662Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "eval",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}
