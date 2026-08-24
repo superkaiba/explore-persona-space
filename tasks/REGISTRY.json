@@ -11923,7 +11923,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/2546",
       "status": "proposed",
-      "title": "Does the context\u2192answer map degrade on questions where chain-of-thought is necessary?"
+      "title": "Can the context\u2192answer map predict the POST-CoT answer, in CoT-trained models?"
     },
     "2547": {
       "has_clean_result": false,

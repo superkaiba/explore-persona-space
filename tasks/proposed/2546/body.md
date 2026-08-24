@@ -1,6 +1,5 @@
 ---
-title: Does the context→answer map degrade on questions where chain-of-thought is
-  necessary?
+title: Can the context→answer map predict the POST-CoT answer, in CoT-trained models?
 kind: experiment
 tags: []
 created_at: '2026-08-24T17:29:34Z'
