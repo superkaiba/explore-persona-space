@@ -29,6 +29,7 @@ import logging
 import re
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -1494,3 +1495,306 @@ def test_r3fix_backoff_wired_into_grid_stage2_anchors_hf_paths():
     assert "oom_backoff=False" in src_pilot
     assert inspect.signature(R.run_block).parameters["oom_backoff"].default is True
     assert "torch.manual_seed(seed_base + i)" in inspect.getsource(R.generate_batch)
+
+
+# ------------------------------------------------- crash-fix r4: capture OOM
+# The grid OOM lived in the TEACHER-FORCED CAPTURE forward
+# (capture_answer_states -> extract_layer_activations), not generation
+# (epm:failure v4, reason grid_capture_forward_oom_unchunked_rows): one
+# unchunked full-sequence forward over the whole row batch at the
+# recalibrated 8192 cap died twice at 4 rows x T~=8.4k (698 MiB failing at
+# 74.99 GiB on H100-80GB). Fix: row-chunk every capture forward under the
+# CAPTURE_TOKENS_PER_FORWARD row-token budget at the ONE shared seam all
+# capture call sites flow through (capture_answer_states; margin_lnp shares
+# the helper for its full-logits forward), with a bounded OOM-backoff on top.
+
+
+class _FakeTok2389:
+    """Mirrors the two surfaces ``capture_answer_states`` touches: the
+    ``__call__(text, add_special_tokens=False) -> {"input_ids": [...]}``
+    encode and ``pad_token_id`` (the test_issue2215_run pattern). One token
+    per whitespace word; ids stay inside the tiny model's 64-token vocab."""
+
+    pad_token_id = 0
+
+    def __call__(self, text: str, add_special_tokens: bool = False) -> dict:
+        assert add_special_tokens is False
+        return {"input_ids": [10 + k for k, _ in enumerate(text.split())]}
+
+
+def _fake_extract_pos(model, ids, layers, attention_mask=None):
+    """Signature mirror of ``analysis.extraction.extract_layer_activations``
+    (the external model-forward boundary). Activation at (row, position) is
+    the POSITION index broadcast over hidden=4 — row-LOCAL semantics, so the
+    expected span means are chunk-invariant by construction and any global-
+    row misalignment across sub-chunks is caught exactly."""
+    b, t = ids.shape
+    pos = torch.arange(t, dtype=torch.float32)[None, :, None].expand(b, t, 4)
+    return {layer: pos.clone() for layer in layers}
+
+
+def _tiny_llama():
+    """Tiny REAL causal LM (random weights, CPU fp32): exercises the REAL
+    ``extract_layer_activations`` hook path (``model.model.layers``) and the
+    real ``model(input_ids=..., attention_mask=...).logits`` margin forward."""
+    from transformers import LlamaConfig, LlamaForCausalLM
+
+    torch.manual_seed(0)
+    mcfg = LlamaConfig(
+        vocab_size=64,
+        hidden_size=16,
+        intermediate_size=32,
+        num_hidden_layers=2,
+        num_attention_heads=2,
+        num_key_value_heads=2,
+        max_position_embeddings=64,
+    )
+    model = LlamaForCausalLM(mcfg)
+    model.eval()
+    return model
+
+
+def _capture_cfg(hidden: int = 16, batch: int = 8) -> SimpleNamespace:
+    return SimpleNamespace(layers=[0, 1], hidden=hidden, capture_batch=batch, device="cpu")
+
+
+def test_r4fix_capture_rows_per_forward_budget_derivation():
+    """The row-token budget bounds rows x padded-T per forward. Pins the
+    measured worst shape: the grid smoke block that died TWICE passed 4 rows
+    at t~=8.4k (2 pairs x 2 draws at the recalibrated 8192 cap) — under the
+    budget it runs 2-row forwards, so the 4-row shape that OOM'd is
+    unreachable; anchors' surviving short-completion chunks keep near-full
+    batches. FAILED at HEAD~ (helper absent)."""
+    assert R.CAPTURE_TOKENS_PER_FORWARD == 18_000
+    assert R._capture_rows_per_forward(4, 8400) == 2  # the death shape -> 2-row forwards
+    assert R._capture_rows_per_forward(8, 2300) == 7  # default-cap cells: near-full batches
+    assert R._capture_rows_per_forward(8, 4600) == 3  # 4096-cap cells
+    assert R._capture_rows_per_forward(2, 10**6) == 1  # floor 1, never 0
+    assert R._capture_rows_per_forward(3, 1) == 3  # capped by the batch itself
+
+
+def test_r4fix_capture_chunked_equals_unchunked_tiny_real_model(monkeypatch, caplog):
+    """Chunked vs unchunked capture over a REAL tiny causal LM: teacher-
+    forced forwards have no cross-row interaction, so row-chunking is
+    numerically identical by construction (fp16-quantization tolerance for
+    batch-size-dependent GEMM reduction order). Also asserts the
+    [capture-chunk] INFO fix-engaged signal. FAILED at HEAD~ (no chunking,
+    no log line)."""
+    model = _tiny_llama()
+    tok = _FakeTok2389()
+    cfg = _capture_cfg()
+    ctx_ids = [[1, 2, 3], [4, 5], [1, 2, 3, 4, 5, 6], [2, 3]]
+    completions = ["a b c", "d e", "f g h i", "j"]
+    eot = [7, 8]
+    monkeypatch.setattr(R, "CAPTURE_TOKENS_PER_FORWARD", 10**9)  # ONE 4-row forward
+    ref = R.capture_answer_states(cfg, model, tok, ctx_ids, completions, eot, tail_inclusive=True)
+    monkeypatch.setattr(R, "CAPTURE_TOKENS_PER_FORWARD", 1)  # forces 1-row forwards
+    with caplog.at_level(logging.INFO, logger="issue2389.run"):
+        chunked = R.capture_answer_states(
+            cfg, model, tok, ctx_ids, completions, eot, tail_inclusive=True, log_id="t-cell"
+        )
+    for key in ("va_span", "va_tail_incl"):
+        assert torch.allclose(ref[key].float(), chunked[key].float(), rtol=2e-3, atol=2e-3), key
+    assert ref["n_completion_tokens"] == chunked["n_completion_tokens"]
+    assert ref["empty_rows"] == chunked["empty_rows"] == []
+    assert any(
+        "[capture-chunk] t-cell: 4 rows" in r.getMessage() and "of <=1 rows" in r.getMessage()
+        for r in caplog.records
+    )
+
+
+def test_r4fix_margin_lnp_chunked_equals_unchunked_tiny_real_model(monkeypatch):
+    """Chunked vs unchunked margin_lnp over the SAME real tiny model (real
+    full-logits forward): per-row lnP identical to fp tolerance, order
+    preserved. FAILED at HEAD~ (no chunking path)."""
+    model = _tiny_llama()
+    tok = _FakeTok2389()
+    cfg = _capture_cfg()
+    rows_spec = [
+        {"ctx_ids": [1, 2, 3], "item_ids": [11, 12], "payload": None, "position": None},
+        {"ctx_ids": [4, 5], "item_ids": [13, 14, 15], "payload": None, "position": None},
+        {"ctx_ids": [1, 2, 3, 4, 5], "item_ids": [16], "payload": None, "position": None},
+        {"ctx_ids": [2, 3], "item_ids": [17, 18], "payload": None, "position": None},
+    ]
+    monkeypatch.setattr(R, "CAPTURE_TOKENS_PER_FORWARD", 10**9)
+    ref = R.margin_lnp(cfg, model, tok, rows_spec)
+    monkeypatch.setattr(R, "CAPTURE_TOKENS_PER_FORWARD", 1)
+    chunked = R.margin_lnp(cfg, model, tok, rows_spec, log_id="t-margin")
+    assert chunked == pytest.approx(ref, abs=1e-5)
+    assert len(chunked) == len(rows_spec)
+
+
+def test_r4fix_capture_row_order_and_empties_preserved_across_chunks(monkeypatch):
+    """Multi-row sub-chunks: every reduced row lands at its GLOBAL index
+    (position-encoded fake makes any misalignment a wrong mean), empty
+    completions stay skipped-and-zero. FAILED at HEAD~."""
+    monkeypatch.setattr(R, "extract_layer_activations", _fake_extract_pos)
+    monkeypatch.setattr(R, "CAPTURE_TOKENS_PER_FORWARD", 14)  # t_max=7 -> 2-row forwards
+    cfg = _capture_cfg(hidden=4)
+    tok = _FakeTok2389()
+    ctx_ids = [[1, 2, 3], [1, 2], [1], [1, 2, 3, 4], [1, 2]]
+    completions = ["a b", "", "x y z", "p", "q r"]
+    out = R.capture_answer_states(cfg, object(), tok, ctx_ids, completions, [7, 8])
+    assert out["empty_rows"] == [1]
+    assert out["n_completion_tokens"] == [2, 0, 3, 1, 2]
+    # Row-local expected span means: row0 ctx3+comp2 -> {3,4}=3.5; row2
+    # ctx1+comp3 -> {1,2,3}=2.0; row3 ctx4+comp1 -> {4}=4.0; row4
+    # ctx2+comp2 -> {2,3}=2.5. Row1 (empty) stays all-zero.
+    assert float(out["va_span"][0, 0, 0]) == 3.5
+    assert float(out["va_span"][2, 0, 0]) == 2.0
+    assert float(out["va_span"][3, 1, 2]) == 4.0
+    assert float(out["va_span"][4, 0, 0]) == 2.5
+    assert torch.equal(out["va_span"][1], torch.zeros(2, 4, dtype=torch.float16))
+
+
+def test_r4fix_hook_rearmed_per_subchunk_with_subchunk_geometry(monkeypatch):
+    """Hooked capture re-arms its OWN hook per sub-chunk (hook row state is
+    batch-geometry-bound — the r3 lesson): each hook_builder call receives
+    exactly the sub-chunk's rows' positions/payloads (global-row aligned),
+    row_lengths == [t_pad]*B_sub, and every stack is removed."""
+    monkeypatch.setattr(R, "extract_layer_activations", _fake_extract_pos)
+    monkeypatch.setattr(R, "CAPTURE_TOKENS_PER_FORWARD", 16)  # t_max=8 -> 2-row forwards
+    calls: list[dict] = []
+    stacks: list = []
+
+    class _Stack:
+        removed = False
+
+        def remove(self):
+            self.removed = True
+
+    def hook_builder(model, cfg, row_lengths, positions, payloads, t_pad):
+        calls.append(
+            {
+                "row_lengths": list(row_lengths),
+                "positions": list(positions),
+                "payloads": list(payloads),
+                "t_pad": t_pad,
+            }
+        )
+        s = _Stack()
+        stacks.append(s)
+        return s
+
+    cfg = _capture_cfg(hidden=4)
+    tok = _FakeTok2389()
+    ctx_ids = [[1, 2, 3], [1, 2], [1, 2, 3, 4], [1, 2, 3], [1, 2]]
+    completions = ["a b", "c", "d e", "f", "g h"]  # row lens 7,5,8,6,6 (eot 2)
+    payloads = [torch.full((1, 2, 4), float(i)) for i in range(5)]
+    positions = [0, 1, 0, 2, 1]
+    out = R.capture_answer_states(
+        cfg,
+        object(),
+        tok,
+        ctx_ids,
+        completions,
+        [7, 8],
+        payloads=payloads,
+        positions=positions,
+        hook_builder=hook_builder,
+    )
+    assert out["empty_rows"] == []
+    assert len(calls) == 3  # ceil(5 rows / 2 per forward)
+    flat_payloads = [p for c in calls for p in c["payloads"]]
+    assert [float(p[0, 0, 0]) for p in flat_payloads] == [0.0, 1.0, 2.0, 3.0, 4.0]
+    assert [p for c in calls for p in c["positions"]] == [(0,), (1,), (0,), (2,), (1,)]
+    for c in calls:
+        assert len(c["row_lengths"]) == len(c["payloads"]) <= 2
+        assert c["row_lengths"] == [c["t_pad"]] * len(c["payloads"])
+    assert stacks and all(s.removed for s in stacks)
+
+
+def test_r4fix_capture_backoff_first_oom_halves_and_keeps_completed(caplog):
+    """A mid-call OOM retries FROM the failed sub-chunk at half width:
+    completed sub-chunks are KEPT (deterministic, row-independent — unlike
+    the r3 generation backoff there is no joint-RNG identity caveat), every
+    row produced in order, and the WARNING names log_id + old -> new chunk
+    (the backoff arm of the fix-engaged signal). FAILED at HEAD~ (helper
+    absent): the worker died with the traceback."""
+    items = list(range(7))
+    calls: list[list[int]] = []
+    armed = {"oom": True}
+
+    def fwd(sub: list[int]) -> list[str]:
+        calls.append(list(sub))
+        if armed["oom"] and sub[0] == 4:
+            armed["oom"] = False
+            raise torch.OutOfMemoryError("CUDA out of memory (synthetic)")
+        return [f"out-{c}" for c in sub]
+
+    with caplog.at_level(logging.WARNING, logger="issue2389.run"):
+        outs = R._capture_with_oom_backoff(items, fwd, rows_per_forward=4, log_id="test cell")
+    assert outs == [f"out-{c}" for c in items]  # complete, order preserved
+    assert calls[0] == [0, 1, 2, 3]  # first sub-chunk at the budgeted width
+    assert calls[1] == [4, 5, 6]  # the OOM'd sub-chunk
+    assert calls[2] == [4, 5] and calls[3] == [6]  # retried at halved width 2
+    assert sum(1 for c in calls if c[0] == 0) == 1  # completed sub-chunk NOT recomputed
+    assert any(
+        "[capture-oom-backoff] test cell" in r.getMessage()
+        and "capture row chunk 4" in r.getMessage()
+        and "retrying at 2" in r.getMessage()
+        for r in caplog.records
+    )
+
+
+def test_r4fix_capture_backoff_persistent_reraises_after_three_halvings():
+    """Persistent OOM re-raises after exactly OOM_BACKOFF_MAX_HALVINGS
+    halvings — fail loud, never an unbounded loop."""
+    calls: list[int] = []
+
+    def fwd(sub: list[int]) -> list[str]:
+        calls.append(len(sub))
+        raise torch.OutOfMemoryError("CUDA out of memory (synthetic)")
+
+    with pytest.raises(torch.OutOfMemoryError):
+        R._capture_with_oom_backoff(list(range(16)), fwd, rows_per_forward=8, log_id="t")
+    assert calls == [8, 4, 2, 1]  # 3 halvings, then re-raise
+
+
+def test_r4fix_capture_backoff_floor_one_reraises():
+    """An OOM at width 1 re-raises immediately (no zero-width loop)."""
+    calls: list[int] = []
+
+    def fwd(sub: list[int]) -> list[str]:
+        calls.append(len(sub))
+        raise torch.OutOfMemoryError("CUDA out of memory (synthetic)")
+
+    with pytest.raises(torch.OutOfMemoryError):
+        R._capture_with_oom_backoff([1, 2], fwd, rows_per_forward=1, log_id="t")
+    assert calls == [1]
+
+
+def test_r4fix_capture_backoff_non_oom_errors_propagate_unretried():
+    """Only torch.OutOfMemoryError backs off — any other failure propagates
+    on the first attempt (no retry masking)."""
+    calls: list[int] = []
+
+    def fwd(sub: list[int]) -> list[str]:
+        calls.append(len(sub))
+        raise ValueError("not an OOM")
+
+    with pytest.raises(ValueError, match="not an OOM"):
+        R._capture_with_oom_backoff([1, 2, 3, 4], fwd, rows_per_forward=2, log_id="t")
+    assert len(calls) == 1
+
+
+def test_r4fix_capture_chunk_wired_at_the_shared_seam_and_all_call_sites():
+    """The seam is INSIDE capture_answer_states (all four capture call sites
+    — grid run_block, stage2 run_stage2_block, anchors _finalize_anchor_batch
+    incl. the vLLM leg, capregen-anchors — flow through it; capregen-grid
+    routes via run_block) and margin_lnp shares the helper for its
+    full-logits forward. log_id is threaded at every call site so the
+    WARNING/INFO name the cell (block.key = cell|slot|arm)."""
+    for fn in (R.capture_answer_states, R.margin_lnp):
+        src = inspect.getsource(fn)
+        assert "_capture_with_oom_backoff(" in src, fn.__name__
+        assert "_capture_rows_per_forward(" in src, fn.__name__
+        assert "[capture-chunk]" in src, fn.__name__
+    assert 'log_id=f"grid capture {block.key}"' in inspect.getsource(R.run_block)
+    assert 'log_id=f"stage2 capture {block.key}"' in inspect.getsource(R.run_stage2_block)
+    assert 'log_id=f"anchors capture {batch}"' in inspect.getsource(R._finalize_anchor_batch)
+    assert 'log_id=f"margin {block.key}"' in inspect.getsource(R._block_margin_rows)
+    assert 'log_id="margin:anchors"' in inspect.getsource(R.phase_margin)
+    assert "capregen:anchors capture" in inspect.getsource(R.phase_capregen_anchors)
+    # The generation-side r3 backoff is untouched: same widths, whole-chunk
+    # regenerate semantics (RNG), pilot exclusion — pinned by the r3 tests.

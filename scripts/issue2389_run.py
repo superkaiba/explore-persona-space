@@ -249,6 +249,26 @@ GEN_BATCH_ADOPT_TOL = 0.05
 # engine manages its own memory).
 OOM_BACKOFF_MAX_HALVINGS = 3
 
+# Crash-fix r4 (epm:failure v4 — grid_capture_forward_oom_unchunked_rows): the
+# grid OOM lived in the TEACHER-FORCED CAPTURE forward (capture_answer_states
+# -> extract_layer_activations), NOT generation — identical alloc signature at
+# gen_batch 32 and 16. A full-sequence capture holds ALL n_layers x rows x T
+# x H hooked states on GPU until the reduce (plus the forward's own
+# (rows, T, vocab) logits), so at the recalibrated 8192-token cap even the
+# smoke block's 4 rows exceeded H100-80GB beside the 55.6 GiB resident
+# weights (died twice at 4 rows x T~=8.4k ~= 33.6k row-tokens: 698 MiB
+# failing at 74.99 GiB, ~layer 60/64). Per row-token the captured stack costs
+# n_layers*H*2B ~= 0.625 MiB at full shape (+ ~0.29 MiB logits at V~=152k),
+# so every capture forward is chunked so that rows x padded-T never exceeds
+# this row-token budget: 18k row-tokens ~= 16.5 GiB above weights ~= 72-73
+# GiB peak (>= ~6 GiB headroom), and the measured worst shape (t~=8.4k) runs
+# at 2-row forwards — the 4-row shape that died is unreachable. Teacher-
+# forced forwards have NO cross-row interaction, so row-chunking is
+# numerically identical by construction; runtime batching behavior only, NOT
+# regime identity (regime_fingerprint unchanged — capture_batch never was an
+# fp input either).
+CAPTURE_TOKENS_PER_FORWARD = 18_000
+
 # Claim-file queue (plan §4.6): stale = dead pid (same host; a same-host LIVE
 # pid is NEVER stolen — r1 M1) or claim age (the cross-host-only fallback;
 # raised 3600 -> 14400 s so a legitimately long block never ages out mid-run).
@@ -2713,6 +2733,66 @@ def phase_bank(cfg: RunConfig) -> int:
 # ── answer-state capture (hooked + unhooked from ONE implementation) ──
 
 
+def _capture_rows_per_forward(n_rows: int, t_max: int) -> int:
+    """Rows per teacher-forced capture forward under the row-token budget.
+
+    ``min(n_rows, CAPTURE_TOKENS_PER_FORWARD // t_max)``, floor 1 — bounds
+    ``rows x padded-T`` per forward (the OOM driver: the on-GPU captured
+    stack + logits scale linearly in row-tokens; crash-fix r4)."""
+    assert n_rows >= 1 and t_max >= 1, (n_rows, t_max)
+    return max(1, min(n_rows, CAPTURE_TOKENS_PER_FORWARD // t_max))
+
+
+def _capture_with_oom_backoff(items: list, fwd_fn, rows_per_forward: int, log_id: str) -> list:
+    """Row-chunked teacher-forced capture with bounded OOM-backoff (r4).
+
+    ``fwd_fn(sub)`` runs ONE forward over the CONTIGUOUS sub-list ``sub`` —
+    padding, arming/removing its OWN hook for exactly those rows, and
+    REDUCING to per-row CPU results before returning (so the only
+    GPU-resident capture state is one sub-chunk's) — and returns one entry
+    per element. Teacher-forced forwards have NO cross-row interaction
+    (attention is within-row; trailing right-pad cannot reach real
+    positions), so row-chunking is numerically identical by construction.
+
+    On ``torch.OutOfMemoryError``: ``torch.cuda.empty_cache()``, HALVE the
+    row chunk (floor 1) and retry FROM the failed sub-chunk at the new
+    width — COMPLETED sub-chunks are kept (teacher-forced captures are
+    deterministic and row-independent, so unlike generation there is no
+    joint-RNG identity caveat); at most OOM_BACKOFF_MAX_HALVINGS halvings
+    per call, then re-raise — fail loud, never an unbounded loop. Order is
+    preserved by contiguous slicing."""
+    eff = max(1, min(len(items), rows_per_forward))
+    outs: list = []
+    pos = 0
+    halvings = 0
+    while pos < len(items):
+        sub = items[pos : pos + eff]
+        try:
+            res = fwd_fn(sub)
+        except torch.OutOfMemoryError:
+            if halvings >= OOM_BACKOFF_MAX_HALVINGS or eff <= 1:
+                raise
+            torch.cuda.empty_cache()
+            new_eff = max(1, eff // 2)
+            logger.warning(
+                "[capture-oom-backoff] %s: torch.OutOfMemoryError at capture row chunk %d — "
+                "empty_cache + retrying at %d (halving %d/%d)",
+                log_id,
+                eff,
+                new_eff,
+                halvings + 1,
+                OOM_BACKOFF_MAX_HALVINGS,
+            )
+            eff = new_eff
+            halvings += 1
+            continue
+        assert len(res) == len(sub), (len(res), len(sub))
+        outs.extend(res)
+        pos += len(sub)
+    assert len(outs) == len(items), (len(outs), len(items))
+    return outs
+
+
 @torch.no_grad()
 def capture_answer_states(
     cfg: RunConfig,
@@ -2725,6 +2805,7 @@ def capture_answer_states(
     positions: list[int] | None = None,
     tail_inclusive: bool = False,
     hook_builder=None,
+    log_id: str = "capture",
 ) -> dict:
     """Span-mean answer states from teacher-forced re-forwards.
 
@@ -2747,6 +2828,19 @@ def capture_answer_states(
     payloads, t_pad)``. Default ``None`` keeps the stage-1 all-layer REPLACE
     hook; stage-2 passes a single-layer ADD-mode builder closing over
     ``(layer, dose)``.
+
+    Crash-fix r4: every capture forward is ROW-CHUNKED so ``rows x padded-T``
+    never exceeds ``CAPTURE_TOKENS_PER_FORWARD`` (the on-GPU captured stack +
+    logits scale linearly in row-tokens; ONE unchunked forward over a whole
+    row batch at the recalibrated 8192 cap OOM'd H100-80GB twice), with the
+    bounded ``_capture_with_oom_backoff`` on top. Teacher-forced forwards
+    have no cross-row interaction, so chunking is numerically identical by
+    construction; each sub-chunk re-pads to its OWN max length and re-arms
+    its OWN hook (hook row state is batch-geometry-bound — the r3 lesson),
+    and the reduce runs per sub-chunk so only one sub-chunk's captured stack
+    is ever GPU-resident. ``log_id`` names the caller in the
+    ``[capture-chunk]`` INFO line (the fix-engaged signal) and the backoff
+    WARNING.
     """
     assert len(ctx_ids_by_row) == len(completions), (len(ctx_ids_by_row), len(completions))
     hooked = payloads is not None
@@ -2766,28 +2860,22 @@ def capture_answer_states(
     ]
     n_comp_tokens: list[int] = [len(ids) for ids in comp_ids]
     empty: list[int] = []
-    for start in range(0, n, cfg.capture_batch):
-        idxs = list(range(start, min(start + cfg.capture_batch, n)))
-        rows, keep = [], []
-        for i in idxs:
-            comp = comp_ids[i]
-            if not comp:
-                empty.append(i)
-                continue
-            rows.append(ctx_ids_by_row[i] + comp + eot_ids)
-            keep.append((i, len(ctx_ids_by_row[i]), len(comp)))
-        if not rows:
-            continue
-        ids, mask = _right_pad(rows, pad_id, cfg.device)
+
+    def _fwd_reduce(sub: list[tuple[int, list[int], int, int]]) -> list[tuple]:
+        """ONE teacher-forced forward over ``sub`` rows -> per-row
+        ``(i, va_span_row, va_tail_row|None)`` on CPU (crash-fix r4: the
+        reduce runs per sub-chunk, so only this sub-chunk's captured stack
+        is GPU-resident)."""
+        ids, mask = _right_pad([row for (_i, row, _c, _n) in sub], pad_id, cfg.device)
         t_pad = int(ids.shape[1])
         stack = None
         if hooked:
             stack = hook_builder(
                 model,
                 cfg,
-                [t_pad] * len(rows),
-                [(positions[i],) for i, _, _ in keep],
-                [payloads[i] for i, _, _ in keep],
+                [t_pad] * len(sub),
+                [(positions[i],) for (i, _row, _c, _n) in sub],
+                [payloads[i] for (i, _row, _c, _n) in sub],
                 t_pad,
             )
         try:
@@ -2795,20 +2883,55 @@ def capture_answer_states(
         finally:
             if stack is not None:
                 stack.remove()
-        for j, (i, ctx_len, n_comp) in enumerate(keep):
+        res: list[tuple] = []
+        for j, (i, _row, ctx_len, n_comp) in enumerate(sub):
             span = slice(ctx_len, ctx_len + n_comp)
-            va_span[i] = torch.stack(
+            vs = torch.stack(
                 [captured[layer][j, span].float().mean(dim=0) for layer in layers]
             ).cpu()
+            vt = None
             if tail_inclusive:
                 # NEW (issue #2215 plan §4.2): the row was forwarded as
                 # ctx + comp + eot_ids, so the tail positions are already in
                 # the captured stack — pool them in, no second forward.
                 span_incl = slice(ctx_len, ctx_len + n_comp + len(eot_ids))
-                va_tail[i] = torch.stack(
+                vt = torch.stack(
                     [captured[layer][j, span_incl].float().mean(dim=0) for layer in layers]
                 ).cpu()
+            res.append((i, vs, vt))
         del captured
+        return res
+
+    for start in range(0, n, cfg.capture_batch):
+        idxs = list(range(start, min(start + cfg.capture_batch, n)))
+        work: list[tuple[int, list[int], int, int]] = []
+        for i in idxs:
+            comp = comp_ids[i]
+            if not comp:
+                empty.append(i)
+                continue
+            work.append((i, ctx_ids_by_row[i] + comp + eot_ids, len(ctx_ids_by_row[i]), len(comp)))
+        if not work:
+            continue
+        # Crash-fix r4: chunk the teacher-forced capture forward by ROWS so
+        # rows x padded-T stays under CAPTURE_TOKENS_PER_FORWARD (the grid
+        # OOM: one unchunked full-sequence forward over the whole row batch
+        # at the recalibrated 8192 cap). The INFO line is the fix-engaged
+        # signal (the backoff WARNING fires only on an actual OOM).
+        t_max = max(len(row) for (_i, row, _c, _n) in work)
+        per_fwd = _capture_rows_per_forward(len(work), t_max)
+        logger.info(
+            "[capture-chunk] %s: %d rows t_max=%d -> %d forwards of <=%d rows",
+            log_id,
+            len(work),
+            t_max,
+            -(-len(work) // per_fwd),
+            per_fwd,
+        )
+        for i, vs, vt in _capture_with_oom_backoff(work, _fwd_reduce, per_fwd, log_id):
+            va_span[i] = vs
+            if tail_inclusive:
+                va_tail[i] = vt
     out = {
         "va_span": va_span.to(torch.float16),
         "n_completion_tokens": n_comp_tokens,
@@ -2850,6 +2973,7 @@ def margin_lnp(
     model,
     tok,
     rows_spec: list[dict],
+    log_id: str = "margin",
 ) -> list[float]:
     """Length-normalized teacher-forced lnP of each pool item.
 
@@ -2857,14 +2981,23 @@ def margin_lnp(
     (1,L,H)|None, "position": int|None}``. All rows in one call are either
     hooked (grid margins) or unhooked (anchor margins) — asserted. Log-probs
     are reduced GPU-side per row; only scalars move to CPU.
+
+    Crash-fix r4: this full-sequence forward materializes the WHOLE
+    ``(rows, T, vocab)`` logits tensor, so it shares the capture pass's OOM
+    exposure at the recalibrated per-cell caps (pool items are drawn from
+    rollouts that can run to the cell cap) — every forward is row-chunked
+    under the same ``CAPTURE_TOKENS_PER_FORWARD`` budget with the same
+    bounded ``_capture_with_oom_backoff`` (numerically identical by
+    construction: no cross-row interaction, per-row reduce unchanged).
     """
     hooked = rows_spec[0]["payload"] is not None
     assert all((r["payload"] is not None) == hooked for r in rows_spec)
     pad_id = tok.pad_token_id
-    out: list[float] = []
-    for start in range(0, len(rows_spec), cfg.capture_batch):
-        chunk = rows_spec[start : start + cfg.capture_batch]
-        rows = [r["ctx_ids"] + r["item_ids"] for r in chunk]
+
+    def _fwd_lnp(sub: list[dict]) -> list[float]:
+        """ONE teacher-forced forward over ``sub`` rows -> per-row lnP floats
+        (only this sub-chunk's logits are ever GPU-resident)."""
+        rows = [r["ctx_ids"] + r["item_ids"] for r in sub]
         ids, mask = _right_pad(rows, pad_id, cfg.device)
         t_pad = int(ids.shape[1])
         stack = None
@@ -2873,8 +3006,8 @@ def margin_lnp(
                 model,
                 cfg,
                 [t_pad] * len(rows),
-                [(r["position"],) for r in chunk],
-                [r["payload"] for r in chunk],
+                [(r["position"],) for r in sub],
+                [r["payload"] for r in sub],
                 t_pad,
             )
         try:
@@ -2882,15 +3015,32 @@ def margin_lnp(
         finally:
             if stack is not None:
                 stack.remove()
-        for b, r in enumerate(chunk):
+        res: list[float] = []
+        for b, r in enumerate(sub):
             s = len(r["ctx_ids"])
             n_item = len(r["item_ids"])
             assert n_item >= 1, "empty pool item ids"
             lp = torch.log_softmax(logits[b, s - 1 : s + n_item - 1].float(), dim=-1)
             targets = ids[b, s : s + n_item]
             tok_lp = lp.gather(-1, targets.unsqueeze(-1)).squeeze(-1)
-            out.append(float(tok_lp.mean()))
+            res.append(float(tok_lp.mean()))
         del logits
+        return res
+
+    out: list[float] = []
+    for start in range(0, len(rows_spec), cfg.capture_batch):
+        chunk = rows_spec[start : start + cfg.capture_batch]
+        t_max = max(len(r["ctx_ids"]) + len(r["item_ids"]) for r in chunk)
+        per_fwd = _capture_rows_per_forward(len(chunk), t_max)
+        logger.info(
+            "[capture-chunk] %s: %d rows t_max=%d -> %d forwards of <=%d rows",
+            log_id,
+            len(chunk),
+            t_max,
+            -(-len(chunk) // per_fwd),
+            per_fwd,
+        )
+        out.extend(_capture_with_oom_backoff(chunk, _fwd_lnp, per_fwd, log_id))
     return out
 
 
@@ -3130,7 +3280,9 @@ def _finalize_anchor_batch(
     IS that ordering). Caller persists the rollout TEXT before invoking."""
     eot = eot_tail_ids(tok)
     jsonl = cfg.anchors_dir / f"anchors_{batch}_w{cfg.worker_index}.jsonl"
-    states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
+    states = capture_answer_states(
+        cfg, model, tok, flat_ctx, flat_text, eot, log_id=f"anchors capture {batch}"
+    )
     _enrich_rows_with_capture(rows, states)  # per-row caps (plan §4.7 item 1)
     _write_jsonl_atomic(jsonl, rows)
     _save_pt_atomic(
@@ -4210,7 +4362,7 @@ def _block_margin_rows(
                 }
             )
     if rows_spec:
-        lnps = margin_lnp(cfg, model, tok, rows_spec)
+        lnps = margin_lnp(cfg, model, tok, rows_spec, log_id=f"margin {block.key}")
         for m, lnp in zip(meta, lnps, strict=True):
             out.append({**m, "lnp_mean": lnp, "skipped": False})
     return out
@@ -4360,7 +4512,15 @@ def run_block(
     shard_jsonl = cfg.rollouts_dir / f"shard_{block.slug}.jsonl"
     _write_jsonl_atomic(shard_jsonl, rows_out)
     states = capture_answer_states(
-        cfg, model, tok, flat_ctx, flat_text, eot, payloads=flat_payload, positions=flat_pos
+        cfg,
+        model,
+        tok,
+        flat_ctx,
+        flat_text,
+        eot,
+        payloads=flat_payload,
+        positions=flat_pos,
+        log_id=f"grid capture {block.key}",
     )
     _enrich_rows_with_capture(rows_out, states, cap)
     _write_jsonl_atomic(shard_jsonl, rows_out)
@@ -6030,7 +6190,15 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
         # Rollout text durable BEFORE the capture reduce (#779 two-write
         # pattern); side file so no shard glob / upload pattern matches it.
         _write_jsonl_atomic(pending_file, rows)
-        states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
+        states = capture_answer_states(
+            cfg,
+            model,
+            tok,
+            flat_ctx,
+            flat_text,
+            eot,
+            log_id=f"capregen:anchors capture {batch} cell {cell}",
+        )
         _enrich_rows_with_capture(rows, states, cfg.max_new_tokens)
         capregen_record["n_rows_regen"] = len(rows)
         _merge_anchor_capregen(
@@ -6201,7 +6369,7 @@ def phase_margin(cfg: RunConfig) -> int:
                     )
         if rows_spec:
             t0 = time.monotonic()
-            lnps = margin_lnp(cfg, model, tok, rows_spec)
+            lnps = margin_lnp(cfg, model, tok, rows_spec, log_id="margin:anchors")
             logger.info("[margin:anchors] %d rows in %.1fs", len(rows_spec), time.monotonic() - t0)
             out_rows.extend(
                 {**m, "lnp_mean": lnp, "skipped": False} for m, lnp in zip(meta, lnps, strict=True)
@@ -7470,6 +7638,7 @@ def run_stage2_block(
         payloads=flat_delta,
         positions=flat_pos,
         hook_builder=_stage2_hook_builder(block.layer, block.dose),
+        log_id=f"stage2 capture {block.key}",
     )
     _enrich_rows_with_capture(rows_out, states, cap)
     _write_jsonl_atomic(shard_jsonl, rows_out)
