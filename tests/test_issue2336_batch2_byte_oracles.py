@@ -20,6 +20,13 @@ acceptance row ("json/jsonl/text: byte-identical; pt/npz: load-equality"):
   pre-migration path-form (``<stem>.tmp.npz`` + ``os.replace``) executed verbatim;
   npz container bytes are not guaranteed stable, so the oracle is
   ``np.load`` key/dtype/value equality (the plan's pt/npz load-equality shape).
+- **pt load-equality** (round 7) — the REAL migrated
+  ``issue1415_run_phase1._save_pt_atomic`` (``torch.save`` through
+  ``atomic_replace``) vs the pre-migration deterministic-temp form
+  (``<name>.tmp`` + ``os.replace``, ``f63dc3da21~1`` :373-378) executed
+  verbatim; ``torch.load`` key/dtype/value equality (same pt/npz
+  load-equality shape). Batch 2 migrated 15 ``torch.save`` sites across
+  8 files; this oracle covers the ``.pt`` half of the pt/npz bar.
 
 Batch-1 precedent: ``tests/test_clean_experiment_downloads_atomic_writers.py``
 (json byte-identity). Every test also asserts zero ``*.tmp*`` residue (old
@@ -191,5 +198,47 @@ def test_atomic_savez_npz_load_equality(tmp_path: Path) -> None:
         for key in new_z.files:
             assert new_z[key].dtype == old_z[key].dtype
             np.testing.assert_array_equal(new_z[key], old_z[key])
+
+    assert _residue(tmp_path) == []
+
+
+# --------------------------------------------------------------------------
+# pt: issue1415_run_phase1._save_pt_atomic (REAL migrated function)
+# --------------------------------------------------------------------------
+
+
+def test_save_pt_atomic_load_equality(tmp_path: Path) -> None:
+    """The REAL migrated ``_save_pt_atomic`` (``torch.save`` through
+    ``atomic_replace``) loads equal to the pre-migration deterministic-temp
+    form (f63dc3da21~1 :373-378) - key set, dtypes, tensor values, and
+    non-tensor fields (pt container bytes are not guaranteed stable, so the
+    A5 oracle for pt/npz is load-equality, not byte-identity). torch and the
+    driver import are test-local so collection stays light."""
+    import issue1415_run_phase1 as RP
+    import torch
+
+    obj = {
+        "w": torch.arange(6, dtype=torch.int64).reshape(2, 3),
+        "b": torch.linspace(0.0, 1.0, 5, dtype=torch.float32),
+        "meta": {"pid": "a1", "n": 3},
+    }
+
+    new_path = tmp_path / "new" / "blob.pt"
+    RP._save_pt_atomic(new_path, obj)
+
+    # Pre-migration form (f63dc3da21~1 :373-378), executed verbatim.
+    old_path = tmp_path / "old" / "blob.pt"
+    old_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = old_path.parent / (old_path.name + ".tmp")
+    torch.save(obj, tmp)
+    os.replace(tmp, old_path)
+
+    new_obj = torch.load(new_path, weights_only=True)
+    old_obj = torch.load(old_path, weights_only=True)
+    assert sorted(new_obj) == sorted(old_obj) == ["b", "meta", "w"]
+    for key in ("w", "b"):
+        assert new_obj[key].dtype == old_obj[key].dtype
+        torch.testing.assert_close(new_obj[key], old_obj[key], rtol=0, atol=0)
+    assert new_obj["meta"] == old_obj["meta"] == {"pid": "a1", "n": 3}
 
     assert _residue(tmp_path) == []
