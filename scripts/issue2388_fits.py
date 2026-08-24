@@ -1564,7 +1564,34 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
             if args.qa_disjoint:
                 if budget == "full":
                     raise SystemExit("--qa-disjoint runs at the registered L anchors only")
-                # clause (v): GROUP-grain pool/draw disjointness (MF-G)
+                # clause (v): GROUP-grain pool/draw disjointness (MF-G).
+                # The pre-gen arithmetic check is ROW-grain (|train| >= |U| + L);
+                # group blocking can leave far fewer eligible rows (R13: qa L2000
+                # realized 1778 eligible vs 11009 >= 10000 arithmetic PASS). Skip
+                # the cell LOUDLY with a durable record instead of crashing the
+                # whole sweep leg.
+                _pool_groups = set(table.group[pool_idx].tolist())
+                _eligible_n = int((~np.isin(table.group[train_idx], sorted(_pool_groups))).sum())
+                if _eligible_n < int(budget):
+                    _rec = {
+                        "cell": f"disjoint_L{budget}_draw{draw_i}",
+                        "status": "infeasible",
+                        "reason": (
+                            f"feasibility(v) GROUP grain: {_eligible_n} non-pool "
+                            f"train rows < L={budget}"
+                        ),
+                        "eligible_rows": _eligible_n,
+                        "budget": int(budget),
+                    }
+                    _inf_path = out_root / f"INFEASIBLE__disjoint_L{budget}_draw{draw_i}.json"
+                    _inf_path.write_text(json.dumps(_rec, indent=1))
+                    print(
+                        f"[sweep] disjoint_L{budget}_draw{draw_i} INFEASIBLE — "
+                        f"{_eligible_n} non-pool train rows < L={budget}; cell "
+                        f"skipped (recorded {_inf_path.name})",
+                        flush=True,
+                    )
+                    continue
                 draw_rows = qa_disjoint_draw(
                     train_idx, table.group, pool_idx, int(budget), seed_parts
                 )
