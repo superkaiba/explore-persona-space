@@ -57,3 +57,18 @@ FINAL `epm:plan` marker, never by the bare `plan.md` symlink. Keep pinning that
 version across re-compose rounds until the concurrent follow-ups settle. Related:
 [[gh_graphql fallback to REST]] is unrelated; this is a plan-resolution lesson
 for the Step 2-pre-b compose stage.
+
+**Variant (#2254 transpose_ladder r1, 2026-08-24): the brief ASSERTS a round
+smoke-arch marker that canonical state does not carry at all.** Brief said
+"epm:smoke-architecture-check (PASS_PARTIAL arms_stubbed=steer,judge) posted";
+events.jsonl held only v1–v6, all prior rounds (v6 = first-k), race re-probed.
+Resolution: Step 0.55's grain is presence-ON-TASK (any version) — so this is
+NOT the fail-loud missing-marker case and NOT a reason to inline a fabricated
+ABSENT literal. Compose truthfully: inline the highest (prior-round) body with
+explicit round-mismatch provenance, state that task-grain presence is
+satisfied (0.55 Critical structurally unavailable), route round-level
+smoke-architecture adequacy to Steps 0.6/0.71 on the plan smoke section + the
+impl marker's ## Smoke run + committed smoke evidence, and pre-declare "a
+round marker may post after compose; absence at read time is not a blocker"
+so the prompt is race-robust (no recompose needed if it lands pre-dispatch).
+Flag the brief-vs-canonical divergence in the Step-4 return.
