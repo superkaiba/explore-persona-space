@@ -35,6 +35,18 @@ surviving Claude verdict's findings as inputs rather than defer to
 them, and state the head-sentinel-vs-posted-version offset (head = brief
 round; posted top-level = auto max+1 on the codex kind, which trails
 when a round never posted).
+Retraction rounds (#823 r9, 2026-08-24): the reuse BASE is the prompt AS
+DISPATCHED, so it can carry orchestrator-injected blocks the composer
+never wrote (r8 shipped an `=== ORCHESTRATOR ADDENDUM ===` with a
+"use it; do not redo it" verification block) — when the brief retracts a
+fence or an attestation, EXCISE the inherited block entirely, move any
+still-true facts (the 13-pin roster, the HF-revision-vs-git-SHA probe
+caveat) into the REVIEW CONTEXT as neutral facts, and re-probe them
+fresh rather than copying the attestation. And when the retraction
+narrative deliberately QUOTES the retracted instruction, the
+stale-string sweep cannot ban the phrase outright — scope it: assert
+count == 1 AND the negating sentence ("No such instruction exists this
+round") is present.
 Round-specific spans to replace: PRIOR CRITIQUE SUMMARIES block (ends
 at `\n\nAll paths above`), ROUND-N SCOPE + BINDING DISMISSALS block
 (ends at the `=== INLINED` banner), the three envelopes (BEGIN..END
