@@ -1,6 +1,10 @@
 """Issue #2476 same-issue follow-up `k200-instrument-census` — pod-side driver.
 
-Plan: tasks/<status>/2476/plans/plan.md (v11). ONE experimental variable changes
+Plan: the plan of record (v11) resolves via
+`uv run python scripts/task.py find 2476` -> `<task-dir>/plans/plan.md`. NEVER
+read it through a worktree-relative `tasks/...` path — a worktree's `tasks/`
+tree is FROZEN at its base commit and serves a stale plan with no error
+(#2422). ONE experimental variable changes
 vs the parent run: the SAE sparsity budget k = 100 -> 200 (the parent driver's
 new `--sae-k` knob; width 65,536, tier bounds, LR, batch, epochs, seeds, pool
 recipe, splits, floors, and every estimator held at parent values). The round
@@ -45,12 +49,16 @@ round's, imported by module — never re-implemented):
                _tier_stats, _shuffle_null_r2, _retrieval_cells with THREE
                sources map/ib/densein — B3) + gates_k200.json consolidation
                (incl. the B2 pred_encode_fve field).
-  figures      R7 hero pair + exploratory figures, eval JSONs/npzs -> git
-               eval_results/issue_2476/k200_census/ (force-add + staged-index
-               verify + push-verify), census tensors -> HF
-               <hf_prefix>/k200_census/, upload-verify enumerating ALL
-               prefixes written this round (sae_c_k200/ + k200_census/),
-               terminal results sentinel.
+  figures      R7 hero pair + exploratory figures; the EXPLICIT §6.5 git
+               allowlist (GIT_EVAL_BASENAMES — declared JSONs +
+               perfeature_union_k200.npz + gates_k200.json; the HF-ONLY
+               firing_census_k200.npz / perfeature_k200_densein.npz are
+               EXCLUDED — the densein npz plausibly exceeds GitHub's 100 MiB
+               hard limit, r8 U1) -> git eval_results/issue_2476/k200_census/
+               (force-add + staged-index verify + push-verify), census
+               tensors -> HF <hf_prefix>/k200_census/, upload-verify
+               enumerating ALL prefixes written this round (sae_c_k200/ +
+               k200_census/), terminal results sentinel.
 
 Smoke blind-spot enumeration (plan §4, mirrored per phase at the fence sites):
   - G-4' (FVE floor), G-C'(ii)/(iii), and the census/lattice reads are
@@ -127,7 +135,33 @@ GC_COUNT_TOL = FS.GC_COUNT_TOL  # boundary-tolerant G-C'(ii) reuse (A2)
 RC_GA = 30  # G-A row-alignment HALT
 RC_GC = 31  # G-C' counts self-consistency HALT (FS._gate_counts exits FS.RC_GC == 31)
 RC_GS = 33  # G-S split-sha HALT
+RC_G4 = 25  # G-4' FVE-floor HALT (== parent RC_G4; pinned by tests/test_issue2476_k200.py)
 assert RC_GC == FS.RC_GC, (RC_GC, FS.RC_GC)
+
+# §3 manipulation check (r8 U7): the budget verdict's CAUSAL narration is
+# conditioned on the realized k=200 val L0 materially exceeding the parent's
+# k=100 realized 98.96 (plan §3 lattice-evaluation note, A4). The concrete
+# conservative predicate — stated verbatim in every lattice record — is
+# val_l0 >= MANIPULATION_VAL_L0_MIN; the analyzer owns the prose narration.
+PARENT_VAL_L0_K100 = 98.96  # plan §3/§11 (parent train_log.json epochs[-1].val_l0)
+MANIPULATION_VAL_L0_MIN = 150.0
+
+# §6.5 destination split (r8 U1): the git leg commits EXACTLY this allowlist —
+# the three declared result JSONs + the per-feature union npz + the gates
+# consolidation. firing_census_k200.npz + perfeature_k200_densein.npz are
+# HF-ONLY (§6.5 row 6; the densein npz is 20,000 x n_union fp16 and plausibly
+# exceeds GitHub's 100 MiB hard limit — a glob sweep would kill the R7 push
+# AFTER the full production run). union_encodes_meta.json is pod-side meta
+# (plan §9 phase-outputs row; not a §6.5 git destination).
+GIT_EVAL_BASENAMES = (
+    "census_k200.json",
+    "tier_sweep_k200.json",
+    "retrieval_k200.json",
+    "gates_k200.json",
+    "perfeature_union_k200.npz",
+)
+HF_ONLY_EVAL_BASENAMES = ("firing_census_k200.npz", "perfeature_k200_densein.npz")
+GIT_FILE_MAX_BYTES = 95 * 1024**2  # fail-loud margin under GitHub's 100 MiB hard limit
 
 LATTICE_NOTE_K200 = (
     "reported (the issue's registered GRADIENT rule lives at the parent's k=100 1% cell; "
@@ -187,6 +221,58 @@ def _sentinel(name: str, note: str, extra: dict | None = None) -> None:
         _drv().C.write_sentinel(f"phase-{name}", note, task_id=TASK_ID, extra=payload)
     except OSError as e:
         logger.warning("[sentinel] phase-%s write failed: %s", name, e)
+
+
+# ── prerequisite-gate loader (r8 U2: recorded FAILs re-apply at phase entry) ─────
+
+#: Upstream recorded gate verdicts each standalone downstream phase REQUIRES at
+#: entry. `g4` reads the parent's gates_p4.json in the sae_c_k200 leaf; every
+#: other key reads _gates_dir(args)/<key>.json.
+_PHASE_REQUIRED_GATES: dict[str, tuple[str, ...]] = {
+    "sae_train": ("gs", "ga"),
+    "densein": ("gs", "ga", "g4"),
+    "census": ("gs", "ga", "g4", "gc_i"),
+    "stats": ("gs", "ga", "g4", "gc_i", "gc_ii", "gc_iii"),
+    "figures": ("gs", "ga", "g4", "gc_i", "gc_ii", "gc_iii"),
+}
+_GATE_RC = {"gs": RC_GS, "ga": RC_GA, "g4": RC_G4, "gc_i": RC_GC, "gc_ii": RC_GC, "gc_iii": RC_GC}
+
+
+def _require_upstream_gates(args, phase: str) -> None:
+    """r8 U2 (the floor round's failed-gate-resume convention, mirrored from the
+    parent's _reapply_recorded_gate_verdicts): every standalone downstream phase
+    entry REQUIRES the upstream recorded gate verdicts and RE-APPLIES a recorded
+    FAIL with the ORIGINAL rc BEFORE any heavy work — a persisted G-S/G-A/G-4'/
+    G-C' FAIL can never be laundered by re-entering at a later ``--phase``
+    (producing/uploading terminal results off a failed gate). A MISSING required
+    record fails loud (the producing phase never completed on this out-root).
+    Verdict semantics: only the literal "FAIL" re-applies — smoke-demoted
+    records carry "INFORMATIONAL-smoke" and G-S/G-A bind at smoke through their
+    own writers, so this matches each gate's binding regime by construction."""
+    for key in _PHASE_REQUIRED_GATES.get(phase, ()):
+        if key == "g4":
+            # the parent's own leaf-local gate record (written FAIL included);
+            # _parent_args pins sae_k=200 so the leaf is always sae_c_k200
+            rec_path = args.out_root / f"sae_c_k{SAE_K200}" / "gates_p4.json"
+            rec = json.loads(rec_path.read_text())["g4"] if rec_path.exists() else None
+        else:
+            rec_path = _gates_dir(args) / f"{key}.json"
+            rec = json.loads(rec_path.read_text()) if rec_path.exists() else None
+        if rec is None:
+            raise RuntimeError(
+                f"[{phase}] required upstream gate record missing: {rec_path} — run the "
+                "producing phase first (a downstream phase never enters off an ungated "
+                "out-root; r8 U2)"
+            )
+        if rec.get("verdict") == "FAIL":
+            rc = _GATE_RC[key]
+            logger.error(
+                "[%s] recorded %s verdict FAIL — re-applying the original halt (rc=%d; r8 U2)",
+                phase,
+                key,
+                rc,
+            )
+            sys.exit(rc)
 
 
 def _parent_args(args, phase: str) -> SimpleNamespace:
@@ -384,13 +470,21 @@ def _gate_fit_rows(n_fit: int, *, production: bool, out_path: Path | None = None
     return record
 
 
-def _budget_lattice(finest_alive: int, *, production: bool) -> dict:
+def _budget_lattice(finest_alive: int, *, val_l0: float, production: bool) -> dict:
     """The REGISTERED budget lattice, verbatim from plan §3 (DISJOINT and
     exhaustive): Budget-limited <=> k200-finest-alive >= 10; Budget-discharged
-    <=> otherwise. Registered at the 1% floor ONLY; informational at smoke n."""
+    <=> otherwise. Registered at the 1% floor ONLY; informational at smoke n.
+
+    r8 U7 — the §3 manipulation check rides the RECORD (branch DEFINITIONS
+    unchanged): plan §3's lattice-evaluation note conditions the CAUSAL
+    narration of either budget branch on the realized k=200 val L0 materially
+    exceeding the parent's 98.96; the record carries val_l0 + the concrete
+    predicate + manipulation_realized so the analyzer (who owns the prose) can
+    route a non-moving L0 to "manipulation not realized" mechanically."""
     verdict = (
         "Budget-limited" if int(finest_alive) >= BUDGET_FINEST_ALIVE_MIN else "Budget-discharged"
     )
+    realized = bool(float(val_l0) >= MANIPULATION_VAL_L0_MIN)
     return {
         "rule": "Budget-limited <=> k200-finest-alive >= 10; Budget-discharged <=> otherwise",
         "threshold": BUDGET_FINEST_ALIVE_MIN,
@@ -399,6 +493,22 @@ def _budget_lattice(finest_alive: int, *, production: bool) -> dict:
         "registered_floor_rows": REGISTERED_FLOOR,
         "verdict": verdict if production else f"INFORMATIONAL-smoke ({verdict})",
         "registered": bool(production),
+        "val_l0": float(val_l0),
+        "manipulation_realized": realized,
+        "manipulation_check": {
+            "predicate": (
+                f"val_l0 >= {MANIPULATION_VAL_L0_MIN} (conservative concrete form of plan §3's "
+                f"'realized k=200 val L0 materially exceeding the parent's {PARENT_VAL_L0_K100}'"
+                " — the A4 lattice-evaluation note)"
+            ),
+            "threshold_val_l0": MANIPULATION_VAL_L0_MIN,
+            "parent_k100_val_l0": PARENT_VAL_L0_K100,
+            "narration": (
+                "conditional-on-manipulation: the CAUSAL (budget) narration of this branch is "
+                "licensed only when manipulation_realized; otherwise the analyzer reports "
+                "'manipulation not realized' (census still valid and reported)"
+            ),
+        },
     }
 
 
@@ -573,6 +683,7 @@ def phase_sae_train(args) -> None:
     asserts cfg k == 200 + the sae_c_k200 leaf/prefix, and reports val L0 (the
     §3 manipulation-check input) + per-tier dead fractions beside the
     committed k=100 row (read at run time, never retyped)."""
+    _require_upstream_gates(args, "sae_train")  # r8 U2: recorded FAILs re-apply first
     drv = _drv()
     pargs = _parent_args(args, "sae_train")
     # the accidental-overwrite fence (plan §8): the k-aware leaf must be
@@ -614,6 +725,26 @@ def phase_sae_train(args) -> None:
 # ── R4: fit-side census pass + union encodes + dense-input companion ─────────────
 
 
+def _record_densein_drop(args, exc: BaseException) -> dict:
+    """r8 U6: the sanctioned R4 companion DROP persists its FULL diagnostic
+    reason_chain to BOTH the census-side densein_dropped.json (the resume
+    predicate's marker) AND the gates dir — the R6 consolidation folds every
+    gates-dir record into the git-destined gates_k200.json, so the complete
+    chain survives pod teardown (census/ is ephemeral and densein_meta.json
+    strips the chain by design)."""
+    fit_doc = {
+        "dropped": True,
+        # not a gate verdict: never "FAIL", so the r8 U2 loader cannot re-apply
+        # a halt off a sanctioned drop (plan §7: DROP, never a round abort)
+        "verdict": "DROPPED-companion",
+        "reason": f"{type(exc).__name__}: {exc}",
+        "reason_chain": "".join(traceback.format_exception(exc)),
+    }
+    FS._write_json_atomic(_census_dir(args) / "densein_dropped.json", fit_doc)
+    _record_gate(args, "densein_dropped", fit_doc)
+    return fit_doc
+
+
 def phase_densein(args) -> None:
     """R4 (plan §4): (1) fit-side FULL-WIDTH streaming census pass (counts +
     sums + per-row L0) over the sae_fit rows with the k=200 SAE + gate G-C'(i)
@@ -627,6 +758,7 @@ def phase_densein(args) -> None:
     lambda-grid + PROD_VAL_CARVE/CARVE_SEED recipe — NEVER the verbatim
     _dense_companion_c own-panel path). A step-4 failure DROPS the reported
     companion + the densein retrieval source (recorded), never the round."""
+    _require_upstream_gates(args, "densein")  # r8 U2: recorded FAILs re-apply first
     drv = _drv()
     drv.C.phase("k200_densein")
     ev = _eval_dir(args)
@@ -636,9 +768,10 @@ def phase_densein(args) -> None:
     census_path = ev / "firing_census_k200.npz"
     densein_path = ev / "perfeature_k200_densein.npz"
     dropped_path = cz / "densein_dropped.json"
+    dropped_gate_path = _gates_dir(args) / "densein_dropped.json"
     ftrue_path = cz / "ftrue_union_k200.fp16.npy"
     rows_path = cz / "union_rows.npz"
-    stale = [census_path, densein_path, dropped_path, ftrue_path, rows_path]
+    stale = [census_path, densein_path, dropped_path, dropped_gate_path, ftrue_path, rows_path]
     regime, resume_ok = _enter_regime(args, "densein", stale_paths=stale)
     core_done = census_path.exists() and ftrue_path.exists() and rows_path.exists()
     if resume_ok and core_done and (densein_path.exists() or dropped_path.exists()):
@@ -648,12 +781,30 @@ def phase_densein(args) -> None:
     production = _production(args)
     pargs = _parent_args(args, "densein")
     a_dir = args.out_root / "assemble"
+    stage = _stage_banked_dir(args)
 
-    sae = drv.MatryoshkaBatchTopKSAE.load_local(drv._sae_out_dir(pargs), device=args.device)
-    assert int(sae.k) == SAE_K200, f"loaded instrument k={sae.k} != {SAE_K200}"
+    # r8 M1: the R4 input contract validates BEFORE MatryoshkaBatchTopKSAE
+    # .load_local(..., device=...) — missing/corrupt inputs fail pre-GPU-init.
+    sae_dir = drv._sae_out_dir(pargs)
+    required_in = [
+        sae_dir / "sae_weights.safetensors",
+        sae_dir / "cfg.json",
+        a_dir / "rows_present.npy",
+        a_dir / "Y19.fp16.npy",
+        a_dir / "X19.fp16.npy",
+        stage / REFIT_HF,
+    ]
+    missing_in = [str(p) for p in required_in if not p.exists()]
+    assert not missing_in, (
+        f"[k200_densein] inputs missing BEFORE the SAE load (r8 M1): {missing_in}"
+    )
     _row_ci, prov_u8, pools = drv._load_scratch_meta(pargs)
     rows_present = np.load(a_dir / "rows_present.npy")
     y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
+    hz = np.load(stage / REFIT_HF)
+    FS._assert_npz_keys(hz, ("holdout_pred16", "holdout_rows"), "refit_holdout")
+    sae = drv.MatryoshkaBatchTopKSAE.load_local(sae_dir, device=args.device)
+    assert int(sae.k) == SAE_K200, f"loaded instrument k={sae.k} != {SAE_K200}"
 
     # ── step 1: full-width counts + sums + per-row L0 over the sae_fit rows ───────
     sae_fit = np.sort(np.asarray(pools["sae_fit"], np.int64))
@@ -712,8 +863,6 @@ def phase_densein(args) -> None:
         )
 
     # ── step 3: restricted f_true encode over concat(fit, holdout) rows ───────────
-    stage = _stage_banked_dir(args)
-    hz = np.load(stage / REFIT_HF)
     hold_rows = np.asarray(hz["holdout_rows"], np.int64)
     local_hold, sel = FS._local_positions(rows_present, hold_rows, production)
     n_te = int(len(local_hold))
@@ -757,17 +906,15 @@ def phase_densein(args) -> None:
             lambda_grid_edge=np.bool_(meta["lambda_grid_edge"]),
         )
         tmp.replace(densein_path)
+        for p in (dropped_path, dropped_gate_path):
+            if p.exists():  # a successful (re)fit clears any prior drop record
+                p.unlink()
         fit_doc = {"dropped": False, "wall_s": round(time.time() - t0, 1), **meta}
         print(f"[k200_densein] unit densein done {json.dumps(meta)}", flush=True)
     except SystemExit:
         raise  # a gate halt is never a droppable fit failure
     except Exception as e:  # plan §7: fit failure = DROP of the companion, never abort
-        fit_doc = {
-            "dropped": True,
-            "reason": f"{type(e).__name__}: {e}",
-            "reason_chain": "".join(traceback.format_exception(e)),
-        }
-        FS._write_json_atomic(dropped_path, fit_doc)
+        fit_doc = _record_densein_drop(args, e)  # r8 U6: full chain -> gates dir too
         logger.error(
             "[k200_densein] dense-companion fit DROPPED (reported companion + densein "
             "retrieval source lost; plan §7 names this in the fold): %s",
@@ -808,6 +955,7 @@ def phase_census(args) -> None:
     counts vs the union-column restricted-encode recount under the
     boundary-tolerant _gate_counts form (VERBATIM floor-sweep reuse, A2), and
     (iii) n_fit_rows == 120,000 (exact, production)."""
+    _require_upstream_gates(args, "census")  # r8 U2: recorded FAILs re-apply first
     drv = _drv()
     drv.C.phase("k200_census")
     ev = _eval_dir(args)
@@ -825,6 +973,7 @@ def phase_census(args) -> None:
     pargs = _parent_args(args, "census")
     stage = _stage_banked_dir(args)
 
+    # ── R5 input contract (r8 M1: validates BEFORE the GPU-init SAE load) ─────────
     fc = np.load(ev / "firing_census_k200.npz")
     counts = np.asarray(fc["counts"], np.int64)
     n_fit = int(fc["n_fit_rows"])
@@ -835,6 +984,19 @@ def phase_census(args) -> None:
     te_prov = np.asarray(rz["te_prov"], np.uint8)
     yc = np.load(cz / "ftrue_union_k200.fp16.npy", mmap_mode="r")
     assert yc.shape == (n_fit + len(hold_kept), len(union)), (yc.shape, n_fit, len(hold_kept))
+    hz = np.load(stage / REFIT_HF)
+    FS._assert_npz_keys(hz, ("holdout_pred16", "holdout_rows"), "refit_holdout")
+    ibz = np.load(stage / TA / "eval" / "ib_c.npz")
+    FS._assert_npz_keys(ibz, ("rows", "pred16"), "ib_c")
+    hold_rows = np.asarray(hz["holdout_rows"], np.int64)
+    rows_present = np.load(args.out_root / "assemble" / "rows_present.npy")
+    _, sel = FS._local_positions(rows_present, hold_rows, production)
+    assert np.array_equal(hold_rows[sel], hold_kept), "R4/R5 holdout row drift"
+    sae_train_log = drv._sae_out_dir(pargs) / "train_log.json"
+    assert sae_train_log.exists(), f"[k200_census] R3 train_log missing: {sae_train_log}"
+
+    sae = drv.MatryoshkaBatchTopKSAE.load_local(drv._sae_out_dir(pargs), device=args.device)
+    assert int(sae.k) == SAE_K200, f"loaded instrument k={sae.k} != {SAE_K200}"
 
     # ── (d.ii): full-width census counts vs the restricted-encode recount ─────────
     recount = np.zeros(len(union), np.int64)
@@ -843,7 +1005,9 @@ def phase_census(args) -> None:
     # VERBATIM floor-sweep _gate_counts (A2): reference = the R4 full-width pass
     # counts at the union columns (self-consistency — no banked k=200 census
     # exists by construction); tol_rows = GC_COUNT_TOL, off-boundary sym-diffs
-    # halt. Exits FS.RC_GC (= RC_GC = 31) at production on FAIL.
+    # halt. Exits FS.RC_GC (= RC_GC = 31) at production on FAIL. The record
+    # carries float(sae.threshold) (r8 M2: near-theta flips are exactly what
+    # tol absorbs — one-look diagnosis, FAIL path included; tol=3 KEPT).
     FS._gate_counts(
         recount,
         counts[union],
@@ -851,19 +1015,12 @@ def phase_census(args) -> None:
         arm="k200_selfconsistency",
         production=production,
         out_path=_gates_dir(args) / "gc_ii.json",
+        extra={"sae_threshold": float(sae.threshold)},
     )
     # ── (d.iii): n_fit == 120,000 vs the sha-pinned pool (exact, production) ──────
     _gate_fit_rows(n_fit, production=production, out_path=_gates_dir(args) / "gc_iii.json")
 
     # ── (b): score-side restricted encodes + (c): pred_encode_fve ─────────────────
-    sae = drv.MatryoshkaBatchTopKSAE.load_local(drv._sae_out_dir(pargs), device=args.device)
-    assert int(sae.k) == SAE_K200, f"loaded instrument k={sae.k} != {SAE_K200}"
-    hz = np.load(stage / REFIT_HF)
-    ibz = np.load(stage / TA / "eval" / "ib_c.npz")
-    hold_rows = np.asarray(hz["holdout_rows"], np.int64)
-    rows_present = np.load(args.out_root / "assemble" / "rows_present.npy")
-    _, sel = FS._local_positions(rows_present, hold_rows, production)
-    assert np.array_equal(hold_rows[sel], hold_kept), "R4/R5 holdout row drift"
     vhat = np.asarray(hz["holdout_pred16"], np.float16)[sel]
     ib16 = np.asarray(ibz["pred16"], np.float16)[sel]
     t0 = time.time()
@@ -912,6 +1069,9 @@ def phase_census(args) -> None:
             "alive_by_tier": {str(t): int((alive & (tiers_full == t)).sum()) for t in (0, 1, 2)},
         }
     finest_alive = int(((counts >= floors_eff[0]) & (tiers_full == 2)).sum())
+    # r8 U7: the §3 manipulation-check input, read from THIS run's train log at
+    # run time (the R3 companion report's source) — rides the lattice record.
+    k200_val_l0 = float(json.loads(sae_train_log.read_text())["epochs"][-1]["val_l0"])
     k100_committed: dict = {"source": "eval_results/issue_2476/floor_sweep/floor_sweep_c.json"}
     fs_path = EV_FLOOR_SWEEP / "floor_sweep_c.json"
     if fs_path.exists():  # committed comparison arm (read at run time, never retyped)
@@ -935,7 +1095,7 @@ def phase_census(args) -> None:
             "k200_design_frac": SAE_K200 / 65536.0,
             "k100_design_frac": 100.0 / 65536.0,
         },
-        "budget_lattice": _budget_lattice(finest_alive, production=production),
+        "budget_lattice": _budget_lattice(finest_alive, val_l0=k200_val_l0, production=production),
         "k100_committed": k100_committed,
         "census_note": (
             "census computed from raw threshold counts (cap-independent; the "
@@ -968,6 +1128,17 @@ def phase_census(args) -> None:
 # ── R6: per-floor stats + retrieval (3 sources) + gates consolidation ────────────
 
 
+def _consolidate_gates(args) -> dict:
+    """The gates_k200.json doc: EVERY gates-dir record verbatim (G-S/G-A/G-C'
+    trio, g4_k200, the B2 pred_encode_fve field, and — r8 U6 — the full-chain
+    densein_dropped record when the R4 companion was dropped, so the sanctioned
+    DROP's complete reason_chain lands in the git-destined artifact)."""
+    gates = {}
+    for p in sorted(_gates_dir(args).glob("*.json")):
+        gates[p.stem] = json.loads(p.read_text())
+    return {"pred_encode_fve": gates.get("pred_encode_fve", {}), "gates": gates}
+
+
 def phase_stats(args) -> None:
     """R6 (plan §4): per-floor batteries via the parent kernels — per-feature
     reads computed ONCE at the union grain (R2 map/ib/train-mean/densein + K=20
@@ -979,6 +1150,7 @@ def phase_stats(args) -> None:
     with a fresh rng(battery_seed), A13 demotion, retrieval with THREE sources
     (map / ib / densein — B3). Consolidates every gate record + the B2
     pred_encode_fve field into gates_k200.json."""
+    _require_upstream_gates(args, "stats")  # r8 U2: recorded FAILs re-apply first
     drv = _drv()
     drv.C.phase("k200_stats")
     ev = _eval_dir(args)
@@ -1211,15 +1383,7 @@ def phase_stats(args) -> None:
     np.savez(tmp, **pf_arrays)
     tmp.replace(ev / "perfeature_union_k200.npz")
 
-    gates = {}
-    for p in sorted(_gates_dir(args).glob("*.json")):
-        gates[p.stem] = json.loads(p.read_text())
-    pe = gates.get("pred_encode_fve", {})
-    drv._write_json(
-        ev / "gates_k200.json",
-        {"pred_encode_fve": pe, "gates": gates},
-        phase="k200-stats",
-    )
+    drv._write_json(ev / "gates_k200.json", _consolidate_gates(args), phase="k200-stats")
     lat = [x["label"] for x in lattice_vector]
     _sentinel("k200-stats", f"R6 done (lattice_reported={lat})")
     logger.info("[k200_stats] done: %s", lat)
@@ -1713,12 +1877,31 @@ FIG_STEMS = (
 )
 
 
+def _r7_git_srcs(ev: Path) -> list[Path]:
+    """The EXPLICIT §6.5 git-destined eval set (r8 U1) — never a glob sweep:
+    every allowlisted basename must exist; the HF-only tensors
+    (HF_ONLY_EVAL_BASENAMES) are structurally excluded (disjointness pinned by
+    tests/test_issue2476_k200.py)."""
+    srcs = [ev / name for name in GIT_EVAL_BASENAMES]
+    missing = [str(p) for p in srcs if not p.exists()]
+    assert not missing, f"[k200_figures] declared git eval artifacts missing: {missing}"
+    return srcs
+
+
 def _git_leg(declared: list[Path]) -> None:
     """Commit + push the declared git-destined result files on the issue branch
-    (the floor-sweep _git_leg shape with this round's dest): force-add
-    (repo-wide *.npz gitignore, #958) + staged-index verify + rev-list
+    (the floor-sweep _git_leg shape with this round's dest): per-file size guard
+    (r8 U1 — a >100 MiB blob kills the push AFTER the full production run) +
+    force-add (repo-wide *.npz gitignore, #958) + staged-index verify + rev-list
     push-verify with ONE fetch+rebase retry (#1880) + per-file
     artifact-presence assert (#1325)."""
+    oversize = [
+        f"{p} ({p.stat().st_size} B)" for p in declared if p.stat().st_size >= GIT_FILE_MAX_BYTES
+    ]
+    assert not oversize, (
+        f"[k200_figures] git-destined file(s) at/over the {GIT_FILE_MAX_BYTES} B guard "
+        f"(GitHub hard limit 100 MiB): {oversize} — route them to the HF leg instead (§6.5)"
+    )
     repo = ROOT
     branch = FS._git(repo, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     assert branch not in ("", "HEAD"), f"git leg needs a named branch checkout, got {branch!r}"
@@ -1851,12 +2034,37 @@ def _hf_leg(args) -> dict:
     }
 
 
+def _r7_digest(census: dict, sweep: dict, gates: dict) -> dict:
+    """The R7 results-sentinel digest. r8 U7: the budget branch publishes
+    LABELED `conditional-on-manipulation`, with the realized val_l0 +
+    manipulation_realized beside it — plan §3's lattice-evaluation note
+    conditions the CAUSAL narration on the manipulation being realized; the
+    analyzer owns the prose (a non-moving L0 routes to 'manipulation not
+    realized')."""
+    lat = census["budget_lattice"]
+    return {
+        "budget_lattice": lat["verdict"],
+        "budget_lattice_label": "conditional-on-manipulation",
+        "manipulation_realized": lat.get("manipulation_realized"),
+        "val_l0": lat.get("val_l0"),
+        "finest_alive_at_registered_floor": lat["finest_alive_at_registered_floor"],
+        "alive_by_tier_at_1pct": census["per_floor"][str(REGISTERED_FLOOR)]["alive_by_tier"],
+        "lattice_reported": [x["label"] for x in sweep["lattice_vector"]],
+        "pred_encode_fve": gates.get("pred_encode_fve", {}).get("pred_encode_fve"),
+        # pred_encode_fve is a REPORTED companion (plan §6 DV1), never a verdict
+        "gates": {
+            k: v.get("verdict") for k, v in gates.get("gates", {}).items() if k != "pred_encode_fve"
+        },
+    }
+
+
 def phase_figures(args) -> None:
-    """R7: hero pair + exploratory figures; production-only git leg (eval
-    JSONs/npzs -> eval_results/issue_2476/k200_census/, figures ->
+    """R7: hero pair + exploratory figures; production-only git leg (the
+    explicit §6.5 allowlist -> eval_results/issue_2476/k200_census/, figures ->
     figures/issue_2476/) + HF leg (census tensors -> <hf_prefix>/k200_census/;
     ALL-prefixes verify) + terminal results sentinel. Smoke diverts every
     output under out_root."""
+    _require_upstream_gates(args, "figures")  # r8 U2: recorded FAILs re-apply first
     drv = _drv()
     drv.C.phase("k200_figures")
     done_path = _state_dir(args, "figures") / "k200_done.json"
@@ -1934,9 +2142,7 @@ def phase_figures(args) -> None:
     _fig_loss_fve(k200_log, k100_log, fig_dir, drv)
 
     copied: list[Path] = []
-    for src in sorted([*ev.glob("*.json"), *ev.glob("*.npz")]):
-        if src.name == "regime.json":
-            continue
+    for src in _r7_git_srcs(ev):  # r8 U1: the explicit §6.5 allowlist, never a glob
         shutil.copy2(src, dest / src.name)
         copied.append(dest / src.name)
     fig_files = sorted(q for stem in FIG_STEMS for q in fig_dir.glob(f"{stem}.*"))
@@ -1949,19 +2155,7 @@ def phase_figures(args) -> None:
             hf_doc = _hf_leg(args)
 
     gates = json.loads((ev / "gates_k200.json").read_text())
-    digest = {
-        "budget_lattice": census["budget_lattice"]["verdict"],
-        "finest_alive_at_registered_floor": census["budget_lattice"][
-            "finest_alive_at_registered_floor"
-        ],
-        "alive_by_tier_at_1pct": census["per_floor"][str(REGISTERED_FLOOR)]["alive_by_tier"],
-        "lattice_reported": [x["label"] for x in sweep["lattice_vector"]],
-        "pred_encode_fve": gates.get("pred_encode_fve", {}).get("pred_encode_fve"),
-        # pred_encode_fve is a REPORTED companion (plan §6 DV1), never a verdict
-        "gates": {
-            k: v.get("verdict") for k, v in gates.get("gates", {}).items() if k != "pred_encode_fve"
-        },
-    }
+    digest = _r7_digest(census, sweep, gates)
     doc = {
         "regime": regime,
         "digest": digest,
@@ -2217,7 +2411,7 @@ def main() -> None:
             (drv.M._tier_stratified_panel, (None, 120_000, 16_384, 14_824), {}),
             (drv.S.tier_of, (None,), {}),
             (drv.EL._assert_estimator_validity, (1, 1, True), {}),
-            (FS._gate_counts, (None, None, None), {"arm": "x", "production": True}),
+            (FS._gate_counts, (None, None, None), {"arm": "x", "production": True, "extra": {}}),
             (FS._undefined_demotion, (None, None, None), {}),
             (FS._local_positions, (None, None, True), {}),
             (FS._tier_quantiles, (None, 1, None), {}),

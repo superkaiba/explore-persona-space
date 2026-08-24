@@ -559,8 +559,17 @@ def test_g1_pass_within_tolerance(tmp_path, monkeypatch, quiet_sentinels):
 # ── G4: production FVE-floor miss -> rc=25, persist-before-halt, no upload ──────
 
 
-def test_g4_production_fail_exits_rc25_upload_unreached(tmp_path, monkeypatch, quiet_sentinels):
-    args = _args(tmp_path, sae_dict=64, sae_steps=1, skip_upload=False)
+@pytest.mark.parametrize(
+    ("sae_k", "leaf"),
+    [
+        (0, "sae_c"),  # production default (k=100)
+        (200, "sae_c_k200"),  # r8 U5: the k200 round's failure semantics AT sae_k=200
+    ],
+)
+def test_g4_production_fail_exits_rc25_upload_unreached(
+    tmp_path, monkeypatch, quiet_sentinels, sae_k, leaf
+):
+    args = _args(tmp_path, sae_dict=64, sae_steps=1, skip_upload=False, sae_k=sae_k)
     a_dir = D._assemble_dir(args)
     a_dir.mkdir(parents=True, exist_ok=True)
     (a_dir / "split_meta.json").write_text("{}")
@@ -596,12 +605,15 @@ def test_g4_production_fail_exits_rc25_upload_unreached(tmp_path, monkeypatch, q
         D.phase_sae_train(args)
     assert ei.value.code == D.RC_G4 == 25
     out = D._sae_out_dir(args)
+    assert out.name == leaf  # r8 U5: record-first artifacts land in the k-aware leaf
     # persist-before-halt: weights + cfg + log + gates all exist
     for name in ("sae_weights.safetensors", "cfg.json", "train_log.json", "gates_p4.json"):
         assert (out / name).exists(), f"{name} must persist BEFORE the G4 halt"
     gates = json.loads((out / "gates_p4.json").read_text())["g4"]
     assert gates["verdict"] == "FAIL"
     assert gates["val_var_fve"] == pytest.approx(0.10)
+    if sae_k == 200:
+        assert int(json.loads((out / "cfg.json").read_text())["k"]) == 200
     # the halt sentinel carries the designed rc; upload never ran (raiser above)
     assert quiet_sentinels.call_args.kwargs.get("extra", {}).get("rc") == 25
 
@@ -1503,6 +1515,32 @@ def test_fs_gate_counts_smoke_is_informational_no_exit(tmp_path):
     recomputed = np.array([100, 1305], np.int64)  # way past tolerance
     rec = FS._gate_counts(recomputed, banked, (1200,), arm="c", production=False)
     assert rec["verdict"] == "INFORMATIONAL-smoke"
+
+
+def test_fs_gate_counts_extra_merges_into_record_fail_path(tmp_path):
+    """r8 M2: caller-supplied diagnostics (the k200 R5 sae_threshold) merge into
+    the persisted gc record — FAIL path included (record written BEFORE the
+    halt), so a near-theta flip is one-look diagnosable; tol=3 unchanged."""
+    banked = np.array([100, 1195], np.int64)
+    with pytest.raises(SystemExit):
+        FS._gate_counts(
+            np.array([100, 1225], np.int64),
+            banked,
+            (1200,),
+            arm="c",
+            production=True,
+            out_path=tmp_path / "gc.json",
+            extra={"sae_threshold": 0.1875},
+        )
+    rec = json.loads((tmp_path / "gc.json").read_text())
+    assert rec["verdict"] == "FAIL"
+    assert rec["sae_threshold"] == pytest.approx(0.1875)
+    assert rec["tol_rows"] == 3  # M2 adjudication: tolerance NOT widened
+    # PASS path merges too
+    rec2 = FS._gate_counts(
+        banked, banked, (1200,), arm="c", production=True, extra={"sae_threshold": 0.5}
+    )
+    assert rec2["verdict"] == "PASS" and rec2["sae_threshold"] == pytest.approx(0.5)
 
 
 def _fs_medians(v_map=0.5, v_ib=0.1):

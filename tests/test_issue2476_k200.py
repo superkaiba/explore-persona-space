@@ -17,9 +17,16 @@ seam incl. the k-aware leaf + regime key; the B1 revision-pin threading):
   the budget), the (100, 200) membership typo-fence, and a tiny REAL
   ``phase_sae_train`` run at k=200 (cfg.json records k=200 in the k-aware leaf).
 - B1: ``N1M._download_chunk_with_retry`` threads ``revision=`` into
-  ``hf_hub_download`` (autospec'd at the network boundary; default None ==
-  legacy call shape) and ``N1M._stream_ckpt_fingerprint`` is byte-for-byte
-  legacy at ``revision=None`` while a pinned revision changes the digest.
+  ``hf_hub_download`` (autospec'd at the network boundary; the default None is
+  forwarded and equals ``hf_hub_download``'s own default — HEAD — so pre-B1
+  callers that omit the kwarg resolve identically; r8 M4 wording) and
+  ``N1M._stream_ckpt_fingerprint`` is byte-for-byte legacy at
+  ``revision=None`` while a pinned revision changes the digest.
+- r8 union fixes: the §6.5 git/HF destination split (U1), the recorded-FAIL
+  re-apply loader at every standalone downstream phase (U2), the legacy k=100
+  regime-hash parity (U3), the warm pass-b provenance pin (U4), the durable
+  densein DROP reason chain (U6), and the §3 manipulation check riding the
+  lattice record + R7 digest (U7).
 
 Hermetic: no GPU, no network — external boundaries faked with
 ``unittest.mock.create_autospec`` (signature-conformant by construction).
@@ -43,6 +50,12 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 import issue779_ffc_n1m_fits as N1M  # noqa: E402
 import issue2476_k200_census as K  # noqa: E402
 import issue2476_turnavg_sae as D  # noqa: E402
+
+#: r8 U3 legacy-parity pin: D._regime(_args(sae_k=0))["config_hash"] at commit
+#: 1b93837e92~1 (the pre---sae-k code, imported by file and evaluated over the
+#: SAME fixture args, 2026-08-24). The post-diff default MUST reproduce it
+#: byte-identically or every banked k=100 manifest is rejected on resume.
+PREDIFF_DEFAULT_CONFIG_HASH = "081e4c12d462cdba"
 
 
 def _args(tmp_path: Path, **over) -> SimpleNamespace:
@@ -94,6 +107,7 @@ def test_rc_codes_match_floor_sweep_convention():
     import issue2476_floor_sweep as FS
 
     assert K.RC_GC == FS.RC_GC  # G-C'(ii) exits through FS._gate_counts verbatim
+    assert K.RC_G4 == D.RC_G4 == 25  # r8 U2: the loader re-applies the parent's G-4' rc
 
 
 def test_phase_registry_names():
@@ -202,17 +216,62 @@ def test_gate_fit_rows_smoke_informational_no_exit(tmp_path):
     ],
 )
 def test_budget_lattice_truth_table(finest_alive, want):
-    doc = K._budget_lattice(finest_alive, production=True)
+    doc = K._budget_lattice(finest_alive, val_l0=199.0, production=True)
     assert doc["verdict"] == want
     assert doc["registered"] is True
     assert doc["threshold"] == 10 and doc["finest_tier_ids"] == [16384, 65536]
 
 
 def test_budget_lattice_smoke_informational():
-    doc = K._budget_lattice(12, production=False)
+    doc = K._budget_lattice(12, val_l0=199.0, production=False)
     assert doc["verdict"].startswith("INFORMATIONAL-smoke")
     assert "Budget-limited" in doc["verdict"]
     assert doc["registered"] is False
+
+
+@pytest.mark.parametrize(
+    ("val_l0", "realized"),
+    [
+        (99.0, False),  # ~ the parent's 98.96: manipulation NOT realized (r8 U7 fixture)
+        (149.9, False),  # below the stated conservative predicate
+        (150.0, True),  # inclusive predicate boundary
+        (199.4, True),  # ~ k=200 expected regime
+    ],
+)
+def test_budget_lattice_manipulation_check_rides_record(val_l0, realized):
+    """r8 U7: the lattice RECORD carries val_l0 + manipulation_realized under
+    the stated concrete predicate (val_l0 >= 150); the registered branch
+    DEFINITIONS are unchanged (verdict computed exactly as before)."""
+    doc = K._budget_lattice(12, val_l0=val_l0, production=True)
+    assert doc["verdict"] == "Budget-limited"  # branch definition untouched
+    assert doc["val_l0"] == pytest.approx(val_l0)
+    assert doc["manipulation_realized"] is realized
+    chk = doc["manipulation_check"]
+    assert chk["threshold_val_l0"] == K.MANIPULATION_VAL_L0_MIN == 150.0
+    assert chk["parent_k100_val_l0"] == K.PARENT_VAL_L0_K100 == 98.96
+    assert "val_l0 >= 150" in chk["predicate"]
+    assert "conditional-on-manipulation" in chk["narration"]
+
+
+def test_r7_digest_conditional_on_manipulation_label():
+    """r8 U7: a production fixture with val_l0 ~ 99 (the parent's regime — the
+    manipulation did NOT move L0) publishes manipulation_realized=false and the
+    digest labels the budget branch `conditional-on-manipulation`."""
+    census = {
+        "budget_lattice": K._budget_lattice(12, val_l0=99.0, production=True),
+        "per_floor": {str(K.REGISTERED_FLOOR): {"alive_by_tier": {"0": 1, "1": 2, "2": 3}}},
+    }
+    sweep = {"lattice_vector": [{"label": "Gradient-holds"}]}
+    gates = {
+        "pred_encode_fve": {"pred_encode_fve": 0.9},
+        "gates": {"gs": {"verdict": "PASS"}, "pred_encode_fve": {"pred_encode_fve": 0.9}},
+    }
+    digest = K._r7_digest(census, sweep, gates)
+    assert digest["budget_lattice"] == "Budget-limited"
+    assert digest["budget_lattice_label"] == "conditional-on-manipulation"
+    assert digest["manipulation_realized"] is False
+    assert digest["val_l0"] == pytest.approx(99.0)
+    assert digest["gates"] == {"gs": "PASS"}  # pred_encode_fve stays a reported companion
 
 
 # ── per-floor row assembly + effective-floor clamp ───────────────────────────────
@@ -275,10 +334,30 @@ def test_sae_k_resolution_and_leaf(tmp_path):
 
 
 def test_parent_regime_carries_sae_k_and_hash_flips(tmp_path):
+    """r8 U3: a DEFAULT budget omits the sae_k key entirely (pre-diff manifest
+    parity — banked k=100 out-roots stay resumable), an explicit --sae-k 100
+    resolves to the same production instrument and the same hash, and k=200
+    keys distinctly (a k=200 run can never resume a k=100 root)."""
     r0 = D._regime(_args(tmp_path, sae_k=0))
+    r100 = D._regime(_args(tmp_path, sae_k=100))
     r2 = D._regime(_args(tmp_path, sae_k=200))
-    assert r0["sae_k"] == 0 and r2["sae_k"] == 200
+    assert "sae_k" not in r0 and "sae_k" not in r100  # default/production budget: key omitted
+    assert r2["sae_k"] == 200
+    assert r0["config_hash"] == r100["config_hash"]  # same resolved instrument, same regime
     assert r0["config_hash"] != r2["config_hash"]  # k=200 NEVER resumes a k=100 root
+
+
+def test_parent_regime_default_hash_is_prediff_legacy_constant(tmp_path):
+    """r8 U3 pin: the default-budget config_hash equals the PRE-diff hash as a
+    literal constant (computed from the pre---sae-k _regime over the same
+    fixture args at commit 1b93837e92~1), so every banked k=100 manifest
+    (parent + floor-sweep out-roots) resumes unrejected. Reconstruction arm:
+    hashing the returned base dict minus the derived keys reproduces it."""
+    r0 = D._regime(_args(tmp_path, sae_k=0))
+    assert r0["config_hash"] == PREDIFF_DEFAULT_CONFIG_HASH
+    base = {k: v for k, v in r0.items() if k not in ("config_hash", "code_sha")}
+    got = hashlib.sha256(json.dumps(base, sort_keys=True).encode()).hexdigest()[:16]
+    assert got == PREDIFF_DEFAULT_CONFIG_HASH
 
 
 def _sae_train_fixture(tmp_path, monkeypatch, **over):
@@ -364,7 +443,10 @@ def test_k200_parent_args_pins_budget_and_regime(tmp_path):
 
 def test_download_chunk_threads_revision(tmp_path, monkeypatch):
     """_download_chunk_with_retry passes revision= through to hf_hub_download
-    (autospec'd network boundary); the default None matches the legacy shape."""
+    (autospec'd network boundary). The default None is FORWARDED explicitly and
+    equals hf_hub_download's own default (HEAD) — behaviorally identical to the
+    pre-B1 callers that omit the kwarg, not a distinct 'legacy call shape'
+    (r8 M4 wording fix)."""
     import huggingface_hub
 
     fake = create_autospec(huggingface_hub.hf_hub_download, return_value=str(tmp_path / "f"))
@@ -374,7 +456,8 @@ def test_download_chunk_threads_revision(tmp_path, monkeypatch):
     kw = fake.call_args.kwargs
     assert kw["revision"] == "deadbeef"
     assert kw["repo_type"] == "dataset" and kw["filename"] == "a/b.pt"
-    # legacy callers (positional, no revision kwarg) resolve HEAD: revision=None
+    # a caller omitting the kwarg forwards revision=None == hf_hub_download's
+    # own default (HEAD) — identical resolution to the pre-B1 call sites (M4)
     N1M._download_chunk_with_retry("repo/x", "a/b.pt", tmp_path)
     assert fake.call_args.kwargs["revision"] is None
 
@@ -394,6 +477,218 @@ def test_stream_fingerprint_legacy_byte_identical_and_revision_refuses():
     # a resume minted under one revision REFUSES a stream from another
     other = N1M._stream_ckpt_fingerprint(19, "p", names, revision="0" * 40)
     assert pinned != other
+
+
+# ── r8 U1: the §6.5 git/HF destination split (explicit allowlist, never a glob) ──
+
+
+def test_git_hf_destination_split_disjoint():
+    """r8 U1: the git allowlist EXCLUDES the two HF-only tensors — the densein
+    npz (20,000 x n_union fp16) plausibly exceeds GitHub's 100 MiB hard limit,
+    so a glob sweep would kill the R7 push AFTER the full production run."""
+    assert set(K.GIT_EVAL_BASENAMES) & set(K.HF_ONLY_EVAL_BASENAMES) == set()
+    assert "firing_census_k200.npz" in K.HF_ONLY_EVAL_BASENAMES
+    assert "perfeature_k200_densein.npz" in K.HF_ONLY_EVAL_BASENAMES
+    # the §6.5 git rows verbatim: declared JSONs + the union npz + gates only
+    assert set(K.GIT_EVAL_BASENAMES) == {
+        "census_k200.json",
+        "tier_sweep_k200.json",
+        "retrieval_k200.json",
+        "gates_k200.json",
+        "perfeature_union_k200.npz",
+    }
+    assert K.GIT_FILE_MAX_BYTES < 100 * 1024**2  # guard sits UNDER the GitHub hard limit
+
+
+def test_r7_git_srcs_allowlist_never_sweeps_hf_only(tmp_path):
+    ev = tmp_path / "eval"
+    ev.mkdir()
+    for name in (*K.GIT_EVAL_BASENAMES, *K.HF_ONLY_EVAL_BASENAMES, "union_encodes_meta.json"):
+        (ev / name).write_text("x")
+    srcs = K._r7_git_srcs(ev)
+    assert sorted(p.name for p in srcs) == sorted(K.GIT_EVAL_BASENAMES)
+    (ev / "gates_k200.json").unlink()  # a missing declared artifact fails loud
+    with pytest.raises(AssertionError, match="declared git eval artifacts missing"):
+        K._r7_git_srcs(ev)
+
+
+def test_git_leg_size_guard_blocks_oversize(tmp_path):
+    """The per-file size guard fires BEFORE any git operation (r8 U1)."""
+    big = tmp_path / "big.npz"
+    with open(big, "wb") as f:
+        f.seek(K.GIT_FILE_MAX_BYTES)  # sparse: st_size over the guard, no disk cost
+        f.write(b"x")
+    with pytest.raises(AssertionError, match="100 MiB"):
+        K._git_leg([big])
+
+
+# ── r8 U2: recorded gate FAILs re-apply at every standalone downstream phase ─────
+
+
+def _write_gate_records(args, *, fail_key=None):
+    """Every required upstream record PASS except ``fail_key`` (FAIL)."""
+    gd = K._gates_dir(args)
+    gd.mkdir(parents=True, exist_ok=True)
+    for key in ("gs", "ga", "gc_i", "gc_ii", "gc_iii"):
+        (gd / f"{key}.json").write_text(
+            json.dumps({"verdict": "FAIL" if key == fail_key else "PASS"})
+        )
+    sae_out = args.out_root / "sae_c_k200"
+    sae_out.mkdir(parents=True, exist_ok=True)
+    (sae_out / "gates_p4.json").write_text(
+        json.dumps({"g4": {"verdict": "FAIL" if fail_key == "g4" else "PASS"}})
+    )
+
+
+@pytest.mark.parametrize(
+    ("phase", "fail_key", "rc"),
+    [
+        ("sae_train", "gs", 33),
+        ("sae_train", "ga", 30),
+        ("densein", "g4", 25),
+        ("census", "gc_i", 31),
+        ("stats", "gc_ii", 31),
+        ("figures", "gc_iii", 31),
+        ("figures", "gs", 33),
+    ],
+)
+def test_downstream_phase_reapplies_recorded_fail_before_heavy_work(
+    tmp_path, monkeypatch, phase, fail_key, rc
+):
+    """r8 U2: entering ANY later --phase over a persisted FAIL re-applies the
+    ORIGINAL rc before heavy work — a failed gate can never be laundered into
+    produced/uploaded terminal results by phase re-entry."""
+    args = _args(tmp_path)
+    _write_gate_records(args, fail_key=fail_key)
+
+    def boom(*a, **k):
+        raise AssertionError("heavy path (_drv) reached on a failed-gate re-entry (r8 U2)")
+
+    monkeypatch.setattr(K, "_drv", boom)  # the first heavy step of every phase
+    with pytest.raises(SystemExit) as ei:
+        K.PHASES[phase](args)
+    assert ei.value.code == rc
+
+
+def test_downstream_phase_missing_gate_record_fails_loud(tmp_path, monkeypatch):
+    args = _args(tmp_path)  # no records written at all
+
+    def boom(*a, **k):
+        raise AssertionError("heavy path reached without required gate records")
+
+    monkeypatch.setattr(K, "_drv", boom)
+    with pytest.raises(RuntimeError, match="required upstream gate record missing"):
+        K.phase_densein(args)
+
+
+def test_require_upstream_gates_pass_records_no_exit(tmp_path):
+    args = _args(tmp_path)
+    _write_gate_records(args, fail_key=None)
+    for phase in ("sae_train", "densein", "census", "stats", "figures"):
+        K._require_upstream_gates(args, phase)  # all PASS: returns
+    K._require_upstream_gates(args, "assemble")  # upstream phases require nothing
+
+
+def test_require_upstream_gates_ignores_sanctioned_drop_record(tmp_path):
+    """A sanctioned densein DROP (verdict DROPPED-companion) is NOT a gate FAIL
+    — downstream phases proceed (plan §7: drop, never a round abort)."""
+    args = _args(tmp_path)
+    _write_gate_records(args, fail_key=None)
+    (K._gates_dir(args) / "densein_dropped.json").write_text(
+        json.dumps({"verdict": "DROPPED-companion", "reason_chain": "tb"})
+    )
+    K._require_upstream_gates(args, "stats")
+    K._require_upstream_gates(args, "figures")
+
+
+# ── r8 U6: the densein DROP reason chain survives into gates_k200.json ───────────
+
+
+def test_densein_drop_reason_chain_durable_in_gates_consolidation(tmp_path):
+    """r8 U6: a forced R4 fit failure records the COMPLETE reason_chain in the
+    gates dir, and the R6 consolidation folds it into gates_k200.json — a
+    git-allowlisted declared final artifact — so the plan's sanctioned DROP
+    diagnostic survives pod teardown."""
+    args = _args(tmp_path)
+    try:
+        raise ValueError("forced densein fit failure (fixture)")
+    except ValueError as e:
+        doc = K._record_densein_drop(args, e)
+    assert doc["dropped"] is True and doc["verdict"] == "DROPPED-companion"
+    assert "ValueError: forced densein fit failure" in doc["reason"]
+    assert "Traceback" in doc["reason_chain"]
+    for p in (
+        K._census_dir(args) / "densein_dropped.json",  # resume-predicate marker
+        K._gates_dir(args) / "densein_dropped.json",  # durable (consolidated) record
+    ):
+        assert "Traceback" in json.loads(p.read_text())["reason_chain"], p
+    consolidated = K._consolidate_gates(args)
+    assert "Traceback" in consolidated["gates"]["densein_dropped"]["reason_chain"]
+    assert "gates_k200.json" in K.GIT_EVAL_BASENAMES  # the chain's git destination
+
+
+# ── r8 U4: warm pass_b cache validates against the revision pin ──────────────────
+
+
+def _tiny_pass_b(path: Path) -> None:
+    import torch
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "layers": torch.tensor([19]),
+            "cx_last": torch.zeros(1, 2, 1),
+            "v_x": torch.zeros(1, 2, 1),
+        },
+        path,
+    )
+
+
+def test_pass_b_warm_reuse_requires_matching_pin(tmp_path, monkeypatch):
+    """r8 U4: a warm (pre-existing) pass_b file enters the pinned assembly ONLY
+    with a sidecar recording the same revision pin; absent or mismatched
+    provenance fails loud (never a silent unpinned read)."""
+    local = tmp_path / "pass_b.pt"
+    monkeypatch.setattr(D.N1G, "PASS_B_LOCAL", str(local))
+    _tiny_pass_b(local)
+    side = D._pass_b_pin_sidecar(local)
+    with pytest.raises(RuntimeError, match="NO revision sidecar"):
+        D._load_pass_b_wo()  # (a) unknown provenance
+    side.write_text(json.dumps({"revision": "0" * 40}))
+    with pytest.raises(RuntimeError, match="!= pinned"):
+        D._load_pass_b_wo()  # (b) mismatched pin
+    side.write_text(json.dumps({"revision": D.DATA_REPO_REVISION}))
+    b = D._load_pass_b_wo()  # (c) matching pin loads
+    assert {"layers", "cx_last", "v_x"} <= set(b.keys())
+
+
+def test_pass_b_fetch_writes_pin_sidecar(tmp_path, monkeypatch):
+    """The fetch path downloads at DATA_REPO_REVISION AND writes the sidecar;
+    a subsequent warm reuse then passes the pin check without network
+    (autospec'd network boundary; the fake materializes the file)."""
+    import huggingface_hub
+
+    local = tmp_path / "sub" / "pass_b.pt"
+    monkeypatch.setattr(D.N1G, "PASS_B_LOCAL", str(local))
+    fake = create_autospec(huggingface_hub.hf_hub_download)
+
+    def materialize(repo_id, filename=None, **kw):
+        _tiny_pass_b(local)
+        return str(local)
+
+    fake.side_effect = materialize
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake)
+    b = D._load_pass_b_wo()
+    assert {"layers", "cx_last", "v_x"} <= set(b.keys())
+    assert fake.call_args.kwargs["revision"] == D.DATA_REPO_REVISION
+    rec = json.loads(D._pass_b_pin_sidecar(local).read_text())
+    assert rec["revision"] == D.DATA_REPO_REVISION
+
+    def no_network(*a, **k):
+        raise AssertionError("network reached on a pinned warm reuse")
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", no_network)
+    D._load_pass_b_wo()  # warm second read: sidecar-validated, no fetch
 
 
 def test_p4_upload_k200_prefix_and_staging(tmp_path, monkeypatch):

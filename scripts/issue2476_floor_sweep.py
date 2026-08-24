@@ -327,13 +327,17 @@ def _gate_counts(
     production: bool,
     tol: int = GC_COUNT_TOL,
     out_path: Path | None = None,
+    extra: dict | None = None,
 ) -> dict:
     """G-C (plan §7): recomputed full-width fit-side counts vs the banked census —
     max per-feature |delta| <= tol AND every per-floor alive-set symmetric
     difference confined to features whose banked count sits within +/-tol of that
     floor. FAIL => record written FIRST, then sys.exit(RC_GC) at production;
     informational (no exit) at smoke n. Banked counts stay CANONICAL for panel
-    definition either way (plan §11)."""
+    definition either way (plan §11). ``extra``: caller-supplied diagnostic
+    fields merged into the record BEFORE the write (k200 r8 M2: the k200 caller
+    records float(sae.threshold) so a near-theta boundary flip is one-look
+    diagnosable from the persisted gc_ii record — FAIL path included)."""
     rec = np.asarray(recomputed, np.int64)
     ban = np.asarray(banked, np.int64)
     assert rec.shape == ban.shape, (rec.shape, ban.shape)
@@ -365,6 +369,8 @@ def _gate_counts(
         "verdict": ("PASS" if ok else "FAIL") if production else "INFORMATIONAL-smoke",
         "production": bool(production),
     }
+    if extra:
+        record.update(extra)
     if out_path is not None:
         _write_json_atomic(out_path, record)
     print(

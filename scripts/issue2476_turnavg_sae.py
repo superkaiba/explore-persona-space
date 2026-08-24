@@ -298,7 +298,6 @@ def _regime(args) -> dict:
         "max_chunks": int(args.max_chunks),
         "smoke_rows": int(args.smoke_rows),
         "sae_dict": int(args.sae_dict),  # output-affecting instrument width (0 = production)
-        "sae_k": int(args.sae_k),  # sparsity budget (0 = production SAE_K; k200 plan §4)
         "sae_steps": int(args.sae_steps),
         "fit_n": int(args.fit_n),
         "n_perm": int(args.n_perm),
@@ -321,6 +320,17 @@ def _regime(args) -> dict:
             "m_s_score_sha256": m_committed["realized"]["s_score_sha256"],
         },
     }
+    # --sae-k joins the hashed dict ONLY at a non-default RESOLVED budget
+    # (k200 code-review r8 U3): the parent's + floor-sweep's pre-diff k=100
+    # manifests were minted WITHOUT the key, so hashing a default-`0` (or an
+    # explicit `100`, which resolves to the same production instrument) would
+    # reject every banked k=100 out-root as a "different config" on any future
+    # resume/re-run. Default => key omitted, hash byte-identical to pre-diff;
+    # k=200 => key present, hash distinct (a k=200 run can never resume a
+    # k=100 root). Pinned by tests/test_issue2476_k200.py (legacy-parity
+    # constant + flip tests).
+    if _sae_k(args) != SAE_K:
+        base["sae_k"] = _sae_k(args)
     cfg_hash = hashlib.sha256(json.dumps(base, sort_keys=True).encode()).hexdigest()[:16]
     prov = git_provenance()
     code_sha = prov.commit_sha_full or prov.commit_sha or "unknown"
@@ -531,11 +541,25 @@ def _assert_pinned_valtest(committed: dict) -> tuple[np.ndarray, np.ndarray, np.
     return np.asarray(r1_train, np.int64), np.asarray(val, np.int64), np.asarray(test, np.int64)
 
 
+def _pass_b_pin_sidecar(local_path: Path) -> Path:
+    """Revision-provenance sidecar beside the warm pass_b bundle (r8 U4)."""
+    return local_path.with_name(local_path.name + ".revision.json")
+
+
 def _load_pass_b_wo():
     """The pass_b bundle through the weights_only load path (fetch-if-absent
     mirrors N1G._load_pass_b_bundle's staging verbatim; the LOAD swaps
-    F._mmap_load's weights_only=False for _torch_load_wo — Codex r1 Major)."""
+    F._mmap_load's weights_only=False for _torch_load_wo — Codex r1 Major).
+
+    Warm-cache pin (k200 code-review r8 U4): a pre-existing local file enters
+    an allegedly PINNED assembly, so its provenance must be validated against
+    DATA_REPO_REVISION — the fetch path writes a revision sidecar, and warm
+    reuse REQUIRES a sidecar recording the same pin. A warm file with a
+    mismatched or absent sidecar (unknown provenance — e.g. staged by a
+    pre-B1 run at an unpinned HEAD) fails LOUD, never a silent unpinned read.
+    """
     local_path = Path(N1G.PASS_B_LOCAL)
+    sidecar = _pass_b_pin_sidecar(local_path)
     if not local_path.exists():
         from huggingface_hub import hf_hub_download
 
@@ -557,6 +581,30 @@ def _load_pass_b_wo():
         )
         if got != local_path:
             os.replace(got, local_path)
+        _write_json(
+            sidecar,
+            {
+                "revision": DATA_REPO_REVISION,
+                "path_in_repo": N1G.PASS_B_HF_PATH,
+                "repo": C.HF_DATA_REPO,
+                "size_bytes": int(local_path.stat().st_size),
+            },
+            phase="pass-b-fetch",
+        )
+    else:
+        if not sidecar.exists():
+            raise RuntimeError(
+                f"[pass_b] warm file {local_path} has NO revision sidecar ({sidecar.name}) — "
+                "unknown provenance cannot enter a pinned assembly (r8 U4). Delete the warm "
+                f"file to force a re-fetch at the pinned revision {DATA_REPO_REVISION}."
+            )
+        rec = json.loads(sidecar.read_text())
+        if rec.get("revision") != DATA_REPO_REVISION:
+            raise RuntimeError(
+                f"[pass_b] warm file {local_path} was staged at revision "
+                f"{rec.get('revision')!r} != pinned {DATA_REPO_REVISION!r} (r8 U4). Delete the "
+                "warm file + sidecar to force a re-fetch at the pin."
+            )
     b = _torch_load_wo(local_path)
     _assert_keys(b, ("layers", "cx_last", "v_x"), "pass_b bundle")
     return b
