@@ -17211,14 +17211,15 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
-    # measured 249,059 B @ #2315 r2 2026-08-23 (1b --assert-launcher wiring:
-    # the unconditional pre-launch refusal + its input-contract comment,
-    # +1,629 B); corridor-max ((measured+2_800)//100)*100 = 251_800, headroom
-    # 2,741 — clears guard_skill_doc_headroom.sh's 2,000 B warn floor.
+    # measured 249,179 B @ #2315 r3 2026-08-23 (1b FATAL arm: per-cause
+    # remedy split — exit 1 fix/emit the launcher vs exit 3 fix the guard,
+    # +120 B); corridor-max ((measured+2_800)//100)*100 = 251_900, headroom
+    # 2,721 — clears guard_skill_doc_headroom.sh's 2,000 B warn floor.
     # Re-measure + re-set at Step 10d against the MERGED tree (concurrent
     # sessions edit this file).
-    # Prior: 250_200 (#2315 r1, 247,430 B) / 245_300 (242,521 B).
-    "issue/steps/13-step-9.md": 251_800,
+    # Prior: 251_800 (#2315 r2, 249,059 B) / 250_200 (#2315 r1, 247,430 B) /
+    # 245_300 (242,521 B).
+    "issue/steps/13-step-9.md": 251_900,
     # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
     # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
     # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =

@@ -78,10 +78,23 @@ emitter == site-1 == site-2 under the pinned `_pytest_flag_set` normalization
 CLI mode gets a subprocess test (mutation-visible at the argparse/dispatch
 seam); and `render_launcher`'s placeholder check is an explicit RuntimeError
 (never a `python -O`-strippable assert).
+
+#2315 r3 closes the round-2 CONCERN (`assert-launcher-fatal-arm-pin`): the r2
+wiring pin asserted only the FATAL message substring, so deleting just
+`exit 1` from the recipe's `||` arm left the suite green while the shipped
+1b block went fail-OPEN. The fail-closed arm is now pinned ON the extracted
+`--assert-launcher || { ... exit 1; }` compound AND executed —
+`test_step9c_1b_assert_launcher_fatal_arm_discriminates` runs the shipped
+compound against compliant / violating / verbatim-placeholder launcher text,
+asserting the actual exit codes and a trailing REACHED_LAUNCH sentinel. The
+arm's message also splits the remedy per cause: exit 1 = fix/emit the
+LAUNCHER; exit 3 = fix the GUARD (emitting a launcher cannot repair a broken
+self-test).
 """
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -715,6 +728,27 @@ def test_emit_launcher_cli_emits_substituted_launcher():
         assert err_frag in bad.stderr, bad_argv
 
 
+def _extract_assert_launcher_compound(sec: str) -> str:
+    """The 1b `--assert-launcher` invocation plus its backslash-continued
+    fail-closed `|| { ... exit 1; }` arm, extracted as shipped (#2315 r3,
+    concern `assert-launcher-fatal-arm-pin`: a section-wide substring pin
+    leaves an `exit 1` deletion green — the arm must be pinned ON the
+    compound and EXECUTED)."""
+    lines = sec.splitlines()
+    for i, ln in enumerate(lines):
+        if ln.lstrip().startswith("uv run") and "--assert-launcher" in ln:
+            snippet = [ln]
+            j = i
+            while lines[j].rstrip().endswith("\\") and j + 1 < len(lines):
+                j += 1
+                snippet.append(lines[j])
+            return "\n".join(snippet)
+    raise AssertionError(
+        "--assert-launcher invocation not found in the 9c section — the 1b "
+        "block no longer wires the pre-launch refusal"
+    )
+
+
 def test_step9c_1b_assert_launcher_wired_before_launch():
     """#2315 r2 (`assert-launcher-live-path`): the 1b sanction block INVOKES
     `--assert-launcher` as a required fail-closed step — a FATAL `||` arm with
@@ -724,7 +758,8 @@ def test_step9c_1b_assert_launcher_wired_before_launch():
     CONTRACT (`assert-launcher-wiring-input-contract`): the composed LAUNCHER
     COMMAND TEXT only, never the whole 1b block — whose fidelity comment
     contains the literal `junit_family=xunit1`, so a whole-block input passes
-    vacuously by reading its own documentation."""
+    vacuously by reading its own documentation. r3 rebinds the FATAL-arm pins
+    onto the extracted compound itself (concern `assert-launcher-fatal-arm-pin`)."""
     sec = _section_9c(_text())
     invocation = "uv run python scripts/select_step9c_tests.py --assert-launcher"
     assert invocation in sec
@@ -734,9 +769,28 @@ def test_step9c_1b_assert_launcher_wired_before_launch():
     assert fidelity_idx < wire_idx < launcher_idx, (
         "the --assert-launcher invocation must sit between the fidelity prose and the 1b launcher"
     )
-    # The fail-closed FATAL arm (exit 1, legible cause + remedy):
-    n = _norm(sec)
-    assert "FATAL: composed launcher violates the xunit1 contract" in n
+    # The fail-closed FATAL arm, pinned ON the extracted compound — never a
+    # section-wide substring (r3, `assert-launcher-fatal-arm-pin`): the `||`
+    # arm carries the legible cause + remedy on stderr AND the `exit 1` that
+    # makes it fail-CLOSED; the executing proof is
+    # test_step9c_1b_assert_launcher_fatal_arm_discriminates below.
+    compound = _extract_assert_launcher_compound(sec)
+    assert "||" in compound, "the --assert-launcher invocation lost its fail-closed arm"
+    arm = compound.split("||", 1)[1]
+    # The exit 1 is pinned as the arm's COMMAND TAIL, never a bare substring:
+    # the FATAL message itself contains the prose token `exit 1:` (the
+    # per-cause remedy split), so `"exit 1" in arm` would pass vacuously off
+    # the quoted echo string with the actual exit command deleted — the same
+    # read-its-own-documentation channel as the r2 input-contract fix.
+    assert arm.rstrip().endswith(">&2; exit 1; }"), (
+        "fail-open: the FATAL arm no longer ends `>&2; exit 1; }`"
+    )
+    assert "FATAL: composed launcher violates the xunit1 contract" in arm
+    # Per-cause remedies (r3 item 2): exit 1 = fix/emit the LAUNCHER; exit 3 =
+    # the guard's own self-test — fix the guard (emitting a launcher cannot
+    # repair a broken self-test):
+    assert "--emit-launcher" in arm
+    assert "fix the guard" in arm
     # The input contract, stated at the call site (comment-wrapped prose):
     c = _norm_comments(sec)
     assert "pass ONLY the composed LAUNCHER COMMAND TEXT" in c
@@ -746,6 +800,65 @@ def test_step9c_1b_assert_launcher_wired_before_launch():
     # unconditionally; a broken guard blocks even a verbatim copy):
     assert "runs UNCONDITIONALLY" in c
     assert "SELF-TEST gates the launch" in c
+
+
+def test_step9c_1b_assert_launcher_fatal_arm_discriminates():
+    """BEHAVIORAL (r3, concern `assert-launcher-fatal-arm-pin`): extract the
+    shipped `--assert-launcher || { ... exit 1; }` compound from the 1b recipe
+    and EXECUTE it under bash, asserting the actual exit codes — the r2 pin
+    covered only the FATAL substring, so deleting just `exit 1` left the
+    recipe fail-OPEN (a REFUSED verdict no longer stops the launch) with the
+    suite green. A trailing REACHED_LAUNCH sentinel models the launcher line
+    that follows the compound in the recipe: on violating input the arm must
+    exit 1 BEFORE the sentinel; deleting `exit 1` makes the violating case
+    print the sentinel at rc 0 and FAILS this test (mutation-discrimination,
+    the plan §6 SC-4 discipline).
+
+    Two surgical, asserted substitutions before execution (the guard script
+    path, flag, and the `|| { ... exit 1; }` arm run as shipped): the quoted
+    inert placeholder -> "$LAUNCHER_TEXT" so one extracted compound serves
+    every input, and the `uv run python` interpreter prefix -> this test
+    run's own interpreter (env plumbing only: `uv run` may sync/build a venv
+    on detached scratch trees; sys.executable IS the synced env's python)."""
+    repo_root = Path(__file__).resolve().parents[1]
+    compound = _extract_assert_launcher_compound(_section_9c(_text()))
+    placeholder = re.search(r"'<[^']*>'", compound)
+    assert placeholder is not None, "quoted inert placeholder missing from the 1b compound"
+    prefix = "uv run python scripts/select_step9c_tests.py"
+    assert prefix in compound, "the 1b compound no longer invokes the selector guard"
+    interp = '"$PYTHON_EXE" scripts/select_step9c_tests.py'
+
+    def run(script_body: str, launcher_text: str | None) -> subprocess.CompletedProcess[str]:
+        env = {**os.environ, "PYTHON_EXE": sys.executable}
+        if launcher_text is not None:
+            env["LAUNCHER_TEXT"] = launcher_text
+        return subprocess.run(
+            ["bash", "-c", script_body + "\necho REACHED_LAUNCH\n"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd=repo_root,
+            env=env,
+        )
+
+    runnable = compound.replace(placeholder.group(0), '"$LAUNCHER_TEXT"', 1).replace(
+        prefix, interp, 1
+    )
+    # Compliant launcher text — the guard passes; the recipe reaches the launch:
+    ok = run(runnable, "uv run pytest tests/test_x.py --junitxml=/tmp/x.xml -o junit_family=xunit1")
+    assert ok.returncode == 0, (ok.returncode, ok.stderr)
+    assert "REACHED_LAUNCH" in ok.stdout
+    assert "FATAL" not in ok.stderr
+    # Violating launcher text — the arm refuses BEFORE the launch, exit 1:
+    bad = run(runnable, "uv run pytest tests/test_x.py --junitxml=/tmp/x.xml")
+    assert bad.returncode == 1, (bad.returncode, bad.stderr, "fail-open: the exit 1 arm is gone")
+    assert "REACHED_LAUNCH" not in bad.stdout, "fail-open: the launch line was reached"
+    assert "FATAL: composed launcher violates the xunit1 contract" in bad.stderr
+    # Route-(1) verbatim copy — the inert placeholder is out of scope for the
+    # verdict; only the guard's built-in self-test gates, so the copy proceeds:
+    verbatim = run(compound.replace(prefix, interp, 1), None)
+    assert verbatim.returncode == 0, (verbatim.returncode, verbatim.stderr)
+    assert "REACHED_LAUNCH" in verbatim.stdout
 
 
 def test_step9c_1b_flag_set_fidelity_comment():

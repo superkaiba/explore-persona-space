@@ -3320,7 +3320,7 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # `-` plus a `< /tmp/step9c-launcher-issue-<N>.txt` stdin redirect.
       # Exit 1 = the text carries --junitxml WITHOUT junit_family=xunit1:
       uv run python scripts/select_step9c_tests.py --assert-launcher '<composed launcher command text — inert placeholder on a verbatim route-(1) copy>' \
-        || { echo "FATAL: composed launcher violates the xunit1 contract (--junitxml without -o junit_family=xunit1) or the guard self-test failed — fix the launcher text, or emit it mechanically (select_step9c_tests.py --emit-launcher --issue <N>); do NOT launch" >&2; exit 1; }
+        || { echo "FATAL: composed launcher violates the xunit1 contract (exit 1: --junitxml without -o junit_family=xunit1 — fix the launcher text, or emit it mechanically: select_step9c_tests.py --emit-launcher --issue <N>) or the guard self-test failed (exit 3: fix the guard — scripts/select_step9c_tests.py; emitting a launcher cannot repair a broken self-test); do NOT launch" >&2; exit 1; }
       S9C_FILES="<files>"
       # Splice-shape check (#2317) — the count check below validates
       # CARDINALITY only: unquoted word-splitting counts a newline list
