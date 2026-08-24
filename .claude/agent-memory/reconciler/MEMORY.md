@@ -1,6 +1,10 @@
 # Reconciler memory index — open the file when a hook matches the disagreement.
 
+- [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — probe gaps yourself; bounded disclosure = NIT, unbounded gloss = false claim; verify attributions by direct containment (#2263 r6/r7)
+
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
+
+- [Twin brief excluded the disputed question](feedback_twin_brief_excluded_disputed_question.md) — PASS = non-coverage, not rebuttal; grep plan for post-spawn BINDING body addenda (#2546 r1)
 
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — recoverability never rescues a defective gate/kill/lattice; 35+ incidents
 - [Gate object-identity unchecked](feedback_claude_gate_object_identity_unchecked.md) — read the NAMED function; wrong object/phase inputs (#2329 r2)
@@ -28,6 +32,9 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [AST-scanner name-binding FP channel + kill-clause trigger-domain paraphrase](feedback_ast_scanner_name_binding_and_kill_clause_trigger_domain.md) — construct the same-name collision; execution-test tightenings for measured-identity; quote STOP clauses verbatim (#2537 r1)
+
+- [Concern closure graded against the LEDGER row, not the fix-sentence](feedback_concern_closure_graded_against_ledger_row_not_fix_sentence.md) — multi-part concern closed on the paraphrased half; diff round-added invariant prose vs the adjacent command (#2263 r3)
 - [Security sweep misses data-into-shell splices](feedback_claude_security_sweep_misses_data_into_shell_splice.md) — re-scan added fenced Bash yourself (#2241 r1)
 - [Masked-rc fallback vs fail-loud consumer](feedback_masked_rc_fallback_vs_downstream_fail_loud_consumer.md) — trace the fallback's FIRST consumer (#2241 r4)
 - [Convention defense unverified: $VAR fences](feedback_claude_convention_defense_unverified_env_var_fence.md) — verify INITIALIZING sites, not use sites (#2241 r3)
@@ -61,11 +68,16 @@
 - [Best-effort upload made load-bearing](feedback_claude_misses_besteffort_upload_made_loadbearing.md) — warn-only upload + ephemeral teardown (#613)
 - [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg new AND prior literals before believing ✓
 - [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes yourself (#897)
-- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection probes (#2329 r2)
+- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection + producer-drift probes; execute the Mechanizable claim (#2329 r2, #2336 r3)
+- [Self-referential replay gate needs independent anchor](feedback_self_referential_replay_gate_needs_independent_anchor.md) — prediction inputs read from the artifact under validation ⇒ agreement entailed; probe falsifiability by input mutation (#2514 r2)
 
 ## Codex code-review overreach (PASS-leaning calibration)
 
+- [Plan-invariant prose vs the plan's own leg specs](feedback_codex_plan_invariant_prose_vs_leg_spec_definitions.md) — resolve "incomplete read" via the plan's operational definitions; test whose recovery the fix would brick (#2328 r1)
 - [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — check reachability arithmetic + grid-superset (#2356 r4)
+- [Env-override poisoning chain: trace every leg](feedback_codex_env_override_poisoning_chain_untraced_leg.md) — a leg outside the blast radius breaks the chain (#2479 r4)
+- [Step 3.75 marker-absent vs clean substance](feedback_step375_marker_absent_vs_verified_clean_substance.md) — 0-hit grep → marker-amendment CONCERN; split reviews omit the check (#2479 r4)
+- [Fenced-content blindness on plan-verbatim validator](feedback_codex_fenced_content_blindness_on_plan_verbatim_validator.md) — plan-registered regex + same-instrument zero-collision audit ⇒ demote (#2309 r1)
 - [Residual gap inherits parent severity bar](feedback_residual_gap_inherits_parent_severity_bar.md) — strictly-more-misconfig residual of a CONCERN-graded parent ⇒ defer+re-raise; reverse-ancestry blind spot (#2479 r5)
 - [Env-override poisoning chain: trace every leg](feedback_codex_env_override_poisoning_chain_untraced_leg.md) — a leg outside the blast radius breaks the chain (#2479 r4)
 - [Step 3.75 marker-absent vs clean substance](feedback_step375_marker_absent_vs_verified_clean_substance.md) — 0-hit grep → marker-amendment CONCERN; split reviews omit the check (#2479 r4)
@@ -93,6 +105,7 @@
 ## Clean-result-critic + interp-critic calibration
 
 - [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — sweep ALL rows vs BOTH candidate sources (#2333 r2)
+- [Claude interp skips derived-quantity inversion](feedback_claude_interp_skips_derived_quantity_inversion.md) — invert pool=1/chance clauses yourself; point value ≤ committed min ≠ rounding (#2479 r3)
 - [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — pre-pass PASS ≠ spec compliance; DISCARD list inside (#923, #2333, #2477)
 - [Bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md) — Methodology Source col / caption #N + reuse path (b) grounded (#722)
 - [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — re-scan for named tests, ± (#378)

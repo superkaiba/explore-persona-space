@@ -1,0 +1,170 @@
+---
+name: two-impl-rounds-one-review-compose
+description: One review round covering TWO deliverable implementer rounds (both graded, not fold-context) — inline both epm:results bodies as peer envelopes; non-contiguous deliverables ban every contiguous range; live-writer mid-compose ⇒ blob read-pinning attestation
+metadata:
+  type: feedback
+---
+
+Compose shape for a review round whose brief names TWO deliverable
+implementer rounds (#2263 review-r5 = impl r5 `epm:results v7` + impl r6
+`v8`, 2026-08-22). DISTINCT from the #2147 fold-round (where intermediate
+markers are do-not-score-shape context): here BOTH rounds are under review —
+inline both bodies as peer `---BEGIN IMPLEMENTATION MARKER BODY (epm:results
+v<k> — implementer round <r>)---` envelopes (assert prefix count == 2), and
+Step 0.5 scores the four-H3 contract on EACH body.
+
+**How to apply:**
+1. **Non-contiguous deliverables ⇒ ban every contiguous range.** Memory/sync
+   commits can sit BETWEEN the two deliverables and AFTER the second (HEAD
+   was a sync commit, not a round commit). Primary reads = one `git show`
+   per deliverable; name each excluded commit with its file list and state
+   explicitly that HEAD is not a round commit. An excluded sync commit can
+   carry an `A`dded file — attest that its `A` status belongs to the sync,
+   so the #1805 round-new-script duty doesn't false-fire.
+2. **Both markers get the Step 4.6 treatment independently** (two Gate-scope
+   blocks, two ts thresholds, two pin-sweep dispositions); the ledger
+   attestation lists per-round addressed rows with per-concern closure
+   duties. A post-hoc-recorded ledger row (orchestrator recorded the r5
+   closure after the v8 marker because the r5 brief omitted the ledger
+   step) gets an explicit disclosure line: adjudicate on the fix's
+   substance, never the bookkeeping order.
+3. **Pin-hardening rounds get a `## Pin-defeat analysis` section** — when
+   the deliverables ARE regression pins, the primary directive is "what
+   mutation slips past each NEW pin", with per-pin harness-scrutiny items
+   handed as sub-questions (rc==0 loudness, n_sub==1 substitution breaks,
+   synthetic-prelude renames, literal+fence-shape escapes on a
+   block-count invariant).
+4. **Cross-task pin coupling gets a STATE-WHICH ruling form.** A uniqueness
+   invariant (exactly ONE launch-bearing bash block) that a SIBLING task's
+   planned edit would trip is handed to Codex as "feature or accidental
+   trap — state which", with the composer attesting the sibling sites'
+   current shape (prose vs fenced) so the ruling is grounded.
+5. **Live writer observed mid-compose ⇒ read-pinning attestation.** During
+   this compose the worktree's skill file transiently diverged from HEAD
+   (a parallel reviewer's in-place mutation battery + fleet pre-commit
+   stash cycles; `~/.cache/pre-commit/patch*` files bracketed the window;
+   git commands hung on index locks). The prompt must then carry: pin
+   verification reads to `git show <round-sha>:<path>` blobs; live file
+   authoritative only when `git status --porcelain -- <path>` is empty;
+   transient divergence is NEVER a finding; surprising pytest failures
+   implicating live-read content get ONE porcelain-clean re-run; hanging
+   git = lock contention, retry bounded, NOT `data-access-blocked`.
+6. **Brief figures to re-derive:** combined byte size (the brief's sum was
+   wrong: 21,818 vs re-derived 15,318) and mutation-reference SHAs (the
+   brief's "pre-r4 text, `10e220d920^`" resolved to a blob that already
+   carried the r4 fix; the real pre-r4 doc text is `788d756fe6^` — the
+   marker's own recipe). Compose with re-derived values, flag both in the
+   return.
+
+**Final-ELECTED-round compose (#2263 review-r6 = impl r7 `epm:results v9`,
+2026-08-22):** when the prior round PASSED the ensemble and the fix round was
+ELECTED (not bounced) to close same-class NIT rows, with the brief naming a
+recorded stopping rule ("advance on any PASS-class result even with fresh
+NITs, UNLESS severity CONCERN+ or a demonstrated false claim in the shipped
+deliverable"):
+1. Inline the stopping rule VERBATIM near the top and bind calibration BOTH
+   ways (no NIT inflation to force a round; no defect deflation to allow
+   advance), and repeat the routed-to-follow-up note inside the verdict
+   template's Concerns-to-persist bracket.
+2. Escalation bridge: a claimed-closed concern that is NOT closed is a
+   "demonstrated false claim in the shipped deliverable" — so NOT-ADDRESSED
+   still maps to substantive FAIL even though every row is a NIT.
+3. Two-author acceptance contract (3 Codex rows + 2 Claude rows): inline the
+   full Codex verdict (tags stripped, rows blockquoted) but only an EXCERPT
+   envelope for the Claude side (verdict line + its 2 blockquoted rows) —
+   the brief asked for the rows, not the 12KB body. Blockquoted-row assert
+   becomes 3+2=5; line-start grammar rows stay ==1.
+4. A closure-by-RE-VERIFICATION (row closed with a verdict, not an edit —
+   the #2470-coupling row) gets its own adjudication duty: does the
+   demonstrated new-pin coverage justify closing without editing the sibling
+   task, or is the closure premature.
+5. Brief-figure disambiguation: "Companion: cap re-derived 148,457 B →
+   `151_200`" read like a prompt-size constraint but was a FACT TO INLINE —
+   the deliverable's own workflow_lint `SKILL_DOC_SIZE_GRANDFATHER` cap
+   bump (skill doc remeasured 148,457; corridor-max
+   ((measured+2_800)//100)*100 = 151_200). Before treating ANY brief byte
+   figure as a compose constraint, re-derive it against the diff — here the
+   number appeared verbatim in the `git show` hunk.
+6. Plan handling when the worktree copy is byte-IDENTICAL to canonical
+   (sha256-verified; branch cut after v3 landed): Step 2-pre-b sanctions
+   by-path, but the brief said INLINE — follow the brief, attest the
+   identity in the plan-envelope heading, and flag the both-valid reading in
+   the return.
+
+**Reconciler-FAIL remedy-round compose (#2263 review-r7 = impl r8
+`epm:results v10`, 2026-08-22):** when the prior review round ended in a
+BINDING reconciler FAIL (stopping-rule exception (ii): demonstrated false
+claim in the shipped deliverable) and this round reviews the remedy:
+1. Inline the RECONCILER body as the acceptance-contract envelope
+   (`---BEGIN BINDING RECONCILER VERDICT---`, tags stripped) INSTEAD of the
+   prior twin verdicts — the binding remedy sentence defines what "closed"
+   means, and it is leaner than two verdict bodies. Upheld-FAIL
+   author-neutrality both ways: Codex's OWN FAIL was upheld — no defending
+   findings beyond the remedy contract, no rubber-stamping because the round
+   answers you; name any reconciler-DISCARDED sub-claim as do-not-re-raise.
+2. Ledger schema note VERBATIM in the prompt: no `resolution` field; events
+   are three-valued (`raised`/`addressed`/`verified-open`), `verified-open`
+   REOPENS, state = latest event per `concern_id`. A reader querying a
+   `resolution` column gets all-null and concludes nothing is resolved —
+   that misread cost a mid-flight correction this round. Assert the note's
+   sentences whitespace-NORMALIZED (prose wraps break exact-string counts).
+3. Claim-vs-enforcement rounds get a DETECTOR-TEETH duty: replicate the
+   PRE-fix detector semantics (verbatim from `git show <fix>^:<file>`) on
+   the NEW pin's synthetic cases; composer static-traces the expected
+   fail-set (which cases fail under old semantics, which legitimately pass
+   under both) and hands it as verify-by-EXECUTION, never as fact. Pair
+   with a real-anchor mutation replication (in-memory/scratch, never the
+   worktree) for the BLOCKER-carrying battery rows.
+4. A declared honest surprise in the battery (expected-GREEN measured-RED)
+   gets a MECHANISM-attribution probe (here: old col-0 regex block-boundary
+   corruption over the COMPOSED multi-file text — insert the mutation at the
+   file's contribution boundary, not overall EOF), with a surface-weighing
+   note: a wrong attribution falsifies the MARKER, not the shipped
+   deliverable text — say which surface exception (ii) reads on.
+5. Standing-only rows (binding ruling: no deliverable change) are named in
+   the ledger header AND excluded from the closure section; flagging them
+   as unclosed is a FALSE FINDING — say so in the prompt.
+6. Plan handling: brief gave a PATH (not "inline") and the worktree copy was
+   byte-identical → by-path per Step 2-pre-b (unlike r5/r6's
+   inline-per-brief), with the identity attested in the prompt and the
+   frozen-tasks staleness warning scoped to everything EXCEPT the verified
+   plan file.
+
+**Claim-text-only remedy-round compose (#2263 review-r8 = impl r9
+`epm:results v11`, 2026-08-22):** when the remedy round changes ZERO
+mechanism (docstring/comment text + correspondence asserts only; detector
+byte-identical) and the residual defect class is "a nearly-true sentence
+about a regex":
+1. The review is EXECUTION-FIRST ON THE CLAIMS: the composer PROBES every
+   shipped bash-behavior sentence with real bash (`;#` prints hi rc=0;
+   standalone `&&#` = syntax error at EOF rc=2 executing NOTHING; a
+   following line completes the `&&` list — the scoping caveat) and
+   replicates the detector counts on the same inputs, then hands the
+   results as EXPECTATIONS-TO-RE-DERIVE by execution, never facts. A
+   contradicted probe on shipped text = exception (ii); attest which
+   surface (deliverable vs marker) each probe reads on.
+2. Inline BOTH symmetric calibrations from the binding verdict: the
+   confirmed-NIT non-promotion (exception (ii) is for claims that outrun
+   mechanisms, not disclosed-limit mechanisms) AND the nearly-true-sentence
+   caution (the only defect class left at a late claim-text round).
+3. Post-brief TIP DRIFT (a sync commit landing after the marker posted,
+   here adding 2 origin/main-synced `A` scripts): pre-adjudicate
+   superseded-not-dishonest — the marker's "final tree" claim is evaluated
+   at ITS tree; attest the `A` files belong to the sync so #1805 does not
+   false-fire; attest live-file == deliverable-blob (`git diff
+   <sha>..HEAD -- <file>` empty) so live reads are safe porcelain-clean.
+4. A marker error the reconciler ordered corrected WITHOUT PENALTY is NOT
+   a live defect — the round adjudicates only the CORRECTED text; say so
+   in the ledger section (the v10 M9 attribution shape).
+5. Echo-only bash probes need an explicit carve-out sentence against the
+   never-execute-dispatch rule (the launch text sits in comment/string
+   position; bash executes only echo) — REQUIRED probes, one sanctioned
+   execution class beyond pytest/ruff/git.
+6. Worktree-mutation-free replication of a composed-doc mutation probe:
+   copy the spec tree to /tmp, mutate the COPY, patch the compose helper's
+   module-level path constants after import — never byte-restore-on-disk
+   (that was the implementer's recipe, not the reviewer's); STATIC fallback
+   sanctioned when two independent prior reproductions agree exactly.
+
+Related: [[revision-round compose recipe]] (fold-round entry, #2147 cr4),
+[[concerns-machine-rows-2326]].

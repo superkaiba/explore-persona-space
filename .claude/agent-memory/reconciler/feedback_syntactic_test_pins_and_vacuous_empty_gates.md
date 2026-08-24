@@ -1,6 +1,6 @@
 ---
 name: syntactic-test-pins-and-vacuous-empty-gates
-description: Claude code-review accepts inspect.getsource/string-position tests as regression pins and never probes a new set-equality gate's empty-selection state; probe both by semantic-bypass + empty-input mutation. #2329 r2.
+description: Claude code-review accepts inspect.getsource/string-position tests as regression pins, credits monkeypatched-derived-state tests, and never probes a new set-equality gate's empty-selection state; probe by semantic-bypass / producer-drift / empty-input mutation. #2329 r2, #2336 r3.
 metadata:
   type: feedback
 ---
@@ -32,6 +32,21 @@ tree and upheld FAIL. Weight calibration: the vacuous PRODUCTION gate was the ve
 (silent estimand corruption + API spend, pre-launch, ~5-line fix); the hollow TEST pins were
 Real-blocking only as riders on an already-bouncing round — standing alone on a PASS-worthy round
 they are demotable to tracked concerns since the shipped code was correct.
+
+**Third probe class (#2336 r3, 2026-08-24) — producer-drift mutation on a monkeypatched-derived-state
+test.** A test that `monkeypatch.setattr`s a module-level DERIVED state (`_FILES_SCOPE =
+frozenset({"scripts/x.py"})`) to the already-correct form never calls the PRODUCTION derivation
+(`_files_scope_rel` via `_run_files_mode`), so a form-drift in the producer stays green while
+production silently loses the guarded behavior — especially when a second consumer keys on RAW
+strings against the derived set (the seam the test cannot see). Claude asserted the counterfactual
+("a form-drift would now fail this assertion") WITHOUT executing it; a 30-line probe mutating the
+producer (`./`-prefix) showed the test fully green, the file not even enumerated, and production's
+WARN gone. The probe is cheap and decisive — execute the FAIL side's "Mechanizable: yes" claim
+before crediting the PASS side's unexecuted counterfactual. Verdict calibration: Real-blocking even
+though production code was correct, BECAUSE the test WAS the round's ordered deliverable (a rider
+fixing a prior hollow test) and its docstring affirmatively claimed the missing coverage — the
+#505 demote rule needs a separately-verified payload the test decorates, absent here. A
+two-deferral track record on the same test also weighs against PASS-with-follow-up.
 
 **How to apply:** any code-review reconcile where one side's mutations went red and the other's
 stayed green — first check whether they mutated the same thing (removal vs semantic bypass);
