@@ -42,3 +42,34 @@ Two compose-mechanics lessons from #2514 r2 (2026-08-23):
    staleness fact in the prompt (a sharp twin checks and gets derailed);
    word it "frozen trees CAN serve stale plans; verified identical at
    compose time; canonical path stays authoritative".
+
+3b. **Two assert-scoping traps hit live (#2502 r4, 2026-08-24):** (a) assert
+   marker-KIND absence by TAG FORM (`<!-- epm:review-reconcile`), never the
+   bare token — the revision BRIEF legitimately names the marker kind in
+   prose ("the binding reconciler (`epm:review-reconcile` r3)"), so a bare
+   token==0 assert false-fails a valid compose; (b) when embeds are
+   f-string-interpolated INTO the head, a composer-span stale-token sweep
+   must STRIP the embeds first (`composer_head.replace(emb, "")`, asserting
+   each embed found exactly once) — the impl marker's own provenance line
+   ("the honest rv3-u2 record") otherwise trips the sweep.
+
+4. **Cached-prompt reuse re-validates TIP STATE, not just marker identity
+   (#2514 r2 re-return, 2026-08-24).** A validated prompt survived in /tmp
+   overnight; on the re-compose the branch tip had gained TWO Step-5a
+   spec-freshness sync commits ON TOP of the round commit. Two consequences
+   a marker-identity check alone misses: (a) the inlined marker's verbatim
+   `HEAD~1..HEAD` / `git show HEAD~1:<file>` commands now MIS-resolve —
+   `HEAD~1:<file>` yields the POST-fix blob, silently inverting the
+   report's before/after comparison — so add an explicit translation note
+   (`HEAD` -> round SHA, `HEAD~1` -> round SHA`^`), framed as a
+   compose-time staleness observation, never an implementer defect; (b)
+   the sync commits must be NAMED out of scope after verifying (per file)
+   byte-identity to the pinned base (`git diff --quiet <base> <tip> --
+   <file>` over `git diff --name-only <round>..<tip>`). Also from the same
+   re-compose: an unscoped `diff <sha>~1..<sha>` command in a data-heavy
+   round is a paging trap — path-scope the primary body command itself
+   (`-- scripts/ tests/`), not just the prose read-budget note; and when
+   the orchestrator's addressed-events land AFTER the marker ts (their
+   bookkeeping, not the parallel twin's outputs), the #2326 ts-pin does
+   NOT exclude them — inline the event-log ledger with addressed-CLAIMED
+   framing + per-concern status-line duties.
