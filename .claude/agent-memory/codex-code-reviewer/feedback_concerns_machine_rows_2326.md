@@ -41,3 +41,15 @@ wording (1 on #2514 r1, where `CONCERN:: none` sat mid-line in backticked
 prose; 4 on the #2333-era template), so a pinned count false-FAILs a valid
 compose. Related: [[revision-round compose recipe]],
 [[bypath-brief-frozen-events-resolution]].
+
+**#2523 addendum (2026-08-24, #2327 r1→r2):** the r1 composed prompt handed
+Codex a KEY-VALUE row template (`CONCERN:: concern_id=… severity=… …`) while
+the same prompt's later prose said the forwarder position-parses —
+`persist_verdict_concerns.py` rejected both rows (`bad-severity` + `bad-id`
++ `duplicate-id`) and the ledger was hand-written. The positional grammar at
+`codex-code-reviewer.md:625` is authoritative over ANY caller brief. Guard
+shape that works (r2): for every line-start `CONCERN:: ` row in the
+assembled prompt, assert tokens 1 AND 2 contain no `=`; a blunt
+`'concern_id=' not in prompt` substring ban false-FAILs on the tail's own
+prohibition prose ("no `concern_id=`, no `severity=` …"), which is worth
+keeping — ban the ROW shape, not the substring.
