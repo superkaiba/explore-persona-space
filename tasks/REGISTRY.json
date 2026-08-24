@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2532,
+  "highest_id": 2533,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11824,6 +11824,13 @@
       "path": "tasks/proposed/2532",
       "status": "proposed",
       "title": "step5a_coupling_check._git_show reports clean over an undecidable state; non-repo test presumes TMPDIR outside a git repo"
+    },
+    "2533": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2533",
+      "status": "proposed",
+      "title": "Ownership-probe recipe: cwd match is not ownership \u2014 a worktree-cwd sweep returns other sessions' transient subprocesses"
     },
     "256": {
       "has_clean_result": false,
