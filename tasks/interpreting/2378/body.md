@@ -4,7 +4,7 @@ title: Context→answer structure is shared across framings in Qwen3.6-27B, but 
 kind: experiment
 tags: []
 created_at: '2026-08-19T02:35:51Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2054
 origin_prompt: 'can we rerun with: a stronger model (qwen3.6), queries that make sense
   in the story, generate story without chat template, queries don''t have to be matched
