@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2557,
+  "highest_id": 2558,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12002,6 +12002,13 @@
       "path": "tasks/proposed/2557",
       "status": "proposed",
       "title": "workflow-fix: Step 5a spec-freshness sync stages a CLAUDE.md whose workflow.yaml gate-key references cannot resolve, because CLAUDE.md is a FAMILY_OF singleton while .claude/workflow.yaml is in FAMILY_workflow"
+    },
+    "2558": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2558",
+      "status": "proposed",
+      "title": "workflow-fix: codex-composer-common mem-commit message file collides across parallel same-name composers"
     },
     "256": {
       "has_clean_result": false,
