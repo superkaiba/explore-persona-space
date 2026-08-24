@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2559,
+  "highest_id": 2560,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12023,6 +12023,13 @@
       "path": "tasks/archived/256",
       "status": "archived",
       "title": "Do pretraining experiments with Pingbang's model"
+    },
+    "2560": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2560",
+      "status": "proposed",
+      "title": "Step 10d lint gate normalization keeps workflow_lint note: lines whose scan COUNT changes with the payload, so any branch adding a scanned file gets a spurious block"
     },
     "257": {
       "has_clean_result": false,
