@@ -1081,6 +1081,36 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   (spans = brief + lensitems + plan + empty prior; digit-free scaffold —
   counts as words, "the balanced-pool control values" instead of numbers).
 
+- **WARN-only-detector plan with a brief-BOLDED central claim (#2327 round
+  one, alternatives on the Step 5a cap-coherence detector): when the brief
+  bolds ONE central claim ("that a WARN-only detector materially reduces the
+  cost of this failure class"), mandate a dedicated `### Central-claim
+  adjudication` section (HOLDS | HOLLOW | PARTIAL + strongest evidence,
+  quote-the-command) placed BEFORE the per-question answers**, and give the
+  WARN-actionability question its empirical instrument explicitly: bounded
+  greps over task event logs for the EXISTING advisory lines the same block
+  already prints (`grep -rl 'spec-freshness' tasks/completed/*/events.jsonl |
+  head` → do subsequent round actions ever reference them?) — the
+  acted-on-in-practice probe is the dormant-advisory-consumer item (57-A/74-H)
+  made empirical. Brief's must-adjudicate merge-remedy question pairs with
+  the #2269 inversion clause on the plan's must-ask fences (auto-merge is
+  must-ask; "if genuinely REQUIRED, say so as Must Fix — that IS the re-plan
+  trigger"). Enumerated alternative-cause states walked per state with
+  HANDLED | MISLEADS-RECOVERABLE | MISLEADS-FATAL labels; scope-creep arm
+  labeled REQUIRED | DEFENSIBLE | CREEP. Read discipline: ban git fetch
+  (origin/main IS the diffed population) + pytest + the full no-flags lint
+  run (plan measured its timeout), permit the fast scoped size check. The
+  spec's own SNAPSHOT-NOTE extensions for detector plans: quoted plan line
+  numbers = plan-time snapshots (read-pinning posture), history-count deltas
+  on a moving window = expected drift, design-rule-mishandles-a-probed-state
+  = still a finding. Numcheck PASS first try at ~73 KB (spans = briefnote +
+  lensitems + plan + empty prior; digit-free scaffold; unsigned
+  both-sides-guard atoms + comma-grouping first + isfinite literal-keep +
+  collect-all + registry leg from repo root; version-suffixed workspace keyed
+  to PLAN version). Self-test note: `983_400` underscore-grouped numerics are
+  atom-free under both-sides guards (the `_` is a word char) — symmetric, safe
+  anywhere.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
