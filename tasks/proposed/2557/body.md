@@ -1,7 +1,7 @@
 ---
-title: Step 5a spec-freshness sync stages a CLAUDE.md whose workflow.yaml gate-key
-  references cannot resolve, because CLAUDE.md is a FAMILY_OF singleton while .claude/workflow.yaml
-  is in FAMILY_workflow
+title: 'workflow-fix: Step 5a spec-freshness sync stages a CLAUDE.md whose workflow.yaml
+  gate-key references cannot resolve — CLAUDE.md is a FAMILY_OF singleton while .claude/workflow.yaml
+  is in FAMILY_workflow'
 kind: infra
 tags:
 - wf-fix
