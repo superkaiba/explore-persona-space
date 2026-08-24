@@ -1,6 +1,6 @@
 ---
-title: Agent-memory per-file size ratchet + trim the 350KB codex-code-reviewer compose-recipe
-  memory
+title: 'workflow-fix: agent-memory per-file size ratchet + trim the 350KB codex-code-reviewer
+  compose-recipe memory'
 kind: infra
 tags:
 - wf-fix

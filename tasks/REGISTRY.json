@@ -12043,7 +12043,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2562",
       "status": "proposed",
-      "title": "Agent-memory per-file size ratchet + trim the 350KB codex-code-reviewer compose-recipe memory"
+      "title": "workflow-fix: agent-memory per-file size ratchet + trim the 350KB codex-code-reviewer compose-recipe memory"
     },
     "257": {
       "has_clean_result": false,
