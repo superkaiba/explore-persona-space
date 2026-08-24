@@ -385,6 +385,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # (branch-agnostic; try/except-ImportError body + per-site waiver
     # exemptions; two WARN tiers) + no-flags bundling + live-tree pins.
     "tests/test_workflow_lint_prod_import_lockfile.py",
+    # NEW (#2336) — workflow_lint --check-shared-tmp-name: process-shared
+    # atomic-write temp names (six arms A-F over scripts/+src/ *.py/*.sh;
+    # 25-row predicate regression table, real-walk discovery pin,
+    # allowlist / stale-WARN / waiver branches) + no-flags bundling.
+    "tests/test_workflow_lint_shared_tmp.py",
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",
@@ -448,6 +453,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_adversarial_planner_factchecker_grain_pin.py",
     # NEW (#1734) — adversarial-planner SKILL.md Phase 1.5.0 per-WARN disposition pin
     "tests/test_adversarial_planner_warn_disposition.py",
+    # NEW (#2336) — shared atomic-write primitive pin
+    # (explore_persona_space.atomic_io.atomic_replace + 7 typed wrappers):
+    # 8-process fork hammer + harness-sensitivity control +
+    # cleanup-never-masks + process-unique naming — the remedy module the
+    # --check-shared-tmp-name failure line points every migration at.
+    "tests/test_atomic_io.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin

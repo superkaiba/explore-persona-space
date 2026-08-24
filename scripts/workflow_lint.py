@@ -278,6 +278,34 @@ Behaviours:
   WARN-only sibling's regime — while the binding gates are
   baseline-subtracted, so a false positive reddens only the introducing
   round (#1388 contained).
+* ``--check-shared-tmp-name`` (also bundled into the no-flags default
+  run): walk every ``*.py`` and ``*.sh`` under ``scripts/`` and ``src/``
+  (``tests/`` deliberately NOT scanned — lint fixtures and the harness
+  control legitimately embed the banned literal) and FAIL on any line
+  deriving a sidecar TEMP path from the destination's own name — six
+  regex arms checked per line in the order A, C, D, B, E, F (example
+  spellings here are DEFUSED so this bullet never self-matches): A
+  attribute concat (``X.name`` joined with a fixed ``".tmp"`` literal),
+  C bare-identifier concat (a lone ``name`` joined with ``".tmp"``), D
+  generic concat (ANY left operand joined with ``".tmp"``, minus the
+  ``.suffix``-derived class, which stays follow-up scope), B the braced
+  ``X.name`` interpolation directly followed by ``.tmp`` with
+  literal-only continuation, E the generic-stem f-string (an
+  interpolation, optional literal text, then ``.tmp`` with literal-only
+  continuation), F the prefix form (a quoted ``.tmp_`` directly
+  followed by an interpolation) — E and F exempt on a same-line ``getpid(`` /
+  ``uuid4(`` process-varying token. A fixed ``<name>.tmp`` temp name is
+  PROCESS-SHARED: two concurrent writers of the same destination collide
+  mid-``os.replace`` and one crashes ``FileNotFoundError`` at the
+  replace stage (#2329 r3). Remedy:
+  ``explore_persona_space.atomic_io.atomic_replace`` (process-unique
+  temp + atomic replace). Waive a legitimate site (e.g. the temp-
+  DIRECTORY publish idiom) with ``# SHARED_TMP_EXEMPT: <reason>``
+  (reason >= 10 chars) on the hit line or the immediately-preceding
+  comment-only line; the batch-0 residual is frozen in
+  ``SHARED_TMP_LEGACY_ALLOWLIST`` (a hit in an allowlisted file passes;
+  an allowlisted file with ZERO hits WARNs ``stale allowlist entry``,
+  never FAILs — the ratchet direction; #2336 shrinks it per batch).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -19284,6 +19312,306 @@ def check_lane_order_adjective(repo_root: Path | None = None) -> list[str]:
     return list(report["findings"])  # type: ignore[arg-type]
 
 
+# ── --check-shared-tmp-name (#2336; the process-shared atomic-write temp-name class)
+# Six predicate arms, checked per line in the order A, C, D, B, E, F with
+# per-line dedupe (a line is a hit if ANY arm matches; the first matching
+# arm attributes it). Regexes verbatim from the approved plan (#2336 v3
+# §4 step 5); landing-day yields recorded there.
+# arm A — attribute concat: destination `.name` joined with a fixed
+# `".tmp"` literal (122 lines / 78 files). (Comment spellings in this
+# block are DEFUSED so the scanner never self-matches its own docs.)
+SHARED_TMP_ARM_A_RE = re.compile(r"""\.name\s*\+\s*(?P<q>["'])\.tmp(?P=q)""")
+# arm B — the braced `X.name` interpolation directly followed by `.tmp`,
+# an f-string with NO interpolation between `.tmp` and
+# the closing quote (a trailing interpolation is presumed process-varying;
+# the 4 cross-line-token safe writers, 8 lines / 6 files).
+SHARED_TMP_ARM_B_RE = re.compile(r"""\{[A-Za-z_][A-Za-z0-9_.\[\]:'"()]*\.name\}\.tmp(?![^"']*\{)""")
+# arm C — bare-identifier concat: a lone `name` joined with `".tmp"`
+# (issue1901 shape, 3 lines / 1 file).
+SHARED_TMP_ARM_C_RE = re.compile(r"""(?<![\w.])name\s*\+\s*(?P<q>["'])\.tmp(?P=q)""")
+# arm D — generic concat: ANY left operand joined with `".tmp"` that is
+# neither arm A
+# nor arm C and not the `.suffix`-derived class (which stays follow-up
+# scope; 7 lines / 7 files).
+SHARED_TMP_ARM_D_RE = re.compile(r"""\+\s*(?P<q>["'])\.tmp(?P=q)""")
+SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE = re.compile(r"""\.suffix\s*\+\s*(?P<q>["'])\.tmp(?P=q)""")
+# arm E — generic-stem f-string: an interpolation, optionally followed by
+# literal text, then `.tmp` with literal-only continuation; only when arm B
+# did not match; EXEMPT on a same-line `getpid(` / `uuid4(` process-varying
+# token (31 lines).
+SHARED_TMP_ARM_E_RE = re.compile(r"""\{[^{}]*\}[^"'{}]*\.tmp(?![^"']*\{)""")
+# arm F — prefix-form f-string (a quoted `.tmp_` directly followed by an
+# interpolation), same E-style exemption
+# (37 lines; exempts the 3 pid-suffixed temp-DIR writers).
+SHARED_TMP_ARM_F_RE = re.compile(r"""["']\.tmp_\{""")
+# Arm E fires only on f-string lines (an interpolation braces + `.tmp` on a
+# non-f-string line — a dict literal, a .format template — is not this
+# class). Prefix detector: optional r/R combined with f/F, either order.
+SHARED_TMP_FSTRING_LINE_RE = re.compile(r"""(?<![A-Za-z0-9_])[rR]?[fF][rR]?["']""")
+SHARED_TMP_WAIVER_RE = re.compile(r"#\s*SHARED_TMP_EXEMPT:\s*(?P<reason>.*\S)")
+SHARED_TMP_WAIVER_MIN_REASON_CHARS = 10
+
+
+def _shared_tmp_line_hit(line: str) -> bool:
+    """True when *line* matches any of the six shared-tmp arms (order
+    A, C, D, B, E, F; per-line dedupe — first match wins). Arm D excludes
+    the ``.suffix``-derived class; arms E/F are exempt when the line
+    carries a ``getpid(`` / ``uuid4(`` process-varying token (a pre-`.tmp`
+    process-varying interpolation is by construction on the matched line)."""
+    if SHARED_TMP_ARM_A_RE.search(line):
+        return True
+    if SHARED_TMP_ARM_C_RE.search(line):
+        return True
+    if SHARED_TMP_ARM_D_RE.search(line) and not SHARED_TMP_ARM_D_SUFFIX_EXCLUSION_RE.search(line):
+        return True
+    if SHARED_TMP_ARM_B_RE.search(line):
+        return True
+    if "getpid(" in line or "uuid4(" in line:
+        return False
+    if SHARED_TMP_FSTRING_LINE_RE.search(line) and SHARED_TMP_ARM_E_RE.search(line):
+        return True
+    return bool(SHARED_TMP_ARM_F_RE.search(line))
+
+
+def _shared_tmp_waiver_present(lines: list[str], idx: int) -> bool:
+    """True when ``# SHARED_TMP_EXEMPT: <reason>`` (reason >=
+    :data:`SHARED_TMP_WAIVER_MIN_REASON_CHARS` chars) sits on the hit line
+    itself or the immediately-preceding COMMENT-ONLY line."""
+
+    def _ok(text: str) -> bool:
+        m = SHARED_TMP_WAIVER_RE.search(text)
+        return bool(m and len(m.group("reason").strip()) >= SHARED_TMP_WAIVER_MIN_REASON_CHARS)
+
+    if _ok(lines[idx]):
+        return True
+    prev = idx - 1
+    return prev >= 0 and lines[prev].lstrip().startswith("#") and _ok(lines[prev])
+
+
+# Batch-0 seed (#2336, plan v3 §4 step 5): the full landing-day residual of
+# the check's OWN scanner with allowlist=() over scripts/ + src/ (208 hit
+# lines / 118 files at seed time) — NEVER derived from a plain grep. Each
+# migration batch shrinks this tuple by exactly the batch's migrated files
+# IN THE SAME COMMIT; stale entries WARN. Close-out gate (plan §7 / A11):
+# the task terminates only when this tuple is EMPTY.
+_SHARED_TMP_SEED_REASON = "batch-0 seed — unsafe shared-tmp file-writer pending migration"
+_SHARED_TMP_DIR_IDIOM_REASON = (
+    "batch-0 seed — §4(g) temp-DIRECTORY idiom site (also carries migratable file-writer"
+    " lines); waiver-or-defer disposition in batch 2, never recipe-migration"
+)
+SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = (
+    ("scripts/clean_experiment_downloads.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1073_capture.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1090_fu6.py", _SHARED_TMP_DIR_IDIOM_REASON),
+    ("scripts/issue1092_build_corpus.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1092_spread_combined_fig.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1112_dispatch.py", _SHARED_TMP_DIR_IDIOM_REASON),
+    ("scripts/issue1315_dispatch.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1335_run.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1415_hooked_decomp.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1415_position_profile.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1415_run_phase1.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1417_run.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_densesae_fullwidth.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_early_layer.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_error_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_matryoshka_tier.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1482_reconstruct_scratch.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1586_dispatch.py", _SHARED_TMP_DIR_IDIOM_REASON),
+    ("scripts/issue1689_derived_vs_free.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_dvf_fold_digest.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_fit_ladder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_lambda_recheck.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1689_user_slot_gen_a1.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1738_crossed_reads.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1738_multiturn_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_bareq_score.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_compliance_full.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_compliance_pilot.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_holdout_rung.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_k1_floor.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_natpv.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_newarm_box.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_newarm_collect.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_pack.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_pilot_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_reconstruct_contexts.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_rejudge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_rescore_ood.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_rescore_ood_armfill.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_pod.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_regen.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_rescore.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_rescore_stage.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_sycoood_stage.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1739_trait_rejudge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1768_capture.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_common.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_describe_axes.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_evidence_builder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_passB_launch.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_phase0_mechanical.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1773_validate.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1775_common.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1887_lambda_audit.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1895_subspaces.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1901_boundary_token_control.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1901_paper_densify_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1934_recover_1773_labels.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1941_fr_diag.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1947_datagen.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1947_localization_panel.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue1947_worker.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_ctx2ctx_fit.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_extended_decomp.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_loco_pooled.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_phase_a.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_pool_specialize.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_pooled_tier_ladder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_remap_pair_nulls.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_resume.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2054_specialization_ladder.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2091_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_phase0.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_rev_reduce.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2094_run.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_genfreeze.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_mapshift.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2162_run.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2202_failchar.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2202_metric_zoo.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_capture.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_followup_basegen_map.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_judge.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2222_lib.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2224_followup_r1.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2224_probe_refit.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2329_analysis.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2329_mapshift.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2333_run.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2476_turnavg_sae.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue2477_base_coherence.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue540_jsrb_predictor.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue541_geometry_extract.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue779_ffc_n1m_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue779_l26_recovery_dispatch.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue779_n1m_readout_dispatch.sh", _SHARED_TMP_SEED_REASON),
+    ("scripts/issue823_ladder_fits.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/resource_ledger.py", _SHARED_TMP_SEED_REASON),
+    ("scripts/sync_repo_root.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/artifacts/recipe.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/eval/callbacks.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue2329/bank2329.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/arms.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/capture.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/corpus_staging.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/dv_build.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/generation.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/mem_guard.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_1739/sentinels.py", _SHARED_TMP_SEED_REASON),
+    ("src/explore_persona_space/experiments/issue_952/run_952.py", _SHARED_TMP_SEED_REASON),
+    (
+        "src/explore_persona_space/experiments/neg_setpoint_601/capability_probe.py",
+        _SHARED_TMP_SEED_REASON,
+    ),
+    (
+        "src/explore_persona_space/experiments/neg_setpoint_601/rowtype_ce_probe.py",
+        _SHARED_TMP_SEED_REASON,
+    ),
+    ("src/explore_persona_space/train/sft.py", _SHARED_TMP_SEED_REASON),
+)
+
+
+def check_shared_tmp_name(
+    *,
+    root: Path | None = None,
+    allowlist: tuple[tuple[str, str], ...] | None = None,
+    warn_sink: list[str] | None = None,
+) -> list[str]:
+    """Walk every ``*.py`` and ``*.sh`` under ``scripts/`` and ``src/`` and
+    FAIL on any line deriving a sidecar TEMP path from the destination's
+    own name (six arms — see the ``SHARED_TMP_ARM_*`` block above).
+
+    Rationale: a fixed ``<name>.tmp`` temp name is PROCESS-SHARED — two
+    concurrent writers of the same destination collide mid-``os.replace``
+    and one crashes ``FileNotFoundError`` at the replace stage (#2329 r3).
+    Remedy: ``explore_persona_space.atomic_io.atomic_replace``
+    (process-unique temp + atomic replace). ``tests/`` is deliberately NOT
+    scanned — lint fixtures and the harness control legitimately embed the
+    banned literal.
+
+    ``root`` (default: the repo root, ``EPS_WORKFLOW_LINT_REPO_ROOT``
+    honored) and ``allowlist`` (default: the module constant
+    :data:`SHARED_TMP_LEGACY_ALLOWLIST`, resolved at CALL time so the
+    bundling test's monkeypatch is honored) are the unit-test hooks — the
+    discovery test walks a temp repo through THIS function, the same
+    entrypoint + walk the no-flags dispatch invokes with defaults. A hit
+    in an allowlisted file passes; an allowlisted file with ZERO hits (or
+    missing) WARNs ``stale allowlist entry`` (never FAILs — the ratchet
+    direction) via ``warn_sink`` when provided, else stderr. Waiver:
+    ``# SHARED_TMP_EXEMPT: <reason>`` (reason >= 10 chars) on the hit
+    line or the immediately-preceding comment-only line. Bundled into the
+    no-flags default run.
+    """
+    if root is None:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    if allowlist is None:
+        allowlist = SHARED_TMP_LEGACY_ALLOWLIST
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    allowlisted = {path for path, _reason in allowlist}
+    errors: list[str] = []
+    files_with_hits: set[str] = set()
+    for sub in ("scripts", "src"):
+        base = root / sub
+        if not base.exists():
+            continue
+        candidates = sorted(p for p in base.rglob("*") if p.suffix in (".py", ".sh"))
+        for f in _files_scope_filter(candidates):
+            if not f.is_file():
+                continue
+            try:
+                text = f.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as exc:
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-shared-tmp-name skipped unreadable {f}: {exc}\n"
+                )
+                continue
+            lines = text.splitlines()
+            hit_idxs = [idx for idx, line in enumerate(lines) if _shared_tmp_line_hit(line)]
+            if not hit_idxs:
+                continue
+            rel = f.relative_to(root).as_posix()
+            files_with_hits.add(rel)
+            if rel in allowlisted:
+                continue
+            errors.extend(
+                f"{rel}:{idx + 1}: process-shared atomic-write temp name "
+                f"(use explore_persona_space.atomic_io.atomic_replace; #2336)"
+                for idx in hit_idxs
+                if not _shared_tmp_waiver_present(lines, idx)
+            )
+    for path, _reason in allowlist:
+        if path not in files_with_hits:
+            _warn(
+                f"--check-shared-tmp-name: stale allowlist entry {path} — zero "
+                f"shared-tmp hits on the current tree (migrated or deleted); "
+                f"remove it from SHARED_TMP_LEGACY_ALLOWLIST"
+            )
+    return errors
+
+
 # `--check-plan-version-immutability` (#2123): a persisted
 # ``tasks/**/plans/v<K>.md`` is immutable — an amendment requires a NEW
 # version file via ``task.py new-plan-version``, never an in-place edit.
@@ -19865,6 +20193,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
         lambda wf: _run_warn_only(check_no_unannotated_gcp_pin_guidance)
     ),
     "check_lane_order_adjective": lambda wf: check_lane_order_adjective(),
+    "check_shared_tmp_name": lambda wf: check_shared_tmp_name(),
 }
 
 # Classification of every dispatch-chain check (plan §4 B2). The task-body
@@ -20016,6 +20345,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_lane_order_adjective": CheckScope(
         "global", (".claude/", "CLAUDE.md", LANE_ORDER_ROUTER_REL)
     ),
+    "check_shared_tmp_name": CheckScope("path-local", ("scripts/", "src/")),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
@@ -21435,6 +21765,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "out of scope (true historical statements). Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-shared-tmp-name",
+        action="store_true",
+        help="FAIL (#2336): flag process-shared atomic-write temp-name "
+        "derivations in *.py/*.sh under scripts/ and src/ (six arms: "
+        "attribute-.name / bare-name / generic concats of a fixed .tmp "
+        "literal minus the .suffix class; the braced-.name-then-.tmp "
+        "and generic-stem f-string shapes and the .tmp_-prefixed "
+        "interpolation form; the f-string arms exempt on a same-line "
+        "getpid()/uuid4() token). A fixed <name>.tmp sidecar is "
+        "PROCESS-SHARED: concurrent writers of one destination "
+        "collide mid-os.replace (#2329 r3); use "
+        "explore_persona_space.atomic_io.atomic_replace. Legacy "
+        "offenders are frozen in SHARED_TMP_LEGACY_ALLOWLIST (stale "
+        "entries WARN, never FAIL); waive a legitimate site with "
+        "'# SHARED_TMP_EXEMPT: <reason >= 10 chars>' on the hit line or "
+        "the immediately-preceding comment-only line. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.files:
@@ -21577,6 +21926,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
         or args.check_lane_order_adjective
+        or args.check_shared_tmp_name
     )
 
     errors: list[str] = []
@@ -21810,6 +22160,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # introducing round (#1388 contained). K1 downgrade lever: wrap in
         # _run_warn_only and record why.
         errors.extend(check_lane_order_adjective())
+    if args.check_shared_tmp_name or no_flags:
+        errors.extend(check_shared_tmp_name())
 
     if errors:
         for err in errors:
