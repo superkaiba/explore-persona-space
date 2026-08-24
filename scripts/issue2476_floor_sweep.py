@@ -91,11 +91,24 @@ FLOORS_B = (240, 120, 60)
 REGISTERED_FLOOR_C = 1200
 REGISTERED_FLOOR_B = 240
 
-# Gate tolerances (plan §7). GR_PERFEATURE_TOL mirrors issue2476_perrow_views.ACC_REPRO_TOL
-# (:80) — the parent line's MEASURED backend near-tie ceiling for this recompute class.
+# Gate tolerances (plan §7; G-R quantile predicate amended v7 — plan §11 "G-R
+# tolerances (amended v7)"). GR_PERFEATURE_TOL mirrors issue2476_perrow_views.ACC_REPRO_TOL
+# (:80) — the parent line's MEASURED backend near-tie ceiling for this recompute class;
+# v7 binds it as a >= GR_SHARE_MIN coverage bar (not a max) after the 2026-08-24
+# production halt (pod-2476 gates/gr_c.json: exactly 1/879 features, feat 56641 tier 2,
+# at delta 2.83e-3 while p99 = 2.15e-4 — a cross-pod fp near-tie, not instrument drift).
+# GR_MAX_TOL hard-fails any order-of-magnitude excursion; the per-tier median conjunct
+# binds only on tiers with n >= GR_MEDIAN_MIN_TIER_N panel features (an n=3 median IS a
+# single feature — the incident's failing conjunct was that same feature's value).
+# NOTE (regime key): the three v7 constants are deliberately NOT in _regime() — the
+# predicate shape is code (covered by code_sha's loud-recompute branch), and adding
+# base keys would flip config_hash and REFUSE resume on the halted production out-root.
 GC_COUNT_TOL = 3
 GR_PERFEATURE_TOL = 2e-3
+GR_MAX_TOL = 1e-2
+GR_SHARE_MIN = 0.99
 GR_MEDIAN_TOL = 1e-3
+GR_MEDIAN_MIN_TIER_N = 10
 RC_GA = 30  # G-A row-alignment HALT (parent RC class convention: 22-26 taken)
 RC_GC = 31  # G-C counts-reconciliation HALT
 RC_GR = 32  # G-R registered-floor reproduction HALT
@@ -371,43 +384,111 @@ def _gate_repro(
     *,
     arm: str,
     production: bool,
+    feat_ids: np.ndarray,
+    tier: np.ndarray,
+    fit_counts: np.ndarray,
     perfeature_tol: float = GR_PERFEATURE_TOL,
+    max_tol: float = GR_MAX_TOL,
+    share_min: float = GR_SHARE_MIN,
     median_tol: float = GR_MEDIAN_TOL,
+    median_min_tier_n: int = GR_MEDIAN_MIN_TIER_N,
     out_path: Path | None = None,
 ) -> dict:
-    """G-R (plan §7): at the registered 1% floor the sweep must REPRODUCE the
-    parent's committed per-feature R2 (max finite |delta| <= perfeature_tol,
-    finiteness pattern EQUAL) and per-tier medians (|delta| <= median_tol).
-    Reference values are READ from the committed artifacts by the caller, never
-    retyped. FAIL => record written FIRST, then sys.exit(RC_GR) at production;
-    informational at smoke n (subset score rows cannot reproduce)."""
+    """G-R (plan §4 Q4 / §7; quantile predicate, amended v7 — plan §11 "G-R
+    tolerances (amended v7)"): at the registered 1% floor the sweep must
+    REPRODUCE the parent's committed per-feature R2 under (a) finiteness
+    pattern EQUAL, (b) >= share_min of finite panel features within
+    |delta| <= perfeature_tol, (c) max finite |delta| <= max_tol, and (d)
+    committed per-tier medians within median_tol on tiers with
+    n >= median_min_tier_n panel features ONLY — a smaller tier contributes NO
+    median conjunct and instead has its per-feature rows recorded verbatim
+    under small_tier_deltas (an n=3 median IS a single feature). EVERY feature
+    over perfeature_tol is recorded verbatim in `violators` (feat id,
+    committed, recomputed, delta, banked fit count — the G-C counts array).
+    Reference values are READ from the committed artifacts by the caller,
+    never retyped. FAIL => record written FIRST, then sys.exit(RC_GR) at
+    production; informational at smoke n (subset score rows cannot
+    reproduce)."""
     got = np.asarray(got_r2, np.float64)
     want = np.asarray(want_r2, np.float64)
-    assert got.shape == want.shape, (got.shape, want.shape)
+    ids = np.asarray(feat_ids, np.int64)
+    tiers = np.asarray(tier, np.int64)
+    counts = np.asarray(fit_counts, np.int64)
+    assert got.shape == want.shape == ids.shape == tiers.shape == counts.shape, (
+        got.shape,
+        want.shape,
+        ids.shape,
+        tiers.shape,
+        counts.shape,
+    )
     fin_got, fin_want = np.isfinite(got), np.isfinite(want)
     finiteness_ok = bool((fin_got == fin_want).all())
     fin = fin_got & fin_want
-    max_abs = float(np.abs(got[fin] - want[fin]).max()) if int(fin.sum()) else 0.0
+    n_fin = int(fin.sum())
+    delta = np.abs(got - want)
+    max_abs = float(delta[fin].max()) if n_fin else 0.0
+    share = float((fin & (delta <= perfeature_tol)).sum() / n_fin) if n_fin else 1.0
+    viol_idx = np.where(fin & (delta > perfeature_tol))[0]
+    viol_idx = viol_idx[np.argsort(-delta[viol_idx])]
+    violators = [
+        {
+            "feat": int(ids[i]),
+            "committed": float(want[i]),
+            "recomputed": float(got[i]),
+            "delta": float(delta[i]),
+            "fit_count": int(counts[i]),
+        }
+        for i in viol_idx
+    ]
+    tier_panel_n = {str(t): int((tiers == t).sum()) for t in (0, 1, 2)}
+    median_exempt_tiers = sorted(
+        t for t in (0, 1, 2) if tier_panel_n[str(t)] < int(median_min_tier_n)
+    )
     med_deltas: dict[str, float | None] = {}
     med_ok = True
     for k, want_v in want_medians.items():
         got_v = got_medians.get(k)
-        if want_v is None or got_v is None:
-            med_deltas[k] = None
+        t = int(k.rsplit("/t", 1)[1])  # caller convention: keys are "{read}/t{tier}"
+        d = None if (want_v is None or got_v is None) else abs(float(got_v) - float(want_v))
+        med_deltas[k] = d
+        if t in median_exempt_tiers:
+            continue  # v7: n < median_min_tier_n => NO median conjunct for this tier
+        if d is None:
             med_ok = med_ok and (want_v is None) == (got_v is None)
             continue
-        d = abs(float(got_v) - float(want_v))
-        med_deltas[k] = d
         med_ok = med_ok and d <= median_tol
-    ok = finiteness_ok and max_abs <= perfeature_tol and med_ok
+    small_tier_deltas = {
+        str(t): [
+            {
+                "feat": int(ids[i]),
+                "committed": float(want[i]) if fin_want[i] else None,
+                "recomputed": float(got[i]) if fin_got[i] else None,
+                "delta": float(delta[i]) if fin[i] else None,
+            }
+            for i in np.where(tiers == t)[0]
+        ]
+        for t in median_exempt_tiers
+    }
+    ok = finiteness_ok and share >= share_min and max_abs <= max_tol and med_ok
     record = {
         "gate": "G-R",
         "arm": arm,
+        "predicate": "v7-quantile",
         "n_features": int(len(got)),
+        "n_finite": n_fin,
         "finiteness_pattern_equal": finiteness_ok,
         "max_abs_delta_r2": max_abs,
+        "share_within_2e3": share,
+        "n_violators": len(violators),
+        "violators": violators,
         "perfeature_tol": float(perfeature_tol),
+        "max_tol": float(max_tol),
+        "share_min": float(share_min),
         "median_tol": float(median_tol),
+        "median_min_tier_n": int(median_min_tier_n),
+        "tier_panel_n": tier_panel_n,
+        "median_exempt_tiers": median_exempt_tiers,
+        "small_tier_deltas": small_tier_deltas,
         "median_deltas": med_deltas,
         "got_medians": got_medians,
         "committed_medians": want_medians,
@@ -417,7 +498,8 @@ def _gate_repro(
     if out_path is not None:
         _write_json_atomic(out_path, record)
     print(
-        f"[gate] G-R arm={arm} max|dR2|={max_abs:.2e} med_ok={med_ok} verdict={record['verdict']}",
+        f"[gate] G-R arm={arm} share={share:.5f} n_viol={len(violators)} "
+        f"max|dR2|={max_abs:.2e} med_ok={med_ok} verdict={record['verdict']}",
         flush=True,
     )
     if production and not ok:
@@ -1044,6 +1126,9 @@ def _arm_sweep(
                 want_med,
                 arm=tag,
                 production=production,
+                feat_ids=alive,
+                tier=tier,
+                fit_counts=np.asarray(counts_banked, np.int64)[alive],
                 out_path=_gates_dir(args) / f"gr_{tag}.json",
             )
             row["registered_reference"] = {
@@ -1052,6 +1137,8 @@ def _arm_sweep(
                 "committed_medians": want_med,
                 "recomputed_medians": got_med,
                 "max_abs_delta_r2": gr["max_abs_delta_r2"],
+                "share_within_2e3": gr["share_within_2e3"],
+                "n_violators": gr["n_violators"],
                 "gr_verdict": gr["verdict"],
             }
         retr_rows[str(fl)] = {

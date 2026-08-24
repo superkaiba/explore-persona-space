@@ -1509,9 +1509,20 @@ def _fs_medians(v_map=0.5, v_ib=0.1):
     }
 
 
+def _fs_gr_kw(n, *, tier=None, feat_ids=None, fit_counts=None):
+    """v7 _gate_repro required arrays (defaults: all tier 0, ids 0..n-1)."""
+    return {
+        "feat_ids": np.arange(n, dtype=np.int64) if feat_ids is None else feat_ids,
+        "tier": np.zeros(n, np.int64) if tier is None else tier,
+        "fit_counts": np.full(n, 1000, np.int64) if fit_counts is None else fit_counts,
+    }
+
+
 def test_fs_gate_repro_pass_within_tolerance(tmp_path):
-    want = np.array([0.6, 0.1, np.nan, -0.2])
-    got = want + np.array([1e-3, -1e-3, 0.0, 1.5e-3])
+    # 12 tier-0 features (n >= 10: the median conjunct BINDS) incl. one
+    # committed-undefined value reproduced as undefined (finiteness equal).
+    want = np.concatenate([np.linspace(0.1, 0.7, 11), [np.nan]])
+    got = want + np.concatenate([np.full(11, 1e-3), [0.0]])  # nan + 0 stays nan
     rec = FS._gate_repro(
         got,
         want,
@@ -1519,32 +1530,44 @@ def test_fs_gate_repro_pass_within_tolerance(tmp_path):
         _fs_medians(0.5 + 5e-4, 0.1 - 5e-4),
         arm="c",
         production=True,
+        **_fs_gr_kw(12),
         out_path=tmp_path / "gr.json",
     )
     assert rec["verdict"] == "PASS"
+    assert rec["predicate"] == "v7-quantile"
     assert rec["finiteness_pattern_equal"] is True
+    assert rec["share_within_2e3"] == 1.0
+    assert rec["n_violators"] == 0 and rec["violators"] == []
     assert rec["max_abs_delta_r2"] <= FS.GR_PERFEATURE_TOL
 
 
 def test_fs_gate_repro_wrong_perfeature_reference_exits_nonzero(tmp_path):
-    want = np.array([0.6, 0.1, 0.3])
-    got = want + np.array([0.0, 5e-3, 0.0])  # > 2e-3: not the parent's instrument
+    # v7 fixture (a): a SYSTEMATIC +5e-3 shift over 100 features fails BOTH the
+    # >=99% share conjunct AND the n>=10 tier-0 median conjunct — rc=32 with
+    # the FAIL record (verbatim violators) written FIRST.
+    want = np.linspace(0.0, 0.6, 100)
+    got = want + 5e-3
     with pytest.raises(SystemExit) as ei:
         FS._gate_repro(
             got,
             want,
-            _fs_medians(),
+            _fs_medians(0.5 + 5e-3, 0.1 + 5e-3),
             _fs_medians(),
             arm="c",
             production=True,
+            **_fs_gr_kw(100),
             out_path=tmp_path / "gr.json",
         )
     assert ei.value.code == FS.RC_GR != 0
-    assert json.loads((tmp_path / "gr.json").read_text())["verdict"] == "FAIL"
+    rec = json.loads((tmp_path / "gr.json").read_text())
+    assert rec["verdict"] == "FAIL"
+    assert rec["share_within_2e3"] == 0.0
+    assert rec["n_violators"] == 100 and len(rec["violators"]) == 100
 
 
 def test_fs_gate_repro_wrong_median_reference_exits_nonzero(tmp_path):
-    want = np.array([0.6, 0.1, 0.3])
+    # tier 0 has n=10 >= GR_MEDIAN_MIN_TIER_N, so its median conjunct BINDS.
+    want = np.linspace(0.2, 0.8, 10)
     with pytest.raises(SystemExit) as ei:
         FS._gate_repro(
             want.copy(),
@@ -1553,6 +1576,7 @@ def test_fs_gate_repro_wrong_median_reference_exits_nonzero(tmp_path):
             _fs_medians(0.51),  # |d|=0.01 > 1e-3
             arm="b",
             production=True,
+            **_fs_gr_kw(10),
             out_path=tmp_path / "gr.json",
         )
     assert ei.value.code == FS.RC_GR != 0
@@ -1562,15 +1586,135 @@ def test_fs_gate_repro_finiteness_drift_exits_nonzero(tmp_path):
     want = np.array([0.6, np.nan, 0.3])
     got = np.array([0.6, 0.2, 0.3])  # finite where the committed value is undefined
     with pytest.raises(SystemExit) as ei:
-        FS._gate_repro(got, want, _fs_medians(), _fs_medians(), arm="c", production=True)
+        FS._gate_repro(
+            got, want, _fs_medians(), _fs_medians(), arm="c", production=True, **_fs_gr_kw(3)
+        )
     assert ei.value.code == FS.RC_GR
 
 
 def test_fs_gate_repro_smoke_is_informational_no_exit():
     want = np.array([0.6, 0.1])
     got = want + 0.5
-    rec = FS._gate_repro(got, want, _fs_medians(), _fs_medians(0.9), arm="c", production=False)
+    rec = FS._gate_repro(
+        got, want, _fs_medians(), _fs_medians(0.9), arm="c", production=False, **_fs_gr_kw(2)
+    )
     assert rec["verdict"] == "INFORMATIONAL-smoke"
+
+
+def test_fs_gate_repro_single_violator_small_tier_passes(tmp_path):
+    # v7 fixture (b): ONE feature at delta ~3e-3 among 103 otherwise <= 1e-4
+    # (share 102/103 = 99.03% >= 99%), max 3e-3 <= 1e-2, violator inside an
+    # n=3 tier-2 whose median conjunct is EXEMPT (n < 10) even though its
+    # committed-vs-recomputed median differs by > 1e-3 — PASS, with the
+    # violator row + the small tier's per-feature rows recorded verbatim.
+    n0 = 100
+    want = np.concatenate([np.linspace(0.1, 0.7, n0), [0.30, 0.40, 0.50]])
+    got = want.copy()
+    got[:n0] += 1e-4
+    got[n0 + 1] += 3e-3
+    kw = _fs_gr_kw(
+        n0 + 3,
+        tier=np.concatenate([np.zeros(n0, np.int64), np.full(3, 2, np.int64)]),
+        feat_ids=np.concatenate([np.arange(n0), [56640, 56641, 56642]]).astype(np.int64),
+        fit_counts=np.concatenate([np.full(n0, 2000), [1400, 1473, 1500]]).astype(np.int64),
+    )
+    got_med = _fs_medians()
+    want_med = _fs_medians()
+    want_med["map/t2"] = got_med["map/t2"] + 2.83e-3  # the v6-failing n=3 median conjunct
+    rec = FS._gate_repro(
+        got,
+        want,
+        got_med,
+        want_med,
+        arm="c",
+        production=True,
+        **kw,
+        out_path=tmp_path / "gr.json",
+    )
+    assert rec["verdict"] == "PASS"
+    assert rec["n_violators"] == 1 and len(rec["violators"]) == 1
+    v = rec["violators"][0]
+    assert v["feat"] == 56641 and v["fit_count"] == 1473
+    assert v["delta"] == pytest.approx(3e-3)
+    assert v["committed"] == pytest.approx(want[n0 + 1])
+    assert v["recomputed"] == pytest.approx(got[n0 + 1])
+    assert 0.99 <= rec["share_within_2e3"] < 1.0
+    assert 2 in rec["median_exempt_tiers"] and 0 not in rec["median_exempt_tiers"]
+    small = rec["small_tier_deltas"]["2"]
+    assert [r["feat"] for r in small] == [56640, 56641, 56642]
+    assert small[1]["delta"] == pytest.approx(3e-3)
+    assert json.loads((tmp_path / "gr.json").read_text())["verdict"] == "PASS"
+
+
+def test_fs_gate_repro_realized_production_distribution_passes(tmp_path):
+    # plan §11 incident grounding (pod-2476 gates/gr_c.json, 2026-08-24): 879
+    # panel features, exactly one (feat 56641, tier 2, fit count 1,473) at
+    # delta = 2.83e-3, bulk within the measured p99 = 2.15e-4; share
+    # 878/879 = 99.886% >= 99%, max 2.83e-3 <= 1e-2, and the tier-2 (n=3)
+    # median conjunct — the v6-failing one — is exempt: PASS under v7 (the
+    # v6 max-based predicate halted production on exactly this distribution).
+    n = 879
+    rng = np.random.default_rng(2476)
+    want = rng.uniform(0.05, 0.8, n)
+    got = want + rng.uniform(0.0, 2.15e-4, n) * rng.choice([-1.0, 1.0], n)
+    tier = np.concatenate(
+        [np.zeros(576, np.int64), np.ones(300, np.int64), np.full(3, 2, np.int64)]
+    )
+    feat_ids = np.arange(1000, 1000 + n, dtype=np.int64)
+    feat_ids[-2] = 56641
+    fit_counts = np.full(n, 1300, np.int64)
+    fit_counts[-2] = 1473
+    got[-2] = want[-2] + 2.83e-3
+    got_med = _fs_medians()
+    want_med = _fs_medians()
+    want_med["map/t2"] = got_med["map/t2"] + 2.83e-3
+    rec = FS._gate_repro(
+        got,
+        want,
+        got_med,
+        want_med,
+        arm="c",
+        production=True,
+        feat_ids=feat_ids,
+        tier=tier,
+        fit_counts=fit_counts,
+        out_path=tmp_path / "gr.json",
+    )
+    assert rec["verdict"] == "PASS"
+    assert rec["n_violators"] == 1
+    assert rec["violators"][0]["feat"] == 56641
+    assert rec["violators"][0]["fit_count"] == 1473
+    assert rec["share_within_2e3"] == pytest.approx(878 / 879)
+    assert rec["max_abs_delta_r2"] == pytest.approx(2.83e-3)
+    assert rec["median_exempt_tiers"] == [2]
+    assert rec["tier_panel_n"] == {"0": 576, "1": 300, "2": 3}
+
+
+def test_fs_gate_repro_order_of_magnitude_excursion_exits_nonzero(tmp_path):
+    # v7 fixture (c): share >= 99% but ONE delta = 2e-2 > GR_MAX_TOL=1e-2 —
+    # the max conjunct hard-fails an order-of-magnitude excursion; rc=32 with
+    # the FAIL record written FIRST.
+    n = 200
+    want = np.linspace(0.05, 0.75, n)
+    got = want.copy()
+    got[7] += 2e-2
+    with pytest.raises(SystemExit) as ei:
+        FS._gate_repro(
+            got,
+            want,
+            _fs_medians(),
+            _fs_medians(),
+            arm="c",
+            production=True,
+            **_fs_gr_kw(n),
+            out_path=tmp_path / "gr.json",
+        )
+    assert ei.value.code == FS.RC_GR != 0
+    rec = json.loads((tmp_path / "gr.json").read_text())
+    assert rec["verdict"] == "FAIL"
+    assert rec["share_within_2e3"] >= 0.99
+    assert rec["n_violators"] == 1
+    assert rec["violators"][0]["delta"] == pytest.approx(2e-2)
 
 
 def _fs_stats_stub(label="Indeterminate"):
