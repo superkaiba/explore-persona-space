@@ -239,16 +239,67 @@ Plot 8 then adds the axis neither camp has: what CoT TRAINING does to the map.
   teacher-forced re-pass; the re-pass cost scales with trace length.
 - Check #1336's 55 banked turnstores for fitness BEFORE generating anything.
 
-## Open decisions for the planner / user
+## SCOPE ADDENDUM — user decision 2026-08-24, BINDING (both items are IN SCOPE for round 1)
 
-1. Model arms for round 1: the same-geometry pre/post pair (Qwen2.5-7B-Instruct →
-   OpenThinker3-7B) alone covers both plots and is the cheapest complete story. R1-Distill
-   and Qwen3-8B add recipe-robustness and the thinking toggle respectively.
-2. Whether to add intermediate think-block positions `t ∈ (0,1)` as a
-   predictability-vs-CoT-position trajectory. They come from the same forward pass, so
-   they are cheap once traces exist, and the trajectory is the direct test of Camp B's
-   monotonicity claim.
-3. Free directional read first: the frozen #779 map applied cross-model to OpenThinker3
+Decisions 1 and 2 below were open at filing and the user resolved BOTH as "add them".
+They are requirements, not options. The planner must cost and schedule them.
+
+### Addendum 1 — all THREE model arms are in round-1 scope
+
+| arm | pre (pre-CoT-trained) | post (CoT-trained) | geometry | what it uniquely buys |
+|---|---|---|---|---|
+| **1 (primary)** | `Qwen/Qwen2.5-7B-Instruct` | `open-thoughts/OpenThinker3-7B` | 3584 / 28, IDENTICAL both sides | the same-geometry pre/post pair; covers Plot 7 AND Plot 8 on its own; pre side is the model the existing R² ≈ 0.8 map and the #1482 baselines already live on |
+| **2 (recipe robustness)** | `Qwen/Qwen2.5-Math-7B` | `deepseek-ai/DeepSeek-R1-Distill-Qwen-7B` | 3584 / 28, identical both sides | a genuinely DIFFERENT CoT-training recipe (SFT on 800k R1-generated traces vs OpenThoughts3 QwQ traces); its chat template PREFILLS `<think>\n`, so the trace/answer boundary is guaranteed rather than emergent |
+| **3 (necessity toggle)** | — | `Qwen/Qwen3-8B`, **ORIGINAL hybrid release, NOT a `-2507` checkpoint** | 4096 / 36, own refit required | `enable_thinking=True/False` on the SAME WEIGHTS ⇒ per-question CoT necessity measured on the exact model being mapped, with no prompt-hack confound. Also the model used by the closest prior work (2603.17199), so the arms stay comparable |
+
+Binding notes:
+- The `-2507` checkpoint pin on arm 3 is load-bearing: `-2507` split into separate Instruct
+  (emits no `<think>`) and Thinking models and LOSES the toggle. Pin the original release.
+- Arm 3 is a DIFFERENT geometry (4096/36), so it gets its own map refit and its own layer
+  selection; it is NOT comparable cell-by-cell to arms 1 and 2, and any cross-arm claim
+  must say so.
+- Arm 2's pre side (`Qwen2.5-Math-7B`) is a non-instruct math-specialised base, so its own
+  answers differ in kind from arm 1's. Arm 2 is a recipe-robustness read on the DIRECTION
+  of the effect, not a second estimate of arm 1's magnitude.
+- **Cost consequence, stated plainly:** arms 2 and 3 each need their own generation corpus
+  and their own map refit, and arm 3's refit is at a different geometry. This is roughly
+  3× arm 1 alone on generation, not a marginal addition. Size all three in plan §9.
+
+### Addendum 2 — the predictability-vs-CoT-position trajectory is a required deliverable
+
+Capture the map input at normalised positions THROUGH the think block, not only at its two
+endpoints, and refit the map at each position against the SAME target (the post-`</think>`
+answer state `v_A*`):
+
+- `t = pre` — last prompt token, before any think token. **This is exactly Plot 7 cell A.**
+- `t ∈ (0,1)` — residual state at normalised positions inside the think block; default grid
+  `{0.1, 0.2, … , 0.9}`, matching the normalised-position convention of 2603.17199 so the
+  arms are directly comparable to the closest prior work.
+- `t = end` — the state at `</think>`. **This is exactly Plot 7 cell D.**
+
+So the trajectory SUBSUMES cells A and D as its endpoints, and Plot 7 becomes the endpoint
+summary of a curve the trajectory plots in full. Deliverable: R² and acc@1 versus `t`, one
+curve per necessity stratum, per arm, with the noise ceiling drawn per stratum.
+
+Why it is required and not optional:
+- It is the direct test of Camp B's monotonicity claim (2412.01113: linear probes for the
+  final answer improve MONOTONICALLY along the reasoning chain). The predicted
+  reconciliation is that the curve is FLAT AND HIGH from `t = pre` on the doesn't-require-CoT
+  corpus, and RISES from near chance on the requires-CoT corpus. A flat-high curve on
+  requires-CoT would refute the whole serial-computation framing, which is the outcome the
+  design must be able to see.
+- The `t = pre → t = end` rise, per stratum, is the serial work measured in the DV's own
+  units, as a curve rather than a two-point gap.
+
+Cost: the intermediate positions come from the SAME forward pass as the endpoints, so the
+capture is near-free once traces exist. The non-trivial added cost is the refit at each
+position (9 extra ridge fits per arm per target), which is the vectorizable many-cell fit
+case — batch the position axis, do NOT loop
+(`.claude/rules/vectorize-many-cell-fits.md`).
+
+## Remaining open decision
+
+1. Free directional read first: the frozen #779 map applied cross-model to OpenThinker3
    contexts on the 1,319 GSM8K test questions, binned by calculator-step count. Weak
    (cross-model transfer, so a drop is partly confounded) but near-zero GPU.
 
