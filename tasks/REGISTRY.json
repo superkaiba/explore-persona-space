@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2526,
+  "highest_id": 2527,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11782,6 +11782,13 @@
       "path": "tasks/proposed/2526",
       "status": "proposed",
       "title": "verify_task_body v4: mechanical FAIL for banned Confidence: sentences (check 6 gap)"
+    },
+    "2527": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2527",
+      "status": "proposed",
+      "title": "Smoke and production legs must not share one HF upload prefix (upload-policy gap)"
     },
     "256": {
       "has_clean_result": false,
