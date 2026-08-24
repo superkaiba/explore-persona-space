@@ -36,3 +36,14 @@ invisible in bare `--file` mode (concerns.jsonl only binds under
 **How to apply:** every same-issue fold that adds a round prompt, faces
 open concerns, or grows past the prose budget. See also
 [[fold-round-gate-mechanics-1336]].
+
+**#2254 position-round fold (2026-08-24) additions:** (a) the word-budget
+round credit differs by invocation — `--file` counts only literal footer
+round clauses (800 + 250×clauses), while `--issue` counts rounds from the
+events ledger (credited 4 rounds → 1800 there) — so a draft that WARNs
+over-budget under `--file` can sit inside the `--issue` budget; keep the
+footer clause anyway (it is what `--file` sees pre-set-body). (b) Footer
+one-line dispositions for open concern ids again satisfied Lens 14 with
+zero bounce (nine open ids: 3 in Takeaways + 6 in footer). (c) The
+"dropdown below is 1 example block of N judged completions ... drawn
+uniformly at random (seed 42)" prelude form passed checks 10/39 first try.
