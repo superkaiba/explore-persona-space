@@ -41,6 +41,12 @@ authenticated `list_repo_tree` at the exact revision (the sandbox has no
 network; without the attestation a wrong-pin check degrades to advisory).
 Scope the attestation narrowly ("treat liveness as established; your job
 is the CONSISTENCY adjudication") so Codex still owns the judgment.
+SPLIT-PIN case (#823 r7): when a revision re-pins ONE artifact to a new
+commit (fig8 re-render) while siblings stay at the old pin, attest each
+file against ITS OWN pin, verify the re-pinned file's blobs DIFFER
+between pins, and say the split explicitly in the prompt — a naive
+single-pin attestation (or a twin checking all files against one pin)
+false-FAILs the re-pinned artifact.
 (5) DELTA-CONFINEMENT MIRRORS carry capture artifacts — run the diff
 yourself at compose time and attest the expected hunk set (#2477 r3,
 2026-08-23): a /tmp round-N body mirror may have been captured WITHOUT the

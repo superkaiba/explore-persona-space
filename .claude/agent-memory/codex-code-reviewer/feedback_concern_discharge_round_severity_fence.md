@@ -188,3 +188,18 @@ paragraph and the Concerns-to-persist bracket. Also carry the reconcile's
 trigger-likelihood rationale with a BOTH-directions moot note ("moot once the
 check exists": no discounting a closure gap on unlikely-trigger grounds, no
 escalating a closed item on consequence grounds).
+
+**Dual disposition vocabulary on a mixed closure round (#2313 r2, 2026-08-23):**
+when one concern closes by a CODE FIX and the other by a JUDGMENT CALL the
+brief hands the twin verbatim ("is the honest-residual mitigation an adequate
+close, or should it stay open? the orchestrator acts on it"), give each its
+own disposition enum in the closure ledger: VERIFIED-ADDRESSED|NOT-ADDRESSED
+for the fix, ADEQUATE-CLOSE|KEEP-OPEN for the judgment concern — and route
+the judgment answer to BOTH the Review-questions body and the ledger line
+(the orchestrator machine-acts on the ledger line). Frame the scope tension
+honestly (reconcile named a bigger lever, brief scoped narrower): adopted
+scope governs, the decline is judged on merits, narrower scope must not
+mechanically drive KEEP-OPEN, and an honest KEEP-OPEN is a fully valid
+answer. Also: a superseding `epm:plan-verify` v2 (fresh PASS at the current
+plan version) RESOLVES a prior round's version-gap attestation — attest the
+v2 and bar re-raising the gap, rather than repeating the r1 caveat.
