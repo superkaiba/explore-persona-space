@@ -1,0 +1,1 @@
+{"ts": "2026-08-24T00:00:14Z", "event": "raised", "concern_id": "live-job-interlock", "severity": "BLOCKER", "summary": "A >2h live job can age out of the busy set, and dispatch can race the unlocked final check-to-kill window.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
