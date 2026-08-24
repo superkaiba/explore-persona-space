@@ -2,7 +2,8 @@
 title: Does context-vector patching improve on a more capable model? (Qwen3.8-27B,
   context-end only, all 39 cells)
 kind: experiment
-tags: []
+tags:
+- keep-running
 created_at: '2026-08-19T17:01:28Z'
 has_clean_result: false
 parent_id: 2329
