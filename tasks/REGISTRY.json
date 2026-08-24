@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2541,
+  "highest_id": 2542,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11887,6 +11887,13 @@
       "path": "tasks/proposed/2541",
       "status": "proposed",
       "title": "plan-conditions check: flag ran-but-unreported registered conditions, not just literal slug coverage"
+    },
+    "2542": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2542",
+      "status": "proposed",
+      "title": "audit_clean_results_body_discipline: documented bare-invocation gate command is a broken legacy bulk mode"
     },
     "256": {
       "has_clean_result": false,
