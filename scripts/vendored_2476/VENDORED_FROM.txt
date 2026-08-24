@@ -1,0 +1,12 @@
+Vendored from git pin d8e9f8bdd4 (origin/issue-2476; plan #2552 v4 vendoring pin).
+Vendored on: 2026-08-24
+Source paths @ d8e9f8bdd4 -> vendored copy (blob sha):
+  scripts/issue2476_turnavg_sae.py  -> scripts/vendored_2476/turnavg_sae.py  (85d8797860dccd0b8eed0b395c556cec5413d351)
+  scripts/issue2476_k200_census.py  -> scripts/vendored_2476/k200_census.py
+  scripts/issue2476_floor_sweep.py  -> scripts/vendored_2476/floor_sweep.py
+Also materialized from the same pin (branch-only artifacts, committed on issue-2552):
+  eval_results/issue_2476/floor_sweep/perfeature_union_c.npz    (blob 3b7d8f038872350960797e5ed5b03ebf006aed20)
+  eval_results/issue_2476/k200_census/perfeature_union_k200.npz (blob 70c7d12d786b3c8ac52bb9750362055cd97aba46)
+Blob shas verified identical at d8e9f8bdd4 AND at origin/issue-2476 tip 4f0e512e4c (2026-08-24).
+Rationale: main's issue2476_turnavg_sae.py LAGS the branch (139 insertions / 15 deletions;
+k200_census.py + floor_sweep.py exist ONLY on the branch) - plan #2552 item (k) leg A remedy.
