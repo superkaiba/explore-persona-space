@@ -152,7 +152,7 @@ What is plotted: left panel — recovery in retrieval space (top-1 accuracy at m
 
 ![Retrieval recovery versus axis, and identity baseline versus transferred operator per character](https://raw.githubusercontent.com/superkaiba/explore-persona-space/745b120206fa0c92af8ab8dfd276dc2d6c8a3c05/figures/issue_2479/retrieval_identity_vs_transfer.png)
 
-> **Figure.** *The retrieval companion fails, and the identity baseline wins it.* Left: rank correlation +0.34, p = 0.10 (euclidean); cosine reads −0.04, p = 0.56. Right: identity-plus-learned-bias top-1 accuracy exceeds the transferred operator's for 15 of 16 characters (all but helios); 14 of 16 under cosine. Chance is roughly 0.005 per held-out pool of about 205 candidates.
+> **Figure.** *The retrieval companion fails, and the identity baseline wins it.* Left: rank correlation +0.34, p = 0.10 (euclidean); cosine reads −0.04, p = 0.56. Right: identity-plus-learned-bias top-1 accuracy exceeds the transferred operator's for 15 of 16 characters (all but helios); 14 of 16 under cosine. Chance is roughly 0.004–0.005 per held-out pool of 206–249 candidates (mean ~236).
 
 The variance-explained and retrieval reads dissociate, and retrieval reverses the intended baseline hierarchy — the right panel shows the reversal per character. The identity baseline's own retrieval accuracy does not order with the axis either (−0.19). The retrieval-versus-identity half of the Goal's recovery read therefore failed outright, not merely inconclusively.
 
@@ -204,3 +204,4 @@ Four mediators stay open: mean answer length tracks the axis (+0.53, p = 0.017);
 Judge: claude-sonnet-4-5-20250929 throughout (story gate at temperature 0; axis at 5 draws, temperature 1.0). Seeds: generation 42, fits 0, permutations 0, axis reservation 0.
 
 **Context:** Originating prompt: `Paper outline 2026-08-22 Results II title clause + critique F4 (n=4 cannot carry a title claim)`. Parent: [#1345](https://eps.superkaiba.com/tasks/1345) — the story-character operator-transfer rig; this run is its 16-character scale-up. Plan v4 (`plans/plan.md`); run legs 2026-08-23/24 UTC; analyzer round 1, 2026-08-23; analyzer round 2 (interpretation-critique fixes: retrieval reversal, tier mediation, judge-loss accounting, CJK substrate split, figure relabels), 2026-08-24; analyzer round 3 (rung-wise ladder report, equalized-n sensitivity, capture-intrusion mediator, identity-vs-transfer retrieval figure, confidence re-adjudication), 2026-08-24.
+
