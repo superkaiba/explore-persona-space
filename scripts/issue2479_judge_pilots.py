@@ -440,9 +440,11 @@ def run_axis_pilot(
         judge_model=jl.JUDGE_MODEL,
         temperature=jl.JUDGE_TEMPERATURE,
         parse_fail_threshold=PARSE_FAIL_MAX,
-        threshold_base=jl.THRESHOLD_BASE_FORCE_BATCH,
         seed=0,
         # Declared wave: the axis judging wave (plan §9 ~19k Batch draws).
+        # #2152: the wave declaration DERIVES the pilot routing (forced-batch
+        # via wave_threshold_base) — passing the legacy threshold_base knob
+        # alongside it is rejected at gate entry.
         wave_n_calls=19_000,
         wave_threshold_base=jl.THRESHOLD_BASE_FORCE_BATCH,
     )
