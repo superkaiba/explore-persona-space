@@ -23,8 +23,20 @@ Data content is unchanged — asserted: the re-rendered sidecar's per-point
 numeric payload must equal the committed (git HEAD) sidecar's, label text
 excluded, else this script fails loud.
 
+Round-6 CLEAN-RESULT revision (both round-6 critics, Lens 3 blocker): the
+floor-sweep acc@1 hero's legend carried the internal predictor token "ib"
+(`_fig_hero_acc1` in scripts/issue2476_floor_sweep.py labels series by its
+`pred` key). `--floor-acc1` re-renders ONLY that figure from the committed
+floor_sweep_c.json + floor_retrieval_c.json with the spelled-out
+"identity+bias" legend label, mirroring the sibling hero
+i2476_floor_sweep_hero_r2's label convention; same sidecar data-unchanged
+assertion:
+
+  - figures/issue_2476/i2476_floor_sweep_hero_acc1.{png,pdf}
+
 Run from the worktree root:
-    uv run python scripts/issue2476_fig_relabel.py
+    uv run python scripts/issue2476_fig_relabel.py                # round-2 pair
+    uv run python scripts/issue2476_fig_relabel.py --floor-acc1   # round-6 fix
 """
 
 import importlib.util
@@ -179,6 +191,48 @@ def _fig_bridge_relabel(drv, fig_expl: Path) -> None:
     print("[fig] i2476_bridge_token_vs_turnavg (relabeled)", flush=True)
 
 
+def _fig_floor_acc1_relabel(drv, fig_expl: Path) -> None:
+    """Floor-sweep acc@1 hero (`_fig_hero_acc1` body, scripts/issue2476_floor_sweep.py)
+    with the identity+bias series labeled "identity+bias" instead of the internal
+    predictor token "ib"; everything else identical."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_panels,
+        paper_palette,
+        savefig_paper,
+    )
+
+    fs = ROOT / "eval_results" / "issue_2476" / "floor_sweep"
+    sweep = json.loads((fs / "floor_sweep_c.json").read_text())
+    retr = json.loads((fs / "floor_retrieval_c.json").read_text())
+    colors = paper_palette(3)
+    xs = [100.0 * r["floor_rows"] / sweep["n_fit_rows"] for r in sweep["rows"]]
+    chance = 1.0 / max(1, retr["n_pool"])
+    fig, axes = plt.subplots(1, 3, figsize=figsize_iclr_panels(3), sharex=True)
+    for t, ax in enumerate(axes):
+        for pred, ls, label in (("map", "-o", "map"), ("ib", "--s", "identity+bias")):
+            ys = []
+            for row in sweep["rows"]:
+                cell = retr["rows"][str(row["floor_rows"])]["tiers"].get(str(t), {})
+                v = cell.get(pred, {}).get("euclidean", {}).get("acc_at_k", {}).get("1")
+                if v is None:
+                    v = cell.get(pred, {}).get("euclidean", {}).get("acc_at_k", {}).get(1)
+                ys.append(np.nan if v is None else v)
+            ax.plot(xs, ys, ls, color=colors[t], ms=2.2, lw=0.9, label=label)
+        ax.axhline(chance, ls=":", lw=0.7, color="gray", label="chance")
+        ax.set_yscale("log")
+        ax.set_title(drv.TIER_LABELS[t].replace("\n", " "), fontsize=6)
+        ax.set_xlabel("alive floor (% of fit rows)")
+    axes[0].invert_xaxis()  # sharex: ONE inversion flips all panels (looser -> right)
+    axes[0].set_ylabel("retrieval acc@1 (euclidean)")
+    axes[0].legend(fontsize=5, loc="best")
+    savefig_paper(fig, "i2476_floor_sweep_hero_acc1", dir=fig_expl)
+    plt.close(fig)
+    print("[fig] i2476_floor_sweep_hero_acc1 (relabeled)", flush=True)
+
+
 def main() -> None:
     drv = _load_driver()
     import matplotlib
@@ -191,6 +245,12 @@ def main() -> None:
 
     fig_paper = ROOT / "figures" / "paper"
     fig_expl = ROOT / "figures" / "issue_2476"
+
+    if "--floor-acc1" in sys.argv:
+        _fig_floor_acc1_relabel(drv, fig_expl)
+        _assert_sidecar_data_unchanged(fig_expl / "i2476_floor_sweep_hero_acc1.meta.json")
+        return
+
     for tok in ("arm c", "arm b", "chanind"):
         assert all(tok not in v for v in drv._ARM_LABELS.values()), tok
 

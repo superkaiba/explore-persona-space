@@ -1,11 +1,15 @@
 {
-  "commit": "a1e18f25",
-  "render_id": "84c11dbfba414c7e",
-  "git_commit": "a1e18f25d199142f823f09c8d5e29738dfb5b588",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2476_floor_sweep.py",
-  "created": "2026-08-24T06:33:36Z",
+  "commit": "63e223de+dirty",
+  "render_id": "03c2d8affd394ed0",
+  "git_commit": "63e223de18c40982f07eb96a0ca9d52ffec24342",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/reconciler/MEMORY.md",
+    "scripts/issue2476_fig_relabel.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2476_fig_relabel.py",
+  "created": "2026-08-24T08:20:15Z",
   "figsize": [
     5.5,
     1.133
@@ -42,28 +46,28 @@
     {
       "alive floor (% of fit rows)": 1.0,
       "retrieval acc@1 (euclidean)": 0.2382,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 1
     },
     {
       "alive floor (% of fit rows)": 0.5,
       "retrieval acc@1 (euclidean)": 0.244,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 1
     },
     {
       "alive floor (% of fit rows)": 0.25,
       "retrieval acc@1 (euclidean)": 0.24765,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 1
     },
     {
       "alive floor (% of fit rows)": 0.2,
       "retrieval acc@1 (euclidean)": 0.24765,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 1
     },
@@ -112,28 +116,28 @@
     {
       "alive floor (% of fit rows)": 1.0,
       "y": 0.00345,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 4
     },
     {
       "alive floor (% of fit rows)": 0.5,
       "y": 0.01335,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 4
     },
     {
       "alive floor (% of fit rows)": 0.25,
       "y": 0.02235,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 4
     },
     {
       "alive floor (% of fit rows)": 0.2,
       "y": 0.0252,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 4
     },
@@ -182,28 +186,28 @@
     {
       "alive floor (% of fit rows)": 1.0,
       "y": 0.0,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 7
     },
     {
       "alive floor (% of fit rows)": 0.5,
       "y": 5e-05,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 7
     },
     {
       "alive floor (% of fit rows)": 0.25,
       "y": 0.00065,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 7
     },
     {
       "alive floor (% of fit rows)": 0.2,
       "y": 0.001,
-      "series": "ib",
+      "series": "identity+bias",
       "_kind": "line",
       "_group": 7
     },
@@ -234,7 +238,7 @@
         "ylabel": "retrieval acc@1 (euclidean)",
         "legend_labels": [
           "map",
-          "ib",
+          "identity+bias",
           "chance"
         ],
         "xticklabels": [
@@ -297,7 +301,7 @@
     ],
     "series": [
       "map",
-      "ib",
+      "identity+bias",
       "chance"
     ]
   },
