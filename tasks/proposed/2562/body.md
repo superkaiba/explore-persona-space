@@ -29,3 +29,8 @@ The lint surface has an agent-memory **INDEX** size ratchet (`MEMORY.md` WARN >2
 ## Provenance
 
 Reported by the `codex-code-reviewer` composer during #2502 code-review round 5 (2026-08-24): "my memory file ... has bloated to 342 KB (unreadable) and needs repair/trim at a safe commit point". Filed by the #2502 orchestrator session per `.claude/rules/workflow-fix-on-bug.md` (surfaced-prose follow-up). Dedup checked: #2444 (sync-subject clobber) and #2341 (guard pathspec) touch the same path only incidentally — distinct bugs, distinct tasks.
+
+## Provenance
+
+workflow_fix_target: .claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md, scripts/workflow_lint.py
+Filed from the #2502 orchestrator session (code-review round 5, 2026-08-24) on a composer-surfaced prose follow-up.
