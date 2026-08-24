@@ -28,6 +28,14 @@ Three mechanical fold-round rules, all hit on the #2215
    literal footer clause `same-issue follow-up round \`label\``**
    (`_V4_FOOTER_ROUND_CLAUSE_RE`); "Follow-up round `label`" earns
    nothing.
+4. **Pod-pushed result commits diverge the local worktree branch — the
+   "figure tracked at live refs" WARN is the tell** (#2476 fold,
+   2026-08-24): the pod pushed the artifact commit to origin/issue-N
+   while the local worktree held agent-memory commits on the same
+   parent, so body-pinned figures existed at the pinned SHA but on NO
+   live local ref. Fix before drafting figures into the body:
+   `git -C $WT pull --rebase origin issue-N` then push (worktree only —
+   never the repo root).
 
 **Why:** each cost one gate round on the #2215 fold; all three are
 invisible in bare `--file` mode (concerns.jsonl only binds under
