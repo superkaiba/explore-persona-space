@@ -25,6 +25,8 @@ goal: On Qwen2.5-7B-Instruct, determine whether on-policy answer correctness (go
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2388.md](https://github.com/superkaiba/explore-persona-space/blob/519ba3c00293463f51a4cd0d25bbf11157df2a14/docs/methodology/issue_2388.md) · [gist](https://gist.github.com/superkaiba/6027d578a08c39253e3d38f55586ebd4)
+
 ## Takeaways
 
 - On locked held-out test splits, a linear probe on the frozen last-prompt-token context vector predicts the K=5 on-policy correctness rate at Spearman rho 0.641 on short-answer QA (n=3,338 test contexts), 0.684 on math (n=2,504), 0.544 on MMLU-Pro (n=2,408) and 0.656 on code (n=1,131).
