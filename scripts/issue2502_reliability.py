@@ -243,6 +243,84 @@ def run_print_commands(args) -> None:
 # --------------------------------------------------------------------------
 
 
+def completion_digests_for(prefix: str, work: Path) -> dict[str, list[str]]:
+    """{context_id: [sha16(completion_token_ids) per gen row]} for ONE replicate.
+
+    Reads the replicate's raw gen-row chunk JSONLs under ``prefix`` (the u2
+    contract: gen rows carry the required ``completion_token_ids`` field).
+    Content hygiene: token ids are HASHED, never printed/logged."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    GC = _gc()
+    files = hub.retry_transient(
+        lambda: hub.list_hf_files_under_path(HfApi(), FT.HF_DATA_REPO, prefix, repo_type="dataset"),
+        what=f"list({prefix})",
+    )
+    skip = ("gen_meta", "regime", "cap_hit_report", "manifest")
+    chunk_files = sorted(
+        f for f in files if f.endswith(".jsonl") and not any(tok in Path(f).name for tok in skip)
+    )
+    if not chunk_files:
+        raise RuntimeError(f"#13: no gen-row jsonl chunks under {prefix}")
+    digests: dict[str, list[str]] = {}
+    for f in chunk_files:
+        local = GC.fetch_repo_file(f, work / "gen_dl", what=f"gen({Path(f).name})")
+        for r in GC.iter_jsonl(local):
+            if "completion_token_ids" not in r:
+                raise RuntimeError(
+                    f"#13: gen row missing completion_token_ids in {Path(f).name} "
+                    f"(context {r.get('context_id')!r})"
+                )
+            digests.setdefault(str(r["context_id"]), []).append(
+                FT.sha16(",".join(str(t) for t in r["completion_token_ids"]))
+            )
+        local.unlink()
+    return digests
+
+
+def _completion_distinctness(
+    per_seed_digests: dict[int, dict], ids: list[str], *, max_identical_frac: float
+) -> dict:
+    """#13: >=2 distinct completion digests per context across replicate draws.
+
+    A MISSING digest for a complete-case context is ALWAYS fatal (the gen rows
+    are the captured tensors' provenance). Contexts whose replicate draws all
+    share ONE digest are tolerated up to ``max_identical_frac`` (legitimate
+    short-answer coincidences); above it the replicate draws are not
+    independent (seed collision / cached completions) and the ceiling would
+    read spuriously high. Reported by id HEAD only — never completion text."""
+    identical: list[str] = []
+    for c in ids:
+        pool: set[str] = set()
+        for s in sorted(per_seed_digests):
+            dm = per_seed_digests[s]
+            if c not in dm or not dm[c]:
+                raise RuntimeError(
+                    f"#13: no gen-row completion digest for context {c!r} in rep {s}"
+                )
+            pool.update(dm[c])
+        if len(pool) < 2:
+            identical.append(c)
+    frac = len(identical) / max(1, len(ids))
+    out = {
+        "n_contexts": len(ids),
+        "n_identical_across_reps": len(identical),
+        "identical_frac": frac,
+        "max_identical_frac": max_identical_frac,
+        "identical_context_ids_head": identical[:20],
+    }
+    if frac > max_identical_frac:
+        raise RuntimeError(
+            f"#13: {len(identical)}/{len(ids)} contexts ({frac:.3f} > {max_identical_frac}) "
+            "carry IDENTICAL completions across ALL replicate draws — replicate "
+            f"independence broken (seed collision / cached completions?); "
+            f"id head: {identical[:20]}"
+        )
+    return out
+
+
 def _rep_matrix(stores: dict[int, object], k: int, ids: list[str]):
     """(n, R, H) fp64 stack of replicate v_x for hs layer k over shared ids."""
     import numpy as np
@@ -310,9 +388,12 @@ def ceiling_from_stack(y, *, sources=None) -> dict:
     return out
 
 
-def run_ceiling(args, stores=None, expected_ids=None, id_meta=None) -> dict:
-    """Per-layer reliability ceilings for one model. ``stores`` injectable
-    (selfcheck seam): {seed: store} with the HfChunkStore duck-type."""
+def run_ceiling(
+    args, stores=None, expected_ids=None, id_meta=None, completion_digests=None
+) -> dict:
+    """Per-layer reliability ceilings for one model. ``stores`` /
+    ``completion_digests`` injectable (selfcheck seams): {seed: store} with the
+    HfChunkStore duck-type / {seed: {context_id: [digest, ...]}}."""
     GC = _gc()
     model_key = args.model_key
     if model_key not in FT.MODEL_NAME:
@@ -320,6 +401,7 @@ def run_ceiling(args, stores=None, expected_ids=None, id_meta=None) -> dict:
     seeds = parse_rep_seeds(args.rep_seeds)
     work = Path(args.work_dir)
     work.mkdir(parents=True, exist_ok=True)
+    injected_stores = stores is not None
     if stores is None:
         stores = {
             s: FT.HfChunkStore(
@@ -327,6 +409,8 @@ def run_ceiling(args, stores=None, expected_ids=None, id_meta=None) -> dict:
             )
             for s in seeds
         }
+        for s in seeds:
+            stores[s].verify_complete()  # #11: replicate stores get the same gate
     if expected_ids is None:
         local = GC.fetch_repo_file(
             f"{SUBSET_PREFIX}/corpus.jsonl", work / "subset_dl", what="subset"
@@ -350,6 +434,32 @@ def run_ceiling(args, stores=None, expected_ids=None, id_meta=None) -> dict:
             f"MF-E coverage {coverage:.3f} < floor {args.coverage_floor} — replicate stores "
             f"incomplete (per-rep coverage {per_rep_cov}); regenerate the missing replicates"
         )
+    # #13: replicate INDEPENDENCE check on the gen-row completion digests,
+    # BEFORE any tensor loop (fail cheap). Injectable; a production run may
+    # skip only via the explicit flag (recorded in the artifact).
+    if completion_digests is None and not injected_stores:
+        if getattr(args, "skip_completion_check", False):
+            distinct_info: dict = {"skipped": "--skip-completion-check (recorded escape)"}
+        else:
+            completion_digests = {
+                s: completion_digests_for(rep_prefixes(model_key, s)["raw"], work / f"gen{s}")
+                for s in seeds
+            }
+    if completion_digests is not None:
+        distinct_info = _completion_distinctness(
+            completion_digests,
+            complete,
+            max_identical_frac=float(getattr(args, "max_identical_frac", 0.02)),
+        )
+        print(
+            f"[ceiling] #13 completion distinctness: "
+            f"{distinct_info['n_identical_across_reps']}/{distinct_info['n_contexts']} "
+            f"identical-across-reps (cap {distinct_info['max_identical_frac']})",
+            flush=True,
+        )
+    elif injected_stores:
+        distinct_info = {"skipped": "injected stores without digests (selfcheck seam)"}
+
     captured_sets = [set(stores[s].captured_hs()) for s in stores]
     layers = sorted(set.intersection(*captured_sets))
     if not layers:
@@ -414,15 +524,24 @@ def run_ceiling(args, stores=None, expected_ids=None, id_meta=None) -> dict:
         "coverage": coverage,
         "coverage_floor": args.coverage_floor,
         "per_rep_coverage": {str(s): int(v) for s, v in per_rep_cov.items()},
+        "completion_distinctness": distinct_info,
         "per_layer": per_layer,
     }
-    GC.atomic_write_json(out_dir / "reliability_ceiling.json", doc)
+    out_path = out_dir / "reliability_ceiling.json"
+    FT.write_artifact_json(out_path, doc)  # committed artifact: non-finite -> null
     best = max(per_layer.values(), key=lambda u: (u["ceiling_pooled"], -u["hs"]))
     print(
-        f"[ceiling] model {model_key}: wrote {out_dir / 'reliability_ceiling.json'} "
+        f"[ceiling] model {model_key}: wrote {out_path} "
         f"({len(per_layer)} layers; max pooled ceiling {best['ceiling_pooled']:.4f} "
         f"at hs {best['hs']})",
         flush=True,
+    )
+    # #12: durable publish on the normal exit path (P3-rel deliverable).
+    FT.publish_artifacts(
+        [out_path],
+        Path(args.out_root),
+        publish=getattr(args, "publish", None) or "none",
+        hf_prefix=getattr(args, "publish_prefix", None) or FT.PUBLISH_EVAL_MIRROR,
     )
     return doc
 
@@ -492,7 +611,11 @@ def run_selfcheck(args) -> int:
         a.model_key = "A"
         a.rep_seeds = "43,44,45"
         a.coverage_floor = COVERAGE_FLOOR
-        doc = run_ceiling(a, stores=stores, expected_ids=ids, id_meta=meta)
+        digests = {s: {c: [f"d-{c}-{s}"] for c in ids} for s in (43, 44, 45)}
+        doc = run_ceiling(
+            a, stores=stores, expected_ids=ids, id_meta=meta, completion_digests=digests
+        )
+        assert doc["completion_distinctness"]["n_identical_across_reps"] == 0
         got = doc["per_layer"]["L01"]["ceiling_pooled"]
         assert abs(got - expected) < 0.05, f"ICC recovery {got:.4f} vs expected {expected:.4f}"
         ws = doc["per_layer"]["L01"]["ceiling_within_source"]
@@ -528,6 +651,34 @@ def run_selfcheck(args) -> int:
         else:
             raise AssertionError("coverage gate failed to fire on incomplete replicate store")
     print("[selfcheck] coverage gate: OK", flush=True)
+
+    # 3b. #13 completion-distinctness probes: distinct PASS, >cap identical
+    # fraction rejects, and a missing digest is ALWAYS fatal.
+    ids100 = [f"c{i:03d}" for i in range(100)]
+    good = {s: {c: [f"d-{c}-{s}"] for c in ids100} for s in (43, 44)}
+    info = _completion_distinctness(good, ids100, max_identical_frac=0.02)
+    assert info["n_identical_across_reps"] == 0, info
+    bad = {
+        s: {c: ([f"same-{c}"] if int(c[1:]) < 10 else [f"d-{c}-{s}"]) for c in ids100}
+        for s in (43, 44)
+    }
+    try:
+        _completion_distinctness(bad, ids100, max_identical_frac=0.02)
+    except RuntimeError as e:
+        assert "#13" in str(e) and "IDENTICAL" in str(e), e
+    else:
+        raise AssertionError("#13 identical-completion gate failed to fire at 10% > 2%")
+    missing = {
+        43: {c: [f"d-{c}-43"] for c in ids100},
+        44: {c: [f"d-{c}-44"] for c in ids100[1:]},
+    }
+    try:
+        _completion_distinctness(missing, ids100, max_identical_frac=0.02)
+    except RuntimeError as e:
+        assert "no gen-row completion digest" in str(e), e
+    else:
+        raise AssertionError("#13 missing-digest gate failed to fire")
+    print("[selfcheck] #13 completion distinctness (pass / reject / missing): OK", flush=True)
 
     # 4. stratified subset: floors + totals + determinism + test-only
     rng = np.random.default_rng(3)
@@ -586,6 +737,30 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--force", action="store_true", help="subset: redraw + re-upload")
     ap.add_argument("--work-dir", default="/workspace/issue2502_reliability")
     ap.add_argument("--out-root", default=str(_REPO_ROOT / "eval_results" / "issue_2502"))
+    ap.add_argument(
+        "--publish",
+        choices=("none", "hf", "git", "hf+git"),
+        default=None,
+        help="#12 REQUIRED for --phase ceiling: durable disposition of the ceiling "
+        "artifact on the normal exit path ('none' = smoke/selfcheck local-only)",
+    )
+    ap.add_argument(
+        "--publish-prefix",
+        default=FT.PUBLISH_EVAL_MIRROR,
+        help="HF data-repo prefix for the eval-results mirror (#12)",
+    )
+    ap.add_argument(
+        "--max-identical-frac",
+        type=float,
+        default=0.02,
+        help="#13: max tolerated fraction of contexts whose completions are "
+        "identical across ALL replicate draws",
+    )
+    ap.add_argument(
+        "--skip-completion-check",
+        action="store_true",
+        help="#13 escape (recorded in the artifact) — smoke/debug only",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -609,6 +784,11 @@ def main() -> int:
     elif args.phase == "print-commands":
         run_print_commands(args)
     else:
+        if args.publish is None:
+            raise SystemExit(
+                "--publish {none,hf,git,hf+git} is REQUIRED for --phase ceiling (#12: "
+                "every caller states a durability disposition; smokes pass --publish none)"
+            )
         run_ceiling(args)
     sys.stdout.flush()
     sys.stderr.flush()
