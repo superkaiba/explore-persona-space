@@ -5,6 +5,10 @@ Renders two figures from the committed ``gradient_verdict.json`` (zero GPU):
 - ``gradient_hero_v2`` — SUPERSEDES ``gradient_hero``: identical data; point
   labels are placed by a renderer-measured greedy dodger so no character
   labels overlap (round-2 render collided dana/tomas and wren/priya/marcus).
+- ``rungwise_ordering`` — NEW: rank correlation of per-character recovery
+  with the judged axis at each of the 9 transfer-ladder rungs (from the
+  committed ``r3_diagnostics.json``), the round-2 critique's rung-wise
+  report as a figure (plain-English rung names).
 - ``retrieval_identity_vs_transfer`` — SUPERSEDES ``gradient_hero_acc1``:
   left panel keeps the transferred-operator retrieval-recovery scatter
   (collision-free labels); the NEW right panel plots per-character raw top-1
@@ -104,15 +108,57 @@ def _scatter_by_anchor(ax, rows: list[dict]) -> None:
         )
 
 
+RUNG_LABELS = {
+    "1_direct": "Direct (no refit)",
+    "2_ctx_offset": "Context offset",
+    "3_ans_offset": "Answer offset",
+    "4_bias_refit": "Bias refit (headline)",
+    "5_global_scale": "Global scale",
+    "6_rotation": "Rotation",
+    "7_ctx_reparam": "Context reparam.",
+    "8_ans_reparam": "Answer reparam.",
+    "9_full_AMB": "Full affine remap",
+}
+NULL_Q95 = 0.4235  # headline 10,000-shuffle null 95th percentile (gradient_verdict.json)
+
+
+def _rungwise_figure(fig_dir: Path) -> None:
+    """Lollipop of rho(axis, rung recovery) per ladder rung (r3_diagnostics.json)."""
+    diag = json.loads(Path("eval_results/issue_2479/r3_diagnostics.json").read_text())
+    per_rung = diag["rungwise_axis_ordering"]["per_rung"]
+    rungs = list(RUNG_LABELS)
+    rhos = [per_rung[r]["rho"] for r in rungs]
+    ys = list(range(len(rungs)))[::-1]  # rung 1 at top
+    fig, ax = plt.subplots(figsize=(6.5, 4.2))
+    ax.hlines(ys, 0, rhos, color="0.75", lw=1.0, zorder=2)
+    ax.scatter(
+        rhos, ys, c=pp.paper_palette_role("primary"), s=48,
+        label="Rank correlation with the judged axis", zorder=3,
+    )
+    ax.axvline(NULL_Q95, color="0.4", lw=0.8, ls="--")
+    ax.axvline(0.0, color="0.85", lw=0.8)
+    ax.set_yticks(ys)
+    ax.set_yticklabels([RUNG_LABELS[r] for r in rungs])
+    ax.set_xlabel("Rank correlation of rung recovery with the AI-likeness axis")
+    ax.set_ylabel("Transfer-ladder rung")
+    pp.savefig_paper(fig, "rungwise_ordering", dir=fig_dir)
+    plt.close(fig)
+    print(f"wrote {fig_dir / 'rungwise_ordering'}.png (+ pdf, meta.json)")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--verdict", type=Path, default=Path("eval_results/issue_2479/gradient_verdict.json")
     )
     ap.add_argument("--fig-dir", type=Path, default=Path("figures/issue_2479"))
+    ap.add_argument("--only", choices=["all", "rungwise"], default="all")
     args = ap.parse_args()
 
     pp.set_paper_style("blog")
+    if args.only == "rungwise":
+        _rungwise_figure(args.fig_dir)
+        return
     per_char = json.loads(args.verdict.read_text())["per_character"]
     names = sorted(per_char, key=lambda n: per_char[n]["axis_score"])
     args.fig_dir.mkdir(parents=True, exist_ok=True)
