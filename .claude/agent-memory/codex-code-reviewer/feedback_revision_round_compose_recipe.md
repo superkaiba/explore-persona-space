@@ -2109,3 +2109,34 @@ a numbered disposition table that OVERLAPS but is not a superset of the ledger
 ids (Claude-only items unledgered, a NIT closed in an opportunistic paragraph),
 say so explicitly and key the closure ledger on BOTH (item numbers + ids,
 Codex maps them from the disposition text) rather than minting pseudo-IDs.
+
+**Proposer-9b-cheap follow-up ROUND 1 on a multi-round parent + brief-pinned
+binary enum (#2474 postnorm r1 = sentinel v4, 2026-08-23):** composable
+recipe for a follow-up whose parent consumed rounds 1-3 (codex v1-v3) and
+whose ledger has ZERO open-raised ids (20 addressed + 4 reconciler-deferred):
+(a) the round contract is the `epm:followup-scope` marker alone (no plan
+version, no plan envelope) — inline it and give each marker-DECLARED decision
+(map-arm option, condition-set default, grain-primary choice, pinned batch-1
+convention) its own adjudication block so the twin judges the stated reason
+instead of auto-flagging drift; explicitly de-trigger Step 0.67 on a
+single-GPU round and pre-frame the batch-1 loop as a pinned recipe-fidelity
+convention to adjudicate, not an auto-FAIL anti-pattern. (b) With no open
+ids, the whole inherited ledger becomes a CLASS RE-CHECK channel: a
+dedicated `## Prior-concern class re-checks` verdict section with
+`CLASS-CLEAN | CLASS-RECURS — evidence:` lines per class-anchor bullet,
+filtered ledger = ALL rows for the deferred ids (rationales included, framed
+parent-scoped so the twin neither re-raises them here nor demands fit.py
+fixes) + latest addressed row per class anchor; a recurrence gets a NEW
+kebab-id row, never the inherited id. (c) A brief-pinned BINARY `PASS|FAIL`
+enum needs a `=== VERDICT ENUM ===` mapping block (rubric CONCERNS mentions
+→ non-blocking finding + optional CONCERN:: row, verdict stays PASS) AND a
+re-worded backstop ("record as non-blocking and keep the verdict PASS" — the
+stock "must be a CONCERNS" sentence contradicts the enum); assert
+`**Verdict:** PASS | FAIL` ==1 and `PASS | CONCERNS | FAIL` ==0. (d) An
+UNLAUNCHED GPU phase on an implementation-only round gets an explicit
+"absence is per-brief scope, never smoke-run-missing" line in both the facts
+block and the tag enumeration. (e) A bare (versionless) impl head sentinel
+composes as a present-but-imperfect observation (never FAIL-grounding) and
+changes tag arithmetic: bare-sentinel count == 1 (body) + 1 (adaptations
+mention). Round-match asserts (label + PASS_UNIFIED + bare sentinel) ran on
+all three inlined inputs per the #841 rule.
