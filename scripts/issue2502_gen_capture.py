@@ -36,9 +36,14 @@ exact-set verify -> local purge; gen rollout TEXT always persists
 ``<out-prefix>/<chunk>/`` (one upload_folder commit per chunk, ~30 files);
 ``.capture_done`` sentinel uploads LAST. Resume: StageLedger (regime-keyed on
 generating parameters, same-workdir) + ONE scoped HF listing per phase, gated
-by a remote ``regime.json`` digest under EACH phase prefix (shard fields
-excluded) — a presence-skip is honored ONLY after the remote digest matches
-this invocation's regime (cross-pod resume; r1 review g2 Major 1).
+by a remote ``regime.json`` digest under EACH phase prefix (shard_index
+excluded; num_shards AND the full-corpus content sha16 are IN the digest —
+r2 SB-1(i)/(ii): a corpus rebuild or a reshard at the same prefix must
+mismatch loudly, never presence-skip stale/colliding chunks) — a
+presence-skip is honored ONLY after the remote digest matches this
+invocation's regime, and the digest is FIRST-published only onto a prefix a
+scoped listing proves EMPTY (r2 SB-1(iii): a populated digest-less prefix is
+pre-regime/foreign residue, refused; r1 review g2 Major 1).
 Cap-hit fraction (finish_reason=="length") is reported in gen_meta.json +
 capture_meta.json; >2% is a DESIGNED HALT: a durable cap_hit_report json
 (affected context ids per chunk) uploads under the raw prefix and the process
@@ -505,6 +510,21 @@ def hf_missing_of(expected: list[str], scope: str) -> set[str]:
     )
 
 
+def hf_prefix_files(prefix: str) -> list[str]:
+    """ONE scoped listing of every file under ``prefix`` on the data repo.
+
+    Absent prefix -> [] (the fresh-first-run case); the underlying
+    ``list_repo_entries_complete`` walk is already transient-retried. Used by
+    the SB-1(iii) first-publication seal in ``ensure_remote_regime``: before
+    ``regime.json`` is first-published, the prefix must be PROVEN empty.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    return hub.list_hf_files_under_path(HfApi(), HF_DATA_REPO, prefix, repo_type="dataset")
+
+
 def fetch_repo_file(repo_path: str, dest_root: Path, *, what: str) -> Path:
     """Retry-wrapped hf_hub_download of one data-repo file into a mirror root."""
     from huggingface_hub import hf_hub_download
@@ -528,9 +548,28 @@ def fetch_repo_file(repo_path: str, dest_root: Path, *, what: str) -> Path:
 # --------------------------------------------------------------------------
 
 
-def load_corpus_rows(args, work: Path) -> list[dict]:
-    """Fetch corpus.jsonl (u1's output) and return the shard-filtered row list.
+def corpus_content_sha16(id_sha_pairs) -> str:
+    """Order/selection-invariant corpus CONTENT fingerprint (r2 SB-1(i)).
 
+    sha256[:16] over the sorted (context_id, context_sha) pairs of the FULL
+    corpus file — identical across shards and ``--limit`` slices, so every
+    shard of one run shares the remote regime digest; any corpus rebuild that
+    changes the row set (or any row's text, via context_sha) flips it,
+    forcing a loud regime mismatch instead of a silent presence-skip over
+    stale chunks. Inputs are file-read strings, never recomputed floats
+    (machine-stable key; gotchas.md float-recompute rule).
+    """
+    joined = "\n".join(f"{cid}:{csha}" for cid, csha in sorted(id_sha_pairs))
+    return hashlib.sha256(joined.encode("utf-8")).hexdigest()[:16]
+
+
+def load_corpus_rows(args, work: Path) -> tuple[list[dict], str]:
+    """Fetch corpus.jsonl (u1's output); return (shard-filtered rows, content sha16).
+
+    The content fingerprint covers EVERY row of the downloaded file (sorted
+    context_id:context_sha pairs) BEFORE shard/limit selection — all shards
+    of one run share it, and it enters the shared remote regime digest
+    (r2 SB-1(i): a corpus rebuild at the same prefix must flip the regime).
     Validates the required fields of EVERY selected row here — BEFORE any
     engine/model init (r1 review Codex finding; validate-before-init) — and
     refuses duplicate context_ids (the capture tensor index is id-keyed).
@@ -540,10 +579,20 @@ def load_corpus_rows(args, work: Path) -> list[dict]:
         f"{args.corpus_prefix}/corpus.jsonl", work / "corpus_dl", what="corpus-download"
     )
     rows = []
+    fp_pairs: list[tuple[str, str]] = []
     for idx, row in enumerate(iter_jsonl(local)):
+        cid = row.get("context_id")
+        csha = row.get("context_sha")
+        if not (isinstance(cid, str) and cid and isinstance(csha, str) and csha):
+            raise RuntimeError(
+                f"[corpus] row {idx}: context_id/context_sha missing or empty — "
+                "cannot fingerprint corpus content (u1 corpus contract violation)"
+            )
+        fp_pairs.append((cid, csha))
         if idx % args.num_shards != args.shard_index:
             continue
         rows.append(row)
+    corpus_sha = corpus_content_sha16(fp_pairs)
     if args.limit is not None:
         rows = rows[: args.limit]
     if not rows:
@@ -567,10 +616,11 @@ def load_corpus_rows(args, work: Path) -> list[dict]:
         seen_ids.add(row["context_id"])
     print(
         f"[corpus] {len(rows)} rows selected + validated "
-        f"(shard {args.shard_index}/{args.num_shards})",
+        f"(shard {args.shard_index}/{args.num_shards}); "
+        f"content sha16={corpus_sha} over {len(fp_pairs)} corpus rows",
         flush=True,
     )
-    return rows
+    return rows, corpus_sha
 
 
 def chunk_key(args, ci: int) -> str:
@@ -587,8 +637,15 @@ def name_suffix(args) -> str:
     return f"_s{args.shard_index:02d}of{args.num_shards:02d}"
 
 
-def gen_regime(args, template_sha: str) -> dict:
-    """Gen-phase regime dict (generating parameters only — machine-stable)."""
+def gen_regime(args, template_sha: str, corpus_sha16: str) -> dict:
+    """Gen-phase regime dict (generating parameters only — machine-stable).
+
+    ``corpus_sha16`` is the FULL-corpus content fingerprint returned by
+    ``load_corpus_rows`` (r2 SB-1(i)): ``corpus_prefix`` alone is a PATH — a
+    corpus rebuilt in place at the same prefix would leave the regime equal
+    and presence-skip stale chunks silently. REQUIRED, no default: a regime
+    without the content fingerprint is the sealed-off r2 hole.
+    """
     return {
         "phase": "gen",
         "issue": ISSUE,
@@ -603,6 +660,7 @@ def gen_regime(args, template_sha: str) -> dict:
         "num_shards": args.num_shards,
         "shard_index": args.shard_index,
         "corpus_prefix": args.corpus_prefix,
+        "corpus_content_sha16": corpus_sha16,
         "raw_prefix": args.raw_prefix,
         "disable_thinking": args.disable_thinking,
         "gdn_prefill": args.gdn_prefill or "",
@@ -611,9 +669,9 @@ def gen_regime(args, template_sha: str) -> dict:
     }
 
 
-def capture_regime(args, template_sha: str) -> dict:
+def capture_regime(args, template_sha: str, corpus_sha16: str) -> dict:
     """Capture-phase regime dict (adds batching knobs — padded-batch bf16 numerics)."""
-    reg = gen_regime(args, template_sha)
+    reg = gen_regime(args, template_sha, corpus_sha16)
     reg.update(
         {
             "phase": "capture",
@@ -625,13 +683,20 @@ def capture_regime(args, template_sha: str) -> dict:
     return reg
 
 
-# Shards share one remote digest per prefix: shard identity fields are excluded
-# from the cross-pod regime comparison (r1 review g2 Major 1 fix spec).
-REGIME_SHARD_FIELDS = ("num_shards", "shard_index")
+# Shards of ONE run share the remote digest per prefix, so ONLY the shard's
+# own identity (shard_index) is excluded from the cross-pod comparison.
+# num_shards is RETAINED (r2 SB-1(ii)): it is output-affecting — it drives the
+# ``idx % num_shards`` row partition AND the shard-count-free chunk keys
+# (``s{shard:02d}_chunk{ci:04d}``), so a reshard (e.g. 4->2) at the same
+# prefix reuses COLLIDING chunk files and MUST force a regime mismatch, never
+# a presence-skip. All shards of one run share one num_shards value, so the
+# shared-digest design is unchanged (r1 review g2 Major 1 fix spec).
+REGIME_SHARD_FIELDS = ("shard_index",)
 
 
 def _strip_shard_fields(regime: dict) -> dict:
-    """Regime minus shard-identity fields (shards of one run share a digest)."""
+    """Regime minus shard_index ONLY (shards of one run share a digest;
+    num_shards stays — output-affecting, r2 SB-1(ii))."""
     return {k: v for k, v in regime.items() if k not in REGIME_SHARD_FIELDS}
 
 
@@ -641,12 +706,16 @@ def ensure_remote_regime(prefix: str, regime: dict, work: Path, *, write_if_abse
     The local StageLedger protects only same-workdir reruns; before ANY
     presence-skip against ``prefix`` the remote artifacts must be proven to
     have been produced under THIS regime. ``{prefix}/regime.json`` is written
-    on the phase's first run (``write_if_absent=True`` — producer side);
-    a consumer (``write_if_absent=False``) fails loud when it is absent.
-    Mismatch (shard fields excluded) fails loud naming the differing keys —
-    the remedy is a FRESH prefix, mirroring the StageLedger message. Regime
-    values are generating parameters only (machine-stable; gotchas.md
-    float-recompute rule).
+    on the phase's first run (``write_if_absent=True`` — producer side) ONLY
+    after a scoped listing proves the prefix holds NO pre-existing files
+    (r2 SB-1(iii): a populated digest-less prefix is pre-regime or foreign
+    residue — first-publishing over it would bless those files for every
+    later presence-skip; the remedy is a fresh prefix). A consumer
+    (``write_if_absent=False``) fails loud when the digest is absent.
+    Mismatch (shard_index excluded; num_shards + corpus_content_sha16
+    RETAINED) fails loud naming the differing keys — the remedy is a FRESH
+    prefix, mirroring the StageLedger message. Regime values are generating
+    parameters only (machine-stable; gotchas.md float-recompute rule).
     """
     dest = f"{prefix}/regime.json"
     want = _strip_shard_fields(regime)
@@ -656,11 +725,24 @@ def ensure_remote_regime(prefix: str, regime: dict, work: Path, *, write_if_abse
                 f"[regime] {dest} absent — remote artifacts have no regime digest; "
                 "run the producing phase (post-fix) first, or use a fresh prefix"
             )
-        p = work / f"regime_pub_{hashlib.sha256(dest.encode('utf-8')).hexdigest()[:8]}.json"
-        atomic_write_json(p, {"regime": want, "meta": run_metadata()})
-        upload_single_file(p, dest)
-        print(f"[regime] published {dest}", flush=True)
-        return
+        existing = hf_prefix_files(prefix)
+        if dest not in existing:
+            if existing:
+                raise RuntimeError(
+                    f"[regime] refusing FIRST publication of {dest}: prefix {prefix} "
+                    f"already holds {len(existing)} file(s) with no regime digest "
+                    f"(e.g. {sorted(existing)[:3]}) — pre-regime or foreign artifacts "
+                    "would be presence-skipped as if produced under this regime; "
+                    "use a fresh prefix (never bless residue in place)"
+                )
+            p = work / f"regime_pub_{hashlib.sha256(dest.encode('utf-8')).hexdigest()[:8]}.json"
+            atomic_write_json(p, {"regime": want, "meta": run_metadata()})
+            upload_single_file(p, dest)
+            print(f"[regime] published {dest} (prefix proven empty pre-publish)", flush=True)
+            return
+        # Race grace: a sibling shard published the digest between the two
+        # probes — fall through and VERIFY it instead of refusing/republishing.
+        print(f"[regime] {dest} appeared during first-publish probe — verifying", flush=True)
     local = fetch_repo_file(dest, work / "regime_dl", what=f"regime({prefix})")
     have = json.loads(local.read_text(encoding="utf-8"))["regime"]
     local.unlink()
@@ -896,10 +978,10 @@ def phase_gen(args, spec) -> None:
     tok = AutoTokenizer.from_pretrained(args.model)
     template_sha = assert_chat_template(tok, disable_thinking=args.disable_thinking)
     print(f"[gen] template sha16={template_sha}", flush=True)
-    rows = load_corpus_rows(args, work)
+    rows, corpus_sha = load_corpus_rows(args, work)
     chunks = [rows[i : i + args.chunk_size] for i in range(0, len(rows), args.chunk_size)]
     keys = [chunk_key(args, ci) for ci in range(len(chunks))]
-    regime = gen_regime(args, template_sha)
+    regime = gen_regime(args, template_sha, corpus_sha)
     # g2 Major 1: the remote digest gates EVERY presence-skip below — verified
     # (or first-run published) BEFORE the HF listing is consulted.
     ensure_remote_regime(args.raw_prefix, regime, work, write_if_absent=True)
@@ -1340,7 +1422,7 @@ def phase_capture(args, spec) -> None:
 
     tok = AutoTokenizer.from_pretrained(args.model)
     template_sha = assert_chat_template(tok, disable_thinking=args.disable_thinking)
-    rows = load_corpus_rows(args, work)
+    rows, corpus_sha = load_corpus_rows(args, work)
     ctx_lookup = {r["context_id"]: r["text"] for r in rows}
     n_chunks = (len(rows) + args.chunk_size - 1) // args.chunk_size
     keys = [chunk_key(args, ci) for ci in range(n_chunks)]
@@ -1348,10 +1430,10 @@ def phase_capture(args, spec) -> None:
     # digest must already exist) BEFORE any gen chunk is trusted, and gate this
     # phase's own out_prefix (producer side) BEFORE any presence-skip.
     ensure_remote_regime(
-        args.raw_prefix, gen_regime(args, template_sha), work, write_if_absent=False
+        args.raw_prefix, gen_regime(args, template_sha, corpus_sha), work, write_if_absent=False
     )
     require_gen_complete(args, work)  # #4 defensive: refuse a regen_required corpus
-    regime = capture_regime(args, template_sha)
+    regime = capture_regime(args, template_sha, corpus_sha)
     ensure_remote_regime(args.out_prefix, regime, work, write_if_absent=True)
     ledger = StageLedger(work / f"capture_ledger{name_suffix(args)}.json", regime)
     exp_by_key = {k: capture_expected(args, k, spec["n_layers"]) for k in keys}
@@ -1590,9 +1672,13 @@ def run_self_test() -> int:
     assert not _is_think_leak({"think_leak": False, "completion": "<think>"})
     assert _is_think_leak({"think_leak": True, "completion": "clean"})
     n_pass += 1
-    # 9. Regime shard-strip: exactly the shard-identity fields are excluded.
+    # 9. Regime shard-strip (r2 SB-1(ii)): ONLY shard_index is excluded —
+    # num_shards is output-affecting (row partition + chunk-key namespace).
     reg = {"a": 1, "num_shards": 4, "shard_index": 2}
-    assert _strip_shard_fields(reg) == {"a": 1}
+    assert _strip_shard_fields(reg) == {"a": 1, "num_shards": 4}
+    # Shards of ONE run share the stripped digest; a reshard must NOT.
+    assert _strip_shard_fields({**reg, "shard_index": 0}) == _strip_shard_fields(reg)
+    assert _strip_shard_fields({**reg, "num_shards": 2}) != _strip_shard_fields(reg)
     n_pass += 1
     # 10. Gen-row preflight validation: good row passes; bad rows raise.
     good = {
@@ -1614,6 +1700,121 @@ def run_self_test() -> int:
         except RuntimeError:
             pass
     n_pass += 1
+    # 11. Corpus content fingerprint (r2 SB-1(i)): order-invariant over the
+    # row set; any row-set change flips it; carried in BOTH regime dicts.
+    pairs = [("b", "2"), ("a", "1")]
+    assert corpus_content_sha16(pairs) == corpus_content_sha16(list(reversed(pairs)))
+    assert corpus_content_sha16(pairs) != corpus_content_sha16(pairs[:1])
+    ns = argparse.Namespace(
+        model="m",
+        env="e",
+        seed=1,
+        max_new_tokens=2,
+        max_model_len=8,
+        chunk_size=1,
+        num_shards=4,
+        shard_index=2,
+        corpus_prefix="c",
+        raw_prefix="r",
+        out_prefix="o",
+        disable_thinking=False,
+        gdn_prefill=None,
+        limit=None,
+        batch_tokens=16,
+        max_batch_rows=4,
+    )
+    r_gen = gen_regime(ns, "tsha", "fp0")
+    assert r_gen["corpus_content_sha16"] == "fp0" and r_gen["num_shards"] == 4
+    r_cap = capture_regime(ns, "tsha", "fp0")
+    assert r_cap["corpus_content_sha16"] == "fp0" and r_cap["phase"] == "capture"
+    n_pass += 1
+    # 12-14. ensure_remote_regime SB-1 seal: refusals exercised through the
+    # REAL gate with the network seams faked at module level (no network).
+    mod = sys.modules[__name__]
+    seams = ("hf_missing_of", "fetch_repo_file", "upload_single_file", "hf_prefix_files")
+    saved = {n: getattr(mod, n) for n in seams}
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            work = Path(td)
+            remote: dict[str, dict] = {}  # dest -> published (stripped) regime
+            force_missing: set[str] = set()
+            listing: list[str] = []
+            uploads: list[str] = []
+
+            def fake_missing(expected, *, scope):
+                return {p for p in expected if p in force_missing or p not in remote}
+
+            def fake_fetch(repo_path, dest_root, *, what):
+                p = Path(dest_root) / "regime.json"
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(json.dumps({"regime": remote[repo_path]}), encoding="utf-8")
+                return p
+
+            def fake_upload(local, dest):
+                uploads.append(dest)
+                remote[dest] = json.loads(Path(local).read_text(encoding="utf-8"))["regime"]
+
+            def fake_listing(prefix):
+                return list(listing)
+
+            mod.hf_missing_of = fake_missing
+            mod.fetch_repo_file = fake_fetch
+            mod.upload_single_file = fake_upload
+            mod.hf_prefix_files = fake_listing
+
+            base = gen_regime(ns, "tsha", "fp0")
+            # 12a. Fresh EMPTY prefix: first publication succeeds.
+            ensure_remote_regime("pfx", base, work, write_if_absent=True)
+            assert uploads == ["pfx/regime.json"], uploads
+            # 12b. num_shards mismatch (reshard 4->2) REFUSES against the digest.
+            ns2 = argparse.Namespace(**{**vars(ns), "num_shards": 2, "shard_index": 0})
+            try:
+                ensure_remote_regime(
+                    "pfx", gen_regime(ns2, "tsha", "fp0"), work, write_if_absent=True
+                )
+                raise AssertionError("num_shards reshard not refused")
+            except RuntimeError as e:
+                assert "num_shards" in str(e), e
+            # Same-run sibling shard (same num_shards) still verifies clean.
+            ns_sib = argparse.Namespace(**{**vars(ns), "shard_index": 0})
+            ensure_remote_regime(
+                "pfx", gen_regime(ns_sib, "tsha", "fp0"), work, write_if_absent=True
+            )
+            n_pass += 1
+            # 13. Corpus-content mismatch (rebuilt corpus, same prefix) REFUSES.
+            try:
+                ensure_remote_regime(
+                    "pfx", gen_regime(ns, "tsha", "fp1"), work, write_if_absent=True
+                )
+                raise AssertionError("corpus content mismatch not refused")
+            except RuntimeError as e:
+                assert "corpus_content_sha16" in str(e), e
+            n_pass += 1
+            # 14. First publication onto a NON-EMPTY digest-less prefix REFUSES
+            # (SB-1(iii)); consumer-absent still refuses; sibling-publish race
+            # falls through to VERIFY (no second publish).
+            listing[:] = ["pfx2/chunk0000.jsonl"]
+            try:
+                ensure_remote_regime("pfx2", base, work, write_if_absent=True)
+                raise AssertionError("non-empty digest-less prefix not refused")
+            except RuntimeError as e:
+                assert "refusing FIRST publication" in str(e), e
+            assert "pfx2/regime.json" not in remote
+            try:
+                ensure_remote_regime("pfx2", base, work, write_if_absent=False)
+                raise AssertionError("consumer absent-digest not refused")
+            except RuntimeError:
+                pass
+            # Race grace: digest present in the listing (and fetchable) while
+            # the missing-probe still reports absent -> verify, don't publish.
+            force_missing.add("pfx/regime.json")
+            listing[:] = ["pfx/regime.json", "pfx/chunk0000.jsonl"]
+            ensure_remote_regime("pfx", base, work, write_if_absent=True)
+            assert uploads == ["pfx/regime.json"], uploads  # no re-publish
+            n_pass += 1
+    finally:
+        for n, fn in saved.items():
+            setattr(mod, n, fn)
     print(f"[self-test] PASS ({n_pass} checks)", flush=True)
     return 0
 
