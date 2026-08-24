@@ -1,11 +1,11 @@
 {
   "cell": "storyq_helios",
   "family": "question",
-  "n_items": 9016,
-  "n_admitted": 6577,
+  "n_items": 9168,
+  "n_admitted": 6694,
   "admit_threshold": 50,
   "drop_counts": {
-    "below_threshold": 2430,
+    "below_threshold": 2465,
     "api_refusal": 9
   },
   "admitted": [
@@ -26316,22 +26316,505 @@
     {
       "row_id": "storyq_helios_w1_a029999",
       "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000002",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000005",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000020",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w2_a000022",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000024",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000025",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000028",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w2_a000029",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000030",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w2_a000035",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000038",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w2_a000047",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000053",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000055",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000057",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000071",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000077",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000082",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000083",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000089",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000091",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000092",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_helios_w2_a000093",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000098",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000099",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000100",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000102",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000108",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w2_a000110",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_helios_w2_a000115",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000118",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000130",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000133",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_helios_w2_a000137",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000141",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000144",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000152",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000159",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000168",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000173",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000175",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000190",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000194",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000199",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000204",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000209",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000210",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000220",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000222",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000227",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000228",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000234",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000236",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000248",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000250",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000255",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000258",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w2_a000262",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w2_a000263",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000264",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000268",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000270",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000271",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000274",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w2_a000277",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000279",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_helios_w2_a000290",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_helios_w2_a000294",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000295",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000299",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_helios_w2_a000301",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000302",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000309",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000319",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000321",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000338",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000345",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w2_a000348",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w2_a000349",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000350",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000351",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000352",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w2_a000353",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000357",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w2_a000363",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000364",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000369",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000372",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000374",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000383",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000390",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000391",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000394",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000399",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000406",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000409",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000411",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000415",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000418",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000422",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000425",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000426",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000433",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000440",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000442",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000444",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000446",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000454",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000457",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000464",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w2_a000469",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000473",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000477",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w2_a000484",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000487",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000488",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w2_a000493",
+      "score": 100
     }
   ],
+  "extend": {
+    "n_prior": 6577,
+    "n_new_admitted": 6694,
+    "n_new_only": 117,
+    "n_merged": 6694,
+    "n_prior_readmitted": 6577,
+    "n_prior_not_readmitted": 0
+  },
   "judge_model": "claude-sonnet-4-5-20250929",
   "rubric_sha": "28b5a61cfc267d00",
   "metadata": {
     "issue": 2378,
-    "timestamp": "2026-08-23T18:16:54-0700",
+    "timestamp": "2026-08-24T03:13:23-0700",
     "python": "3.12.13",
     "argv": [
-      "scripts/issue2378_judge.py",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_judge.py",
       "--wave",
       "admission",
+      "--transport",
+      "batch",
       "--stage-from-hf"
     ],
-    "git_commit": "ed49b2d5",
-    "git_dirty": false,
+    "git_commit": "21b095a5",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_batch.json",
+      "eval_results/issue_2378/kept/storyq_astra.json",
+      "eval_results/issue_2378/kept/storyq_dana.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_judge.py"
   }

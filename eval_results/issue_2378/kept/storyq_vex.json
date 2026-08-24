@@ -1,11 +1,11 @@
 {
   "cell": "storyq_vex",
   "family": "question",
-  "n_items": 8095,
-  "n_admitted": 5792,
+  "n_items": 9461,
+  "n_admitted": 6784,
   "admit_threshold": 50,
   "drop_counts": {
-    "below_threshold": 2300,
+    "below_threshold": 2674,
     "api_refusal": 3
   },
   "admitted": [
@@ -23176,22 +23176,4006 @@
     {
       "row_id": "storyq_vex_w1_a029994",
       "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000000",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000002",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000007",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000009",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000012",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000021",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000034",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000045",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000046",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000053",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000054",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000064",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000073",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000076",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000083",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000091",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000092",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000094",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000102",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000103",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000112",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000113",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000120",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000122",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000125",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000126",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000127",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000129",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000130",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000135",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000136",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000141",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000146",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000151",
+      "score": 92
+    },
+    {
+      "row_id": "storyq_vex_w2_a000156",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000159",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000165",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000167",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a000168",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000173",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000180",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000187",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000189",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000190",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000192",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000194",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000196",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000241",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000246",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000247",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000253",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000260",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000263",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000272",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000273",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000283",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000289",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000294",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000295",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000319",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000322",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000332",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000353",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000356",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000357",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000365",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a000375",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000378",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000379",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000392",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000393",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000400",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000409",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000410",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000411",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000415",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000417",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000418",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000427",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000428",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000429",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000441",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000451",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000462",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000463",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000464",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000466",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000467",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000471",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000473",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000474",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000476",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000479",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000487",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000490",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000493",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000495",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000499",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000504",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000505",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000514",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000521",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000523",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000529",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000536",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000537",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000539",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000548",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000559",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000560",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000566",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000570",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a000572",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000574",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000584",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000586",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000588",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000604",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000614",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000619",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000633",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000646",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000650",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000652",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000658",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000665",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000676",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000681",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000691",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000692",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000700",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000702",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000705",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000710",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000711",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000715",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000719",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000736",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000737",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000738",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000742",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000743",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a000746",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000748",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000759",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000767",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000771",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a000772",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000777",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000786",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a000790",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000797",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000798",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000805",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000807",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000809",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000813",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a000820",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000829",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000834",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000837",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000843",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000845",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000851",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000854",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000855",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a000857",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a000863",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000865",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000868",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000871",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000875",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000876",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a000881",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000884",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000893",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000895",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000898",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000899",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000907",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000911",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000920",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000927",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000936",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000941",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000942",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000943",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000945",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a000947",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000952",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a000962",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000963",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000978",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000985",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a000995",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a001007",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001022",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001025",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001028",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a001030",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001034",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001041",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001045",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001054",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001057",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001058",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001064",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001066",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001067",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001069",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001074",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001081",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001089",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001093",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001099",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001105",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001115",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001116",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001117",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001122",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001123",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001125",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001128",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001129",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001130",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001136",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001146",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001154",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001156",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001159",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001161",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001164",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001168",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001171",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001172",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001177",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001185",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001186",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001197",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001201",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001205",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001207",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001209",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001210",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001217",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001221",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001226",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001236",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001239",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001241",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001249",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001252",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001266",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001267",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001277",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001280",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001285",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001286",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001289",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001298",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001299",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a001310",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001311",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001313",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001316",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001319",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001327",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001336",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001337",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a001339",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001353",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001364",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001373",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001376",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001379",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001387",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001404",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001409",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001410",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001412",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001414",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001416",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001418",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001425",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001427",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001435",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001444",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001446",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001449",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001451",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001453",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001457",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001459",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001471",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001472",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001480",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001486",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001492",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001493",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001500",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001506",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001509",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001513",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001519",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001524",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001532",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001537",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001539",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001540",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001546",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001555",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001567",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001585",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001591",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001593",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001596",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001599",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001609",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001613",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001617",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001623",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001627",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001631",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001638",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001644",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001646",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001649",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001650",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001655",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001668",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001673",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001676",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001679",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001684",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001685",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001689",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001690",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001692",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001695",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001696",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001698",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001701",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a001708",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001715",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001717",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001718",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001721",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001724",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001737",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001739",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001740",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001744",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001746",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001753",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001764",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001769",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001771",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001774",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001778",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001780",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001784",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001791",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001796",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001802",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a001807",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001815",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001816",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001819",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001824",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001844",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001851",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001861",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001863",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001868",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001871",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001875",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001887",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001893",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a001899",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001902",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001908",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001913",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001933",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a001941",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001944",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001948",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001952",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a001970",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001971",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001977",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001984",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a001985",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a001990",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a001996",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002001",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002004",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002007",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002010",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002017",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002025",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002026",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002027",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002030",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002032",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002033",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002037",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002052",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002058",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002060",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002062",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002066",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002071",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002072",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002080",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002084",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002098",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002100",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002113",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002129",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002133",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002138",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002143",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002147",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002150",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002153",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a002155",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002159",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002170",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002179",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002185",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002188",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002202",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002203",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002210",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002212",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002217",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002220",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002223",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002224",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002230",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002233",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002236",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002238",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002243",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002253",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002261",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002264",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002274",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002277",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002280",
+      "score": 92
+    },
+    {
+      "row_id": "storyq_vex_w2_a002285",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002288",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002291",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002296",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002299",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002301",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002305",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002306",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002310",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002318",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002331",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002336",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002340",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002343",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002350",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002351",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002354",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002357",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002359",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002361",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002363",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002372",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002383",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002388",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002396",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002398",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002414",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002418",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002425",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002431",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002433",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002436",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002437",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002442",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002443",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002444",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002450",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002464",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002467",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002470",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002471",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002472",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002475",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002478",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002482",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002494",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002499",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002500",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002512",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002516",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002521",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002525",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002533",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002539",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002544",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002554",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002565",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002567",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002569",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002575",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002583",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002589",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002598",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002600",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002620",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002621",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002623",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002626",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002627",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002629",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002634",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002639",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002643",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002650",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002653",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002660",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002661",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002670",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002672",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002693",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002707",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002713",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002720",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002723",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002726",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002747",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002748",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002751",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002755",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002757",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002759",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002784",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002789",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002791",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002797",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002801",
+      "score": 92
+    },
+    {
+      "row_id": "storyq_vex_w2_a002803",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002808",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002814",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002816",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002819",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002822",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002833",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002843",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002854",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002861",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002870",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002881",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002884",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002886",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002887",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a002889",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002895",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002898",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002900",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002902",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002905",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002910",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002913",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002919",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002921",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002926",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002927",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002929",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002940",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002942",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002946",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a002955",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a002956",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002971",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002977",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002978",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a002991",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002995",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a002996",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003001",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003007",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003010",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003018",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003024",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003033",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003040",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003043",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003044",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003045",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003048",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003054",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003070",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003076",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003081",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003089",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003113",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003120",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003122",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003124",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003127",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003129",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003130",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003131",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003143",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003146",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003155",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003159",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003163",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003168",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003176",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003177",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003179",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003181",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003183",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003184",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003204",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003207",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003208",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003220",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003222",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003227",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003232",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003234",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003246",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003255",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003257",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003259",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003260",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003266",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003272",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003273",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003281",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003284",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003287",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003290",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003306",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003309",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003319",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003329",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003337",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003338",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003340",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003344",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003346",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003351",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003354",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003356",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003365",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003376",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003377",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003383",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003386",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003387",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003389",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003392",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003395",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003398",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003401",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003404",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003407",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003409",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003413",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003416",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003417",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003420",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003425",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003427",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003432",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003434",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003450",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003451",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003459",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003461",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003464",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003465",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003466",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003474",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003477",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003487",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003491",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003499",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003501",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003514",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003517",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003522",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003523",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003531",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003536",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003539",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003541",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003546",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003557",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003559",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003560",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003564",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003567",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003568",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003569",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003576",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003583",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003588",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003603",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003608",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003609",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003610",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003616",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003617",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003620",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003633",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003637",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003639",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003648",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003650",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003652",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003657",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003664",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003666",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003674",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003676",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003681",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003684",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003695",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003698",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003699",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003700",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003702",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003706",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003713",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003716",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003720",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003721",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003727",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003728",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003735",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003738",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003744",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003745",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003746",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003747",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003750",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003755",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003758",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003763",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003764",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003765",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003776",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003782",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003784",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003789",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003799",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003802",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003803",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003805",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003807",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003809",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003817",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003835",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003836",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003838",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003840",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003842",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003861",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003862",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003864",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003867",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003870",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003872",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003877",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003888",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003895",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003905",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003908",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003911",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003917",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003919",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003923",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003932",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003936",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a003937",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003943",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003945",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003947",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003951",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003953",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003954",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a003970",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003978",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a003982",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003990",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003994",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a003998",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a003999",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004008",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004011",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004014",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004016",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004017",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004020",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004040",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004051",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004054",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004055",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004067",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004068",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004070",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004085",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004086",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004092",
+      "score": 92
+    },
+    {
+      "row_id": "storyq_vex_w2_a004102",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004118",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004125",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004133",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004138",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004139",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004141",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004148",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004149",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004150",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004157",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004159",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004170",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004172",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a004176",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004180",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004181",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004194",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004195",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004201",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004208",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004213",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004217",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004219",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004224",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004229",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004234",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a004241",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004244",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004245",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004249",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004250",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004252",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004254",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004257",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004267",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004279",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004283",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004287",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004288",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004297",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004299",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004303",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004311",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004314",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004315",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004321",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004324",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004343",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004354",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004359",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004374",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004383",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004389",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004391",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004421",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004428",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004432",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004437",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004442",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004443",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004446",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004460",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a004462",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004464",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004473",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004474",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004478",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004482",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004483",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004486",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a004502",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004503",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004508",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004515",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004517",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004521",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004522",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004524",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004530",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004533",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004537",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004539",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004540",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004545",
+      "score": 72
+    },
+    {
+      "row_id": "storyq_vex_w2_a004552",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004564",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004574",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004585",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004586",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004588",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004592",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004593",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004594",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004596",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004599",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004604",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004605",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004614",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004624",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004630",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004635",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004639",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004640",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004641",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004643",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004645",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004647",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004654",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004657",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004666",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004668",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004675",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004681",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004684",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004697",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004703",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004707",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004708",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004712",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004721",
+      "score": 92
+    },
+    {
+      "row_id": "storyq_vex_w2_a004726",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004733",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004741",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004743",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004751",
+      "score": 92
+    },
+    {
+      "row_id": "storyq_vex_w2_a004753",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004754",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004759",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004770",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a004772",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004775",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004784",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004787",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004788",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004794",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004795",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004798",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004799",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_vex_w2_a004804",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004807",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004809",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004811",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004812",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004823",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004832",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004836",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a004839",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004846",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004855",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004872",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004873",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004878",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004879",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004886",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004898",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004899",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004901",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004902",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004909",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004929",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004932",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004937",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004940",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004941",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004942",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004948",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_vex_w2_a004960",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004962",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_vex_w2_a004969",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004973",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004976",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004977",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004978",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_vex_w2_a004984",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004988",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004994",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_vex_w2_a004999",
+      "score": 100
     }
   ],
+  "extend": {
+    "n_prior": 5792,
+    "n_new_admitted": 6784,
+    "n_new_only": 992,
+    "n_merged": 6784,
+    "n_prior_readmitted": 5792,
+    "n_prior_not_readmitted": 0
+  },
   "judge_model": "claude-sonnet-4-5-20250929",
   "rubric_sha": "28b5a61cfc267d00",
   "metadata": {
     "issue": 2378,
-    "timestamp": "2026-08-23T18:16:55-0700",
+    "timestamp": "2026-08-24T03:13:24-0700",
     "python": "3.12.13",
     "argv": [
-      "scripts/issue2378_judge.py",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_judge.py",
       "--wave",
       "admission",
+      "--transport",
+      "batch",
       "--stage-from-hf"
     ],
-    "git_commit": "ed49b2d5",
-    "git_dirty": false,
+    "git_commit": "21b095a5",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_batch.json",
+      "eval_results/issue_2378/kept/storyq_astra.json",
+      "eval_results/issue_2378/kept/storyq_dana.json",
+      "eval_results/issue_2378/kept/storyq_helios.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_judge.py"
   }

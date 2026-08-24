@@ -14,16 +14,16 @@
       "storyq_astra": {
         "valid": 42
       },
-      "storyq_wren": {
+      "storyq_helios": {
         "valid": 42
       },
-      "storyq_dana": {
+      "storyq_wren": {
         "valid": 42
       },
       "storyq_vex": {
         "valid": 42
       },
-      "storyq_helios": {
+      "storyq_dana": {
         "valid": 42
       }
     },
@@ -36,10 +36,10 @@
   "rubric_sha": "28b5a61cfc267d00",
   "metadata": {
     "issue": 2378,
-    "timestamp": "2026-08-23T18:01:35-0700",
+    "timestamp": "2026-08-24T03:04:21-0700",
     "python": "3.12.13",
     "argv": [
-      "scripts/issue2378_judge.py",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_judge.py",
       "--wave",
       "admission",
       "--pilot",
@@ -48,7 +48,7 @@
       "batch",
       "--stage-from-hf"
     ],
-    "git_commit": "849e2941",
+    "git_commit": "21b095a5",
     "git_dirty": false,
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_judge.py"

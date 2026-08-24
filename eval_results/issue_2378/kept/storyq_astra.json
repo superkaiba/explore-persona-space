@@ -28526,20 +28526,33 @@
       "score": 100
     }
   ],
+  "extend": {
+    "n_prior": 7129,
+    "n_new_admitted": 7129,
+    "n_new_only": 0,
+    "n_merged": 7129,
+    "n_prior_readmitted": 7129,
+    "n_prior_not_readmitted": 0
+  },
   "judge_model": "claude-sonnet-4-5-20250929",
   "rubric_sha": "28b5a61cfc267d00",
   "metadata": {
     "issue": 2378,
-    "timestamp": "2026-08-23T18:16:52-0700",
+    "timestamp": "2026-08-24T03:13:22-0700",
     "python": "3.12.13",
     "argv": [
-      "scripts/issue2378_judge.py",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_judge.py",
       "--wave",
       "admission",
+      "--transport",
+      "batch",
       "--stage-from-hf"
     ],
-    "git_commit": "ed49b2d5",
-    "git_dirty": false,
+    "git_commit": "21b095a5",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_batch.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_judge.py"
   }

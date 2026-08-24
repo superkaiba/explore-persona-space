@@ -2,8 +2,8 @@
   "tally": {
     "per_family": {
       "question": {
-        "valid": 42580,
-        "api_refusal": 27
+        "valid": 47513,
+        "api_refusal": 31
       }
     },
     "per_cell": {
@@ -12,15 +12,15 @@
         "api_refusal": 4
       },
       "storyq_dana": {
-        "valid": 5791,
-        "api_refusal": 1
+        "valid": 9206,
+        "api_refusal": 5
       },
       "storyq_helios": {
-        "valid": 9007,
+        "valid": 9159,
         "api_refusal": 9
       },
       "storyq_vex": {
-        "valid": 8092,
+        "valid": 9458,
         "api_refusal": 3
       },
       "storyq_wren": {
@@ -29,22 +29,32 @@
       }
     },
     "stop_reasons": {
-      "end_turn": 42580,
-      "refusal": 27
+      "end_turn": 47513,
+      "refusal": 31
     }
   },
   "metadata": {
     "issue": 2378,
-    "timestamp": "2026-08-23T18:16:58-0700",
+    "timestamp": "2026-08-24T03:13:25-0700",
     "python": "3.12.13",
     "argv": [
-      "scripts/issue2378_judge.py",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_judge.py",
       "--wave",
       "admission",
+      "--transport",
+      "batch",
       "--stage-from-hf"
     ],
-    "git_commit": "ed49b2d5",
-    "git_dirty": false,
+    "git_commit": "21b095a5",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_batch.json",
+      "eval_results/issue_2378/kept/storyq_astra.json",
+      "eval_results/issue_2378/kept/storyq_dana.json",
+      "eval_results/issue_2378/kept/storyq_helios.json",
+      "eval_results/issue_2378/kept/storyq_vex.json",
+      "eval_results/issue_2378/kept/storyq_wren.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_judge.py"
   }
