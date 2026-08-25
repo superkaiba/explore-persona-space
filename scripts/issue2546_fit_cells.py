@@ -1935,9 +1935,19 @@ def run_selftest() -> int:
             next(u for u in units if u.kind == "traj"),
             next(u for u in units if u.kind == "ladder" and "gsm8k_train" in u.unit_id),
             next(u for u in units if u.kind == "reliability"),
+            # every registry KIND exercised at smoke n (smoke-architecture per-arm rows):
+            next(u for u in units if u.kind == "operator"),
+            next(u for u in units if u.unit_id == "ood_does2doesnt__a1"),
         ]
         rc = run_units(args, prof, picks)
         assert rc == 0
+        op = json.loads((root / "out" / "ladder" / "operator_comparison__a1.json").read_text())
+        assert op["status"] == "ok", op
+        assert -1.0 <= op["direction_aware"]["raw_cosine_with_rotation_null"]["raw_cosine"] <= 1.0
+        assert 0.0 <= op["rotation_invariant_only"]["spectrum_cosine"] <= 1.0 + 1e-9
+        ood = json.loads((root / "out" / "cells" / "ood_does2doesnt__a1.json").read_text())
+        assert ood["status"] == "ok", ood
+        assert np.isfinite(ood["transfer_r2"]) and ood["knn_identity"]["euclidean"]["acc_at_k"]
         a_json = json.loads((root / "out" / "cells" / "p7_A__does__a1.json").read_text())
         assert a_json["status"] == "ok" and a_json["floor_check"] == "smoke-demoted"
         assert a_json["knn_content"] is not None
