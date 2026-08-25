@@ -12204,8 +12204,8 @@
     "2583": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2583",
-      "status": "proposed",
+      "path": "tasks/archived/2583",
+      "status": "archived",
       "title": "workflow-fix: canonical Codex review-dispatch snippet omits --no-write, so doubled review sites run write-enabled"
     },
     "259": {
