@@ -1,7 +1,7 @@
 {
-  "commit": "09bf0809+dirty",
-  "render_id": "a15bbb7dbfc440b1",
-  "git_commit": "09bf0809523be4ada18ba13d41035c5d1145b011",
+  "commit": "819695ef+dirty",
+  "render_id": "276de36ed4e64f1f",
+  "git_commit": "819695ef63e6869a75238c39145fce7858f5c802",
   "git_dirty": true,
   "git_dirty_paths": [
     "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
@@ -9,13 +9,9 @@
     "figures/issue_2356/flippair_2afc.meta.json",
     "figures/issue_2356/flippair_2afc.pdf",
     "figures/issue_2356/flippair_2afc.png",
-    "figures/paper/c1_stage_ladder_arms.meta.json",
-    "figures/paper/c1_stage_ladder_arms.pdf",
-    "figures/paper/c1_stage_ladder_arms.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
-    "scripts/issue1902_figures.py",
     "scripts/issue2054_paper_r2_figs.py",
     "scripts/issue2356_flippair_2afc.py",
     "scripts/issue2356_flippair_figures.py",
@@ -35,7 +31,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2054_paper_r2_figs.py",
-  "created": "2026-08-25T20:11:25Z",
+  "created": "2026-08-25T21:26:00Z",
   "figsize": [
     5.5,
     4.4
@@ -235,7 +231,7 @@
           "trained on this speaker alone",
           "trained on everything",
           "trained on everything + constant shift",
-          "trained on everything + global rescaling",
+          "trained on everything + shift and rescaling",
           "identity + bias baseline"
         ],
         "yticklabels": [
@@ -273,7 +269,7 @@
       "trained on this speaker alone",
       "trained on everything",
       "trained on everything + constant shift",
-      "trained on everything + global rescaling"
+      "trained on everything + shift and rescaling"
     ]
   },
   "formats_written": [
