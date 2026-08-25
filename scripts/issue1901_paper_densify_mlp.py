@@ -21,15 +21,17 @@ batch 4096, max 300 epochs — the banked constants; NOTE the banked
 #1491 n=25k point used lr 1e-3 / max 50 epochs, a recipe seam recorded
 in the output meta), evaluated on the ladder's pinned test_1000.
 
-Job C — mlp-scaling-densify (#1901 follow-up round, plan v13 §4): one
+Job C — mlp-scaling-densify (#1901 follow-up round, plan v15 §4): one
 dense L19 scaling ladder, 8 fresh rungs {5k, 10k, 25k, 50k, 100k, 150k,
 250k, 500k} + the banked 963k apply point, with mlp_w8192 AND ridge fit
-on IDENTICAL train subsets per rung (scale7 rungs = seeded permutation
-prefixes of train_25k; n1m rungs = ``N1M.select_train`` lmsys draws
-under PYTHONHASHSEED=0 / --seed-b 0), plus the blockwise identity+bias
-baseline. Gates: G1 cross-store fold identity (scale7 val/test Y rows
-content-equal to the n1m pinned rows at L19, ≤2e-3 fp16-cast bound,
-abort on fail); G2 RECORDED three-state sel-sha comparison vs the
+on IDENTICAL train subsets per rung — ALL fresh rungs are within-store
+``N1M.select_train`` lmsys draws under PYTHONHASHSEED=0 / --seed-b 0
+(the v13 scale7-prefix sourcing is REMOVED: the 2026-08-25 on-pod G1
+measurement refuted cross-store fold identity — 0/400 exact matches,
+max|Δ| ≈ 37 vs the 2e-3 fp16-cast bound — so the output gates record
+carries the static ``g1_cross_store`` provenance field instead of a
+runtime gate; G1_CROSS_STORE below), plus the blockwise identity+bias
+baseline. Gates: G2 RECORDED three-state sel-sha comparison vs the
 banked bigN refits (PASS / FALLBACK-PARITY-PASS at --parity-tol /
 FAIL ⇒ halt — testable pure function ``_g2_gate``); G3 whitened-CSLS
 pool floor (n_pool ≥ K_CSLS+2). Every rung×arm cell reports the
@@ -40,8 +42,11 @@ diagnostic). Per-cell fingerprinted resume (sel_sha + code sha + store
 revision + PYTHONHASHSEED + seeds + recipe — field-for-field, never
 bare existence), checkpoint-per-cell perfit JSONs, fp16 test-pool
 prediction npz staged for HF ``issue1901_mlpdense/analysis_tensors/``.
-``--smoke-chunks 4`` = tiny-real smoke (rungs {1k scale7-prefix,
-2k n1m-lmsys}), full production path, ``*_smoke`` output names.
+Phase c5 additionally writes the machine-readable supersession record
+``superseded_cross_store_join.json`` (plan v15 §10 — the refuted
+cross-store join + its tracked consumers). ``--smoke-chunks 4`` =
+tiny-real smoke (rungs {1k n1m-lmsys, 2k n1m-lmsys — the 2k rung is the
+seedwise endpoint}), full production path, ``*_smoke`` output names.
 
 Per cell, all jobs report: pooled test R^2 + 95% bootstrap CI
 (n_boot=1000), val R^2 on the pinned val_400, kNN retrieval
@@ -141,8 +146,17 @@ WEIGHTS_L19_PREFIX = f"{BAT.WEIGHTS_PREFIX}/L19"  # issue779_monitoring/n1m_read
 WHITEN_LAMBDA = 0.1  # task-locked shrinkage (issue2202 convention; plan §4 c2)
 WHITEN_BLOCK = 65_536  # fp64 accumulation block (rows) for the pool cov/mean passes
 IB_BLOCK = 65_536  # identity+bias blocked accumulation (plan §9 LARGEST-CELL keying)
-DENSE_SCALE7_MAX_N = 25_000  # rungs ≤ this fit on the scale7 store; larger on the n1m capture
 DENSE_ENDPOINT_NS = (50_000, 500_000)  # 3-seed MLP dispersion endpoints (plan §4 c3)
+# Plan v15 within-store pivot: ALL fresh rungs draw from the n1m lmsys pool via
+# N1M.select_train (the scale7-prefix sourcing + G1 runtime gate are removed).
+# The gates record carries this static provenance field instead of a runtime G1.
+G1_CROSS_STORE = (
+    "refuted-2026-08-25 — scale7 eval pools are not the n1m pinned rows; see "
+    "epm:progress 2026-08-25T03:18:29Z + artifacts/mlpdense-smoke-r3-g1fail.log"
+)
+# c0 weights staging narrows to the two payloads job C actually consumes
+# (plan §9 arithmetic ~0.29 GB vs the full 2.8 GB L19 prefix).
+WEIGHTS_L19_FILES = ("mlp_w8192.pt", "ridge.pt")
 # Registered run-shape expectations (plan v13 §0/§3/§9/§10). _validate_run_shape
 # asserts the REALIZED shape against the invocation mode's OWN registered set
 # BEFORE any whitening/fit compute — production AND smoke each carry explicit
@@ -151,7 +165,7 @@ PRODUCTION_DENSE_NS = (5_000, 10_000, 25_000, 50_000, 100_000, 150_000, 250_000,
 PRODUCTION_SEED_SET = frozenset({42, 43, 44})  # OPT-1 endpoint replication (plan §3)
 PRODUCTION_CAPTURE_FILES = 1_920  # n1m capture chunk universe (plan §9, Hub-measured)
 PRODUCTION_POOL_FULL = 963_444  # train pool = 3,600 pass_b-train + 959,844 captured (plan §9)
-SMOKE_RUNG_SPECS = ((1_000, "scale7"), (2_000, "n1m"))  # plan §4 registered smoke rungs
+SMOKE_RUNG_SPECS = ((1_000, "n1m"), (2_000, "n1m"))  # plan §4 (v15) registered smoke rungs
 DENSE_GAP_MARGIN = 0.01  # plan §3: D_gap = (S_mlp − S_ridge) − 0.01
 MIXED1M_APPLY_TOL = 1e-3  # deterministic banked-weights apply parity (plan §7 kill criterion 3)
 # Advisory wall check after the first n1m rung (50k): plan §9 basis ≈ mlp ~60 s + ridge
@@ -184,39 +198,14 @@ BANKED_BATTERY_CONTEXT_JSON = (
 )
 
 
-def _ladder_ridge_25k(d: dict) -> float:
-    """The banked #1901 ladder ridge cell at n_train=25,000 (prefix draw)."""
-    for cell in d["cells"]:
-        if cell.get("n_train") == 25_000 and cell.get("draw") == "prefix":
-            return float(cell["ridge"]["test_r2"])
-    raise KeyError("ladder n_train=25000 prefix ridge cell not found in scaling_ladder_L19.json")
-
-
 # (arm, n) -> (banked json path, extractor, pasted value, kind). kind semantics
-# (plan §4 c3 / §7): "fold-exact" halts on |Δ| > tol in production;
+# (plan §4 c3 / §7, v15): the v13 "fold-exact" scale7 anchors are REMOVED with
+# the scale7 sourcing (no fresh rung shares a banked fold exactly);
 # "sha-conditional" halts only when the rung's realized sel-sha matches the
 # recorded bigN selection (sel-sha-exact ⇒ fit-machinery drift, criterion-3
 # class); "statistical" is recorded, never a halt (different selection
 # realization is possible; G2 owns the mismatch disposition).
 DENSE_PARITY_ANCHORS = {
-    ("mlp", 5_000): (
-        BANKED_MLP_SCALING_JSON,
-        lambda d: d["per_n"]["5000"]["test_r2"],
-        0.6661844181705912,
-        "fold-exact",
-    ),
-    ("mlp", 10_000): (
-        BANKED_MLP_SCALING_JSON,
-        lambda d: d["per_n"]["10000"]["test_r2"],
-        0.6945270264582182,
-        "fold-exact",
-    ),
-    ("ridge", 25_000): (
-        BANKED_LADDER_CELLS_JSON,
-        _ladder_ridge_25k,
-        0.7250873308449972,
-        "fold-exact",
-    ),
     ("mlp", 150_000): (
         PD.BANKED_N1M_FITS,
         lambda d: d["per_point"]["lmsys_150k"]["predictors"]["mlp_w8192"]["whole_map_r2"],
@@ -568,7 +557,9 @@ def _read_memtotal_gb() -> float:
 def _stage_job_c(args, smoke: bool):
     """Phase c0: stage capture + pass_b + banked weights under stage_root, with
     a resume-aware fallocate headroom probe, the MemTotal floor, and the
-    realized-keys check on the banked weight payloads. Returns
+    realized-keys check on the banked weight payloads. The weights stage is
+    NARROWED to the two consumed payloads (WEIGHTS_L19_FILES, ~0.29 GB vs the
+    2.8 GB full L19 prefix — plan v15 §9). Returns
     (capture_dir, pass_b_path, weights_dir, store_revision)."""
     stage_root: Path = args.stage_root
     stage_root.mkdir(parents=True, exist_ok=True)
@@ -650,13 +641,15 @@ def _stage_job_c(args, smoke: bool):
     # resumed pod whose capture already occupies the quota is not dead-locked
     # by a fresh-run-sized floor. fallocate canary catches MooseFS EDQUOT.
     prefixes = [
-        (N1M_CAPTURE_PREFIX, args.smoke_chunks if smoke else None),
-        (PASS_B_STAGE_PREFIX, None),
-        (WEIGHTS_L19_PREFIX, None),
+        (N1M_CAPTURE_PREFIX, args.smoke_chunks if smoke else None, None),
+        (PASS_B_STAGE_PREFIX, None, None),
+        (WEIGHTS_L19_PREFIX, None, WEIGHTS_L19_FILES),
     ]
     pending = 0
-    for prefix, max_files in prefixes:
+    for prefix, max_files, only_files in prefixes:
         files = PD._list_prefix(prefix, revision=store_revision)
+        if only_files is not None:
+            files = PD.filter_listing_only_files(files, only_files, prefix)
         if max_files is not None:
             files = files[:max_files]
         pending += sum(
@@ -678,7 +671,11 @@ def _stage_job_c(args, smoke: bool):
         PASS_B_STAGE_PREFIX, stage_root, workers=args.stage_workers, revision=store_revision
     )
     weights_dir = PD.stage_prefix(
-        WEIGHTS_L19_PREFIX, stage_root, workers=args.stage_workers, revision=store_revision
+        WEIGHTS_L19_PREFIX,
+        stage_root,
+        workers=args.stage_workers,
+        revision=store_revision,
+        only_files=WEIGHTS_L19_FILES,
     )
     # Realized-keys check on the banked weight payloads (plan §10 fitness (f);
     # reuses the battery's apply_map-contract checker — mmap read, fail loud).
@@ -716,47 +713,6 @@ def _assemble_n1m(args, capture_dir: Path, pass_b_path: Path, store_revision: st
     X, Y, prov, r1_train, val, test, split = N1M.assemble(ns, layer=19)
     pools = N1M._pool_rows(prov, r1_train, X.shape[0], val, test)
     return X, Y, pools, val, test, split
-
-
-def _g1_fold_identity(asm: dict, Y_n1m: np.ndarray, val_ids, test_ids) -> dict:
-    """Gate G1 (plan §4 c1): the scale7 store's val/test Y rows must be
-    content-equal to the n1m capture's pinned rows at L19 — max |Δ| ≤ 2e-3
-    (fp16-cast bound; ≤1e-6 recorded when the store is not fp16-cast).
-    Abort (RuntimeError) on any id-set or content mismatch."""
-    rows = {}
-    worst = 0.0
-    for label, s7_rows, cis_key, n1m_ids in (
-        ("val", asm["val"], "val_400", val_ids),
-        ("test", asm["te"], "test_1000", test_ids),
-    ):
-        cis = np.asarray(asm["cis"][cis_key], dtype=np.int64)
-        ids = np.asarray(n1m_ids, dtype=np.int64)
-        if sorted(cis.tolist()) != sorted(ids.tolist()):
-            raise RuntimeError(
-                f"G1 FAIL: scale7 {cis_key} context-id set != n1m {label} id set "
-                f"(n_scale7={len(cis)}, n_n1m={len(ids)})"
-            )
-        pos = {int(c): i for i, c in enumerate(cis)}
-        order = np.array([pos[int(i)] for i in ids], dtype=np.int64)
-        a = np.asarray(asm["Y"][np.asarray(s7_rows)[order]], dtype=np.float64)
-        b = np.asarray(Y_n1m[ids], dtype=np.float64)
-        m = float(np.max(np.abs(a - b)))
-        rows[label] = {
-            "max_abs_diff": m,
-            "n": int(len(ids)),
-            "within_1e-6": bool(m <= 1e-6),
-        }
-        worst = max(worst, m)
-    verdict = {
-        "pass": bool(worst <= 2e-3),
-        "worst_max_abs_diff": worst,
-        "tol_fp16_cast": 2e-3,
-        "per_split": rows,
-    }
-    if not verdict["pass"]:
-        raise RuntimeError(f"G1 FAIL (cross-store fold identity): {json.dumps(verdict)}")
-    logger.info("[job-c] G1 PASS %s", json.dumps(verdict))
-    return verdict
 
 
 def _blocked_mean(arr, rows, dev, block: int, phase: str) -> np.ndarray:
@@ -1133,6 +1089,75 @@ def _annotate_g2_percell(out_dir: Path, perfit_tag: str, g2: GateVerdict) -> lis
     return annotated
 
 
+def _dense_rung_specs(dense_ns, smoke: bool) -> list[tuple[int, str]]:
+    """Rung plan (plan v15 §4): production = every --dense-ns rung as a
+    within-store n1m lmsys draw (sorted, deduped); smoke = the registered
+    SMOKE_RUNG_SPECS verbatim. Pure — asserts nothing (the registered-set
+    checks live in run_job_c / _validate_run_shape)."""
+    if smoke:
+        return [(int(n), s) for n, s in SMOKE_RUNG_SPECS]
+    return [(int(n), "n1m") for n in sorted(set(int(n) for n in dense_ns))]
+
+
+def _superseded_join_record() -> dict:
+    """The plan v15 §10 supersession record: the v13 cross-store join (scale7
+    prefix rungs plotted as one ladder with the n1m bigN points) is REFUTED —
+    the scale7 eval pools are not the n1m pinned rows — and the within-store
+    dense ladder (mlp_scaling_dense_L19.json) replaces it. The banked JSONs
+    stay valid WITHIN their own store/folds; only the cross-store join is
+    superseded. Consumers enumerated at implementation time via
+    `grep -rl 'scaling_bigN_acc1_L19.json\\|scaling_ladder_L19.json\\|mlp_scaling_L19.json'`
+    over docs/ + scripts/ (producers + tasks/ excluded)."""
+    return {
+        "kind": "superseded-cross-store-join",
+        "superseded_join": {
+            "what": (
+                "the v13 cross-store scaling join: scale7-prefix rungs (5k-25k, "
+                "issue1491_scale_ladder/scale7_refit folds) plotted as ONE ladder with "
+                "the n1m capture bigN points (150k/500k/963k)"
+            ),
+            "why_refuted": (
+                "G1 cross-store fold identity FAILED on-pod 2026-08-25: 0/400 scale7 "
+                "val rows content-equal to the n1m pinned rows at L19 (max |dY| ~ 37 vs "
+                "the 2e-3 fp16-cast bound) — the two stores' eval pools are different "
+                "rows, so cross-store cells are not on one comparable ladder"
+            ),
+            "banked_files": [
+                str(BANKED_BIGN_JSON.relative_to(FFC.PROJECT_ROOT)),
+                str(BANKED_LADDER_CELLS_JSON.relative_to(FFC.PROJECT_ROOT)),
+                str(BANKED_MLP_SCALING_JSON.relative_to(FFC.PROJECT_ROOT)),
+            ],
+            "disposition": (
+                "each banked JSON stays valid WITHIN its own store/folds; any figure or "
+                "claim joining scale7 cells with n1m cells on one x-axis is superseded by "
+                "the within-store dense ladder"
+            ),
+        },
+        "evidence": [
+            "task #1901 events.jsonl epm:progress 2026-08-25T03:18:29Z (G1 FAIL note)",
+            "tasks/<status>/1901/artifacts/mlpdense-smoke-r3-g1fail.log",
+        ],
+        "replacement_artifact": (
+            "eval_results/issue_1901/paper_densify/mlp_scaling_dense_L19.json "
+            "(all 8 fresh rungs within-store n1m lmsys draws; plan v15 §4/§10)"
+        ),
+        "consumers": [
+            "docs/paper_context_answer_map/claims.md (C1 main row)",
+            "scripts/issue1901_body_figures.py (fig_paper_c1_scaling; reads all three)",
+            "docs/posters/mats_2026/make_plot1_scaling.py (reads scaling_ladder_L19.json)",
+            "docs/posters/mats_2026/csls_rescore.py (validates vs scaling_ladder_L19.json)",
+            "scripts/issue1901_boundary_token_control.py (banked ladder/bign inputs)",
+            "docs/methodology/issue_1901.md (names the draw convention)",
+        ],
+        "consumer_resolution": (
+            "grep -rl over the three banked filenames across the repo at implementation "
+            "time (2026-08-25); producers issue1901_paper_densify{,_mlp}.py and tasks/** "
+            "excluded"
+        ),
+        "recorded_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
 def run_job_c(args, dev, out_path: Path) -> dict:
     smoke = args.smoke_chunks > 0
     if os.environ.get("PYTHONHASHSEED") != "0":
@@ -1169,13 +1194,15 @@ def run_job_c(args, dev, out_path: Path) -> dict:
         "[job-c] ru_maxrss after c1 assemble: %.1f GB",
         resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6,
     )
-    asm = LF._assemble_scale_layer(
-        args.ladder_hf_prefix, 19, args.cache_dir, revision=store_revision
-    )
     n_capture_files = len(list(capture_dir.glob("shard*_chunk*.pt")))
 
     gates: dict = {}
-    gates["G1"] = _g1_fold_identity(asm, Y, val, test)
+    # Plan v15: G1 is RETIRED as a runtime gate — the 2026-08-25 on-pod
+    # measurement refuted cross-store fold identity (0/400 exact matches), so
+    # the scale7 store is no longer consumed and the gates record carries the
+    # static provenance field below (plan §7 acceptance:
+    # .gates.g1_cross_store | startswith("refuted-2026-08-25")).
+    gates["g1_cross_store"] = G1_CROSS_STORE
     k_csls = BAT.K_CSLS
     gates["G3"] = {
         "n_pool": int(len(test)),
@@ -1186,22 +1213,19 @@ def run_job_c(args, dev, out_path: Path) -> dict:
         raise RuntimeError(f"G3 FAIL: n_pool={len(test)} < K_CSLS+2={k_csls + 2}")
     recorded_shas = _g2_recorded_shas()
 
-    # Rung plan. Smoke replaces the rung set (plan §4: {1k scale7-prefix,
-    # 2k n1m-lmsys}) and treats its n1m rung as the seed-dispersion endpoint so
-    # the seedwise code path executes at tiny n (production endpoints 50k/500k).
+    # Rung plan (plan v15 §4: every rung — smoke and production — is a
+    # within-store n1m lmsys draw). Smoke replaces the rung set with
+    # SMOKE_RUNG_SPECS and treats its 2k rung as the seed-dispersion endpoint
+    # so the seedwise code path executes at tiny n (production 50k/500k).
+    rung_specs = _dense_rung_specs(args.dense_ns, smoke)
     if smoke:
-        rung_specs = [(1_000, "scale7"), (2_000, "n1m")]
         endpoint_ns = {2_000}
     else:
-        rung_specs = [
-            (int(n), "scale7" if n <= DENSE_SCALE7_MAX_N else "n1m")
-            for n in sorted(set(args.dense_ns))
-        ]
         endpoint_ns = set(DENSE_ENDPOINT_NS) & {n for n, _ in rung_specs}
-        max_n1m = max((n for n, s in rung_specs if s == "n1m"), default=0)
-        if n_lmsys < max_n1m:
+        max_rung = max(n for n, _ in rung_specs)
+        if n_lmsys < max_rung:
             raise RuntimeError(
-                f"lmsys pool {n_lmsys} < largest n1m rung {max_n1m} — cannot realize the ladder"
+                f"lmsys pool {n_lmsys} < largest rung {max_rung} — cannot realize the ladder"
             )
 
     # C2: registered-shape validator — BEFORE any whitening/fit compute; each
@@ -1217,9 +1241,6 @@ def run_job_c(args, dev, out_path: Path) -> dict:
         n_pool_full=len(pool_full),
     )
     logger.info("[job-c] shape validator PASS: %s", json.dumps(gates["shape"]))
-
-    s7_rng = np.random.default_rng(args.seed)
-    s7_perm = s7_rng.permutation(len(asm["tr"]))
 
     C.phase("c2-whiten")
     whiten_npz = preds_dir / ("whiten_stats_L19_smoke.npz" if smoke else "whiten_stats_L19.npz")
@@ -1238,12 +1259,9 @@ def run_job_c(args, dev, out_path: Path) -> dict:
         "k_csls": int(k_csls),
         "knn_ks": list(KNN_KS),
     }
+    # Keyed by source so n1m fingerprints stay byte-compatible with round 3's
+    # (the v13 "scale7" entry is removed with the scale7 sourcing).
     fp_eval_shas = {
-        "scale7": {
-            "val_sha256": FFC._sha_ids(np.asarray(asm["val"], dtype=np.int64)),
-            "test_sha256": FFC._sha_ids(np.asarray(asm["te"], dtype=np.int64)),
-            "eval_store": args.ladder_hf_prefix,
-        },
         "n1m": {
             "val_sha256": split["val_sha256"],
             "test_sha256": split["test_sha256"],
@@ -1265,8 +1283,8 @@ def run_job_c(args, dev, out_path: Path) -> dict:
         "pythonhashseed": os.environ.get("PYTHONHASHSEED"),
         "store": {
             "n1m_capture_prefix": N1M_CAPTURE_PREFIX,
-            "scale7_prefix": args.ladder_hf_prefix,
             "weights_prefix": WEIGHTS_L19_PREFIX,
+            "weights_files": list(WEIGHTS_L19_FILES),
             "store_revision": store_revision,
             "stage_root": str(args.stage_root),
         },
@@ -1294,33 +1312,23 @@ def run_job_c(args, dev, out_path: Path) -> dict:
 
     for n, source in rung_specs:
         rung_t0 = time.time()
-        if source == "scale7":
-            if n > len(asm["tr"]):
-                raise RuntimeError(f"scale7 rung n={n} > train_25k pool {len(asm['tr'])}")
-            sub = np.sort(np.asarray(asm["tr"])[s7_perm[:n]])
-            sel_name = f"scale7_prefix_{n}"
-            sel_diag = {
-                "mode": "scale7-prefix",
-                "n_target": int(n),
-                "n_realized": int(len(sub)),
-                "subsample": "seeded permutation prefix of train_25k (default_rng(seed))",
-            }
-            Xs, Ys = asm["X"], asm["Y"]
-            val_idx, te_idx = asm["val"], asm["te"]
-        else:
-            sel_name = f"lmsys_{n // 1000}k"
-            sub, sel_diag = N1M.select_train(pools, sel_name, n, "lmsys", args.seed_b)
-            # C3: smoke-CALIBRATED expected count, never skip-under-smoke —
-            # select_train returns min(n_target, |pool|) rows, so the smoke's
-            # partial pool binds exactly at min(n, n_lmsys).
-            expected_n = n if not smoke else min(n, n_lmsys)
-            if len(sub) != expected_n:
-                raise RuntimeError(
-                    f"{sel_name}: realized train {len(sub)} != expected {expected_n} "
-                    f"(target {n}, lmsys pool {n_lmsys}, smoke={smoke})"
-                )
-            Xs, Ys = X, Y
-            val_idx, te_idx = val, test
+        # Plan v15: every rung is a within-store n1m lmsys draw (the v13
+        # scale7-prefix branch is removed with the store).
+        if source != "n1m":
+            raise RuntimeError(f"rung n={n}: source {source!r} != 'n1m' (plan v15 within-store)")
+        sel_name = f"lmsys_{n // 1000}k"
+        sub, sel_diag = N1M.select_train(pools, sel_name, n, "lmsys", args.seed_b)
+        # C3: smoke-CALIBRATED expected count, never skip-under-smoke —
+        # select_train returns min(n_target, |pool|) rows, so the smoke's
+        # partial pool binds exactly at min(n, n_lmsys).
+        expected_n = n if not smoke else min(n, n_lmsys)
+        if len(sub) != expected_n:
+            raise RuntimeError(
+                f"{sel_name}: realized train {len(sub)} != expected {expected_n} "
+                f"(target {n}, lmsys pool {n_lmsys}, smoke={smoke})"
+            )
+        Xs, Ys = X, Y
+        val_idx, te_idx = val, test
         sel_sha = FFC._sha_ids(sub)
         res["sel_shas"][str(n)] = sel_sha
         if sel_name in recorded_shas:
@@ -1776,6 +1784,18 @@ def run_job_c(args, dev, out_path: Path) -> dict:
     _flush()
 
     C.phase("c5-upload")
+    # Plan v15 §10: the machine-readable supersession record for the refuted
+    # v13 cross-store join, written at c5 alongside the aggregate (smoke writes
+    # a smoke-suffixed name — never the production record).
+    supersede_path = args.out_dir / (
+        "superseded_cross_store_join_smoke.json" if smoke else "superseded_cross_store_join.json"
+    )
+    supersede_rec = _superseded_join_record()
+    supersede_rec["provenance"] = as_metadata_dict(git_provenance(), phase="c5-supersession-record")
+    C.write_json_atomic(supersede_path, supersede_rec)
+    logger.info("[job-c] supersession record written: %s", supersede_path)
+    res["superseded_cross_store_join"] = supersede_path.name
+
     if args.skip_hf_upload:
         logger.info("[job-c] --skip-hf-upload: leaving %s unstaged to HF", preds_dir)
     else:
@@ -1918,7 +1938,7 @@ def _parse_args() -> argparse.Namespace:
         type=int,
         nargs="+",
         default=[5_000, 10_000, 25_000, 50_000, 100_000, 150_000, 250_000, 500_000],
-        help="job c dense rungs; <=25k fit on the scale7 store, larger on the n1m capture",
+        help="job c dense rungs; ALL fit on the n1m capture (lmsys draws; plan v15)",
     )
     ap.add_argument(
         "--endpoint-seeds",
@@ -1931,7 +1951,7 @@ def _parse_args() -> argparse.Namespace:
         "--smoke-chunks",
         type=int,
         default=0,
-        help="job c: >0 = tiny-real smoke (stage N capture chunks; rungs {1k scale7, 2k n1m})",
+        help="job c: >0 = tiny-real smoke (stage N capture chunks; rungs {1k n1m, 2k n1m})",
     )
     ap.add_argument("--ridge-block", type=int, default=N1M.RIDGE_BLOCK)
     ap.add_argument("--stage-workers", type=int, default=8)

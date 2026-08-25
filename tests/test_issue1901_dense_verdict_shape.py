@@ -1,4 +1,5 @@
-"""#1901 mlp-scaling-densify round-2 pure functions (review fixes C2/M1/M2/C3).
+"""#1901 mlp-scaling-densify round-2 pure functions (review fixes C2/M1/M2/C3)
++ the round-4 plan-v15 within-store pivot pins.
 
 Pins, on synthetic fixtures (no GPU, no downloads, no staged stores):
 - ``_validate_run_shape`` (C2): production asserts the exact registered rung
@@ -11,6 +12,10 @@ Pins, on synthetic fixtures (no GPU, no downloads, no staged stores):
   breaks the resume equality.
 - The C3 dead-branch guarantee: registered smoke rungs never intersect a
   DENSE_PARITY_ANCHORS key.
+- Plan v15: ``_dense_rung_specs`` sources EVERY rung from the n1m lmsys pool
+  (production AND smoke); the ``g1_cross_store`` static provenance field
+  matches the plan §7 acceptance predicate; ``_superseded_join_record`` names
+  the three banked JSONs + the known consumers + the replacement artifact.
 """
 
 import argparse
@@ -26,16 +31,19 @@ if str(_SCRIPTS) not in sys.path:
 
 from issue1901_paper_densify_mlp import (  # noqa: E402
     DENSE_PARITY_ANCHORS,
+    G1_CROSS_STORE,
     PRODUCTION_DENSE_NS,
     SMOKE_RUNG_SPECS,
     GateVerdict,
     _annotate_g2_percell,
     _dense_fingerprint,
+    _dense_rung_specs,
     _endpoint_verdict,
+    _superseded_join_record,
     _validate_run_shape,
 )
 
-PROD_RUNGS = [(n, "scale7" if n <= 25_000 else "n1m") for n in PRODUCTION_DENSE_NS]
+PROD_RUNGS = [(n, "n1m") for n in PRODUCTION_DENSE_NS]
 
 
 def _split(cap=959_844, man=959_844):
@@ -107,7 +115,7 @@ def test_shape_smoke_asserts_own_expectations_never_skips():
     audit = _validate_run_shape(**_smoke_kwargs())
     assert audit["mode"] == "smoke"
     with pytest.raises(RuntimeError, match="smoke rung specs"):
-        _validate_run_shape(**_smoke_kwargs(rung_specs=[(1_000, "scale7")]))
+        _validate_run_shape(**_smoke_kwargs(rung_specs=[(1_000, "n1m")]))
     with pytest.raises(RuntimeError, match="--smoke-chunks"):
         _validate_run_shape(**_smoke_kwargs(n_capture_files=5))
     with pytest.raises(RuntimeError, match="partial pool"):
@@ -120,6 +128,71 @@ def test_registered_smoke_rungs_disjoint_from_parity_anchors():
     no smoke branch."""
     anchor_ns = {n for _, n in DENSE_PARITY_ANCHORS}
     assert not (anchor_ns & {n for n, _ in SMOKE_RUNG_SPECS})
+
+
+# ── plan v15 within-store pivot (round 4) ────────────────────────────────────────
+
+
+def test_dense_rung_specs_all_n1m_both_modes():
+    """Plan v15 §4: EVERY rung — production and smoke — is a within-store n1m
+    lmsys draw; production sorts + dedups --dense-ns; smoke returns the
+    registered SMOKE_RUNG_SPECS verbatim."""
+    prod = _dense_rung_specs([*reversed(PRODUCTION_DENSE_NS), 5_000], smoke=False)
+    assert prod == [(int(n), "n1m") for n in sorted(PRODUCTION_DENSE_NS)]
+    smoke = _dense_rung_specs([999_999], smoke=True)  # dense_ns ignored at smoke
+    assert smoke == [(int(n), s) for n, s in SMOKE_RUNG_SPECS]
+    assert {s for _, s in prod + smoke} == {"n1m"}
+
+
+def test_g1_cross_store_static_field_matches_acceptance_predicate():
+    """Plan §7 acceptance 3 reads
+    .gates.g1_cross_store | startswith("refuted-2026-08-25") — pin the
+    constant's prefix + its two evidence pointers."""
+    assert G1_CROSS_STORE.startswith("refuted-2026-08-25")
+    assert "epm:progress 2026-08-25T03:18:29Z" in G1_CROSS_STORE
+    assert "mlpdense-smoke-r3-g1fail.log" in G1_CROSS_STORE
+
+
+def test_no_fold_exact_anchors_survive_v15():
+    """The v13 fold-exact scale7 anchors are removed with the scale7 sourcing;
+    the surviving anchor kinds are the recorded statistical/sha-conditional
+    bigN rows only (no anchor can halt a fresh within-store rung on a
+    different-fold banked value)."""
+    kinds = {v[3] for v in DENSE_PARITY_ANCHORS.values()}
+    assert kinds == {"statistical", "sha-conditional"}
+    assert set(DENSE_PARITY_ANCHORS) == {
+        ("mlp", 150_000),
+        ("mlp", 500_000),
+        ("ridge", 150_000),
+        ("ridge", 500_000),
+    }
+
+
+def test_superseded_join_record_shape():
+    """Plan v15 §10 items i-iv: refuted join + evidence + replacement artifact
+    + enumerated consumers, naming all three banked JSONs."""
+    rec = _superseded_join_record()
+    assert rec["kind"] == "superseded-cross-store-join"
+    banked = rec["superseded_join"]["banked_files"]
+    for name in (
+        "scaling_bigN_acc1_L19.json",
+        "scaling_ladder_L19.json",
+        "mlp_scaling_L19.json",
+    ):
+        assert any(b.endswith(name) for b in banked), name
+    assert "mlp_scaling_dense_L19.json" in rec["replacement_artifact"]
+    assert any("epm:progress 2026-08-25T03:18:29Z" in e for e in rec["evidence"])
+    consumers = "\n".join(rec["consumers"])
+    for frag in (
+        "claims.md",
+        "issue1901_body_figures.py",
+        "make_plot1_scaling.py",
+        "csls_rescore.py",
+        "issue1901_boundary_token_control.py",
+        "methodology/issue_1901.md",
+    ):
+        assert frag in consumers, frag
+    assert rec["superseded_join"]["why_refuted"].startswith("G1 cross-store fold identity FAILED")
 
 
 # ── _endpoint_verdict (M2) ───────────────────────────────────────────────────────
