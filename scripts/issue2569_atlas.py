@@ -40,7 +40,7 @@ Consumes the paired captures ``issue2569_xmodel_capture.py`` finalizes
   coordinates are presentation-only; every claim reads off the distance table.
   Writes ``eval_results/issue_2569/leg7/atlas_distances.json``.
 - ``--phase selftest``: tiny-synthetic end-to-end pass (fits -> report -> atlas at
-  d=8/12, n~240) — the committed CPU smoke for the whole assembly path.
+  d=32/48, n~240) — the committed CPU smoke for the whole assembly path.
 
 Fit core: the reused #779 val-lambda-selected primal ridge
 (``issue779_ffc_n50k_fits.fit_ridge_primal`` via ``issue2569_gateladder._load_fit_core``;
@@ -1199,9 +1199,17 @@ def phase_atlas(args) -> None:
 
 def _make_synthetic_captures(root: Path, *, n: int, d_q: int, d_l: int, seed: int) -> None:
     """Write tiny synthetic finalized capture bundles (both models, one matched
-    pair 19,22) with a real linear cross-model structure + noise."""
+    pair 19,22) with a real linear cross-model structure + a REAL noise floor.
+
+    The noise level (sigma=0.3) and d ~ n_train/5 are calibrated so val-selected
+    lambda is INTERIOR on the smoke grid: a near-noiseless fixture (or d << n)
+    makes the val curve flat toward lambda->0 and the C4 edge-refusal fires
+    (probed 2026-08-25: sigma=0.3, d=32/48, n=240 — edge-free across 8 seeds,
+    worst native-route test R2 = 0.626; the earlier sigma=0.05, d=8/12 fixture
+    low-edged through all 6 widenings)."""
     import issue2569_xmodel_capture as XC
 
+    sigma = 0.3
     rng = np.random.default_rng(seed)
     ci = np.arange(n, dtype=np.int64) * 3 + 1
     corpus = ["lmsys" if i % 2 == 0 else "wildchat" for i in range(n)]
@@ -1210,10 +1218,10 @@ def _make_synthetic_captures(root: Path, *, n: int, d_q: int, d_l: int, seed: in
     T = rng.standard_normal((d_q, d_l)).astype(np.float32) / np.sqrt(d_q)
     data = {
         ("qwen", "vc", 19): z,
-        ("qwen", "va", 19): z @ Mq + 0.05 * rng.standard_normal((n, d_q)).astype(np.float32),
-        ("llama", "vc", 22): z @ T + 0.05 * rng.standard_normal((n, d_l)).astype(np.float32),
+        ("qwen", "va", 19): z @ Mq + sigma * rng.standard_normal((n, d_q)).astype(np.float32),
+        ("llama", "vc", 22): z @ T + sigma * rng.standard_normal((n, d_l)).astype(np.float32),
     }
-    data[("llama", "va", 22)] = data[("qwen", "va", 19)] @ T + 0.05 * rng.standard_normal(
+    data[("llama", "va", 22)] = data[("qwen", "va", 19)] @ T + sigma * rng.standard_normal(
         (n, d_l)
     ).astype(np.float32)
     root.mkdir(parents=True, exist_ok=True)
@@ -1247,7 +1255,7 @@ def phase_selftest(args) -> None:
 
     work = Path(tempfile.mkdtemp(prefix="i2569-atlas-selftest-"))
     cap = work / "captures"
-    _make_synthetic_captures(cap, n=240, d_q=8, d_l=12, seed=0)
+    _make_synthetic_captures(cap, n=240, d_q=32, d_l=48, seed=0)
     argv = [
         "--phase",
         "fits",
@@ -1281,7 +1289,10 @@ def phase_selftest(args) -> None:
     phase_atlas(a2)
     tt = json.loads((work / "leg7" / "three_tier.json").read_text())
     at = json.loads((work / "leg7" / "atlas_distances.json").read_text())
-    assert tt["tier2_routes"]["native"]["r2"] > 0.5, tt["tier2_routes"]["native"]["r2"]
+    routes = tt["tier2_operator_similarity"]["routes"]
+    assert routes["native"]["r2"] > 0.5, routes["native"]["r2"]
+    # the composed route must beat the alignment-only baseline on TRUE linear structure
+    assert routes["composed_matched"]["r2"] > routes["alignment_only_baseline"]["r2"], routes
     assert at["rows"], "selftest atlas resolved no rows"
     # ridge_beta_at_lambda equivalence vs the reused core at a fixed lambda
     rng = np.random.default_rng(1)
