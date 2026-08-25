@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2571,
+  "highest_id": 2572,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12116,6 +12116,13 @@
       "path": "tasks/proposed/2571",
       "status": "proposed",
       "title": "Add a row/column-convention consistency check for plans that fit or consume a linear map"
+    },
+    "2572": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2572",
+      "status": "proposed",
+      "title": "Fix fleet-wide red test_no_new_torch_before_dotenv_vm_entrypoints on scripts/issue2254_firstk_ctxext_sensitivity.py"
     },
     "258": {
       "has_clean_result": false,
