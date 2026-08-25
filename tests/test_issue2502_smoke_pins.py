@@ -148,8 +148,10 @@ carried a real-secret-grade string):
 
   (s) redact_secret_rows drops the WHOLE flagged row (completion text AND
       completion_token_ids — a text-only scrub leaks: the ids decode back to
-      the secret and the gate never scans the int array) using the upload
-      gate's OWN detector (secret_scrub.scan_bytes per line): the flagged row
+      the secret and the gate never scans the int array), deriving drops from
+      the upload gate's EXACT function (secret_scrub.scan_file), mapping each
+      finding's byte offset to its containing JSONL line and looping
+      scan -> drop -> rewrite until scan_file returns empty: the flagged row
       is gone, scan_file on the rewritten file returns ZERO findings (the
       gate passes by construction), the secret_redacted count is exact,
       clean rows survive BYTE-IDENTICAL (token ids intact); an all-flagged
@@ -158,6 +160,19 @@ carried a real-secret-grade string):
       wires the drop step AFTER the chunk write, BEFORE upload_single_file.
       Synthetic planted AKIA-shaped string only — never a real secret, never
       real rollout text.
+
+  (t) gate-framing parity at the 8 MiB stream-buffer boundary (r13 revise —
+      the reconciler's reproduced counterexample): on a >8 MiB chunk (legal
+      under the 9.5 MB non-LFS budget) a DUMMY-exculpated AKIA-shaped match
+      ending 2 bytes before the _CHUNK_BYTES buffer edge is KEPT by per-line
+      scan_bytes (the full-line +-30-byte DUMMY_RX window reaches the dummy
+      token) but FLAGGED by scan_file (_scan_stream clips the window at the
+      buffer edge and never retracts the buffer-1 finding when the overlap
+      re-scan exculpates it with fuller context) — so a per-line scan is NOT
+      gate parity, and v12's "gate-clean by construction" claim was FALSE
+      for >8 MiB chunks. redact_secret_rows must drop the straddling row and
+      leave the rewritten file scan_file-clean (the gate would pass).
+      Synthetic padding + planted AKIA-shaped string only.
 """
 
 from __future__ import annotations
@@ -1292,3 +1307,60 @@ def test_s_redact_wired_in_phase_gen_after_write_before_upload():
     i_redact = src.index("redact_secret_rows(local, key)")
     i_upload = src.index("upload_single_file(local, dests[key])")
     assert i_write < i_redact < i_upload
+
+
+def test_t_gate_framing_parity_8mib_boundary_straddle(tmp_path):
+    """Pin (t): the reconciler's >8 MiB counterexample — scan_bytes/scan_file split.
+
+    Constructs a chunk whose LAST row carries a DUMMY-exculpated AKIA-shaped
+    match ENDING 2 bytes before the 8 MiB stream-buffer edge, with the "dummy"
+    exculpation token starting 2 bytes PAST the edge. Pre-fix framing: the
+    whole-line scan_bytes sees the dummy token and keeps the row (0 findings)
+    while scan_file — the upload gate's exact function — records the buffer-1
+    finding (clipped context) and never retracts it, so the gate would raise
+    on a chunk a per-line redact certified clean. Post-fix: redact_secret_rows
+    (scan_file-derived drops) removes the row and the rewrite is
+    scan_file-clean. Fails pre-fix (per-line redact returned 0). Synthetic.
+    """
+    from explore_persona_space.orchestrate import secret_scrub
+
+    secret = _PLANTED_SECRET.encode()
+    last_row = _s_gen_row(9999, f"the api key is {_PLANTED_SECRET} ok dummy end")
+    last_line = json.dumps(last_row, ensure_ascii=False).encode()
+    off_in_line = last_line.index(secret)
+    # Match END (exclusive) sits 2 bytes before the buffer edge => the
+    # trailing "dummy" token (match end + 4) lies past the edge, so the
+    # buffer-1 DUMMY_RX context (clipped at the edge) cannot see it.
+    target_secret_off = secret_scrub._CHUNK_BYTES - 2 - len(secret)
+    target_pad = target_secret_off - off_in_line  # filler line + its newline
+    filler_base = json.dumps(_s_gen_row(0, ""), ensure_ascii=False).encode()
+    filler_row = _s_gen_row(0, "z" * (target_pad - 1 - len(filler_base)))
+    filler_line = json.dumps(filler_row, ensure_ascii=False).encode()
+    assert len(filler_line) + 1 == target_pad
+    blob = filler_line + b"\n" + last_line + b"\n"
+    # Geometry asserts: legal chunk size, straddling placement, exact offsets.
+    assert secret_scrub._CHUNK_BYTES < len(blob) <= GC.GEN_CHUNK_MAX_BYTES
+    assert blob.index(secret) == target_secret_off
+    assert target_secret_off + len(secret) == secret_scrub._CHUNK_BYTES - 2
+    assert blob.index(b"dummy", target_secret_off) == secret_scrub._CHUNK_BYTES + 2
+
+    # (a) PRE-fix framing split: whole-line scan exculpates (row kept by a
+    # per-line redact) while the gate's scan_file flags the match.
+    assert secret_scrub.scan_bytes(last_line) == []
+    p = tmp_path / "chunk0048.jsonl"
+    p.write_bytes(blob)
+    findings = secret_scrub.scan_file(p)
+    assert len(findings) >= 1, "boundary straddle must be gate-visible"
+    assert {f.pattern for f in findings} == {"aws-access-key"}
+    assert findings[0].offset == target_secret_off
+
+    # (b) POST-fix: scan_file-derived redact drops the straddling row whole;
+    # the rewrite is scan_file-clean (the upload gate would pass) and the
+    # clean filler row survives byte-identical.
+    n = GC.redact_secret_rows(p, "chunk0048")
+    assert n == 1
+    out = p.read_bytes()
+    assert secret not in out
+    kept = [ln for ln in out.split(b"\n") if ln.strip()]
+    assert kept == [filler_line]
+    assert secret_scrub.scan_file(p) == []

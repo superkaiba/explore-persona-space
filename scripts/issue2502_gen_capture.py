@@ -53,12 +53,16 @@ policy (#2378 classifier port, g2 Major 2): a completion containing
 ``<think>`` is FLAGGED at gen (``think_leak`` on the persisted row — rollout
 text always persists) and DROPPED at capture (excluded from tensors +
 rows.json); counts ride gen_meta + capture_meta. Secret-drop policy (#2502
-crash fix): a gen row whose JSONL line carries a real-secret-grade string
-(``secret_scrub.scan_bytes`` — the SAME detector the fail-closed upload gate
-runs) is DROPPED WHOLE at gen BEFORE upload — completion text AND
-``completion_token_ids``, because the ids decode back to the secret and a
-text-only scrub would leak through the int array; a chunk dropping ALL rows
-fails loud. Counts ride gen_meta (``n_secret_redacted``) + capture_meta
+crash fix): a gen row carrying a real-secret-grade string is DROPPED WHOLE at
+gen BEFORE upload — completion text AND ``completion_token_ids``, because the
+ids decode back to the secret and a text-only scrub would leak through the
+int array. Drops are derived from ``secret_scrub.scan_file`` — the EXACT
+function the fail-closed upload gate runs (a per-line ``scan_bytes`` is NOT
+gate parity: DUMMY_RX exculpation windows differ at the gate's 8 MiB
+stream-buffer boundaries, and gen chunks may legally exceed 8 MiB) — looping
+scan → drop-whole-lines → atomic rewrite until ``scan_file`` returns empty,
+so the rewritten chunk passes the gate by construction; a chunk dropping ALL
+rows fails loud. Counts ride gen_meta (``n_secret_redacted``) + capture_meta
 totals (``n_secret_redacted_drops``); logs are COUNT-ONLY (never row text).
 
 Content hygiene: corpus/context text is NEVER printed — logs carry digests,
@@ -818,39 +822,80 @@ def redact_secret_rows(local: Path, key: str) -> int:
     ``completion_token_ids`` decode straight back to the secret and the gate
     never scans the int array — so the ENTIRE line is dropped (text AND token
     ids; capture teacher-forces on stored ids of KEPT rows only, so kept rows
-    are unaffected). Detection is the gate's own ``scan_bytes`` applied per
-    line (the full line, so a secret in ANY field is caught): a per-line
-    DUMMY_RX context window is a subset of the gate's whole-file window, so
-    per-line flags a SUPERSET of gate findings and the rewritten file passes
-    the gate by construction. Kept lines are byte-untouched. Content hygiene:
-    count-only — never prints/raises row text or finding values. Returns the
-    dropped-row count; rewrites (atomic same-dir replace) only when > 0;
-    raises if ALL rows are flagged (never upload an empty chunk — the file is
-    left on disk for investigation).
-    """
-    from explore_persona_space.orchestrate.secret_scrub import scan_bytes
+    are unaffected).
 
-    raw = local.read_bytes()
-    kept: list[bytes] = []
-    dropped = 0
-    for ln in raw.split(b"\n"):
-        if not ln.strip():
-            continue
-        if scan_bytes(ln, path=str(local)):
-            dropped += 1
-            continue
-        kept.append(ln)
-    if not dropped:
-        return 0
-    if not kept:
-        raise RuntimeError(
-            f"[gen] {key}: ALL {dropped} rows secret-flagged — refusing to upload an "
-            "empty chunk (count-only; no row text). Investigate the generation output."
-        )
-    tmp = local.with_name(local.name + ".redact.tmp")
-    tmp.write_bytes(b"\n".join(kept) + b"\n")
-    tmp.replace(local)
-    return dropped
+    Gate-framing parity (r13 revise): drops are derived from
+    ``secret_scrub.scan_file`` — the gate's EXACT function — never from a
+    per-line ``scan_bytes``. The two DISAGREE at stream-buffer boundaries:
+    ``_scan_stream`` scans 8 MiB (``_CHUNK_BYTES``) buffers, its DUMMY_RX
+    exculpation context is CLIPPED at the buffer edge, and a buffer-1 finding
+    is never retracted when the overlap re-scan exculpates the same match
+    with fuller context — while a whole-line ``scan_bytes`` always sees the
+    full ±30-byte window. Gen chunks may legally exceed 8 MiB
+    (GEN_CHUNK_MAX_BYTES = 9.5 MB), so a placeholder-shaped match straddling
+    the boundary is flagged by ``scan_file`` yet kept by a per-line scan, and
+    the gate would re-raise on a file a per-line pass certified clean. Each
+    finding's absolute byte offset is mapped to its containing JSONL line;
+    those whole lines are dropped and the file atomically rewritten (tmp in
+    the same dir + replace); then scan → drop → rewrite LOOPS until
+    ``scan_file`` returns empty — row removal shifts byte offsets, so a match
+    can move onto (or off) a buffer boundary. Every iteration drops >=1 line,
+    so the loop converges; it is bounded (fail-loud), and a finding that maps
+    to no line fails loud. ``scan_file`` empty at return ⇒ the gate passes by
+    construction (same function, same bytes). Kept lines are byte-untouched.
+    Content hygiene: count-only — never prints/raises row text, finding
+    values, or masked excerpts. Returns the dropped-row count summed across
+    iterations; rewrites only when > 0; raises if ALL remaining rows are
+    flagged (never upload an empty chunk — the file is left on disk for
+    investigation).
+    """
+    import bisect
+
+    from explore_persona_space.orchestrate.secret_scrub import scan_file
+
+    dropped_total = 0
+    max_iters: int | None = None
+    iteration = 0
+    while True:
+        findings = scan_file(local)
+        if not findings:
+            return dropped_total
+        raw = local.read_bytes()
+        lines = raw.split(b"\n")
+        starts: list[int] = []
+        pos = 0
+        for ln in lines:
+            starts.append(pos)
+            pos += len(ln) + 1  # +1 for the newline consumed by split
+        if max_iters is None:
+            # Every iteration drops >=1 line => bounded by the initial row count.
+            max_iters = sum(1 for ln in lines if ln.strip()) + 1
+        iteration += 1
+        if iteration > max_iters:
+            raise RuntimeError(
+                f"[gen] {key}: secret-redaction loop failed to converge after "
+                f"{iteration - 1} iterations (count-only; no row text) — refusing to upload."
+            )
+        drop_idx: set[int] = set()
+        for f in findings:
+            i = bisect.bisect_right(starts, f.offset) - 1
+            if i < 0 or f.offset >= starts[i] + len(lines[i]):
+                raise RuntimeError(
+                    f"[gen] {key}: scan_file finding at byte offset {f.offset} maps to "
+                    "no JSONL line (count-only; no finding value) — refusing to upload."
+                )
+            drop_idx.add(i)
+        kept = [ln for i, ln in enumerate(lines) if i not in drop_idx and ln.strip()]
+        if not kept:
+            raise RuntimeError(
+                f"[gen] {key}: ALL {dropped_total + len(drop_idx)} remaining rows "
+                "secret-flagged — refusing to upload an empty chunk (count-only; no "
+                "row text). Investigate the generation output."
+            )
+        dropped_total += len(drop_idx)
+        tmp = local.with_name(local.name + ".redact.tmp")
+        tmp.write_bytes(b"\n".join(kept) + b"\n")
+        tmp.replace(local)
 
 
 def count_chunk_stats(path: Path) -> dict:
