@@ -103,6 +103,8 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 logger = logging.getLogger("issue1739_sycoood_stage")
 
 BEHAVIOR = "sycophancy"
@@ -139,19 +141,14 @@ def _sha8(text: str) -> str:
 
 
 def _write_jsonl_atomic(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for row in rows:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2))
 
 
 def _load_sycoeval(subset: str) -> list[dict]:

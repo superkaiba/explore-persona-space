@@ -36,6 +36,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 HF_PREFIX = "issue1739_new_arm_round"
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 LEGS = ("fc", "oracle", "arm5ood", "nlood")
@@ -302,19 +304,14 @@ def fc_vs_t1_pairs(fc_rows: list[dict], baseline_rows: list[dict]) -> list[dict]
 
 
 def _write_json(path: Path, payload) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for r in rows:
             fh.write(json.dumps(r, sort_keys=True) + "\n")
-    tmp.replace(path)
 
 
 def load_k1_flags(path: Path | None) -> dict[tuple[str, str], bool]:

@@ -18,6 +18,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 SENTINEL_SCHEMA_VERSION = 1  # lockstep with poll_pipeline.SENTINEL_SCHEMA_VERSION_SUPPORTED
 ISSUE = 1739
 
@@ -62,12 +64,10 @@ def _envelope(kind: str, note: str, *, extra: dict | None = None) -> dict:
 
 def _write(out_root: Path | str, kind: str, body: dict, *, name_hint: str) -> Path:
     out_root = Path(out_root)
-    out_root.mkdir(parents=True, exist_ok=True)
     slug = kind.replace(":", "_")
     path = out_root / f"issue-{ISSUE}-{slug}-{name_hint}-{int(time.time())}.json"
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(body, indent=1))
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(body, indent=1))
     print(f"[sentinel] wrote {path}", flush=True)
     return path
 

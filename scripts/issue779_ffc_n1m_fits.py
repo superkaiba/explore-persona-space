@@ -161,7 +161,9 @@ DEFAULT_ORIG_DIR = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-co
 # ── data assembly (pass_b + stream-reduced n1m capture) + provenance ────────────
 
 
-def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str:
+def _download_chunk_with_retry(
+    repo: str, filename: str, local_dir: Path, revision: str | None = None
+) -> str:
     """hf_hub_download through the canonical transient-retry envelope
     (``hub.retry_transient`` = ``_retry_upload``, #1402): Retry-After-aware,
     ``EPM_HF_RETRY_BUDGET_S`` wall budget (default 1800 s — sized to outlive an
@@ -177,7 +179,9 @@ def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str
     from explore_persona_space.orchestrate import hub
 
     return hub.retry_transient(
-        lambda: hf_hub_download(repo, filename=filename, repo_type="dataset", local_dir=local_dir),
+        lambda: hf_hub_download(
+            repo, filename=filename, repo_type="dataset", local_dir=local_dir, revision=revision
+        ),
         what=f"[n1m] chunk download ({repo}:{filename})",
         max_attempts=STREAM_DOWNLOAD_ATTEMPTS,
     )
@@ -267,6 +271,7 @@ def _stream_n1m_layer(
     ckpt_dir: Path | None = None,
     ckpt_every: int = STREAM_CKPT_EVERY,
     fresh: bool = False,
+    revision: str | None = None,
 ):
     """Stream-reduce cx_last + v_x + ci at ``layer`` from the n1m capture chunks.
 
@@ -283,7 +288,13 @@ def _stream_n1m_layer(
     if local_dir is not None:
         return _stream_local_chunks(local_dir, layer)
     return _stream_hf_chunks(
-        prefix, layer, cache_dir, ckpt_dir=ckpt_dir, ckpt_every=ckpt_every, fresh=fresh
+        prefix,
+        layer,
+        cache_dir,
+        ckpt_dir=ckpt_dir,
+        ckpt_every=ckpt_every,
+        fresh=fresh,
+        revision=revision,
     )
 
 
@@ -352,28 +363,37 @@ def _resume_hf_stream(ckpt_dir, layer, fp, prefix, names, fresh, cx_parts, vx_pa
     return cursor, None
 
 
-def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
+def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh, revision=None):
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
     # r4: chunk-universe listing rides retry_transient (the #1482 429-storm class;
     # list_repo_tree is LAZY — materialize inside the thunk so iteration retries).
+    # ``revision`` pins listing + downloads to one Hub commit (#1901 C1; None =
+    # legacy main-tip read, byte-identical behavior incl. the ckpt fingerprint).
     names = hub.retry_transient(
         lambda: sorted(
             f.path.rsplit("/", 1)[-1]
             # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here (r4)
             for f in HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                C.HF_DATA_REPO,
+                path_in_repo=prefix,
+                repo_type="dataset",
+                recursive=True,
+                revision=revision,
             )
             if getattr(f, "size", None) is not None and f.path.endswith(".pt")
         ),
-        what=f"n1m chunk listing ({prefix})",
+        what=f"n1m chunk listing ({prefix}@{revision or 'main'})",
     )
     if not names:
         raise FileNotFoundError(f"no n1m capture chunks under HF {prefix}")
     cache_dir.mkdir(parents=True, exist_ok=True)
-    fp = _stream_ckpt_fingerprint(layer, prefix, names) if ckpt_dir is not None else ""
+    # Revision joins the checkpoint identity ONLY when pinned, so pre-existing
+    # unpinned checkpoints stay valid for every legacy caller.
+    fp_prefix = prefix if revision is None else f"{prefix}@{revision}"
+    fp = _stream_ckpt_fingerprint(layer, fp_prefix, names) if ckpt_dir is not None else ""
 
     cx_parts: list[np.ndarray] = []
     vx_parts: list[np.ndarray] = []
@@ -385,7 +405,9 @@ def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
         return complete_arrays
 
     for i in range(start, len(names)):
-        got = Path(_download_chunk_with_retry(C.HF_DATA_REPO, f"{prefix}/{names[i]}", cache_dir))
+        got = Path(
+            _download_chunk_with_retry(C.HF_DATA_REPO, f"{prefix}/{names[i]}", cache_dir, revision)
+        )
         b = F._mmap_load(got)
         cx_parts.append(N50._slice_layer(b, "cx_last", layer))
         vx_parts.append(N50._slice_layer(b, "v_x", layer))
@@ -802,6 +824,7 @@ def assemble_multilayer(args, layers: list[int]):
         out_dir=args.out_dir,
         manifest_from_hf=args.manifest_from_hf,
         hf_prefix=args.manifest_hf_prefix,
+        manifest_revision=getattr(args, "manifest_revision", None),
     )
     manifest_dir = N1G._resolve_manifest_dir(manifest_args)
     pool, man_meta = N1G.read_manifest_pool(manifest_dir)
@@ -949,6 +972,7 @@ def assemble(args, layer: int):
         out_dir=args.out_dir,
         manifest_from_hf=args.manifest_from_hf,
         hf_prefix=args.manifest_hf_prefix,
+        manifest_revision=getattr(args, "manifest_revision", None),
     )
     manifest_dir = N1G._resolve_manifest_dir(manifest_args)
     pool, man_meta = N1G.read_manifest_pool(manifest_dir)
@@ -963,6 +987,7 @@ def assemble(args, layer: int):
         ckpt_dir=(args.out_dir / ".n1m_stream_ckpt") if local_dir is None else None,
         ckpt_every=STREAM_CKPT_EVERY,
         fresh=args.fresh_stream,
+        revision=getattr(args, "store_revision", None),
     )
     # provenance for each captured new row (ci -> corpus); pass_b rows are lmsys.
     new_prov = np.array([ci_to_corpus[int(c)] for c in new_ci], dtype=object)
@@ -2320,10 +2345,15 @@ def _smoke_stream_ckpt(ckpt_root: Path) -> tuple[int, int]:
             self.path, self.size = path, 1
 
     class _FakeHfApi:
-        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+        # revision=None mirrors the production call shape (#1901 r3: the C1
+        # revision threading passes revision= unconditionally, so a fake
+        # without it TypeErrors the self-smoke).
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, recursive=False, revision=None
+        ):
             return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
 
-    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         dl_calls["n"] += 1
         base = filename.rsplit("/", 1)[-1]
         idx = remote[base]
@@ -2379,7 +2409,7 @@ def _smoke_download_retry(cache: Path) -> int:
 
     calls = {"n": 0}
 
-    def _flaky(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _flaky(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         if calls["n"] == 1:
             raise requests.exceptions.ReadTimeout("synthetic read timeout")
@@ -2400,7 +2430,7 @@ def _smoke_download_retry(cache: Path) -> int:
 
     calls["n"] = 0
 
-    def _hard(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _hard(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         raise ValueError("non-transient")
 
@@ -2465,10 +2495,14 @@ def _smoke_multilayer_stream(root: Path) -> dict:
             self.path, self.size = path, 1
 
     class _FakeHfApi:
-        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+        # revision=None mirrors the production call shape (#1901 r3, see the
+        # sibling fake in _smoke_stream_ckpt).
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, recursive=False, revision=None
+        ):
             return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
 
-    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         base = filename.rsplit("/", 1)[-1]
         idx = remote[base]
         if crash_at["i"] is not None and idx >= crash_at["i"]:

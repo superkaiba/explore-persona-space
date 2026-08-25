@@ -53,7 +53,9 @@ def _install_stream_fake(monkeypatch, responses: dict):
     prefix fails loud (KeyError) rather than fabricating data.
     """
 
-    def _fake_stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
+    def _fake_stream_hf_chunks(
+        prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh, revision=None
+    ):
         resp = responses[prefix]
         if isinstance(resp, BaseException):
             raise resp
