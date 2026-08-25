@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2588,
+  "highest_id": 2589,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12244,6 +12244,13 @@
       "path": "tasks/planning/2588",
       "status": "planning",
       "title": "Context-to-answer mapping quality vs general model capability (cross-family ladder, thinking on/off)"
+    },
+    "2589": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2589",
+      "status": "proposed",
+      "title": "workflow-fix: Codex review-site dispatches run write-enabled despite declaring read-only"
     },
     "259": {
       "has_clean_result": false,
