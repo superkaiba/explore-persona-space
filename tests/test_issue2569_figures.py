@@ -765,6 +765,271 @@ def _write_leg2(root: Path) -> None:
     (root / "leg2_curve" / "learning_curve.json").write_text(json.dumps(_learning_curve_doc()))
 
 
+_WIRING_CAVEATS = [
+    "all wiring claims are map-level (fixture)",
+    "sensitivity-analysis scope only (fixture)",
+]
+
+
+def _dash_direction_rows(k: int, rng, sigma, c_align, eigen: bool, write: bool) -> list[dict]:
+    """Schema-true sae_dashboards direction rows (issue2569_weights._dash_rows)."""
+    rows = []
+    for j in range(k):
+        row: dict = {
+            "rank": j + 1,
+            "max_abs_cos": float(rng.uniform(0.08, 0.6)),
+            "exceeds_analytic_floor": True,
+            "exceeds_empirical_p95": False,
+            "top_features": [
+                {
+                    "feat_id": int(rng.integers(0, 1000)),
+                    "cos": 0.3,
+                    "label": {
+                        "description": "fixture context feature",
+                        "confidence": 3,
+                        "evidence_side": "ctx",
+                        "source": "fixture",
+                    },
+                }
+            ],
+        }
+        if eigen:
+            row.update(
+                abs_lambda=1.0 - 0.05 * j,
+                is_complex=bool(j % 2),
+                im_frac=float(rng.uniform(0.0, 0.8)),
+            )
+        else:
+            row.update(sigma=float(sigma[j]), self_alignment_c=float(c_align[j]))
+        if write:
+            row["encoder_pass"] = {"n_fired": 2, "fired": [{"feat_id": 5, "act": 0.4}]}
+            row["linear_top"] = [{"feat_id": 5, "value": 0.4}]
+        rows.append(row)
+    return rows
+
+
+def _null_floor(n_features: int) -> dict:
+    """One side of the sae_dashboards null_floors block."""
+    return {
+        "n_features": n_features,
+        "analytic_sqrt_2lnN_over_d": 0.19,
+        "empirical": {
+            "n_draws": 16,
+            "seed": 1,
+            "mean": 0.20,
+            "p50": 0.20,
+            "p90": 0.23,
+            "p95": 0.25,
+            "p99": 0.30,
+            "max": 0.33,
+        },
+    }
+
+
+def _attr_feature(why: str, with_label: bool) -> dict:
+    """One tabled answer feature (issue2569_weights.attribution_decompose shape)."""
+    label = (
+        {
+            "description": "fixture judged context-feature description",
+            "confidence": 4,
+            "evidence_side": "ctx",
+            "source": "fixture",
+        }
+        if with_label
+        else None
+    )
+    return {
+        "why_in_table": why,
+        "pred_act": 1.2,
+        "true_act": 0.9,
+        "pre_act": 1.2,
+        "n_active_ctx": 7,
+        "contributions": [
+            {"ctx_feat_id": 3, "a_j": 0.5, "edge": 0.2, "contribution": 0.1, "label": label},
+            {"ctx_feat_id": 9, "a_j": 0.4, "edge": -0.1, "contribution": -0.04, "label": None},
+        ],
+        "bias_terms": {
+            "ctx_decoder_bias_via_map": 0.01,
+            "sae_recon_residual_via_map": 0.0,
+            "map_intercept": 0.02,
+            "ans_encoder_offset": -0.3,
+        },
+        "closure_residual": 1e-9,
+    }
+
+
+def _write_weights(root: Path, alive: bool = True) -> None:
+    """weights/{leg1,leg3} P-A driver artifacts (issue2569_weights schemas, tiny d)."""
+    import torch
+
+    rng = np.random.default_rng(7)
+    d = 48
+    leg1 = root / "weights" / "leg1"
+    leg1.mkdir(parents=True, exist_ok=True)
+    leg3 = root / "weights" / "leg3"
+    leg3.mkdir(parents=True, exist_ok=True)
+    sigma = np.sort(rng.uniform(0.02, 1.3, size=d))[::-1].copy()
+    c_align = rng.uniform(-1.0, 1.0, size=d)
+    lam = rng.normal(size=d) + 1j * (rng.random(d) < 0.4) * rng.normal(size=d)
+    lam = lam[np.argsort(-np.abs(lam))].astype(np.complex128)
+    torch.save(
+        {
+            "sigma": torch.from_numpy(sigma),
+            "self_alignment_c": torch.from_numpy(c_align),
+            "eig_lambda": torch.from_numpy(lam),
+            "stats": {"rho": float(np.abs(lam).max()), "d": d, "top_k": 8},
+        },
+        leg1 / "factor_L19.pt",
+    )
+    tau = 0.12
+    labels = np.where(sigma < tau, "ignored", "rotated_scaled")
+    total = float((sigma**2).sum())
+    classes = {
+        lab: {
+            "count": int((labels == lab).sum()),
+            "frac_count": float((labels == lab).mean()),
+            "sigma2_mass_frac": float((sigma[labels == lab] ** 2).sum() / total),
+        }
+        for lab in ("ignored", "copied", "damped", "transcoded", "rotated_scaled")
+    }
+    (leg1 / "anatomy_L19.json").write_text(
+        json.dumps(
+            {
+                "tau_kernel": tau,
+                "k99": int((sigma >= tau).sum()),
+                "k90": 30,
+                "tau_k90": 0.3,
+                "sigma_max": float(sigma[0]),
+                "sigma_median": float(np.median(sigma)),
+                "labels": labels.tolist(),
+                "sigma": sigma.tolist(),
+                "c": c_align.tolist(),
+                "classes": classes,
+                "top_directions": [
+                    {
+                        "rank": 1,
+                        "sigma": float(sigma[0]),
+                        "c": float(c_align[0]),
+                        "abs_c": float(abs(c_align[0])),
+                        "label": str(labels[0]),
+                    }
+                ],
+                "thresholds": {"copied_gain": [0.8, 1.25]},
+                "precedence": "fixture",
+                "data_weighted_mass": "deferred-to-P-B (fixture)",
+            }
+        )
+    )
+    (leg1 / "sae_dashboards_L19.json").write_text(
+        json.dumps(
+            {
+                "sections": {
+                    "singular_read": {
+                        "dictionary": "fixture ctx",
+                        "directions": _dash_direction_rows(8, rng, sigma, c_align, False, False),
+                    },
+                    "singular_write": {
+                        "dictionary": "fixture ans",
+                        "directions": _dash_direction_rows(8, rng, sigma, c_align, False, True),
+                    },
+                    "eigen_read": {
+                        "dictionary": "fixture ctx",
+                        "directions": _dash_direction_rows(8, rng, sigma, c_align, True, False),
+                    },
+                    "eigen_write": {
+                        "dictionary": "fixture ans",
+                        "directions": _dash_direction_rows(8, rng, sigma, c_align, True, True),
+                    },
+                },
+                "null_floors": {"ctx": _null_floor(1000), "ans": _null_floor(600)},
+                "whitened_cosine": "deferred-to-P-B (fixture)",
+                "complex_note": "fixture",
+                "label_sources": {"note": "fixture"},
+            }
+        )
+    )
+    # Wiring npz: monotone concentration curves ending at the top-32 share.
+    n_feat, k_grid = 10, np.array([1, 2, 4, 8, 16, 32], np.int64)
+    share32 = rng.uniform(0.15, 0.9, size=n_feat)
+    ramp = (np.log2(k_grid) + 1.0) / (np.log2(k_grid[-1]) + 1.0)
+    conc = share32[:, None] * ramp[None, :]
+    is_near = np.zeros(n_feat, bool)
+    is_near[[1, 4, 7]] = True
+    feat_ids = np.sort(rng.choice(5000, size=n_feat, replace=False)).astype(np.int64)
+    arrays = {
+        "feat_ids": feat_ids,
+        "is_rb_nearest": is_near,
+        "top_edge_ids": rng.integers(0, 9000, size=(n_feat, 32)).astype(np.int64),
+        "top_edge_vals": rng.normal(size=(n_feat, 32)).astype(np.float32),
+        "edge_absmass_total": rng.uniform(1.0, 4.0, size=n_feat).astype(np.float64),
+        "top32_absmass_share": share32.astype(np.float32),
+        "conc_curve": conc.astype(np.float32),
+        "conc_k_grid": k_grid,
+    }
+    share32_alive = np.minimum(1.0, share32 + 0.05)
+    if alive:
+        arrays.update(
+            top_edge_ids_alive=arrays["top_edge_ids"],
+            top_edge_vals_alive=arrays["top_edge_vals"],
+            edge_absmass_total_alive=arrays["edge_absmass_total"],
+            top32_absmass_share_alive=share32_alive.astype(np.float32),
+            conc_curve_alive=(share32_alive[:, None] * ramp[None, :]).astype(np.float32),
+        )
+    np.savez(leg3 / "wiring_edges_L19.npz", **arrays)
+    quant = {"median": 0.5, "mean": 0.5, "q25": 0.3, "q75": 0.7}
+    traits = ("evil", "sycophancy", "hallucination")
+    (leg3 / "wiring_L19.json").write_text(
+        json.dumps(
+            {
+                "h3": {
+                    "statistic": "fixture",
+                    "grain": "fixture",
+                    "behavior_relevant": {
+                        t: {
+                            "feat_id": int(feat_ids[i]),
+                            "cos": 0.5,
+                            "top32_share_full": float(share32[i]),
+                            "top32_share_alive": float(share32_alive[i]) if alive else None,
+                        }
+                        for t, i in zip(traits, (1, 4, 7), strict=True)
+                    },
+                    "union_top32_share_full": quant,
+                    "union_top32_share_alive": quant if alive else "deferred — see ctx_alive",
+                },
+                "ctx_alive": {"n_alive": 5} if alive else "deferred (fixture)",
+                "n_answer_features": n_feat,
+                "rb_nearest": {},
+                "out_edges": {},
+                "out_edges_note": "fixture",
+                "label_sources": {"note": "fixture"},
+                "caveats": _WIRING_CAVEATS,
+            }
+        )
+    )
+    (leg3 / "attribution_L19.json").write_text(
+        json.dumps(
+            {
+                "examples": [
+                    {
+                        "row_id": 100 + i,
+                        "position": i,
+                        "n_ctx_active": 7,
+                        "features": {
+                            "11": _attr_feature("r_B-nearest (evil)", True),
+                            "5": _attr_feature("top predicted activation", False),
+                        },
+                    }
+                    for i in range(3)
+                ],
+                "holdout": {"source": "fixture", "n_holdout_present": 40, "seed": 1},
+                "decomposition": "fixture",
+                "label_sources": {"note": "fixture"},
+                "caveats": _WIRING_CAVEATS,
+            }
+        )
+    )
+
+
 @pytest.fixture()
 def full_root(tmp_path: Path) -> Path:
     """A results root carrying every landed-producer artifact, schema-true."""
@@ -777,6 +1042,7 @@ def full_root(tmp_path: Path) -> Path:
     _write_dw(root)
     _write_leg6(root)
     _write_leg7(root)
+    _write_weights(root)
     return root
 
 
@@ -940,6 +1206,101 @@ def test_leg7_figures_render(full_root, tmp_path):
     plt.close(fig)
     stem = F.fig_leg7_atlas(full_root, tmp_path / "figs")
     _assert_rendered(tmp_path / "figs", stem)
+
+
+def test_display_map_covers_anatomy_classes_and_dashboard_sections():
+    """Every anatomy class and dashboard section slug has a plain-English label."""
+    for key in F.ANATOMY_CLASS_ORDER:
+        assert F.display(key) != key
+    assert "ignored" not in F.display("ignored")  # tau exceeds the median gain here
+    for key in F.DASH_SECTION_SIDE:
+        assert F.display(key) != key
+
+
+def test_leg1_hero_and_eigen_scatter_render(full_root, tmp_path):
+    """Spectra + class bars carry artists; the eigen-vs-singular scatter renders."""
+    anatomy = F._load_anatomy(full_root)
+    fac = F._load_factor_arrays(full_root)
+    fig = F.build_leg1_anatomy_hero(anatomy, fac)
+    # 2 spectra lines + 2 reference lines + 10 class bars (5 classes x 2 series)
+    assert _n_artists(fig) >= 14
+    import matplotlib.pyplot as plt
+
+    plt.close(fig)
+    fig = F.build_leg1_eigen_vs_singular(fac, anatomy)
+    assert _n_artists(fig) >= 3  # scatter set(s) + parity line + tau line
+    plt.close(fig)
+    for fn, stem_want in (
+        (F.fig_leg1_anatomy_hero, "leg1_anatomy_hero"),
+        (F.fig_leg1_eigen_vs_singular, "leg1_eigen_vs_singular"),
+    ):
+        stem = fn(full_root, tmp_path / "figs")
+        assert stem == stem_want
+        _assert_rendered(tmp_path / "figs", stem)
+
+
+def test_leg1_sae_dashboards_render(full_root, tmp_path):
+    """All four sections render with both null-floor lines; eigen panels add im_frac."""
+    doc = json.loads((full_root / "weights" / "leg1" / "sae_dashboards_L19.json").read_text())
+    fig = F.build_sae_dashboards(doc)
+    assert len(fig.axes) == 4
+    for ax in fig.axes:
+        assert len(ax.lines) >= 3  # max-|cos| series + analytic floor + empirical p95
+    # eigen panels carry the extra im_frac series
+    assert sum(1 for ax in fig.axes if len(ax.lines) >= 4) >= 2
+    import matplotlib.pyplot as plt
+
+    plt.close(fig)
+    stem = F.fig_leg1_sae_dashboards(full_root, tmp_path / "figs")
+    _assert_rendered(tmp_path / "figs", stem)
+
+
+def test_leg3_wiring_renders_alive_and_full_only(full_root, tmp_path):
+    """Alive-attached npz renders 4 panels with decision lines; full-only renders 2.
+
+    The sidecar caption carries the producer-shipped map-level caveat strings.
+    """
+    stem = F.fig_leg3_wiring_edge_mass(full_root, tmp_path / "figs")
+    _assert_rendered(tmp_path / "figs", stem)
+    meta = json.loads((tmp_path / "figs" / f"{stem}.meta.json").read_text())
+    assert "map-level" in meta["caption"]
+    with np.load(full_root / "weights" / "leg3" / "wiring_edges_L19.npz") as npz:
+        arrays = {k: npz[k] for k in npz.files}
+    wdoc = json.loads((full_root / "weights" / "leg3" / "wiring_L19.json").read_text())
+    fig = F.build_wiring_edge_mass(arrays, wdoc)
+    assert len(fig.axes) == 4
+    import matplotlib.pyplot as plt
+
+    plt.close(fig)
+    _write_weights(full_root, alive=False)  # rewrite without the *_alive npz keys
+    with np.load(full_root / "weights" / "leg3" / "wiring_edges_L19.npz") as npz:
+        arrays = {k: npz[k] for k in npz.files}
+    assert "top32_absmass_share_alive" not in arrays
+    fig = F.build_wiring_edge_mass(arrays, wdoc)
+    assert len(fig.axes) == 2  # informational panels only, no verdict-grade row
+    plt.close(fig)
+
+
+def test_leg3_attribution_renders_and_defers(full_root, tmp_path):
+    """Per-example tables render (caveats in sidecar); a deferral string raises."""
+    stem = F.fig_leg3_attribution_tables(full_root, tmp_path / "figs")
+    _assert_rendered(tmp_path / "figs", stem)
+    meta = json.loads((tmp_path / "figs" / f"{stem}.meta.json").read_text())
+    assert "map-level" in meta["caption"]
+    doc = json.loads((full_root / "weights" / "leg3" / "attribution_L19.json").read_text())
+    fig = F.build_attribution_tables(doc)
+    assert sum(len(ax.tables) for ax in fig.axes) == 3  # one table per worked example
+    import matplotlib.pyplot as plt
+
+    plt.close(fig)
+    # behavior-nearest feature is preferred over the id-lower predicted one
+    fid, feat = F._attribution_table_feature(doc["examples"][0])
+    assert fid == "11" and feat["why_in_table"].startswith("r_B-nearest")
+    attr_path = full_root / "weights" / "leg3" / "attribution_L19.json"
+    doc["examples"] = "deferred — the P-B P1 assemble dir was not attached (fixture)"
+    attr_path.write_text(json.dumps(doc))
+    with pytest.raises(ValueError, match="deferred by producer"):
+        F.fig_leg3_attribution_tables(full_root, tmp_path / "figs")
 
 
 # ---------------------------------------------------------------------------

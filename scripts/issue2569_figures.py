@@ -24,12 +24,20 @@ Input schemas were read off the producing code in this worktree at 57808a6434:
 - ``leg6/<arm>/L*_*.json``              issue2569_leg6.fit_split_half / run_arm
 - ``leg7/three_tier.json``              issue2569_atlas.phase_report
 - ``leg7/atlas_distances.json``         issue2569_atlas.phase_atlas
+- ``weights/leg1/anatomy_L19.json``     issue2569_weights.phase_anatomy (@ d41a8e8420)
+- ``weights/leg1/factor_L19.pt``        issue2569_weights.phase_factor (@ d41a8e8420)
+- ``weights/leg1/sae_dashboards_L19.json``  issue2569_weights.phase_sae_dashboards
+- ``weights/leg3/wiring_edges_L19.npz``     issue2569_weights.phase_wiring
+- ``weights/leg3/wiring_L19.json``          issue2569_weights.phase_wiring (h3 + caveats)
+- ``weights/leg3/attribution_L19.json``     issue2569_weights.phase_attribution
 
-Deferred by design (no producing code landed yet, so no schema exists to key
-on): the leg-1 hero anatomy figure, the eigen-vs-singular scatter, the
-two-sided SAE dashboards, the leg-3 wiring edge-mass + attribution tables, and
-the leg-6 cross-arm shared-factor heatmap. See the figures-unit concern on the
-task ledger; those functions are added once the P-A weights driver lands.
+Deferred by design (no producing code landed, so no schema exists to key on):
+the leg-6 cross-arm shared-factor heatmap. ``issue2569_leg6`` persists factor
+MATCHES and singular values per arm, never the factor vectors themselves, so
+cross-arm factor cosines cannot be plotted without re-deriving fits (concern
+``leg6-cross-arm-factor-vectors-unpersisted`` on the task ledger). The hero
+figure's split-half spread bands are a P-B (rowbattery) product absent from
+P-A artifacts; they are added when that producer lands, never fabricated.
 
 Usage:
     uv run python scripts/issue2569_figures.py \
@@ -55,6 +63,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
@@ -122,6 +131,19 @@ DISPLAY: dict[str, str] = {
     # alignment direction families (leg 5)
     "delta_tbar": "realized mean write direction",
     "c_C": "training-context centroid",
+    # leg-1 anatomy classes (issue2569_weights.classify_anatomy; tau EXCEEDS the
+    # median gain on this map, so the below-tau class reads at reduced relative
+    # gain rather than being dropped: no "ignored" / "null space" phrasing).
+    "ignored": "below tau (last 1% of squared-gain mass)",
+    "copied": "copied (gain 0.8 to 1.25, aligned)",
+    "damped": "damped (aligned, gain below 0.8)",
+    "transcoded": "transcoded (gain kept, direction changed)",
+    "rotated_scaled": "rotated + scaled (remainder)",
+    # leg-1 SAE dashboard sections (B1 orientation dictionary)
+    "singular_read": "Singular read directions (u_i) vs context SAE",
+    "singular_write": "Singular write directions (v_i) vs answer SAE",
+    "eigen_read": "Eigen read directions (right eigvecs) vs context SAE",
+    "eigen_write": "Eigen write directions (left eigvecs) vs answer SAE",
 }
 
 GATE_METRIC_ORDER = (
@@ -1109,6 +1131,415 @@ def build_atlas(doc: dict) -> plt.Figure:
 
 
 # ---------------------------------------------------------------------------
+# Legs 1 + 3 (P-A weights driver, issue2569_weights.py @ d41a8e8420)
+# ---------------------------------------------------------------------------
+
+WEIGHTS_LAYER = 19  # primary analysis layer (plan §4; issue2569_weights LAYERS_PRODUCTION[0])
+# H3 wiring decision constants, mirrored verbatim from issue2569_weights.py
+# (plan §7.5 leg 3). Decision lines are drawn ONLY on alive-masked panels;
+# full-131k-column shares are INFORMATIONAL at P-A and never carry a verdict
+# line (issue2569_weights h3.grain).
+H3_PASS_SHARE = 0.50
+H3_KILL_SHARE = 0.10
+# Free slots 12/15 (max lightness contrast among unreserved slots); the two
+# lines also differ by linestyle so the pair never reads as one threshold.
+COLOR_H3_PASS = _PAL[12]  # H3 PASS floor line (dark teal, dashed)
+COLOR_H3_KILL = _PAL[15]  # H3 kill line (light yellow-green, dashdot)
+
+# Anatomy class precedence order (issue2569_weights.classify_anatomy; first match).
+ANATOMY_CLASS_ORDER = ("ignored", "copied", "damped", "transcoded", "rotated_scaled")
+# Dashboard section -> null-floor side (mirrors the producing writer's nulls[side]).
+DASH_SECTION_SIDE = {
+    "singular_read": "ctx",
+    "singular_write": "ans",
+    "eigen_read": "ctx",
+    "eigen_write": "ans",
+}
+
+
+def _load_factor_arrays(root: Path) -> dict:
+    """factor_L<layer>.pt reduced to the plain numpy arrays the figures read.
+
+    ``weights_only=False`` is deliberate: a self-produced, regime-pinned
+    project artifact (#1900 convention; mirrors the producing driver's own
+    loads). The complex tolerance mirrors the dashboards writer's convention.
+    """
+    path = root / "weights" / "leg1" / f"factor_L{WEIGHTS_LAYER}.pt"
+    if not path.is_file():
+        raise FileNotFoundError(f"weights/leg1/factor_L{WEIGHTS_LAYER}.pt")
+    fac = torch.load(path, map_location="cpu", weights_only=False)
+    lam = fac["eig_lambda"].numpy()
+    abs_lam = np.abs(lam).astype(np.float64)
+    tol = 1e-12 * max(float(abs_lam.max()) if abs_lam.size else 1.0, 1.0)
+    return {
+        "sigma": fac["sigma"].numpy().astype(np.float64),
+        "abs_lambda": abs_lam,
+        "is_complex": np.abs(lam.imag) > tol,
+    }
+
+
+def _caveat_caption(doc: dict) -> str:
+    """Producer-shipped binding caveat strings, joined verbatim (plan leg-8 step 4)."""
+    return " | ".join(str(c) for c in (doc.get("caveats") or []))
+
+
+def _render_with_caption(fig: plt.Figure, stem: str, fig_dir: Path, caption: str) -> str:
+    """_render plus a caption written into the savefig_paper sidecar.
+
+    Figures never carry caption blocks on canvas (standing directive), so the
+    binding caveat strings shipped inside the producing JSON ride the figure's
+    ``.meta.json`` sidecar, where every consumer of the artifact sees them.
+    """
+    stem = _render(fig, stem, fig_dir)
+    side = fig_dir / f"{stem}.meta.json"
+    meta = json.loads(side.read_text())
+    meta["caption"] = caption
+    with atomic_replace(side) as tmp:
+        tmp.write_text(json.dumps(meta, indent=1, sort_keys=True))
+    return stem
+
+
+def build_leg1_anatomy_hero(anatomy: dict, fac: dict) -> plt.Figure:
+    """Hero: sigma and |lambda| spectra + read-direction class fractions (L19).
+
+    Panel A overlays the full singular spectrum (read gains, anatomy JSON)
+    and the eigenvalue-magnitude spectrum (factor .pt), each rank-ordered,
+    with the tau threshold (99% of squared-gain mass) and the median singular
+    value as references: on this map tau EXCEEDS the median gain, so below-tau
+    directions are read at reduced relative gain, not dropped. Panel B shows
+    each anatomy class's share of squared-gain mass next to its share of
+    directions. Split-half spread bands are a P-B product, absent at P-A.
+    """
+    sigma = np.asarray(anatomy["sigma"], np.float64)
+    abs_lam = np.asarray(fac["abs_lambda"], np.float64)
+    if sigma.size == 0 or abs_lam.size == 0:
+        raise ValueError("anatomy/factor artifacts carry empty spectra")
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(10.2, 4.0), layout="constrained")
+    ax_a.plot(
+        np.arange(1, sigma.size + 1),
+        sigma,
+        color=COLOR_PRIMARY,
+        label="singular value (read gain)",
+    )
+    ax_a.plot(
+        np.arange(1, abs_lam.size + 1),
+        abs_lam,
+        color=COLOR_COMPARISON,
+        label="eigenvalue magnitude",
+    )
+    ax_a.axhline(
+        float(anatomy["tau_kernel"]),
+        color=COLOR_NEUTRAL,
+        ls="--",
+        label="tau (99% of squared-gain mass)",
+    )
+    ax_a.axhline(
+        float(anatomy["sigma_median"]),
+        color=COLOR_NEUTRAL,
+        ls=":",
+        label="median singular value",
+    )
+    ax_a.set_yscale("log")
+    ax_a.set_xlabel("rank")
+    ax_a.set_ylabel("gain")
+    ax_a.set_title(f"Operator spectra, layer {WEIGHTS_LAYER}", fontsize=9)
+    ax_a.legend(fontsize=7)
+
+    classes = anatomy["classes"]
+    order = [c for c in ANATOMY_CLASS_ORDER if c in classes]
+    if not order:
+        raise ValueError("anatomy JSON carries no known class entries")
+    x = np.arange(len(order))
+    width = 0.38
+    ax_b.bar(
+        x - width / 2,
+        [classes[c]["sigma2_mass_frac"] for c in order],
+        width,
+        color=COLOR_PRIMARY,
+        label="share of squared-gain mass",
+    )
+    ax_b.bar(
+        x + width / 2,
+        [classes[c]["frac_count"] for c in order],
+        width,
+        color=COLOR_COMPARISON,
+        label="share of directions",
+    )
+    ax_b.set_xticks(x, [display(c) for c in order], rotation=18, ha="right", fontsize=6.5)
+    ax_b.set_ylabel("fraction")
+    ax_b.set_title("Read-direction classes (precedence order)", fontsize=9)
+    ax_b.legend(fontsize=7)
+    return fig
+
+
+def build_leg1_eigen_vs_singular(fac: dict, anatomy: dict) -> plt.Figure:
+    """Rank-matched eigen-vs-singular gain scatter (each spectrum sorted descending).
+
+    Real eigenvalues and complex pairs are split by color (is_complex read off
+    the persisted complex array, never recomputed); the equal-gain diagonal and
+    the tau threshold from the anatomy JSON are the only references.
+    """
+    s = np.asarray(fac["sigma"], np.float64)
+    al = np.asarray(fac["abs_lambda"], np.float64)
+    n = int(min(s.size, al.size))
+    s, al = s[:n], al[:n]
+    cx = np.asarray(fac["is_complex"], bool)[:n]
+    keep = (s > 0) & (al > 0)  # log-log presentation; nonpositive pairs cannot render
+    if not keep.any():
+        raise ValueError("no positive rank-matched (sigma, |lambda|) pairs to plot")
+    fig, ax = plt.subplots(figsize=(4.8, 4.4), layout="constrained")
+    ax.scatter(s[keep & ~cx], al[keep & ~cx], s=7, color=COLOR_PRIMARY, label="real eigenvalue")
+    if (keep & cx).any():
+        ax.scatter(s[keep & cx], al[keep & cx], s=7, color=COLOR_COMPARISON, label="complex pair")
+    lo = float(min(s[keep].min(), al[keep].min()))
+    hi = float(max(s[keep].max(), al[keep].max()))
+    ax.plot([lo, hi], [lo, hi], color=COLOR_NEUTRAL, ls="--", label="equal gain (y = x)")
+    ax.axvline(
+        float(anatomy["tau_kernel"]),
+        color=COLOR_NEUTRAL,
+        ls=":",
+        label="tau (99% of squared-gain mass)",
+    )
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("singular value (rank-matched)")
+    ax.set_ylabel("eigenvalue magnitude (rank-matched)")
+    ax.set_title(f"Eigen vs singular gains, layer {WEIGHTS_LAYER}", fontsize=9)
+    ax.legend(fontsize=7)
+    return fig
+
+
+def build_sae_dashboards(doc: dict) -> plt.Figure:
+    """Two-sided SAE dashboards: per-direction max |cos| vs BOTH null floors.
+
+    One panel per section (singular/eigen x read/write). Read panels quote the
+    context-dictionary floors, write panels the answer-dictionary floors: the
+    analytic sqrt(2 ln N / d) floor and the empirical random-unit max-|cos|
+    p95, both read off the persisted null_floors block. Eigen panels add the
+    per-direction imaginary-part fraction on the same [0, 1] axis.
+    """
+    sections = doc["sections"]
+    floors = doc["null_floors"]
+    fig, axes = plt.subplots(2, 2, figsize=(9.8, 6.6), layout="constrained")
+    for ax, key in zip(axes.ravel(), DASH_SECTION_SIDE):
+        rows = sections[key]["directions"]
+        if not rows:
+            raise ValueError(f"sae_dashboards section {key} carries no directions")
+        ranks = np.asarray([r["rank"] for r in rows], np.int64)
+        mac = np.asarray([r["max_abs_cos"] for r in rows], np.float64)
+        ax.plot(ranks, mac, "o-", ms=3.5, color=COLOR_PRIMARY, label="max |cos| vs dictionary")
+        if key.startswith("eigen"):
+            imf = np.asarray([r["im_frac"] for r in rows], np.float64)
+            ax.plot(
+                ranks,
+                imf,
+                "s",
+                ms=5.0,
+                mew=1.4,
+                mfc="none",
+                color=COLOR_COMPARISON,
+                label="imaginary-part fraction",
+            )
+        nf = floors[DASH_SECTION_SIDE[key]]
+        ax.axhline(
+            float(nf["analytic_sqrt_2lnN_over_d"]),
+            color=COLOR_THEORY,
+            ls="--",
+            label="analytic null floor sqrt(2 ln N / d)",
+        )
+        ax.axhline(
+            float(nf["empirical"]["p95"]),
+            color=COLOR_NEUTRAL,
+            ls=":",
+            label="empirical null p95 (random unit dirs)",
+        )
+        ax.set_ylim(0.0, 1.0)
+        ax.set_xlabel("direction rank")
+        ax.set_ylabel("|cos|")
+        ax.set_title(display(key), fontsize=8.5)
+        ax.legend(fontsize=6)
+    return fig
+
+
+def build_wiring_edge_mass(arrays: dict, wdoc: dict) -> plt.Figure:
+    """Leg-3 in-edge |edge|-mass concentration: per-feature curves + H3 histogram.
+
+    Top row: full-context-column curves and top-32 shares (INFORMATIONAL at
+    P-A, per the persisted h3.grain; no decision lines). Bottom row (present
+    only on rows-attached runs, read off the ``*_alive`` npz keys): the
+    alive-masked twins, carrying the H3 PASS floor and kill line. Behavior-
+    nearest answer features (is_rb_nearest) are highlighted in both rows; the
+    map-level caveat strings ride the sidecar caption.
+    """
+    k_grid = np.asarray(arrays["conc_k_grid"], np.int64)
+    is_near = np.asarray(arrays["is_rb_nearest"], bool)
+    conc = np.asarray(arrays["conc_curve"], np.float64)
+    if conc.size == 0:
+        raise ValueError("wiring_edges npz carries no answer features")
+    have_alive = "top32_absmass_share_alive" in arrays
+    n_rows = 2 if have_alive else 1
+    fig, axes = plt.subplots(
+        n_rows, 2, figsize=(10.0, 3.7 * n_rows), layout="constrained", squeeze=False
+    )
+
+    def _curves(ax: plt.Axes, curve: np.ndarray, title: str, verdict: bool) -> None:
+        """Per-feature concentration curves + median (+ decision lines on alive)."""
+        for row in curve:
+            ax.plot(k_grid, row, color=COLOR_PRIMARY, alpha=0.12, lw=0.6)
+        ax.plot(
+            k_grid,
+            np.median(curve, axis=0),
+            color=COLOR_PRIMARY,
+            lw=2.0,
+            label="median over answer features",
+        )
+        for j, row in enumerate(curve[is_near]):
+            ax.plot(
+                k_grid,
+                row,
+                color=COLOR_COMPARISON,
+                lw=1.6,
+                label="behavior-nearest answer feature" if j == 0 else None,
+            )
+        if verdict:
+            ax.axhline(
+                H3_PASS_SHARE, color=COLOR_H3_PASS, ls="--", lw=1.8, label="H3 PASS floor (0.50)"
+            )
+            ax.axhline(
+                H3_KILL_SHARE, color=COLOR_H3_KILL, ls="-.", lw=2.0, label="H3 kill line (0.10)"
+            )
+            ax.axvline(32, color=COLOR_NEUTRAL, ls=":", label="k = 32 (verdict statistic)")
+        ax.set_xscale("log", base=2)
+        ax.set_xlabel("k (top in-edges kept)")
+        ax.set_ylabel("cumulative |edge|-mass share")
+        ax.set_ylim(0.0, 1.02)
+        ax.set_title(title, fontsize=8.5)
+        ax.legend(fontsize=6.5)
+
+    def _hist(ax: plt.Axes, share: np.ndarray, title: str, verdict: bool) -> None:
+        """Top-32 share distribution with behavior-nearest rug (+ decision lines)."""
+        ax.hist(share, bins=24, range=(0.0, 1.0), color=COLOR_PRIMARY, label="answer features")
+        if is_near.any():
+            ax.plot(
+                share[is_near],
+                np.zeros(int(is_near.sum())),
+                "^",
+                ms=7,
+                color=COLOR_COMPARISON,
+                clip_on=False,
+                label="behavior-nearest answer feature",
+            )
+        if verdict:
+            ax.axvline(
+                H3_PASS_SHARE, color=COLOR_H3_PASS, ls="--", lw=1.8, label="H3 PASS floor (0.50)"
+            )
+            ax.axvline(
+                H3_KILL_SHARE, color=COLOR_H3_KILL, ls="-.", lw=2.0, label="H3 kill line (0.10)"
+            )
+        ax.set_xlabel("top-32 |edge|-mass share")
+        ax.set_ylabel("answer-feature count")
+        ax.set_title(title, fontsize=8.5)
+        ax.legend(fontsize=6.5)
+
+    _curves(axes[0][0], conc, "Full context columns (informational)", verdict=False)
+    _hist(
+        axes[0][1],
+        np.asarray(arrays["top32_absmass_share"], np.float64),
+        "Top-32 share, full columns (informational)",
+        verdict=False,
+    )
+    if have_alive:
+        _curves(
+            axes[1][0],
+            np.asarray(arrays["conc_curve_alive"], np.float64),
+            "Alive context columns (verdict grade)",
+            verdict=True,
+        )
+        _hist(
+            axes[1][1],
+            np.asarray(arrays["top32_absmass_share_alive"], np.float64),
+            "Top-32 share, alive columns (verdict grade)",
+            verdict=True,
+        )
+    return fig
+
+
+def _attribution_table_feature(ex: dict) -> tuple[str, dict]:
+    """The one answer feature tabled per example: behavior-nearest first, then id order."""
+    feats = ex.get("features") or {}
+    if not feats:
+        raise ValueError(f"attribution example row {ex.get('row_id')} carries no features")
+
+    def _pref(item: tuple[str, dict]) -> tuple[int, int]:
+        fid, feat = item
+        near = str(feat.get("why_in_table", "")).startswith("r_B-nearest")
+        return (0 if near else 1, int(fid))
+
+    return min(feats.items(), key=_pref)
+
+
+def _short(text: str, width: int) -> str:
+    """Presentation truncation with a visible ellipsis (never silent)."""
+    return text if len(text) <= width else text[: width - 1] + "…"
+
+
+def build_attribution_tables(doc: dict) -> plt.Figure:
+    """Leg-3 worked-example attribution tables (the sanctioned table exception).
+
+    One table per worked example: the top contribution rows a_j * (E_f A^T d_j)
+    for that example's tabled answer feature, with the judged context-feature
+    description where one exists. A producer deferral string (rows not
+    attached) raises so the batch records the reason as a named skip.
+    """
+    examples = doc["examples"]
+    if isinstance(examples, str):
+        raise ValueError(f"attribution examples deferred by producer: {examples[:160]}")
+    if not examples:
+        raise ValueError("attribution JSON carries no worked examples")
+    n = min(len(examples), 8)
+    n_grid_rows = (n + 1) // 2
+    fig, axes = plt.subplots(
+        n_grid_rows, 2, figsize=(11.2, 2.6 * n_grid_rows), layout="constrained", squeeze=False
+    )
+    flat = list(axes.ravel())
+    for ax in flat[n:]:
+        ax.set_visible(False)
+    for ax, ex in zip(flat, examples[:n]):
+        fid, feat = _attribution_table_feature(ex)
+        rows = []
+        for c in feat["contributions"][:6]:
+            lab = c.get("label")
+            desc = str(lab.get("description") or "") if isinstance(lab, dict) else ""
+            rows.append(
+                [
+                    str(c["ctx_feat_id"]),
+                    f"{c['a_j']:.3g}",
+                    f"{c['edge']:.3g}",
+                    f"{c['contribution']:.3g}",
+                    _short(desc, 46),
+                ]
+            )
+        if not rows:
+            raise ValueError(f"attribution feature {fid} carries no contribution rows")
+        tab = ax.table(
+            cellText=rows,
+            colLabels=["context feature", "activation", "edge", "contribution", "description"],
+            loc="center",
+            cellLoc="left",
+        )
+        tab.auto_set_font_size(False)
+        tab.set_fontsize(6.0)
+        tab.auto_set_column_width(col=list(range(5)))
+        ax.set_axis_off()
+        ax.set_title(
+            f"Holdout row {ex['row_id']}, answer feature {fid} ({feat['why_in_table']}): "
+            f"predicted {feat['pred_act']:.3g}, true {feat['true_act']:.3g}",
+            fontsize=7,
+        )
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Driver: load inputs, guard, render, manifest
 # ---------------------------------------------------------------------------
 
@@ -1256,7 +1687,77 @@ def fig_leg7_atlas(root: Path, fig_dir: Path) -> str:
     return _render(build_atlas(doc), "leg7_atlas", fig_dir)
 
 
+def _load_anatomy(root: Path) -> dict:
+    """anatomy_L<layer>.json (fail-loud when the weights driver has not run)."""
+    doc = _read_json(root / "weights" / "leg1" / f"anatomy_L{WEIGHTS_LAYER}.json")
+    if doc is None:
+        raise FileNotFoundError(f"weights/leg1/anatomy_L{WEIGHTS_LAYER}.json")
+    return doc
+
+
+def fig_leg1_anatomy_hero(root: Path, fig_dir: Path) -> str:
+    """Hero anatomy figure: spectra + class fractions (leg-1, primary layer)."""
+    return _render(
+        build_leg1_anatomy_hero(_load_anatomy(root), _load_factor_arrays(root)),
+        "leg1_anatomy_hero",
+        fig_dir,
+    )
+
+
+def fig_leg1_eigen_vs_singular(root: Path, fig_dir: Path) -> str:
+    """Rank-matched eigen-vs-singular gain scatter (leg-1, primary layer)."""
+    return _render(
+        build_leg1_eigen_vs_singular(_load_factor_arrays(root), _load_anatomy(root)),
+        "leg1_eigen_vs_singular",
+        fig_dir,
+    )
+
+
+def fig_leg1_sae_dashboards(root: Path, fig_dir: Path) -> str:
+    """Two-sided SAE dashboards vs both null floors (leg-1, primary layer)."""
+    doc = _read_json(root / "weights" / "leg1" / f"sae_dashboards_L{WEIGHTS_LAYER}.json")
+    if doc is None:
+        raise FileNotFoundError(f"weights/leg1/sae_dashboards_L{WEIGHTS_LAYER}.json")
+    return _render(build_sae_dashboards(doc), "leg1_sae_dashboards", fig_dir)
+
+
+def fig_leg3_wiring_edge_mass(root: Path, fig_dir: Path) -> str:
+    """Wiring edge-mass concentration + H3 shares; caveats ride the sidecar."""
+    npz_path = root / "weights" / "leg3" / f"wiring_edges_L{WEIGHTS_LAYER}.npz"
+    wdoc = _read_json(root / "weights" / "leg3" / f"wiring_L{WEIGHTS_LAYER}.json")
+    if wdoc is None or not npz_path.is_file():
+        raise FileNotFoundError(
+            f"weights/leg3/wiring_edges_L{WEIGHTS_LAYER}.npz + wiring_L{WEIGHTS_LAYER}.json"
+        )
+    with np.load(npz_path) as npz:
+        arrays = {k: npz[k] for k in npz.files}
+    return _render_with_caption(
+        build_wiring_edge_mass(arrays, wdoc),
+        "leg3_wiring_edge_mass",
+        fig_dir,
+        _caveat_caption(wdoc),
+    )
+
+
+def fig_leg3_attribution_tables(root: Path, fig_dir: Path) -> str:
+    """Worked-example attribution tables; caveats ride the sidecar."""
+    doc = _read_json(root / "weights" / "leg3" / f"attribution_L{WEIGHTS_LAYER}.json")
+    if doc is None:
+        raise FileNotFoundError(f"weights/leg3/attribution_L{WEIGHTS_LAYER}.json")
+    return _render_with_caption(
+        build_attribution_tables(doc),
+        "leg3_attribution_tables",
+        fig_dir,
+        _caveat_caption(doc),
+    )
+
+
 FIGURES: dict[str, object] = {
+    "leg1_anatomy_hero": fig_leg1_anatomy_hero,
+    "leg1_eigen_vs_singular": fig_leg1_eigen_vs_singular,
+    "leg1_sae_dashboards": fig_leg1_sae_dashboards,
+    "leg3_wiring_edge_mass": fig_leg3_wiring_edge_mass,
+    "leg3_attribution_tables": fig_leg3_attribution_tables,
     "leg2_learning_curve": fig_leg2_learning_curve,
     "leg2_gate_ladder_content": fig_leg2_gate_ladder_content,
     "leg2_gate_ladder_marker": fig_leg2_gate_ladder_marker,
@@ -1274,15 +1775,14 @@ FIGURES: dict[str, object] = {
     "leg8_kernel_pairs": fig_leg8_kernel_pairs,
 }
 
-# Plan §6 figures whose PRODUCING driver has not landed; enumerated so the
-# manifest names the gap instead of silently omitting it (plan hero included).
+# Plan §6 figures whose PRODUCING artifact does not exist; enumerated so the
+# manifest names the gap instead of silently omitting it.
 DEFERRED_NO_PRODUCER = {
-    "leg1_anatomy_hero": "P-A weights driver (leg-1 operator reads) not landed",
-    "leg1_eigen_vs_singular": "P-A weights driver (leg-1 operator reads) not landed",
-    "leg1_sae_dashboards": "P-A weights driver (leg-1 dashboards) not landed",
-    "leg3_wiring_edge_mass": "P-A weights driver (leg-3 wiring receipts) not landed",
-    "leg3_attribution_tables": "P-A weights driver (leg-3 receipts) not landed",
-    "leg6_shared_factor_heatmap": "cross-arm factor vectors are not persisted by issue2569_leg6",
+    "leg6_shared_factor_heatmap": (
+        "issue2569_leg6 persists factor MATCHES and singular values per arm, never the "
+        "factor vectors, and no cross-arm cosine / rotation-null artifact exists; plotting "
+        "would require re-deriving fits (concern leg6-cross-arm-factor-vectors-unpersisted)"
+    ),
 }
 
 
