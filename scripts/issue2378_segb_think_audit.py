@@ -25,9 +25,10 @@ import collections
 import json
 from pathlib import Path
 
-from huggingface_hub import hf_hub_download, list_repo_tree
+from huggingface_hub import HfApi, hf_hub_download
 
 from explore_persona_space.orchestrate.env import load_dotenv
+from explore_persona_space.orchestrate.hub import list_hf_files_under_path, retry_transient
 
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 PREFIX = "issue2378_xframing/raw_completions/pilot/{round}/segb"
@@ -38,14 +39,21 @@ def _fetch(round_: str, dest: Path) -> list[Path]:
     """Download every SegB completion shard for ``round_`` into ``dest``."""
     prefix = PREFIX.format(round=round_)
     remote = [
-        f.path
-        for f in list_repo_tree(DATA_REPO, path_in_repo=prefix, repo_type="dataset")
-        if f.path.endswith(".jsonl")
+        p
+        for p in list_hf_files_under_path(HfApi(), DATA_REPO, prefix, repo_type="dataset")
+        if p.endswith(".jsonl")
     ]
     if not remote:
         raise RuntimeError(f"no SegB shards under {prefix} -- wrong round or prefix (fail loud)")
     return [
-        Path(hf_hub_download(DATA_REPO, path, repo_type="dataset", local_dir=str(dest)))
+        Path(
+            retry_transient(
+                lambda p=path: hf_hub_download(
+                    DATA_REPO, p, repo_type="dataset", local_dir=str(dest)
+                ),
+                what=f"hf_hub_download({path})",
+            )
+        )
         for path in remote
     ]
 
