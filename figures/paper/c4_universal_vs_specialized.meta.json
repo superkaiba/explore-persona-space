@@ -1,32 +1,25 @@
 {
-  "commit": "45754bb9+dirty",
-  "render_id": "03489a5da148484c",
-  "git_commit": "45754bb99f766f45311a80d6871f417d04119764",
+  "commit": "09bf0809+dirty",
+  "render_id": "a15bbb7dbfc440b1",
+  "git_commit": "09bf0809523be4ada18ba13d41035c5d1145b011",
   "git_dirty": true,
   "git_dirty_paths": [
+    "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/issue_1901/avgtarget_plots/c1_layer_profile.meta.json",
-    "figures/issue_1901/avgtarget_plots/c1_layer_profile.pdf",
-    "figures/issue_1901/avgtarget_plots/c1_layer_profile.png",
-    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.meta.json",
-    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.pdf",
-    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.png",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
-    "figures/paper/c1_layer_profile.meta.json",
-    "figures/paper/c1_layer_profile.pdf",
-    "figures/paper/c1_layer_profile.png",
-    "figures/paper/c1_scaling_train_pool.meta.json",
-    "figures/paper/c1_scaling_train_pool.pdf",
-    "figures/paper/c1_scaling_train_pool.png",
-    "figures/paper/c3_persona_direction_spectrum.meta.json",
-    "figures/paper/c3_persona_direction_spectrum.pdf",
-    "figures/paper/c3_persona_direction_spectrum.png",
-    "scripts/issue1901_avgtarget_plots.py",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "figures/paper/c1_stage_ladder_arms.meta.json",
+    "figures/paper/c1_stage_ladder_arms.pdf",
+    "figures/paper/c1_stage_ladder_arms.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue1902_figures.py",
     "scripts/issue2054_paper_r2_figs.py",
+    "scripts/issue2356_flippair_2afc.py",
+    "scripts/issue2356_flippair_figures.py",
     "scripts/issue2474_n1m_map.py",
-    "scripts/issue779_plot3_redesign.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -38,128 +31,199 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2568/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2054_paper_r2_figs.py",
-  "created": "2026-08-25T17:21:25Z",
+  "created": "2026-08-25T20:11:25Z",
   "figsize": [
     5.5,
     4.4
   ],
   "points": [
     {
-      "x": -0.19,
+      "x": -0.3,
       "y": 0.5796996369279679,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.81,
+      "x": 0.7,
       "y": 0.38985271917718867,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.81,
+      "x": 1.7,
       "y": 0.36960715629310803,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 2.81,
+      "x": 2.7,
       "y": 0.3559185425108692,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 3.81,
+      "x": 3.7,
       "y": 0.3609899231388926,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 4.81,
+      "x": 4.7,
       "y": 0.2962172010567693,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.19,
+      "x": -0.1,
       "y": 0.4344725349984258,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 1.19,
+      "x": 0.9,
       "y": 0.2583914084983648,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 2.19,
+      "x": 1.9,
       "y": 0.34028494498421596,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 3.19,
+      "x": 2.9,
       "y": 0.29810181543967956,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 4.19,
+      "x": 3.9,
       "y": 0.29057467848968915,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 5.19,
+      "x": 4.9,
       "y": 0.18511645251809059,
       "_kind": "bar",
       "_group": 1
     },
     {
+      "x": 0.1,
+      "y": 0.49863549309530714,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.1,
+      "y": null,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.1,
+      "y": 0.36357969979447313,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.1,
+      "y": 0.3333196701682339,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.1,
+      "y": 0.32840868465267,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.1,
+      "y": 0.2482758263106431,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.3,
+      "y": 0.4984962645228225,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "y": null,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.3,
+      "y": 0.36337732347961105,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.3,
+      "y": 0.33358413721790753,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.3,
+      "y": 0.3284518026639579,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.3,
+      "y": 0.2557825286373018,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
       "x": 0.0,
       "y": -0.8400497253129029,
       "_kind": "line",
-      "_group": 2
+      "_group": 4
     },
     {
       "x": 1.0,
       "y": -1.5096405941662412,
       "_kind": "line",
-      "_group": 2
+      "_group": 4
     },
     {
       "x": 2.0,
       "y": -0.6427885531940452,
       "_kind": "line",
-      "_group": 2
+      "_group": 4
     },
     {
       "x": 3.0,
       "y": -0.6850771881940597,
       "_kind": "line",
-      "_group": 2
+      "_group": 4
     },
     {
       "x": 4.0,
       "y": -0.5145396609602718,
       "_kind": "line",
-      "_group": 2
+      "_group": 4
     },
     {
       "x": 5.0,
       "y": -0.8233364601594321,
       "_kind": "line",
-      "_group": 2
+      "_group": 4
     }
   ],
-  "n_series": 3,
-  "total_points": 18,
+  "n_series": 5,
+  "total_points": 30,
   "text": {
     "suptitle": null,
     "fig_texts": [
@@ -170,6 +234,8 @@
         "legend_labels": [
           "trained on this speaker alone",
           "trained on everything",
+          "trained on everything + constant shift",
+          "trained on everything + global rescaling",
           "identity + bias baseline"
         ],
         "yticklabels": [
@@ -205,7 +271,9 @@
     "series": [
       "identity + bias baseline",
       "trained on this speaker alone",
-      "trained on everything"
+      "trained on everything",
+      "trained on everything + constant shift",
+      "trained on everything + global rescaling"
     ]
   },
   "formats_written": [
