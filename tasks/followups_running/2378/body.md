@@ -2,7 +2,8 @@
 title: Context→answer structure is shared across story characters; chat, plain-text,
   and user framings are covered partially or not at all in Qwen3.6-27B (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-19T02:35:51Z'
 has_clean_result: true
 parent_id: 2054
