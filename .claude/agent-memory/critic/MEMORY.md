@@ -81,6 +81,7 @@
 
 ## Panel composition / axis conflation
 - [Repaired-grid re-mine](feedback_repaired_grid_remine_review.md) — cap mismatch from own-suite fix (#2221)
+- [Multi-model pod weight accumulation](feedback_multi_model_pod_weight_accumulation.md) — panel pods: cumulative HF_HOME weights + per-GPU concurrent captures vs ~130 GB quota (#2588)
 - [Neutral-prompt conflation](feedback_neutral_prompt_axis_conflation.md) — "neutral" = evaluated persona (#267)
 - [Panel family clustering](feedback_panel_family_clustering.md) — ≥5 same-family can carry headline ρ (#380)
 - [Alternatives lens round 2](feedback_alternatives_lens_round2.md) — conflations survive v1→v2 (#257)
