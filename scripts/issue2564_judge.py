@@ -70,6 +70,7 @@ import re  # noqa: E402
 import sys  # noqa: E402
 from pathlib import Path  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue2564 import bank2564 as BK  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
@@ -127,11 +128,9 @@ def log(msg: str) -> None:
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    """Atomic JSON write (tmp + os.replace)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, sort_keys=True))
-    os.replace(tmp, path)
+    """Atomic JSON write via a process-unique temp (atomic_io.atomic_replace, #2336)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2, sort_keys=True))
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -628,9 +627,8 @@ def main() -> None:
                     sort_keys=True,
                 )
             )
-        tmp = raw_dir / "judge_scores.jsonl.tmp"
-        tmp.write_text("\n".join(lines) + "\n")
-        os.replace(tmp, raw_dir / "judge_scores.jsonl")
+        with atomic_replace(raw_dir / "judge_scores.jsonl") as tmp:
+            tmp.write_text("\n".join(lines) + "\n")
 
     # ---- fire tables ----
     value_rows: list[dict] = []
