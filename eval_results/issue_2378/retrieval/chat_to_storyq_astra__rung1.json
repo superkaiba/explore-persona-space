@@ -1,0 +1,202 @@
+{
+  "regime": {
+    "script_version": "issue2378_retrieval_v1",
+    "layer": 51,
+    "k": 5,
+    "seed": 137,
+    "n_eq": 6601,
+    "fold_map_sha": "72bb15c6c9c04010b7e7f5ae047058b71d045efcaf5166e59ee34a54c73704aa",
+    "conventions": [
+      "raw_euclidean",
+      "raw_cosine",
+      "whiten_cos",
+      "csls_cos",
+      "csls_whiten_cos"
+    ],
+    "ks": [
+      1,
+      5,
+      10
+    ],
+    "csls_k": 10,
+    "whiten_lam": 0.1,
+    "fresh_seeds": [
+      138,
+      139,
+      140,
+      141
+    ],
+    "pool": "the cell's full equalized cohort answers, pooled across folds (each row's prediction from its own fold's map); chance = 1/pool",
+    "whiten_cov": "per-fold TRAIN-ONLY (folds != f) shrunk covariance; queries whitened by their target row's fold decomposition (no eval leakage)"
+  },
+  "unit_kind": "ladder",
+  "pair": "chat_to_storyq_astra",
+  "rung_index": 1,
+  "rung": "1_direct",
+  "suppress_by_tier": null,
+  "preds_path": "/workspace/explore-persona-space/eval_results/issue_2378/ladder/preds/chat_to_storyq_astra__rung1__preds.npz",
+  "n_rows": 6601,
+  "n_pool": 6601,
+  "chance_at_1": 0.0001514921981517952,
+  "conventions": {
+    "raw_euclidean": {
+      "acc_at_k": {
+        "1": 0.0021208907741251328,
+        "5": 0.006211180124223602,
+        "10": 0.009846992879866687
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 1482.0,
+      "mrr": 0.006545512798196001,
+      "n": 6601,
+      "n_pool": 6601
+    },
+    "raw_cosine": {
+      "acc_at_k": {
+        "1": 0.01196788365399182,
+        "5": 0.033479775791546734,
+        "10": 0.04878048780487805
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 786.0,
+      "mrr": 0.02756606783127945,
+      "n": 6601,
+      "n_pool": 6601
+    },
+    "csls_cos": {
+      "acc_at_k": {
+        "1": 0.05271928495682472,
+        "5": 0.12967732161793669,
+        "10": 0.17860930162096653
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 182.0,
+      "mrr": 0.09668435163642972,
+      "n": 6601,
+      "n_pool": 6601
+    },
+    "whiten_cos": {
+      "acc_at_k": {
+        "1": 0.014088774428116952,
+        "5": 0.07483714588698683,
+        "10": 0.12028480533252538
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 321.0,
+      "mrr": 0.04998930108232021,
+      "n": 6601,
+      "n_pool": 6601
+    },
+    "csls_whiten_cos": {
+      "acc_at_k": {
+        "1": 0.08150280260566581,
+        "5": 0.19633388880472655,
+        "10": 0.2516285411301318
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 148.0,
+      "mrr": 0.13913630784387188,
+      "n": 6601,
+      "n_pool": 6601
+    }
+  },
+  "reconciliation_vs_producer_knn": {
+    "euclidean": {
+      "acc_at_k": {
+        "1": {
+          "producer": 0.0021208907741251328,
+          "battery": 0.0021208907741251328,
+          "abs_diff": 0.0
+        },
+        "5": {
+          "producer": 0.006211180124223602,
+          "battery": 0.006211180124223602,
+          "abs_diff": 0.0
+        },
+        "10": {
+          "producer": 0.009846992879866687,
+          "battery": 0.009846992879866687,
+          "abs_diff": 0.0
+        }
+      },
+      "max_abs_diff": 0.0,
+      "tol": 0.0003029843973035904,
+      "pass": true
+    },
+    "cosine": {
+      "acc_at_k": {
+        "1": {
+          "producer": 0.01196788365399182,
+          "battery": 0.01196788365399182,
+          "abs_diff": 0.0
+        },
+        "5": {
+          "producer": 0.033479775791546734,
+          "battery": 0.033479775791546734,
+          "abs_diff": 0.0
+        },
+        "10": {
+          "producer": 0.04878048780487805,
+          "battery": 0.04878048780487805,
+          "abs_diff": 0.0
+        }
+      },
+      "max_abs_diff": 0.0,
+      "tol": 0.0003029843973035904,
+      "pass": true
+    }
+  },
+  "whiten": {
+    "lam": 0.1,
+    "builder": "analysis.null_battery.shrunk_cholesky_from_cov",
+    "cov_source": "per-fold TRAIN-ONLY answers (folds != f): each query is whitened by its target row's fold decomposition, which never saw that row (no evaluation leakage into the whitening transform)",
+    "n_rows": 6601,
+    "n_train_per_fold": {
+      "0": 5274,
+      "1": 5293,
+      "2": 5296,
+      "3": 5282,
+      "4": 5259
+    },
+    "csls_note": "whitened-CSLS neighborhood statistics are computed within each fold's query group (queries sharing a target fold see one whitened space; the target-side r_T averages over that group's queries only — disclosed; k clamped to the group size, which binds only at probe/tiny-n scale); raw (unwhitened) CSLS is unchanged, computed over the full query set"
+  },
+  "unit_wall_s": 6.76,
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T17:08:09+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_retrieval.py",
+      "--phase",
+      "all",
+      "--cells",
+      "chat,plain_text,storyq_astra",
+      "--store-root",
+      "/workspace/explore-persona-space/data/issue_2378/p6_stage/issue2378_xframing/analysis_tensors/activations"
+    ],
+    "git_commit": "50c4d0dd",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_retrieval.py"
+  }
+}

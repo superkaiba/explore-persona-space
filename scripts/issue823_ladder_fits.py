@@ -128,6 +128,7 @@ from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
 )
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue_779.fit_h import ridge_fit_predict  # noqa: E402
 from explore_persona_space.experiments.issue_823.run_823 import (  # noqa: E402
     EXPECTED_HIDDEN,
@@ -1190,10 +1191,10 @@ def chunk_done(ckpt_dir: pathlib.Path, name: str, fingerprint: dict) -> bool:
 
 
 def save_chunk(ckpt_dir: pathlib.Path, name: str, arrays: dict, fingerprint: dict) -> None:
-    ckpt_dir.mkdir(parents=True, exist_ok=True)
-    tmp = ckpt_dir / f"{name}.tmp.npz"  # suffix stays .npz (np.savez appends it otherwise)
-    np.savez(tmp, **arrays)
-    tmp.replace(ckpt_dir / f"{name}.npz")
+    # np.savez APPENDS .npz to path-typed names lacking it, so the write goes
+    # through an open handle on the yielded .tmp path (atomic_io discipline).
+    with atomic_replace(ckpt_dir / f"{name}.npz") as tmp, tmp.open("wb") as fh:
+        np.savez(fh, **arrays)
     write_json(ckpt_dir / f"{name}.json", {"fingerprint": fingerprint, "ts": time.time()})
 
 

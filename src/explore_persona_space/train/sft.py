@@ -49,6 +49,7 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Literal
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -1492,10 +1493,8 @@ def _finalize_consumption_record(
         "git_commit": _git_short_sha_failsoft(),
         "ts": _utc_now_iso(),
     }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(record, ensure_ascii=False, indent=1))
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(record, ensure_ascii=False, indent=1))
     # Fail-loud asserts (AFTER the forensic write).
     if len(yielded) != n:
         raise RuntimeError(

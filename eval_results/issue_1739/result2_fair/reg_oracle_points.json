@@ -1,0 +1,428 @@
+{
+ "n_points": 14,
+ "points": [
+  {
+   "behavior": "evil",
+   "setting": "pvsynth",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.8456174068169083,
+   "ci": [
+    0.7919709194218829,
+    0.886762451835078
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 17,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "wildchat_rung",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.21387686274055107,
+   "ci": [
+    0.12070756790922788,
+    0.2951296362249793
+   ],
+   "n_replicates": 1,
+   "n_eval": 417,
+   "layer": 17,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "train",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.8056781007378913,
+   "ci": [
+    0.7953111588395115,
+    0.8149593862544009
+   ],
+   "n_replicates": 1,
+   "n_eval": 6468,
+   "layer": 17,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "hhrt",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.07115914173994092,
+   "ci": [
+    0.019706967156266735,
+    0.1106105599014611
+   ],
+   "n_replicates": 1,
+   "n_eval": 1868,
+   "layer": 17,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "evil",
+   "setting": "toxicchat",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.2981343002115607,
+   "ci": [
+    0.2063747588485659,
+    0.37952906074579884
+   ],
+   "n_replicates": 1,
+   "n_eval": 519,
+   "layer": 17,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/evil/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "pvsynth",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.7839551917464801,
+   "ci": [
+    0.7066947764568875,
+    0.8393619454296518
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 19,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "wildchat_rung",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.5460979190433695,
+   "ci": [
+    0.46678185733306815,
+    0.6140799690150983
+   ],
+   "n_replicates": 1,
+   "n_eval": 415,
+   "layer": 19,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "train",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.7697732535245382,
+   "ci": [
+    0.761902380594496,
+    0.7777726067028662
+   ],
+   "n_replicates": 1,
+   "n_eval": 16000,
+   "layer": 19,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "sycophancy",
+   "setting": "aita",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.7286289551180206,
+   "ci": [
+    0.6954821967279056,
+    0.7634422351494403
+   ],
+   "n_replicates": 1,
+   "n_eval": 1304,
+   "layer": 19,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/sycophancy/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "pvsynth",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.785539907559668,
+   "ci": [
+    0.687923303694386,
+    0.843483096662918
+   ],
+   "n_replicates": 1,
+   "n_eval": 200,
+   "layer": 18,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "wildchat_rung",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.6799617428533451,
+   "ci": [
+    0.6079994628527355,
+    0.7413527977689146
+   ],
+   "n_replicates": 1,
+   "n_eval": 411,
+   "layer": 18,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "trait_rubric_graded_0_100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "train",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.6502932921607457,
+   "ci": [
+    0.6399334063777409,
+    0.6594269772331558
+   ],
+   "n_replicates": 1,
+   "n_eval": 16000,
+   "layer": 18,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "nqopen",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.49579222160840714,
+   "ci": [
+    0.4672829188965083,
+    0.5231736162655031
+   ],
+   "n_replicates": 1,
+   "n_eval": 3167,
+   "layer": 18,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/hallucination/all_arms_spearman.json"
+  },
+  {
+   "behavior": "hallucination",
+   "setting": "simpleqa",
+   "method": "reg_oracle",
+   "arm_id": "arm12_oracle_reg",
+   "map_kind": "linear",
+   "rho": 0.55128529392285,
+   "ci": [
+    0.530481413399171,
+    0.5771353983545925
+   ],
+   "n_replicates": 1,
+   "n_eval": 4021,
+   "layer": 18,
+   "map_condition": "none (real-answer input; fair protocol)",
+   "readout": "fair union readout",
+   "dv_construct": "fabricated_fraction_rescaled_x100",
+   "source_file": "eval_results/issue_1739/result2_fair_v2/hallucination/all_arms_spearman.json"
+  }
+ ],
+ "meta": {
+  "method": "reg_oracle",
+  "arm_id": "arm12_oracle_reg",
+  "method_note": "reg_oracle = ridge regression fitted on the REAL answer activation summaries (the vectors arm11_oracle_proj projects the persona vector onto) under the fair matched-data protocol \u2014 the real-answer upper bound for the regression family (arm4_ridge_ctx = context input, arm7_map_ridge_pred = mapped-answer input). The rig's own fig-module slot name for this arm is 'regression_real_answer'; this artifact uses the requested key 'reg_oracle'.",
+  "extraction_note": "pure re-read of the committed fair-v2 summaries (no refit): the arm12_oracle_reg fit was produced by scripts/issue1739_result2fair_score.py on 2026-08-07 under the identical fair protocol; parity gate re-verified that every shared linear cell (arms 1/4/6/7/11 x all settings) reproduces the committed result2_fair_points.json rho exactly",
+  "parity_gate": {
+   "cells_checked": 70,
+   "tolerance": 1e-12,
+   "arms": [
+    "arm1_ctx_e1",
+    "arm4_ridge_ctx",
+    "arm6_map_proj_e1",
+    "arm7_map_ridge_pred",
+    "arm11_oracle_proj"
+   ]
+  },
+  "n_train_by_behavior": {
+   "evil": {
+    "n_train": 8038,
+    "n_eliciting": 6468,
+    "n_wc_train": 1570,
+    "d": 3584,
+    "regime": "n_train > d (primal ridge); identical counts asserted vs arm4_ridge_ctx"
+   },
+   "sycophancy": {
+    "n_train": 17567,
+    "n_eliciting": 16000,
+    "n_wc_train": 1567,
+    "d": 3584,
+    "regime": "n_train > d (primal ridge); identical counts asserted vs arm4_ridge_ctx"
+   },
+   "hallucination": {
+    "n_train": 17556,
+    "n_eliciting": 16000,
+    "n_wc_train": 1556,
+    "d": 3584,
+    "regime": "n_train > d (primal ridge); identical counts asserted vs arm4_ridge_ctx"
+   }
+  },
+  "frozen_layers": {
+   "evil": 17,
+   "sycophancy": 19,
+   "hallucination": 18
+  },
+  "ridge_selector": {
+   "fn": "explore_persona_space.experiments.issue_1739.fits.ridge_gcv_predict_per_target",
+   "selection": "per-target GCV over the pinned lambda grid",
+   "lambda_grid": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+   ],
+   "selected_lambda": "not persisted by the fair pass (no ridge_lambda_diagnostics in either committed result2_fair tree)",
+   "gram": "primal d x d when n_train > d (holds for every behavior here)"
+  },
+  "ci_method": "per-cell paired bootstrap of Spearman rho at the frozen layer, 500 draws, 2.5/97.5 percent quantiles (experiments.issue_1739.arms bootstrap machinery \u2014 the same CI every committed result2_fair arm carries)",
+  "feature_dim_source": "Qwen-2.5-7B hidden size (3584); not recorded in the summaries read here",
+  "input_sha256": {
+   "eval_results/issue_1739/result2_fair/result2_fair_points.json": "de01583c4ccdf137d618462485d8ccc6f39f5c2dc43c7425c67b96ab73813a50",
+   "eval_results/issue_1739/result2_fair_v2/evil/all_arms_spearman.json": "6042dafca3e14ce5da08752742a651c9b1615865b80b5ad436aabcbc1e3446b8",
+   "eval_results/issue_1739/result2_fair_v2/sycophancy/all_arms_spearman.json": "647fccbc7a1a6e18726d1749d7f71d0298ca5f6c4d23b2aab911420b8e4504c9",
+   "eval_results/issue_1739/result2_fair_v2/hallucination/all_arms_spearman.json": "fda0b3ab53c36ff7bfc61f2f6e28ac49d9da1d2be282f1143441d9345290d1b5"
+  },
+  "upstream_fit_provenance": {
+   "evil": {
+    "fit_git_commit": "b1a8f6687ffc188e71969dbf5e447d0e47a011e1",
+    "fit_ts": "2026-08-07T00:15:24Z",
+    "fit_script": "scripts/issue1739_result2fair_score.py",
+    "fit_input_paths": {
+     "train_store": "data/issue_1739/hf_dl/evil_labeling",
+     "train_dv": "data/issue_1739/hf_dl/train_dv/evil/labeling.json",
+     "e1_store": "data/issue_1739/hf_dl/evil_extraction",
+     "wcrung_store": "data/issue_1739/hf_dl/wcrung_capture_store/wildchat",
+     "wcrung_dv": "eval_results/issue_1739/wildchat_rung/dv_dataset/evil/labeling.json",
+     "train_summary": "eval_results/issue_1739/evil/arm_results/all_arms_spearman.json"
+    },
+    "fit_input_sha256": {
+     "data/issue_1739/hf_dl/train_dv/evil/labeling.json": "21ce1f8ce437f50399dd81d22553fb84ef3381120217781f94e53dc7b8fe59c1",
+     "eval_results/issue_1739/wildchat_rung/dv_dataset/evil/labeling.json": "3fc06817c9d3da512253026d3606b89c410a72e3e143742e1ecb6c3635ba5b96",
+     "eval_results/issue_1739/pvsynth/dv_dataset/evil/labeling.json": "8f38602d8d90e8f623abe3045665389c4a705d329f5a571e3392610fe1bf4d63",
+     "eval_results/issue_1739/evil/arm_results/all_arms_spearman.json": "cbea13fb2c56beb196a151d83224b487b60a893b9f83b39b5691b2be002f6615"
+    },
+    "frozen_layer_source": "modal-committed-train-cells:eval_results/issue_1739/evil/arm_results/all_arms_spearman.json",
+    "n_train_contexts_meta": 6468
+   },
+   "sycophancy": {
+    "fit_git_commit": "b1a8f6687ffc188e71969dbf5e447d0e47a011e1",
+    "fit_ts": "2026-08-07T00:54:26Z",
+    "fit_script": "scripts/issue1739_result2fair_score.py",
+    "fit_input_paths": {
+     "train_store": "data/issue_1739/hf_dl/sycophancy_labeling",
+     "train_dv": "data/issue_1739/hf_dl/train_dv/sycophancy/labeling.json",
+     "e1_store": "data/issue_1739/hf_dl/sycophancy_extraction",
+     "wcrung_store": "data/issue_1739/hf_dl/wcrung_capture_store/wildchat",
+     "wcrung_dv": "eval_results/issue_1739/wildchat_rung/dv_dataset/sycophancy/labeling.json",
+     "train_summary": "eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json"
+    },
+    "fit_input_sha256": {
+     "data/issue_1739/hf_dl/train_dv/sycophancy/labeling.json": "8d6aed280943e1c6868bfb44448dbfa6fbee17d91b26533fa26896931617defb",
+     "eval_results/issue_1739/wildchat_rung/dv_dataset/sycophancy/labeling.json": "b6217ef9f7089915a87094d3a34ee1d48ec10c17f969353dae93121cc5cb5765",
+     "eval_results/issue_1739/pvsynth/dv_dataset/sycophancy/labeling.json": "47ceec94fd0910100a1e2ffeb94f6a0d59ff8bd0ce9abb68965efa4938404850",
+     "eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json": "343387cfc740dbe85571014e9a96e93b2a20ea59c18f2cc75af2cb378737c25d"
+    },
+    "frozen_layer_source": "modal-committed-train-cells:eval_results/issue_1739/sycophancy/arm_results/all_arms_spearman.json",
+    "n_train_contexts_meta": 16000
+   },
+   "hallucination": {
+    "fit_git_commit": "b1a8f6687ffc188e71969dbf5e447d0e47a011e1",
+    "fit_ts": "2026-08-07T01:38:53Z",
+    "fit_script": "scripts/issue1739_result2fair_score.py",
+    "fit_input_paths": {
+     "train_store": "data/issue_1739/hf_dl/hallucination_labeling",
+     "train_dv": "data/issue_1739/hf_dl/train_dv/hallucination/labeling.json",
+     "e1_store": "data/issue_1739/hf_dl/hallucination_extraction",
+     "wcrung_store": "data/issue_1739/hf_dl/wcrung_capture_store/wildchat",
+     "wcrung_dv": "eval_results/issue_1739/wildchat_rung/dv_dataset/hallucination/labeling.json",
+     "train_summary": "eval_results/issue_1739/hallucination/arm_results/all_arms_spearman.json"
+    },
+    "fit_input_sha256": {
+     "data/issue_1739/hf_dl/train_dv/hallucination/labeling.json": "39c3a7beaffbba08a01057a730e1e415410537158bf296cdb40adaac9382cf5f",
+     "eval_results/issue_1739/wildchat_rung/dv_dataset/hallucination/labeling.json": "bd73ee462436e3aa2fa16812412678377cdceb47c74e89648c3ff40e8fbc1cc5",
+     "eval_results/issue_1739/pvsynth/dv_dataset/hallucination/labeling.json": "8205b84ac2d50f08428b4abd078ec51bf329550b98a3479d28962217679c377e",
+     "eval_results/issue_1739/hallucination/arm_results/all_arms_spearman.json": "d8dbe5b145a10bf00803674b829ba582103d37baf8e6235c38e778b2747e8251"
+    },
+    "frozen_layer_source": "modal-committed-train-cells:eval_results/issue_1739/hallucination/arm_results/all_arms_spearman.json",
+    "n_train_contexts_meta": 16000
+   }
+  },
+  "ts": "2026-08-25T17:50:38Z",
+  "git_commit": "6fe11a3d8ce2761f033d1b9d87ef7c7b3c60f201",
+  "git_dirty": true,
+  "phase": "reg-oracle-extract",
+  "git_dirty_paths": [
+   "scripts/issue1739_reg_oracle_arm.py",
+   ".claude/agent-memory/implementer/MEMORY.md",
+   "eval_results/issue_2474/n1m_map_arms.json",
+   "scripts/issue2474_n1m_map.py",
+   "tasks/completed/2214/body.md",
+   "tasks/completed/2214/comments.jsonl",
+   "tasks/completed/2214/concerns.jsonl",
+   "tasks/completed/2214/events.jsonl",
+   "tasks/completed/2214/plans/plan.md",
+   "tasks/completed/2214/plans/v1.md",
+   "tasks/completed/2214/plans/v2.md",
+   "tasks/completed/2214/plans/v3.md",
+   "tasks/proposed/2416/body.md",
+   "tasks/proposed/2416/comments.jsonl",
+   "tasks/proposed/2416/events.jsonl",
+   "tasks/running/2502/events.jsonl",
+   "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_reg_oracle_arm.py"
+ }
+}

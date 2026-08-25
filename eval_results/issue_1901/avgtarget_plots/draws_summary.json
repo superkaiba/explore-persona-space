@@ -1,0 +1,48 @@
+{
+ "per_seed": {
+  "43": {
+   "n_present": 1000,
+   "n_dropped": 0
+  },
+  "44": {
+   "n_present": 1000,
+   "n_dropped": 0
+  },
+  "45": {
+   "n_present": 1000,
+   "n_dropped": 0
+  },
+  "46": {
+   "n_present": 1000,
+   "n_dropped": 0
+  }
+ },
+ "ceiling_capture_parity_L19": {
+  "43": {
+   "n": 1000,
+   "max_abs_diff_L19_max": 0.38020896911621094,
+   "cos_L19_min": 0.999853253364563,
+   "cos_L19_mean": 0.9999888760447502
+  },
+  "44": {
+   "n": 1000,
+   "max_abs_diff_L19_max": 0.38020896911621094,
+   "cos_L19_min": 0.999853253364563,
+   "cos_L19_mean": 0.9999887786507606
+  }
+ },
+ "metadata": {
+  "git_commit": "2326df2054590a7852c8c0fee936f74ba2eddba0",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/issue1901_avgtarget_plots.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1901_avgtarget_plots.py",
+  "script": "issue1901_avgtarget_plots",
+  "issue": 1901,
+  "round": "avgtarget-plots",
+  "phase": "capture",
+  "timestamp_utc": "2026-08-25T07:57:21Z"
+ }
+}

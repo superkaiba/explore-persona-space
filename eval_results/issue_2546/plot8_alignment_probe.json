@@ -1,0 +1,48 @@
+{
+  "dv": "feasibility of Plot-8 cell E (pre-CoT-trained v_C -> post-CoT-trained v_A) from banked tensors only",
+  "pre": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "source": "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/store_manifest.json",
+    "n_contexts": 50,
+    "hidden": 3584,
+    "probe_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+  },
+  "post": {
+    "model": "open-thoughts/OpenThinker2-7B",
+    "source": "superkaiba1/explore-persona-space-data:issue928_cot_decomposition/analysis_tensors/store/percq_summaries/manifest.json",
+    "n_contexts": 50,
+    "hidden": 3584,
+    "probe_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7",
+    "n_probes": 48,
+    "summary_names": [
+      "ctx_mean",
+      "ctx_max",
+      "ctx_last",
+      "cot_mean",
+      "cot_max",
+      "cot_last",
+      "cot_close",
+      "ans_mean",
+      "ans_max",
+      "ans_last",
+      "ans_im_end",
+      "ans_turn_nl"
+    ]
+  },
+  "checks": {
+    "probe_pool_hash_match": true,
+    "context_id_set_match": true,
+    "capture_layers_match": true,
+    "hidden_size_match": true
+  },
+  "aligned": true,
+  "context_ids_only_in_pre": [],
+  "context_ids_only_in_post": [],
+  "estimator_regime_if_fit": {
+    "n_train_rows_per_question": 1994,
+    "feature_dim": 3584,
+    "n_lt_d": true,
+    "verdict": "REFUSED for a headline fit: the banked design is the raw summary at full hidden width, so n_train < d and held-out R2 there is estimator-degenerate. #2546's corpora put n_train above d by construction; the cross-model cell belongs there, not here."
+  },
+  "conclusion": "cell E is ASSEMBLABLE from banked tensors (rows align exactly); it is NOT fit here, on the estimator-regime gate above"
+}

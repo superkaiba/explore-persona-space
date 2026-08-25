@@ -31,11 +31,11 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from pathlib import Path
 
 from transformers import TrainerCallback
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.train.sft import (
     _apply_chat_template_safe,
     _tokenize_probe_row,
@@ -414,8 +414,5 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
             payload["n_neg_slot_rows"] = self.neg_slot["n_rows"]
             payload["neg_slot_ce"] = [r.get("neg_slot_ce") for r in self._records]
             payload["neg_slot_ce_base"] = self._base["neg_slot"]
-        os.makedirs(os.path.dirname(self.out_path) or ".", exist_ok=True)
-        tmp = self.out_path + ".tmp"
-        with open(tmp, "w") as f:
+        with atomic_replace(Path(self.out_path)) as tmp, open(tmp, "w") as f:
             json.dump(payload, f, ensure_ascii=False)
-        os.replace(tmp, self.out_path)

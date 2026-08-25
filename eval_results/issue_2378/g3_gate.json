@@ -1,0 +1,70 @@
+{
+  "gate": "G3",
+  "verdict": "PASS",
+  "reads": {
+    "chat_fold_mean_r2": 0.6076350154888659,
+    "chat_pooled_r2": 0.6078300426340202,
+    "own_null_p95": -0.03487174300745483,
+    "r2_gt_null_p95": true,
+    "rank1_acc": 0.6747462505680958,
+    "rank1_chance": 0.0001514921981517952,
+    "rank1_threshold": 0.0015149219815179518,
+    "rank1_gt_10x_chance": true
+  },
+  "measured_unit_wall_s": 890.79,
+  "per_fold_timings_s": [
+    {
+      "fit": 16.32,
+      "reduced": 16.61,
+      "bootstrap": 0.06,
+      "null": 144.72
+    },
+    {
+      "fit": 17.81,
+      "reduced": 16.02,
+      "bootstrap": 0.03,
+      "null": 143.17
+    },
+    {
+      "fit": 16.72,
+      "reduced": 16.31,
+      "bootstrap": 0.03,
+      "null": 143.04
+    },
+    {
+      "fit": 17.14,
+      "reduced": 17.44,
+      "bootstrap": 0.03,
+      "null": 143.83
+    },
+    {
+      "fit": 16.85,
+      "reduced": 16.72,
+      "bootstrap": 0.03,
+      "null": 143.81
+    }
+  ],
+  "shape": {
+    "n_rows": 6601,
+    "d": 5120,
+    "k": 5
+  },
+  "fits_json": "/workspace/explore-persona-space/eval_results/issue_2378/fits/chat__context.json",
+  "abort_semantics": "REFUSED aborts the P6 fan-out (12 ladders + pooled arm measure nothing about transfer when the source map is indistinguishable from its own null)",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T14:19:00+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_fits.py",
+      "--phase",
+      "g3",
+      "--store-root",
+      "/workspace/explore-persona-space/data/issue_2378/p6_stage/issue2378_xframing/analysis_tensors/activations"
+    ],
+    "git_commit": "1736e66b",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_fits.py"
+  }
+}

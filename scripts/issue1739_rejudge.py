@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -28,6 +27,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue_1739 import dv_build, judging  # noqa: E402
 from explore_persona_space.experiments.issue_1739.constants import (  # noqa: E402
     JUDGE_TEMPERATURE,
@@ -178,9 +178,8 @@ def main() -> int:
         git_commit=_git_commit(),
     )
 
-    tmp = scores_path.with_name(scores_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    os.replace(tmp, scores_path)
+    with atomic_replace(scores_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
     print(
         json.dumps(
             {

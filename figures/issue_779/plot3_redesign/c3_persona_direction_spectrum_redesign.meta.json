@@ -1,0 +1,2727 @@
+{
+  "commit": "7e9a5173+dirty",
+  "render_id": "c56dfb785a7640a5",
+  "git_commit": "7e9a5173b885fc135775fa843354e6e2b3ffbcb1",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue779_plot3_redesign.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
+    "figures/paper/c3_sae_tier_gradient.pdf",
+    "figures/paper/c3_sae_tier_gradient.png",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2342/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue779_plot3_redesign.py",
+  "created": "2026-08-24T22:53:21Z",
+  "figsize": [
+    5.5,
+    2.475
+  ],
+  "points": [
+    {
+      "variance rank (log)": 11.0,
+      "per-direction $R^2$": 0.8413961231445568,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "variance rank (log)": 5.0,
+      "per-direction $R^2$": 0.9119878574670457,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "variance rank (log)": 3.0,
+      "per-direction $R^2$": 0.8369872877563032,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "variance rank (log)": 12.0,
+      "per-direction $R^2$": 0.8895988650275292,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "variance rank (log)": 7.0,
+      "per-direction $R^2$": 0.8831028091358923,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "variance rank (log)": 7.0,
+      "per-direction $R^2$": 0.8960813812403703,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "variance rank (log)": 6.0,
+      "per-direction $R^2$": 0.8776767034924108,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "variance rank (log)": 1.0,
+      "per-direction $R^2$": 0.9253582737618609,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2.0,
+      "per-direction $R^2$": 0.8536554613645544,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3.0,
+      "per-direction $R^2$": 0.872117395531183,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 4.0,
+      "per-direction $R^2$": 0.8825921183490052,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 5.0,
+      "per-direction $R^2$": 0.8848088596078568,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 6.0,
+      "per-direction $R^2$": 0.8468383765524676,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 7.0,
+      "per-direction $R^2$": 0.8286832734713366,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 8.0,
+      "per-direction $R^2$": 0.8384826726269543,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 9.0,
+      "per-direction $R^2$": 0.8428657726831486,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 10.0,
+      "per-direction $R^2$": 0.8102687210726576,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 11.0,
+      "per-direction $R^2$": 0.81302599183192,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 12.0,
+      "per-direction $R^2$": 0.8349242546877917,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 13.0,
+      "per-direction $R^2$": 0.7831598080002775,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 14.0,
+      "per-direction $R^2$": 0.708692253499712,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 15.0,
+      "per-direction $R^2$": 0.7567041460569246,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 16.0,
+      "per-direction $R^2$": 0.7597056756237915,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 17.0,
+      "per-direction $R^2$": 0.7405545512207945,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 18.0,
+      "per-direction $R^2$": 0.7085282614725814,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 19.0,
+      "per-direction $R^2$": 0.6653397633224922,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 20.0,
+      "per-direction $R^2$": 0.6394126786039862,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 21.0,
+      "per-direction $R^2$": 0.7290409725597222,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 22.0,
+      "per-direction $R^2$": 0.6829093603123251,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 23.0,
+      "per-direction $R^2$": 0.6882668692381311,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 24.0,
+      "per-direction $R^2$": 0.6083014101488755,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 25.0,
+      "per-direction $R^2$": 0.7121338662583565,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 26.0,
+      "per-direction $R^2$": 0.6809066512768802,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 27.0,
+      "per-direction $R^2$": 0.6722544359867375,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 28.0,
+      "per-direction $R^2$": 0.671203070224565,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 29.0,
+      "per-direction $R^2$": 0.6681641104721362,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 30.0,
+      "per-direction $R^2$": 0.6165614425759112,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 31.0,
+      "per-direction $R^2$": 0.6366434583651398,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 32.0,
+      "per-direction $R^2$": 0.6684442443399015,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 33.0,
+      "per-direction $R^2$": 0.6297769291441604,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 34.0,
+      "per-direction $R^2$": 0.5711438520405372,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 35.0,
+      "per-direction $R^2$": 0.5970022498175489,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 36.0,
+      "per-direction $R^2$": 0.6477298093430366,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 37.0,
+      "per-direction $R^2$": 0.5703818077406088,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 38.0,
+      "per-direction $R^2$": 0.6280718877749519,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 39.0,
+      "per-direction $R^2$": 0.5520912932754193,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 40.0,
+      "per-direction $R^2$": 0.55980670127124,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 41.0,
+      "per-direction $R^2$": 0.6408321133807093,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 42.0,
+      "per-direction $R^2$": 0.5635251771445049,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 43.0,
+      "per-direction $R^2$": 0.5414740994025444,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 44.0,
+      "per-direction $R^2$": 0.5841325137864711,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 45.0,
+      "per-direction $R^2$": 0.5934939469523902,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 46.0,
+      "per-direction $R^2$": 0.5878407607321124,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 47.0,
+      "per-direction $R^2$": 0.5297175325215202,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 48.0,
+      "per-direction $R^2$": 0.6089763688819152,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 49.0,
+      "per-direction $R^2$": 0.6200532211061152,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 50.0,
+      "per-direction $R^2$": 0.5390787355687021,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 51.0,
+      "per-direction $R^2$": 0.5753118863721659,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 52.0,
+      "per-direction $R^2$": 0.6064399449842233,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 53.0,
+      "per-direction $R^2$": 0.4949608205745766,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 54.0,
+      "per-direction $R^2$": 0.5784644334934521,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 55.0,
+      "per-direction $R^2$": 0.595256065857031,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 56.0,
+      "per-direction $R^2$": 0.5477475462373542,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 57.0,
+      "per-direction $R^2$": 0.6075419684392236,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 58.0,
+      "per-direction $R^2$": 0.5155877506063382,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 59.0,
+      "per-direction $R^2$": 0.5226224808925752,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 60.0,
+      "per-direction $R^2$": 0.4835356998893412,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 61.0,
+      "per-direction $R^2$": 0.5993880753926322,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 62.0,
+      "per-direction $R^2$": 0.5510373176232717,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 63.0,
+      "per-direction $R^2$": 0.5280480490869839,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 64.0,
+      "per-direction $R^2$": 0.4794382257515142,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 65.0,
+      "per-direction $R^2$": 0.494691484856591,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 66.0,
+      "per-direction $R^2$": 0.4189232217767581,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 67.0,
+      "per-direction $R^2$": 0.5231266040178486,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 68.0,
+      "per-direction $R^2$": 0.534336614401968,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 69.0,
+      "per-direction $R^2$": 0.4786955919272281,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 70.0,
+      "per-direction $R^2$": 0.5535751646832721,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 71.0,
+      "per-direction $R^2$": 0.5393608761889992,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 72.0,
+      "per-direction $R^2$": 0.4482977573889063,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 73.0,
+      "per-direction $R^2$": 0.47167667653018863,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 74.0,
+      "per-direction $R^2$": 0.3995990529877119,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 75.0,
+      "per-direction $R^2$": 0.4173658217271483,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 76.0,
+      "per-direction $R^2$": 0.5022530340156419,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 77.0,
+      "per-direction $R^2$": 0.45646481403650463,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 78.0,
+      "per-direction $R^2$": 0.4243681841633823,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 79.0,
+      "per-direction $R^2$": 0.4669296882441155,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 80.0,
+      "per-direction $R^2$": 0.47399920233845216,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 81.0,
+      "per-direction $R^2$": 0.4755302662190505,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 82.0,
+      "per-direction $R^2$": 0.4812921390869891,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 83.0,
+      "per-direction $R^2$": 0.402362511214873,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 84.0,
+      "per-direction $R^2$": 0.4232473264614274,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 85.0,
+      "per-direction $R^2$": 0.41174431790405286,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 86.0,
+      "per-direction $R^2$": 0.45465172489428596,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 87.0,
+      "per-direction $R^2$": 0.337358515316169,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 88.0,
+      "per-direction $R^2$": 0.42365603677964114,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 89.0,
+      "per-direction $R^2$": 0.3876249426005095,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 90.0,
+      "per-direction $R^2$": 0.42803786970369373,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 91.0,
+      "per-direction $R^2$": 0.39400998147449107,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 92.0,
+      "per-direction $R^2$": 0.3829298768640568,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 93.0,
+      "per-direction $R^2$": 0.33765098945239636,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 94.0,
+      "per-direction $R^2$": 0.407655936841431,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 95.0,
+      "per-direction $R^2$": 0.39988970825329984,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 96.0,
+      "per-direction $R^2$": 0.3959349407406926,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 97.0,
+      "per-direction $R^2$": 0.4120967731031687,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 98.0,
+      "per-direction $R^2$": 0.338946201457502,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 99.0,
+      "per-direction $R^2$": 0.3674367945140419,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 100.0,
+      "per-direction $R^2$": 0.3721003756620481,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 101.0,
+      "per-direction $R^2$": 0.4030357296312299,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 102.0,
+      "per-direction $R^2$": 0.3511054321417596,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 103.0,
+      "per-direction $R^2$": 0.43269946492444256,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 104.0,
+      "per-direction $R^2$": 0.3963875324566686,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 105.0,
+      "per-direction $R^2$": 0.3674552523034841,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 106.0,
+      "per-direction $R^2$": 0.3235309310148119,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 107.0,
+      "per-direction $R^2$": 0.3615724024220285,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 108.0,
+      "per-direction $R^2$": 0.34450434675529007,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 109.0,
+      "per-direction $R^2$": 0.3315003000669473,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 110.0,
+      "per-direction $R^2$": 0.3592440752445204,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 111.0,
+      "per-direction $R^2$": 0.3562386091801356,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 112.0,
+      "per-direction $R^2$": 0.3238260439199331,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 113.0,
+      "per-direction $R^2$": 0.2994627372053661,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 114.0,
+      "per-direction $R^2$": 0.2120248502201263,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 115.0,
+      "per-direction $R^2$": 0.21321770832887776,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 116.0,
+      "per-direction $R^2$": 0.3025706051079994,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 117.0,
+      "per-direction $R^2$": 0.37198713845377207,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 118.0,
+      "per-direction $R^2$": 0.28859602099962955,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 119.0,
+      "per-direction $R^2$": 0.2755243523867783,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 120.0,
+      "per-direction $R^2$": 0.29611986100078014,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 121.0,
+      "per-direction $R^2$": 0.26415838420735693,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 122.0,
+      "per-direction $R^2$": 0.36555797915303523,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 123.0,
+      "per-direction $R^2$": 0.3854208913456699,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 124.0,
+      "per-direction $R^2$": 0.3147862065856083,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 125.0,
+      "per-direction $R^2$": 0.28987618740953547,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 126.0,
+      "per-direction $R^2$": 0.31815432586923575,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 127.0,
+      "per-direction $R^2$": 0.24419427404651262,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 128.0,
+      "per-direction $R^2$": 0.29206922963973414,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 129.0,
+      "per-direction $R^2$": 0.31394256152388245,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 130.0,
+      "per-direction $R^2$": 0.3155461580585629,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 131.0,
+      "per-direction $R^2$": 0.2627244782735727,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 132.0,
+      "per-direction $R^2$": 0.17290222311581682,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 133.0,
+      "per-direction $R^2$": 0.28447185813472164,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 134.0,
+      "per-direction $R^2$": 0.3431427582118358,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 135.0,
+      "per-direction $R^2$": 0.22213136610271234,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 136.0,
+      "per-direction $R^2$": 0.29658407523064456,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 137.0,
+      "per-direction $R^2$": 0.3297306383329688,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 138.0,
+      "per-direction $R^2$": 0.3180966199691978,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 139.0,
+      "per-direction $R^2$": 0.2751233650307471,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 140.0,
+      "per-direction $R^2$": 0.2782420107280251,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 141.0,
+      "per-direction $R^2$": 0.32465038327337126,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 142.0,
+      "per-direction $R^2$": 0.28602528286234574,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 143.0,
+      "per-direction $R^2$": 0.2769479411635749,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 144.0,
+      "per-direction $R^2$": 0.27740988416605317,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 145.0,
+      "per-direction $R^2$": 0.3051245613202819,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 146.0,
+      "per-direction $R^2$": 0.24312263544415003,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 147.0,
+      "per-direction $R^2$": 0.27380226506156424,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 148.0,
+      "per-direction $R^2$": 0.2671711539248982,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 149.0,
+      "per-direction $R^2$": 0.18850414971813778,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 150.0,
+      "per-direction $R^2$": 0.253429995954524,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 151.0,
+      "per-direction $R^2$": 0.26710631893177916,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 152.0,
+      "per-direction $R^2$": 0.2025931081678699,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 153.0,
+      "per-direction $R^2$": 0.10209618457795866,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 154.0,
+      "per-direction $R^2$": 0.34232898595937344,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 155.0,
+      "per-direction $R^2$": 0.18892928473878967,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 156.0,
+      "per-direction $R^2$": 0.3205679474244685,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 157.0,
+      "per-direction $R^2$": 0.18782823711385965,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 158.0,
+      "per-direction $R^2$": 0.23397421294939502,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 159.0,
+      "per-direction $R^2$": 0.15789312648452536,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 160.0,
+      "per-direction $R^2$": 0.1783074376469368,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 161.0,
+      "per-direction $R^2$": 0.0947199698229303,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 162.0,
+      "per-direction $R^2$": 0.06603960574537204,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 163.0,
+      "per-direction $R^2$": 0.2802978675153619,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 164.0,
+      "per-direction $R^2$": 0.22554799284366334,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 165.0,
+      "per-direction $R^2$": 0.183103706788728,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 166.0,
+      "per-direction $R^2$": 0.23758064404792478,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 167.0,
+      "per-direction $R^2$": 0.214435477105954,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 168.0,
+      "per-direction $R^2$": 0.18900229580887062,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 169.0,
+      "per-direction $R^2$": 0.26130614823107834,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 170.0,
+      "per-direction $R^2$": 0.19793174562428384,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 171.0,
+      "per-direction $R^2$": 0.16553254714964927,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 172.0,
+      "per-direction $R^2$": 0.206847021395535,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 173.0,
+      "per-direction $R^2$": 0.18226778597508952,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 174.0,
+      "per-direction $R^2$": 0.23246598722198597,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 175.0,
+      "per-direction $R^2$": 0.1691270232968608,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 176.0,
+      "per-direction $R^2$": 0.18001049532101376,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 177.0,
+      "per-direction $R^2$": 0.2411485992897454,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 178.0,
+      "per-direction $R^2$": 0.1458080654157704,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 179.0,
+      "per-direction $R^2$": 0.2831295723519619,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 180.0,
+      "per-direction $R^2$": 0.17563117644513815,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 181.0,
+      "per-direction $R^2$": 0.15839157770924306,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 182.0,
+      "per-direction $R^2$": 0.23769185917091296,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 183.0,
+      "per-direction $R^2$": 0.25245476492898955,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 184.0,
+      "per-direction $R^2$": 0.17012665911384506,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 185.0,
+      "per-direction $R^2$": 0.19277403157998385,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 186.0,
+      "per-direction $R^2$": 0.12647273342055643,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 187.0,
+      "per-direction $R^2$": 0.20269602859822655,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 188.0,
+      "per-direction $R^2$": 0.16481895436979743,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 189.0,
+      "per-direction $R^2$": 0.12738044798232595,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 190.0,
+      "per-direction $R^2$": 0.13238351816412808,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 191.0,
+      "per-direction $R^2$": 0.17178172272282655,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 192.0,
+      "per-direction $R^2$": 0.11470527282262055,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 193.0,
+      "per-direction $R^2$": 0.17856709131615867,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 194.0,
+      "per-direction $R^2$": 0.17754030164220913,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 195.0,
+      "per-direction $R^2$": 0.262257268556346,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 196.0,
+      "per-direction $R^2$": 0.21654799629378774,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 197.0,
+      "per-direction $R^2$": 0.19778415136294036,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 198.0,
+      "per-direction $R^2$": 0.16269118660241677,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 199.0,
+      "per-direction $R^2$": 0.21174367234861602,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 200.0,
+      "per-direction $R^2$": 0.1770935668613578,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 201.0,
+      "per-direction $R^2$": 0.201746968566485,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 221.0,
+      "per-direction $R^2$": 0.11261267083559978,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 241.0,
+      "per-direction $R^2$": 0.1070842950840909,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 261.0,
+      "per-direction $R^2$": 0.08000749643338845,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 281.0,
+      "per-direction $R^2$": 0.03945726252825654,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 301.0,
+      "per-direction $R^2$": 0.0974600165227344,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 321.0,
+      "per-direction $R^2$": 0.11363810389795848,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 341.0,
+      "per-direction $R^2$": 0.03159770858775146,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 361.0,
+      "per-direction $R^2$": -0.0410235967137893,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 381.0,
+      "per-direction $R^2$": 0.050454609319783406,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 401.0,
+      "per-direction $R^2$": -0.0738482082826204,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 421.0,
+      "per-direction $R^2$": -0.16460727356746796,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 441.0,
+      "per-direction $R^2$": -0.027276314286995174,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 461.0,
+      "per-direction $R^2$": -0.18694749910829067,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 481.0,
+      "per-direction $R^2$": -0.09185896346479505,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 501.0,
+      "per-direction $R^2$": -0.08104201944573841,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 521.0,
+      "per-direction $R^2$": -0.0625125002134177,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 541.0,
+      "per-direction $R^2$": -0.07750875007780156,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 561.0,
+      "per-direction $R^2$": -0.12884262627650722,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 581.0,
+      "per-direction $R^2$": -0.1253901730712188,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 601.0,
+      "per-direction $R^2$": -0.12133709720390273,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 621.0,
+      "per-direction $R^2$": -0.13632955553873938,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 641.0,
+      "per-direction $R^2$": -0.147766398477575,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 661.0,
+      "per-direction $R^2$": -0.15841456727079173,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 681.0,
+      "per-direction $R^2$": -0.1189618792297562,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 701.0,
+      "per-direction $R^2$": -0.04481847634637082,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 721.0,
+      "per-direction $R^2$": -0.12023299429461964,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 741.0,
+      "per-direction $R^2$": -0.028618686649032554,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 761.0,
+      "per-direction $R^2$": -0.099546951372671,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 781.0,
+      "per-direction $R^2$": -0.12602586721036313,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 801.0,
+      "per-direction $R^2$": -0.14708612062092774,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 821.0,
+      "per-direction $R^2$": -0.10728392689976363,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 841.0,
+      "per-direction $R^2$": -0.1487322282822967,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 861.0,
+      "per-direction $R^2$": -0.09318962281826804,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 881.0,
+      "per-direction $R^2$": -0.1183063234036581,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 901.0,
+      "per-direction $R^2$": -0.09243058725895659,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 921.0,
+      "per-direction $R^2$": -0.09773515269466615,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 941.0,
+      "per-direction $R^2$": -0.14199668571422053,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 961.0,
+      "per-direction $R^2$": -0.14611904036120182,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 981.0,
+      "per-direction $R^2$": -0.057592541217957205,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1001.0,
+      "per-direction $R^2$": -0.25501259590107517,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1021.0,
+      "per-direction $R^2$": -0.23036492547126097,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1041.0,
+      "per-direction $R^2$": -0.10088514818264782,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1061.0,
+      "per-direction $R^2$": -0.09863656113347785,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1081.0,
+      "per-direction $R^2$": -0.09311570054148666,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1101.0,
+      "per-direction $R^2$": -0.15365218857721707,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1121.0,
+      "per-direction $R^2$": -0.14375243674896865,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1141.0,
+      "per-direction $R^2$": -0.05736451525556707,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1161.0,
+      "per-direction $R^2$": -0.11479829157471233,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1181.0,
+      "per-direction $R^2$": -0.177774477244097,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1201.0,
+      "per-direction $R^2$": -0.11210475705243139,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1221.0,
+      "per-direction $R^2$": -0.1720160146391545,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1241.0,
+      "per-direction $R^2$": -0.06617657526192544,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1261.0,
+      "per-direction $R^2$": -0.1308385226685469,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1281.0,
+      "per-direction $R^2$": -0.1738862410587132,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1301.0,
+      "per-direction $R^2$": -0.13677693731475737,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1321.0,
+      "per-direction $R^2$": -0.09722779571866003,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1341.0,
+      "per-direction $R^2$": -0.12775022826136428,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1361.0,
+      "per-direction $R^2$": -0.12043684401149735,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1381.0,
+      "per-direction $R^2$": -0.17767812603245425,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1401.0,
+      "per-direction $R^2$": -0.16446526357213465,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1421.0,
+      "per-direction $R^2$": -0.1526046704949935,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1441.0,
+      "per-direction $R^2$": -0.05167029703545922,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1461.0,
+      "per-direction $R^2$": -0.08430469109003957,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1481.0,
+      "per-direction $R^2$": -0.12582408788027832,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1501.0,
+      "per-direction $R^2$": -0.03587017791683644,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1521.0,
+      "per-direction $R^2$": -0.06668180715568961,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1541.0,
+      "per-direction $R^2$": -0.0955943249980975,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1561.0,
+      "per-direction $R^2$": -0.1470289527301818,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1581.0,
+      "per-direction $R^2$": -0.0827887790422932,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1601.0,
+      "per-direction $R^2$": -0.10106758073510602,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1621.0,
+      "per-direction $R^2$": -0.057671427125219665,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1641.0,
+      "per-direction $R^2$": -0.1230513215525979,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1661.0,
+      "per-direction $R^2$": -0.11000691391917683,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1681.0,
+      "per-direction $R^2$": -0.07516457261762155,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1701.0,
+      "per-direction $R^2$": -0.0732967550828405,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1721.0,
+      "per-direction $R^2$": -0.06772667380015429,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1741.0,
+      "per-direction $R^2$": -0.06747768416270805,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1761.0,
+      "per-direction $R^2$": -0.08798772521089027,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1781.0,
+      "per-direction $R^2$": -0.09495708481269705,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1801.0,
+      "per-direction $R^2$": -0.04253664915020816,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1821.0,
+      "per-direction $R^2$": -0.10849521778028737,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1841.0,
+      "per-direction $R^2$": -0.04148406521125114,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1861.0,
+      "per-direction $R^2$": -0.10347487487902063,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1881.0,
+      "per-direction $R^2$": -0.028404474994287332,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1901.0,
+      "per-direction $R^2$": -0.11517167600662259,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1921.0,
+      "per-direction $R^2$": -0.05409516199219655,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1941.0,
+      "per-direction $R^2$": -0.08060435467394966,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1961.0,
+      "per-direction $R^2$": -0.07707732703852321,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 1981.0,
+      "per-direction $R^2$": -0.07352482687403805,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2001.0,
+      "per-direction $R^2$": -0.055200426857860085,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2021.0,
+      "per-direction $R^2$": -0.03498561840150072,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2041.0,
+      "per-direction $R^2$": -0.02581279733692332,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2061.0,
+      "per-direction $R^2$": -0.03407372076447701,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2081.0,
+      "per-direction $R^2$": -0.02796875903819429,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2101.0,
+      "per-direction $R^2$": -0.0645991369656087,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2121.0,
+      "per-direction $R^2$": -0.04817494860169491,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2141.0,
+      "per-direction $R^2$": -0.03198384650695729,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2161.0,
+      "per-direction $R^2$": -0.08735404336089214,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2181.0,
+      "per-direction $R^2$": -0.046244529657273103,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2201.0,
+      "per-direction $R^2$": -0.02339349369482213,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2221.0,
+      "per-direction $R^2$": -0.0546363386282529,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2241.0,
+      "per-direction $R^2$": -0.07167372258095361,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2261.0,
+      "per-direction $R^2$": -0.028904847922839094,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2281.0,
+      "per-direction $R^2$": -0.04909749918145612,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2301.0,
+      "per-direction $R^2$": -0.02694593068404494,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2321.0,
+      "per-direction $R^2$": -0.03231757008011393,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2341.0,
+      "per-direction $R^2$": -0.048514978361868355,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2361.0,
+      "per-direction $R^2$": -0.06277184363467181,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2381.0,
+      "per-direction $R^2$": -0.03938584386844468,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2401.0,
+      "per-direction $R^2$": -0.007692301874490992,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2421.0,
+      "per-direction $R^2$": -0.031587005545158586,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2441.0,
+      "per-direction $R^2$": -0.01910260032514577,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2461.0,
+      "per-direction $R^2$": -0.04575770608124552,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2481.0,
+      "per-direction $R^2$": -0.027069857395108476,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2501.0,
+      "per-direction $R^2$": -0.0058343264641402826,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2521.0,
+      "per-direction $R^2$": -0.050582301303655486,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2541.0,
+      "per-direction $R^2$": -0.016235053087972906,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2561.0,
+      "per-direction $R^2$": -0.04294604679876923,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2581.0,
+      "per-direction $R^2$": -0.0075875593954619625,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2601.0,
+      "per-direction $R^2$": -0.01936927617745421,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2621.0,
+      "per-direction $R^2$": -0.015189732349263574,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2641.0,
+      "per-direction $R^2$": -0.0062804605766166866,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2661.0,
+      "per-direction $R^2$": -0.036915833246163654,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2681.0,
+      "per-direction $R^2$": -0.007660731001974952,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2701.0,
+      "per-direction $R^2$": -0.011648247333513106,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2721.0,
+      "per-direction $R^2$": -0.001447550947074161,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2741.0,
+      "per-direction $R^2$": -0.009464099674229232,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2761.0,
+      "per-direction $R^2$": -0.014388382355341678,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2781.0,
+      "per-direction $R^2$": -0.017676489482163937,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2801.0,
+      "per-direction $R^2$": -0.012901948339018476,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2821.0,
+      "per-direction $R^2$": -0.01770245453719843,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2841.0,
+      "per-direction $R^2$": -0.0026739454024677922,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2861.0,
+      "per-direction $R^2$": -0.003656522384541283,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2881.0,
+      "per-direction $R^2$": -0.006728962101142821,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2901.0,
+      "per-direction $R^2$": -0.01919321463750223,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2921.0,
+      "per-direction $R^2$": -0.006798421046977143,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2941.0,
+      "per-direction $R^2$": -0.004869760179871951,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2961.0,
+      "per-direction $R^2$": -0.01717976286877909,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 2981.0,
+      "per-direction $R^2$": -0.019110502530535145,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3001.0,
+      "per-direction $R^2$": 0.014598674715797455,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3021.0,
+      "per-direction $R^2$": -0.0021247327829878593,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3041.0,
+      "per-direction $R^2$": 0.0006859067477172909,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3061.0,
+      "per-direction $R^2$": -0.005258710777954478,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3081.0,
+      "per-direction $R^2$": -0.03247093281298019,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3101.0,
+      "per-direction $R^2$": -0.01358977212628698,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3121.0,
+      "per-direction $R^2$": -0.009257387310263043,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3141.0,
+      "per-direction $R^2$": 0.0013645381383915467,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3161.0,
+      "per-direction $R^2$": 0.0019370837665009244,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3181.0,
+      "per-direction $R^2$": 0.0059430213768849605,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3201.0,
+      "per-direction $R^2$": 0.003943909644610777,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3221.0,
+      "per-direction $R^2$": -0.006535085620791081,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3241.0,
+      "per-direction $R^2$": 0.008108220732186422,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3261.0,
+      "per-direction $R^2$": -0.0021124485441255114,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3281.0,
+      "per-direction $R^2$": -9.46443432316979e-05,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3301.0,
+      "per-direction $R^2$": -0.0035300109827540727,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3321.0,
+      "per-direction $R^2$": -0.0028392277831494894,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3341.0,
+      "per-direction $R^2$": -0.003229130456502194,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3361.0,
+      "per-direction $R^2$": -0.003989536141600247,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3381.0,
+      "per-direction $R^2$": -0.005736087371150722,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3401.0,
+      "per-direction $R^2$": -0.004147092526987084,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3421.0,
+      "per-direction $R^2$": 0.0022448412304917342,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3441.0,
+      "per-direction $R^2$": -0.008453259333770724,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3461.0,
+      "per-direction $R^2$": -0.003978563798845425,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3481.0,
+      "per-direction $R^2$": -0.0006696689280558665,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3501.0,
+      "per-direction $R^2$": -0.0030530541291304836,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3521.0,
+      "per-direction $R^2$": -0.002917220063859638,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3541.0,
+      "per-direction $R^2$": -0.0008602169383833402,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3561.0,
+      "per-direction $R^2$": -0.0002491495997116733,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "variance rank (log)": 3581.0,
+      "per-direction $R^2$": -0.0024807241112019263,
+      "series": "answer-PCA direction",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 377,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "variance rank (log)",
+        "ylabel": "per-direction $R^2$",
+        "legend_labels": [
+          "random directions (mean \u00b1 SD)",
+          "answer-PCA direction"
+        ],
+        "annotations": [
+          "evil",
+          "sycophancy",
+          "hallucination",
+          "refusal",
+          "assistant axis",
+          "casualness",
+          "impoliteness"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "answer-PCA direction"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

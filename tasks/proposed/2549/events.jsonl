@@ -1,1 +1,2 @@
 {"ts": "2026-08-24T18:16:02Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-24T23:43:09Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Re-observed 2026-08-24 by the #2552 unit-1 implementer's payload lint pass (no-flags run FAIL(1) on main, zero payload-attributed). Cross-ref: #2565 filed then archived as exact duplicate of this task."}

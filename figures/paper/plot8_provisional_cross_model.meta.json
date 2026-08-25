@@ -1,0 +1,94 @@
+{
+  "commit": "8cc31bc8+dirty",
+  "render_id": "fc37486632dc4134",
+  "git_commit": "8cc31bc82e38200bd0f1c3274255ae7408af137e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.meta.json",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.pdf",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.png",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.meta.json",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.pdf",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/paper_plot8_provisional.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-25T18:04:38Z",
+  "figsize": [
+    6.4,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "pre context to\npost answer",
+      "held-out skill (R$^2$ over mean)": 0.60482344107603,
+      "_kind": "bar"
+    },
+    {
+      "category": "post context to\npost answer",
+      "held-out skill (R$^2$ over mean)": 0.6568178869446677,
+      "_kind": "bar"
+    },
+    {
+      "category": "pre context to\npost CoT",
+      "held-out skill (R$^2$ over mean)": 0.6685885199458428,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out skill (R$^2$ over mean)",
+        "xticklabels": [
+          "pre context to\npost answer",
+          "post context to\npost answer",
+          "pre context to\npost CoT"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

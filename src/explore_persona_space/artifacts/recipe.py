@@ -40,14 +40,15 @@ from __future__ import annotations
 import json
 import logging
 import math
-import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from transformers import TrainerCallback
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS, Behavior
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.train.sft import TrainLoraConfig  # CPU-cheap: sft.py defers torch
 
 logger = logging.getLogger(__name__)
@@ -665,11 +666,8 @@ class TfMarginBandStopCallback(TrainerCallback):
             "records": recs,
         }
         out_path = str(self.trajectory_out_path)
-        os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-        tmp_path = out_path + ".tmp"
-        with open(tmp_path, "w") as f:
+        with atomic_replace(Path(out_path)) as tmp_path, open(tmp_path, "w") as f:
             json.dump(payload, f, ensure_ascii=False)
-        os.replace(tmp_path, out_path)
 
 
 def make_tf_margin_probe(
