@@ -931,7 +931,14 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--dl-dir", default="data/issue_2546/hf_dl", help="HF staging mirror root (re-downloadable)"
     )
-    ap.add_argument("--hf-dest", default=HF_DEST_DEFAULT, help="HF data-repo prefix")
+    ap.add_argument(
+        "--hf-dest",
+        default=None,
+        help=(
+            "HF data-repo prefix — REQUIRED when uploading (no implicit issue-prefix "
+            f"default, #1005 clobber shape; canonical for this issue: {HF_DEST_DEFAULT})"
+        ),
+    )
     ap.add_argument("--seed", type=int, default=0, help="draw/dedup seed (registered)")
     ap.add_argument(
         "--smoke",
@@ -1108,6 +1115,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.smoke or args.skip_upload:
         _log("upload SKIPPED (--smoke/--skip-upload)")
     else:
+        if not args.hf_dest:
+            raise RuntimeError(
+                "--hf-dest is REQUIRED when uploading (no implicit issue-prefix default — "
+                f"the #1005 clobber shape; canonical for this issue: {HF_DEST_DEFAULT}). "
+                "Pass --hf-dest explicitly, or --smoke/--skip-upload to build without upload."
+            )
         expected = [rec["file"] for recs in file_records.values() for rec in recs]
         expected.append(man_path.name)
         upload_bundle(out_dir, args.hf_dest, expected)

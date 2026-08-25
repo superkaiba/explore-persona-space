@@ -90,6 +90,7 @@ import issue1345_operator_comparison as oc  # noqa: E402
 import issue2546_gen_capture as g25  # noqa: E402
 
 from explore_persona_space.analysis import mapping_baselines as mb  # noqa: E402
+from explore_persona_space.atomic_io import write_json_atomic  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
@@ -213,10 +214,8 @@ def stratum_of(meta: dict) -> str | None:
 
 
 def _atomic_json(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2, default=float))
-    os.replace(tmp, path)
+    """Atomic JSON write via atomic_io (process-unique temp + same-dir replace, #2336)."""
+    write_json_atomic(path, payload, ensure_ascii=True, default=float)
 
 
 def _store_prefix(arm: int, smoke: bool) -> str:

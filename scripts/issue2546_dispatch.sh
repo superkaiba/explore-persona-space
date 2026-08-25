@@ -90,7 +90,24 @@ case "$ARM" in
 esac
 
 # GPU count guard (informational for phase scripts; they own per-GPU CVD fan-out).
-NGPU=$( (nvidia-smi --list-gpus 2>/dev/null || true) | wc -l)
+# Width derivation is ALLOCATION-first (#1902/#2251): on shared SLURM nodes
+# nvidia-smi enumerates the PHYSICAL node and ignores CUDA_VISIBLE_DEVICES, so a
+# detected-count fan-out trespasses onto other tenants' GPUs. Precedence:
+# inherited CUDA_VISIBLE_DEVICES array count > SLURM allocation env
+# (SLURM_JOB_ID + SLURM_GPUS_ON_NODE, fail LOUD when unresolvable) >
+# nvidia-smi enumeration (non-SLURM exclusive hosts: RunPod pods).
+if [ -n "${CUDA_VISIBLE_DEVICES:-}" ]; then
+    IFS=',' read -ra _CVD_ALLOC <<<"$CUDA_VISIBLE_DEVICES"
+    NGPU=${#_CVD_ALLOC[@]}
+elif [ -n "${SLURM_JOB_ID:-}" ]; then
+    NGPU="${SLURM_GPUS_ON_NODE:-}"
+    if [ -z "$NGPU" ]; then
+        echo "[dispatch2546] FATAL: SLURM allocation exposes neither CUDA_VISIBLE_DEVICES nor SLURM_GPUS_ON_NODE — refusing to derive width from node enumeration" >&2
+        exit 70
+    fi
+else
+    NGPU=$( (nvidia-smi --list-gpus 2>/dev/null || true) | wc -l)
+fi
 case "$NGPU" in
 *[!0-9]* | "")
     echo "[dispatch2546] FATAL: bad GPU count '$NGPU'" >&2

@@ -33,7 +33,6 @@ import os
 os.environ.setdefault("HF_HOME", os.environ.get("HF_HOME", "/workspace/.cache/huggingface"))
 
 import argparse
-import json
 import logging
 import subprocess
 import sys
@@ -55,6 +54,7 @@ import torch  # noqa: E402
 from issue779_ffc_n1m_fits import apply_map  # noqa: E402
 
 from explore_persona_space.analysis.mapping_baselines import knn_retrieval  # noqa: E402
+from explore_persona_space.atomic_io import write_json_atomic  # noqa: E402
 from explore_persona_space.orchestrate.hub import (  # noqa: E402
     DEFAULT_DATASET_REPO,
     stage_hub_file,
@@ -348,10 +348,8 @@ def main(argv: list[str] | None = None) -> int:
         "repro": repro_meta(),
     }
     dest = out_root / "out" / "n1m_read" / "gsm8k_test1319_read.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dest.parent / (dest.name + ".tmp")
-    tmp.write_text(json.dumps(result, indent=2))
-    os.replace(tmp, dest)
+    # atomic_io: process-unique temp + same-dir os.replace (#2336).
+    write_json_atomic(dest, result, ensure_ascii=True)
     for layer in FROZEN_LAYERS:
         a = result["reads"]["post_vc"][f"L{layer}"]
         b = result["reads"]["pre_vc"][f"L{layer}"]

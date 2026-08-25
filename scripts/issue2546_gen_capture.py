@@ -91,6 +91,7 @@ import torch  # noqa: E402
 # at process start, never inside a smoke-skipped branch (gotchas.md #606).
 from issue928_common import char_span_to_token_span, repeated_4gram_fraction  # noqa: E402
 
+from explore_persona_space.atomic_io import write_json_atomic, write_jsonl_atomic  # noqa: E402
 from explore_persona_space.orchestrate.hub import (  # noqa: E402
     DEFAULT_DATASET_REPO,
     _upload,
@@ -357,19 +358,13 @@ def _slot_of(row_id: str, num_workers: int) -> int:
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-    os.replace(tmp, path)
+    """Atomic JSON write via atomic_io (process-unique temp + same-dir replace, #2336)."""
+    write_json_atomic(path, payload)
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
-        for r in rows:
-            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
+    """Atomic JSONL write via atomic_io (process-unique temp + same-dir replace, #2336)."""
+    write_jsonl_atomic(path, rows)
 
 
 def _read_jsonl(path: Path) -> list[dict]:
