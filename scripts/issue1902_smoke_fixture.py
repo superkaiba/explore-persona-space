@@ -58,7 +58,12 @@ N_SMOKE_GROUPS = 8
 
 ARCH_TOKENIZER = {
     "olmo2": "allenai/OLMo-2-1124-7B-Instruct",
-    "olmo3": "allenai/Olmo-3-1025-7B",  # the #2544 production base (plain render, no template)
+    # Instruct tokenizer (same vocab as the base): the fixture serves EVERY
+    # ladder rung under smoke, and #2544's natgen cells assert
+    # has_chat_template on post rungs (R) — a template-less base tokenizer
+    # kills pass1 there (measured 2026-08-24). Mirrors the olmo2 row's
+    # Instruct choice; plain-render cells ignore the template.
+    "olmo3": "allenai/Olmo-3-1025-7B-Instruct",
 }
 
 
