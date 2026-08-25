@@ -369,7 +369,15 @@ def render_prompt_ids(tok, text: str, *, disable_thinking: bool) -> list[int]:
                 "chat template contract violated on render (context "
                 f"{text_digest(text)}): empty think block {EMPTY_THINK!r} absent"
             )
-    ids = tok.apply_chat_template(msgs, tokenize=True, add_generation_prompt=True, **kwargs)
+    # transformers 5.x flips apply_chat_template(tokenize=True) to default
+    # return_dict=True (a BatchEncoding dict — the listcomp would int() its
+    # KEYS); 4.x defaults return_dict=False (flat id list). Pass it
+    # explicitly so BOTH lanes (Model A repo-standard 4.57.6, Model B
+    # pod2378-venv 5.15.1) get the flat id list (#2502; gotcha in
+    # .claude/rules/gotchas.md, cites #2378).
+    ids = tok.apply_chat_template(
+        msgs, tokenize=True, add_generation_prompt=True, return_dict=False, **kwargs
+    )
     return [int(x) for x in ids]
 
 

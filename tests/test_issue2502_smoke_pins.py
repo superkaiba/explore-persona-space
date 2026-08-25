@@ -131,6 +131,16 @@ assembled corpus.jsonl and refused the upload):
       downstream fingerprints read), while clean rows' shas still match
       their text. Synthetic planted strings only — never a real secret,
       never real corpus text.
+
+Model-B render fix pin (transformers 5.x return_dict flip; #2502 + #2378):
+
+  (r) render_prompt_ids yields a FLAT list of int token ids under BOTH
+      apply_chat_template return conventions: transformers 4.57.6 (Model A
+      repo-standard venv) defaults tokenize=True to return_dict=False (id
+      list), transformers 5.15.1 (Model B pod2378-venv) flips the default
+      to return_dict=True (BatchEncoding dict) — pre-fix the listcomp
+      int()'d the DICT KEYS (ValueError on 'input_ids'). Synthetic fake
+      tokenizers only; no model download, no corpus text.
 """
 
 from __future__ import annotations
@@ -1106,3 +1116,63 @@ def test_r11_build_path_scrubs_persisted_corpus_and_records_count(monkeypatch, t
     for r in rows:
         if r is not scrubbed[0]:
             assert r["context_sha"] == CP._context_sha(r["text"])
+
+
+# ---------------------------------------------------------------------------
+# Pin (r): render_prompt_ids under BOTH apply_chat_template return conventions
+# (transformers 4.57.6 return_dict=False default vs 5.15.1 return_dict=True
+# default; #2502 + #2378). Fails pre-fix on the 5.x-convention fake.
+# ---------------------------------------------------------------------------
+
+
+class _Tok4xConvention:
+    """transformers 4.57.6 shape: tokenize=True defaults return_dict=False."""
+
+    def apply_chat_template(
+        self,
+        msgs,
+        *,
+        tokenize=False,
+        add_generation_prompt=False,
+        return_dict=False,
+        **kwargs,
+    ):
+        """Return an id LIST unless return_dict=True (4.x default False)."""
+        if not tokenize:
+            return "<|user|>ping<|assistant|>" + GC.EMPTY_THINK
+        ids = [1, 2, 3]
+        if return_dict:
+            return {"input_ids": ids, "attention_mask": [1] * len(ids)}
+        return ids
+
+
+class _Tok5xConvention:
+    """transformers 5.15.1 shape: tokenize=True defaults return_dict=True."""
+
+    def apply_chat_template(
+        self,
+        msgs,
+        *,
+        tokenize=False,
+        add_generation_prompt=False,
+        return_dict=None,
+        **kwargs,
+    ):
+        """Return a BatchEncoding-like DICT unless return_dict=False is explicit."""
+        if not tokenize:
+            return "<|user|>ping<|assistant|>" + GC.EMPTY_THINK
+        if return_dict is None:
+            return_dict = True  # the 5.x default flip for tokenize=True
+        ids = [4, 5, 6]
+        if return_dict:
+            return {"input_ids": ids, "attention_mask": [1] * len(ids)}
+        return ids
+
+
+@pytest.mark.parametrize("disable_thinking", [False, True])
+def test_render_prompt_ids_flat_int_ids_under_both_conventions(disable_thinking):
+    """Pin (r): flat int-id list under BOTH 4.x and 5.x conventions."""
+    for tok, want in ((_Tok4xConvention(), [1, 2, 3]), (_Tok5xConvention(), [4, 5, 6])):
+        got = GC.render_prompt_ids(tok, "ping", disable_thinking=disable_thinking)
+        assert got == want, (type(tok).__name__, got)
+        assert all(type(x) is int for x in got), got
