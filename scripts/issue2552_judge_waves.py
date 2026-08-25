@@ -411,6 +411,7 @@ def _list_mining_files(revision: str, hf_prefix: str) -> list[str]:
     prefix = f"{hf_prefix}/raw_completions/mining"
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: call runs inside hub.retry_transient (enclosing lambda)
             api.list_repo_tree(
                 t.C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", revision=revision
             )
