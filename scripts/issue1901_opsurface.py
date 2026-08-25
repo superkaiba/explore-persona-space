@@ -767,8 +767,12 @@ def phase_capture28(args) -> dict:
     parity: dict = {"gate": gate_rec}
 
     def _cosrow(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        num = (a.astype(np.float64) * b.astype(np.float64)).sum(axis=-1)
-        den = np.linalg.norm(a, axis=-1) * np.linalg.norm(b, axis=-1) + 1e-12
+        # fp64 BEFORE the norm: fp16 inputs overflow in the squared-sum at late
+        # layers (Qwen massive activations; L26 norms ~300 -> inf, cos -> 0).
+        a64 = a.astype(np.float64)
+        b64 = b.astype(np.float64)
+        num = (a64 * b64).sum(axis=-1)
+        den = np.linalg.norm(a64, axis=-1) * np.linalg.norm(b64, axis=-1) + 1e-12
         return num / den
 
     cos_pool = _cosrow(vx28[:, L19, :], y16)
