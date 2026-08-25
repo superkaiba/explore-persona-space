@@ -30,3 +30,14 @@ the CJK intrusion scan was carried forward via `cjk_recount.json` +
 
 (Reconstructed 2026-08-18 from the MEMORY.md index hook after the original
 file went missing from disk; the #2333 r3 application re-grounds it.)
+
+**Lens-6 twin of the same principle (#2378 r3, 2026-08-25).** On a
+wording/caption-only revision round where the compose-time blob check shows
+every figure pin BYTE-UNCHANGED from a round both critics fully verified
+(renders + degenerate-series hash), scope Lens 6 to caption-text deltas
+against the already-verified render facts: instruct "reload a PNG only if a
+caption delta makes a claim the prior round did not verify", and give the
+exact carried output line for the degenerate-series check ("carried from
+r2 — pins unchanged ... — pass"). Same UNLESS clause as Lens 7. Pair it
+with an anti-manufacture rule sentence: untouched material both prior
+verdicts scored clean is not a source of new blockers.

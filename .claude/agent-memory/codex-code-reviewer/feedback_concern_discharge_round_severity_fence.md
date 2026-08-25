@@ -142,6 +142,36 @@ answer. Also: a superseding `epm:plan-verify` v2 (fresh PASS at the current
 plan version) RESOLVES a prior round's version-gap attestation — attest the
 v2 and bar re-raising the gap, rather than repeating the r1 caveat.
 
+**Re-emission bar splits by ledger state (#2552 r4, 2026-08-25):** the #2564
+"ALL persisted ids barred from `CONCERN:: ` re-emission" wording holds only
+for ids whose latest event is `raised` (still open — a row would duplicate).
+When the implementer posted `addressed` rows for the target ids (the closure
+claims under verification), a NOT-ADDRESSED/PARTIALLY-ADDRESSED re-raise
+REQUIRES the same-id row — it is the re-open mechanism. Compose both rules
+explicitly: target ids (latest=addressed) get rows on failed closure at the
+fence severity; open-by-design ids (latest=raised) get status lines only.
+Same round: reconcile "Standing recommendations on PASS" items become the
+round contract when the round is dispatched to implement exactly them
+(attest the flip); a reconcile "Observed but not raised" fold-into-next-touch
+item is ARMED when the round touches that code — give it a small
+adjudication line (comment-accuracy post-fix, at most Minor). Also attest
+stale BLOCKER severities on older rows of a since-downgraded id (the latest
+verified-open CONCERN rows + the binding reconcile govern).
+
+**Own-CONCERNS-verdict discharge — no reconciler exists (#2552 r5, 2026-08-25):**
+the fence applies identically when the persisted loci come from the twin's OWN
+`CONCERN::` rows on a CONCERNS verdict that agreed-PASSed with the Claude PASS
+(no reconcile record, nothing downgraded). Compose deltas vs the
+reconciler-downgrade shape: state "the grades are YOUR OWN — no superseded
+severity, no reconcile envelope"; author-neutrality binds in both directions;
+acceptance contract = the `raised` rows + the twin's own r(n-1) Evidence/Impact/
+Fix + Mechanizable sketches (verdict inlined tags-stripped, its `CONCERN::` rows
+blockquoted per #2329 rclose — asserts: line-start rows==1 template-only,
+blockquoted==2). Per-locus severities incl. a NIT id re-raising at NIT (#2479
+r6). The Mechanizable sketches double as closure-duty decompositions (the
+rollback variant, the preseed-legacy-fixture variant) — restate them as explicit
+S/F items rather than trusting Codex to re-read its own sketch.
+
 **Default fence on a silent brief + out-of-round diverged_on_main (#2564 r3,
 2026-08-25):** a brief framing the round as "the concern-closure round …
 the review verifies the closures + any new defects" WITHOUT a

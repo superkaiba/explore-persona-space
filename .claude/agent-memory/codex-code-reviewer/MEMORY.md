@@ -2,6 +2,7 @@
 
 <!-- This file is the MEMORY.md index for the codex-code-reviewer agent. -->
 
+- [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block (thru r15 fresh-cycle interp-REVISE corrective shape)
 - [stale-base MB pin + fixture re-measure](feedback_stale_base_mb_pin_and_fixture_remeasure.md) — pin the resolved merge-base SHA when the brief flags phantom two-dot deletions; sibling-task verify_plan fixtures: probe worktree presence + identity, give live-run→static-trace ladder (#2204 r1)
 - [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block
 - [worktree status-folder both directions](feedback_worktree_status_folder_both_directions.md) — brief plan path may cite wrong status dir in EITHER direction; `ls <wt>/tasks/*/<N>` before inlining fallback
@@ -18,6 +19,8 @@
 - [wf-fix Step-2-floor attestation](feedback_wf_fix_step2_floor_attestation.md) — wf-fix composes probe main for epm:plan-verify and attest PASSED/absent in the prompt; Codex can't read main-side events (#2326 r1)
 - [whole-round unsplit compose](feedback_whole_round_unsplit_compose.md) — #2074 split rounds: base = round-parent SHA; strip the Step-0 split-review paragraph (token leak); per-commit reads over 300KB; truthful plan-envelope when worktree copy is identical (#823 r1); vendored-pin fidelity tier (#2552 r1)
 - [CONCERN:: machine rows + ledger field](feedback_concerns_machine_rows_2326.md) — since #2326 the template needs `CONCERN::` rows + `**Prior-concerns ledger:**`; currency-check the composer spec too, not only code-reviewer.md
+- [infra/wf-fix lint-gate compose](feedback_infra_wf_fix_lint_gate_compose.md) — workflow_lint.py diffs: N/A-by-type facts, hollow-gate = check-registration trace, LIVE_WORKFLOW_HELPERS arming, plan-verify attestation (#2192 r1)
+- [wording-concern fixes may be marker-text-only](feedback_wording_concern_marker_text_only.md) — verify payload stat vs brief file list; mine impl (b)/(d) for self-disclosed tensions → named adjudications (#2378 r3)
 - [infra/wf-fix lint-gate compose](feedback_infra_wf_fix_lint_gate_compose.md) — guard/lint/verifier diffs: N/A-by-type facts, hollow-gate = dispatch trace, roster arming, TAG-first wf-fix attestation, plan-vs-measured = test-the-hypothesis (#2192, #2291)
 - [shell-wrapper infra compose](feedback_shell_wrapper_infra_compose.md) — .sh diffs: Step 0.70 binds, live-alert never-run warning, seam=child-binary 3.8 shape, bash-semantics Step 2 list (#2196 r1)
 - [envelope brace residue + intra-round rename](feedback_envelope_brace_residue_and_intraround_rename.md) — residue check excludes marker envelope (git ^{{commit}} is content); same-round add-then-rename ⇒ 3.75 N/A attested (#2198 r1)
