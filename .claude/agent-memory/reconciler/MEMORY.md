@@ -32,6 +32,10 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Kwarg-threading: in-script --smoke fakes + sidecar reachability](feedback_kwarg_threading_inscript_smoke_fakes_and_sidecar_reachability.md) — RUN the shared script's own --smoke; trace pin persistence before crediting mixed-revision Critical (#1901 r2)
+
+- [AST-scanner name-binding FP channel + kill-clause trigger-domain paraphrase](feedback_ast_scanner_name_binding_and_kill_clause_trigger_domain.md) — construct the same-name collision; execution-test tightenings for measured-identity; quote STOP clauses verbatim (#2537 r1)
+
 - [AST-scanner name-binding FP channel + kill-clause trigger-domain paraphrase](feedback_ast_scanner_name_binding_and_kill_clause_trigger_domain.md) — construct the same-name collision; execution-test tightenings for measured-identity; quote STOP clauses verbatim (#2537 r1)
 
 - [Concern closure graded against the LEDGER row, not the fix-sentence](feedback_concern_closure_graded_against_ledger_row_not_fix_sentence.md) — multi-part concern closed on the paraphrased half; diff round-added invariant prose vs the adjacent command (#2263 r3)
