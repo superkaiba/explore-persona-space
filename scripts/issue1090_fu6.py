@@ -38,6 +38,7 @@ Usage (repro card, plan v10 s10):
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # .env + shared-VM thread caps BEFORE heavy imports
@@ -1057,20 +1058,19 @@ def phase_capture_rollouts(cfg: Cfg) -> dict:
         # Encode-skipped rows' keys, persisted so P3 can tell "legitimately
         # excluded at encode" from "keying bug / store corruption" (fail loud).
         skipped_keys = [list(group[i][1]) for i, r in enumerate(rows) if r is None]
-        tmp = cap_dir / f"pair{pi}_{arm}.pt.tmp"
-        torch.save(
-            {
-                # v2: stable (question_idx, rollout_idx) row keys + skipped_keys.
-                "schema_version": 2,
-                "means_fp16": stack,
-                "row_meta": row_meta,
-                "skipped_keys": skipped_keys,
-                "encode_counts": encode_counts,
-                "meta": {"git_commit": _git_commit(), "ts": _utc(), "model": BASE_MODEL},
-            },
-            tmp,
-        )
-        os.replace(tmp, cap_dir / f"pair{pi}_{arm}.pt")
+        with atomic_replace(cap_dir / f"pair{pi}_{arm}.pt") as tmp:
+            torch.save(
+                {
+                    # v2: stable (question_idx, rollout_idx) row keys + skipped_keys.
+                    "schema_version": 2,
+                    "means_fp16": stack,
+                    "row_meta": row_meta,
+                    "skipped_keys": skipped_keys,
+                    "encode_counts": encode_counts,
+                    "meta": {"git_commit": _git_commit(), "ts": _utc(), "model": BASE_MODEL},
+                },
+                tmp,
+            )
         logger.info("[p1b] persisted pair%d_%s (%d captures)", pi, arm, stack.shape[0])
     del model
     import gc
@@ -1219,6 +1219,10 @@ def _merge_adapter_fu6(adapter_dir: Path, merged_dir: Path) -> Path:
 
     if (merged_dir / "config.json").exists():
         return merged_dir
+    # Temp-DIRECTORY publish/reclaim (#2336 plan 4(g)): a crashed merge leaves residue at
+    # this PREDICTABLE path and the exists()+rmtree reclaim depends on it; atomic_replace
+    # is file-scoped and cannot replace a directory publish.
+    # SHARED_TMP_EXEMPT: temp-DIRECTORY publish/reclaim; deterministic name is load-bearing
     tmp_dir = merged_dir.parent / (merged_dir.name + ".tmp")
     if tmp_dir.exists():
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -1432,9 +1436,8 @@ def run_organism_capture(cfg: Cfg, spec: dict | None) -> None:
                             f"K2 HALT: {unit} own-context response shift norm is 0 at layer "
                             f"{li} — wrong/unapplied adapter (apply-path breakage)"
                         )
-        tmp = out_dir / "pooled.pt.tmp"
-        torch.save(store, tmp)
-        os.replace(tmp, out_dir / "pooled.pt")
+        with atomic_replace(out_dir / "pooled.pt") as tmp:
+            torch.save(store, tmp)
         logger.info("[p1c] %s captured (%d own + %d shared rows)", unit, n_own, len(base_rows))
     finally:
         if cleanup is not None:

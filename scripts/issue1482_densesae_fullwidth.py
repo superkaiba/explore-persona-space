@@ -38,6 +38,7 @@ upload that fires the moment each cell lands (#664).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import logging
 import os
@@ -57,6 +58,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # #847: thread caps + credentials BEFORE numpy/torch import
@@ -484,42 +486,44 @@ def phase_assemble(args) -> int:
     nnz = int(indptr[-1])
     logger.info("[assemble] n=%d nnz=%d (%.1f nnz/row)", n, nnz, nnz / max(1, n))
 
-    # pass 2: scatter each shard's rows into their preallocated slices
-    ind = np.memmap(work / "y_indices.i32.tmp", dtype=np.int32, mode="w+", shape=(nnz,))
-    vals = {
-        p: np.memmap(work / f"y_val_{p}.f16.tmp", dtype=np.float16, mode="w+", shape=(nnz,))
-        for p in POOLINGS
-    }
-    t0 = time.time()
-    for i, p in enumerate(shards):
-        with np.load(p, allow_pickle=False) as z:
-            rid = np.asarray(z["row_idx"], dtype=np.int64)
-            off = np.asarray(z["idx_off"], dtype=np.int64)
-            sidx = np.asarray(z["ans_idx"], dtype=np.int32)
-            svals = {q: np.asarray(z[VAL_KEY[q]], dtype=np.float16) for q in POOLINGS}
-        starts = np.concatenate(([0], np.cumsum(off))).astype(np.int64)
-        for j, (r, o) in enumerate(zip(rid, off, strict=True)):
-            pos = row_pos.get(int(r))
-            if pos is None:
-                continue
-            src = slice(int(starts[j]), int(starts[j]) + int(o))
-            dst = slice(int(indptr[pos]), int(indptr[pos]) + int(o))
-            ind[dst] = sidx[src]
-            for q in POOLINGS:
-                vals[q][dst] = svals[q][src]
-        if (i + 1) % 400 == 0 or (i + 1) == len(shards):
-            logger.info(
-                "[assemble] pass2 shard %d/%d (%.0fs)", i + 1, len(shards), time.time() - t0
-            )
-    ind.flush()
-    del ind
-    for q in POOLINGS:
-        vals[q].flush()
-    del vals
-    np.save(paths["indptr"], indptr)
-    os.replace(work / "y_indices.i32.tmp", paths["indices"])
-    for q in POOLINGS:
-        os.replace(work / f"y_val_{q}.f16.tmp", paths[q])
+    # pass 2: scatter each shard's rows into their preallocated slices.
+    # #2336 plan 4(h): the memmap workfiles are long-lived deferred-publish temps —
+    # ExitStack over atomic_replace contexts (pid+uuid temp names); each os.replace
+    # publish fires at stack exit, and a crash unlinks the partial workfiles.
+    with contextlib.ExitStack() as stack:
+        ind_tmp = stack.enter_context(atomic_replace(paths["indices"]))
+        val_tmps = {p: stack.enter_context(atomic_replace(paths[p])) for p in POOLINGS}
+        ind = np.memmap(ind_tmp, dtype=np.int32, mode="w+", shape=(nnz,))
+        vals = {
+            p: np.memmap(val_tmps[p], dtype=np.float16, mode="w+", shape=(nnz,)) for p in POOLINGS
+        }
+        t0 = time.time()
+        for i, p in enumerate(shards):
+            with np.load(p, allow_pickle=False) as z:
+                rid = np.asarray(z["row_idx"], dtype=np.int64)
+                off = np.asarray(z["idx_off"], dtype=np.int64)
+                sidx = np.asarray(z["ans_idx"], dtype=np.int32)
+                svals = {q: np.asarray(z[VAL_KEY[q]], dtype=np.float16) for q in POOLINGS}
+            starts = np.concatenate(([0], np.cumsum(off))).astype(np.int64)
+            for j, (r, o) in enumerate(zip(rid, off, strict=True)):
+                pos = row_pos.get(int(r))
+                if pos is None:
+                    continue
+                src = slice(int(starts[j]), int(starts[j]) + int(o))
+                dst = slice(int(indptr[pos]), int(indptr[pos]) + int(o))
+                ind[dst] = sidx[src]
+                for q in POOLINGS:
+                    vals[q][dst] = svals[q][src]
+            if (i + 1) % 400 == 0 or (i + 1) == len(shards):
+                logger.info(
+                    "[assemble] pass2 shard %d/%d (%.0fs)", i + 1, len(shards), time.time() - t0
+                )
+        ind.flush()
+        del ind
+        for q in POOLINGS:
+            vals[q].flush()
+        del vals
+        np.save(paths["indptr"], indptr)
     _write_json(
         paths["meta"],
         {

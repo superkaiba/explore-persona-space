@@ -143,6 +143,9 @@ write_sentinel() {  # write_sentinel <kind> <gate> <note_json_path>
 import json
 import os
 import sys
+from pathlib import Path
+
+from explore_persona_space.atomic_io import atomic_replace
 
 kind, gate, note_path, dest, out_dir, fig_dir = sys.argv[1:7]
 hf_prefix = os.environ.get("EPM_I1335_HF_PREFIX", "issue1335_ablation_ladder")
@@ -185,12 +188,9 @@ payload = {
     "by": "issue1335_run.sh",
     "note": note,
 }
-tmp = dest + ".tmp"
-with open(tmp, "w", encoding="utf-8") as f:
-    json.dump(payload, f)
-import os
-
-os.replace(tmp, dest)
+with atomic_replace(Path(dest)) as tmp:
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(payload, f)
 print(f"[i1335-run] sentinel written: {dest}")
 PY
 }

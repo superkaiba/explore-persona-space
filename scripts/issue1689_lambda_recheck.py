@@ -45,6 +45,7 @@ from pathlib import Path
 # CRITICAL: load_dotenv() BEFORE importing numpy / torch — the shared-VM
 # thread caps (#847) freeze at first BLAS/torch import (lint-gate pin on this
 # branch; see scripts/issue1689_procrustes_figure.py for the pattern).
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -204,11 +205,10 @@ def _ckpt_satisfies(prior: dict | None, want: dict) -> bool:
 
 
 def _atomic_write_json(path: Path, obj: dict) -> None:
-    # Atomic same-dir tmp + replace (EXDEV rule: tmp INSIDE dest dir).
-    tmp = path.with_name(f".{path.name}.tmp")
-    with tmp.open("w") as fh:
-        json.dump(obj, fh, indent=2)
-    tmp.replace(path)
+    # Shared process-safe atomic write (same-dir pid+uuid tmp + os.replace).
+    with atomic_replace(path) as tmp:
+        with tmp.open("w") as fh:
+            json.dump(obj, fh, indent=2)
 
 
 def process_cell_arm(
