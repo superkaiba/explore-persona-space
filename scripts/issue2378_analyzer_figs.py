@@ -458,6 +458,50 @@ def fig_lofo(fits: dict) -> None:
     plt.close(fig)
 
 
+def fig_lofo_points(fits: dict) -> None:
+    """Per-fold companion to fig_lofo: leave-one-framing-out R² vs own-map R², fold by fold.
+
+    Filled circles = the leave-one-framing-out map's held-out R² on each of the 5 global-family
+    folds; open diamonds = the same framing's own-map per-fold R² (the recovery denominator).
+    Decomposes the aggregate recovery bars into the per-fold points behind them.
+    """
+    fig, ax = plt.subplots(figsize=(8.0, 4.2))
+    x = np.arange(len(CELLS))
+    for i, c in enumerate(CELLS):
+        d = _load(POOL_GF / "lofo" / f"{c}__context.json")
+        lofo_vals = [f["r2"]["m0"] for f in d["per_fold"]]
+        ax.plot(
+            np.full(len(lofo_vals), x[i] - 0.12),
+            lofo_vals,
+            marker="o",
+            ls="none",
+            ms=4,
+            color=COLOR[c],
+        )
+        ceil_f = [f["r2"] for f in load_own_ceiling(c)["per_fold"]]
+        ax.plot(
+            np.full(len(ceil_f), x[i] + 0.12),
+            ceil_f,
+            marker="D",
+            ls="none",
+            ms=4,
+            mfc="white",
+            mec=COLOR[c],
+            markeredgewidth=1.1,
+        )
+    ax.axhline(0.0, color="grey", lw=0.6)
+    ax.set_xticks(x)
+    ax.set_xticklabels([SHORT[c] for c in CELLS])
+    ax.set_ylabel("held-out R² (per fold)")
+    set_title_subtitle(
+        ax,
+        "Per-fold R²: leave-one-framing-out map (filled) vs own map (open)",
+        "5 global-family folds; left-out story cells track their own maps, chat/plain/user fall below",
+    )
+    savefig_paper(fig, f"{OUT}/lofo_points", dir="figures/")
+    plt.close(fig)
+
+
 def fig_r2_vs_retrieval(fits: dict, lad: dict) -> None:
     fig, ax = plt.subplots(figsize=(7.2, 5.0))
     # own maps (stagger the tightly-clustered story-cell labels)
@@ -518,6 +562,7 @@ def main() -> None:
     fig_pooled_tiers(fits)
     fig_pooled_points(fits)
     fig_lofo(fits)
+    fig_lofo_points(fits)
     fig_r2_vs_retrieval(fits, lad)
     print("all figures written to figures/issue_2378/")
 
