@@ -288,6 +288,7 @@ def generate_batch_ids(
     temperature: float = 1.0,
     seed_base: int = 42,
     greedy: bool = False,
+    stop_strings: list[str] | None = None,
 ) -> list[list[dict]]:
     """N draws for each raw-id row, LEFT-padded, per-draw seeded.
 
@@ -295,6 +296,12 @@ def generate_batch_ids(
     "n_completion_tokens": int, "hit_eos": bool}``. When ``stack`` is armed
     for replace, ``donors_full`` must be provided and is re-armed per draw
     (each draw resets the prefill latch + decode counter).
+
+    ``stop_strings`` (optional, additive — #2378 r18): per-batch textual stop
+    set threaded to ``model.generate(stop_strings=..., tokenizer=...)``
+    (``StopStringCriteria`` — per-row early halt; halted rows are pad-filled
+    by HF generate, and the pad fill is stripped from ``gen_ids``). Default
+    ``None`` keeps the pre-existing behavior byte-identical.
     """
     assert rows_ids, "empty batch"
     device = next(model.parameters()).device
@@ -325,6 +332,9 @@ def generate_batch_ids(
                 # n=1; re-assert the latch is fresh.
                 for h in stack.hooks:
                     assert h.mode is not None, "stack installed but not armed"
+        stop_kwargs = {}
+        if stop_strings:
+            stop_kwargs = {"stop_strings": list(stop_strings), "tokenizer": tokenizer}
         out = model.generate(
             input_ids=input_ids,
             attention_mask=attn,
@@ -334,6 +344,7 @@ def generate_batch_ids(
             top_k=None,
             max_new_tokens=max_new_tokens,
             pad_token_id=pad_id,
+            **stop_kwargs,
         )
         gen = out[:, T:]
         rows_out: list[dict] = []
@@ -347,6 +358,13 @@ def generate_batch_ids(
                     hit_eos = True
                     break
             gen_ids = toks[:n_comp]
+            if stop_strings:
+                # A stop-string halt leaves HF's pad fill on the row tail
+                # (pad_id may differ from every EOS id) — strip it so gen_ids
+                # carry only really-generated tokens (#2378 r18).
+                while gen_ids and gen_ids[-1] == pad_id:
+                    gen_ids = gen_ids[:-1]
+                n_comp = len(gen_ids)
             rows_out.append(
                 {
                     "gen_ids": gen_ids,

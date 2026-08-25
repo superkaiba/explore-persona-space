@@ -21,9 +21,14 @@ an assistant) — it is F_act-only by design, stated in the round report.
 Transport: ``llm/api_dispatch.dispatch_calls`` (rubric-keyed cache, batch
 checkpointing, 429/529 retry) — the same machinery as issue2378_judge, whose
 parse/classify helpers are imported verbatim. Pilot gate (llm-judging rules
-23/26): ``--pilot N`` runs N calls on the production instrument and FAILS on
-any ``max_tokens`` stop or a parse-fail rate >= 2%; the production wave
-refuses to run without a PASS report on disk (or --skip-pilot-gate, recorded).
+23/26): ``--pilot N`` runs N calls STRATIFIED across every realized
+(row kind x rubric) class on the production instrument and FAILS on any
+``max_tokens`` stop, a parse-fail rate >= 2% of ANSWERED calls, or any class
+with zero answered calls (transport losses are vacuous, never a PASS); the
+production wave refuses to run without a PASS report on disk whose transport
+AND instrument sha match the wave's (rule 26(c) parity; or --skip-pilot-gate,
+recorded in the wave report). The wave fold is rebuild-from-cache resumable
+(fresh tmp dir + atomic publish — a rerun never truncates or refuses).
 
 Inputs: the harvested pod dirs under --patch-root (bank/anchors/grid/confirm
 rollout JSONLs). Outputs: per-row scores JSONL + a wave report under
@@ -36,6 +41,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -199,48 +205,153 @@ def _pilot_report_path(out_dir: Path) -> Path:
     return out_dir / "pilot_report.json"
 
 
-def run_pilot(args, out_dir: Path) -> int:
-    items = build_items(Path(args.patch_root), max_items=int(args.pilot))
-    classified = _dispatch(items, args, args.transport, f"pilot-{args.transport}")
+def _item_class(item_id: str) -> tuple[str, str]:
+    """(kind, rubric) — the pilot stratification class of one judge item.
+    item_id shapes: ``anchors|<ctx>|d<k>|<rubric>`` / ``grid|<cell>|d<k>|<rubric>``."""
+    return item_id.split("|", 1)[0], item_id.rsplit("|", 1)[1]
+
+
+def _instrument_sha() -> str:
+    """sha256 of the judge INSTRUMENT (model, cap, system, all rubrics) — a
+    pilot PASS is valid only for this exact instrument (llm-judging rule 26);
+    the wave refuses on a mismatch."""
+    import hashlib
+
+    payload = json.dumps(
+        [
+            cm.JUDGE_MODEL,
+            cm.JUDGE_MAX_TOKENS,
+            pc.PATCH_JUDGE_SYSTEM,
+            pc.PERSONA_RUBRIC,
+            pc.ASSISTANT_RUBRIC,
+            pc.COHERENCE_RUBRIC,
+        ]
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def stratified_pilot_items(items: list, n: int) -> list:
+    """Deterministic round-robin per-(kind x rubric) selection of n pilot items.
+
+    The pilot must span EVERY realized row kind (anchors/grid/confirm) and
+    EVERY rubric in the wave (llm-judging rule 26; r17 Claude M2 / codex
+    patch-judge-pilot-vacuous: a head-of-list cap drew chat-anchors rows only
+    and never piloted the coherence rubric)."""
+    by_class: dict[tuple[str, str], list] = {}
+    for it in items:
+        by_class.setdefault(_item_class(it.item_id), []).append(it)
+    for lst in by_class.values():
+        lst.sort(key=lambda it: it.item_id)
+    order = sorted(by_class)
+    target = min(n, len(items))
+    out: list = []
+    idx = 0
+    while len(out) < target:
+        lst = by_class[order[idx % len(order)]]
+        if lst:
+            out.append(lst.pop(0))
+        idx += 1
+    return out
+
+
+def pilot_report_from_classified(classified: dict[str, dict], transport: str) -> dict:
+    """Pure pilot verdict: per-class tallies + the gate booleans.
+
+    FAIL (ok=False) on ANY of: a max_tokens stop; parse-fail rate over the
+    ANSWERED denominator >= 2%; zero answered calls overall; any realized
+    (kind x rubric) class with ZERO answered calls — transport losses /
+    api-refusals produce no verdict, so an all-transport class is a VACUOUS
+    pilot, never a PASS (r17 codex patch-judge-pilot-vacuous)."""
+    per_class: dict[str, dict] = {}
+    for iid, c in classified.items():
+        key = "|".join(_item_class(iid))
+        rec = per_class.setdefault(
+            key, {"n": 0, "n_answered": 0, "n_parse_fail": 0, "n_max_tokens_stops": 0}
+        )
+        rec["n"] += 1
+        if c["class"] not in ("transport_loss", "api_refusal"):
+            rec["n_answered"] += 1
+        if c["class"] in ("parse_fail", "truncation"):
+            rec["n_parse_fail"] += 1
+        if c.get("stop_reason") == "max_tokens":
+            rec["n_max_tokens_stops"] += 1
     n = len(classified)
-    n_cap = sum(1 for c in classified.values() if c.get("stop_reason") == "max_tokens")
-    n_parse_fail = sum(1 for c in classified.values() if c["class"] in ("parse_fail", "truncation"))
-    ok = n_cap == 0 and (n_parse_fail / max(n, 1)) < PILOT_PARSE_FAIL_MAX
-    report = {
+    n_answered = sum(rec["n_answered"] for rec in per_class.values())
+    n_cap = sum(rec["n_max_tokens_stops"] for rec in per_class.values())
+    n_parse_fail = sum(rec["n_parse_fail"] for rec in per_class.values())
+    vacuous = sorted(k for k, rec in per_class.items() if rec["n_answered"] == 0)
+    ok = (
+        n_cap == 0
+        and n_answered > 0
+        and (n_parse_fail / max(n_answered, 1)) < PILOT_PARSE_FAIL_MAX
+        and not vacuous
+    )
+    return {
         "n": n,
+        "n_answered": n_answered,
         "n_max_tokens_stops": n_cap,
         "n_parse_fail": n_parse_fail,
-        "parse_fail_rate": n_parse_fail / max(n, 1),
-        "transport": args.transport,
+        "parse_fail_rate": n_parse_fail / max(n_answered, 1),
+        "classes": {k: per_class[k] for k in sorted(per_class)},
+        "vacuous_classes": vacuous,
+        "transport": transport,
+        "instrument_sha": _instrument_sha(),
         "ok": ok,
-        "metadata": cm.run_metadata({"phase": "patch_judge_pilot"}),
     }
+
+
+def run_pilot(args, out_dir: Path) -> int:
+    all_items = build_items(Path(args.patch_root))
+    classes = sorted({"|".join(_item_class(it.item_id)) for it in all_items})
+    if int(args.pilot) < len(classes):
+        raise SystemExit(
+            f"--pilot {args.pilot} < {len(classes)} realized (kind x rubric) classes "
+            f"{classes} — raise the pilot size so every class is spanned (rule 26)"
+        )
+    items = stratified_pilot_items(all_items, int(args.pilot))
+    _log(
+        f"[pilot] {len(items)}/{len(all_items)} stratified items over classes "
+        f"{sorted({'|'.join(_item_class(it.item_id)) for it in items})}"
+    )
+    classified = _dispatch(items, args, args.transport, f"pilot-{args.transport}")
+    report = pilot_report_from_classified(classified, args.transport)
+    report["n_items_total"] = len(all_items)
+    report["metadata"] = cm.run_metadata({"phase": "patch_judge_pilot"})
+    # Persist the pilot's raw classified rows (rule 26: read stop_reasons from
+    # persisted results, never truncated failure-log text).
+    with (out_dir / "pilot_rows.jsonl").open("w", encoding="utf-8") as fh:
+        for iid in sorted(classified):
+            c = classified[iid]
+            fh.write(
+                json.dumps({"item_id": iid, **{k: v for k, v in c.items() if k != "parsed"}}) + "\n"
+            )
     cm.atomic_write_json(_pilot_report_path(out_dir), report)
-    _log(f"[pilot] n={n} max_tokens_stops={n_cap} parse_fail={n_parse_fail} ok={ok}")
-    return 0 if ok else 7
+    _log(
+        f"[pilot] n={report['n']} answered={report['n_answered']} "
+        f"max_tokens_stops={report['n_max_tokens_stops']} parse_fail={report['n_parse_fail']} "
+        f"vacuous={report['vacuous_classes']} ok={report['ok']}"
+    )
+    return 0 if report["ok"] else 7
 
 
 # ── production wave ─────────────────────────────────────────────────────────
 
 
-def run_wave(args, out_dir: Path) -> int:
-    if not args.skip_pilot_gate:
-        rp = _pilot_report_path(out_dir)
-        if not rp.exists():
-            raise SystemExit(f"pilot gate: no pilot report at {rp} — run --pilot first")
-        rep = json.loads(rp.read_text(encoding="utf-8"))
-        if not rep.get("ok"):
-            raise SystemExit(f"pilot gate: pilot report at {rp} is FAIL — fix the instrument")
-    items = build_items(Path(args.patch_root))
-    t0 = time.time()
-    classified = _dispatch(
-        items, args, None if args.transport == "auto" else args.transport, "wave"
-    )
-    by_id = {it.item_id: it for it in items}
-    scores_path = out_dir / "scores.jsonl"
-    tally = {"kept": 0, "dropped": 0, "transport_loss": 0}
-    writer = cm.ShardWriter(out_dir / "raw", "judge_rows")
-    with scores_path.open("w", encoding="utf-8") as fh:
+def _write_fold(out_dir: Path, classified: dict[str, dict]) -> tuple[dict, dict]:
+    """Build scores.jsonl + raw shards in a FRESH tmp dir, then atomically
+    publish over any prior fold (r17 codex patch-judge-fold-not-resumable:
+    the old truncate-then-ShardWriter-refuse path made every rerun fail on
+    the existing raw shard; results are cache/checkpoint-served upstream, so
+    a rerun deterministically rebuilds the complete output set)."""
+    import shutil
+
+    fold_tmp = out_dir / "fold_tmp"
+    if fold_tmp.exists():
+        shutil.rmtree(fold_tmp)
+    (fold_tmp / "raw").mkdir(parents=True)
+    tally: dict = {"kept": 0, "dropped": 0, "transport_loss": 0, "by_class": {}}
+    writer = cm.ShardWriter(fold_tmp / "raw", "judge_rows")
+    with (fold_tmp / "scores.jsonl").open("w", encoding="utf-8") as fh:
         for iid in sorted(classified):
             c = classified[iid]
             score = c.get("score")
@@ -248,6 +359,7 @@ def run_wave(args, out_dir: Path) -> int:
             tally["kept" if kept else "dropped"] += 1
             if c["class"] == "transport_loss":
                 tally["transport_loss"] += 1
+            tally["by_class"][c["class"]] = tally["by_class"].get(c["class"], 0) + 1
             row_id, rubric = iid.rsplit("|", 1)
             fh.write(
                 json.dumps(
@@ -265,12 +377,57 @@ def run_wave(args, out_dir: Path) -> int:
             )
             writer.write({"item_id": iid, **{k: v for k, v in c.items() if k != "parsed"}})
     shard_info = writer.close()
+    raw_dir = out_dir / "raw"
+    if raw_dir.exists():
+        shutil.rmtree(raw_dir)  # prior fold — rebuilt whole from cached results
+    (fold_tmp / "raw").rename(raw_dir)
+    os.replace(fold_tmp / "scores.jsonl", out_dir / "scores.jsonl")
+    shutil.rmtree(fold_tmp)
+    shard_info["shards"] = [str(raw_dir / Path(p).name) for p in shard_info["shards"]]
+    return tally, shard_info
+
+
+def run_wave(args, out_dir: Path) -> int:
+    if not args.skip_pilot_gate:
+        rp = _pilot_report_path(out_dir)
+        if not rp.exists():
+            raise SystemExit(f"pilot gate: no pilot report at {rp} — run --pilot first")
+        rep = json.loads(rp.read_text(encoding="utf-8"))
+        if not rep.get("ok"):
+            raise SystemExit(f"pilot gate: pilot report at {rp} is FAIL — fix the instrument")
+        # Transport parity (llm-judging rule 26(c), #2152): the pilot must
+        # have RUN the wave's transport — a pilot-gated wave pins it.
+        if args.transport == "auto":
+            raise SystemExit(
+                "pilot gate: a pilot-gated wave requires a PINNED --transport sync|batch "
+                "matching the pilot's (rule 26(c) transport parity — never count-routed auto)"
+            )
+        if rep.get("transport") != args.transport:
+            raise SystemExit(
+                f"pilot gate: pilot transport {rep.get('transport')!r} != wave transport "
+                f"{args.transport!r} — re-pilot on the wave's transport (rule 26(c))"
+            )
+        if rep.get("instrument_sha") != _instrument_sha():
+            raise SystemExit(
+                "pilot gate: the judge instrument changed since the pilot PASS "
+                f"(pilot sha {rep.get('instrument_sha')!r} != live {_instrument_sha()!r}) "
+                "— re-pilot (rule 26)"
+            )
+    items = build_items(Path(args.patch_root))
+    t0 = time.time()
+    classified = _dispatch(
+        items, args, None if args.transport == "auto" else args.transport, "wave"
+    )
+    tally, shard_info = _write_fold(out_dir, classified)
     report = {
         "n_items": len(items),
         "tally": tally,
         "wall_s": time.time() - t0,
         "judge_model": cm.JUDGE_MODEL,
         "max_tokens": cm.JUDGE_MAX_TOKENS,
+        "transport": args.transport,
+        "skip_pilot_gate": bool(args.skip_pilot_gate),
+        "instrument_sha": _instrument_sha(),
         "raw_shards": shard_info,
         "metadata": cm.run_metadata({"phase": "patch_judge_wave"}),
     }

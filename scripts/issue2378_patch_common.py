@@ -104,6 +104,28 @@ FRAMING_MAX_TOKENS = {
     "plain": cm.PLAIN_MAX_TOKENS,
 }
 
+# Registered textual stops by TARGET framing (parent stop conventions: a story
+# reply ends at its closing quote — gen._mine_closing_quote's char set — and a
+# plain reply at the next user turn; "\n\nUser:" contains "\nUser:", so the
+# single shorter stop covers both cm.PLAIN_STOP members). Chat stops on EOS.
+FRAMING_STOP_STRINGS: dict[str, tuple[str, ...]] = {
+    "story": ('"', "”"),
+    "chat": (),
+    "plain": ("\nUser:",),
+}
+
+
+def stop_strings_for(framing: str) -> list[str] | None:
+    """The generate-time stop set for one target framing (None = EOS only)."""
+    stops = FRAMING_STOP_STRINGS[framing]
+    return list(stops) if stops else None
+
+
+def hit_stop(framing: str, text: str) -> bool:
+    """Whether a generated text reached its framing's registered textual stop
+    (cap-hit telemetry: capped = not hit_eos and not hit_stop)."""
+    return any(s in text for s in FRAMING_STOP_STRINGS[framing])
+
 
 def primary_read_layer(n_layers: int) -> int:
     """Depth-matched #2094 primary F_act read layer (26/28 of the stack)."""
@@ -233,8 +255,12 @@ def screen_families(
         "screen_rule": (
             "paired per-question F_act(steered)-F_act(null) differences; pair-clustered "
             f"bootstrap B={n_boot} seed={seed} (issue2094_analysis."
-            "bootstrap_family_means_batched); PASS iff the 2.5/97.5 percentile CI "
-            f"excludes 0; min_pairs={min_pairs} (#2094 select_best_cells floor)"
+            "bootstrap_family_means_batched), run PER identical-qid-set family GROUP so "
+            "every family resamples exactly its OWN fixed pair set (a union-with-NaN "
+            "matrix over disjoint qid sets gives each family a random effective n per "
+            "replicate); group g uses seed+g over sorted group keys. PASS iff the "
+            f"2.5/97.5 percentile CI excludes 0; min_pairs={min_pairs} "
+            "(#2094 select_best_cells floor)"
         ),
         "families": {},
         "skipped_below_min_pairs": skipped,
@@ -242,25 +268,33 @@ def screen_families(
     if not fams:
         report["confirm_families"] = []
         return report
-    all_qids = sorted({q for f in fams for q in diffs_by_family[f]})
-    values = np.full((len(all_qids), len(fams)), np.nan)
-    for j, fam in enumerate(fams):
-        for i, q in enumerate(all_qids):
-            if q in diffs_by_family[fam]:
-                values[i, j] = diffs_by_family[fam][q]
-    boots = A.bootstrap_family_means_batched(values, n_boot, seed)
-    for j, fam in enumerate(fams):
-        col = boots[:, j]
-        col = col[~np.isnan(col)]
-        d = diffs_by_family[fam]
-        lo, hi = float(np.percentile(col, 2.5)), float(np.percentile(col, 97.5))
-        report["families"][fam] = {
-            "n_pairs": len(d),
-            "mean_diff": float(np.mean(list(d.values()))),
-            "ci_lo": lo,
-            "ci_hi": hi,
-            "screen_pass": bool(lo > 0.0 or hi < 0.0),
-        }
+    # Group families by their EXACT qid set: within a group the values matrix
+    # is dense (no NaN), so each bootstrap replicate resamples exactly
+    # n_pairs pairs — fixed effective n per family (r17 codex
+    # patch-bootstrap-variable-effective-n). Families sharing qids stay
+    # pair-clustered together (same draw indices within the group).
+    groups: dict[tuple[str, ...], list[str]] = {}
+    for fam in fams:
+        groups.setdefault(tuple(sorted(diffs_by_family[fam])), []).append(fam)
+    for gi, qid_key in enumerate(sorted(groups)):
+        gfams = sorted(groups[qid_key])
+        values = np.array(
+            [[diffs_by_family[fam][q] for fam in gfams] for q in qid_key], dtype=np.float64
+        )
+        assert not np.isnan(values).any(), (qid_key, gfams)  # dense by construction
+        boots = A.bootstrap_family_means_batched(values, n_boot, seed + gi)
+        for j, fam in enumerate(gfams):
+            col = boots[:, j]
+            col = col[~np.isnan(col)]
+            d = diffs_by_family[fam]
+            lo, hi = float(np.percentile(col, 2.5)), float(np.percentile(col, 97.5))
+            report["families"][fam] = {
+                "n_pairs": len(d),
+                "mean_diff": float(np.mean(list(d.values()))),
+                "ci_lo": lo,
+                "ci_hi": hi,
+                "screen_pass": bool(lo > 0.0 or hi < 0.0),
+            }
     passing = [
         (fam, rec["mean_diff"])
         for fam, rec in report["families"].items()

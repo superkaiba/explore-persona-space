@@ -186,6 +186,21 @@ def _load_model_ctx(args) -> dict:
     }
 
 
+_MODEL_HOLDER: dict = {}
+
+
+def _ensure_mctx(args) -> dict:
+    """Process-wide memoized model context — ONE 27B load across the whole
+    ``model_all`` chain (r17 Claude M1 / codex patch-model-all-reloads: four
+    per-phase ``_load_model_ctx`` calls deserialized the checkpoint 4x and the
+    driver-level HBM preflight could false-FAIL mid-chain on freed-but-
+    allocator-retained prior-phase weights). Phases call this LAZILY, after
+    computing their pending-unit set, so a fully-resumed phase never loads."""
+    if "ctx" not in _MODEL_HOLDER:
+        _MODEL_HOLDER["ctx"] = _load_model_ctx(args)
+    return _MODEL_HOLDER["ctx"]
+
+
 def _tok(args, mctx: dict | None = None):
     if mctx is not None and "tok" in mctx:
         return mctx["tok"]
@@ -194,6 +209,28 @@ def _tok(args, mctx: dict | None = None):
 
         return AutoTokenizer.from_pretrained(args.tiny_tokenizer)
     return gen._get_tokenizer()
+
+
+def _bank_digest(args) -> str:
+    """sha256 over the bank files' on-disk bytes (bit-exact file inputs — safe
+    to hash; regenerating the bank changes the digest and fail-louds every
+    downstream StageLedger regime)."""
+    import hashlib
+
+    out = _out(args) / "bank"
+    h = hashlib.sha256()
+    for p in (out / "bank_rows.jsonl", out / "vc_bank.npz"):
+        h.update(p.read_bytes())
+    return h.hexdigest()[:16]
+
+
+def _openers_digest(openers: dict[str, list[int]]) -> str:
+    """sha256 over the CONSUMED opener mapping (last-wins dict — stable under
+    the benign duplicate re-append a mid-batch anchors resume can produce)."""
+    import hashlib
+
+    payload = json.dumps(sorted((k, list(v)) for k, v in openers.items()))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 # ── bank: rows + prompts + all-layer v_C capture + gates ────────────────────
@@ -307,19 +344,44 @@ def _capture_vc_bank(args, mctx: dict, ctxs: list[dict]) -> dict[str, np.ndarray
     Prompt-only forwards (causality makes the prompt-end state identical to
     the full-row state at that position); hs[l] task-layer indexing, matching
     the production capture convention (issue2378_capture._forward_chunk).
+    Checkpointed per capture batch (r18: ~180 units > the T2 ~50-unit floor —
+    a crash must not lose the whole bank): parts land under
+    ``bank/vc_parts/partNNN.npz`` with a StageLedger keyed on the generating
+    parameters; a resume re-captures only the missing parts.
     """
+    import hashlib
+
     torch = mctx["torch"]
     model, dev = mctx["model"], mctx["device"]
     n_layers = _n_layers(args)
-    out: dict[str, np.ndarray] = {}
+    parts_dir = _out(args) / "bank" / "vc_parts"
+    parts_dir.mkdir(parents=True, exist_ok=True)
+    ctxs_sha = hashlib.sha256(
+        json.dumps([(c["ctx_id"], c["prompt_sha"]) for c in ctxs]).encode("utf-8")
+    ).hexdigest()[:16]
+    ledger = cm.StageLedger(
+        parts_dir / "ledger.json",
+        {
+            "stage": "bank_capture",
+            "model": "tiny" if args.tiny else cm.MODEL_ID,
+            "n_layers": n_layers,
+            "batch_tokens": int(args.batch_tokens),
+            "max_batch_rows": int(args.max_batch_rows),
+            "ctxs": ctxs_sha,
+        },
+    )
     # Token-budgeted packing (the production capture kernel's discipline):
     # output_hidden_states materializes (n_layers+1) x B x T x H — an
     # unbounded row-count batch of long rows OOMs (65 levels x 64k tokens x
-    # 5120 bf16 ~ 43 GB); args.batch_tokens bounds B x T instead.
+    # 5120 bf16 ~ 43 GB); args.batch_tokens bounds B x T instead. The packing
+    # is deterministic over the full ctx list, so part indices are
+    # resume-stable.
     batches = cap._pack_batches(ctxs, args.batch_tokens, args.max_batch_rows)
     t0 = time.time()
-    done_rows = 0
-    for batch in batches:
+    for bi, batch in enumerate(batches):
+        key = f"part{bi:03d}"
+        if ledger.is_done(key):
+            continue
         t_max = max(ctxs[i]["n_tokens"] for i in batch)
         ids = torch.full((len(batch), t_max), mctx["pad_id"], dtype=torch.long)
         mask = torch.zeros((len(batch), t_max), dtype=torch.long)
@@ -336,13 +398,22 @@ def _capture_vc_bank(args, mctx: dict, ctxs: list[dict]) -> dict[str, np.ndarray
             )
         hs = res.hidden_states
         assert len(hs) == n_layers + 1, (len(hs), n_layers + 1)
+        part: dict[str, np.ndarray] = {}
         for j, i in enumerate(batch):
             pos = ctxs[i]["n_tokens"] - 1
             vec = torch.stack([hs[layer][j, pos] for layer in range(1, n_layers + 1)])
-            out[ctxs[i]["ctx_id"]] = cap._encode_bf16(torch, vec)
+            part[ctxs[i]["ctx_id"]] = cap._encode_bf16(torch, vec)
         del res, hs
-        done_rows += len(batch)
-        cm.progress("bank.vc", done_rows, len(ctxs), f"b{done_rows}", t0)
+        cap._atomic_savez(parts_dir / f"{key}.npz", **part)
+        ledger.mark_done(key)
+        cm.progress("bank.vc", bi + 1, len(batches), key, t0)
+    out: dict[str, np.ndarray] = {}
+    for p in sorted(parts_dir.glob("part*.npz")):
+        z = np.load(p)
+        out.update({k: z[k] for k in z.files})
+    missing = {c["ctx_id"] for c in ctxs} - set(out)
+    if missing:
+        raise RuntimeError(f"bank capture parts incomplete: missing {sorted(missing)[:5]}")
     return out
 
 
@@ -528,7 +599,7 @@ def phase_bank(args) -> int:
     tokz = _tok(args)
     qrows = _sample_bank_questions(args)
     ctxs = _bank_contexts(tokz, qrows)
-    mctx = _load_model_ctx(args)
+    mctx = _ensure_mctx(args)  # bank always needs the model: gates re-verify on every entry
     bank_vc = _capture_vc_bank(args, mctx, ctxs)
     np.savez(out / "vc_bank.npz", **bank_vc)
     rows_path = out / "bank_rows.jsonl"
@@ -546,12 +617,29 @@ def phase_bank(args) -> int:
 
 
 def _load_bank(args) -> tuple[list[dict], dict[str, np.ndarray]]:
+    """Bank rows + v_C bank with exact runtime KEY-COVERAGE asserts (r17 codex
+    patch-cache-key-coverage): unique row ctx ids, and vc_bank.npz keys
+    EXACTLY equal to the row ctx-id set — a partial/stale/mismatched prior
+    bank fails loud here, BEFORE any 27B model load."""
     out = _out(args) / "bank"
     rows = list(cm.iter_jsonl(out / "bank_rows.jsonl"))
     if not rows:
         raise RuntimeError("empty bank_rows.jsonl (fail loud)")
+    ids = [r["ctx_id"] for r in rows]
+    dupes = sorted(k for k, v in Counter(ids).items() if v > 1)
+    if dupes:
+        raise RuntimeError(f"duplicate bank ctx ids (stale/partial bank): {dupes[:5]}")
     z = np.load(out / "vc_bank.npz")
-    return rows, {k: z[k] for k in z.files}
+    vc = {k: z[k] for k in z.files}
+    missing = sorted(set(ids) - set(vc))
+    extra = sorted(set(vc) - set(ids))
+    if missing or extra:
+        raise RuntimeError(
+            "vc_bank.npz key-coverage mismatch vs bank_rows.jsonl: "
+            f"missing={missing[:5]} extra={extra[:5]} (n_rows={len(ids)}, n_vc={len(vc)}) "
+            "— stale/partial bank; re-run --phase bank into a fresh out-root"
+        )
+    return rows, vc
 
 
 # ── shared rollout post-processing ──────────────────────────────────────────
@@ -605,6 +693,11 @@ def _va_capture(args, mctx, tokz, items: list[dict]) -> np.ndarray | None:
     kept, drops = cap._tokenize_and_positions(tokz, rows, max_tokens=int(args.capture_max_tokens))
     if drops:
         _log(f"[va] span drops: {dict(drops)}")
+    return _va_from_recs(args, mctx, items, kept, layers)
+
+
+def _va_from_recs(args, mctx, items: list[dict], kept: list[dict], layers: list[int]):
+    """Shared v_A assembly: forward the kept recs, align rows back to items."""
     for it in items:
         it["va_dropped"] = True
     if not kept:
@@ -619,7 +712,68 @@ def _va_capture(args, mctx, tokz, items: list[dict]) -> np.ndarray | None:
     return out
 
 
+def _prefill_capture_rec(k: int, prompt_ids: list[int], completion_ids: list[int]) -> dict:
+    """One exact-token-ID capture rec for a prefill row (#2333 convention):
+    input ids = prompt + completion VERBATIM (never re-tokenized text), v_A
+    span = the whole kept completion — matching issue2333_run's
+    ``span = (len(base), len(full))`` — v_C at the last prompt position."""
+    n_p, n = len(prompt_ids), len(prompt_ids) + len(completion_ids)
+    assert completion_ids, "empty completion ids"
+    return {
+        "row_id": f"r{k}",
+        "input_ids": [*prompt_ids, *completion_ids],
+        "n_tokens": n,
+        "v_C_pos": n_p - 1,
+        "v_P_pos": n_p,  # v_P unused this round; anchored at the answer start
+        "ans_lo": n_p,
+        "ans_hi": n,
+        "_item": k,
+    }
+
+
+def _va_capture_ids(args, mctx, items: list[dict]) -> np.ndarray | None:
+    """Exact-token-ID v_A capture for prefill rows (r17 codex
+    patch-prefill-token-identity-loss): consumes each item's
+    ``_capture_ids`` = {"prompt": ids, "completion": ids} carried from the
+    generation call — no decode -> re-tokenize round trip anywhere. Reuses
+    the production forward kernel (cap._forward_chunk) verbatim."""
+    layers = list(_read_layers(args))
+    max_tokens = int(args.capture_max_tokens)
+    recs: list[dict] = []
+    drops: Counter = Counter()
+    for k, it in enumerate(items):
+        pid = it["_capture_ids"]["prompt"]
+        cid = it["_capture_ids"]["completion"]
+        if not cid:
+            drops["empty_completion"] += 1
+            continue
+        if len(pid) + len(cid) > max_tokens:
+            drops["over_length"] += 1
+            continue
+        recs.append(_prefill_capture_rec(k, pid, cid))
+    if drops:
+        _log(f"[va-ids] drops: {dict(drops)}")
+    return _va_from_recs(args, mctx, items, recs, layers)
+
+
 # ── anchors ─────────────────────────────────────────────────────────────────
+
+
+def _anchor_units(ctxs: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Batch-STABLE anchor units: fixed per-framing chunks over the FULL bank
+    order (never a todo-filtered list), so a resume re-runs identical batches
+    with identical per-unit seeds (r17 codex: a todo-derived batch shifted the
+    remaining contexts' draws on resume), and every batch is single-framing
+    (exact per-framing cap + stop set — never a mixed-cap max)."""
+    by_framing: dict[str, list[dict]] = {}
+    for c in ctxs:
+        by_framing.setdefault(c["framing"], []).append(c)
+    units: list[tuple[str, list[dict]]] = []
+    for framing in sorted(by_framing):
+        cs = by_framing[framing]  # bank order is deterministic
+        for k in range(0, len(cs), GEN_BATCH_ROWS):
+            units.append((f"{framing}|b{k // GEN_BATCH_ROWS:03d}", cs[k : k + GEN_BATCH_ROWS]))
+    return units
 
 
 def phase_anchors(args) -> int:
@@ -637,21 +791,25 @@ def phase_anchors(args) -> int:
         "temperature": cm.TEMPERATURE,
         "opener_tokens": pc.OPENER_TOKENS,
         "read_layers": list(_read_layers(args)),
+        "n_q_per_char": int(args.n_q_per_char),
+        "capture_max_tokens": int(args.capture_max_tokens),
+        "bank": _bank_digest(args),
         "tiny": bool(args.tiny),
     }
     ledger = cm.StageLedger(out / "ledger.json", regime)
-    mctx = _load_model_ctx(args)
+    units = _anchor_units(ctxs)
+    todo = [(key, batch) for key, batch in units if not ledger.is_done(key)]
+    _log(f"[anchors] {len(todo)}/{len(units)} units to run (resume skips the rest)")
+    if not todo:
+        return 0
+    mctx = _ensure_mctx(args)  # lazy: a fully-resumed phase never loads
     tokz = _tok(args, mctx)
-    todo = [c for c in ctxs if not ledger.is_done(c["ctx_id"])]
-    _log(f"[anchors] {len(todo)}/{len(ctxs)} contexts to run (resume skips the rest)")
     t0 = time.time()
     openers_path = out / "openers.jsonl"
-    for start in range(0, len(todo), GEN_BATCH_ROWS):
-        batch = todo[start : start + GEN_BATCH_ROWS]
+    for u, (unit_key, batch) in enumerate(todo):
+        framing = batch[0]["framing"]
         ids = [c["input_ids"] for c in batch]
-        cap_tokens = max(pc.FRAMING_MAX_TOKENS[c["framing"]] for c in batch)
-        if args.tiny:
-            cap_tokens = 16
+        cap_tokens = 16 if args.tiny else pc.FRAMING_MAX_TOKENS[framing]
         per_draw = generate_batch_ids(
             model=mctx["model"],
             tokenizer=tokz,
@@ -659,8 +817,11 @@ def phase_anchors(args) -> int:
             n=draws,
             max_new_tokens=cap_tokens,
             temperature=cm.TEMPERATURE,
-            seed_base=cm.derived_seed("patch-anchors", batch[0]["ctx_id"]),
+            seed_base=cm.derived_seed("patch-anchors", unit_key),
+            stop_strings=pc.stop_strings_for(framing),
         )
+        # Openers deliberately carry NO stop set: the #2333 donor scheme takes
+        # the first PREFILL_K greedy tokens verbatim, stops included.
         openers = generate_batch_ids(
             model=mctx["model"],
             tokenizer=tokz,
@@ -684,6 +845,7 @@ def phase_anchors(args) -> int:
                         "gen_text": row["text"],
                         "n_completion_tokens": row["n_completion_tokens"],
                         "hit_eos": row["hit_eos"],
+                        "hit_stop": pc.hit_stop(c["framing"], row["text"]),
                         "drop_reason": drop,
                     }
                 )
@@ -713,8 +875,8 @@ def phase_anchors(args) -> int:
                     )
                     + "\n"
                 )
-            ledger.mark_done(c["ctx_id"])
-            cm.progress("anchors", start + b + 1, len(todo), c["ctx_id"], t0)
+        ledger.mark_done(unit_key)
+        cm.progress("anchors", u + 1, len(todo), unit_key, t0)
     return 0
 
 
@@ -731,13 +893,24 @@ def _anchor_va(args) -> dict[str, np.ndarray]:
     return got
 
 
-def _openers(args) -> dict[str, list[int]]:
+def _openers(args, expected_ctx_ids=None) -> dict[str, list[int]]:
+    """Opener-token map, with exact key coverage against the bank ctx-id set
+    when ``expected_ctx_ids`` is given (r17 codex patch-cache-key-coverage —
+    checked BEFORE any model load; last-wins over benign duplicate rows)."""
     path = _out(args) / "anchors" / "openers.jsonl"
     got: dict[str, list[int]] = {}
     for row in cm.iter_jsonl(path):
         got[row["ctx_id"]] = list(row["opener_ids"])
     if not got:
         raise RuntimeError(f"no openers at {path} (fail loud)")
+    if expected_ctx_ids is not None:
+        missing = sorted(set(expected_ctx_ids) - set(got))
+        extra = sorted(set(got) - set(expected_ctx_ids))
+        if missing or extra:
+            raise RuntimeError(
+                f"openers.jsonl key-coverage mismatch vs the bank: missing={missing[:5]} "
+                f"extra={extra[:5]} — stale/partial anchors; re-run --phase anchors"
+            )
     return got
 
 
@@ -848,6 +1021,7 @@ def _run_hooked_block(
                 temperature=cm.TEMPERATURE,
                 max_new_tokens=cap_tokens,
                 seed_base=cm.derived_seed(seed_tag, block_cells[0]["cell_id"], d),
+                stop_strings=pc.stop_strings_for(tgt_framing),
             )
             for b, c in enumerate(block_cells):
                 row = g[0][b]
@@ -877,6 +1051,7 @@ def _run_hooked_block(
                         "gen_text": row["text"],
                         "n_completion_tokens": row["n_completion_tokens"],
                         "hit_eos": row["hit_eos"],
+                        "hit_stop": pc.hit_stop(tgt_framing, row["text"]),
                         "drop_reason": drop,
                         "prefill_k": None,
                     }
@@ -886,18 +1061,65 @@ def _run_hooked_block(
     return out_rows
 
 
+def _prefill_row(tokz, c, tgt_framing, prompt_ids, opener_ids, gen_row, d) -> dict:
+    """One prefill rollout row (#2333 token-identity convention, r17 codex
+    patch-prefill-token-identity-loss): the judged reply is the ONE-SHOT
+    decode of ``[opener_ids + gen_ids]`` — a split decode can corrupt a
+    multi-byte / cleanup-space seam between the segments (issue2333_run r1
+    blocker) — and the EXACT combined ids ride ``_capture_ids`` for the v_A
+    capture, never a re-tokenized text round trip."""
+    completion_ids = [*opener_ids, *gen_row["gen_ids"]]
+    text = tokz.decode(completion_ids, skip_special_tokens=True)
+    ans, drop = _extract_answer(tgt_framing, text)
+    return {
+        **{
+            k: c[k]
+            for k in (
+                "cell_id",
+                "arm",
+                "variant",
+                "src",
+                "tgt",
+                "qid",
+                "char",
+                "pair_type",
+                "direction",
+                "family",
+                "donor_ctx",
+            )
+        },
+        "draw": d,
+        "framing": tgt_framing,
+        "prompt_text": None,  # filled by the caller (by_ctx lookup)
+        "answer": ans or "",
+        "gen_text": text,
+        "n_completion_tokens": len(completion_ids),
+        "hit_eos": gen_row["hit_eos"],
+        "hit_stop": pc.hit_stop(tgt_framing, text),
+        "drop_reason": drop,
+        "prefill_k": pc.PREFILL_K,
+        # v_A span convention for this arm: the WHOLE kept completion in ID
+        # space (issue2333_run span=(len(base), len(full))), never the
+        # re-tokenized trimmed text; stop_strings bound post-stop residue.
+        "va_span": "completion_ids",
+        "_capture_ids": {"prompt": list(prompt_ids), "completion": completion_ids},
+    }
+
+
 def _run_prefill_block(args, mctx, tokz, block_cells, by_ctx, openers, greedy, draws, seed_tag):
     """Prefill arm: TARGET prompt + the SOURCE's first-k greedy opener TOKEN
-    ids (token-id concatenation, #2333 convention); no hook."""
+    ids (token-id concatenation, #2333 convention); no hook. generate_batch_ids
+    asserts the padded row tail carries [prompt+opener] ids verbatim (the
+    #2333 exact-ID assert)."""
     from explore_persona_space.experiments.issue2333.decode_hooks import generate_batch_ids
 
     tgt_framing = block_cells[0]["tgt"].split(":", 1)[0]
-    rows_ids, prefixes = [], []
+    rows_ids, opener_by_b = [], []
     for c in block_cells:
-        opener = openers[c["src"]][: pc.PREFILL_K]
+        opener = list(openers[c["src"]][: pc.PREFILL_K])
         assert opener, f"empty opener for {c['src']} (fail loud)"
-        rows_ids.append(list(by_ctx[c["tgt"]]["input_ids"]) + list(opener))
-        prefixes.append(tokz.decode(opener, skip_special_tokens=True))
+        rows_ids.append(list(by_ctx[c["tgt"]]["input_ids"]) + opener)
+        opener_by_b.append(opener)
         c["donor_ctx"] = c["src"]
     cap_tokens = 16 if args.tiny else pc.FRAMING_MAX_TOKENS[tgt_framing]
     out_rows = []
@@ -911,41 +1133,14 @@ def _run_prefill_block(args, mctx, tokz, block_cells, by_ctx, openers, greedy, d
             temperature=cm.TEMPERATURE,
             max_new_tokens=cap_tokens,
             seed_base=cm.derived_seed(seed_tag, block_cells[0]["cell_id"], d),
+            stop_strings=pc.stop_strings_for(tgt_framing),
         )
         for b, c in enumerate(block_cells):
-            row = g[0][b]
-            full = prefixes[b] + row["text"]  # the prefilled opener IS part of the answer
-            ans, drop = _extract_answer(tgt_framing, full)
-            out_rows.append(
-                {
-                    **{
-                        k: c[k]
-                        for k in (
-                            "cell_id",
-                            "arm",
-                            "variant",
-                            "src",
-                            "tgt",
-                            "qid",
-                            "char",
-                            "pair_type",
-                            "direction",
-                            "family",
-                            "donor_ctx",
-                        )
-                    },
-                    "draw": d,
-                    "framing": tgt_framing,
-                    "prompt_text": by_ctx[c["tgt"]]["prompt_text"],
-                    "answer": ans or "",
-                    "gen_text": full,
-                    "n_completion_tokens": row["n_completion_tokens"]
-                    + len(openers[c["src"]][: pc.PREFILL_K]),
-                    "hit_eos": row["hit_eos"],
-                    "drop_reason": drop,
-                    "prefill_k": pc.PREFILL_K,
-                }
+            row = _prefill_row(
+                tokz, c, tgt_framing, by_ctx[c["tgt"]]["input_ids"], opener_by_b[b], g[0][b], d
             )
+            row["prompt_text"] = by_ctx[c["tgt"]]["prompt_text"]
+            out_rows.append(row)
     return out_rows
 
 
@@ -975,6 +1170,24 @@ def _grid_cells(args, ctxs: list[dict]) -> list[dict]:
     return cells
 
 
+def _write_unit_outputs(out: Path, unit_key: str, rows: list[dict], live: list[dict], va) -> None:
+    """Rollout JSONL (private ``_capture_ids`` stripped) + kept-row v_A npz."""
+    slug = unit_key.replace("|", "_")
+    with (out / "rollouts" / f"{slug}.jsonl").open("w", encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(
+                json.dumps({k: v for k, v in r.items() if k != "_capture_ids"}, ensure_ascii=False)
+                + "\n"
+            )
+    if va is not None:
+        keep = [j for j, it in enumerate(live) if not it["va_dropped"]]
+        cap._atomic_savez(
+            out / "va" / f"{slug}.npz",
+            va=va[keep],
+            cell_ids=np.asarray([f"{live[j]['cell_id']}#{live[j]['draw']}" for j in keep]),
+        )
+
+
 def phase_grid(args) -> int:
     _phase_line("patch_grid")
     out = _out(args) / "grid"
@@ -982,7 +1195,8 @@ def phase_grid(args) -> int:
     (out / "va").mkdir(parents=True, exist_ok=True)
     ctxs, bank_vc = _load_bank(args)
     by_ctx = {c["ctx_id"]: c for c in ctxs}
-    openers = _openers(args)
+    # Key-coverage checks run BEFORE any model load (patch-cache-key-coverage).
+    openers = _openers(args, expected_ctx_ids=[c["ctx_id"] for c in ctxs])
     dmaps = _derangement_maps(ctxs)
     cells = _grid_cells(args, ctxs)
     regime = {
@@ -992,11 +1206,12 @@ def phase_grid(args) -> int:
         "prefill_k": pc.PREFILL_K,
         "n_q_per_char": int(args.n_q_per_char),
         "cells_limit": int(args.cells_limit or 0),
+        "capture_max_tokens": int(args.capture_max_tokens),
+        "bank": _bank_digest(args),
+        "openers": _openers_digest(openers),
         "tiny": bool(args.tiny),
     }
     ledger = cm.StageLedger(out / "ledger.json", regime)
-    mctx = _load_model_ctx(args)
-    tokz = _tok(args, mctx)
 
     blocks: dict[str, list[dict]] = {}
     for c in cells:
@@ -1007,11 +1222,16 @@ def phase_grid(args) -> int:
         cs = sorted(blocks[key], key=lambda c: c["cell_id"])
         for k in range(0, len(cs), GEN_BATCH_ROWS):
             units.append((f"{key}|{k // GEN_BATCH_ROWS:03d}", cs[k : k + GEN_BATCH_ROWS]))
+    todo = [(key, cs) for key, cs in units if not ledger.is_done(key)]
+    _log(f"[grid] {len(todo)}/{len(units)} units to run (resume skips the rest)")
+    if not todo:
+        return 0
+    mctx = _ensure_mctx(args)  # lazy: a fully-resumed phase never loads
+    tokz = _tok(args, mctx)
     t0 = time.time()
-    for u, (unit_key, block_cells) in enumerate(units):
-        if ledger.is_done(unit_key):
-            continue
-        if block_cells[0]["arm"] == "prefill":
+    for u, (unit_key, block_cells) in enumerate(todo):
+        prefill = block_cells[0]["arm"] == "prefill"
+        if prefill:
             rows = _run_prefill_block(
                 args, mctx, tokz, block_cells, by_ctx, openers, True, 1, "patch-grid"
             )
@@ -1020,20 +1240,15 @@ def phase_grid(args) -> int:
                 args, mctx, tokz, block_cells, by_ctx, bank_vc, dmaps, True, 1, "patch-grid"
             )
         live = [r for r in rows if r["drop_reason"] is None]
-        va = _va_capture(args, mctx, tokz, live) if live else None
-        slug = unit_key.replace("|", "_")
-        with (out / "rollouts" / f"{slug}.jsonl").open("w", encoding="utf-8") as fh:
-            for r in rows:
-                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-        if va is not None:
-            keep = [j for j, it in enumerate(live) if not it["va_dropped"]]
-            cap._atomic_savez(
-                out / "va" / f"{slug}.npz",
-                va=va[keep],
-                cell_ids=np.asarray([f"{live[j]['cell_id']}#{live[j]['draw']}" for j in keep]),
-            )
+        if not live:
+            va = None
+        elif prefill:
+            va = _va_capture_ids(args, mctx, live)  # exact-ID path (#2333 control)
+        else:
+            va = _va_capture(args, mctx, tokz, live)
+        _write_unit_outputs(out, unit_key, rows, live, va)
         ledger.mark_done(unit_key)
-        cm.progress("grid", u + 1, len(units), unit_key, t0)
+        cm.progress("grid", u + 1, len(todo), unit_key, t0)
     return 0
 
 
@@ -1055,7 +1270,18 @@ def _grid_fact(args, stage: str) -> tuple[list[dict], dict]:
         z = np.load(p)
         for j, key in enumerate(z["cell_ids"].tolist()):
             va_by_key[str(key)] = z["va"][j]
-    rows: list[dict] = []
+    # Batched fold (r17 codex patch-fact-serial-batch-one): decode each
+    # context's anchors ONCE, group rows by (tgt, src) — all rows of a group
+    # share floor/ceiling — and call the batch-capable f_act once per group
+    # with v_patched stacked over the group's rows.
+    dec_cache: dict[str, object] = {}
+
+    def _anchor(ctx: str):
+        if ctx not in dec_cache:
+            dec_cache[ctx] = cap.decode_bf16(anchors[ctx][:, prim_idx], torch).double()
+        return dec_cache[ctx]
+
+    groups: dict[tuple[str, str], list[tuple[dict, np.ndarray]]] = {}
     dropped = Counter()
     for p in sorted((out_dir / "rollouts").glob("*.jsonl")):
         for r in cm.iter_jsonl(p):
@@ -1066,13 +1292,18 @@ def _grid_fact(args, stage: str) -> tuple[list[dict], dict]:
             if r["tgt"] not in anchors or r["src"] not in anchors:
                 dropped["anchor_missing"] += 1
                 continue
-            floor = cap.decode_bf16(anchors[r["tgt"]][:, prim_idx], torch).double()
-            ceil = cap.decode_bf16(anchors[r["src"]][:, prim_idx], torch).double()
-            if floor.shape[0] < 2 or ceil.shape[0] < 1:
-                dropped["anchor_underfilled"] += 1
-                continue
-            vp = cap.decode_bf16(va_by_key[key][prim_idx : prim_idx + 1], torch)[0].double()
-            res = f_act(vp.unsqueeze(0), floor.unsqueeze(0), ceil.unsqueeze(0))
+            groups.setdefault((r["tgt"], r["src"]), []).append((r, va_by_key[key]))
+
+    rows: list[dict] = []
+    for (tgt, src), pairs in sorted(groups.items()):
+        floor = _anchor(tgt)
+        ceil = _anchor(src)
+        if floor.shape[0] < 2 or ceil.shape[0] < 1:
+            dropped["anchor_underfilled"] += len(pairs)
+            continue
+        vp = cap.decode_bf16(np.stack([va[prim_idx] for _, va in pairs]), torch).double()
+        res = f_act(vp, floor, ceil)  # (K,d) floor/ceiling broadcast over the (B,d) batch
+        for j, (r, _) in enumerate(pairs):
             rows.append(
                 {
                     **{
@@ -1091,10 +1322,10 @@ def _grid_fact(args, stage: str) -> tuple[list[dict], dict]:
                             "draw",
                         )
                     },
-                    "f_act": float(res.f_act[0]),
-                    "f_act_shared": float(res.f_act_shared[0]),
-                    "traversal_ratio": float(res.traversal_ratio[0]),
-                    "degenerate": bool(res.degenerate[0]),
+                    "f_act": float(res.f_act[j]),
+                    "f_act_shared": float(res.f_act_shared[j]),
+                    "traversal_ratio": float(res.traversal_ratio[j]),
+                    "degenerate": bool(res.degenerate[j]),
                 }
             )
     return rows, dict(dropped)
@@ -1113,6 +1344,7 @@ def phase_screen(args) -> int:
     for r in by_cell.values():
         fam_vals.setdefault(r["family"], {})[r["qid"]] = r["f_act"]
     diffs: dict[str, dict[str, float]] = {}
+    no_null_pairs: dict[str, int] = {}
     for fam, vals in fam_vals.items():
         if not fam.endswith("|steered"):
             continue
@@ -1121,7 +1353,12 @@ def phase_screen(args) -> int:
         d = {q: vals[q] - nvals[q] for q in vals if q in nvals}
         if d:
             diffs[fam] = d
+        else:
+            # Counted bucket (r17 Claude m6): a steered family whose null
+            # pairs ALL dropped must not silently vanish from the screen.
+            no_null_pairs[fam] = len(vals)
     report = pc.screen_families(diffs)
+    report["families_no_null_pairs"] = no_null_pairs
     report["family_means"] = {
         fam: {
             "n": len(vals),
@@ -1139,7 +1376,8 @@ def phase_screen(args) -> int:
     n_pass = sum(1 for f in report["families"].values() if f["screen_pass"])
     _log(
         f"[screen] families={len(report['families'])} pass={n_pass} "
-        f"confirm={report['confirm_families']} degenerate={n_deg} dropped={dropped}"
+        f"confirm={report['confirm_families']} degenerate={n_deg} dropped={dropped} "
+        f"no_null_pairs={no_null_pairs}"
     )
     return 0
 
@@ -1158,7 +1396,9 @@ def phase_confirm(args) -> int:
     fams = screen["confirm_families"]
     if not fams:
         _log("[confirm] no screen-PASS families — nothing to confirm (recorded)")
-        cm.atomic_write_json(out / "confirm_empty.json", {"confirm_families": []})
+        # Inside the uploaded confirm subtree (r17 codex NIT: the valid
+        # "no families selected" terminal record must persist to HF).
+        cm.atomic_write_json(out / "rollouts" / "confirm_empty.json", {"confirm_families": []})
         return 0
     ctxs, bank_vc = _load_bank(args)
     by_ctx = {c["ctx_id"]: c for c in ctxs}
@@ -1178,11 +1418,16 @@ def phase_confirm(args) -> int:
         "families": sorted(fams),
         "draws": int(args.confirm_draws),
         "temperature": cm.TEMPERATURE,
+        "lstar": _lstar(args),
+        "read_layers": list(_read_layers(args)),
+        "n_q_per_char": int(args.n_q_per_char),
+        "cells_limit": int(args.cells_limit or 0),
+        "confirm_max_pairs": pc.CONFIRM_MAX_PAIRS,
+        "capture_max_tokens": int(args.capture_max_tokens),
+        "bank": _bank_digest(args),
         "tiny": bool(args.tiny),
     }
     ledger = cm.StageLedger(out / "ledger.json", regime)
-    mctx = _load_model_ctx(args)
-    tokz = _tok(args, mctx)
     units: list[tuple[str, list[dict]]] = []
     by_block: dict[str, list[dict]] = {}
     for c in wanted:
@@ -1191,10 +1436,14 @@ def phase_confirm(args) -> int:
         cs = sorted(by_block[key], key=lambda c: c["cell_id"])
         for k in range(0, len(cs), GEN_BATCH_ROWS):
             units.append((f"{key}|{k // GEN_BATCH_ROWS:03d}", cs[k : k + GEN_BATCH_ROWS]))
+    todo = [(key, cs) for key, cs in units if not ledger.is_done(key)]
+    _log(f"[confirm] {len(todo)}/{len(units)} units to run (resume skips the rest)")
+    if not todo:
+        return 0
+    mctx = _ensure_mctx(args)  # lazy: a fully-resumed phase never loads
+    tokz = _tok(args, mctx)
     t0 = time.time()
-    for u, (unit_key, block_cells) in enumerate(units):
-        if ledger.is_done(unit_key):
-            continue
+    for u, (unit_key, block_cells) in enumerate(todo):
         rows = _run_hooked_block(
             args,
             mctx,
@@ -1209,19 +1458,9 @@ def phase_confirm(args) -> int:
         )
         live = [r for r in rows if r["drop_reason"] is None]
         va = _va_capture(args, mctx, tokz, live) if live else None
-        slug = unit_key.replace("|", "_")
-        with (out / "rollouts" / f"{slug}.jsonl").open("w", encoding="utf-8") as fh:
-            for r in rows:
-                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-        if va is not None:
-            keep = [j for j, it in enumerate(live) if not it["va_dropped"]]
-            cap._atomic_savez(
-                out / "va" / f"{slug}.npz",
-                va=va[keep],
-                cell_ids=np.asarray([f"{live[j]['cell_id']}#{live[j]['draw']}" for j in keep]),
-            )
+        _write_unit_outputs(out, unit_key, rows, live, va)
         ledger.mark_done(unit_key)
-        cm.progress("confirm", u + 1, len(units), unit_key, t0)
+        cm.progress("confirm", u + 1, len(todo), unit_key, t0)
     return 0
 
 
@@ -1304,7 +1543,11 @@ def phase_upload(args) -> int:
 
 
 def phase_model_all(args) -> int:
-    """The model chain in ONE process (one 27B load): bank gates -> confirm."""
+    """The model chain in ONE process and ONE 27B load: every model phase
+    resolves the shared ``_ensure_mctx`` holder (memoized ``_load_model_ctx``),
+    so the checkpoint is deserialized at most once per process and the HBM
+    preflight runs only on that first load (r17 Claude M1 / codex
+    patch-model-all-reloads); phases with no pending units never load."""
     for fn in (phase_bank, phase_anchors, phase_grid, phase_screen, phase_confirm):
         rc = fn(args)
         if rc != 0:
@@ -1315,6 +1558,12 @@ def phase_model_all(args) -> int:
 def phase_all(args) -> int:
     """Parent dispatcher: ensure model venv, run model_all under the model
     interpreter, then upload under the repo venv. Runner OK-flags resume."""
+    if args.tiny:
+        raise SystemExit(
+            "--phase all is the pod parent mode and refuses --tiny (r17 Claude m3: children "
+            "would re-default to production dials) — the VM smoke runs --phase model_all/upload "
+            "directly under --tiny"
+        )
     import issue2378_dispatch as D
 
     runner = D.Runner(Path(args.logs_dir), resume=not args.no_resume, dry=False)
@@ -1338,11 +1587,29 @@ def phase_all(args) -> int:
         args.hf_suffix,
         "--ledger-root",
         str(args.ledger_root),
+        "--cells-limit",
+        str(args.cells_limit or 0),
+        "--batch-tokens",
+        str(args.batch_tokens),
+        "--max-batch-rows",
+        str(args.max_batch_rows),
+        "--capture-max-tokens",
+        str(args.capture_max_tokens),
+        "--min-free-hbm-gb",
+        str(args.min_free_hbm_gb),
     ]
     if args.stage_raw_from_hf:
         passthrough.append("--stage-raw-from-hf")
     if args.lstar:
         passthrough += ["--lstar", str(args.lstar)]
+    if args.mined_dir:
+        passthrough += ["--mined-dir", str(args.mined_dir)]
+    if args.sentinel_dir:
+        passthrough += ["--sentinel-dir", str(args.sentinel_dir)]
+    if args.skip_upload:
+        passthrough.append("--skip-upload")
+    if args.skip_harvest:
+        passthrough.append("--skip-harvest")
     child_env = {CHILD_ENV: "1"}
     runner.run(
         "patch.model_all",

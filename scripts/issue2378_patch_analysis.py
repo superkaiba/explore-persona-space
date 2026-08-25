@@ -183,7 +183,9 @@ def _family_table(cells: list[dict], value_key: str) -> dict[str, dict[str, floa
 
 
 def _family_stats(fam_vals: dict[str, dict[str, float]]) -> dict:
-    """Per-family mean + bootstrap CI + the paired steered-null diff screen."""
+    """Per-family n + mean, plus the paired steered-vs-null diff screen
+    (bootstrap CIs live on the steered-null DIFFERENCES — the
+    ``steered_vs_null`` block — not on the raw per-family means)."""
     diffs: dict[str, dict[str, float]] = {}
     for fam, vals in fam_vals.items():
         if not fam.endswith("|steered"):
@@ -201,9 +203,12 @@ def _family_stats(fam_vals: dict[str, dict[str, float]]) -> dict:
 
 
 def _cap_hit_fractions(rows: list[dict]) -> dict[str, float]:
-    """Realized cap-hit fraction per family (vLLM-equivalent length stops:
-    story no-close counts as the SegB cap-hit convention; chat/plain =
-    hit_eos False)."""
+    """Realized cap-hit fraction per family. A row is capped iff it reached
+    the token cap without ANY registered terminal: story = the SegB no-close
+    convention (drop_reason cap_hit_no_close); chat/plain = neither EOS nor
+    the framing's textual stop fired (``hit_stop``, r18 — a stop-string halt
+    is an EFFECTIVE stop, never a cap hit; legacy rows without the field
+    fall back to hit_eos alone)."""
     tot: Counter = Counter()
     hit: Counter = Counter()
     for r in rows:
@@ -212,7 +217,7 @@ def _cap_hit_fractions(rows: list[dict]) -> dict[str, float]:
         capped = (
             r.get("drop_reason") == "cap_hit_no_close"
             if r.get("framing") == "story"
-            else not r.get("hit_eos", True)
+            else not r.get("hit_eos", True) and not r.get("hit_stop", False)
         )
         if capped:
             hit[fam] += 1

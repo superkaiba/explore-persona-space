@@ -107,3 +107,281 @@ def test_cell_and_family_keys_roundtrip():
     assert fam.rsplit("|", 1)[0] + "|null" == pc.family_key(
         "chat~story", "Vex", "a2b", "lstar", "null"
     )
+
+
+# ── r18 review-fix invariants ────────────────────────────────────────────────
+
+
+def test_screen_families_disjoint_qid_groups_fixed_n():
+    """Disjoint-qid families bootstrap over their OWN fixed pair set (r17
+    codex patch-bootstrap-variable-effective-n): each family's CI equals a
+    direct dense per-group helper call — never the union-with-NaN matrix."""
+    import issue2094_analysis as A
+    import numpy as np
+
+    fam_a = {f"a{k}": 0.4 + 0.05 * k for k in range(4)}
+    fam_b = {f"b{k}": (-1) ** k * 0.3 for k in range(4)}
+    diffs = {
+        "chat~story|Vex|a2b|lstar|steered": fam_a,
+        "chat~story|Wren|a2b|lstar|steered": fam_b,
+    }
+    rep = pc.screen_families(diffs, n_boot=500)
+    group_keys = sorted(tuple(sorted(d)) for d in (fam_a, fam_b))
+    for fam, d in diffs.items():
+        gi = group_keys.index(tuple(sorted(d)))
+        values = np.array([[d[q]] for q in sorted(d)])
+        boots = A.bootstrap_family_means_batched(values, 500, pc.PATCH_BOOTSTRAP_SEED + gi)
+        col = boots[:, 0]
+        assert not np.isnan(col).any(), "dense group matrix — fixed effective n, no NaN draws"
+        assert rep["families"][fam]["ci_lo"] == pytest.approx(float(np.percentile(col, 2.5)))
+        assert rep["families"][fam]["ci_hi"] == pytest.approx(float(np.percentile(col, 97.5)))
+        assert rep["families"][fam]["n_pairs"] == 4
+
+
+def test_stop_strings_and_hit_stop():
+    assert pc.stop_strings_for("chat") is None
+    assert pc.stop_strings_for("story") == ['"', "”"]
+    assert pc.stop_strings_for("plain") == ["\nUser:"]
+    assert pc.hit_stop("story", 'I will win." She left.') is True
+    assert pc.hit_stop("story", "never closes") is False
+    assert pc.hit_stop("plain", "Paris.\n\nUser: next") is True
+    assert pc.hit_stop("plain", "Paris.") is False
+    assert pc.hit_stop("chat", 'quotes "inside" are fine') is False
+
+
+class _SeamTok:
+    """Split decode differs from combined decode at the [1, 2] seam —
+    the #2333 cleanup-space/multi-byte corruption class."""
+
+    def decode(self, ids, skip_special_tokens=True):
+        out, i = [], 0
+        while i < len(ids):
+            if ids[i] == 1 and i + 1 < len(ids) and ids[i + 1] == 2:
+                out.append("ab")
+                i += 2
+            elif ids[i] == 1:
+                out.append("a ")
+                i += 1
+            elif ids[i] == 2:
+                out.append(" b")
+                i += 1
+            else:
+                out.append("x")
+                i += 1
+        return "".join(out)
+
+
+def test_prefill_row_one_shot_decode_and_exact_ids():
+    """The prefill reply is the ONE-SHOT decode of [opener+gen] ids and the
+    exact combined ids ride _capture_ids (r17 codex
+    patch-prefill-token-identity-loss)."""
+    import issue2378_patch_run as run
+
+    tok = _SeamTok()
+    cell = {
+        k: f"<{k}>"
+        for k in (
+            "cell_id",
+            "arm",
+            "variant",
+            "src",
+            "tgt",
+            "qid",
+            "char",
+            "pair_type",
+            "direction",
+            "family",
+            "donor_ctx",
+        )
+    }
+    gen_row = {"gen_ids": [2, 9], "hit_eos": True}
+    row = run._prefill_row(tok, cell, "chat", [7, 7, 7], [1], gen_row, d=0)
+    assert row["gen_text"] == "abx"  # one-shot; split decode would give "a  bx"
+    assert tok.decode([1]) + tok.decode([2, 9]) == "a  bx"
+    assert row["_capture_ids"] == {"prompt": [7, 7, 7], "completion": [1, 2, 9]}
+    assert row["n_completion_tokens"] == 3
+    rec = run._prefill_capture_rec(0, [7, 7, 7], [1, 2, 9])
+    assert rec["input_ids"] == [7, 7, 7, 1, 2, 9]
+    assert (rec["ans_lo"], rec["ans_hi"], rec["v_C_pos"]) == (3, 6, 2)
+
+
+def test_ensure_mctx_single_load(monkeypatch):
+    """ONE model load per process (r17 Claude M1 / codex
+    patch-model-all-reloads): the holder memoizes _load_model_ctx."""
+    import issue2378_patch_run as run
+
+    calls = []
+
+    def fake_load(args):
+        calls.append(1)
+        return {"tok": "T"}
+
+    monkeypatch.setattr(run, "_load_model_ctx", fake_load)
+    monkeypatch.setattr(run, "_MODEL_HOLDER", {})
+    args = run.build_argparser().parse_args(["--phase", "bank"])
+    a = run._ensure_mctx(args)
+    b = run._ensure_mctx(args)
+    assert a is b and len(calls) == 1
+
+
+def test_phase_all_refuses_tiny():
+    import issue2378_patch_run as run
+
+    args = run.build_argparser().parse_args(["--phase", "all", "--tiny"])
+    with pytest.raises(SystemExit, match="refuses --tiny"):
+        run.phase_all(args)
+
+
+def _bank_fixture(tmp_path, ctx_ids, vc_keys=None):
+    import json
+
+    import numpy as np
+
+    bank = tmp_path / "bank"
+    bank.mkdir(parents=True, exist_ok=True)
+    with (bank / "bank_rows.jsonl").open("w", encoding="utf-8") as fh:
+        for cid in ctx_ids:
+            fh.write(json.dumps({"ctx_id": cid}) + "\n")
+    np.savez(
+        bank / "vc_bank.npz",
+        **{k: np.zeros((2, 4), dtype=np.uint16) for k in (vc_keys or ctx_ids)},
+    )
+
+
+def test_load_bank_key_coverage(tmp_path):
+    """vc_bank.npz keys must EXACTLY cover the bank ctx-id set, checked before
+    any model load (r17 codex patch-cache-key-coverage)."""
+    import issue2378_patch_run as run
+
+    args = run.build_argparser().parse_args(["--phase", "grid", "--out-root", str(tmp_path)])
+    _bank_fixture(tmp_path, ["chat:q0", "story:q0"], vc_keys=["chat:q0"])
+    with pytest.raises(RuntimeError, match="key-coverage mismatch"):
+        run._load_bank(args)
+    _bank_fixture(tmp_path, ["chat:q0", "story:q0"])
+    rows, vc = run._load_bank(args)
+    assert {r["ctx_id"] for r in rows} == set(vc)
+
+
+def test_openers_key_coverage(tmp_path):
+    import json
+
+    import issue2378_patch_run as run
+
+    args = run.build_argparser().parse_args(["--phase", "grid", "--out-root", str(tmp_path)])
+    anchors = tmp_path / "anchors"
+    anchors.mkdir(parents=True)
+    with (anchors / "openers.jsonl").open("w", encoding="utf-8") as fh:
+        fh.write(json.dumps({"ctx_id": "chat:q0", "opener_ids": [1, 2]}) + "\n")
+    with pytest.raises(RuntimeError, match="key-coverage mismatch"):
+        run._openers(args, expected_ctx_ids=["chat:q0", "story:q0"])
+    assert run._openers(args, expected_ctx_ids=["chat:q0"]) == {"chat:q0": [1, 2]}
+
+
+def test_confirm_empty_record_lands_in_rollouts(tmp_path):
+    """The valid no-families-selected terminal record persists INSIDE the
+    uploaded confirm subtree (r17 codex NIT patch-confirm-empty-not-uploaded)."""
+    import json
+
+    import issue2378_patch_run as run
+
+    (tmp_path / "screen").mkdir(parents=True)
+    (tmp_path / "screen" / "screen_report.json").write_text(
+        json.dumps({"confirm_families": []}), encoding="utf-8"
+    )
+    args = run.build_argparser().parse_args(["--phase", "confirm", "--out-root", str(tmp_path)])
+    assert run.phase_confirm(args) == 0
+    assert (tmp_path / "confirm" / "rollouts" / "confirm_empty.json").exists()
+
+
+def _cls(cls, stop="end_turn", score=None):
+    return {"class": cls, "score": score, "reasoning": None, "stop_reason": stop}
+
+
+def test_pilot_stratification_spans_classes():
+    from types import SimpleNamespace
+
+    import issue2378_patch_judge as pj
+
+    items = [
+        SimpleNamespace(item_id=f"{kind}|x{i}|d0|{rubric}")
+        for kind in ("anchors", "grid")
+        for rubric in ("persona", "assistant", "coherence")
+        for i in range(5)
+    ]
+    sel = pj.stratified_pilot_items(items, 6)
+    assert len(sel) == 6
+    assert {pj._item_class(it.item_id) for it in sel} == {
+        (k, r) for k in ("anchors", "grid") for r in ("persona", "assistant", "coherence")
+    }
+    assert len(pj.stratified_pilot_items(items, 999)) == len(items)
+
+
+def test_pilot_vacuous_class_fails():
+    """A pilot whose transport losses empty ANY (kind x rubric) class is a
+    FAIL, never a PASS (r17 Claude M2 / codex patch-judge-pilot-vacuous)."""
+    import issue2378_patch_judge as pj
+
+    healthy = {
+        "anchors|chat:q0|d0|persona": _cls("valid", score=80),
+        "anchors|chat:q0|d0|assistant": _cls("valid", score=10),
+        "grid|cell0|d0|coherence": _cls("valid", score=90),
+    }
+    rep = pj.pilot_report_from_classified(healthy, "batch")
+    assert rep["ok"] is True and rep["vacuous_classes"] == []
+    all_transport = {k: _cls("transport_loss", stop=None) for k in healthy}
+    rep = pj.pilot_report_from_classified(all_transport, "batch")
+    assert rep["ok"] is False and rep["n_answered"] == 0
+    one_vacuous = {**healthy, "grid|cell0|d0|coherence": _cls("transport_loss", stop=None)}
+    rep = pj.pilot_report_from_classified(one_vacuous, "batch")
+    assert rep["ok"] is False and rep["vacuous_classes"] == ["grid|coherence"]
+    capped = {**healthy, "anchors|chat:q0|d0|persona": _cls("valid", stop="max_tokens", score=80)}
+    assert pj.pilot_report_from_classified(capped, "batch")["ok"] is False
+
+
+def test_wave_fold_resumable(tmp_path):
+    """A rerun REPLACES the prior fold instead of truncate-then-refusing on
+    the existing raw shard (r17 codex patch-judge-fold-not-resumable)."""
+    import json
+
+    import issue2378_patch_judge as pj
+
+    classified = {
+        "grid|cell0|d0|persona": _cls("valid", score=70),
+        "grid|cell0|d0|assistant": _cls("parse_fail"),
+    }
+    # Preseed a stale prior fold (the shape the old code refused on).
+    (tmp_path / "raw").mkdir(parents=True)
+    (tmp_path / "raw" / "judge_rows.shard00.jsonl").write_text("stale\n", encoding="utf-8")
+    (tmp_path / "scores.jsonl").write_text("stale\n", encoding="utf-8")
+    for _ in range(2):  # idempotent rebuild, twice
+        tally, shard_info = pj._write_fold(tmp_path, classified)
+        assert tally == {
+            "kept": 1,
+            "dropped": 1,
+            "transport_loss": 0,
+            "by_class": {"valid": 1, "parse_fail": 1},
+        }
+        rows = [
+            json.loads(line)
+            for line in (tmp_path / "scores.jsonl").read_text(encoding="utf-8").splitlines()
+        ]
+        assert [r["kept"] for r in rows] == [False, True]
+        assert all(Path(p).exists() for p in shard_info["shards"])
+    assert not (tmp_path / "fold_tmp").exists()
+
+
+def test_cap_hit_fractions_hit_stop():
+    """A stop-string halt is an effective stop, never a cap hit (r17 codex
+    patch-framing-stops-not-wired telemetry leg)."""
+    import issue2378_patch_analysis as pa
+
+    rows = [
+        {"family": "f", "framing": "plain", "hit_eos": False, "hit_stop": True},
+        {"family": "f", "framing": "plain", "hit_eos": False, "hit_stop": False},
+        {"family": "f", "framing": "plain", "hit_eos": True, "hit_stop": False},
+        {"family": "g", "framing": "story", "drop_reason": "cap_hit_no_close"},
+        {"family": "g", "framing": "story", "drop_reason": None, "hit_eos": False},
+    ]
+    frac = pa._cap_hit_fractions(rows)
+    assert frac["f"] == pytest.approx(1 / 3)
+    assert frac["g"] == pytest.approx(1 / 2)
