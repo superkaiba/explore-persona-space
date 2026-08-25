@@ -131,19 +131,25 @@ DEFAULT_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_1901" / "paper_densify"
 # ── staging (scoped listing + parallel per-file download + size verify) ─────────
 
 
-def _list_prefix(prefix: str) -> list[tuple[str, int]]:
+def _list_prefix(prefix: str, *, revision: str | None = None) -> list[tuple[str, int]]:
     """Scoped (path, size) listing of one data-repo prefix (#833: never a bare
-    full-repo listing on the ~1M-file repo), under the transient-retry wrapper."""
+    full-repo listing on the ~1M-file repo), under the transient-retry wrapper.
+    ``revision`` pins the listing to one Hub commit (stage-revision threading;
+    #1901 mlp-scaling-densify C1); ``None`` keeps the legacy main-tip read."""
     from huggingface_hub import HfApi
 
     tree = hub.retry_transient(
         lambda: list(
             # HUB_VERIFY_RETRY_EXEMPT: whole listing runs inside hub.retry_transient (this lambda).
             HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                C.HF_DATA_REPO,
+                path_in_repo=prefix,
+                repo_type="dataset",
+                recursive=True,
+                revision=revision,
             )
         ),
-        what=f"scoped tree listing ({prefix})",
+        what=f"scoped tree listing ({prefix}@{revision or 'main'})",
     )
     out = [(f.path, int(f.size)) for f in tree if getattr(f, "size", None) is not None]
     if not out:
@@ -152,14 +158,22 @@ def _list_prefix(prefix: str) -> list[tuple[str, int]]:
 
 
 def stage_prefix(
-    prefix: str, stage_root: Path, *, max_files: int | None = None, workers: int = 8
+    prefix: str,
+    stage_root: Path,
+    *,
+    max_files: int | None = None,
+    workers: int = 8,
+    revision: str | None = None,
 ) -> Path:
     """Parallel-download one HF prefix to ``stage_root/<prefix>`` (files land at
     their repo-relative paths). Already-present files with matching size skip
-    (resume). Returns the staged prefix dir after a per-file size verification."""
+    (resume). Returns the staged prefix dir after a per-file size verification.
+    ``revision`` pins the listing AND every file download to one Hub commit
+    (#1901 C1: the shared data repo advances constantly — an unpinned resume
+    can mix file generations across pods)."""
     from huggingface_hub import hf_hub_download
 
-    files = _list_prefix(prefix)
+    files = _list_prefix(prefix, revision=revision)
     if max_files is not None:
         files = files[:max_files]
     dest = stage_root / prefix
@@ -178,7 +192,11 @@ def stage_prefix(
     def _fetch(path: str) -> str:
         return hub.retry_transient(
             lambda: hf_hub_download(
-                C.HF_DATA_REPO, filename=path, repo_type="dataset", local_dir=stage_root
+                C.HF_DATA_REPO,
+                filename=path,
+                repo_type="dataset",
+                local_dir=stage_root,
+                revision=revision,
             ),
             what=f"stage {path}",
         )
