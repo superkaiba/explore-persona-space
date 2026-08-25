@@ -16,12 +16,25 @@ origin_prompt: 'User-approved 8-leg battery from the 2026-08-24 one-at-a-time th
   one autonomous session, Llama-3.1-8B-Instruct for the atlas capture, no Overleaf
   writes.'
 workflow: v1
+goal: 'Exploit the linearity of the fitted residual context-answer mapping (banked
+  963k-row layer-19 ridge map, Qwen2.5-7B-Instruct) to characterize in one phased
+  battery: (1) operator eigenstructure, effective null space, fixed point, and their
+  SAE-feature reads (ignored/copied/transcoded/damped anatomy); (2) whether the map''s
+  Gram matrix WtW is the correct theory-paper context-gate metric and whether the
+  closed-form ridge learning curve reproduces the empirical C1 scaling; (3) the feature-to-feature
+  wiring of the map across SAE dictionaries including a trained last-prompt-token
+  SAE; (4) the literal weight-update rank (dW spectra, intruder dimensions, factor
+  alignment) across the recent organism fleet; (5) denoised reduced-rank structure
+  of #1979''s banked write maps; (6) an aligned operator atlas with a cross-model
+  (Llama-3.1-8B-Instruct) three-tier representation-vs-operator similarity report;
+  (7) correlational validation of the effective null space via kernel-equivalent context
+  pairs, plus closed-form monitor decision geometry and sensitivity certificates.'
 ---
 # Linear-map theory battery: operator eigenstructure, null-space fibers, theory-bridge gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and a cross-model operator atlas
 
 ## Goal
 
-Exploit the linearity of the fitted residual context→answer mapping (the banked 963k-row layer-19 ridge map W: v_C → v_A, Qwen2.5-7B-Instruct, d=3584) to answer, in one phased battery: (1) what the operator's eigenstructure, effective null space, and fixed point are and what they mean in SAE-feature terms (which context directions are ignored, copied, transcoded, or damped); (2) whether the theory paper's gate/readout assumptions are best operationalized by the map's own Gram matrix (WᵀW) rather than the identity or whitened metrics, and whether the closed-form ridge learning curve reproduces the empirical C1 scaling; (3) what the feature→feature wiring of the map looks like across SAE dictionaries, including a trained last-prompt-token (context-side) SAE; (4) what the literal weight-space update ΔW = θ_post − θ_base of trained organisms looks like (rank, intruder dimensions, factor alignment) — never previously computed; (5) whether #1979's banked answer-shift write maps contain shared low-rank factors after split-half denoising; (6) how all banked operators relate in one aligned atlas, including a cross-model leg (Llama-3.1-8B-Instruct) with a three-tier representation-vs-operator similarity report; and (7) whether the map's effective null space validates as a prediction on real data (kernel-equivalent context pairs produce matching realized answers) and what closed-form sensitivity certificates say about the C5 linear monitors.
+Exploit the linearity of the fitted residual context-answer mapping (banked 963k-row layer-19 ridge map, Qwen2.5-7B-Instruct) to characterize in one phased battery: (1) operator eigenstructure, effective null space, fixed point, and their SAE-feature reads (ignored/copied/transcoded/damped anatomy); (2) whether the map's Gram matrix WtW is the correct theory-paper context-gate metric and whether the closed-form ridge learning curve reproduces the empirical C1 scaling; (3) the feature-to-feature wiring of the map across SAE dictionaries including a trained last-prompt-token SAE; (4) the literal weight-update rank (dW spectra, intruder dimensions, factor alignment) across the recent organism fleet; (5) denoised reduced-rank structure of #1979's banked write maps; (6) an aligned operator atlas with a cross-model (Llama-3.1-8B-Instruct) three-tier representation-vs-operator similarity report; (7) correlational validation of the effective null space via kernel-equivalent context pairs, plus closed-form monitor decision geometry and sensitivity certificates.
 
 ## Decision record (clarify gate, 2026-08-24 — answers are the user's, from the one-at-a-time discussion walk + the filing batch)
 
