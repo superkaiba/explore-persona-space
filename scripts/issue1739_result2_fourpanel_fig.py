@@ -92,13 +92,12 @@ METHOD_OF = {
     ("arm11_oracle_proj", "linear"): "oracle",
 }
 
-# --style iclr roster (user order 2026-08-25: "plot everything except
-# regression on real answer"): the four persona-vector arms PLUS the three
-# regression (ridge probe) arms, keyed by the points file's own `method`
-# field. Colour = input representation (one colour = one meaning paper-wide);
-# fill = readout family (solid = persona-vector projection, open = regression).
-# The open real-answer slot stays free for the regression-on-real-answer arm
-# once its inline run lands (no such arm exists under the fair protocol yet).
+# --style iclr roster (user orders 2026-08-25): the four persona-vector arms
+# PLUS the four regression (ridge probe) arms, keyed by the points files' own
+# `method` field. Colour = input representation (one colour = one meaning
+# paper-wide); fill = readout family (solid = persona-vector projection,
+# open = regression). The regression-on-real-answer arm (arm12_oracle_reg)
+# rides the companion artifact reg_oracle_points.json (same inline round).
 # (method slot, label, paper-colour concept, filled?)
 ICLR_METHODS = [
     ("pv_context", "Persona vector on context", "persona_vector", True),
@@ -108,6 +107,7 @@ ICLR_METHODS = [
     ("pv_map_mlp", "Persona vector on mapped answer (MLP map)", "neural_map", True),
     ("reg_map_mlp", "Regression on mapped answer (MLP map)", "neural_map", False),
     ("oracle", "Persona vector on real answer", "oracle_answer", True),
+    ("reg_oracle", "Regression on real answer", "oracle_answer", False),
 ]
 ICLR_SLOTS = [m for m, _l, _c, _f in ICLR_METHODS]
 ICLR_LABEL = {m: lbl for m, lbl, _c, _f in ICLR_METHODS}
@@ -160,19 +160,22 @@ def load_points() -> dict[tuple[str, str, str], dict]:
 def load_points_iclr() -> dict[tuple[str, str, str], dict]:
     """{(behavior, setting, method): point record} for the ICLR_METHODS roster.
 
-    Keys off the points file's own `method` field (which already names every
+    Keys off the points files' own `method` field (which already names every
     arm x map-kind combination uniquely per cell), so the regression arms need
-    no (arm_id, map_kind) mapping of their own.
+    no (arm_id, map_kind) mapping of their own. The reg_oracle arm rides its
+    companion artifact (parity-gated against the same fair-v2 summaries).
     """
-    doc = json.loads(POINTS.read_text())
     out: dict[tuple[str, str, str], dict] = {}
-    for p in doc["points"]:
-        if p["method"] not in ICLR_SLOTS:
-            continue
-        key = (p["behavior"], p["setting"], p["method"])
-        if key in out:
-            raise SystemExit(f"duplicate point {key}")
-        out[key] = p
+    reg_oracle = EVAL / "result2_fair/reg_oracle_points.json"
+    for src in (POINTS, reg_oracle):
+        doc = json.loads(src.read_text())
+        for p in doc["points"]:
+            if p["method"] not in ICLR_SLOTS:
+                continue
+            key = (p["behavior"], p["setting"], p["method"])
+            if key in out:
+                raise SystemExit(f"duplicate point {key}")
+            out[key] = p
     for beh in BEHAVIORS:
         for settings in GROUP_SETTINGS[beh].values():
             for s in settings:
