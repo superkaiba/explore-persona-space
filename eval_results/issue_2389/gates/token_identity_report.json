@@ -1,0 +1,310 @@
+{
+ "criterion": "per-pair token-identity at the span-locus registry grain (gate 0a)",
+ "dropped": [],
+ "floor_per_cell": 30,
+ "issue": 2389,
+ "metadata": {
+  "generated_at": "2026-08-23T19:27:10.306452+00:00",
+  "git_argv0_path": "src/explore_persona_space/experiments/issue2389/bank2389.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "cbf540da2c5038fc84eb4d5dc41b48588e4538d4",
+  "git_dirty": false,
+  "tokenizer_class": "Qwen2TokenizerFast",
+  "transformers_version": "4.57.6"
+ },
+ "model_id": "Qwen/Qwen3.8-27B",
+ "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+ "n_dropped": 0,
+ "n_intact": 1404,
+ "n_pairs_total": 1404,
+ "no_prefix_context_ids": [
+  "persona_prompted::v2::d1",
+  "persona_prompted::v2::d2",
+  "persona_prompted::v2::d3",
+  "persona_prompted::v2::n1",
+  "persona_prompted::v2::n2",
+  "persona_prompted::v2::n3",
+  "persona_prompted::v2::n4",
+  "persona_prompted::v2::n5",
+  "persona_prompted::v2::n6",
+  "persona_prompted::v2::n7",
+  "persona_prompted::v2::n8",
+  "persona_prompted::v2::n9",
+  "persona_role_header::v1::d1",
+  "persona_role_header::v1::d2",
+  "persona_role_header::v1::d3",
+  "persona_role_header::v1::n1",
+  "persona_role_header::v1::n2",
+  "persona_role_header::v1::n3",
+  "persona_role_header::v1::n4",
+  "persona_role_header::v1::n5",
+  "persona_role_header::v1::n6",
+  "persona_role_header::v1::n7",
+  "persona_role_header::v1::n8",
+  "persona_role_header::v1::n9",
+  "persona_role_header::v2::d1",
+  "persona_role_header::v2::d2",
+  "persona_role_header::v2::d3",
+  "persona_role_header::v2::n1",
+  "persona_role_header::v2::n2",
+  "persona_role_header::v2::n3",
+  "persona_role_header::v2::n4",
+  "persona_role_header::v2::n5",
+  "persona_role_header::v2::n6",
+  "persona_role_header::v2::n7",
+  "persona_role_header::v2::n8",
+  "persona_role_header::v2::n9",
+  "persona_role_header::v3::d1",
+  "persona_role_header::v3::d2",
+  "persona_role_header::v3::d3",
+  "persona_role_header::v3::n1",
+  "persona_role_header::v3::n2",
+  "persona_role_header::v3::n3",
+  "persona_role_header::v3::n4",
+  "persona_role_header::v3::n5",
+  "persona_role_header::v3::n6",
+  "persona_role_header::v3::n7",
+  "persona_role_header::v3::n8",
+  "persona_role_header::v3::n9"
+ ],
+ "parent_model_id": "Qwen/Qwen3.5-9B",
+ "per_cell": {
+  "conflict_format_fwd": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "conflict_format_rev": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "conflict_persona_fwd": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "conflict_persona_rev": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "constraint_knowledge": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "demo_format": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "demo_persona": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "fact_assistant_animal": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "fact_novel_queried": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "fact_user_name": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "filler_swap": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "icl_task_mapping": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "instr_format": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "instr_language": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "language_implied": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "list_numeric_detail": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "load_fact_assistant_animal_l3": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "load_fact_assistant_animal_l5": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "load_fact_user_name_l3": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "load_fact_user_name_l5": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "load_instr_format_l3": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "load_instr_format_l5": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "persona_prompted": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "persona_role_header": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "prior_topic": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "query_content": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "reasoning_style": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_fact_user_name_d3": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_fact_user_name_d5": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_instr_format_d3": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_instr_format_d5": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_persona_prompted_d3": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_persona_prompted_d5": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_prior_topic_d3": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "recency_prior_topic_d5": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "refusal_boundary": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "user_emotion": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "user_expertise": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  },
+  "verbosity": {
+   "dropped": [],
+   "n_dropped": 0,
+   "n_intact": 36,
+   "n_pairs": 36
+  }
+ },
+ "template_kwargs": {
+  "enable_thinking": false
+ }
+}

@@ -1,0 +1,48 @@
+{
+  "cells": [
+    {
+      "cell": "icl_task_mapping",
+      "slot": "ce",
+      "steered_mean": 0.8237105098587495,
+      "p_iut": 5.820766091346741e-11,
+      "p_holm": 2.270098775625229e-09
+    },
+    {
+      "cell": "instr_language",
+      "slot": "ce",
+      "steered_mean": 0.639226063870592,
+      "p_iut": 0.000546065391972661,
+      "p_holm": 0.020204419502988458
+    },
+    {
+      "cell": "conflict_format_rev",
+      "slot": "ce",
+      "steered_mean": 0.37569098615398006,
+      "p_iut": 0.00031152513111010194,
+      "p_holm": 0.011837954982183874
+    }
+  ],
+  "selection": {
+    "criterion": "holm_pass (IUT p = max(wilcoxon steered-shuffled, steered-crosstype), Holm over 39 analysis-time testable candidates, alpha 0.05) AND fully-disjoint pair-clustered bootstrap CIs (steered lo > both nulls' hi); cap 12 by descending steered F_act mean",
+    "n_candidates": 39,
+    "n_testable": 39,
+    "n_survivors": 3,
+    "boot": {
+      "B": 10000,
+      "seed": 21620
+    },
+    "survival_floor": 12,
+    "regime_fp": "817aa4fb60d781e8-fact-v1"
+  },
+  "repro": {
+    "git_commit": "2023ed93ca7be00ff8a2c77eee009d18be3d538e",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.15.0",
+    "model_id": "Qwen/Qwen3.8-27B",
+    "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 64,
+    "timestamp": "2026-08-25T13:41:54.783159+00:00"
+  }
+}

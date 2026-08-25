@@ -1,0 +1,15 @@
+{
+  "read_layer": 59,
+  "n_anchor_draws_total": 14040,
+  "n_anchor_draws_kept": 13923,
+  "flag_counts": {
+    "flag_empty": 116,
+    "flag_script_intrusion": 1,
+    "flag_repetition": 0
+  },
+  "thresholds": {
+    "nonlatin_letter_frac": 0.05,
+    "dup_4gram_frac": 0.5
+  },
+  "n_contexts_with_draws": 1403
+}

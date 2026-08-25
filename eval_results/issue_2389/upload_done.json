@@ -1,0 +1,120 @@
+{
+  "margin_deferred": true,
+  "margin_blocks_done": 0,
+  "margin_blocks_expected": 117,
+  "margin_anchors_done": false,
+  "margin_deferred_recipe": "stage the judge-built pools (reuse the parent's banked pools from issue2162_q7rerun/pools/pools.json, or rebuild VM-side via scripts/issue2162_judge.py --phase pools; scp pools.json to the pod), then on a fresh 1x H100: scripts/issue2389_dispatch.sh margin && scripts/issue2389_dispatch.sh upload (needs bank.json + pools.json + the model; ~3.7 GPU-h)",
+  "deferred_leg": false,
+  "eval_numbers": {
+    "grid_shards": 117,
+    "va_shards": 117,
+    "stage2_shards": 84,
+    "stage2_va_shards": 84,
+    "fact_pair_rows": 4212,
+    "fact_select_survivors": 3,
+    "pe_excluded_pair_cells": 0,
+    "pe_empty_blocks": 0,
+    "margin_shards": 0,
+    "anchor_rows": 14040,
+    "grid_rollouts_persisted": 21060,
+    "cap_hit_rows": 73,
+    "cap_hit_frac": 0.003466286799620133,
+    "injection_gate_passed": true,
+    "injection_gate_spots_failed": 0,
+    "degeneracy_gate_passed": true,
+    "degeneracy_violations": 0
+  },
+  "eval_paths": [
+    "/workspace/issue2389_out/anchors",
+    "/workspace/issue2389_out/best_cells_actsel.json",
+    "/workspace/issue2389_out/f_metrics_actonly",
+    "/workspace/issue2389_out/gates/degeneracy_guard_report.json",
+    "/workspace/issue2389_out/gates/injection_gate_report.json",
+    "/workspace/issue2389_out/gates/pilot_gate_report.json",
+    "/workspace/issue2389_out/manifests/cap_hit_report_anchors.json",
+    "/workspace/issue2389_out/manifests/cap_hit_report_grid.json",
+    "/workspace/issue2389_out/margin",
+    "/workspace/issue2389_out/rollouts",
+    "/workspace/issue2389_out/va_store",
+    "/workspace/issue2389_out/vc_bank/bank.json",
+    "/workspace/issue2389_out/vc_bank/vc_bank.pt"
+  ],
+  "reproducibility_card": {
+    "git_commit": "2023ed93ca7be00ff8a2c77eee009d18be3d538e",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.15.0",
+    "model_id": "Qwen/Qwen3.8-27B",
+    "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 64,
+    "timestamp": "2026-08-25T13:37:20.027988+00:00",
+    "seed_base": 42,
+    "bank_seed": 2162,
+    "max_new_tokens": 2048,
+    "grid_temperature": 1.0,
+    "grid_draws": 5,
+    "anchor_temperature": 1.0,
+    "anchor_draws": 10,
+    "gen_batch": 16,
+    "num_workers": 8,
+    "template_kwargs": {
+      "enable_thinking": false
+    },
+    "f_act_read_layer": 59,
+    "stage2": {
+      "layers": [
+        18,
+        31,
+        32,
+        39,
+        47,
+        50,
+        60
+      ],
+      "doses": [
+        1,
+        4
+      ],
+      "arms": [
+        "steered",
+        "shuffled"
+      ],
+      "draws": 1,
+      "temperature": 0.0
+    },
+    "fact_select": {
+      "boot_B": 10000,
+      "boot_seed": 21620,
+      "holm_alpha": 0.05,
+      "survival_floor": 12,
+      "cap": 12
+    }
+  },
+  "wandb_url": null,
+  "hf_hub_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-overflow/tree/main/issue2389_q38ce",
+  "worktree_path": "/workspace/explore-persona-space",
+  "final_commit_sha": "2023ed93ca7be00ff8a2c77eee009d18be3d538e",
+  "gpu_hours_used": null,
+  "gpu_hours_budgeted": 45.0,
+  "plan_deviations": [
+    "the per-block margin TF runs as a SEPARATE batched hooked pass beside the V_a pass (rollout rows need hidden states, pool rows need logits) — same per-block pipelining on the same GPU as the plan's 'one hooked TF pass', recorded here because the plan's phrasing implies one fused forward",
+    "cap-hit telemetry is derived from the re-tokenized completion length (generate_batch returns decoded text only); recorded per row as cap_hit_basis=retokenized_completion_len >= max_new_tokens",
+    "the V_a store carries the span-mean pooling only (the plan §4.4 metric); the parent's tail-inclusive twin pooling is not persisted"
+  ],
+  "uploaded_prefixes": {
+    "vc_bank": 4,
+    "anchors_text": 73,
+    "anchors_tensors": 73,
+    "grid_text": 117,
+    "va_store": 117,
+    "margin": 0,
+    "stage2_text": 84,
+    "va_store_stage2": 84,
+    "fact_metrics": 354,
+    "gates": 10,
+    "outroot_top": 1,
+    "preregen_superseded": 36,
+    "manifests": 337
+  }
+}
