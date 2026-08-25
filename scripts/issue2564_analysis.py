@@ -1241,28 +1241,41 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                     "paired": "per-pair cos difference under the SHARED carrier bootstrap",
                 }
 
-        # family 2: calibration
+        # family 2: calibration (headline floor-gated; *_all_values companions
+        # for the ratio + CI reads too — r3 concern all-values-companions-incomplete —
+        # under the SAME carrier-clustered bootstrap draws)
         calibration = {}
         for arm in ARMS:
             ax_pt = through_origin_slope(norm_pred[arm][head], norm_obs[PRIMARY_LAYER][head])
+            ax_all_pt = through_origin_slope(norm_pred[arm][prim], norm_obs[PRIMARY_LAYER][prim])
             ax_draws = slope_draws(head, arm)
+            ax_all_draws = slope_draws(prim, arm)
             with np.errstate(invalid="ignore", divide="ignore"):
                 ratio_draws = ax_draws / global_slope_draws[arm]
                 ratio_swap_draws = ax_draws / global_slope_swap_draws[arm]
+                ratio_all_draws = ax_all_draws / global_slope_draws[arm]
+                ratio_swap_all_draws = ax_all_draws / global_slope_swap_draws[arm]
             calibration[arm] = {
                 "axis_slope": ax_pt,
                 "axis_slope_ci95": _ci(ax_draws),
-                "axis_slope_all_values": through_origin_slope(
-                    norm_pred[arm][prim], norm_obs[PRIMARY_LAYER][prim]
-                ),
+                "axis_slope_all_values": ax_all_pt,
+                "axis_slope_ci95_all_values": _ci(ax_all_draws),
                 "global_slope_all2778": global_slope[arm],
                 "ratio_to_global": ax_pt / global_slope[arm] if global_slope[arm] else float("nan"),
                 "ratio_to_global_ci95": _ci(ratio_draws),
+                "ratio_to_global_all_values": (
+                    ax_all_pt / global_slope[arm] if global_slope[arm] else float("nan")
+                ),
+                "ratio_to_global_ci95_all_values": _ci(ratio_all_draws),
                 "global_slope_swap864": global_slope_swap[arm],
                 "ratio_to_global_swap864": (
                     ax_pt / global_slope_swap[arm] if global_slope_swap[arm] else float("nan")
                 ),
                 "ratio_to_global_swap864_ci95": _ci(ratio_swap_draws),
+                "ratio_to_global_swap864_all_values": (
+                    ax_all_pt / global_slope_swap[arm] if global_slope_swap[arm] else float("nan")
+                ),
+                "ratio_to_global_swap864_ci95_all_values": _ci(ratio_swap_all_draws),
             }
 
         # family 3: axis identity (carrier-mean per vp; headline = fired-vp
@@ -1274,10 +1287,12 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
             vp_fired = fired[70][view.primary_grid[:, 0]]
             grid_head = view.primary_grid[vp_fired] if (headline_ok and vp_fired.any()) else None
             med_head_draws: dict[str, np.ndarray | None] = {}
+            med_all_draws: dict[str, np.ndarray] = {}
             for arm in ARMS:
                 pt_rows, _, med_draws = carrier_mean_cos_median(
                     view.primary_grid, None, obs_tail[PRIMARY_LAYER], pred[arm], mult
                 )
+                med_all_draws[arm] = med_draws
                 if grid_head is not None:
                     pt_rows_h, _, med_draws_h = carrier_mean_cos_median(
                         grid_head, None, obs_tail[PRIMARY_LAYER], pred[arm], mult
@@ -1312,6 +1327,17 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                     }
                 else:
                     identity[arm]["median_gap_vs_iddelta"] = None
+                # r3 concern all-values-companions-incomplete: below-floor
+                # companion — always populated (same shared-carrier bootstrap),
+                # never replacing the null headline gap above.
+                identity[arm]["median_gap_vs_iddelta_all_values"] = {
+                    "gap": (
+                        identity[arm]["median_all_values"]
+                        - identity["arm_iddelta"]["median_all_values"]
+                    ),
+                    "ci95": _ci(med_all_draws[arm] - med_all_draws["arm_iddelta"]),
+                    "paired": "median-draw difference under the SHARED carrier bootstrap",
+                }
         else:
             identity = {
                 "n/a": "query_content pairs are carrier dyads — no carrier-replicated "
@@ -1510,22 +1536,33 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 }
 
         # layer twins (arm_iddelta only — the frozen ridge maps are L19 by
-        # construction) + span-pooling twin (point estimates)
+        # construction) + span-pooling twin (point estimates; *_all_values
+        # companions match the twins' own point-estimate convention — r3
+        # concern all-values-companions-incomplete)
         layer_twins = {}
         for layer in (14, 26):
             c = rowwise_cos(pred_iddelta_twin[layer], obs_tail[layer])
             no_l = np.linalg.norm(pred_iddelta_twin[layer], axis=1)
             ax_slope = through_origin_slope(no_l[head], norm_obs[layer][head])
+            ax_slope_all = through_origin_slope(no_l[prim], norm_obs[layer][prim])
             gl = through_origin_slope(no_l, norm_obs[layer])
             layer_twins[str(layer)] = {
                 "arm_iddelta_mean_cos_headline": _nm(c, head),
+                "arm_iddelta_mean_cos_all_values": _nm(c, prim),
                 "arm_iddelta_ratio_to_global": ax_slope / gl if gl else float("nan"),
+                "arm_iddelta_ratio_to_global_all_values": (
+                    ax_slope_all / gl if gl else float("nan")
+                ),
                 "note": "iddelta only — ridge arms are L19-fit and have no twin at this layer",
             }
         span_twin = {
             arm: {
                 "mean_cos_headline": _nm(cos_arm_span[arm], head),
+                "mean_cos_all_values": _nm(cos_arm_span[arm], prim),
                 "axis_slope": through_origin_slope(norm_pred[arm][head], norm_obs_span[head]),
+                "axis_slope_all_values": through_origin_slope(
+                    norm_pred[arm][prim], norm_obs_span[prim]
+                ),
             }
             for arm in ARMS
         }
@@ -1577,6 +1614,12 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
 
     # per-pair rows ------------------------------------------------------
     fa70, fb70 = pair_fired_mask(pa, fire, 70)
+    # r3 concern headline-pair-floor-mislabel: pair_fired_70 keeps the raw
+    # both-endpoints-fired read; in_headline_70 ADDITIONALLY requires the
+    # axis's floor verdict (fire.headline_ok), so figure consumers never
+    # label pairs on a compliance-limited axis as headline pairs. An axis
+    # without a computed view keeps the floor_met-defaults-True convention.
+    headline_ok_by_axis = {ax: bool(axes_out[ax]["fire"]["headline_ok"]) for ax in axes_out}
     perpair: list[dict] = []
     for i in range(pa.n):
         perpair.append(
@@ -1603,7 +1646,10 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 "noise_norm": float(rel["noise_norm"][i]),
                 "fired_a_70": bool(fa70[i]),
                 "fired_b_70": bool(fb70[i]),
-                "in_headline_70": bool(fa70[i] and fb70[i]),
+                "pair_fired_70": bool(fa70[i] and fb70[i]),
+                "in_headline_70": bool(
+                    fa70[i] and fb70[i] and headline_ok_by_axis.get(pa.axis[i], True)
+                ),
             }
         )
 
