@@ -2,7 +2,8 @@
 title: 'Turn-averaged SAE feature predictability: Der et al. replication, category-level
   map reads, and a partialed covariate ladder'
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-24T20:18:15Z'
 has_clean_result: false
 parent_id: 2476
