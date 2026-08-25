@@ -181,6 +181,30 @@ def _config_dir(out_root: Path) -> Path:
     return out_root / "config"
 
 
+_CONFIG_BUNDLE_FILES = (
+    "budget_recheck.json",
+    "exemplars.json",
+    "subsets.json",
+    "issue2544_ladder.json",
+)
+
+
+def _config_bundle_resumable(cdir: Path) -> bool:
+    """True iff every config-bundle file + sha sidecar exists and verifies —
+    the phase_config generate-if-missing predicate. Relaunches must keep the
+    bundle BYTE-stable: every downstream fingerprint hashes these files, and
+    ``_metadata()`` embeds git sha + timestamp, so a regeneration with zero
+    scientific change still flips exemplars_sha/subsets_sha and every stored
+    queue refuses resume (smoke attempt-6 incident)."""
+    for name in _CONFIG_BUNDLE_FILES:
+        f = cdir / name
+        if not f.exists() or not (f.parent / (f.name + ".sha256")).exists():
+            return False
+        if C2.read_sha_sidecar(f) != C2.sha256_file(f):
+            return False
+    return True
+
+
 def _stage_manifest_path(out_root: Path) -> Path:
     return out_root / "stage_manifest.json"
 
@@ -754,6 +778,40 @@ def phase_config(args: argparse.Namespace, out_root: Path) -> None:
         assert C.MODEL_BRANCHES.get(c) == ladder["branches"].get(c), c
     logger.info("[config] ladder validated: %d rungs from %s", len(C.CKPTS), ladder_path)
 
+    if _config_bundle_resumable(cdir):
+        # Generate-if-missing (M2 resume stability): existing verified bundle
+        # bytes are canonical — regeneration would rewrite them with fresh
+        # _metadata() (git sha + timestamp) and invalidate every stored queue
+        # fingerprint. A deliberate config change wipes cdir first. The upload
+        # still runs (covers a crash between write and upload; idempotent).
+        from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
+
+        budget = R._read_json(cdir / "budget_recheck.json")
+        subsets_meta = R._read_json(cdir / "subsets.json")
+        print("[config] resuming existing config bundle (skip regeneration)", flush=True)
+        upload_dir_sharded(
+            cdir,
+            C.HF_DATA_REPO,
+            C2.CONFIG_HF_PATH,
+            repo_type="dataset",
+            verify=True,
+            delete_local=False,
+        )
+        phase_stage(args, out_root)
+        write_sentinel(
+            out_root,
+            "config",
+            {
+                "n_rows": budget["n_rows"],
+                "n_excluded": budget["n_excluded"],
+                "subset_sizes": subsets_meta["sizes"],
+                "resumed": True,
+            },
+            smoke=args.smoke,
+        )
+        print("[phase=config] done", flush=True)
+        return
+
     # P0 tokenizer load is pre-P1 UNPINNED by convention (C.default_revision_pins).
     tok_id = C.MODEL_IDS["main"]
     tokenizer = AutoTokenizer.from_pretrained(tok_id)
@@ -848,7 +906,7 @@ def phase_config(args: argparse.Namespace, out_root: Path) -> None:
 
     # Ladder copy travels with the config bundle (pods stage ONE prefix).
     (cdir / "issue2544_ladder.json").write_bytes(ladder_path.read_bytes())
-    for name in ("budget_recheck.json", "exemplars.json", "subsets.json", "issue2544_ladder.json"):
+    for name in _CONFIG_BUNDLE_FILES:
         C2.write_sha_sidecar(cdir / name)
 
     # 5) Fail-loud upload of the config bundle.
@@ -887,7 +945,7 @@ def phase_stage(args: argparse.Namespace, out_root: Path) -> None:
     _stage_corpus_files(corpus_dir)
     cdir = _config_dir(out_root)
     cdir.mkdir(parents=True, exist_ok=True)
-    for name in ("budget_recheck.json", "exemplars.json", "subsets.json", "issue2544_ladder.json"):
+    for name in _CONFIG_BUNDLE_FILES:
         dest = cdir / name
         if not dest.exists():
             got = _hf_download(f"{C2.CONFIG_HF_PATH}/{name}")
@@ -895,20 +953,42 @@ def phase_stage(args: argparse.Namespace, out_root: Path) -> None:
             logger.info("[stage] fetched config/%s", name)
 
     corpus_file = corpus_dir / C.CORPUS_SINGLE_FILENAME
-    repo_rev = hub.retry_transient(
-        lambda: str(HfApi().dataset_info(C.HF_DATA_REPO).sha), what="dataset_info"
-    )
     manifest = {
         "metadata": _metadata(),
         "corpus_sha": C2.sha256_file(corpus_file),
-        "corpus_repo_revision": repo_rev,
         "exemplars_sha": C2.sha256_file(cdir / "exemplars.json"),
         "subsets_sha": C2.sha256_file(cdir / "subsets.json"),
         "budget_sha": C2.sha256_file(cdir / "budget_recheck.json"),
         "ladder_sha": C2.sha256_file(cdir / "issue2544_ladder.json"),
         "write_prefix": C2.HF_WRITE_PREFIX,
     }
-    R._write_json_atomic(_stage_manifest_path(out_root), manifest)
+    # Pin-once (M2 resume stability): the run's OWN uploads advance the data
+    # repo's tip sha, so re-resolving it every launch self-invalidates all
+    # stored fingerprints (smoke attempt-6: pass1/pass2 uploads moved the
+    # pin). Unchanged content shas carry the prior pin forward; a genuine
+    # content change re-resolves fresh.
+    mp = _stage_manifest_path(out_root)
+    prior = R._read_json(mp) if mp.exists() else None
+    content_keys = (
+        "corpus_sha",
+        "exemplars_sha",
+        "subsets_sha",
+        "budget_sha",
+        "ladder_sha",
+        "write_prefix",
+    )
+    if prior is not None and all(prior.get(k) == manifest[k] for k in content_keys):
+        manifest["corpus_repo_revision"] = prior["corpus_repo_revision"]
+        print(
+            f"[phase=stage] manifest content unchanged — corpus_repo_revision "
+            f"{manifest['corpus_repo_revision'][:12]} carried forward (pin-once)",
+            flush=True,
+        )
+    else:
+        manifest["corpus_repo_revision"] = hub.retry_transient(
+            lambda: str(HfApi().dataset_info(C.HF_DATA_REPO).sha), what="dataset_info"
+        )
+    R._write_json_atomic(mp, manifest)
     print(f"[phase=stage] manifest written: corpus {manifest['corpus_sha'][:12]}", flush=True)
 
 
