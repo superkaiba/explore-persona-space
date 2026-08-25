@@ -790,73 +790,68 @@ def fig_paper_c1_stage_retention(eval_dir: Path) -> None:
 
 _STAGE_CODES = ("B", "S", "D", "R")
 _STAGE_LABELS = {"B": "base", "S": "SFT", "D": "DPO", "R": "RLVR"}
+# One color = one meaning: identity+bias keeps its paper-wide registry color.
 _ARM_COLORS = {
     "self": "#0072B2",  # blue - the stage's own map (its ceiling)
     "transferred": "#D55E00",  # vermilion - previous stage's map applied here
-    "crossfit": "#009E73",  # green - map refit across the transition
+    "crossfit": "#CC79A7",  # purple - map refit across the transition
+    "identity": "#009E73",  # green - PAPER_COLORS["identity_bias"]
 }
-
-
-def _mean_acc1(knn_folds: list[dict], metric: str = "cosine") -> float:
-    """Mean retrieval acc@1 over the per-fold kNN blocks of one fitted cell."""
-    return float(np.mean([f[metric]["acc_at_k"]["1"] for f in knn_folds]))
+_ARM_ORDER = (
+    ("self", "own map at this stage"),
+    ("transferred", "previous stage's map, applied as-is"),
+    ("crossfit", "map refit: previous contexts $\\to$ this stage's answers"),
+    ("identity", "identity + learned bias"),
+)
 
 
 def _stage_ladder_arms(eval_dir: Path) -> dict[str, dict[str, tuple[float, float]]]:
     """Collect (R2, acc@1) per arm per stage for the post-training ladder figure.
 
-    Returns ``{arm: {stage_code: (r2, acc1)}}`` for the three arms of plot 6
-    (self map / previous stage's map transferred in / map refit from the
-    previous stage's contexts onto this stage's on-policy answers), single-turn
-    context arm, ridge, at the shared selected layer.
+    Both reads come from the whitened-cos+CSLS round
+    (``retrieval_whitencsls/retrieval.json``), which refits the layer-31
+    single-turn context-arm maps with the same batched ridge helper that
+    produced the committed cells and GATES every pooled R2 against them, so
+    the retrieval panel follows the paper's standing convention (whitened
+    cosine + CSLS k=10) instead of the raw-cosine kNN the original fits
+    recorded. Returns ``{arm: {stage_code: (r2, acc1)}}``.
     """
-    grid = _load(eval_dir, "fits/grid_cells.json")
-    xf = _load(eval_dir, "transfer/transfer_matrix.json")
-    cells = grid["cells"]
-    layer = str(grid["layer_star"])
-    out: dict[str, dict[str, tuple[float, float]]] = {"self": {}, "transferred": {}, "crossfit": {}}
-    for s in _STAGE_CODES:
-        d = cells[f"diag_{s}_single_ctx"]
-        out["self"][s] = (d["r2_at_star"], _mean_acc1(d["baselines_at_star"]["knn"]))
-    for i in range(1, len(_STAGE_CODES)):
-        prev, cur = _STAGE_CODES[i - 1], _STAGE_CODES[i]
-        pair = xf["pairs"][f"{prev}->{cur}"]
-        out["transferred"][cur] = (
-            pair["r2"]["direct"],
-            _mean_acc1([b["knn"] for b in pair["baselines"]]),
-        )
-        g = cells[f"grid_{prev}{cur}_single_ctx"]["per_layer"][layer]
-        out["crossfit"][cur] = (g["r2"], _mean_acc1(g["knn"]))
+    ret = _load(eval_dir, "retrieval_whitencsls/retrieval.json")
+    if ret.get("r2_gate", {}).get("status") != "PASS":
+        raise RuntimeError("retrieval_whitencsls R2 reproduction gate did not PASS")
+    out: dict[str, dict[str, tuple[float, float]]] = {}
+    for arm, per_stage in ret["arms"].items():
+        out[arm] = {
+            st: (float(v["r2_pooled"]), float(v["acc1_whitencsls_mean"]))
+            for st, v in per_stage.items()
+        }
     return out
 
 
 def fig_paper_c1_stage_ladder_arms(eval_dir: Path) -> None:
     """ICLR paper figure (plan.tex plot 6): how the map evolves through post-training.
 
-    Three arms per stage of the OLMo-2 chain, single-turn context arm, ridge,
-    at the shared selected layer: (1) the stage's own map, (2) the previous
-    stage's map applied unchanged to this stage's pairs, (3) a map refit from
-    the previous stage's context states onto this stage's on-policy answers.
-    Left panel held-out R^2, right panel retrieval acc@1 (cosine).
+    Four arms per stage of the OLMo-2 chain, single-turn context arm, ridge, at
+    the shared selected layer: the stage's own map, the previous stage's map
+    applied unchanged to this stage's pairs, a map refit from the previous
+    stage's context states onto this stage's on-policy answers, and the
+    identity + learned-bias baseline against the same target. Left panel
+    held-out R^2, right panel retrieval acc@1 under whitened cosine + CSLS
+    k=10 (the paper's standing retrieval convention).
     """
     from explore_persona_space.analysis.paper_plots import figsize_iclr_full, set_paper_style
 
     set_paper_style("iclr")
     arms = _stage_ladder_arms(eval_dir)
-    grid = _load(eval_dir, "fits/grid_cells.json")
-    n_pool = grid["cells"]["diag_B_single_ctx"]["baselines_at_star"]["knn"][0]["cosine"]["n_pool"]
-    series = [
-        ("self", "own map at this stage"),
-        ("transferred", "previous stage's map, applied as-is"),
-        ("crossfit", "map refit: previous contexts $\\to$ this stage's answers"),
-    ]
+    ret = _load(eval_dir, "retrieval_whitencsls/retrieval.json")
+    n_pool = int(round(ret["arms"]["self"]["B"]["n_pool_mean"]))
     xs = np.arange(len(_STAGE_CODES))
-    width = 0.26
-    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_full(height_frac=0.36))
+    width = 0.20
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_full(height_frac=0.38))
     for ax, idx, ylabel in ((axes[0], 0, "held-out $R^2$"), (axes[1], 1, "retrieval acc@1")):
-        for k, (arm, label) in enumerate(series):
-            offs = (k - 1) * width
-            present = [(i, s) for i, s in enumerate(_STAGE_CODES) if s in arms[arm]]
+        for k, (arm, label) in enumerate(_ARM_ORDER):
+            offs = (k - (len(_ARM_ORDER) - 1) / 2.0) * width
+            present = [(i, s) for i, s in enumerate(_STAGE_CODES) if s in arms.get(arm, {})]
             ax.bar(
                 [xs[i] + offs for i, _ in present],
                 [arms[arm][s][idx] for _, s in present],
