@@ -28,3 +28,22 @@ for applied/absent claims); (3) keep the marker version = the round number
 at r4+ gets the normal full-prior-history re-review. Still refuse genuinely
 malformed rounds (0, negative, >10, non-integer). See also
 [[compose-recipe-lens-ref-replacements]].
+
+**Verification-round-after-binding-reconcile shape (confirmed #2378 r3,
+2026-08-25):** these can arrive at ANY round >= 3, not just r4+. Compose
+the FULL fifteen-lens prompt (not a bare delta) PLUS: (1) the reconciler
+verdict temp-file path as a REQUIRED-reading header input; (2) a "ROUND N
+SCOPE" block with (a) the binding fixes to verify AGAINST GROUND TRUTH
+(quote the reconciler's git-show line refs; permit read-only git for the
+check), (b) a regression check (word caps, do-not-touch items), (c) the
+DISCARDED/settled item list inlined with an explicit no-re-raise rule
+(near-duplicates included, absent NEW evidence the reconciler lacked);
+(3) a "### Binding-fix verification" section at the TOP of the output
+template (VERIFIED|NOT-VERIFIED|FAIL per fix + regression line); (4) a
+note in the Concerns section not to re-persist the settled concerns; (5)
+an explicit "if (a)+(b) verify clean and no genuine new violation exists,
+PASS is the honest verdict" line — counteracts nit-manufacturing on a
+3-rounds-deep body. Extend the HF network-advisory clause to github.com
+/tree links when a binding fix converted plain SHAs to links (resolved
+404 stays a real FAIL). Sanity-grep the canonical body for the claimed
+fix text BEFORE composing so the scope statements are accurate.
