@@ -1,0 +1,53 @@
+{
+ "surface": "mcq",
+ "arm": "arm_n1m",
+ "banked_arms": [
+  "arm_ctx",
+  "arm_maplin"
+ ],
+ "eval_names": [
+  "dev",
+  "rung0"
+ ],
+ "n_cells": 21,
+ "selection": "eval_results/issue_2388/n1m/mcq/selection.json",
+ "bootstrap_summary": "eval_results/issue_2388/n1m/mcq/bootstrap_summary.json",
+ "n1m": {
+  "provenance": {
+   "source": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json",
+   "hf_weights_prefix": "issue779_monitoring/n1m_readout/weights",
+   "fit_point": "mixed_1m",
+   "n_train": 963444,
+   "n_lmsys": 529085,
+   "n_wildchat": 434359,
+   "d": 3584,
+   "base_model": "Qwen/Qwen2.5-7B-Instruct",
+   "banked_layers": [
+    14,
+    19,
+    26
+   ]
+  },
+  "payloads": {
+   "L14": {
+    "sha12": "5a085dc6bbbf",
+    "selected_lambda": 0.001
+   },
+   "L19": {
+    "sha12": "188486f8afd9",
+    "selected_lambda": 0.001
+   },
+   "L26": {
+    "sha12": "f2c7a4d0e6f5",
+    "selected_lambda": 0.001
+   }
+  }
+ },
+ "metadata": {
+  "git_commit": "c1b4102ae1674d67f630bd4c43a52e37e43ea54d",
+  "git_dirty": false,
+  "phase": "n1m-surface-summary",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2388_n1m_map.py"
+ }
+}
