@@ -66,6 +66,7 @@ from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
 )
 from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue2564 import bank2564 as BK  # noqa: E402
+from explore_persona_space.experiments.issue2564 import paths as P2564  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
     git_provenance,
@@ -345,23 +346,35 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def build_config(args: argparse.Namespace) -> CfgPE:
-    """Resolve the CLI namespace (smoke rebinds out-dir/prefix/B, never inputs)."""
+    """Resolve the CLI namespace (smoke rebinds out-dir/prefix/B, never inputs).
+
+    Default out-dirs come from the shared ``experiments.issue2564.paths``
+    constants so the figures consumer's defaults cannot drift (r2 blocker 4).
+    Under ``--smoke`` an explicit ``--manip-check`` is REQUIRED (r2 [g5]): the
+    production ``manipulation_check.json`` is a different fire regime, and
+    silently gating smoke reads on it would mask wiring bugs.
+    """
     smoke = bool(args.smoke)
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = P2564.repo_root()
     if args.out_dir is not None:
         out_dir = Path(args.out_dir)
     elif smoke:
-        out_dir = Path("/tmp/issue-2564-smoke/eval_results/issue_2564")
+        out_dir = P2564.smoke_results_dir()
     else:
-        out_dir = repo_root / "eval_results" / "issue_2564"
+        out_dir = P2564.production_results_dir()
     default_stage = (
         repo_root / "data" / "issue_2564" / "hf_dl" / ("pe_stage_smoke" if smoke else "pe_stage")
     )
-    manip = (
-        Path(args.manip_check)
-        if args.manip_check is not None
-        else repo_root / "eval_results" / "issue_2564" / "manipulation_check.json"
-    )
+    if args.manip_check is not None:
+        manip = Path(args.manip_check)
+    elif smoke:
+        raise SystemExit(
+            "--manip-check is REQUIRED under --smoke: the smoke run must never silently "
+            "read the committed PRODUCTION manipulation_check.json (its fire verdicts come "
+            "from a different regime and would gate the smoke reads)."
+        )
+    else:
+        manip = P2564.production_results_dir() / "manipulation_check.json"
     return CfgPE(
         in_root=Path(args.in_root) if args.in_root else None,
         out_dir=out_dir,
@@ -514,6 +527,18 @@ def load_stores(cfg: CfgPE, bank: dict) -> Stores:
         empty_ids = np.array(sorted(int(i) for i in store.get("empty_rows", [])), dtype=np.int64)
         if empty_ids.size:
             empty_mask[empty_ids] = True
+        n_absent = int((ctx_idx < 0).sum())
+        if n_absent:
+            # r2 [g5]: never a silent drop — va rows whose context_id is absent
+            # from the vc store are counted loudly (recorded in meta.input_files).
+            logger.warning(
+                "[pe] va2564_%s: %d/%d rows reference contexts ABSENT from the vc store "
+                "(dropped from the join)",
+                cell,
+                n_absent,
+                n_rows,
+            )
+        files[f"va2564_{cell}.pt"]["n_rows_ctx_absent_from_vc"] = n_absent
         valid = (ctx_idx >= 0) & (n_comp > 0) & ~empty_mask
         for layer in LAYERS:
             np.add.at(tail_sum[layer], ctx_idx[valid], tail[valid, li[layer], :])
@@ -814,7 +839,21 @@ def build_axis_views(pa: PairArrays, n_car: int) -> dict[str, AxisView]:
             install = np.array(sorted(idx_by.get((axis, "install"), [])), dtype=np.int64)
             fams = np.array(sorted(idx_by.get((axis, "famswap"), [])), dtype=np.int64)
             prim_grid, vps = _grid_for(pa, prim, n_car)
-            fams_grid, _ = _grid_for(pa, fams, n_car) if fams.size else (None, [])
+            fams_grid, fams_vps = _grid_for(pa, fams, n_car) if fams.size else (None, [])
+            if fams_grid is not None and prim_grid is not None:
+                # r2 [g5]: famswap rows must align 1:1 with the primary grid's
+                # rows — famswap pair k is (para(value_a_k), para(value_b_k)),
+                # SAME order, paraphrase ids being f"{vid}p" (bank2564 :321-324).
+                # cross_family pairs the two grids BY ROW; a sort-order skew
+                # would silently compare mismatched value pairs.
+                expected_fams_vps = [
+                    f"{pa.value_a[prim_grid[k, 0]]}p-{pa.value_b[prim_grid[k, 0]]}p"
+                    for k in range(prim_grid.shape[0])
+                ]
+                assert fams_vps == expected_fams_vps, (
+                    f"famswap/primary vp grid misalignment for axis {axis}: "
+                    f"{fams_vps} != {expected_fams_vps}"
+                )
             if prim_grid is not None and prim_grid.shape[0] >= 2:
                 scheme = "carrier- and class-preserving value-pair derangement"
             else:
@@ -1062,6 +1101,15 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
         draws = boot_weighted_mean(vals[sel], pa.ca[sel], pa.cb[sel], pa.dyad[sel], mult)
         return pt, _ci(draws)
 
+    def _nm(vals: np.ndarray, sel: np.ndarray) -> float:
+        """nanmean over a selection; an EMPTY selection (compliance-limited
+        headline, r2 blocker 7) returns NaN without numpy's empty-slice
+        RuntimeWarning."""
+        if sel.size == 0:
+            return float("nan")
+        v = vals[sel]
+        return float(np.nanmean(v)) if np.isfinite(v).any() else float("nan")
+
     def slope_draws(sel: np.ndarray, arm: str) -> np.ndarray:
         num = boot_pair_sums(
             norm_pred[arm][sel] * norm_obs[PRIMARY_LAYER][sel],
@@ -1094,28 +1142,43 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
         ta = time.time()
         prim = view.primary_idx
         hmask = fired[70][prim]
-        head = prim[hmask]
-        if head.size == 0:
-            head = prim  # compliance-limited axis: fall back, flagged below
+        # r2 blocker 7 (plan §6): the manipulation check's per-axis floor
+        # verdict (axis_row.floor_met = n_fired_base >= ceil(0.6 x width))
+        # gates the HEADLINE. A below-floor axis reports NULL headline fields
+        # (compliance-limited) — NEVER a silent fall-back to the unfiltered
+        # pair set; *_all_values companions stay populated. Zero fired pairs
+        # on a floor-met axis (no_fired_pairs, tracked separately) also nulls
+        # the headline: there is nothing compliant to read.
+        ar = fire["axis_rows"].get(axis)
+        floor_met = bool(ar["floor_met"]) if ar is not None else True
+        compliance_limited = ar is not None and not floor_met
+        no_fired_pairs = not bool(hmask.any())
+        headline_ok = not compliance_limited and not no_fired_pairs
+        head = prim[hmask] if headline_ok else np.array([], dtype=np.int64)
         null_schemes[axis] = view.null_scheme
 
         # fire summary
-        ar = fire["axis_rows"].get(axis)
         fire_summary = {
             "axis_row": ar,
             "n_primary_pairs": int(prim.size),
-            "n_headline_pairs_fired70": int(prim[hmask].size),
-            "compliance_limited": bool(prim[hmask].size == 0),
+            "n_headline_pairs_fired70": int(hmask.sum()),
+            "floor_met": floor_met if ar is not None else None,
+            "compliance_limited": compliance_limited,
+            "no_fired_pairs": no_fired_pairs,
+            "headline_ok": headline_ok,
             "fired_pair_counts": {str(t): int(fired[t][prim].sum()) for t in FIRE_THRESHOLDS},
         }
 
-        # family 5: reliability ceiling (headline pairs)
+        # family 5: reliability ceiling (headline pairs; all-values companions)
         ceil_pt, ceil_ci = wm(r10, head)
+        ceil_all_pt, ceil_all_ci = wm(r10, prim)
         rel_axis = {
-            "r_half_mean": float(np.nanmean(rel["r_half"][head])),
+            "r_half_mean": _nm(rel["r_half"], head),
             "r10_mean": ceil_pt,
             "r10_ci95": ceil_ci,
-            "noise_norm_mean": float(np.nanmean(rel["noise_norm"][head])),
+            "r10_mean_all_values": ceil_all_pt,
+            "r10_ci95_all_values": ceil_all_ci,
+            "noise_norm_mean": _nm(rel["noise_norm"], head),
             "spearman_brown": "r10 = 2*r5 / (1 + r5)",
         }
         suppressed = suppression_verdict(ceil_pt, ceil_ci[0], ceil_ci[1])
@@ -1164,6 +1227,19 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 "ceiling_suppressed": suppressed,
                 "controls": controls,
             }
+            if arm != "arm_iddelta":
+                # map-vs-iddelta gap (r2 concern map-iddelta-gap-missing):
+                # PAIRED per-pair cos difference — the shared carrier-clustered
+                # bootstrap (mult) makes the CI a paired-difference CI.
+                gpt, gci = wm(cos_arm[arm] - cos_arm["arm_iddelta"], head)
+                gpt_all, gci_all = wm(cos_arm[arm] - cos_arm["arm_iddelta"], prim)
+                direction[arm]["gap_vs_iddelta"] = {
+                    "mean_cos_gap_headline": gpt,
+                    "ci95": gci,
+                    "mean_cos_gap_all_values": gpt_all,
+                    "ci95_all_values": gci_all,
+                    "paired": "per-pair cos difference under the SHARED carrier bootstrap",
+                }
 
         # family 2: calibration
         calibration = {}
@@ -1176,6 +1252,9 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
             calibration[arm] = {
                 "axis_slope": ax_pt,
                 "axis_slope_ci95": _ci(ax_draws),
+                "axis_slope_all_values": through_origin_slope(
+                    norm_pred[arm][prim], norm_obs[PRIMARY_LAYER][prim]
+                ),
                 "global_slope_all2778": global_slope[arm],
                 "ratio_to_global": ax_pt / global_slope[arm] if global_slope[arm] else float("nan"),
                 "ratio_to_global_ci95": _ci(ratio_draws),
@@ -1186,21 +1265,53 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 "ratio_to_global_swap864_ci95": _ci(ratio_swap_draws),
             }
 
-        # family 3: axis identity (carrier-mean per vp)
+        # family 3: axis identity (carrier-mean per vp; headline = fired-vp
+        # subset under the floor gate; all-values companions always reported)
         identity = {}
         if view.primary_grid is not None:
+            # a grid row shares ONE value pair across carriers, so the pair-level
+            # fire mask is constant along the row — read it off carrier 0.
+            vp_fired = fired[70][view.primary_grid[:, 0]]
+            grid_head = view.primary_grid[vp_fired] if (headline_ok and vp_fired.any()) else None
+            med_head_draws: dict[str, np.ndarray | None] = {}
             for arm in ARMS:
                 pt_rows, _, med_draws = carrier_mean_cos_median(
                     view.primary_grid, None, obs_tail[PRIMARY_LAYER], pred[arm], mult
                 )
+                if grid_head is not None:
+                    pt_rows_h, _, med_draws_h = carrier_mean_cos_median(
+                        grid_head, None, obs_tail[PRIMARY_LAYER], pred[arm], mult
+                    )
+                    med_h, ci_h = float(np.nanmedian(pt_rows_h)), _ci(med_draws_h)
+                else:
+                    med_draws_h = None
+                    med_h, ci_h = float("nan"), [float("nan"), float("nan")]
+                med_head_draws[arm] = med_draws_h
                 identity[arm] = {
                     "per_vp_cos": {v: float(c) for v, c in zip(view.primary_vps, pt_rows)},
-                    "median": float(np.nanmedian(pt_rows)),
-                    "median_ci95": _ci(med_draws),
+                    "per_vp_fired70": {v: bool(f) for v, f in zip(view.primary_vps, vp_fired)},
+                    "median": med_h,
+                    "median_ci95": ci_h,
+                    "median_all_values": float(np.nanmedian(pt_rows)),
+                    "median_ci95_all_values": _ci(med_draws),
                     "pc1_identity_cos_exploratory": pc1_identity_cos(
                         obs_tail[PRIMARY_LAYER], pred[arm], view.primary_grid
                     ),
                 }
+            for arm in ARMS:
+                if arm == "arm_iddelta":
+                    continue
+                da_, di_ = med_head_draws[arm], med_head_draws["arm_iddelta"]
+                if da_ is not None and di_ is not None:
+                    # r2 concern map-iddelta-gap-missing: paired median-draw
+                    # difference under the SHARED carrier bootstrap.
+                    identity[arm]["median_gap_vs_iddelta"] = {
+                        "gap": identity[arm]["median"] - identity["arm_iddelta"]["median"],
+                        "ci95": _ci(da_ - di_),
+                        "paired": "median-draw difference under the SHARED carrier bootstrap",
+                    }
+                else:
+                    identity[arm]["median_gap_vs_iddelta"] = None
         else:
             identity = {
                 "n/a": "query_content pairs are carrier dyads — no carrier-replicated "
@@ -1211,6 +1322,9 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
         cross_family: dict = {}
         if view.famswap_grid is not None and view.primary_grid is not None:
             rng_cf = np.random.default_rng([NULL_SEED, 500 + k])
+            # r2 blocker 7 sweep: headline requires BOTH families' pair fired.
+            vp_fired_cf = fired[70][view.primary_grid[:, 0]] & fired[70][view.famswap_grid[:, 0]]
+            cf_head_ok = headline_ok and bool(vp_fired_cf.any())
             spaces = {"observed": (obs_tail[PRIMARY_LAYER], obs_tail[PRIMARY_LAYER])}
             for arm in ARMS:
                 spaces[arm] = (pred[arm], pred[arm])
@@ -1218,6 +1332,17 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 pt_rows, _, med_draws = carrier_mean_cos_median(
                     view.primary_grid, view.famswap_grid, da, db, mult
                 )
+                if cf_head_ok:
+                    pt_rows_h, _, med_draws_h = carrier_mean_cos_median(
+                        view.primary_grid[vp_fired_cf],
+                        view.famswap_grid[vp_fired_cf],
+                        da,
+                        db,
+                        mult,
+                    )
+                    med_h, ci_h = float(np.nanmedian(pt_rows_h)), _ci(med_draws_h)
+                else:
+                    med_h, ci_h = float("nan"), [float("nan"), float("nan")]
                 n_vp = view.primary_grid.shape[0]
                 if n_vp >= 2:
                     sm = _unit(da[view.primary_grid].mean(axis=1))
@@ -1232,30 +1357,54 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                     nscheme = "sign_randomization_2value (single vp — derangement undefined)"
                 cross_family[space] = {
                     "per_vp_cos": {v: float(c) for v, c in zip(view.primary_vps, pt_rows)},
-                    "median": float(np.nanmedian(pt_rows)),
-                    "median_ci95": _ci(med_draws),
+                    "per_vp_fired70_both_families": {
+                        v: bool(f) for v, f in zip(view.primary_vps, vp_fired_cf)
+                    },
+                    "median": med_h,
+                    "median_ci95": ci_h,
+                    "median_all_values": float(np.nanmedian(pt_rows)),
+                    "median_ci95_all_values": _ci(med_draws),
                     "null": {
                         "scheme": nscheme,
                         "mean": float(np.nanmean(null_draws)),
                         "q2_5": _pct(null_draws, 2.5),
                         "q97_5": _pct(null_draws, 97.5),
                         "b": cfg.b_null,
+                        "over": "all primary-class value pairs (fire mask NOT applied "
+                        "to the null grid)",
                     },
                 }
         else:
             cross_family = {"n/a": "no paraphrase-family swap class for this axis"}
 
-        # family 6: text third space (observed only)
-        flip_txt_pt, flip_txt_ci = wm(norm_text, prim)
-        para_txt_pt, para_txt_ci = wm(norm_text, view.para_idx)
+        # family 6: text third space (observed only; headline floor-gated,
+        # all-values companions — r2 blocker 7 sweep)
+        para_head = (
+            view.para_idx[fired[70][view.para_idx]]
+            if headline_ok and view.para_idx.size
+            else np.array([], dtype=np.int64)
+        )
+        flip_txt_pt, flip_txt_ci = wm(norm_text, head)
+        flip_all_pt, flip_all_ci = wm(norm_text, prim)
+        para_txt_pt, para_txt_ci = wm(norm_text, para_head)
+        para_all_pt, para_all_ci = wm(norm_text, view.para_idx)
         text_space = {
             "flip_norm_mean": flip_txt_pt,
             "flip_norm_ci95": flip_txt_ci,
+            "flip_norm_mean_all_values": flip_all_pt,
+            "flip_norm_ci95_all_values": flip_all_ci,
             "paraphrase_null_norm_mean": para_txt_pt,
             "paraphrase_null_norm_ci95": para_txt_ci,
+            "paraphrase_null_norm_mean_all_values": para_all_pt,
+            "paraphrase_null_norm_ci95_all_values": para_all_ci,
             "flip_over_para_ratio": (
                 flip_txt_pt / para_txt_pt
                 if para_txt_pt and np.isfinite(para_txt_pt)
+                else float("nan")
+            ),
+            "flip_over_para_ratio_all_values": (
+                flip_all_pt / para_all_pt
+                if para_all_pt and np.isfinite(para_all_pt)
                 else float("nan")
             ),
             "note": "Qwen3-Embedding-8B mean answer embeddings (means of L2-normalized "
@@ -1263,6 +1412,7 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
             "in text space",
         }
         if view.primary_grid is not None:
+            vp_fired_txt = fired[70][view.primary_grid[:, 0]]
             pt_rows = np.array(
                 [
                     offdiag_pairmean_cos(delta_text[view.primary_grid[v]])
@@ -1270,24 +1420,52 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 ]
             )
             cons_draws = boot_pairmean_cos_median(view.primary_grid, delta_text, idx_draws)
+            if headline_ok and vp_fired_txt.any():
+                cons_draws_h = boot_pairmean_cos_median(
+                    view.primary_grid[vp_fired_txt], delta_text, idx_draws
+                )
+                med_h_txt = float(np.nanmedian(pt_rows[vp_fired_txt]))
+                ci_h_txt = _ci(cons_draws_h)
+            else:
+                med_h_txt, ci_h_txt = float("nan"), [float("nan"), float("nan")]
             text_space["cross_carrier_consistency"] = {
                 "per_vp_mean_pairwise_cos": {
                     v: float(c) for v, c in zip(view.primary_vps, pt_rows)
                 },
-                "median": float(np.nanmedian(pt_rows)),
-                "median_ci95": _ci(cons_draws),
+                "median": med_h_txt,
+                "median_ci95": ci_h_txt,
+                "median_all_values": float(np.nanmedian(pt_rows)),
+                "median_ci95_all_values": _ci(cons_draws),
             }
         else:
             text_space["cross_carrier_consistency"] = None
 
-        # family 7: surface sensitivity (descriptive) + edit-dose companion
+        # family 7: surface sensitivity (descriptive; headline floor-gated,
+        # all-values companions — r2 blocker 7 sweep) + edit-dose companion
         surface = {}
         for name, norms in {"observed": norm_obs[PRIMARY_LAYER], **norm_pred}.items():
-            fpt, fci = wm(norms, prim)
-            ppt, pci = wm(norms, view.para_idx)
-            rf, _ = wm(resid[name], prim)
-            rp, _ = wm(resid[name], view.para_idx)
-            gap_draws = boot_weighted_mean(
+            fpt, fci = wm(norms, head)
+            ppt, pci = wm(norms, para_head)
+            fpt_all, fci_all = wm(norms, prim)
+            ppt_all, pci_all = wm(norms, view.para_idx)
+            rf, _ = wm(resid[name], head)
+            rp, _ = wm(resid[name], para_head)
+            rf_all, _ = wm(resid[name], prim)
+            rp_all, _ = wm(resid[name], view.para_idx)
+            if head.size and para_head.size:
+                gap_draws = boot_weighted_mean(
+                    norms[head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
+                ) - boot_weighted_mean(
+                    norms[para_head],
+                    pa.ca[para_head],
+                    pa.cb[para_head],
+                    pa.dyad[para_head],
+                    mult,
+                )
+                gap_ci = _ci(gap_draws)
+            else:
+                gap_ci = [float("nan"), float("nan")]
+            gap_all_draws = boot_weighted_mean(
                 norms[prim], pa.ca[prim], pa.cb[prim], pa.dyad[prim], mult
             ) - boot_weighted_mean(
                 norms[view.para_idx],
@@ -1301,10 +1479,17 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 "flip_norm_ci95": fci,
                 "para_norm_mean": ppt,
                 "para_norm_ci95": pci,
+                "flip_norm_mean_all_values": fpt_all,
+                "flip_norm_ci95_all_values": fci_all,
+                "para_norm_mean_all_values": ppt_all,
+                "para_norm_ci95_all_values": pci_all,
                 "gap": fpt - ppt,
-                "gap_ci95": _ci(gap_draws),
+                "gap_ci95": gap_ci,
+                "gap_all_values": fpt_all - ppt_all,
+                "gap_ci95_all_values": _ci(gap_all_draws),
                 "edit_dose_ols": dose_fit[name],
                 "residualized_gap": rf - rp,
+                "residualized_gap_all_values": rf_all - rp_all,
                 "labeling": "DESCRIPTIVE only (plan §6: a surface-transducing map "
                 "predicts a NEGATIVE gap; no H-label keys on this gap)",
             }
@@ -1333,13 +1518,13 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
             ax_slope = through_origin_slope(no_l[head], norm_obs[layer][head])
             gl = through_origin_slope(no_l, norm_obs[layer])
             layer_twins[str(layer)] = {
-                "arm_iddelta_mean_cos_headline": float(np.nanmean(c[head])),
+                "arm_iddelta_mean_cos_headline": _nm(c, head),
                 "arm_iddelta_ratio_to_global": ax_slope / gl if gl else float("nan"),
                 "note": "iddelta only — ridge arms are L19-fit and have no twin at this layer",
             }
         span_twin = {
             arm: {
-                "mean_cos_headline": float(np.nanmean(cos_arm_span[arm][head])),
+                "mean_cos_headline": _nm(cos_arm_span[arm], head),
                 "axis_slope": through_origin_slope(norm_pred[arm][head], norm_obs_span[head]),
             }
             for arm in ARMS
@@ -1461,8 +1646,12 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
         "compliance": {
             "headline_threshold_pct": 70,
             "sensitivity_pcts": [50, 90],
-            "rule": "headline per-axis reads use pairs whose BOTH endpoint values fired; "
-            "non-fired values stay in the artifact (hollow), excluded from the headline",
+            "rule": "headline per-axis reads are FLOOR-GATED: an axis whose "
+            "manipulation-check floor verdict (axis_row.floor_met, "
+            "n_fired_base >= ceil(0.6 x width)) is not met is compliance-limited and "
+            "reports NULL headline fields; on floor-met axes the headline uses pairs "
+            "whose BOTH endpoint values fired at 70; non-fired values stay in the "
+            "artifact (hollow) via *_all_values companions, excluded from the headline",
         },
     }
 

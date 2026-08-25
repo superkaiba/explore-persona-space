@@ -666,3 +666,155 @@ def test_e2e_prediction_tensors_written(e2e_run):
 
 def test_import_check_mode_returns_zero():
     assert A.main(["--import-check"]) == 0
+
+
+# ── r2 blocker 7: floor-gated headline + gap-vs-iddelta reads ──────────
+
+
+def _manip_doc(base_verdict: str, floor_met: bool, n_fired_base: int) -> dict:
+    """Manipulation-check doc with register base values at ``base_verdict``
+    (paraphrase values always fired) and an explicit axis floor verdict."""
+    values = BK.load_values()
+    value_rows = []
+    for vid in BK.value_ids(values, "register"):
+        for v in (vid, f"{vid}p"):
+            verdict = base_verdict if v == vid else "fired"
+            value_rows.append(
+                {
+                    "axis": "register",
+                    "value_id": v,
+                    "kind": "orig" if v == vid else "para",
+                    "instrument": "judged",
+                    "n_comply": 24 if verdict == "fired" else 0,
+                    "n_noncomply": 0 if verdict == "fired" else 24,
+                    "n_incomplete": 0,
+                    "denom": 24,
+                    "comply_frac": 1.0 if verdict == "fired" else 0.0,
+                    "verdict": verdict,
+                    "sensitivity": {"50": verdict, "90": verdict},
+                }
+            )
+    return {
+        "meta": {
+            "judged_denominator": 24,
+            "fire_threshold_pct": 70,
+            "floor_rule": "n_fired_base >= ceil(0.6 * width)",
+        },
+        "value_rows": value_rows,
+        "axis_rows": [
+            {
+                "axis": "register",
+                "width": 2,
+                "floor": 2,
+                "n_fired_base": n_fired_base,
+                "floor_met": floor_met,
+            }
+        ],
+    }
+
+
+def _rerun_with_manip(e2e_out_dir: Path, manip: Path, out2: Path) -> dict:
+    """Re-run the REAL pipeline on the e2e fixture's inputs with a different
+    manipulation-check file (the only lever under test)."""
+    root = e2e_out_dir.parent
+    maps_dir = root / "maps"
+    rc = A.main(
+        [
+            "--smoke",
+            "--in-root",
+            str(root / "in"),
+            "--out-dir",
+            str(out2),
+            "--manip-check",
+            str(manip),
+            "--ridge-779",
+            str(maps_dir / "ridge_779.pt"),
+            "--ridge-1738",
+            str(maps_dir / "ridge_1738.pt"),
+            "--upload",
+            "none",
+            "--b-boot",
+            "50",
+            "--b-null",
+            "50",
+            "--n-splits",
+            "4",
+        ]
+    )
+    assert rc == 0
+    return json.loads((out2 / "minpair_delta.json").read_text())
+
+
+def test_e2e_below_floor_axis_nulls_headline_despite_fired_pairs(e2e_run, tmp_path):
+    """r2 blocker 7 (compliance-floor-not-enforced): headline gating keys on
+    ``axis_row.floor_met`` — a below-floor axis nulls EVERY headline field even
+    when individual pairs fired; ``*_all_values`` companions stay populated."""
+    _, _, e2e_out = e2e_run
+    manip = tmp_path / "manip_belowfloor.json"
+    manip.write_text(json.dumps(_manip_doc("fired", floor_met=False, n_fired_base=0)))
+    doc = _rerun_with_manip(e2e_out, manip, tmp_path / "out_belowfloor")
+    reg = doc["axes"]["register"]
+    fire = reg["fire"]
+    assert fire["compliance_limited"] is True
+    assert fire["headline_ok"] is False
+    assert fire["no_fired_pairs"] is False  # pairs DID fire — the FLOOR is what gates
+    assert fire["n_headline_pairs_fired70"] == 3
+    # NaN headline fields serialize to null (_json_sanitize) — assert None.
+    d = reg["direction"]["arm_779ce"]
+    assert d["mean_cos_headline"] is None
+    assert d["mean_cos_all_values"] > 0.99
+    assert d["ceiling_suppressed"] is True and d["ceiling_normalized_cos"] is None
+    r = reg["reliability"]
+    assert r["r10_mean"] is None
+    assert r["r10_mean_all_values"] == pytest.approx(1.0, abs=1e-6)
+    assert reg["identity"]["arm_779ce"]["median"] is None
+    assert reg["identity"]["arm_779ce"]["median_all_values"] > 0.99
+    assert reg["cross_family"]["observed"]["median"] is None
+    assert isinstance(reg["cross_family"]["observed"]["median_all_values"], float)
+    assert reg["text_space"]["flip_norm_mean"] is None
+    assert isinstance(reg["text_space"]["flip_norm_mean_all_values"], float)
+    assert reg["surface"]["observed"]["flip_norm_mean"] is None
+    assert isinstance(reg["surface"]["observed"]["flip_norm_mean_all_values"], float)
+
+
+def test_e2e_zero_fired_pairs_nulls_headline_no_prim_fallback(e2e_run, tmp_path):
+    """r2 blocker 7 regression: floor met but ZERO fired pairs — the r1 code
+    silently fell back to ``head = prim`` (unfiltered); the headline must null
+    with ``no_fired_pairs`` set instead."""
+    _, _, e2e_out = e2e_run
+    manip = tmp_path / "manip_nofired.json"
+    manip.write_text(json.dumps(_manip_doc("not_fired", floor_met=True, n_fired_base=2)))
+    doc = _rerun_with_manip(e2e_out, manip, tmp_path / "out_nofired")
+    reg = doc["axes"]["register"]
+    fire = reg["fire"]
+    assert fire["no_fired_pairs"] is True
+    assert fire["compliance_limited"] is False
+    assert fire["headline_ok"] is False
+    assert fire["n_headline_pairs_fired70"] == 0
+    # r1 fallback would have produced the unfiltered ~1.0 here; nulled now.
+    assert reg["direction"]["arm_779ce"]["mean_cos_headline"] is None
+    assert reg["direction"]["arm_779ce"]["mean_cos_all_values"] > 0.99
+
+
+def test_e2e_gap_vs_iddelta_schema_and_identity_world_zero(e2e_run):
+    """r2 concern map-iddelta-gap-missing: ridge arms carry paired gap-vs-
+    identity reads (direction + identity medians). Identity world (W == I,
+    bias cancels) makes every gap exactly ~0."""
+    doc, _, _ = e2e_run
+    reg = doc["axes"]["register"]
+    for arm in ("arm_779ce", "arm_1738ce"):
+        g = reg["direction"][arm]["gap_vs_iddelta"]
+        assert set(g) >= {"mean_cos_gap_headline", "ci95", "mean_cos_gap_all_values"}
+        assert g["mean_cos_gap_headline"] == pytest.approx(0.0, abs=1e-6)
+        mg = reg["identity"][arm]["median_gap_vs_iddelta"]
+        assert mg is not None
+        assert mg["gap"] == pytest.approx(0.0, abs=1e-6)
+    assert "gap_vs_iddelta" not in reg["direction"]["arm_iddelta"]
+    assert "median_gap_vs_iddelta" not in reg["identity"]["arm_iddelta"]
+
+
+def test_smoke_requires_explicit_manip_check():
+    """r2 [g5]: --smoke without --manip-check refuses — the smoke run must
+    never silently gate on the committed PRODUCTION manipulation_check.json."""
+    with pytest.raises(SystemExit, match="manip-check"):
+        A.build_config(A.parse_args(["--smoke", "--upload", "none"]))

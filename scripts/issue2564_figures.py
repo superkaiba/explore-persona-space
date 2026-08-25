@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -41,11 +42,17 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
     set_paper_style,
 )
+from explore_persona_space.experiments.issue2564 import paths as P2564  # noqa: E402
 
-SMOKE_ROOT = Path("/tmp/issue-2564-smoke")
-DEFAULT_RESULTS_DIR = Path("eval_results/issue_2564/pe")
-DEFAULT_OUT_DIR = Path("figures/")
+# Shared with scripts/issue2564_analysis.py via experiments.issue2564.paths
+# (r2 blocker 4): producer default out-dir == consumer default results-dir,
+# repo-root-anchored — never cwd-relative, in BOTH modes.
+SMOKE_ROOT = P2564.SMOKE_ROOT
+DEFAULT_RESULTS_DIR = P2564.production_results_dir()
+SMOKE_RESULTS_DIR = P2564.smoke_results_dir()
+DEFAULT_OUT_DIR = P2564.repo_root() / "figures"
 STEM_PREFIX = "issue_2564"
+_SINGLE_CARRIER_RE = re.compile(r"^c\d+$")  # excludes query_content dyads ("c01|c02")
 
 ARMS = ("arm_779ce", "arm_1738ce", "arm_iddelta")
 # Plain-English labels only on rendered text (paper-plots SKILL §3.5).
@@ -170,19 +177,26 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
                 capsize=2,
                 zorder=3,
             )
-        # Split-half ceiling recovered from the ceiling-normalized read of the primary arm.
-        v779 = _finite(_get(d, "arm_779ce", "mean_cos_headline"))
-        vnorm = _finite(_get(d, "arm_779ce", "ceiling_normalized_cos"))
-        if v779 is not None and vnorm is not None and abs(vnorm) > 1e-12:
-            ax.plot(
-                [v779 / vnorm],
+        # Split-half ceiling: DIRECT read of reliability.r10_mean + its CI
+        # (r2 concern hero-ceiling-suppressed: the old reconstruction via
+        # ceiling_normalized_cos vanished exactly on suppressed axes — the
+        # rows where seeing the ceiling matters most).
+        r10 = _finite(_get(doc, "axes", name, "reliability", "r10_mean"))
+        if r10 is not None:
+            lo_c, hi_c = _xerr(r10, _get(doc, "axes", name, "reliability", "r10_ci95"))
+            ax.errorbar(
+                [r10],
                 [ys[i]],
+                xerr=[lo_c, hi_c],
                 marker="D",
                 ms=6,
                 mfc="none",
                 mec=neutral,
                 mew=1.4,
                 ls="none",
+                ecolor=neutral,
+                elinewidth=1.0,
+                capsize=2,
                 zorder=2,
             )
     ax.axvline(0.0, color=neutral, lw=0.8, alpha=0.6)
@@ -313,8 +327,9 @@ def fig_norm_scatter(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
                 alpha=0.75,
                 label="non-fired pair",
             )
-        if slope is not None and xs.size:
-            xline = np.linspace(0, max(1e-9, xs.max()), 32)
+        finite_xs = xs[np.isfinite(xs)]
+        if slope is not None and finite_xs.size:
+            xline = np.linspace(0, max(1e-9, float(finite_xs.max())), 32)
             ax.plot(xline, slope * xline, color=neutral, lw=1.0, label="global slope")
         ax.set_title(axis_label(name), loc="left")
         ax.set_xlabel("observed shift norm")
@@ -533,11 +548,15 @@ def fig_flip_vs_para_text(doc: dict, rows: list[dict], out_dir: Path) -> str | N
     para_cls = {"instruction_paraphrase", "query_paraphrase"}
     groups: list[tuple[str, str, list[float]]] = []
     for name in _axes_sorted(doc):
+        # r2 concern exploratory-figure-pair-filters: the flip bucket is the
+        # axis's PRIMARY class only (doc metadata) — never every non-para
+        # class (install/famswap rows are controls, not flips).
+        prim_cls = _get(doc, "axes", name, "primary_class")
         flips = [
             v
             for r in rows
             if r.get("axis") == name
-            and r.get("pair_class") not in para_cls
+            and r.get("pair_class") == prim_cls
             and (v := _finite(r.get("norm_text"))) is not None
         ]
         paras = [
@@ -580,16 +599,27 @@ def fig_flip_vs_para_text(doc: dict, rows: list[dict], out_dir: Path) -> str | N
 def fig_carrier_transfer(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
     """Axis-by-carrier matrix of mean per-pair direction cosine (primary arm)."""
     axes_names = _axes_sorted(doc)
-    carriers = sorted({r["carrier"] for r in rows if r.get("carrier")})
+    # r2 concern exploratory-figure-pair-filters: single carriers only
+    # (query_content dyads "c01|c02" are not carrier cells), and per axis
+    # only its PRIMARY pair class (controls would dilute the cell means).
+    carriers = sorted(
+        {
+            r["carrier"]
+            for r in rows
+            if r.get("carrier") and _SINGLE_CARRIER_RE.fullmatch(str(r["carrier"]))
+        }
+    )
     if not axes_names or not carriers:
         return None
     mat = np.full((len(axes_names), len(carriers)), np.nan)
     for i, name in enumerate(axes_names):
+        prim_cls = _get(doc, "axes", name, "primary_class")
         for j, car in enumerate(carriers):
             vals = [
                 v
                 for r in rows
                 if r.get("axis") == name
+                and r.get("pair_class") == prim_cls
                 and r.get("carrier") == car
                 and (v := _finite(_get(r, "cos", "arm_779ce"))) is not None
             ]
@@ -643,10 +673,12 @@ def fig_ceiling_vs_cos(doc: dict, rows: list[dict], out_dir: Path) -> str | None
     """Per-axis split-half reliability vs headline direction cosine."""
     pts: list[tuple[str, float, float]] = []
     for name in _axes_sorted(doc):
-        r_half = _finite(_get(doc, "axes", name, "reliability", "r_half_mean"))
+        # r10_mean is the ceiling the headline reads are normalized by
+        # (Spearman-Brown r10), matching the hero panel's ceiling marker.
+        r10 = _finite(_get(doc, "axes", name, "reliability", "r10_mean"))
         v = _finite(_get(doc, "axes", name, "direction", "arm_779ce", "mean_cos_headline"))
-        if r_half is not None and v is not None:
-            pts.append((name, r_half, v))
+        if r10 is not None and v is not None:
+            pts.append((name, r10, v))
     if not pts:
         return None
     fig, ax = plt.subplots(figsize=(5.4, 4.4))
@@ -654,7 +686,7 @@ def fig_ceiling_vs_cos(doc: dict, rows: list[dict], out_dir: Path) -> str | None
     for name, x, y in pts:
         ax.scatter([x], [y], s=26, color=col)
         ax.text(x, y, f" {axis_label(name)}", fontsize=7, va="center")
-    ax.set_xlabel("split-half reliability of the observed shift")
+    ax.set_xlabel("reliability ceiling of the observed shift (Spearman-Brown r10)")
     ax.set_ylabel("direction cosine (single-turn frozen map)")
     ax.set_title("Reliability ceiling vs direction recovery", loc="left")
     fig.tight_layout()
@@ -828,10 +860,12 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = args.out_dir
     if args.smoke:
         if args.results_dir == DEFAULT_RESULTS_DIR:
-            results_dir = SMOKE_ROOT / "out"
+            results_dir = SMOKE_RESULTS_DIR
         if args.out_dir == DEFAULT_OUT_DIR:
             out_dir = SMOKE_ROOT / "figures"
-        elif str(out_dir).startswith("figures"):
+        elif out_dir.resolve().is_relative_to((P2564.repo_root() / "figures").resolve()):
+            # resolved-path compare (r2 blocker 4): the old string-startswith
+            # guard missed absolute paths into the committed figures/ tree.
             raise SystemExit("--smoke must not write the committed figures/ tree")
 
     doc_path = results_dir / "minpair_delta.json"

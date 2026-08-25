@@ -156,6 +156,24 @@ def test_gate_iii_fails_on_mutated_nonvaried_slot(values):
         B.gate_pair_slot_identity(values, contexts, pairs)
 
 
+def test_gate_iv_fails_on_overlong_paraphrase(tokenizer, values):
+    """r2: the (iv) length-ratio gate FAILs loud on a paraphrase template far
+    outside the +/-30% token band (previously the only gate with no
+    broken-fixture demonstration — the module docstring overclaimed)."""
+    broken = copy.deepcopy(values)
+    ax = broken["axes"]["persona"]
+    assert ax["kind"] == "slotted"
+    ax["paraphrase_template"] = (
+        "Adopt, embrace, and thoroughly maintain at all times and across every "
+        f"single sentence of your entire reply the persona of {ax['slot']}, never "
+        "once stepping outside of that character for any reason whatsoever."
+    )
+    contexts = B.build_contexts(broken)
+    pairs = B.build_pairs(broken, contexts)
+    with pytest.raises(B.BankGateError, match=r"gate\(iv\)"):
+        B.gate_paraphrase_ratios(tokenizer, broken, contexts, pairs)
+
+
 def test_gate_v_fails_on_missing_paraphrase_context(values):
     contexts = B.build_contexts(values)
     pairs = B.build_pairs(values, contexts)

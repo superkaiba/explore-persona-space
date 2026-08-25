@@ -25,11 +25,12 @@ score ≥ 50 (judged) / word present (programmatic); the slot FIRED iff ≥70%
 of its checks comply on the FIXED denominator — 24 judged (12 carriers × 2
 draws) / 120 programmatic (12 × 10) — never a shrunken one. A check with no
 post-retry judgment (dropped / transport-exhausted / missing anchor row) is
-INCOMPLETE; a slot is ``undetermined`` when its incomplete checks are
-DECISION-RELEVANT (it would fire if they all complied but does not on
-complies alone) — counted as not-fired for the axis floor, kept in the
-denominator. Raw (n_comply, n_noncomply, n_incomplete, denom) counts are
-persisted per slot so stricter readings are recomputable. Axis floor:
+INCOMPLETE; a slot with ANY incomplete check after the retry budget is
+``undetermined`` (plan §6, verbatim: "a value whose checks are incomplete
+after the judge retry budget is marked undetermined") — counted as
+not-fired for the axis floor, kept in the denominator. Raw (n_comply,
+n_noncomply, n_incomplete, denom) counts are persisted per slot so a
+looser decision-relevance-only reading stays recomputable. Axis floor:
 ≥ ceil(0.6 × width) of the axis's BASE values fired (3/5 five-value axes,
 2/2 two-value axes); paraphrase slots get their own fire rows but are
 excluded from the floor count. 50%/90% comply-threshold sensitivity columns
@@ -164,24 +165,23 @@ def fire_verdict(
 ) -> str:
     """Three-way fire decision on the FIXED denominator (plan §6).
 
-    Integer arithmetic (no float thresholds): fired iff
-    ``n_comply * 100 >= threshold_pct * denom`` (≥70% of 24 ⇒ ≥17; of 120 ⇒ ≥84).
-    ``undetermined`` iff not fired on complies alone but the incomplete checks
-    are decision-relevant (crediting all of them would fire) — counted as
-    not-fired for the axis floor, kept in the denominator. A slot whose
-    incomplete checks cannot change the verdict keeps its determinate verdict;
-    raw counts are persisted so a stricter any-incomplete⇒undetermined reading
-    stays recomputable downstream.
+    MANDATORY-undetermined (plan §6, verbatim registration; r2 blocker 6):
+    a slot with ANY incomplete check after the judge retry budget is
+    ``undetermined`` — counted as not-fired for the axis floor, kept in the
+    denominator — regardless of whether the incompletes could flip the
+    verdict. Otherwise integer arithmetic (no float thresholds): fired iff
+    ``n_comply * 100 >= threshold_pct * denom`` (≥70% of 24 ⇒ ≥17; of 120 ⇒
+    ≥84). Raw counts are persisted per slot so a looser
+    decision-relevance-only reading stays recomputable downstream.
     """
     if n_comply < 0 or n_incomplete < 0 or n_comply + n_incomplete > denom or denom <= 0:
         raise ValueError(
             f"bad fire counts: comply={n_comply} incomplete={n_incomplete} denom={denom}"
         )
-    thr = threshold_pct * denom
-    if n_comply * 100 >= thr:
-        return "fired"
-    if (n_comply + n_incomplete) * 100 >= thr:
+    if n_incomplete > 0:
         return "undetermined"
+    if n_comply * 100 >= threshold_pct * denom:
+        return "fired"
     return "not_fired"
 
 
@@ -689,8 +689,8 @@ def main() -> None:
             "sensitivity_pcts": list(SENSITIVITY_PCTS),
             "floor_rule": "n_fired_base >= ceil(0.6 * width); undetermined counts as not-fired",
             "undetermined_semantics": (
-                "decision-relevant incompleteness: not fired on complies alone but would "
-                "fire crediting all incomplete checks; raw counts persisted per slot"
+                "mandatory (plan §6 verbatim): ANY incomplete check after the judge "
+                "retry budget => undetermined; raw counts persisted per slot"
             ),
             "judged_denominator": len(carriers) * len(JUDGED_DRAWS),
             "programmatic_denominator": len(carriers) * len(PROG_DRAWS),

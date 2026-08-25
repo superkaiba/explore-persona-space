@@ -917,14 +917,25 @@ def _repro(cfg: RunConfig) -> dict:
 def load_model_and_tokenizer(cfg: RunConfig):
     """Production: bf16 Qwen-2.5-7B-Instruct pinned to one device (never
     ``device_map='auto'`` — silent CPU offload, gotchas). Tiny: a from-config
-    same-arch model on CPU over the REAL vocab-id space."""
+    same-arch model on CPU over the REAL vocab-id space.
+
+    Revision pin (#2564 blocker 8): when the caller's cfg carries a RESOLVED
+    ``model_revision`` (a real sha — the ``unresolved*`` sentinels of tiny /
+    import-check modes are filtered to None), it is threaded as ``revision=``
+    into BOTH the tokenizer and the production weight load, so the loaded
+    bytes match the sha recorded in the regime fingerprint / repro metadata.
+    Additive: callers without the attribute (the #2162 lineage) load exactly
+    as before (revision=None == default branch tip)."""
     from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(cfg.model_id)  # loaded ONCE (HF-429 gotcha)
+    rev = getattr(cfg, "model_revision", None)
+    if not rev or str(rev).startswith("unresolved"):
+        rev = None
+    tok = AutoTokenizer.from_pretrained(cfg.model_id, revision=rev)  # loaded ONCE (HF-429 gotcha)
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     if cfg.tiny:
-        mcfg = AutoConfig.from_pretrained(cfg.model_id)
+        mcfg = AutoConfig.from_pretrained(cfg.model_id, revision=rev)
         mcfg.hidden_size = cfg.hidden
         mcfg.intermediate_size = 2 * cfg.hidden
         mcfg.num_hidden_layers = cfg.n_layers
@@ -934,7 +945,9 @@ def load_model_and_tokenizer(cfg: RunConfig):
         model = AutoModelForCausalLM.from_config(mcfg).to(torch.float32)
     else:
         assert torch.cuda.is_available(), "the full grid requires CUDA (use --tiny for CPU smoke)"
-        model = AutoModelForCausalLM.from_pretrained(cfg.model_id, dtype=torch.bfloat16)
+        model = AutoModelForCausalLM.from_pretrained(
+            cfg.model_id, dtype=torch.bfloat16, revision=rev
+        )
     model = model.to(cfg.device)
     assert model.config.hidden_size == cfg.hidden, (model.config.hidden_size, cfg.hidden)
     assert model.config.num_hidden_layers == cfg.n_layers, (

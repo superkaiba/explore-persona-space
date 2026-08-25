@@ -14,7 +14,9 @@ fp16 storage), and uploads per-draw + per-context-mean npz stores to
 checkpoints (``atomic_io.atomic_replace`` process-unique temps, #2336;
 ``np.savez`` gets an OPEN handle — it appends ``.npz`` to path-named
 non-.npz targets) and a fingerprint-gated resume keyed on generating parameters +
-the file-read row texts (bit-exact inputs — safe to hash). The FIRST
+the file-read row texts (bit-exact inputs — safe to hash) + the RESOLVED
+embed-model revision, which is pinned BEFORE any loader init and threaded
+into both the tokenizer and the ``LLM(...)`` engine. The FIRST
 COMPUTED chunk's elapsed drives a pilot gate: projected wall >
 ``--pilot-ceiling-h`` (default 2.0 h, plan §9 PC ceiling) ⇒ report JSON +
 ``sys.exit(7)`` (a designed artifact-routed halt, never a bare rc=1);
@@ -167,11 +169,13 @@ def load_rows(paths: dict[str, Path]) -> tuple[list[dict], int]:
     return rows, n_empty
 
 
-def _regime_fp(rows: list[dict], chunk: int, max_model_len: int) -> str:
+def _regime_fp(rows: list[dict], chunk: int, max_model_len: int, revision: str) -> str:
     """Resume fingerprint: generating params + file-read row identities.
 
     Hashes the (context_id, draw, sha16(text)) triples — bit-exact inputs read
-    from files (safe per the float-last-bit rule; no recomputed floats).
+    from files (safe per the float-last-bit rule; no recomputed floats) — plus
+    the RESOLVED embed-model revision (a checkpoint embedded under different
+    model bytes is a different regime; r2 blocker 8).
     """
     ids = [
         (
@@ -181,8 +185,22 @@ def _regime_fp(rows: list[dict], chunk: int, max_model_len: int) -> str:
         )
         for r in rows
     ]
-    payload = json.dumps([EMBED_MODEL, EMBED_DIM, max_model_len, chunk, ids], sort_keys=True)
+    payload = json.dumps(
+        [EMBED_MODEL, revision, EMBED_DIM, max_model_len, chunk, ids], sort_keys=True
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def resolve_embed_revision() -> str:
+    """Pin the embed model's main → resolved sha ONCE, BEFORE any loader init
+    (tokenizer + LLM both take ``revision=``; provenance label == loaded bytes)."""
+    from huggingface_hub import HfApi
+
+    revision = hub.retry_transient(
+        lambda: HfApi().model_info(EMBED_MODEL).sha, what="model_info(qwen3-embed)"
+    )
+    assert revision, f"could not resolve model revision for {EMBED_MODEL}"
+    return str(revision)
 
 
 def _reap_engine(llm: object) -> None:
@@ -222,6 +240,7 @@ def embed_rows(
     pilot_ceiling_h: float,
     pilot_report_path: Path,
     smoke: bool,
+    revision: str | None = None,
 ) -> np.ndarray:
     """Chunked embed with per-chunk atomic checkpoints + resume + pilot gate.
 
@@ -254,9 +273,10 @@ def embed_rows(
             if llm is None:
                 from vllm import LLM
 
-                log(f"[pc_embed] loading {EMBED_MODEL} (pooling runner)")
+                log(f"[pc_embed] loading {EMBED_MODEL}@{revision} (pooling runner)")
                 llm = LLM(
                     model=EMBED_MODEL,
+                    revision=revision,
                     runner="pooling",
                     dtype="bfloat16",
                     max_model_len=max_model_len,
@@ -372,11 +392,16 @@ def main() -> None:
     texts = [r["text"] for r in rows]
     log(f"[pc_embed] loaded {len(rows)} rows across {len(cells)} cells (skipped_empty={n_empty})")
 
+    # Resolve the embed-model revision BEFORE any loader init (r2 blocker 8):
+    # tokenizer + LLM both load the pinned sha, and it enters the regime fp.
+    revision = resolve_embed_revision()
+    log(f"[pc_embed] resolved {EMBED_MODEL} revision {revision}")
+
     # Token-length precheck with the EMBED model's own tokenizer — raise the
     # flag, never truncate (the #2215 port's contract).
     from transformers import AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(EMBED_MODEL)
+    tok = AutoTokenizer.from_pretrained(EMBED_MODEL, revision=revision)
     lens = [len(tok.encode(t, add_special_tokens=True)) for t in texts]
     max_len = max(lens)
     log(f"[pc_embed] token lens: max={max_len} mean={sum(lens) / len(lens):.1f}")
@@ -386,7 +411,7 @@ def main() -> None:
             "raise the flag — inputs are never truncated"
         )
 
-    fp = _regime_fp(rows, chunk, args.max_model_len)
+    fp = _regime_fp(rows, chunk, args.max_model_len, revision)
     emb = embed_rows(
         texts,
         chunks_dir=out_root / "chunks",
@@ -396,6 +421,7 @@ def main() -> None:
         pilot_ceiling_h=args.pilot_ceiling_h,
         pilot_report_path=out_root / "pilot_gate_report.json",
         smoke=args.smoke,
+        revision=revision,
     )
 
     norms = np.linalg.norm(emb.astype(np.float64), axis=1)
@@ -433,11 +459,6 @@ def main() -> None:
         emb_mean=means,
         context_ids=np.array(uniq_cids),
         n_draws=counts,
-    )
-    from huggingface_hub import HfApi
-
-    revision = hub.retry_transient(
-        lambda: HfApi().model_info(EMBED_MODEL).sha, what="model_info(qwen3-embed)"
     )
     meta = {
         "issue": ISSUE,
