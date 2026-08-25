@@ -1,11 +1,35 @@
 {
-  "commit": "09750cbb",
-  "render_id": "3fa83ed52b9f4c4c",
-  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "8265bcd7+dirty",
+  "render_id": "d1b6d55eb0fb4939",
+  "git_commit": "8265bcd75f781d8e879e924de60063e536e58dcf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/fig_expl_cross_family_scatter.meta.json",
+    "figures/issue_2564/fig_expl_cross_family_scatter.pdf",
+    "figures/issue_2564/fig_expl_cross_family_scatter.png",
+    "figures/issue_2564/fig_expl_edit_dose.meta.json",
+    "figures/issue_2564/fig_expl_edit_dose.pdf",
+    "figures/issue_2564/fig_expl_edit_dose.png",
+    "figures/issue_2564/fig_expl_identity_heatmaps.meta.json",
+    "figures/issue_2564/fig_expl_identity_heatmaps.pdf",
+    "figures/issue_2564/fig_expl_identity_heatmaps.png",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.meta.json",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.pdf",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.png",
+    "figures/issue_2564/fig_expl_manip_fire_rates.meta.json",
+    "figures/issue_2564/fig_expl_manip_fire_rates.pdf",
+    "figures/issue_2564/fig_expl_manip_fire_rates.png",
+    "figures/issue_2564/fig_expl_norm_scatter.meta.json",
+    "figures/issue_2564/fig_expl_norm_scatter.pdf",
+    "figures/issue_2564/fig_expl_norm_scatter.png",
+    "figures/issue_2564/fig_hero_axis_profile.meta.json",
+    "figures/issue_2564/fig_hero_axis_profile.pdf",
+    "figures/issue_2564/fig_hero_axis_profile.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2564_figures.py",
-  "created": "2026-08-25T14:37:12Z",
+  "created": "2026-08-25T20:00:03Z",
   "figsize": [
     13.6,
     9.600000000000001
@@ -32,7 +56,7 @@
         ]
       },
       {
-        "title_left": "format",
+        "title_left": "output format",
         "xticklabels": [
           "value v1",
           "value v2",
@@ -60,7 +84,7 @@
         ]
       },
       {
-        "title_left": "lexical marker",
+        "title_left": "marker word",
         "xticklabels": [
           "value v1",
           "value v2",
@@ -94,7 +118,7 @@
         ]
       },
       {
-        "title_left": "register",
+        "title_left": "tone",
         "xticklabels": [
           "value v1",
           "value v2"
@@ -122,7 +146,7 @@
         ]
       },
       {
-        "title_left": "user fact",
+        "title_left": "injected name",
         "xticklabels": [
           "value v1",
           "value v2",
@@ -139,7 +163,7 @@
         ]
       },
       {
-        "title_left": "user profile",
+        "title_left": "user description",
         "xticklabels": [
           "value v1",
           "value v2",

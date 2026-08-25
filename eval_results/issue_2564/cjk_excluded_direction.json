@@ -714,6 +714,19 @@
       "max_abs_delta_axis": "format",
       "max_abs_delta_headline": 0.0013807704272794374,
       "n_axes_with_finite_headline": 8
+    },
+    "user_profile_robust_values": {
+      "basis": "as-scored per-pair cos over the 12 v2-v5 swap pairs (perpair.jsonl); the two values that fire under every intrusion convention (as-scored / zeroed / excluded; see intrusion_audit.json)",
+      "mean_cos": {
+        "arm_1738ce": 0.5105836155500622,
+        "arm_779ce": 0.4914998043796101,
+        "arm_iddelta": 0.3623764494306038
+      },
+      "n_pairs": 12,
+      "values": {
+        "v2": "retired engineer",
+        "v5": "business traveler"
+      }
     }
   }
 }

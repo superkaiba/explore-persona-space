@@ -247,6 +247,44 @@ def _nm(vals: np.ndarray, sel: np.ndarray) -> float:
     return float(np.nanmean(v)) if np.isfinite(v).any() else float("nan")
 
 
+def append_robust_values(perpair_path: Path, out_path: Path) -> int:
+    """Append the user-description robust-values read to the committed JSON.
+
+    The intrusion audit leaves exactly two user-description values fired under
+    every convention (as-scored, zeroed, excluded): retired engineer (v2) and
+    business traveler (v5). This reads their 12 as-scored swap pairs from the
+    committed ``perpair.jsonl`` and records the per-arm mean direction cosine
+    under ``summary.user_profile_robust_values`` — the number quoted in the
+    clean-result Takeaways (map 0.49 vs identity 0.36). Fail-loud: refuses to
+    run if the pair count is not 12 or the output JSON is missing.
+    """
+    rows = [json.loads(line) for line in perpair_path.read_text().splitlines() if line.strip()]
+    sel = [
+        r
+        for r in rows
+        if r["axis"] == "user_profile"
+        and r["pair_class"] == "swap"
+        and {r["value_a"], r["value_b"]} == {"v2", "v5"}
+    ]
+    if len(sel) != 12:
+        raise SystemExit(f"expected 12 v2-v5 user_profile swap pairs, found {len(sel)}")
+    doc = json.loads(out_path.read_text())
+    doc["summary"]["user_profile_robust_values"] = {
+        "values": {"v2": "retired engineer", "v5": "business traveler"},
+        "basis": "as-scored per-pair cos over the 12 v2-v5 swap pairs (perpair.jsonl); "
+        "the two values that fire under every intrusion convention "
+        "(as-scored / zeroed / excluded; see intrusion_audit.json)",
+        "mean_cos": {
+            arm: float(np.mean([r["cos"][arm] for r in sel]))
+            for arm in ("arm_779ce", "arm_1738ce", "arm_iddelta")
+        },
+        "n_pairs": len(sel),
+    }
+    A._write_json_atomic(out_path, A._json_sanitize(doc))
+    print(f"[robust-values] appended summary.user_profile_robust_values to {out_path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0].replace("%", "%%"))
     ap.add_argument(
@@ -269,10 +307,20 @@ def main(argv: list[str] | None = None) -> int:
         help="max |recomputed as-scored - stored JSON| per headline/all-values/null read "
         "(expected noise: fp32 cast of the committed prediction tensors, ~1e-7)",
     )
+    ap.add_argument(
+        "--append-robust-values",
+        action="store_true",
+        help="only append the user-description intrusion-robust-values direction read "
+        "(mean cosine over the retired-engineer vs business-traveler swap pairs, the two "
+        "values that fire under every intrusion convention) to the existing --out JSON "
+        "from the committed perpair.jsonl; touches nothing else",
+    )
     args = ap.parse_args(argv)
     if getattr(args, "import_check", False):  # pragma: no cover - convention slot
         return 0
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(name)s %(message)s")
+    if args.append_robust_values:
+        return append_robust_values(args.minpair_delta.parent / "perpair.jsonl", args.out)
     t0 = time.time()
 
     # (1) CJK scan — must reproduce the audit's 357/9,840
