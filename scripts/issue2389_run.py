@@ -5759,6 +5759,21 @@ def phase_capregen_grid(cfg: RunConfig) -> int:
         cfg.num_workers,
         cfg.smoke,
     )
+    # Grid capregen is a GENERATION phase and MUST resolve both regime knobs at
+    # entry, exactly as phase_capregen_anchors does. Omitting them made this
+    # phase fingerprint as if it were a NON-generation phase (the stable CLI
+    # defaults gen_batch=16 / armed=False, per regime_fingerprint's own note),
+    # so base_fp came out 817aa4fb60d781e8 while the grid blocks, generated
+    # with shared prefill armed, carry e9aca3abf5b096c5. Every block then hit
+    # the #722 cross-regime hard refusal in _capregen_block_done. Confirmed
+    # against gates/share_prefill_frozen_grid.json (armed=true, verdict=PASS,
+    # family=grid); _share_prefill_family strips the "capregen_" prefix, so
+    # this adopts the GRID family's frozen decision, which is what the
+    # _resolve_share_prefill docstring requires of a family participant
+    # ("capregen enters last"). Requires --share-prefill auto on the CLI:
+    # _resolve_share_prefill forces armed=False for any other mode.
+    cfg = _adopt_pilot_gen_batch(cfg)  # regen at the pilot-selected B (item 3)
+    cfg = _resolve_share_prefill(cfg, "capregen_grid")  # honest base/regen fp (B9)
     rep, rep_path = _load_breach_report(cfg, "grid")
     breach = set(rep["breaching_cells"])
     if not breach:
