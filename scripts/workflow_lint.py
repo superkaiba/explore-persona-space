@@ -311,6 +311,20 @@ Behaviours:
   file passes; an allowlisted file with ZERO hits WARNs ``stale
   allowlist entry``, never FAILs — the ratchet direction, judged only
   over the scanned scope under files-mode; #2336 shrinks it per batch).
+* ``--check-artifact-supersession`` (also bundled into the no-flags
+  default run): discover committed artifact-supersession records
+  (basename-anchored ``superseded_*.json`` under ``eval_results/``,
+  index-read — JSONs under ``superseded_*`` DIRECTORIES are not
+  records), RE-RUN the consumer enumeration fresh (``git grep
+  --cached`` with tree-class pathspec excludes), and FAIL on any
+  consumer that neither consumes a replacement artifact nor carries a
+  supersession label within +/-5 lines of each refuted-artifact
+  mention (#2568). Malformed/unrecognized records and
+  ``acknowledged_pending`` consumers are non-blocking ``WARN:`` lines.
+  The audit core is ``scripts/audit_artifact_supersession.py`` (schema
+  spec in its docstring), loaded ``__file__``-relative; a core load
+  failure is itself a FAIL line, never a silent skip. Verified no-op
+  on the live tree at landing (0 records discovered).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -19741,6 +19755,75 @@ def check_shared_tmp_name(
     return errors
 
 
+# `--check-artifact-supersession` (#2568): committed artifact-supersession
+# records (basename-anchored ``superseded_*.json`` under eval_results/) are
+# audited against a FRESH consumer enumeration on every default lint run — a
+# consumer of a refuted artifact must consume a replacement artifact or carry
+# a supersession label near every mention. The audit core lives in
+# scripts/audit_artifact_supersession.py (single source of truth for the
+# schema + discovery + enumeration + label check); this check is a thin
+# loader/mapper over it.
+def check_artifact_supersession(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL when a committed supersession record's fresh consumer
+    enumeration finds a consumer that neither consumes a replacement
+    artifact nor carries a supersession label within +/-5 lines of each
+    refuted-artifact mention (#2568).
+
+    Thin wrapper over the audit core
+    ``scripts/audit_artifact_supersession.py`` — loaded ``__file__``-relative
+    via importlib (single source of truth, NO logic duplication) and run
+    against the PASSED repo root, so fixture-tree tests exercise the REAL
+    core, not the load-failure branch. A core LOAD failure (or a core
+    crash) is itself a FAIL line, never a silent skip (the
+    new-fence-silent-pass class). Schema problems and
+    ``acknowledged_pending`` consumers are non-blocking ``WARN:`` stderr
+    lines. ``repo_root`` is a unit-test override; production callers pass
+    None (``EPS_WORKFLOW_LINT_REPO_ROOT`` env override supported so
+    subprocess fixture tests can point the check at a tmp corpus). Bundled
+    into the no-flags default run. Verified no-op on the live tree at
+    landing: basename-anchored discovery returns 0 records (the 12
+    issue_1482 ``superseded_*``-DIRECTORY files do not match).
+    """
+    import importlib.util
+    import os as _os
+
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = _os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    core_path = Path(__file__).resolve().parent / "audit_artifact_supersession.py"
+    module_name = "_eps_artifact_supersession_core"
+    try:
+        spec = importlib.util.spec_from_file_location(module_name, core_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"no import spec for {core_path}")
+        core = importlib.util.module_from_spec(spec)
+        # sys.modules registration BEFORE exec: py3.12 dataclasses resolves
+        # `sys.modules.get(cls.__module__).__dict__` at decoration time and
+        # crashes on an unregistered spec-loaded module.
+        sys.modules[module_name] = core
+        try:
+            spec.loader.exec_module(core)
+        except BaseException:
+            sys.modules.pop(module_name, None)
+            raise
+    except Exception as exc:
+        # A missing/broken core must FAIL loud, never silently skip.
+        return [
+            "check-artifact-supersession: audit core failed to load from "
+            f"{core_path}: {exc!r} (a missing/broken core is a FAIL, never a silent skip)"
+        ]
+    try:
+        report = core.run_audit(root)
+    except Exception as exc:
+        # A core crash is equally a FAIL line, never a silent skip.
+        return [f"check-artifact-supersession: audit core raised: {exc!r}"]
+    for warning in report.warnings:
+        sys.stderr.write(f"WARN: check-artifact-supersession: {warning}\n")
+    return [f"check-artifact-supersession: {v}" for v in report.violations]
+
+
 # `--check-plan-version-immutability` (#2123): a persisted
 # ``tasks/**/plans/v<K>.md`` is immutable — an amendment requires a NEW
 # version file via ``task.py new-plan-version``, never an in-place edit.
@@ -20324,6 +20407,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     ),
     "check_lane_order_adjective": lambda wf: check_lane_order_adjective(),
     "check_shared_tmp_name": lambda wf: check_shared_tmp_name(),
+    "check_artifact_supersession": lambda wf: check_artifact_supersession(),
 }
 
 # Classification of every dispatch-chain check (plan §4 B2). The task-body
@@ -20477,6 +20561,30 @@ CHECK_SCOPES: dict[str, CheckScope] = {
         "global", (".claude/", "CLAUDE.md", LANE_ORDER_ROUTER_REL)
     ),
     "check_shared_tmp_name": CheckScope("path-local", ("scripts/", "src/")),
+    # #2568: record-keyed repo scan — records live under eval_results/ and a
+    # consumer can be ANY tracked file outside the excluded trees, so the
+    # surface set is drawn WIDE (the #2235 critic note: a scripts/ ADD can
+    # newly produce a red line naming a payload path). tasks/ + figures/ are
+    # deliberately absent: both are excluded from the consumer enumeration at
+    # grep time, so a payload there can never redden this check.
+    "check_artifact_supersession": CheckScope(
+        "global",
+        (
+            ".claude/",
+            "CLAUDE.md",
+            "scripts/",
+            "tests/",
+            "src/",
+            "external/",
+            "eval_results/",
+            "eps/",
+            "eval/",
+            "experiments/",
+            "docs/",
+            "configs/",
+            "raw/",
+        ),
+    ),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
@@ -21928,6 +22036,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "the immediately-preceding comment-only line. Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-artifact-supersession",
+        action="store_true",
+        help="Audit committed artifact-supersession records "
+        "(basename-anchored superseded_*.json under eval_results/, "
+        "index-read) against a FRESH consumer enumeration (git grep "
+        "--cached; tasks/, eval_results/, ood_eval_results/, figures/ "
+        "excluded at grep time): FAIL on any consumer that neither "
+        "consumes a replacement artifact nor carries a supersession "
+        "label within +/-5 lines of each refuted-artifact mention "
+        "(#2568). Malformed/unrecognized records and "
+        "acknowledged_pending consumers WARN (non-blocking). Core: "
+        "scripts/audit_artifact_supersession.py (schema spec in its "
+        "docstring), loaded __file__-relative — a load failure is "
+        "itself a FAIL line. Bundled into the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.files:
@@ -22072,6 +22196,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_unannotated_gcp_pin_guidance
         or args.check_lane_order_adjective
         or args.check_shared_tmp_name
+        or args.check_artifact_supersession
     )
 
     errors: list[str] = []
@@ -22309,6 +22434,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_lane_order_adjective())
     if args.check_shared_tmp_name or no_flags:
         errors.extend(check_shared_tmp_name())
+    if args.check_artifact_supersession or no_flags:
+        errors.extend(check_artifact_supersession())
 
     if errors:
         for err in errors:
