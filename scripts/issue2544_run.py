@@ -785,7 +785,14 @@ def phase_config(args: argparse.Namespace, out_root: Path) -> None:
     )
 
     # 2) Exemplar bank (M3: pool -> registered composition template).
-    corpus_sha16s = {C2.sha16(r["query"]) for r in rows}
+    # The not-in-corpus exclusion is CORPUS-WIDE regardless of the smoke
+    # subset: leakage protection binds against the full committed corpus, and
+    # a subset-sized exclusion set changes which LMSYS rows fill the pool
+    # quotas — the smoke pool then diverges from the production pool shape
+    # (MEASURED 2026-08-24: subset exclusion -> math spares 2/3 infeasible at
+    # {40,40,40}; full-corpus exclusion at the same quotas -> bank OK).
+    rows_excl = rows if not args.smoke else R.load_corpus(corpus_dir, C.CORPUS_SINGLE, smoke=False)
+    corpus_sha16s = {C2.sha16(r["query"]) for r in rows_excl}
     quotas = C2.EXEMPLAR_POOL_QUOTAS if not args.smoke else SMOKE_EXEMPLAR_QUOTAS
     scan_cap = C2.EXEMPLAR_SCAN_CAP if not args.smoke else SMOKE_EXEMPLAR_SCAN_CAP
     if args.smoke:
