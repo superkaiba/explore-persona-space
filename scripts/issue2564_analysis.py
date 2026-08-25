@@ -64,6 +64,7 @@ from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
     identity_bias_predict,
     knn_retrieval,
 )
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue2564 import bank2564 as BK  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
@@ -1507,10 +1508,9 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, sort_keys=True, allow_nan=True))
-    os.replace(tmp, path)
+    """Atomic JSON write via a process-unique temp (atomic_io.atomic_replace, #2336)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2, sort_keys=True, allow_nan=True))
 
 
 def _json_sanitize(obj):
@@ -1531,9 +1531,8 @@ def write_outputs(cfg: CfgPE, doc: dict, perpair: list[dict], predictions: dict)
     cfg.out_dir.mkdir(parents=True, exist_ok=True)
     _write_json_atomic(cfg.out_dir / "minpair_delta.json", _json_sanitize(doc))
     rows = [json.dumps(_json_sanitize(r), sort_keys=True) for r in perpair]
-    tmp = cfg.out_dir / "perpair.jsonl.tmp"
-    tmp.write_text("\n".join(rows) + "\n")
-    os.replace(tmp, cfg.out_dir / "perpair.jsonl")
+    with atomic_replace(cfg.out_dir / "perpair.jsonl") as tmp:
+        tmp.write_text("\n".join(rows) + "\n")
 
     cfg.pred_dir.mkdir(parents=True, exist_ok=True)
     pair_ids = predictions["pair_ids"]
@@ -1541,12 +1540,12 @@ def write_outputs(cfg: CfgPE, doc: dict, perpair: list[dict], predictions: dict)
         if name == "pair_ids":
             continue
         dest = cfg.pred_dir / f"{name}.pt"
-        tmpp = cfg.pred_dir / f"{name}.tmp.pt"
-        torch.save(
-            {"issue": ISSUE, "pair_ids": pair_ids, "layer": PRIMARY_LAYER, "tensor": tensor},
-            tmpp,
-        )
-        os.replace(tmpp, dest)
+        # atomic_replace temp ends ".tmp" -> never matches the "*.pt" upload glob (#2336)
+        with atomic_replace(dest) as tmpp:
+            torch.save(
+                {"issue": ISSUE, "pair_ids": pair_ids, "layer": PRIMARY_LAYER, "tensor": tensor},
+                tmpp,
+            )
     upload: dict = {"mode": cfg.upload}
     if cfg.upload == "hf":
         from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded

@@ -85,6 +85,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 ISSUE = 2564
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 VALUES_FILENAME = "bank2564_values.json"
@@ -711,10 +713,9 @@ def write_bank_manifest(bank: dict, out_path: Path) -> None:
         **as_metadata_dict(git_provenance(), phase="bank"),
     }
     out_path = Path(out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    tmp.replace(out_path)
+    # process-unique temp via atomic_io.atomic_replace (#2336)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
 
 
 def _repo_root() -> Path:
