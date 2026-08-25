@@ -1,5 +1,6 @@
 # code-reviewer-lean memory index
 - [Loop-var tmp interpolation evades #2336 lint](loopvar_tmp_interpolation_evades_2336_lint.md) — arms E/F exempt post-`.tmp_` interpolations; a loop-variable name is still fixed-per-unit — grep all `.tmp` writers, classify interpolants (#2552 r1 g4)
+- [Size-match resume skip == presence for npz](size_match_resume_skip_npz.md) — resume_skip size probe skips recomputed same-shape npz (byte-identical size, different content); require resume_skip=False after wipe-recompute paths (#2552 r1 g3)
 - [Embedded smoke leg in production chain](feedback_embedded_smoke_leg_production_chain.md) — a production `all` chain running its smoke leg internally defeats dispatcher-level out-root splits; smoke dial must be in the SCRIPT's resume fingerprint (#2546 r1 g2)
 - [Sibling-figure palette pair rebinding](sibling_figure_palette_pair_rebinding.md) — table each figure's color→factor binding; one palette pair bound to different factors across sibling figures = §2 violation (#2546 r1 g4)
 - [Fixed-name tmp atomic-write fan-out race](fixed_name_tmp_atomic_write_fanout_race.md) — every worker re-derives + writes the SAME artifact via `<path>.tmp`+replace → FileNotFoundError race; require process-unique temp (#2546 r1 g3)
