@@ -1,0 +1,80 @@
+{
+  "n": 200,
+  "n_answered": 197,
+  "n_max_tokens_stops": 0,
+  "n_parse_fail": 0,
+  "parse_fail_rate": 0.0,
+  "classes": {
+    "anchors|assistant": {
+      "n": 25,
+      "n_answered": 25,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "anchors|persona": {
+      "n": 25,
+      "n_answered": 25,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "confirm|assistant": {
+      "n": 25,
+      "n_answered": 24,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "confirm|coherence": {
+      "n": 25,
+      "n_answered": 24,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "confirm|persona": {
+      "n": 25,
+      "n_answered": 24,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "grid|assistant": {
+      "n": 25,
+      "n_answered": 25,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "grid|coherence": {
+      "n": 25,
+      "n_answered": 25,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "grid|persona": {
+      "n": 25,
+      "n_answered": 25,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    }
+  },
+  "vacuous_classes": [],
+  "transport": "batch",
+  "instrument_sha": "7c99b80d00d4997c",
+  "ok": true,
+  "n_items_total": 5085,
+  "item_set_sha": "db2044dfb585d241",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-25T16:11:00-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_patch_judge.py",
+      "--pilot",
+      "200",
+      "--transport",
+      "batch"
+    ],
+    "git_commit": "b64870b091b5bd32b24e8c300afa8cceeba00991",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_patch_judge.py",
+    "phase": "patch_judge_pilot"
+  }
+}

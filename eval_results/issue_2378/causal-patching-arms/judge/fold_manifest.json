@@ -1,0 +1,16 @@
+{
+  "fold_dir": "fold_20260825T231725Z_82cb808d",
+  "published_at": "2026-08-25T16:17:25-0700",
+  "n_rows": 5085,
+  "tally": {
+    "kept": 5023,
+    "dropped": 62,
+    "transport_loss": 0,
+    "by_class": {
+      "valid": 5023,
+      "api_refusal": 47,
+      "rubric_refusal": 14,
+      "parse_fail": 1
+    }
+  }
+}

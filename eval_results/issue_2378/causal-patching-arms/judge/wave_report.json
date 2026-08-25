@@ -1,0 +1,42 @@
+{
+  "fold_dir": "fold_20260825T231725Z_82cb808d",
+  "n_items": 5085,
+  "tally": {
+    "kept": 5023,
+    "dropped": 62,
+    "transport_loss": 0,
+    "by_class": {
+      "valid": 5023,
+      "api_refusal": 47,
+      "rubric_refusal": 14,
+      "parse_fail": 1
+    }
+  },
+  "wall_s": 381.24181509017944,
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "transport": "batch",
+  "skip_pilot_gate": false,
+  "instrument_sha": "7c99b80d00d4997c",
+  "raw_shards": {
+    "n_rows": 5085,
+    "shards": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/eval_results/issue_2378/causal-patching-arms/judge/fold_20260825T231725Z_82cb808d/raw/judge_rows.shard00.jsonl"
+    ]
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-25T16:17:25-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_patch_judge.py",
+      "--transport",
+      "batch"
+    ],
+    "git_commit": "b64870b091b5bd32b24e8c300afa8cceeba00991",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_patch_judge.py",
+    "phase": "patch_judge_wave"
+  }
+}
