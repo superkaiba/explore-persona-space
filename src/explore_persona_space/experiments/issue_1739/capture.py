@@ -35,6 +35,7 @@ from pathlib import Path
 
 import numpy as np
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.experiments.issue_1739.constants import (
     HIDDEN_DIM,
     MODEL_NAME,
@@ -271,19 +272,17 @@ def write_store_shard(
         for layer in range(n_layers):
             arr = np.stack([s[kind][layer] for s in summaries], axis=0).astype(np.float16)
             path = store_dir / f"{kind}_L{layer:02d}_shard{shard_idx:02d}.npy"
-            # Dot-prefixed tmp: must NOT match the loader's `{kind}_L*_shard*.npy`
-            # glob (a crash-surviving tmp would otherwise enter the shard set);
-            # ends in .npy so np.save does not append a suffix.
-            tmp = path.with_name(".tmp_" + path.name)
-            np.save(tmp, arr)
-            os.replace(tmp, path)
+            # The atomic_replace tmp ends `.tmp`, so it cannot match the loader's
+            # `{kind}_L*_shard*.npy` glob (a crash-surviving tmp would otherwise
+            # enter the shard set); np.save goes through an open handle because
+            # it APPENDS `.npy` to path-typed names lacking it.
+            with atomic_replace(path) as tmp, tmp.open("wb") as fh:
+                np.save(fh, arr)
             written.append(path)
     index_path = store_dir / f"row_index_shard{shard_idx:02d}.jsonl"
-    tmp = index_path.with_name(index_path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(index_path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for row in meta_rows:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-    os.replace(tmp, index_path)
     written.append(index_path)
     return written
 
@@ -613,9 +612,8 @@ def capture_rollout_files(
         meta_rows = [dict(meta, **pos) for (_, meta), pos in zip(shard, positions, strict=True)]
         write_store_shard(store_dir, shard_idx, summaries, meta_rows)
         meta_path = _shard_meta_path(store_dir, shard_idx)
-        tmp = meta_path.with_name(meta_path.name + ".tmp")
-        tmp.write_text(json.dumps({"fingerprint": fingerprint, "n_rows": len(shard)}))
-        os.replace(tmp, meta_path)
+        with atomic_replace(meta_path) as tmp:
+            tmp.write_text(json.dumps({"fingerprint": fingerprint, "n_rows": len(shard)}))
         n_captured += len(shard)
         logger.info(
             "[capture] shard %d/%d rows=%d elapsed=%.0fs",
@@ -639,9 +637,8 @@ def capture_rollout_files(
         **completeness,
     }
     manifest_path = store_dir / "_capture_manifest.json"
-    tmp = manifest_path.with_name(manifest_path.name + ".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2))
-    os.replace(tmp, manifest_path)
+    with atomic_replace(manifest_path) as tmp:
+        tmp.write_text(json.dumps(manifest, indent=2))
     return manifest
 
 
@@ -735,11 +732,10 @@ def repair_missing_rows(
         meta_rows = [dict(meta, **pos) for (_, meta), pos in zip(shard, positions, strict=True)]
         write_store_shard(store_dir, shard_idx, summaries, meta_rows)
         meta_path = _shard_meta_path(store_dir, shard_idx)
-        tmp = meta_path.with_name(meta_path.name + ".tmp")
-        tmp.write_text(
-            json.dumps({"fingerprint": fingerprint, "n_rows": len(shard), "repair": True})
-        )
-        os.replace(tmp, meta_path)
+        with atomic_replace(meta_path) as tmp:
+            tmp.write_text(
+                json.dumps({"fingerprint": fingerprint, "n_rows": len(shard), "repair": True})
+            )
         appended.append(shard_idx)
         n_captured += len(shard)
         logger.info(
@@ -777,9 +773,8 @@ def repair_missing_rows(
             }
         )
         manifest.setdefault("repairs", []).append(repair_record)
-        tmp = manifest_path.with_name(manifest_path.name + ".tmp")
-        tmp.write_text(json.dumps(manifest, indent=2))
-        os.replace(tmp, manifest_path)
+        with atomic_replace(manifest_path) as tmp:
+            tmp.write_text(json.dumps(manifest, indent=2))
     return {**completeness, "repair": repair_record, "n_over_budget": n_over_budget}
 
 

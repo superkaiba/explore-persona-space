@@ -96,6 +96,7 @@ def _ensure_repo_root_on_syspath() -> None:
 
 _ensure_repo_root_on_syspath()
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -606,9 +607,7 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
                     f"(zero/NaN norm) at layer(s) {bad}"
                 )
         out_dir = stage / behavior / f"r_b_{label}"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        tmp = out_dir / f"{behavior}.tmp.npz"  # np.savez appends .npz to non-.npz names
-        with tmp.open("wb") as fh:
+        with atomic_replace(out_dir / f"{behavior}.npz") as tmp, tmp.open("wb") as fh:
             np.savez(
                 fh,
                 rb=np.asarray(rb, dtype=np.float16),
@@ -630,7 +629,6 @@ def phase_directions(args, behavior: str, stage: Path) -> None:
                     }
                 ),
             )
-        os.replace(tmp, out_dir / f"{behavior}.npz")
         logger.info("[%s] wrote %s", behavior, out_dir / f"{behavior}.npz")
 
 
@@ -819,9 +817,7 @@ def phase_whitening(args, behavior: str, stage: Path) -> None:
         wh = fits.fit_whitening(u_x, device=args.whiten_device, seed=int(args.whiten_seed))
         del u_x
         out = whitening_path(args, variant)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        tmp = out.with_name(out.name.replace(".npz", ".tmp.npz"))
-        with tmp.open("wb") as fh:
+        with atomic_replace(out) as tmp, tmp.open("wb") as fh:
             np.savez(
                 fh,
                 # fp32 matches the persisted-map precedent (_save_map); the
@@ -847,7 +843,6 @@ def phase_whitening(args, behavior: str, stage: Path) -> None:
                     }
                 ),
             )
-        os.replace(tmp, out)
         logger.info(
             "[whitening] %s: wrote %s (gammas=%s) in %.1f min",
             variant,
@@ -1116,11 +1111,9 @@ def phase_project(args, behavior: str, stage: Path) -> None:
     if n_members != expect:
         raise RuntimeError(f"[{behavior}] saw {n_members} summary members, expected {expect}")
     out = stage / behavior / cube_dir_name(args)
-    out.mkdir(parents=True, exist_ok=True)
     payload = {f"{read}__{regime}": cube[read][regime] for read in reads for regime in regimes}
     n_distinct_prefix = len(set(prefix_hashes.values()))
-    tmp = out / "cube.tmp.npz"
-    with tmp.open("wb") as fh:
+    with atomic_replace(out / "cube.npz") as tmp, tmp.open("wb") as fh:
         np.savez(
             fh,
             **payload,
@@ -1149,7 +1142,6 @@ def phase_project(args, behavior: str, stage: Path) -> None:
                 }
             ),
         )
-    os.replace(tmp, out / "cube.npz")
     logger.info(
         "[%s] cube written (%d rows, %d distinct prefix states @L%d)",
         behavior,

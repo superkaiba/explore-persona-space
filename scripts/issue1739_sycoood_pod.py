@@ -48,7 +48,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -70,6 +69,8 @@ _REPO_ROOT = _ensure_repo_root_on_syspath()
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # credentials + thread caps BEFORE any torch/vllm import
+
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 
 logger = logging.getLogger("issue1739_sycoood_pod")
 
@@ -103,19 +104,14 @@ def _import_check() -> int:
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2))
 
 
 def _write_jsonl_atomic(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for row in rows:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
 
 
 def _read_jsonl(path: Path) -> list[dict]:

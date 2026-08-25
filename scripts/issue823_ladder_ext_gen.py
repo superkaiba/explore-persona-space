@@ -114,6 +114,7 @@ from collections import Counter  # noqa: E402
 
 from huggingface_hub import hf_hub_download  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.llm.api_dispatch import DispatchItem, DispatchResult  # noqa: E402
 from explore_persona_space.orchestrate.hub import (  # noqa: E402
     _upload_folder_filtered,
@@ -1327,9 +1328,8 @@ def shard_large_jsonl_for_upload(files: list[pathlib.Path]) -> list[pathlib.Path
             if not shard_lines:
                 return
             sp = f.with_name(f"{f.stem}.shard{len(shards):02d}.jsonl")
-            tmp = sp.with_name(sp.name + ".tmp")
-            tmp.write_text("".join(shard_lines), encoding="utf-8")
-            os.replace(tmp, sp)
+            with atomic_replace(sp) as tmp:
+                tmp.write_text("".join(shard_lines), encoding="utf-8")
             shards.append(sp)
             line_counts.append(len(shard_lines))
             shard_lines, shard_bytes = [], 0
