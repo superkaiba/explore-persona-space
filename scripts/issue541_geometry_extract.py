@@ -50,6 +50,8 @@ logger = bootstrap(log_name="i541_geometry_extract")
 
 import numpy as np  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -293,9 +295,8 @@ def _extract_activations(
             arrays = {str(li): acts[li].numpy().astype(np.float32) for li in LAYERS}
             for li, arr in arrays.items():
                 assert arr.shape == (len(probes), model.config.hidden_size), (li, arr.shape)
-            tmp = acts_dir / f"{name}.npz.tmp.npz"
-            np.savez(tmp, probe_sha=np.array(probe_sha), **arrays)
-            tmp.rename(acts_dir / f"{name}.npz")
+            with atomic_replace(acts_dir / f"{name}.npz") as tmp, tmp.open("wb") as fh:
+                np.savez(fh, probe_sha=np.array(probe_sha), **arrays)
             logger.info(
                 "extracted %s (%d/%d) in %.1fs", name, i + 1, len(pending), time.time() - t0
             )

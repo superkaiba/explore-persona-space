@@ -4,6 +4,7 @@ title: Fit context→answer map on a mega-diverse weird-behavior corpus, replica
 kind: experiment
 tags:
 - trigger-dense
+- keep-running
 created_at: '2026-08-23T17:17:32Z'
 has_clean_result: false
 origin_prompt: I want to try to fit a mapping on a very very large and VERY VERY diverse

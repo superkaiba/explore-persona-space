@@ -34,6 +34,10 @@
 
 - [Kwarg-threading: in-script --smoke fakes + sidecar reachability](feedback_kwarg_threading_inscript_smoke_fakes_and_sidecar_reachability.md) — RUN the shared script's own --smoke; trace pin persistence before crediting mixed-revision Critical (#1901 r2)
 
+- [Kwarg-threading: in-script --smoke fakes + sidecar reachability](feedback_kwarg_threading_inscript_smoke_fakes_and_sidecar_reachability.md) — RUN the shared script's own --smoke; trace pin persistence before crediting mixed-revision Critical (#1901 r2)
+
+- [AST-scanner name-binding FP channel + kill-clause trigger-domain paraphrase](feedback_ast_scanner_name_binding_and_kill_clause_trigger_domain.md) — construct the same-name collision; execution-test tightenings for measured-identity; quote STOP clauses verbatim (#2537 r1)
+
 - [AST-scanner name-binding FP channel + kill-clause trigger-domain paraphrase](feedback_ast_scanner_name_binding_and_kill_clause_trigger_domain.md) — construct the same-name collision; execution-test tightenings for measured-identity; quote STOP clauses verbatim (#2537 r1)
 
 - [Concern closure graded against the LEDGER row, not the fix-sentence](feedback_concern_closure_graded_against_ledger_row_not_fix_sentence.md) — multi-part concern closed on the paraphrased half; diff round-added invariant prose vs the adjacent command (#2263 r3)
@@ -71,6 +75,7 @@
 - [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg new AND prior literals before believing ✓
 - [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes yourself (#897)
 - [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection + producer-drift probes; execute the Mechanizable claim (#2329 r2, #2336 r3)
+- [Degenerate-token validation + files-mode scope gaps](feedback_claude_degenerate_token_validation_and_files_mode_scope.md) — `""` in containment = universal pass; diff CHECK_SCOPES surfaces vs the check's own enumeration; adopt-don't-duplicate forwarded Codex concerns (#2568 r1)
 - [Self-referential replay gate needs independent anchor](feedback_self_referential_replay_gate_needs_independent_anchor.md) — prediction inputs read from the artifact under validation ⇒ agreement entailed; probe falsifiability by input mutation (#2514 r2)
 
 ## Codex code-review overreach (PASS-leaning calibration)

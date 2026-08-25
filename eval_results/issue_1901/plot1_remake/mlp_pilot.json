@@ -1,0 +1,17 @@
+{
+  "layer": 19,
+  "mlp_wall_s": 37.1,
+  "projected_mlp_total_s": 1039.9,
+  "fence_s_2x": 2079.8,
+  "meta": {
+    "git_commit": "9fc95e06e562d092fce48311026a268efb5166fc",
+    "git_dirty": false,
+    "phase": "pilot",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue1901_plot1_remake.py",
+    "script": "issue1901_plot1_remake",
+    "issue": 1901,
+    "round": "plot1-remake",
+    "timestamp_utc": "2026-08-24T23:19:39Z"
+  }
+}

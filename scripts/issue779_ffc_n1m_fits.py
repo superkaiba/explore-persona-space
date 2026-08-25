@@ -81,6 +81,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # #847: thread caps land BEFORE numpy/torch import on the shared VM.
@@ -217,10 +218,8 @@ def _write_stream_ckpt(
     the ``cx.shape[0] != n_rows`` guard and the stale checkpoint is refused."""
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     npz_path, cur_path = _stream_ckpt_paths(ckpt_dir, layer)
-    tmp_npz = npz_path.parent / (npz_path.name + ".tmp")
-    with open(tmp_npz, "wb") as f:
+    with atomic_replace(npz_path) as tmp_npz, open(tmp_npz, "wb") as f:
         np.savez(f, cx=cx, vx=vx, ci=ci)
-    os.replace(tmp_npz, npz_path)
     meta = {
         "fingerprint": fingerprint,
         "layer": int(layer),
@@ -230,9 +229,8 @@ def _write_stream_ckpt(
         "n_rows": int(cx.shape[0]),
         "complete": bool(complete),
     }
-    tmp_cur = cur_path.parent / (cur_path.name + ".tmp")
-    tmp_cur.write_text(json.dumps(meta))
-    os.replace(tmp_cur, cur_path)
+    with atomic_replace(cur_path) as tmp_cur:
+        tmp_cur.write_text(json.dumps(meta))
 
 
 def _load_stream_ckpt(ckpt_dir: Path, layer: int, fingerprint: str, hf_prefix: str):
@@ -460,9 +458,8 @@ def _ml_paths(mm_dir: Path, layers: list[int]) -> dict:
 
 def _ml_write_cursor(mm_dir: Path, meta: dict) -> None:
     cur = mm_dir / _ML_CURSOR_NAME
-    tmp = cur.parent / (cur.name + ".tmp")
-    tmp.write_text(json.dumps(meta))
-    os.replace(tmp, cur)
+    with atomic_replace(cur) as tmp:
+        tmp.write_text(json.dumps(meta))
 
 
 def _ml_load_cursor(mm_dir: Path) -> dict | None:
@@ -520,17 +517,16 @@ def _truncate_npy_rows(path: Path, n_rows: int) -> None:
     else:  # padded header length changed — chunked copy (rare; logged, not silent)
         logger.info("[n1m-ml] truncate via chunked copy (header length changed): %s", path)
         src = np.load(path, mmap_mode="r")
-        tmp = path.parent / (path.name + ".trunc.tmp")
-        dst = np.lib.format.open_memmap(
-            tmp, mode="w+", dtype=src.dtype, shape=(int(n_rows),) + src.shape[1:]
-        )
-        step = 50_000
-        for s in range(0, int(n_rows), step):
-            e = min(int(n_rows), s + step)
-            dst[s:e] = src[s:e]
-        dst.flush()
-        del dst, src
-        os.replace(tmp, path)
+        with atomic_replace(path) as tmp:
+            dst = np.lib.format.open_memmap(
+                tmp, mode="w+", dtype=src.dtype, shape=(int(n_rows),) + src.shape[1:]
+            )
+            step = 50_000
+            for s in range(0, int(n_rows), step):
+                e = min(int(n_rows), s + step)
+                dst[s:e] = src[s:e]
+            dst.flush()
+            del dst, src
 
 
 def _iter_chunks_prefetched(names, start: int, fetch, k: int):
@@ -922,12 +918,10 @@ def apply_map(payload: dict, X_eval: np.ndarray, dev: torch.device) -> np.ndarra
 def _persist_weights(weights_dir: Path, layer: int, name: str, payload: dict) -> Path:
     """Atomically save one (layer, fitter) weight payload (fp32 tensors)."""
     dest = weights_dir / f"L{int(layer)}" / f"{name}.pt"
-    dest.parent.mkdir(parents=True, exist_ok=True)
     payload = dict(payload)
     payload.update({"layer": int(layer), "fitter": name})
-    tmp = dest.parent / (dest.name + ".tmp")
-    torch.save(payload, tmp)
-    os.replace(tmp, dest)
+    with atomic_replace(dest) as tmp:
+        torch.save(payload, tmp)
     logger.info("[persist] wrote %s (%.0f MB)", dest, dest.stat().st_size / 1e6)
     return dest
 

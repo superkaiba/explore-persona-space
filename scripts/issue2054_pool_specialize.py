@@ -64,6 +64,7 @@ sidecar) checkpoint-per-cell with fingerprinted resume; ``pooled_{arm}.json``;
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # thread caps + HF/creds BEFORE torch import (code-style.md)
@@ -71,7 +72,6 @@ load_dotenv()  # thread caps + HF/creds BEFORE torch import (code-style.md)
 import argparse
 import hashlib
 import json
-import os
 import resource
 import sys
 import time
@@ -691,16 +691,14 @@ def run_cell(
     y_s = y_all[sidx]
     s2 = ((y_s - y_s.mean(axis=0)) ** 2).sum(axis=1)
     conv_scored = np.asarray([j["order"][i] for i in sidx])
-    rows_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_npz = rows_path.with_name(rows_path.stem + ".tmp.npz")  # np.savez suffix trap
-    np.savez(
-        tmp_npz,
-        conv_id=conv_scored,
-        e2=np.stack([e2[name][sidx] for name in names], axis=1),
-        s2=s2,
-        model_names=np.asarray(names),
-    )
-    os.replace(tmp_npz, rows_path)
+    with atomic_replace(rows_path) as tmp_npz, tmp_npz.open("wb") as fh:
+        np.savez(
+            fh,
+            conv_id=conv_scored,
+            e2=np.stack([e2[name][sidx] for name in names], axis=1),
+            s2=s2,
+            model_names=np.asarray(names),
+        )
 
     mean_r2 = {
         name: float(np.mean([fr["metrics"][name]["r2"] for fr in fold_records])) for name in names
@@ -743,10 +741,8 @@ def run_cell(
         "per_fold": fold_records,
         "pooled": pooled_summary,
     }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _log(
         f"[poolspec] unit {cell.key}__{arm} CHECKPOINTED -> {out_path} "
         f"(wall={time.time() - t_unit:.0f}s)"
@@ -880,9 +876,8 @@ def aggregate(
         "arms": per_arm,
     }
     out_path = out_root / "aggregate.json"
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _log(f"[poolspec] aggregate -> {out_path}")
     return True
 
@@ -992,10 +987,8 @@ def main() -> int:
             "n_join_per_cell": acc["joins"][arm],
         }
         pooled_path = out_root / f"pooled_{arm}.json"
-        pooled_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = pooled_path.with_name(pooled_path.name + ".tmp")
-        tmp.write_text(json.dumps(pooled_payload, indent=1), encoding="utf-8")
-        os.replace(tmp, pooled_path)
+        with atomic_replace(pooled_path) as tmp:
+            tmp.write_text(json.dumps(pooled_payload, indent=1), encoding="utf-8")
 
         fp = _fingerprint(args, fold_map, arm, all_keys, ceilings)
         shard_cells = [c for i, c in enumerate(cells) if i % args.num_shards == args.shard]

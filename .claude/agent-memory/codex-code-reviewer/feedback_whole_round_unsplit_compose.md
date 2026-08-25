@@ -71,7 +71,8 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    costume).
 
 7. **Brief's stale-plan premise can be FALSE (#823 ext-ladder r1,
-   2026-08-23):** a whole-round brief may order plan INLINING "because the
+   2026-08-23; again #2564 r1, 2026-08-24 — worktree copy byte-identical
+   to canonical v6):** a whole-round brief may order plan INLINING "because the
    worktree tasks/ tree is frozen at base" while the compose-time identity
    diff shows the worktree copy IDENTICAL to canonical (the plan version
    predated the branch cut). Follow the inline order (also the race-free
@@ -80,6 +81,19 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    boilerplate over an identical copy (a falsifiable claim Codex can check
    in-sandbox costs credibility) — and flag the premise divergence in the
    return block.
+
+8. **Vendored-pin fidelity tier (#2552 r1, 2026-08-24):** when the round
+   VENDORS upstream files under a declared git pin reachable in the
+   worktree (a VENDORED_FROM.txt naming source paths + the only claimed
+   modification), the read strategy adds a tier between full-read and
+   digest-only: delta the vendored copy against `git show <pin>:<orig>`
+   filtered by the declared waiver token (VENDORED_FROM.txt itself carried
+   the exact command) — empty residue = only declared insertions; any
+   residue = undeclared modification reviewed in FULL (a code change hidden
+   behind a "comment-only" claim is substantive). Never line-review
+   unmodified upstream as round-authored; the driver→vendored-module SEAM
+   stays fully in scope. Verify pin reachability (`git cat-file -t <pin>`)
+   at compose time before prescribing the recipe.
 
 **Why:** the whole-round view is the ONLY reviewer seeing commit
 interactions; a mis-based diff (origin/main) or a leaked split-token

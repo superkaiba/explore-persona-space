@@ -60,7 +60,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -73,6 +72,7 @@ from issue2224_common import (
     sha256_file,
     stable_seed,
 )
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # BEFORE numpy/torch imports: shared-VM thread caps + HF token (#847)
@@ -339,15 +339,14 @@ def phase_stage(args) -> int:
                 for layer in layers:
                     arrays[f"{kind}__L{layer}"] = tens[:, layer, :].numpy()
             sample_ids = np.array([str(s) for s in payload["sample_ids"]])
-            part.parent.mkdir(parents=True, exist_ok=True)
-            tmp = part.with_name(f"{part.stem}.tmp.npz")  # np.savez appends .npz otherwise
-            np.savez(
-                tmp,
-                sample_ids=sample_ids,
-                regime=np.array(json.dumps(regime)),
-                **arrays,
-            )
-            os.replace(tmp, part)
+            # Handle-form np.savez (appends .npz to path-typed names otherwise).
+            with atomic_replace(part) as tmp, tmp.open("wb") as fh:
+                np.savez(
+                    fh,
+                    sample_ids=sample_ids,
+                    regime=np.array(json.dumps(regime)),
+                    **arrays,
+                )
             local_pt.unlink()  # stream-reduce: never accumulate the 40 GB shard set
             print(
                 f"[stage] unit {i + 1}/{len(shard_rows)} {corpus}/{row['file']} "
@@ -446,18 +445,16 @@ def _save_map_npz(path: Path, fits: dict[int, dict], layers: list[int], meta: di
     y_mu = np.stack([fits[layer]["b0"][None, :] for layer in layers])  # (Ly, 1, T)
     x_mu = np.zeros((len(layers), 1, d))
     x_sd = np.ones((len(layers), 1, d))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f"{path.stem}.tmp.npz")
-    np.savez(
-        tmp,
-        w=w,
-        x_mu=x_mu,
-        x_sd=x_sd,
-        y_mu=y_mu,
-        layers=np.array(layers, dtype=np.int64),
-        meta=np.array(json.dumps(meta)),
-    )
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            w=w,
+            x_mu=x_mu,
+            x_sd=x_sd,
+            y_mu=y_mu,
+            layers=np.array(layers, dtype=np.int64),
+            meta=np.array(json.dumps(meta)),
+        )
 
 
 def phase_refit(args) -> int:
@@ -632,19 +629,17 @@ def phase_refit(args) -> int:
                     layer_out["traits"][trait] = tr_out
                     # Per-sample derived scores (durable, regen-cheap): npz.
                     sc_path = out_root / "refit" / f"{corpus}__{arm}__L{layer}__{trait}_scores.npz"
-                    sc_path.parent.mkdir(parents=True, exist_ok=True)
-                    tmp = sc_path.with_name(f"{sc_path.stem}.tmp.npz")
-                    np.savez(
-                        tmp,
-                        sample_ids=np.array(ids),
-                        exact=exact.astype(np.float32),
-                        refit_score=refit_score.astype(np.float32),
-                        frozen_score=frozen.astype(np.float32),
-                        identity_score=ident_score.astype(np.float32),
-                        standin_refit=standin_refit.astype(np.float32),
-                        standin_nat=standin_nat.astype(np.float32),
-                    )
-                    os.replace(tmp, sc_path)
+                    with atomic_replace(sc_path) as tmp, tmp.open("wb") as fh:
+                        np.savez(
+                            fh,
+                            sample_ids=np.array(ids),
+                            exact=exact.astype(np.float32),
+                            refit_score=refit_score.astype(np.float32),
+                            frozen_score=frozen.astype(np.float32),
+                            identity_score=ident_score.astype(np.float32),
+                            standin_refit=standin_refit.astype(np.float32),
+                            standin_nat=standin_nat.astype(np.float32),
+                        )
                 arm_out["layers"][str(layer)] = layer_out
                 # Final deployable map on ALL rows (the E1 artifact).
                 final_fits[layer] = dof_capped_ridge_fit_all(

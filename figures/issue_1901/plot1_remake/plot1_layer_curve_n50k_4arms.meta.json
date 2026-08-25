@@ -1,0 +1,1694 @@
+{
+  "commit": "0d3807b8+dirty",
+  "render_id": "a0e761ba6ef440dc",
+  "git_commit": "0d3807b804aa3c2b68d6d84867d09f1e8f875753",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2552/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_plot1_remake.py",
+  "created": "2026-08-25T01:09:01Z",
+  "figsize": [
+    9.0,
+    3.4
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.4860100922962466,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5062249090282465,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5420416717755965,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5518067991576502,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5608658439214644,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5775758683148763,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.591457109687101,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5860340493603952,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6051801698341942,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5787097717787466,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.606550125112088,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6213143991641994,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6411411727808706,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6603357633358693,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6845244357516254,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7016476357976816,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7126165772556918,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7138900514633824,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7229856912473647,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7599992543132661,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7504063458886658,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7365986743624688,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7204283151352113,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7041308480555531,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7059647228119953,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7056059652979185,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6893896244300903,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6959585351320245,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.4941136796032478,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5255230636136343,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5595376892181267,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5601349229590279,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.58009102217835,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.5946724909481519,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.613719614122975,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6090300145253054,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6282571711269147,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6086160629184019,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6341826869038536,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6524456810723811,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6673873840396938,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.6852564591549579,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.708269154276397,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7225248435642636,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7339852217388392,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7354521163566443,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7400221899773332,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.776906684505257,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7665824384505131,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7562377778014581,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7423426009259998,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7279277852307859,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7280152595852893,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7281026514920259,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.7146767196632398,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.725573992355032,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.31416542100947664,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.3254476066952565,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.286734027878744,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.2667721100071283,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.3695605528506052,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.6300224626971953,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.5600415174231759,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.4128467059740246,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.4994480545767226,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.5696545929518191,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.5299453711953448,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.5846793298635842,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.48474706764733666,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.530135615276675,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.6139408821868269,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.5671434951531524,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.6741654838636677,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.7435530635267389,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.8842336363499306,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$ (test, n=1,000)": -0.8795987011227666,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$ (test, n=1,000)": -1.2689665186738575,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$ (test, n=1,000)": -1.255118599713632,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$ (test, n=1,000)": -1.708608802879962,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$ (test, n=1,000)": -1.8763707754608818,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$ (test, n=1,000)": -1.8320067068580173,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$ (test, n=1,000)": -2.0462108985916188,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$ (test, n=1,000)": -2.543764623679317,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$ (test, n=1,000)": -2.3486566786076595,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.18047693651655794,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.1876613644193127,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.2142006171060642,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.18434669663751957,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.21443906334282292,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.2130162050586485,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.2410859490697943,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.23573480768260324,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.27520324428179244,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.30271565596797756,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.32179740189384054,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.31453626623610753,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.3190423633196029,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.32947098579687617,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.3260238556141263,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.3291582323186101,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.3251505049702407,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.3216414242656307,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.3437831032428512,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.4145990975930267,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.41464672739784825,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.42115815486103514,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.4438672595227092,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.46464921773374956,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.4622920284201648,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.4347543927627022,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.4247413112737656,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$ (test, n=1,000)": 0.465770044531698,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "acc@1 (whitened cosine + CSLS)": 0.853,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "acc@1 (whitened cosine + CSLS)": 0.875,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "acc@1 (whitened cosine + CSLS)": 0.86,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "acc@1 (whitened cosine + CSLS)": 0.846,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "acc@1 (whitened cosine + CSLS)": 0.862,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "acc@1 (whitened cosine + CSLS)": 0.866,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "acc@1 (whitened cosine + CSLS)": 0.864,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "acc@1 (whitened cosine + CSLS)": 0.842,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "acc@1 (whitened cosine + CSLS)": 0.844,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "acc@1 (whitened cosine + CSLS)": 0.834,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "acc@1 (whitened cosine + CSLS)": 0.846,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "acc@1 (whitened cosine + CSLS)": 0.851,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "acc@1 (whitened cosine + CSLS)": 0.858,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "acc@1 (whitened cosine + CSLS)": 0.88,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "acc@1 (whitened cosine + CSLS)": 0.875,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "acc@1 (whitened cosine + CSLS)": 0.883,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "acc@1 (whitened cosine + CSLS)": 0.883,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "acc@1 (whitened cosine + CSLS)": 0.88,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "acc@1 (whitened cosine + CSLS)": 0.885,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "acc@1 (whitened cosine + CSLS)": 0.898,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "acc@1 (whitened cosine + CSLS)": 0.892,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "acc@1 (whitened cosine + CSLS)": 0.892,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "acc@1 (whitened cosine + CSLS)": 0.898,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "acc@1 (whitened cosine + CSLS)": 0.891,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "acc@1 (whitened cosine + CSLS)": 0.886,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "acc@1 (whitened cosine + CSLS)": 0.883,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "acc@1 (whitened cosine + CSLS)": 0.881,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "acc@1 (whitened cosine + CSLS)": 0.88,
+      "series": "linear map (ridge)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "acc@1 (whitened cosine + CSLS)": 0.762,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "acc@1 (whitened cosine + CSLS)": 0.799,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "acc@1 (whitened cosine + CSLS)": 0.793,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "acc@1 (whitened cosine + CSLS)": 0.799,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "acc@1 (whitened cosine + CSLS)": 0.835,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "acc@1 (whitened cosine + CSLS)": 0.841,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "acc@1 (whitened cosine + CSLS)": 0.833,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "acc@1 (whitened cosine + CSLS)": 0.804,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "acc@1 (whitened cosine + CSLS)": 0.809,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "acc@1 (whitened cosine + CSLS)": 0.819,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "acc@1 (whitened cosine + CSLS)": 0.825,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "acc@1 (whitened cosine + CSLS)": 0.844,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "acc@1 (whitened cosine + CSLS)": 0.851,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "acc@1 (whitened cosine + CSLS)": 0.87,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "acc@1 (whitened cosine + CSLS)": 0.873,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "acc@1 (whitened cosine + CSLS)": 0.877,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "acc@1 (whitened cosine + CSLS)": 0.879,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "acc@1 (whitened cosine + CSLS)": 0.868,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "acc@1 (whitened cosine + CSLS)": 0.877,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "acc@1 (whitened cosine + CSLS)": 0.893,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "acc@1 (whitened cosine + CSLS)": 0.887,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "acc@1 (whitened cosine + CSLS)": 0.884,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "acc@1 (whitened cosine + CSLS)": 0.886,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "acc@1 (whitened cosine + CSLS)": 0.879,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "acc@1 (whitened cosine + CSLS)": 0.876,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "acc@1 (whitened cosine + CSLS)": 0.871,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "acc@1 (whitened cosine + CSLS)": 0.866,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "acc@1 (whitened cosine + CSLS)": 0.862,
+      "series": "nonlinear map (MLP)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "acc@1 (whitened cosine + CSLS)": 0.333,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "acc@1 (whitened cosine + CSLS)": 0.385,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "acc@1 (whitened cosine + CSLS)": 0.364,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "acc@1 (whitened cosine + CSLS)": 0.339,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "acc@1 (whitened cosine + CSLS)": 0.348,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "acc@1 (whitened cosine + CSLS)": 0.291,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "acc@1 (whitened cosine + CSLS)": 0.204,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "acc@1 (whitened cosine + CSLS)": 0.176,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "acc@1 (whitened cosine + CSLS)": 0.157,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "acc@1 (whitened cosine + CSLS)": 0.204,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "acc@1 (whitened cosine + CSLS)": 0.18,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "acc@1 (whitened cosine + CSLS)": 0.176,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "acc@1 (whitened cosine + CSLS)": 0.192,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "acc@1 (whitened cosine + CSLS)": 0.281,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "acc@1 (whitened cosine + CSLS)": 0.345,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "acc@1 (whitened cosine + CSLS)": 0.325,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "acc@1 (whitened cosine + CSLS)": 0.332,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "acc@1 (whitened cosine + CSLS)": 0.337,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "acc@1 (whitened cosine + CSLS)": 0.422,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "acc@1 (whitened cosine + CSLS)": 0.597,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "acc@1 (whitened cosine + CSLS)": 0.582,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "acc@1 (whitened cosine + CSLS)": 0.619,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "acc@1 (whitened cosine + CSLS)": 0.634,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "acc@1 (whitened cosine + CSLS)": 0.631,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "acc@1 (whitened cosine + CSLS)": 0.618,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "acc@1 (whitened cosine + CSLS)": 0.616,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "acc@1 (whitened cosine + CSLS)": 0.648,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "acc@1 (whitened cosine + CSLS)": 0.665,
+      "series": "copy context vector + trained bias",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "acc@1 (whitened cosine + CSLS)": 0.819,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "acc@1 (whitened cosine + CSLS)": 0.854,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "acc@1 (whitened cosine + CSLS)": 0.772,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "acc@1 (whitened cosine + CSLS)": 0.746,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "acc@1 (whitened cosine + CSLS)": 0.688,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "acc@1 (whitened cosine + CSLS)": 0.705,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "acc@1 (whitened cosine + CSLS)": 0.682,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "acc@1 (whitened cosine + CSLS)": 0.605,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "acc@1 (whitened cosine + CSLS)": 0.569,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "acc@1 (whitened cosine + CSLS)": 0.494,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "acc@1 (whitened cosine + CSLS)": 0.477,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "acc@1 (whitened cosine + CSLS)": 0.478,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "acc@1 (whitened cosine + CSLS)": 0.529,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "acc@1 (whitened cosine + CSLS)": 0.531,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "acc@1 (whitened cosine + CSLS)": 0.513,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "acc@1 (whitened cosine + CSLS)": 0.564,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "acc@1 (whitened cosine + CSLS)": 0.581,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "acc@1 (whitened cosine + CSLS)": 0.589,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "acc@1 (whitened cosine + CSLS)": 0.634,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "acc@1 (whitened cosine + CSLS)": 0.642,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "acc@1 (whitened cosine + CSLS)": 0.618,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "acc@1 (whitened cosine + CSLS)": 0.618,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "acc@1 (whitened cosine + CSLS)": 0.588,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "acc@1 (whitened cosine + CSLS)": 0.545,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "acc@1 (whitened cosine + CSLS)": 0.516,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "acc@1 (whitened cosine + CSLS)": 0.524,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "acc@1 (whitened cosine + CSLS)": 0.545,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "acc@1 (whitened cosine + CSLS)": 0.53,
+      "series": "boundary token",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 0.0,
+      "acc@1 (whitened cosine + CSLS)": 0.001,
+      "series": "Chance (1/1000)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 1.0,
+      "acc@1 (whitened cosine + CSLS)": 0.001,
+      "series": "Chance (1/1000)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 226,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Layer",
+        "ylabel": "Held-out $R^2$ (test, n=1,000)",
+        "legend_labels": [
+          "linear map (ridge)",
+          "nonlinear map (MLP)",
+          "copy context vector + trained bias",
+          "boundary token"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "Layer",
+        "ylabel": "acc@1 (whitened cosine + CSLS)",
+        "legend_labels": [
+          "linear map (ridge)",
+          "nonlinear map (MLP)",
+          "copy context vector + trained bias",
+          "boundary token",
+          "Chance (1/1000)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "linear map (ridge)",
+      "nonlinear map (MLP)",
+      "copy context vector + trained bias",
+      "boundary token",
+      "Chance (1/1000)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

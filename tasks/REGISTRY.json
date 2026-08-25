@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2556,
+  "highest_id": 2570,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10252,8 +10252,8 @@
     "2327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2327",
-      "status": "running",
+      "path": "tasks/blocked/2327",
+      "status": "blocked",
       "title": "Step 5a spec-freshness sync copies a .claude doc without its workflow_lint.py grandfather cap, producing a deterministic false-red gate"
     },
     "2328": {
@@ -10360,8 +10360,8 @@
     "2340": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2340",
-      "status": "planning",
+      "path": "tasks/reviewing/2340",
+      "status": "reviewing",
       "title": "verify_task_body: footer check for SHA-pinned GitHub links on named code/artifacts"
     },
     "2341": {
@@ -10374,8 +10374,8 @@
     "2342": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2342",
-      "status": "proposed",
+      "path": "tasks/running/2342",
+      "status": "running",
       "title": "workflow.yaml markers registry: reconcile marker kinds mismatch with /issue review-loop practice"
     },
     "2343": {
@@ -10424,8 +10424,8 @@
     "2349": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2349",
-      "status": "proposed",
+      "path": "tasks/reviewing/2349",
+      "status": "reviewing",
       "title": "plan-compute-sizing.md: a 1-unit pilot is not a sizing basis when the phase's own design admits unequal unit costs (1.5x grid under-projection, #2329)"
     },
     "235": {
@@ -10641,11 +10641,11 @@
     },
     "2378": {
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2378",
-      "status": "running",
-      "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
+      "path": "tasks/reviewing/2378",
+      "status": "reviewing",
+      "title": "Context\u2192answer structure is shared across story characters; chat, plain-text, and user framings are covered partially or not at all in Qwen3.6-27B (MODERATE confidence)"
     },
     "2379": {
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
@@ -11856,15 +11856,15 @@
     "2537": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2537",
-      "status": "running",
+      "path": "tasks/completed/2537",
+      "status": "completed",
       "title": "select_step9c_tests.py: feature-named consumer tests escape module mapping; over-wide sweep_scope label hides the gap"
     },
     "2538": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2538",
-      "status": "running",
+      "path": "tasks/completed/2538",
+      "status": "completed",
       "title": "Step 10d merge-conflict-recovery block omits gh pr ready, so a recovery-path merge dies on the draft precondition and misroutes to the Failure bullet"
     },
     "2539": {
@@ -11964,8 +11964,8 @@
       "goal": "Determine (1, exploratory) how the context\u2192answer map's per-feature predictability of turn-averaged SAE features ranks across the five Der et al. (arXiv 2606.28548) schema categories (content/form/voice/function/meta) on the #2476 matryoshka SAEs (k=100 + k=200) and on a faithful flat replication of Der et al.'s recipe; (2) whether that replication (BatchTopK 32,768/k=128 on banked layer-19 turn means + their full judged evaluation, judge claude-sonnet-4-6 no-prefill) reproduces their discrimination-vs-coverage inversion; and (3) which feature properties (schema categories + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability, via a forward-selection partial-out ladder as the headline figure.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/2552",
-      "status": "planning",
+      "path": "tasks/running/2552",
+      "status": "running",
       "title": "Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder"
     },
     "2553": {
@@ -11996,6 +11996,27 @@
       "status": "proposed",
       "title": "workflow-fix: lattice label-semantics truth-table + threshold-CI-policy check (c20 extension or sibling)"
     },
+    "2557": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2557",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a spec-freshness sync stages a CLAUDE.md whose workflow.yaml gate-key references cannot resolve, because CLAUDE.md is a FAMILY_OF singleton while .claude/workflow.yaml is in FAMILY_workflow"
+    },
+    "2558": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2558",
+      "status": "archived",
+      "title": "workflow-fix: codex-composer-common mem-commit message file collides across parallel same-name composers"
+    },
+    "2559": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2559",
+      "status": "proposed",
+      "title": "workflow_lint files-mode: check_sha_pin_domain grandfather-stale artifact when grandfathered file is in scope"
+    },
     "256": {
       "has_clean_result": false,
       "kind": "experiment",
@@ -12003,12 +12024,91 @@
       "status": "archived",
       "title": "Do pretraining experiments with Pingbang's model"
     },
+    "2560": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2560",
+      "status": "proposed",
+      "title": "Step 10d lint gate normalization keeps workflow_lint note: lines whose scan COUNT changes with the payload, so any branch adding a scanned file gets a spurious block"
+    },
+    "2561": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2561",
+      "status": "proposed",
+      "title": "Step 10d lint gate: an unset WT silently certifies the WRONG tree and emits a benign-looking skip-artifact-only instead of failing loud"
+    },
+    "2562": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2562",
+      "status": "proposed",
+      "title": "workflow-fix: agent-memory per-file size ratchet + trim the 350KB codex-code-reviewer compose-recipe memory"
+    },
+    "2563": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2563",
+      "status": "proposed",
+      "title": "workflow-fix: gate single-flight probe counts a long-lived watcher carrying the gate pattern as a live gate, so the spec's own probe-keyed wait makes the next relaunch refuse against no gate"
+    },
+    "2564": {
+      "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2564",
+      "status": "running",
+      "title": "Controlled minimal-pair battery: does the context\u2192answer map predict the DIFFERENCE in answer vectors, per instruction axis?"
+    },
+    "2565": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2565",
+      "status": "archived",
+      "title": "workflow-fix: no-flags workflow_lint red on main \u2014 issue823_ladder_ext_gen.py trips --check-shared-tmp-name"
+    },
+    "2566": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2566",
+      "status": "proposed",
+      "title": "workflow-fix: test_gates_full_shape red fleet-wide \u2014 clarify_experiment_ask gate missing from pinned set"
+    },
+    "2567": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2567",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c pristine-compare falsely attributes pre-existing main reds to the branch (traceback-flag asymmetry + base_identical not consulted for ordinary nodes)"
+    },
+    "2568": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2568",
+      "status": "running",
+      "title": "workflow-fix: consumer-supersession audit \u2014 enumerate committed consumers of refuted evidence artifacts and require supersession labels"
+    },
+    "2569": {
+      "goal": "Exploit the linearity of the fitted residual context-answer mapping (banked 963k-row layer-19 ridge map, Qwen2.5-7B-Instruct) to characterize in one phased battery: (1) operator eigenstructure, effective null space, fixed point, and their SAE-feature reads (ignored/copied/transcoded/damped anatomy); (2) whether the map's Gram matrix WtW is the correct theory-paper context-gate metric and whether the closed-form ridge learning curve reproduces the empirical C1 scaling; (3) the feature-to-feature wiring of the map across SAE dictionaries including a trained last-prompt-token SAE; (4) the literal weight-update rank (dW spectra, intruder dimensions, factor alignment) across the recent organism fleet; (5) denoised reduced-rank structure of #1979's banked write maps; (6) an aligned operator atlas with a cross-model (Llama-3.1-8B-Instruct) three-tier representation-vs-operator similarity report; (7) correlational validation of the effective null space via kernel-equivalent context pairs, plus closed-form monitor decision geometry and sensitivity certificates.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/2569",
+      "status": "planning",
+      "title": "Linear-map theory battery: operator eigenstructure, null-space fibers, theory-bridge gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and a cross-model operator atlas"
+    },
     "257": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/257",
       "status": "archived",
       "title": "Do pingbang pretraining experiments"
+    },
+    "2570": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2570",
+      "status": "proposed",
+      "title": "Re-point paper/poster scaling-figure generators off the superseded cross-store join (#1901 finding)"
     },
     "258": {
       "has_clean_result": false,

@@ -30,6 +30,17 @@ fallback/retry path is the drifting one) and set-diff its kwargs against the pri
 [[registered-gate-quantity-substituted]], [[new-dial-missing-from-resume-regime]],
 [[linked-pins-pinned-separately]].
 
+**Live-Hub discovery predicates (#2546 r1 g1, two blockers in one probe):** when a
+stager DISCOVERS its sources at runtime (author listing + name-substring marker +
+expected-count assert, per-family config-name regexes), run the discovery expression
+LIVE at review time — one `list_datasets` + one `get_dataset_config_names` on a real
+repo. #2546: marker substring matched 25 repos vs the asserted 16 (incl. a GATED
+parent repo that crashes the smoke's `[:2]` slice), and `^math\w*$` double-matched
+`math__round_2_fixes` (\w matches underscores), silently inflating a registered
+regressor's denominator while the sibling anchored patterns excluded their
+`__round_2_fixes` twins. Reading the regexes against the plan cannot catch either;
+only the live probe can.
+
 **r2 closure probes (validated, #2502 r2 g1 PASS):** a family-restoration claim settles
 in minutes with (a) live `datasets-server /info` curls per named dataset (config +
 field + row count vs the SourceSpec), (b) cap-sum arithmetic split by topup class vs

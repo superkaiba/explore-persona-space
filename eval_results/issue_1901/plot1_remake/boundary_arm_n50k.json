@@ -1,0 +1,4800 @@
+{
+  "per_layer": {
+    "19": {
+      "unit_key": {
+        "layer": 19,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 19,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.4145990975930267,
+          "mean_cosine": 0.879706713860461,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.4145990975930267,
+              "lo": 0.4046655173663657,
+              "hi": 0.42318308738823096
+            },
+            "mean_cosine": {
+              "point": 0.879706713860461,
+              "lo": 0.8769570228195,
+              "hi": 0.8820189637059357
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.316,
+                "5": 0.617,
+                "10": 0.715
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.45441026803997536,
+              "acc1_ci": {
+                "lo": 0.287975,
+                "hi": 0.34402499999999997
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.373,
+                "5": 0.714,
+                "10": 0.817
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.5290923378075548,
+              "acc1_ci": {
+                "lo": 0.341,
+                "hi": 0.404
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.642,
+                "5": 0.987,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7970490259740258,
+              "acc1_ci": {
+                "lo": 0.6139749999999999,
+                "hi": 0.673
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.61,
+                "5": 0.98,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7715793650793651,
+              "acc1_ci": {
+                "lo": 0.58,
+                "hi": 0.640025
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.41846613258624954,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.4145990975930267,
+            "lo": 0.3990049926908871,
+            "hi": 0.4265077504717071,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 20.6,
+      "banked_l19_parity_informational": {
+        "banked_test_r2": 0.41460064032598243,
+        "this_run_test_r2": 0.4145990975930267,
+        "delta": -1.5427329557171632e-06,
+        "note": "INFORMATIONAL: fresh 28-layer capture re-runs the forward under different batch geometry \u2014 bf16 activation drift expected"
+      }
+    },
+    "0": {
+      "unit_key": {
+        "layer": 0,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 0,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.18047693651655794,
+          "mean_cosine": 0.9401118737692841,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.18047693651655794,
+              "lo": 0.17228614585425697,
+              "hi": 0.18763050785002536
+            },
+            "mean_cosine": {
+              "point": 0.9401118737692841,
+              "lo": 0.9385147168977611,
+              "hi": 0.9415848648741855
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.075,
+                "5": 0.18,
+                "10": 0.249
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 87.5,
+              "mrr": 0.1301970836403358,
+              "acc1_ci": {
+                "lo": 0.058,
+                "hi": 0.091
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.084,
+                "5": 0.201,
+                "10": 0.274
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 65.0,
+              "mrr": 0.14763671121195004,
+              "acc1_ci": {
+                "lo": 0.066,
+                "hi": 0.1
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.819,
+                "5": 1.0,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.9001666666666668,
+              "acc1_ci": {
+                "lo": 0.796,
+                "hi": 0.842
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.718,
+                "5": 0.983,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8314654761904763,
+              "acc1_ci": {
+                "lo": 0.692,
+                "hi": 0.745
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.1832772241848798,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.1804769365165595,
+            "lo": 0.16540000815769523,
+            "hi": 0.19048916573870717,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 16.5
+    },
+    "1": {
+      "unit_key": {
+        "layer": 1,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 1,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.1876613644193127,
+          "mean_cosine": 0.9405886147039351,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.1876613644193127,
+              "lo": 0.17848118018927717,
+              "hi": 0.19524261930398315
+            },
+            "mean_cosine": {
+              "point": 0.9405886147039351,
+              "lo": 0.9389816784136659,
+              "hi": 0.9420765670272055
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.082,
+                "5": 0.194,
+                "10": 0.249
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 83.5,
+              "mrr": 0.14206310646152942,
+              "acc1_ci": {
+                "lo": 0.066,
+                "hi": 0.099
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.106,
+                "5": 0.224,
+                "10": 0.286
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 61.0,
+              "mrr": 0.16667210837202318,
+              "acc1_ci": {
+                "lo": 0.088,
+                "hi": 0.126
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.854,
+                "5": 1.0,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.9227000000000001,
+              "acc1_ci": {
+                "lo": 0.8329749999999999,
+                "hi": 0.876
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.759,
+                "5": 0.99,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8619028138528138,
+              "acc1_ci": {
+                "lo": 0.733,
+                "hi": 0.785
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.1887381406826617,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.18766136441931325,
+            "lo": 0.17308594765832816,
+            "hi": 0.19820511965214166,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.3
+    },
+    "2": {
+      "unit_key": {
+        "layer": 2,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 2,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.2142006171060642,
+          "mean_cosine": 0.9359989700013489,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.2142006171060642,
+              "lo": 0.20524811393295775,
+              "hi": 0.2207736601897543
+            },
+            "mean_cosine": {
+              "point": 0.9359989700013489,
+              "lo": 0.9343154557701217,
+              "hi": 0.9375827034082008
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.105,
+                "5": 0.238,
+                "10": 0.321
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 41.0,
+              "mrr": 0.17632628807333475,
+              "acc1_ci": {
+                "lo": 0.085,
+                "hi": 0.12302499999999998
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.122,
+                "5": 0.277,
+                "10": 0.358
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 29.5,
+              "mrr": 0.20051525650811713,
+              "acc1_ci": {
+                "lo": 0.102,
+                "hi": 0.14202499999999996
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.772,
+                "5": 0.995,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8726428571428572,
+              "acc1_ci": {
+                "lo": 0.7449749999999999,
+                "hi": 0.800025
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.67,
+                "5": 0.979,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8026436868686868,
+              "acc1_ci": {
+                "lo": 0.64,
+                "hi": 0.701
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.21684174221340202,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.21420061710606475,
+            "lo": 0.19882698876123048,
+            "hi": 0.22517430585300852,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.4
+    },
+    "3": {
+      "unit_key": {
+        "layer": 3,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 3,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.18434669663751957,
+          "mean_cosine": 0.8958895680740251,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.18434669663751957,
+              "lo": 0.17690852832837842,
+              "hi": 0.1904030380808986
+            },
+            "mean_cosine": {
+              "point": 0.8958895680740251,
+              "lo": 0.893467258119649,
+              "hi": 0.8982007643974521
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.067,
+                "5": 0.166,
+                "10": 0.238
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 84.5,
+              "mrr": 0.12366083435251585,
+              "acc1_ci": {
+                "lo": 0.052,
+                "hi": 0.082
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.086,
+                "5": 0.221,
+                "10": 0.297
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 52.5,
+              "mrr": 0.15524562805402992,
+              "acc1_ci": {
+                "lo": 0.07,
+                "hi": 0.10302499999999998
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.746,
+                "5": 0.999,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8600333333333333,
+              "acc1_ci": {
+                "lo": 0.717,
+                "hi": 0.776
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.649,
+                "5": 0.968,
+                "10": 0.995
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7899940787182168,
+              "acc1_ci": {
+                "lo": 0.6189749999999999,
+                "hi": 0.68
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 31622.776601683792,
+            "val_r2_at_selected": 0.18840902808847237,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.18434669663751901,
+            "lo": 0.1714577493290887,
+            "hi": 0.193246447862061,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.2
+    },
+    "4": {
+      "unit_key": {
+        "layer": 4,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 4,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.21443906334282292,
+          "mean_cosine": 0.8717030237549834,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.21443906334282292,
+              "lo": 0.20617789956138066,
+              "hi": 0.22108248141264789
+            },
+            "mean_cosine": {
+              "point": 0.8717030237549834,
+              "lo": 0.8689997487809761,
+              "hi": 0.8743887918135955
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.102,
+                "5": 0.243,
+                "10": 0.327
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 40.0,
+              "mrr": 0.17635151475562588,
+              "acc1_ci": {
+                "lo": 0.08297500000000001,
+                "hi": 0.12
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.123,
+                "5": 0.314,
+                "10": 0.407
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 20.0,
+              "mrr": 0.2188867076817623,
+              "acc1_ci": {
+                "lo": 0.103,
+                "hi": 0.144
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.688,
+                "5": 0.997,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8252261904761905,
+              "acc1_ci": {
+                "lo": 0.660975,
+                "hi": 0.718
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.611,
+                "5": 0.977,
+                "10": 0.994
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7654242784992784,
+              "acc1_ci": {
+                "lo": 0.581,
+                "hi": 0.641
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.21945488201692687,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.2144390633428227,
+            "lo": 0.2002119686253474,
+            "hi": 0.22427162605254075,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.1
+    },
+    "5": {
+      "unit_key": {
+        "layer": 5,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 5,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.2130162050586485,
+          "mean_cosine": 0.8902235976062036,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.2130162050586485,
+              "lo": 0.20421239723434956,
+              "hi": 0.22023027106025933
+            },
+            "mean_cosine": {
+              "point": 0.8902235976062036,
+              "lo": 0.8875690872199788,
+              "hi": 0.892694944394302
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.104,
+                "5": 0.229,
+                "10": 0.319
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 43.5,
+              "mrr": 0.17440925839442165,
+              "acc1_ci": {
+                "lo": 0.086975,
+                "hi": 0.122
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.113,
+                "5": 0.292,
+                "10": 0.38
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 26.0,
+              "mrr": 0.2009263193869772,
+              "acc1_ci": {
+                "lo": 0.094,
+                "hi": 0.13102499999999997
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.705,
+                "5": 0.995,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8361000000000001,
+              "acc1_ci": {
+                "lo": 0.678,
+                "hi": 0.736
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.648,
+                "5": 0.982,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7909238095238095,
+              "acc1_ci": {
+                "lo": 0.62,
+                "hi": 0.679
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.21616968078937093,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.21301620505864816,
+            "lo": 0.19790320160104805,
+            "hi": 0.22403823629530342,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.6
+    },
+    "6": {
+      "unit_key": {
+        "layer": 6,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 6,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.2410859490697943,
+          "mean_cosine": 0.8809106869378451,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.2410859490697943,
+              "lo": 0.2316965461678856,
+              "hi": 0.24831140659540593
+            },
+            "mean_cosine": {
+              "point": 0.8809106869378451,
+              "lo": 0.8782729535892425,
+              "hi": 0.8834572271562052
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.116,
+                "5": 0.275,
+                "10": 0.362
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 27.0,
+              "mrr": 0.19975278456816503,
+              "acc1_ci": {
+                "lo": 0.096975,
+                "hi": 0.135
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.135,
+                "5": 0.35,
+                "10": 0.448
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 15.0,
+              "mrr": 0.23709704080255353,
+              "acc1_ci": {
+                "lo": 0.115,
+                "hi": 0.157
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.682,
+                "5": 0.993,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.8246809523809524,
+              "acc1_ci": {
+                "lo": 0.654,
+                "hi": 0.712
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.621,
+                "5": 0.977,
+                "10": 0.995
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7724513042513043,
+              "acc1_ci": {
+                "lo": 0.5909749999999999,
+                "hi": 0.652
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.24505801291811313,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.24108594906979408,
+            "lo": 0.2250215919925331,
+            "hi": 0.2523743884999208,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.5
+    },
+    "7": {
+      "unit_key": {
+        "layer": 7,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 7,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.23573480768260324,
+          "mean_cosine": 0.8463298807784492,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.23573480768260324,
+              "lo": 0.2273152412033043,
+              "hi": 0.24238527215397804
+            },
+            "mean_cosine": {
+              "point": 0.8463298807784492,
+              "lo": 0.8432439247074706,
+              "hi": 0.8492039971596286
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.102,
+                "5": 0.252,
+                "10": 0.342
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 29.0,
+              "mrr": 0.18485119445086265,
+              "acc1_ci": {
+                "lo": 0.084,
+                "hi": 0.121
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.138,
+                "5": 0.351,
+                "10": 0.461
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 13.0,
+              "mrr": 0.24519309994338037,
+              "acc1_ci": {
+                "lo": 0.116,
+                "hi": 0.16
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.605,
+                "5": 0.989,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7777964285714286,
+              "acc1_ci": {
+                "lo": 0.5749749999999999,
+                "hi": 0.639
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.542,
+                "5": 0.968,
+                "10": 0.995
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7282913096338618,
+              "acc1_ci": {
+                "lo": 0.512,
+                "hi": 0.576
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.24319215891128465,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.23573480768260346,
+            "lo": 0.22039184245646828,
+            "hi": 0.24608966183854347,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.6
+    },
+    "8": {
+      "unit_key": {
+        "layer": 8,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 8,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.27520324428179244,
+          "mean_cosine": 0.8428874694685384,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.27520324428179244,
+              "lo": 0.2665966766939075,
+              "hi": 0.2822903016403843
+            },
+            "mean_cosine": {
+              "point": 0.8428874694685384,
+              "lo": 0.8399951111923827,
+              "hi": 0.8456293588901911
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.129,
+                "5": 0.314,
+                "10": 0.421
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 16.0,
+              "mrr": 0.22565532185799958,
+              "acc1_ci": {
+                "lo": 0.108,
+                "hi": 0.15
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.177,
+                "5": 0.439,
+                "10": 0.567
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 7.0,
+              "mrr": 0.29929287575741786,
+              "acc1_ci": {
+                "lo": 0.154,
+                "hi": 0.203
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.569,
+                "5": 0.981,
+                "10": 0.996
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7527156963134904,
+              "acc1_ci": {
+                "lo": 0.54,
+                "hi": 0.601
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.528,
+                "5": 0.957,
+                "10": 0.986
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7129605994830995,
+              "acc1_ci": {
+                "lo": 0.498,
+                "hi": 0.561
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.27899603598213785,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.27520324428179255,
+            "lo": 0.25862620743570114,
+            "hi": 0.2871166276432939,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.0
+    },
+    "9": {
+      "unit_key": {
+        "layer": 9,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 9,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.30271565596797756,
+          "mean_cosine": 0.8368351257292315,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.30271565596797756,
+              "lo": 0.29288120302757614,
+              "hi": 0.31106650693957416
+            },
+            "mean_cosine": {
+              "point": 0.8368351257292315,
+              "lo": 0.8334465653013208,
+              "hi": 0.8401658607756921
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.137,
+                "5": 0.341,
+                "10": 0.467
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 13.0,
+              "mrr": 0.24305070244503651,
+              "acc1_ci": {
+                "lo": 0.11697500000000001,
+                "hi": 0.159
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.196,
+                "5": 0.473,
+                "10": 0.601
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 6.0,
+              "mrr": 0.32519657049339784,
+              "acc1_ci": {
+                "lo": 0.17,
+                "hi": 0.22102499999999997
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.494,
+                "5": 0.964,
+                "10": 0.993
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.7013541853979354,
+              "acc1_ci": {
+                "lo": 0.463,
+                "hi": 0.526
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.461,
+                "5": 0.941,
+                "10": 0.985
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6668919680357537,
+              "acc1_ci": {
+                "lo": 0.43,
+                "hi": 0.493
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.2994736172929079,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.30271565596797756,
+            "lo": 0.2830014394859184,
+            "hi": 0.31728992110621035,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 15.0
+    },
+    "10": {
+      "unit_key": {
+        "layer": 10,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 10,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.32179740189384054,
+          "mean_cosine": 0.8389667083486434,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.32179740189384054,
+              "lo": 0.3118466336560167,
+              "hi": 0.3299198351128874
+            },
+            "mean_cosine": {
+              "point": 0.8389667083486434,
+              "lo": 0.8356951881108359,
+              "hi": 0.841948992303424
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.162,
+                "5": 0.392,
+                "10": 0.502
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 10.0,
+              "mrr": 0.27173751525500156,
+              "acc1_ci": {
+                "lo": 0.14,
+                "hi": 0.185
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.218,
+                "5": 0.507,
+                "10": 0.644
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 5.0,
+              "mrr": 0.3522661537615094,
+              "acc1_ci": {
+                "lo": 0.192,
+                "hi": 0.245
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.477,
+                "5": 0.966,
+                "10": 0.995
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6884079666821047,
+              "acc1_ci": {
+                "lo": 0.448,
+                "hi": 0.51
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.428,
+                "5": 0.937,
+                "10": 0.987
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6458228084415585,
+              "acc1_ci": {
+                "lo": 0.398975,
+                "hi": 0.462
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.32031187011139894,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.32179740189384065,
+            "lo": 0.3027065151173674,
+            "hi": 0.3352736200267175,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 15.3
+    },
+    "11": {
+      "unit_key": {
+        "layer": 11,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 11,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.31453626623610753,
+          "mean_cosine": 0.8358985904077942,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.31453626623610753,
+              "lo": 0.30460763109082545,
+              "hi": 0.32252917104284873
+            },
+            "mean_cosine": {
+              "point": 0.8358985904077942,
+              "lo": 0.8327077822183276,
+              "hi": 0.83887794619561
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.152,
+                "5": 0.375,
+                "10": 0.492
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 11.0,
+              "mrr": 0.2623195356633209,
+              "acc1_ci": {
+                "lo": 0.129975,
+                "hi": 0.175
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.22,
+                "5": 0.499,
+                "10": 0.644
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 6.0,
+              "mrr": 0.35388107787533046,
+              "acc1_ci": {
+                "lo": 0.192,
+                "hi": 0.24602499999999997
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.478,
+                "5": 0.958,
+                "10": 0.994
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6915728540126896,
+              "acc1_ci": {
+                "lo": 0.447975,
+                "hi": 0.51
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.444,
+                "5": 0.944,
+                "10": 0.982
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.655946130799929,
+              "acc1_ci": {
+                "lo": 0.414,
+                "hi": 0.476
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.31148025563869874,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.3145362662361073,
+            "lo": 0.2969753482951536,
+            "hi": 0.32715354143483155,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.8
+    },
+    "12": {
+      "unit_key": {
+        "layer": 12,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 12,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.3190423633196029,
+          "mean_cosine": 0.835479547291868,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.3190423633196029,
+              "lo": 0.3092507953677979,
+              "hi": 0.3271800056550564
+            },
+            "mean_cosine": {
+              "point": 0.835479547291868,
+              "lo": 0.8321696994513956,
+              "hi": 0.8383676925349719
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.162,
+                "5": 0.394,
+                "10": 0.507
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 10.0,
+              "mrr": 0.2718568327996353,
+              "acc1_ci": {
+                "lo": 0.14,
+                "hi": 0.186
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.236,
+                "5": 0.527,
+                "10": 0.654
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 5.0,
+              "mrr": 0.3685483384187787,
+              "acc1_ci": {
+                "lo": 0.207,
+                "hi": 0.262025
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.529,
+                "5": 0.975,
+                "10": 0.997
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7261777469804455,
+              "acc1_ci": {
+                "lo": 0.5,
+                "hi": 0.561
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.492,
+                "5": 0.958,
+                "10": 0.991
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.693774840143803,
+              "acc1_ci": {
+                "lo": 0.462975,
+                "hi": 0.524
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.3180327378704181,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.3190423633196028,
+            "lo": 0.30134652684790025,
+            "hi": 0.3315190227851417,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 13.8
+    },
+    "13": {
+      "unit_key": {
+        "layer": 13,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 13,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.32947098579687617,
+          "mean_cosine": 0.8319907887114355,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.32947098579687617,
+              "lo": 0.3202323898631424,
+              "hi": 0.33770529578506825
+            },
+            "mean_cosine": {
+              "point": 0.8319907887114355,
+              "lo": 0.8287004582143105,
+              "hi": 0.8348057858535071
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.186,
+                "5": 0.449,
+                "10": 0.552
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 8.0,
+              "mrr": 0.3095499496373316,
+              "acc1_ci": {
+                "lo": 0.161,
+                "hi": 0.21
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.263,
+                "5": 0.585,
+                "10": 0.704
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 4.0,
+              "mrr": 0.40953677328560095,
+              "acc1_ci": {
+                "lo": 0.23297500000000002,
+                "hi": 0.292
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.531,
+                "5": 0.968,
+                "10": 0.996
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7279173444168126,
+              "acc1_ci": {
+                "lo": 0.502,
+                "hi": 0.564
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.5,
+                "5": 0.964,
+                "10": 0.989
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.5,
+              "mrr": 0.7000224384290173,
+              "acc1_ci": {
+                "lo": 0.47,
+                "hi": 0.534
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.3241409286848139,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.3294709857968765,
+            "lo": 0.31306312937910424,
+            "hi": 0.3407234045429869,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.0
+    },
+    "14": {
+      "unit_key": {
+        "layer": 14,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 14,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.3260238556141263,
+          "mean_cosine": 0.849989711599921,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.3260238556141263,
+              "lo": 0.3167926702614297,
+              "hi": 0.3339262293134956
+            },
+            "mean_cosine": {
+              "point": 0.849989711599921,
+              "lo": 0.8468076237950563,
+              "hi": 0.8528193251149128
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.184,
+                "5": 0.424,
+                "10": 0.536
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 9.0,
+              "mrr": 0.2992085378999731,
+              "acc1_ci": {
+                "lo": 0.16,
+                "hi": 0.209
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.243,
+                "5": 0.549,
+                "10": 0.666
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 4.0,
+              "mrr": 0.3864285270599562,
+              "acc1_ci": {
+                "lo": 0.214,
+                "hi": 0.271
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.513,
+                "5": 0.968,
+                "10": 0.993
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.712984996947497,
+              "acc1_ci": {
+                "lo": 0.483,
+                "hi": 0.548
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.479,
+                "5": 0.948,
+                "10": 0.989
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6848261135399294,
+              "acc1_ci": {
+                "lo": 0.45,
+                "hi": 0.510025
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.3234610820874888,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.32602385561412606,
+            "lo": 0.3103342139171826,
+            "hi": 0.3377203065894948,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 13.4
+    },
+    "15": {
+      "unit_key": {
+        "layer": 15,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 15,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.3291582323186101,
+          "mean_cosine": 0.8542043566519295,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.3291582323186101,
+              "lo": 0.31915075660189673,
+              "hi": 0.3375670271778982
+            },
+            "mean_cosine": {
+              "point": 0.8542043566519295,
+              "lo": 0.8511701583182568,
+              "hi": 0.856695915572076
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.195,
+                "5": 0.453,
+                "10": 0.549
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 7.0,
+              "mrr": 0.3167021299270922,
+              "acc1_ci": {
+                "lo": 0.17,
+                "hi": 0.221
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.259,
+                "5": 0.578,
+                "10": 0.687
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 4.0,
+              "mrr": 0.40590419908536635,
+              "acc1_ci": {
+                "lo": 0.23,
+                "hi": 0.286025
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.564,
+                "5": 0.976,
+                "10": 0.996
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7471563492063492,
+              "acc1_ci": {
+                "lo": 0.536,
+                "hi": 0.5960249999999999
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.529,
+                "5": 0.963,
+                "10": 0.991
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7165547077922079,
+              "acc1_ci": {
+                "lo": 0.5,
+                "hi": 0.564
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.32843253876687184,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.32915823231861074,
+            "lo": 0.3139283639036152,
+            "hi": 0.3407812676326885,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.1
+    },
+    "16": {
+      "unit_key": {
+        "layer": 16,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 16,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.3251505049702407,
+          "mean_cosine": 0.8553798201934076,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.3251505049702407,
+              "lo": 0.3149152974234348,
+              "hi": 0.3333825531432226
+            },
+            "mean_cosine": {
+              "point": 0.8553798201934076,
+              "lo": 0.8522682585355101,
+              "hi": 0.8579819485380802
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.191,
+                "5": 0.448,
+                "10": 0.535
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 8.0,
+              "mrr": 0.30952859952544076,
+              "acc1_ci": {
+                "lo": 0.167975,
+                "hi": 0.215
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.251,
+                "5": 0.577,
+                "10": 0.669
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 4.0,
+              "mrr": 0.40091089230068455,
+              "acc1_ci": {
+                "lo": 0.225,
+                "hi": 0.278025
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.581,
+                "5": 0.983,
+                "10": 0.995
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7585624532330414,
+              "acc1_ci": {
+                "lo": 0.552,
+                "hi": 0.613
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.553,
+                "5": 0.964,
+                "10": 0.991
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.734090326851919,
+              "acc1_ci": {
+                "lo": 0.524,
+                "hi": 0.584
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.3255610262437999,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.32515050497024045,
+            "lo": 0.3098940079424881,
+            "hi": 0.33621560939860656,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.1
+    },
+    "17": {
+      "unit_key": {
+        "layer": 17,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 17,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.3216414242656307,
+          "mean_cosine": 0.8513660992086279,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.3216414242656307,
+              "lo": 0.31114392689416404,
+              "hi": 0.33054593484927497
+            },
+            "mean_cosine": {
+              "point": 0.8513660992086279,
+              "lo": 0.8482624501155928,
+              "hi": 0.8540378529568331
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.187,
+                "5": 0.426,
+                "10": 0.522
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 9.0,
+              "mrr": 0.3029585794889837,
+              "acc1_ci": {
+                "lo": 0.164,
+                "hi": 0.21102499999999996
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.251,
+                "5": 0.565,
+                "10": 0.655
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 4.0,
+              "mrr": 0.3943278854682655,
+              "acc1_ci": {
+                "lo": 0.224975,
+                "hi": 0.280025
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.589,
+                "5": 0.978,
+                "10": 0.994
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7652054865885748,
+              "acc1_ci": {
+                "lo": 0.562,
+                "hi": 0.6190249999999999
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.552,
+                "5": 0.962,
+                "10": 0.987
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7331259541956804,
+              "acc1_ci": {
+                "lo": 0.525,
+                "hi": 0.5840249999999999
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.32500275020425995,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.32164142426563014,
+            "lo": 0.3059412396284383,
+            "hi": 0.3337721988099017,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.8
+    },
+    "18": {
+      "unit_key": {
+        "layer": 18,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 18,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.3437831032428512,
+          "mean_cosine": 0.8593632810486648,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.3437831032428512,
+              "lo": 0.3328674680280009,
+              "hi": 0.35291844086930685
+            },
+            "mean_cosine": {
+              "point": 0.8593632810486648,
+              "lo": 0.8564655600907879,
+              "hi": 0.8618989556102351
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.232,
+                "5": 0.465,
+                "10": 0.554
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 7.0,
+              "mrr": 0.3438510118892805,
+              "acc1_ci": {
+                "lo": 0.206,
+                "hi": 0.259
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.283,
+                "5": 0.583,
+                "10": 0.688
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 4.0,
+              "mrr": 0.4239885391616681,
+              "acc1_ci": {
+                "lo": 0.254,
+                "hi": 0.312025
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.634,
+                "5": 0.991,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7955623376623375,
+              "acc1_ci": {
+                "lo": 0.6059749999999999,
+                "hi": 0.665
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.6,
+                "5": 0.984,
+                "10": 0.997
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7700432862888744,
+              "acc1_ci": {
+                "lo": 0.571,
+                "hi": 0.633
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.34869718927530613,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.34378310324285166,
+            "lo": 0.32791432565429146,
+            "hi": 0.35591285691895463,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.1
+    },
+    "20": {
+      "unit_key": {
+        "layer": 20,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 20,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.41464672739784825,
+          "mean_cosine": 0.8755675577243279,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.41464672739784825,
+              "lo": 0.4040752529910249,
+              "hi": 0.42357573706438095
+            },
+            "mean_cosine": {
+              "point": 0.8755675577243279,
+              "lo": 0.8726614816098751,
+              "hi": 0.8781341661944985
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.309,
+                "5": 0.612,
+                "10": 0.719
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4475568173942209,
+              "acc1_ci": {
+                "lo": 0.282,
+                "hi": 0.337
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.373,
+                "5": 0.715,
+                "10": 0.828
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.5278451769381308,
+              "acc1_ci": {
+                "lo": 0.342,
+                "hi": 0.403
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.618,
+                "5": 0.987,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7794002495089452,
+              "acc1_ci": {
+                "lo": 0.5879749999999999,
+                "hi": 0.648
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.588,
+                "5": 0.979,
+                "10": 0.996
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7524305916305916,
+              "acc1_ci": {
+                "lo": 0.559,
+                "hi": 0.61805
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.4183012010745776,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.4146467273978477,
+            "lo": 0.39846468372922467,
+            "hi": 0.42621325930090137,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.4
+    },
+    "21": {
+      "unit_key": {
+        "layer": 21,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 21,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.42115815486103514,
+          "mean_cosine": 0.870274757966281,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.42115815486103514,
+              "lo": 0.4107195828605087,
+              "hi": 0.43027199010631084
+            },
+            "mean_cosine": {
+              "point": 0.870274757966281,
+              "lo": 0.866863958967913,
+              "hi": 0.8732948119850201
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.314,
+                "5": 0.612,
+                "10": 0.727
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4527538499330255,
+              "acc1_ci": {
+                "lo": 0.284,
+                "hi": 0.34502499999999997
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.361,
+                "5": 0.723,
+                "10": 0.825
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.5217815915290216,
+              "acc1_ci": {
+                "lo": 0.33,
+                "hi": 0.393
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.618,
+                "5": 0.983,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7735349647266313,
+              "acc1_ci": {
+                "lo": 0.587,
+                "hi": 0.647
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.56,
+                "5": 0.972,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7299841630591629,
+              "acc1_ci": {
+                "lo": 0.531,
+                "hi": 0.59
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.4241058022761126,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.42115815486103536,
+            "lo": 0.4048019647643371,
+            "hi": 0.43370747931342946,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.7
+    },
+    "22": {
+      "unit_key": {
+        "layer": 22,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 22,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.4438672595227092,
+          "mean_cosine": 0.8740486307100311,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.4438672595227092,
+              "lo": 0.4339587585618548,
+              "hi": 0.45234091861172104
+            },
+            "mean_cosine": {
+              "point": 0.8740486307100311,
+              "lo": 0.8706105368292079,
+              "hi": 0.8769800110835492
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.319,
+                "5": 0.662,
+                "10": 0.77
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4725920938802939,
+              "acc1_ci": {
+                "lo": 0.291,
+                "hi": 0.347025
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.357,
+                "5": 0.759,
+                "10": 0.854
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.5338448815634247,
+              "acc1_ci": {
+                "lo": 0.327975,
+                "hi": 0.387
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.588,
+                "5": 0.975,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7513310457516339,
+              "acc1_ci": {
+                "lo": 0.557,
+                "hi": 0.619
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.541,
+                "5": 0.963,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7135579365079365,
+              "acc1_ci": {
+                "lo": 0.508975,
+                "hi": 0.5710249999999999
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.4444806889849543,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.44386725952270933,
+            "lo": 0.4272233837493943,
+            "hi": 0.4565376810628777,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 15.2
+    },
+    "23": {
+      "unit_key": {
+        "layer": 23,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 23,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.46464921773374956,
+          "mean_cosine": 0.8855923737642886,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.46464921773374956,
+              "lo": 0.454474670241188,
+              "hi": 0.4733230953690608
+            },
+            "mean_cosine": {
+              "point": 0.8855923737642886,
+              "lo": 0.8823630191552552,
+              "hi": 0.8884551762196171
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.309,
+                "5": 0.696,
+                "10": 0.789
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.47680883894422416,
+              "acc1_ci": {
+                "lo": 0.282,
+                "hi": 0.339
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.345,
+                "5": 0.758,
+                "10": 0.862
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.5247457664962463,
+              "acc1_ci": {
+                "lo": 0.317,
+                "hi": 0.375
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.545,
+                "5": 0.967,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7236690476190476,
+              "acc1_ci": {
+                "lo": 0.514,
+                "hi": 0.575
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.482,
+                "5": 0.942,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6723384920634922,
+              "acc1_ci": {
+                "lo": 0.451,
+                "hi": 0.514025
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.4617745102799111,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.4646492177337497,
+            "lo": 0.4438214249709597,
+            "hi": 0.48083271636938896,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 15.2
+    },
+    "24": {
+      "unit_key": {
+        "layer": 24,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 24,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.4622920284201648,
+          "mean_cosine": 0.9010004849012987,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.4622920284201648,
+              "lo": 0.45180237594399425,
+              "hi": 0.4708135138391658
+            },
+            "mean_cosine": {
+              "point": 0.9010004849012987,
+              "lo": 0.8980344706131368,
+              "hi": 0.9037429022310495
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.294,
+                "5": 0.673,
+                "10": 0.776
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.46102168160809165,
+              "acc1_ci": {
+                "lo": 0.268,
+                "hi": 0.321
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.323,
+                "5": 0.721,
+                "10": 0.83
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4923543723265265,
+              "acc1_ci": {
+                "lo": 0.294,
+                "hi": 0.352
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.516,
+                "5": 0.965,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7016333694083694,
+              "acc1_ci": {
+                "lo": 0.485,
+                "hi": 0.549
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.469,
+                "5": 0.924,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6579711038961038,
+              "acc1_ci": {
+                "lo": 0.437975,
+                "hi": 0.501
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.4604558667932299,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.4622920284201648,
+            "lo": 0.44308840914575115,
+            "hi": 0.47669757170622334,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.2
+    },
+    "25": {
+      "unit_key": {
+        "layer": 25,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 25,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.4347543927627022,
+          "mean_cosine": 0.9053945362193122,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.4347543927627022,
+              "lo": 0.4238075009275391,
+              "hi": 0.4433812831638756
+            },
+            "mean_cosine": {
+              "point": 0.9053945362193122,
+              "lo": 0.9027571868907571,
+              "hi": 0.9078553800650312
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.273,
+                "5": 0.639,
+                "10": 0.753
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4364667158914252,
+              "acc1_ci": {
+                "lo": 0.245975,
+                "hi": 0.301
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.304,
+                "5": 0.678,
+                "10": 0.799
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4663345597639727,
+              "acc1_ci": {
+                "lo": 0.276,
+                "hi": 0.332
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.524,
+                "5": 0.962,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7050869047619048,
+              "acc1_ci": {
+                "lo": 0.492,
+                "hi": 0.554
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.458,
+                "5": 0.925,
+                "10": 0.998
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6547900793650793,
+              "acc1_ci": {
+                "lo": 0.426,
+                "hi": 0.49
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.4319146663627391,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.434754392762702,
+            "lo": 0.415923317365552,
+            "hi": 0.44943434613608185,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.2
+    },
+    "26": {
+      "unit_key": {
+        "layer": 26,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 26,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.4247413112737656,
+          "mean_cosine": 0.9235342638225186,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.4247413112737656,
+              "lo": 0.41464243625506525,
+              "hi": 0.4330995734607917
+            },
+            "mean_cosine": {
+              "point": 0.9235342638225186,
+              "lo": 0.9216384957424457,
+              "hi": 0.9253417373738129
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.272,
+                "5": 0.652,
+                "10": 0.767
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4385884895255842,
+              "acc1_ci": {
+                "lo": 0.245975,
+                "hi": 0.299
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.311,
+                "5": 0.704,
+                "10": 0.81
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4761014994857595,
+              "acc1_ci": {
+                "lo": 0.283,
+                "hi": 0.341
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.545,
+                "5": 0.958,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7165599206349207,
+              "acc1_ci": {
+                "lo": 0.514975,
+                "hi": 0.5750249999999999
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.475,
+                "5": 0.942,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6662246392496393,
+              "acc1_ci": {
+                "lo": 0.446,
+                "hi": 0.507
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.42326172023339836,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.42474131127376524,
+            "lo": 0.40661298571006793,
+            "hi": 0.4393754647581883,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 13.8
+    },
+    "27": {
+      "unit_key": {
+        "layer": 27,
+        "seed": 42,
+        "n_train": 50000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          7,
+          21
+        ],
+        "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+        "manifest_regime": {
+          "split_seed": 42,
+          "max_anchors": 48,
+          "article_cap_tokens": 4096,
+          "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+          "near_dupe": {
+            "ngram": 5,
+            "jaccard": 0.8
+          },
+          "eval_target": {
+            "margin": 1400,
+            "test": 1000,
+            "val": 400,
+            "per_article_cap": 12
+          },
+          "smoke": false,
+          "smoke_articles": null
+        },
+        "whiten": {
+          "lambda": 0.1,
+          "k_csls": 10
+        },
+        "n_boot": 1000,
+        "smoke": false
+      },
+      "layer": 27,
+      "n_train": 50000,
+      "arms": {
+        "boundary_ridge": {
+          "whole_map_r2": 0.465770044531698,
+          "mean_cosine": 0.8698429686993303,
+          "bootstrap_ci": {
+            "r2": {
+              "point": 0.465770044531698,
+              "lo": 0.45432118311405595,
+              "hi": 0.4759087248306752
+            },
+            "mean_cosine": {
+              "point": 0.8698429686993303,
+              "lo": 0.8658605214941907,
+              "hi": 0.8736701102223638
+            },
+            "n_test": 1000
+          },
+          "retrieval": {
+            "euclidean": {
+              "metric": "euclidean",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.28,
+                "5": 0.656,
+                "10": 0.787
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4439447526064806,
+              "acc1_ci": {
+                "lo": 0.252,
+                "hi": 0.308025
+              }
+            },
+            "cosine": {
+              "metric": "cosine",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.28,
+                "5": 0.674,
+                "10": 0.812
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 3.0,
+              "mrr": 0.4566996792461563,
+              "acc1_ci": {
+                "lo": 0.252,
+                "hi": 0.311025
+              }
+            },
+            "whiten_csls": {
+              "metric": "whiten_csls",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.53,
+                "5": 0.963,
+                "10": 1.0
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 1.0,
+              "mrr": 0.7075003968253968,
+              "acc1_ci": {
+                "lo": 0.499,
+                "hi": 0.562025
+              }
+            },
+            "whiten_cos": {
+              "metric": "whiten_cos",
+              "n": 1000,
+              "n_pool": 1000,
+              "acc_at_k": {
+                "1": 0.45,
+                "5": 0.935,
+                "10": 0.999
+              },
+              "chance_at_k": {
+                "1": 0.001,
+                "5": 0.005,
+                "10": 0.01
+              },
+              "median_rank": 2.0,
+              "mrr": 0.6482821789321789,
+              "acc1_ci": {
+                "lo": 0.419,
+                "hi": 0.481
+              }
+            }
+          },
+          "whitening": {
+            "primary": "whiten_csls",
+            "whiten_shrinkage_lambda": 0.1,
+            "k_csls": 10,
+            "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+          },
+          "fit_meta": {
+            "n_train": 50000,
+            "selection": "val-lambda (primal, streaming)",
+            "selected_lambda": 10000.0,
+            "val_r2_at_selected": 0.4687429695990515,
+            "lambda_grid_edge": null,
+            "ridge_block": 50000
+          },
+          "article_ci": {
+            "point": 0.46577004453169824,
+            "lo": 0.44873937078562887,
+            "hi": 0.4775707954888215,
+            "n_articles": 117,
+            "n_boot": 1000,
+            "seed": 42,
+            "n_degenerate_draws": 0
+          }
+        }
+      },
+      "wall_time_s": 14.2
+    }
+  },
+  "arm": "boundary_ridge (x_sep '.' anchor state -> next-span mean, WikiText control)",
+  "n_train": 50000,
+  "draw_convention": "file-order prefix over the b0 seed-42 shuffle (train_order order)",
+  "eval": {
+    "test": 1000,
+    "val": 400,
+    "article_disjoint": true
+  },
+  "manifest_regime": {
+    "split_seed": 42,
+    "max_anchors": 48,
+    "article_cap_tokens": 4096,
+    "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+    "near_dupe": {
+      "ngram": 5,
+      "jaccard": 0.8
+    },
+    "eval_target": {
+      "margin": 1400,
+      "test": 1000,
+      "val": 400,
+      "per_article_cap": 12
+    },
+    "smoke": false,
+    "smoke_articles": null
+  },
+  "span_text_shards": [
+    "boundary_spans_used_00.jsonl",
+    "boundary_spans_used_01.jsonl",
+    "boundary_spans_used_02.jsonl"
+  ],
+  "whitening": {
+    "primary": "whiten_csls",
+    "whiten_shrinkage_lambda": 0.1,
+    "k_csls": 10,
+    "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+  },
+  "knn": {
+    "ks": [
+      1,
+      5,
+      10
+    ],
+    "pool": "held-out test span-mean targets",
+    "chance_at_1": 0.001
+  },
+  "smoke": false,
+  "metadata": {
+    "git_commit": "9fc95e06e562d092fce48311026a268efb5166fc",
+    "git_dirty": false,
+    "phase": "boundary-arm",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue1901_plot1_remake.py",
+    "script": "issue1901_plot1_remake",
+    "issue": 1901,
+    "round": "plot1-remake",
+    "timestamp_utc": "2026-08-25T01:00:40Z"
+  }
+}
