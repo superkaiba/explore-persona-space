@@ -141,6 +141,23 @@ Model-B render fix pin (transformers 5.x return_dict flip; #2502 + #2378):
       to return_dict=True (BatchEncoding dict) — pre-fix the listcomp
       int()'d the DICT KEYS (ValueError on 'input_ids'). Synthetic fake
       tokenizers only; no model download, no corpus text.
+
+Secret-row drop pins (#2502 crash fix — SecretUploadGateError killed the
+Model B run at the chunk0048 upload gate; a model-generated completion
+carried a real-secret-grade string):
+
+  (s) redact_secret_rows drops the WHOLE flagged row (completion text AND
+      completion_token_ids — a text-only scrub leaks: the ids decode back to
+      the secret and the gate never scans the int array) using the upload
+      gate's OWN detector (secret_scrub.scan_bytes per line): the flagged row
+      is gone, scan_file on the rewritten file returns ZERO findings (the
+      gate passes by construction), the secret_redacted count is exact,
+      clean rows survive BYTE-IDENTICAL (token ids intact); an all-flagged
+      chunk raises loud (never an empty upload) with NO secret text in the
+      message; a clean chunk is byte-untouched at count 0; and phase_gen
+      wires the drop step AFTER the chunk write, BEFORE upload_single_file.
+      Synthetic planted AKIA-shaped string only — never a real secret, never
+      real rollout text.
 """
 
 from __future__ import annotations
@@ -1176,3 +1193,102 @@ def test_render_prompt_ids_flat_int_ids_under_both_conventions(disable_thinking)
         got = GC.render_prompt_ids(tok, "ping", disable_thinking=disable_thinking)
         assert got == want, (type(tok).__name__, got)
         assert all(type(x) is int for x in got), got
+
+
+# ---------------------------------------------------------------------------
+# (s) gen-side secret-row drop (#2502 crash fix: SecretUploadGateError at
+#     the chunk upload gate — drop whole rows, never scrub-text-keep-ids)
+# ---------------------------------------------------------------------------
+
+# Synthetic AWS-shaped key: \b(?:AKIA|ASIA)[0-9A-Z]{16}\b, chosen to NOT match
+# DUMMY_RX (no XXXX / 1234567890 / example / 0{8} / dummy tokens in it or in
+# the +-30-byte JSON context around it). Never a real secret.
+_PLANTED_SECRET = "AKIA" + "QQQJRZLWNBHXUEYT"
+
+
+def _s_gen_row(i: int, completion: str) -> dict:
+    return {
+        "context_id": f"ctx-{i:04d}",
+        "context_sha": hashlib.sha256(f"ctx-{i}".encode()).hexdigest()[:16],
+        "prompt_sha": hashlib.sha256(f"p-{i}".encode()).hexdigest()[:16],
+        "completion": completion,
+        "completion_token_ids": [100 + i, 200 + i, 300 + i],
+        "n_gen_tokens": 3,
+        "finish_reason": "stop",
+        "cap_hit": False,
+        "think_leak": False,
+    }
+
+
+def test_s_secret_row_dropped_whole_and_file_gate_clean(tmp_path):
+    """Pin (s) core: flagged row gone; gate-clean rewrite; survivors byte-identical."""
+    from explore_persona_space.orchestrate import secret_scrub
+
+    rows = [
+        _s_gen_row(0, "a clean answer about topology"),
+        _s_gen_row(1, f"my key is {_PLANTED_SECRET} ok"),
+        _s_gen_row(2, "another clean answer"),
+        _s_gen_row(3, "clean answer three"),
+    ]
+    lines = [json.dumps(r, ensure_ascii=False).encode() for r in rows]
+    # Pre-fix flag verification: the planted string IS detector-visible on its
+    # line (and clean lines are not) — the same scan the upload gate runs.
+    assert secret_scrub.scan_bytes(lines[1]), "planted secret must be detector-visible"
+    assert not secret_scrub.scan_bytes(lines[0])
+    assert not secret_scrub.scan_bytes(lines[2])
+    p = tmp_path / "chunk0048.jsonl"
+    p.write_bytes(b"\n".join(lines) + b"\n")
+
+    n = GC.redact_secret_rows(p, "chunk0048")
+    assert n == 1  # (c) exact count
+    out = p.read_bytes()
+    assert _PLANTED_SECRET.encode() not in out  # (a) flagged row gone
+    kept = [ln for ln in out.split(b"\n") if ln.strip()]
+    assert kept == [lines[0], lines[2], lines[3]]  # (d) byte-identical survivors
+    parsed = [json.loads(ln) for ln in kept]
+    assert [r["completion_token_ids"] for r in parsed] == [
+        rows[0]["completion_token_ids"],
+        rows[2]["completion_token_ids"],
+        rows[3]["completion_token_ids"],
+    ]
+    assert secret_scrub.scan_file(p) == []  # (b) the upload gate would pass
+    # The phase_gen post-drop stats path recounts from the rewritten file.
+    stats = GC.count_chunk_stats(p)
+    assert stats["n_rows"] == 3
+    assert stats["n_cap_hit"] == 0
+
+
+def test_s_all_rows_flagged_raises_loud_without_secret_text(tmp_path):
+    """Pin (s) degenerate: never upload an empty chunk; message carries no text."""
+    row = _s_gen_row(0, f"only row, contains {_PLANTED_SECRET}")
+    p = tmp_path / "chunk0000.jsonl"
+    original = json.dumps(row, ensure_ascii=False).encode() + b"\n"
+    p.write_bytes(original)
+    with pytest.raises(RuntimeError, match="refusing to upload"):
+        GC.redact_secret_rows(p, "chunk0000")
+    try:
+        GC.redact_secret_rows(p, "chunk0000")
+    except RuntimeError as e:
+        assert _PLANTED_SECRET not in str(e)  # count-only: no secret in the raise
+    assert p.read_bytes() == original  # file left on disk for investigation
+
+
+def test_s_clean_chunk_untouched_zero_count(tmp_path):
+    """Pin (s) no-op path: zero drops => no rewrite, bytes untouched."""
+    rows = [_s_gen_row(i, f"clean answer {i}") for i in range(3)]
+    p = tmp_path / "chunk0001.jsonl"
+    original = b"\n".join(json.dumps(r, ensure_ascii=False).encode() for r in rows) + b"\n"
+    p.write_bytes(original)
+    assert GC.redact_secret_rows(p, "chunk0001") == 0
+    assert p.read_bytes() == original
+
+
+def test_s_redact_wired_in_phase_gen_after_write_before_upload():
+    """Pin (s) wiring order: chunk write -> redact -> upload_single_file."""
+    import inspect
+
+    src = inspect.getsource(GC.phase_gen)
+    i_write = src.index('local.open("w"')
+    i_redact = src.index("redact_secret_rows(local, key)")
+    i_upload = src.index("upload_single_file(local, dests[key])")
+    assert i_write < i_redact < i_upload

@@ -52,7 +52,14 @@ against FRESH prefixes (the regime digest forbids in-place mixing). Think-leak
 policy (#2378 classifier port, g2 Major 2): a completion containing
 ``<think>`` is FLAGGED at gen (``think_leak`` on the persisted row — rollout
 text always persists) and DROPPED at capture (excluded from tensors +
-rows.json); counts ride gen_meta + capture_meta.
+rows.json); counts ride gen_meta + capture_meta. Secret-drop policy (#2502
+crash fix): a gen row whose JSONL line carries a real-secret-grade string
+(``secret_scrub.scan_bytes`` — the SAME detector the fail-closed upload gate
+runs) is DROPPED WHOLE at gen BEFORE upload — completion text AND
+``completion_token_ids``, because the ids decode back to the secret and a
+text-only scrub would leak through the int array; a chunk dropping ALL rows
+fails loud. Counts ride gen_meta (``n_secret_redacted``) + capture_meta
+totals (``n_secret_redacted_drops``); logs are COUNT-ONLY (never row text).
 
 Content hygiene: corpus/context text is NEVER printed — logs carry digests,
 counts, and chunk keys only.
@@ -801,6 +808,51 @@ def _is_think_leak(row: dict) -> bool:
     return "<think>" in (row.get("completion") or "")
 
 
+def redact_secret_rows(local: Path, key: str) -> int:
+    """Drop whole secret-bearing rows from a gen chunk file BEFORE upload (#2502).
+
+    Model completions can regurgitate real-secret-grade strings; the fail-closed
+    upload gate (``assert_upload_clean`` inside ``hub._upload``) scans file bytes
+    and refuses the whole chunk (Model B chunk0048 crashed there,
+    SecretUploadGateError). A text-only scrub is a LEAK-BYPASS: the row's
+    ``completion_token_ids`` decode straight back to the secret and the gate
+    never scans the int array — so the ENTIRE line is dropped (text AND token
+    ids; capture teacher-forces on stored ids of KEPT rows only, so kept rows
+    are unaffected). Detection is the gate's own ``scan_bytes`` applied per
+    line (the full line, so a secret in ANY field is caught): a per-line
+    DUMMY_RX context window is a subset of the gate's whole-file window, so
+    per-line flags a SUPERSET of gate findings and the rewritten file passes
+    the gate by construction. Kept lines are byte-untouched. Content hygiene:
+    count-only — never prints/raises row text or finding values. Returns the
+    dropped-row count; rewrites (atomic same-dir replace) only when > 0;
+    raises if ALL rows are flagged (never upload an empty chunk — the file is
+    left on disk for investigation).
+    """
+    from explore_persona_space.orchestrate.secret_scrub import scan_bytes
+
+    raw = local.read_bytes()
+    kept: list[bytes] = []
+    dropped = 0
+    for ln in raw.split(b"\n"):
+        if not ln.strip():
+            continue
+        if scan_bytes(ln, path=str(local)):
+            dropped += 1
+            continue
+        kept.append(ln)
+    if not dropped:
+        return 0
+    if not kept:
+        raise RuntimeError(
+            f"[gen] {key}: ALL {dropped} rows secret-flagged — refusing to upload an "
+            "empty chunk (count-only; no row text). Investigate the generation output."
+        )
+    tmp = local.with_name(local.name + ".redact.tmp")
+    tmp.write_bytes(b"\n".join(kept) + b"\n")
+    tmp.replace(local)
+    return dropped
+
+
 def count_chunk_stats(path: Path) -> dict:
     """Recount a gen chunk file's stats (cross-pod resume path for gen_meta)."""
     n = cap = leak = gen_tok = 0
@@ -942,6 +994,9 @@ def write_gen_meta(
     n_rows = sum(s["n_rows"] for s in stats.values())
     n_cap = sum(s["n_cap_hit"] for s in stats.values())
     n_leak = sum(s.get("n_think_leak", 0) for s in stats.values())
+    # Recounted chunks (produced by another run/pod) lack the key: dropped rows
+    # are absent from the uploaded chunk, so a recount cannot recover the count.
+    n_secret = sum(s.get("n_secret_redacted", 0) for s in stats.values())
     frac = n_cap / max(1, n_rows)
     meta = {
         "model": args.model,
@@ -953,6 +1008,11 @@ def write_gen_meta(
         "regen_required": frac > CAP_HIT_THRESHOLD,
         "n_think_leak": n_leak,
         "think_leak_policy": "flagged at gen (rollout text persisted); dropped at capture",
+        "n_secret_redacted": n_secret,
+        "secret_redacted_policy": (
+            "whole row (completion text + token ids) dropped at gen BEFORE upload "
+            "(#2502; count-only, this-run chunks only — recounts cannot recover it)"
+        ),
         "template_sha16": template_sha,
         "regime": regime,
         "per_chunk": stats,
@@ -963,7 +1023,7 @@ def write_gen_meta(
     upload_single_file(p, f"{args.raw_prefix}/gen_meta{name_suffix(args)}.json")
     print(
         f"[cap-hit] fraction={frac:.4f} ({n_cap}/{n_rows}) threshold={CAP_HIT_THRESHOLD}; "
-        f"think_leak={n_leak}",
+        f"think_leak={n_leak}; secret_redacted={n_secret}",
         flush=True,
     )
     if frac > CAP_HIT_THRESHOLD:
@@ -1092,6 +1152,14 @@ def phase_gen(args, spec) -> None:
                     "think_leak": think_leak,
                 }
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        # #2502 crash fix: drop whole secret-bearing rows BEFORE the fail-closed
+        # upload gate (hub._upload -> assert_upload_clean) scans the file.
+        # NEVER scrub-text-and-keep-ids (token ids decode back to the secret)
+        # and NEVER bypass the gate (EPM_SECRET_UPLOAD_GATE=0 is forbidden
+        # here — the data repo is public). COUNT-ONLY log; no row text.
+        n_secret = redact_secret_rows(local, key)
+        if n_secret:
+            print(f"[gen] {key}: secret_redacted {n_secret}", flush=True)
         sz = local.stat().st_size
         if sz > GEN_CHUNK_MAX_BYTES:
             raise RuntimeError(
@@ -1099,14 +1167,22 @@ def phase_gen(args, spec) -> None:
                 "lower --chunk-size"
             )
         upload_single_file(local, dests[key])
+        if n_secret:
+            # Dropped rows may have carried cap_hit / think_leak / token counts;
+            # recount from the rewritten file so stats match uploaded content
+            # (and the realized row-count reconciliation reads POST-drop rows).
+            chunk_stats = count_chunk_stats(local)
+        else:
+            chunk_stats = {
+                "n_rows": len(rendered),
+                "n_cap_hit": n_cap,
+                "n_think_leak": n_leak,
+                "n_gen_tokens_sum": gen_tok_sum,
+                "cap_hit_ids": cap_ids,
+            }
+        chunk_stats["n_secret_redacted"] = n_secret
         local.unlink()
-        stats[key] = {
-            "n_rows": len(rendered),
-            "n_cap_hit": n_cap,
-            "n_think_leak": n_leak,
-            "n_gen_tokens_sum": gen_tok_sum,
-            "cap_hit_ids": cap_ids,
-        }
+        stats[key] = chunk_stats
         n_generated += 1
         atomic_write_json(stats_path, stats)
         ledger.mark_done(key)
@@ -1440,7 +1516,9 @@ def phase_capture(args, spec) -> None:
     ensure_remote_regime(
         args.raw_prefix, gen_regime(args, template_sha, corpus_sha), work, write_if_absent=False
     )
-    require_gen_complete(args, work)  # #4 defensive: refuse a regen_required corpus
+    # #4 defensive: refuse a regen_required corpus. The returned meta also
+    # carries per-chunk n_secret_redacted (#2502 gen-time drop class).
+    gen_meta = require_gen_complete(args, work)
     regime = capture_regime(args, template_sha, corpus_sha)
     ensure_remote_regime(args.out_prefix, regime, work, write_if_absent=True)
     ledger = StageLedger(work / f"capture_ledger{name_suffix(args)}.json", regime)
@@ -1525,6 +1603,14 @@ def phase_capture(args, spec) -> None:
             s["drops"].get("empty_completion", 0) for s in summaries.values()
         ),
         "n_think_leak_drops": sum(s["drops"].get("think_leak", 0) for s in summaries.values()),
+        # #2502 gen-time drop class: rows dropped BEFORE upload (secret-bearing
+        # line = text + token ids), so they are absent from n_gen_rows above;
+        # read from gen_meta (capture never sees them). Recounted gen chunks
+        # lack the key => counted 0 (the count is unrecoverable post-drop).
+        "n_secret_redacted_drops": sum(
+            int((s or {}).get("n_secret_redacted", 0))
+            for s in (gen_meta.get("per_chunk") or {}).values()
+        ),
     }
     # Producer contract for the downstream fits/reliability unit: exact chunk
     # keys + per-chunk counts + the COMPLETE captured layer set + the full
