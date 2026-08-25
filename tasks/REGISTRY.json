@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2581,
+  "highest_id": 2582,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12193,6 +12193,13 @@
       "path": "tasks/proposed/2581",
       "status": "proposed",
       "title": "Session-namespace commit-message temp files so git commit -F cannot consume a concurrent session's message"
+    },
+    "2582": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2582",
+      "status": "proposed",
+      "title": "verify_task_body.py: add per-pair to the per-unit-evidence vocabulary"
     },
     "259": {
       "has_clean_result": false,
