@@ -1,0 +1,316 @@
+"""Paper figures: the context-to-answer map across speaker identities and framings.
+
+Results-2 Plot 1 and Plot 2 of the context-answer-map paper, sharing one x-axis
+and one label map. Replaces the two-figure stitch of #1345 (chat / plain text /
+story) plus #1310 (four story characters), which compared cells measured on
+different corpora. Everything here comes from ONE lattice, #2054: one shared
+draw of real conversations, 8,000 rows per cell against d = 3,584 (so every
+ambient ridge fit is well-posed), layer 19, K = 5 conversation-grouped held-out
+folds under the shared production fold map.
+
+Sources (context arm, on-policy answers only, i.e. the measured model writes the
+answer itself; the spliced-verbatim-answer cells are deliberately excluded):
+
+* ``eval_results/issue_2054/specialization_ladder/ladder.json`` -- per-cell own-map
+  ceiling, the pooled-map read, and the identity-plus-bias baseline.
+* ``eval_results/issue_2054/specialization_ladder/loco_pooled.units.jsonl`` -- the
+  leave-one-speaker-out pooled read (a universal map that never saw this speaker).
+
+Six x positions, ordered by how close the speaker is to the assistant in the
+chat template. The ordering is intuitive, not fitted:
+
+    assistant in the chat template
+    assistant in plain text ("User: ... / Assistant: ...")
+    HELIOS   (ship AI)      speaking in its own story
+    Wren     (helpful)      speaking in its own story
+    Dana     (ordinary)     speaking in its own story
+    Vex      (villain)      speaking in its own story
+
+Plot 1 (``c4_speaker_ladder``): the map's own-cell ceiling per speaker, base vs
+instruct, with the identity-plus-bias baseline and the shuffled-answer null.
+
+Plot 2 (``c4_universal_vs_specialized``): the same x-axis, one panel per model,
+comparing a map trained on everything against a map trained on this speaker
+alone, with the same identity-plus-bias baseline.
+
+The shuffled-answer null (mean of the six cells' banked 97.5th percentiles) is
+drawn as a dotted line: the floor a map with no real context-answer pairing
+reaches.
+
+The assistant plain-text instruct bar is plotted at its cap-excluded refit
+rather than its raw value. The plain-text render carries no end-of-turn token,
+so 42.5% of that cell's own generations ran to the 4,096-token cap; #2054
+banked the exclusion refit at 0.390 against the raw 0.209, with a
+random-removal control at matched n moving it the other way (0.195). A
+regeneration at a 16,384-token cap is in flight and will replace the
+substituted value. The substitution is disclosed in the figure's caption, per
+Thomas's call (2026-08-25) to draw it as a plain bar rather than mark it on
+the canvas.
+
+Usage::
+
+    uv run python scripts/issue2054_paper_r2_figs.py \
+        [--out-dir figures/paper] [--style iclr]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import matplotlib  # noqa: E402
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    figsize_iclr_full,
+    paper_color,
+    savefig_paper,
+    set_paper_style,
+)
+
+REPO = Path(__file__).resolve().parents[1]
+LADDER_DIR = REPO / "eval_results/issue_2054/specialization_ladder"
+LADDER = LADDER_DIR / "ladder.json"
+LOCO = LADDER_DIR / "loco_pooled.units.jsonl"
+
+# Reader-facing display names live here and nowhere else: one label map, so a
+# rename lands once. Internal cell ids never reach an axis label.
+# (character key, framing key, two-line tick label)
+POSITIONS: list[tuple[str, str, str]] = [
+    ("assistant", "chat", "Assistant\nchat template"),
+    ("assistant", "bare_text", "Assistant\nplain text"),
+    ("helios", "attrib_quoted", "HELIOS\nship AI"),
+    ("wren", "attrib_quoted", "Wren\nhelpful"),
+    ("dana", "attrib_quoted", "Dana\nordinary"),
+    ("vex", "attrib_quoted", "Vex\nvillain"),
+]
+PROVENANCE = "on_policy"
+ARM = "context"
+MODELS = ("base", "instruct")
+MODEL_KEY = {"qwen2.5-7b": "base", "qwen2.5-7b-instruct": "instruct"}
+
+IDENTITY_LABEL = "identity + bias baseline"
+
+# Banked cap-excluded refit of the one truncation-contaminated cell
+# (figures/issue_2054/caphit_censoring_refits.meta.json, bare text / capped
+# removed), keyed by (character, framing, model).
+CAP_EXCLUDED = {("assistant", "bare_text", "instruct"): 0.38985271917718867}
+
+
+def load_cells() -> dict[tuple[str, str, str], dict]:
+    """Index the ladder's context-arm on-policy units by (character, framing, model)."""
+    payload = json.loads(LADDER.read_text())
+    out: dict[tuple[str, str, str], dict] = {}
+    for unit in payload["units"]:
+        if unit["arm"] != ARM or unit["provenance"] != PROVENANCE:
+            continue
+        out[(unit["character"], unit["framing"], unit["model"])] = unit
+    return out
+
+
+def load_loco() -> dict[tuple[str, str, str], float]:
+    """Fold-mean held-out R^2 of the pooled map fit WITHOUT this speaker's cells."""
+    out: dict[tuple[str, str, str], float] = {}
+    for line in LOCO.read_text().split("\n"):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row["arm"] != ARM or row["condition"] != PROVENANCE:
+            continue
+        key = (row["speaker"], row["framing"], MODEL_KEY[row["model"]])
+        out[key] = float(np.mean([f["loco"]["r2"] for f in row["per_fold"]]))
+    return out
+
+
+def build_series(cells: dict[tuple[str, str, str], dict], loco: dict) -> dict:
+    """Pull the six positions x two models out of the indexed cells, fail loud on a miss."""
+    series: dict = {"labels": [label for _, _, label in POSITIONS], "n": [], "null": []}
+    for model in MODELS:
+        series[model] = {"ceiling": [], "pooled": [], "loco": [], "identity": []}
+    for character, framing, _ in POSITIONS:
+        for model in MODELS:
+            key = (character, framing, model)
+            if key not in cells:
+                raise KeyError(f"no {ARM}/{PROVENANCE} cell for {key}; have {sorted(cells)}")
+            unit = cells[key]
+            series[model]["ceiling"].append(unit["ceiling_r2"])
+            series[model]["pooled"].append(unit["r2"]["pooled"])
+            series[model]["identity"].append(unit["aux_r2"]["identity_cell"])
+            if key not in loco:
+                raise KeyError(f"no LOCO row for {key}; have {sorted(loco)}")
+            series[model]["loco"].append(loco[key])
+            series["n"].append(unit["n_join"])
+            series["null"].append(unit["banked_null_r2_pooled_p95"])
+    return series
+
+
+def _substituted_indices() -> list[int]:
+    """Positions whose instruct bar is plotted at the cap-excluded refit."""
+    return [
+        idx
+        for idx, (character, framing, _) in enumerate(POSITIONS)
+        if (character, framing, "instruct") in CAP_EXCLUDED
+    ]
+
+
+def _apply_cap_excluded(values: list[float], indices: list[int]) -> list[float]:
+    """Swap in the cap-excluded refit at the substituted positions."""
+    out = list(values)
+    for idx in indices:
+        character, framing, _ = POSITIONS[idx]
+        out[idx] = CAP_EXCLUDED[(character, framing, "instruct")]
+    return out
+
+
+def _identity_ticks(ax, x, values, span: float, label: str | None) -> None:
+    """Draw the identity-plus-bias baseline as a short tick per position."""
+    ax.plot(
+        x,
+        values,
+        linestyle="none",
+        marker="_",
+        markersize=span * 26,
+        markeredgewidth=1.6,
+        color=paper_color("identity_bias"),
+        label=label,
+    )
+
+
+def _ordered_legend(ax, order: list[str], **kwargs) -> None:
+    """Legend in reading order, ignoring labels this panel did not draw."""
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles, strict=True))
+    present = [name for name in order if name in by_label]
+    ax.legend([by_label[name] for name in present], present, **kwargs)
+
+
+def figure_ladder(series: dict, out_dir: Path) -> None:
+    """Plot 1: own-cell map ceiling per speaker, base vs instruct."""
+    x = np.arange(len(series["labels"]), dtype=float)
+    width = 0.38
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.86), constrained_layout=True)
+    substituted = _substituted_indices()
+
+    for model, offset in zip(MODELS, (-width / 2, width / 2), strict=True):
+        values = series[model]["ceiling"]
+        if model == "instruct":
+            values = _apply_cap_excluded(values, substituted)
+        ax.bar(x + offset, values, width, color=paper_color(model), label=model)
+
+    for model, offset in zip(MODELS, (-width / 2, width / 2), strict=True):
+        _identity_ticks(
+            ax,
+            x + offset,
+            series[model]["identity"],
+            width,
+            IDENTITY_LABEL if model == "base" else None,
+        )
+
+    null_level = float(np.mean(series["null"]))
+    ax.axhline(
+        null_level,
+        color=paper_color("null"),
+        linestyle=":",
+        linewidth=1.0,
+        label="shuffled answers (null)",
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(series["labels"])
+    ax.set_ylabel(r"held-out $R^2$ (context $\rightarrow$ answer, layer 19)")
+    ax.axhline(0.0, color=paper_color("reference"), linewidth=0.6)
+    # The identity-plus-bias baseline sits far below zero, so the axis is set to
+    # show it rather than letting the bars alone drive autoscale.
+    floor = min(min(series[m]["identity"]) for m in MODELS)
+    ax.set_ylim(floor - 0.12, None)
+    _ordered_legend(
+        ax,
+        ["base", "instruct", IDENTITY_LABEL, "shuffled answers (null)"],
+        # Anchored into the empty band just under zero: the lower-left corner is
+        # where the plain-text instruct identity tick (-1.51) sits.
+        loc="upper left",
+        bbox_to_anchor=(0.01, 0.64),
+        ncol=2,
+    )
+    savefig_paper(fig, "c4_speaker_ladder", dir=out_dir)
+    plt.close(fig)
+
+
+def figure_universal(series: dict, out_dir: Path) -> None:
+    """Plot 2: a map trained on everything against a map trained on this speaker alone."""
+    x = np.arange(len(series["labels"]), dtype=float)
+    width = 0.38
+    # Stacked, not side-by-side: two panels across 5.5in leaves no room for six
+    # two-line speaker labels, and they collide.
+    fig, axes = plt.subplots(
+        2, 1, figsize=figsize_iclr_full(1.15), sharex=True, sharey=True, constrained_layout=True
+    )
+    substituted = _substituted_indices()
+
+    arms = [
+        ("ceiling", "trained on this speaker alone", paper_color("instruct")),
+        ("pooled", "trained on everything", paper_color("oracle_answer")),
+    ]
+
+    # Both arms are plotted RAW here, cap-excluded substitution deliberately NOT
+    # applied. Only the own-map refit was banked cap-excluded; substituting it
+    # while the pooled bar stays raw would compare two different row sets in the
+    # same speaker group. Plot 1 has no such pairing and does substitute.
+    for ax, model in zip(axes, MODELS, strict=True):
+        for (key, label, color), offset in zip(arms, (-width / 2, width / 2), strict=True):
+            ax.bar(x + offset, series[model][key], width, color=color, label=label)
+        _identity_ticks(ax, x, series[model]["identity"], width * 2, IDENTITY_LABEL)
+        ax.axhline(0.0, color=paper_color("reference"), linewidth=0.6)
+        ax.set_ylabel(f"{model}\n" + r"held-out $R^2$")
+
+    axes[-1].set_xticks(x)
+    axes[-1].set_xticklabels(series["labels"])
+    floor = min(min(series[m]["identity"]) for m in MODELS)
+    axes[0].set_ylim(floor - 0.12, None)
+    _ordered_legend(
+        axes[0],
+        [label for _, label, _ in arms] + [IDENTITY_LABEL],
+        loc="lower left",
+        ncol=2,
+    )
+    savefig_paper(fig, "c4_universal_vs_specialized", dir=out_dir)
+    plt.close(fig)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out-dir", type=Path, default=REPO / "figures/paper")
+    ap.add_argument("--style", choices=("iclr",), default="iclr")
+    args = ap.parse_args()
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    set_paper_style(args.style)
+    series = build_series(load_cells(), load_loco())
+    for idx, label in enumerate(series["labels"]):
+        flat = label.replace("\n", " / ")
+        parts = [
+            f"{model}: own {series[model]['ceiling'][idx]:+.3f} "
+            f"pooled {series[model]['pooled'][idx]:+.3f} "
+            f"loco {series[model]['loco'][idx]:+.3f} "
+            f"id+bias {series[model]['identity'][idx]:+.3f}"
+            for model in MODELS
+        ]
+        print(f"{flat:26s} " + " | ".join(parts))
+    print(f"rows per cell: {sorted(set(series['n']))}")
+    print(f"shuffled-answer null (mean p97.5): {np.mean(series['null']):+.4f}")
+
+    figure_ladder(series, args.out_dir)
+    figure_universal(series, args.out_dir)
+    print("DONE", args.out_dir)
+
+
+if __name__ == "__main__":
+    main()

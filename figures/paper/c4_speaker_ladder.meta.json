@@ -1,22 +1,22 @@
 {
-  "commit": "4cddcdd6+dirty",
-  "render_id": "c14c6a1571114cc0",
-  "git_commit": "4cddcdd6a8f0502d63d9b31c889ec9587a59e97c",
+  "commit": "bdfd8307+dirty",
+  "render_id": "28428b7ef56f4823",
+  "git_commit": "bdfd83075628ea543b8cc17c84fff8fa4e216973",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2054_paper_speaker_ladder_fig.py",
+    "scripts/issue2054_paper_r2_figs.py",
     "eval_results/issue_2474/n1m_map_arms.json",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
-    "figures/paper/c1_stage_retention.meta.json",
-    "figures/paper/c1_stage_retention.pdf",
-    "figures/paper/c1_stage_retention.png",
     "figures/paper/c3_persona_direction_spectrum.meta.json",
     "figures/paper/c3_persona_direction_spectrum.pdf",
     "figures/paper/c3_persona_direction_spectrum.png",
-    "scripts/issue1901_avgtarget_plots.py",
+    "figures/paper/c4_speaker_ladder.meta.json",
+    "figures/paper/c4_speaker_ladder.pdf",
+    "figures/paper/c4_speaker_ladder.png",
     "scripts/issue2474_n1m_map.py",
+    "scripts/issue2564_type_reads_plot.py",
     "scripts/issue779_plot3_redesign.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
@@ -29,14 +29,16 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2552/events.jsonl",
+    "tasks/running/2568/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "untracked",
-  "git_argv0_path": "scripts/issue2054_paper_speaker_ladder_fig.py",
-  "created": "2026-08-25T16:21:36Z",
+  "git_argv0_path": "scripts/issue2054_paper_r2_figs.py",
+  "created": "2026-08-25T16:41:20Z",
   "figsize": [
     5.5,
-    3.6300000000000003
+    4.7299999999999995
   ],
   "points": [
     {
@@ -83,7 +85,7 @@
     },
     {
       "x": 1.19,
-      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.20882159429132746,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.38985271917718867,
       "_kind": "bar",
       "_group": 1
     },
@@ -112,29 +114,100 @@
       "_group": 1
     },
     {
+      "x": -0.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -1.0164627183325465,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.7303550581969958,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6781967605260142,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6902511251920581,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.5319566685059043,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.8422278162310233,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.8400497253129029,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -1.5096405941662412,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6427885531940452,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6850771881940597,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.5145396609602718,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.8233364601594321,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
       "x": 0.0,
       "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.028103851491912357,
       "series": "shuffled answers (null)",
       "_kind": "line",
-      "_group": 2
+      "_group": 4
     },
     {
       "x": 1.0,
       "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.028103851491912357,
       "series": "shuffled answers (null)",
       "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 1.19,
-      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.38985271917718867,
-      "series": "instruct, truncated answers removed",
-      "_kind": "line",
-      "_group": 3
+      "_group": 4
     }
   ],
-  "n_series": 4,
-  "total_points": 15,
+  "n_series": 5,
+  "total_points": 26,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -144,8 +217,8 @@
         "legend_labels": [
           "base",
           "instruct",
-          "shuffled answers (null)",
-          "instruct, truncated answers removed"
+          "identity + bias baseline",
+          "shuffled answers (null)"
         ],
         "xticklabels": [
           "Assistant\nchat template",
@@ -156,21 +229,19 @@
           "Vex\nvillain"
         ],
         "yticklabels": [
-          "\u22120.1",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
           "0.0",
-          "0.1",
-          "0.2",
-          "0.3",
-          "0.4",
           "0.5",
-          "0.6",
-          "0.7"
+          "1.0"
         ]
       }
     ],
     "series": [
+      "identity + bias baseline",
       "shuffled answers (null)",
-      "instruct, truncated answers removed",
       "base",
       "instruct"
     ]
