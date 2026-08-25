@@ -54,7 +54,6 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # shared-VM thread caps (#847) + API keys BEFORE any heavy import
@@ -199,8 +198,10 @@ def _meta(phase: str) -> dict:
 
 
 def _write_json(path: Path, payload: dict) -> None:
-    with atomic_replace(path) as tmp:
-        tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -215,9 +216,12 @@ def _read_jsonl(path: Path) -> list[dict]:
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:
-    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as f:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    os.replace(tmp, path)
 
 
 def _read_committed_json(rel: str) -> dict:
