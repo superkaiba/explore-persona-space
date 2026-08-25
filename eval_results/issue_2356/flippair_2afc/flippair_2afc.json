@@ -1,0 +1,177 @@
+{
+ "meta": {
+  "issue": 2356,
+  "round": "flippair_2afc",
+  "layer": 20,
+  "map": "analysis_tensors/maps/3a_generic/layer20.npz (label-blind, generic corpus)",
+  "seed": 2356,
+  "n_boot": 10000,
+  "n_null": 10000,
+  "gpu_hours": 0
+ },
+ "cross_family_yardstick_norm": 44.8475015136091,
+ "strata": {
+  "A_flip_rewrite_only": {
+   "n_pairs": 901,
+   "n_families": 164,
+   "context_dist_median": 48.778528384865204,
+   "context_dist_ratio_to_yardstick": 1.0876531966906389,
+   "context_cosine_median": 0.8868992036819336,
+   "arms": {
+    "map_3a_generic": {
+     "acc": 0.9178690344062154,
+     "ci95_family_clustered": [
+      0.8997734671870848,
+      0.9346591695610591
+     ],
+     "n_directions": 1802
+    },
+    "identity_bias_loo": {
+     "acc": 0.7863485016648168,
+     "ci95_family_clustered": [
+      0.7627116353641777,
+      0.8103058068089249
+     ],
+     "n_directions": 1802
+    }
+   },
+   "null_band_95": [
+    0.47669256381798003,
+    0.5227524972253053
+   ]
+  },
+  "B_flip_any": {
+   "n_pairs": 1208,
+   "n_families": 168,
+   "context_dist_median": 50.72309060614738,
+   "context_dist_ratio_to_yardstick": 1.1310126293380092,
+   "context_cosine_median": 0.8773480679358012,
+   "arms": {
+    "map_3a_generic": {
+     "acc": 0.929635761589404,
+     "ci95_family_clustered": [
+      0.914377469053649,
+      0.9441729727218348
+     ],
+     "n_directions": 2416
+    },
+    "identity_bias_loo": {
+     "acc": 0.8017384105960265,
+     "ci95_family_clustered": [
+      0.7798236754541248,
+      0.8239872169397447
+     ],
+     "n_directions": 2416
+    }
+   },
+   "null_band_95": [
+    0.48013245033112584,
+    0.5198675496688742
+   ]
+  },
+  "C_sameBehavior_rewrite_only": {
+   "n_pairs": 4403,
+   "n_families": 393,
+   "context_dist_median": 31.273055403452886,
+   "context_dist_ratio_to_yardstick": 0.6973199029596552,
+   "context_cosine_median": 0.9533857229067164,
+   "arms": {
+    "map_3a_generic": {
+     "acc": 0.7225755166931638,
+     "ci95_family_clustered": [
+      0.7098002568386319,
+      0.735423946864161
+     ],
+     "n_directions": 8806
+    },
+    "identity_bias_loo": {
+     "acc": 0.7271178741766977,
+     "ci95_family_clustered": [
+      0.7129777981231403,
+      0.741214633905339
+     ],
+     "n_directions": 8806
+    }
+   },
+   "null_band_95": [
+    0.4894361798773563,
+    0.5106745400863048
+   ]
+  },
+  "C1_sameBehavior_refuse_only": {
+   "n_pairs": 4098,
+   "n_families": 375,
+   "context_dist_median": 31.402503459608283,
+   "context_dist_ratio_to_yardstick": 0.7002063080387901,
+   "context_cosine_median": 0.9530963554057885,
+   "arms": {
+    "map_3a_generic": {
+     "acc": 0.7223035627135188,
+     "ci95_family_clustered": [
+      0.7087965037186682,
+      0.7360775492485319
+     ],
+     "n_directions": 8196
+    },
+    "identity_bias_loo": {
+     "acc": 0.7337725719863348,
+     "ci95_family_clustered": [
+      0.7190926095980726,
+      0.7481464436081242
+     ],
+     "n_directions": 8196
+    }
+   },
+   "null_band_95": [
+    0.48914104441190825,
+    0.5107399951195705
+   ]
+  },
+  "C2_sameBehavior_engage_only": {
+   "n_pairs": 305,
+   "n_families": 80,
+   "context_dist_median": 29.515165279772884,
+   "context_dist_ratio_to_yardstick": 0.6581228448326474,
+   "context_cosine_median": 0.9580275555465845,
+   "arms": {
+    "map_3a_generic": {
+     "acc": 0.7262295081967213,
+     "ci95_family_clustered": [
+      0.6912875610128126,
+      0.7587211609449982
+     ],
+     "n_directions": 610
+    },
+    "identity_bias_loo": {
+     "acc": 0.6377049180327868,
+     "ci95_family_clustered": [
+      0.6080135888501742,
+      0.6696976647206004
+     ],
+     "n_directions": 610
+    }
+   },
+   "null_band_95": [
+    0.460655737704918,
+    0.5393442622950819
+   ]
+  }
+ },
+ "pool_knn_retrieval_cosine": {
+  "metric": "cosine",
+  "n": 2630,
+  "n_pool": 2630,
+  "acc_at_k": {
+   "1": 0.13269961977186312,
+   "5": 0.2973384030418251,
+   "10": 0.37718631178707224
+  },
+  "chance_at_k": {
+   "1": 0.00038022813688212925,
+   "5": 0.0019011406844106464,
+   "10": 0.0038022813688212928
+  },
+  "median_rank": 29.5,
+  "mrr": 0.21239990003336906
+ }
+}

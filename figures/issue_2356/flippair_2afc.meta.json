@@ -1,0 +1,279 @@
+{
+  "commit": "33122705+dirty",
+  "render_id": "dd8a26dc07dc402a",
+  "git_commit": "331227053adad1f47a128a1264c607c03636eefd",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_2afc.py",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2356_flippair_figures.py",
+  "created": "2026-08-25T20:43:33Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "Behavior\ndiffers\n(rewrite pair)",
+      "Context distance \u00f7 cross-family distance": 1.0876531966906389,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Behavior\ndiffers\n(+ original)",
+      "Context distance \u00f7 cross-family distance": 1.1310126293380092,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Same behavior\n(both\nrefuse)",
+      "Context distance \u00f7 cross-family distance": 0.7002063080387901,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Same behavior\n(both\ncomply)",
+      "Context distance \u00f7 cross-family distance": 0.6581228448326474,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.18,
+      "Two-alternative accuracy": 0.9178690344062154,
+      "error": 0.01744285118698713,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "Two-alternative accuracy": 0.929635761589404,
+      "error": 0.014897751834092865,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.82,
+      "Two-alternative accuracy": 0.7223035627135188,
+      "error": 0.013640522764931828,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.82,
+      "Two-alternative accuracy": 0.7262295081967213,
+      "error": 0.03371679996609278,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.18,
+      "Two-alternative accuracy": 0.7863485016648168,
+      "error": 0.0237970857223736,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "Two-alternative accuracy": 0.8017384105960265,
+      "error": 0.02208177074280998,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.18,
+      "Two-alternative accuracy": 0.7337725719863348,
+      "error": 0.014526917005025786,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.18,
+      "Two-alternative accuracy": 0.6377049180327868,
+      "error": 0.030842037935213118,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "Two-alternative accuracy": 0.8997734671870848,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8200000000000001,
+      "Two-alternative accuracy": 0.914377469053649,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "Two-alternative accuracy": 0.7087965037186682,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.82,
+      "Two-alternative accuracy": 0.6912875610128126,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "Two-alternative accuracy": 0.9346591695610591,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8200000000000001,
+      "Two-alternative accuracy": 0.9441729727218348,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "Two-alternative accuracy": 0.7360775492485319,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.82,
+      "Two-alternative accuracy": 0.7587211609449982,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "Two-alternative accuracy": 0.7627116353641777,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.18,
+      "Two-alternative accuracy": 0.7798236754541248,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "Two-alternative accuracy": 0.7190926095980726,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.18,
+      "Two-alternative accuracy": 0.6080135888501742,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.18,
+      "Two-alternative accuracy": 0.8103058068089249,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.18,
+      "Two-alternative accuracy": 0.8239872169397447,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.18,
+      "Two-alternative accuracy": 0.7481464436081242,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "Two-alternative accuracy": 0.6696976647206004,
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "How similar are the paired prompts?",
+        "ylabel": "Context distance \u00f7 cross-family distance",
+        "xticklabels": [
+          "Behavior\ndiffers\n(rewrite pair)",
+          "Behavior\ndiffers\n(+ original)",
+          "Same behavior\n(both\nrefuse)",
+          "Same behavior\n(both\ncomply)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      },
+      {
+        "title_left": "Does the map pick the right answer?",
+        "ylabel": "Two-alternative accuracy",
+        "legend_labels": [
+          "Shuffled-pair null (95%)",
+          "Fitted map",
+          "Identity + bias"
+        ],
+        "xticklabels": [
+          "Behavior\ndiffers\n(rewrite pair)",
+          "Behavior\ndiffers\n(+ original)",
+          "Same behavior\n(both\nrefuse)",
+          "Same behavior\n(both\ncomply)"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ],
+    "series": [
+      "Fitted map",
+      "Identity + bias",
+      "Shuffled-pair null (95%)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
