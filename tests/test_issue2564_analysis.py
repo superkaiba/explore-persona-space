@@ -641,9 +641,13 @@ def test_e2e_perpair_rows_carry_contract_fields(e2e_run):
             "cos",
             "r10",
             "fired_a_70",
+            "pair_fired_70",
             "in_headline_70",
         }
         assert r["changed_tokens"] >= 1
+        # r3 headline-pair-floor-mislabel: on this all-fired floor-met fixture
+        # the floor-gated headline flag equals the raw both-fired flag.
+        assert r["in_headline_70"] == r["pair_fired_70"]
     qc = [r for r in rows if r["pair_class"] == "query_content"]
     assert all("->" in r["orientation"] and "|" in r["carrier"] for r in qc)
 
@@ -775,6 +779,37 @@ def test_e2e_below_floor_axis_nulls_headline_despite_fired_pairs(e2e_run, tmp_pa
     assert isinstance(reg["text_space"]["flip_norm_mean_all_values"], float)
     assert reg["surface"]["observed"]["flip_norm_mean"] is None
     assert isinstance(reg["surface"]["observed"]["flip_norm_mean_all_values"], float)
+    # r3 all-values-companions-incomplete: the four previously headline-only
+    # families carry populated *_all_values companions below floor too.
+    cal = reg["calibration"]["arm_779ce"]
+    assert cal["ratio_to_global"] is None  # headline nulls below floor
+    assert isinstance(cal["ratio_to_global_all_values"], float)
+    assert all(isinstance(v, float) for v in cal["ratio_to_global_ci95_all_values"])
+    assert isinstance(cal["axis_slope_ci95_all_values"][0], float)
+    assert isinstance(cal["ratio_to_global_swap864_all_values"], float)
+    assert reg["identity"]["arm_779ce"]["median_gap_vs_iddelta"] is None
+    mg_all = reg["identity"]["arm_779ce"]["median_gap_vs_iddelta_all_values"]
+    assert mg_all["gap"] == pytest.approx(0.0, abs=1e-6)  # identity world
+    lt = reg["layer_twins"]["14"]
+    assert lt["arm_iddelta_mean_cos_headline"] is None
+    assert isinstance(lt["arm_iddelta_mean_cos_all_values"], float)
+    assert isinstance(lt["arm_iddelta_ratio_to_global_all_values"], float)
+    sp = reg["pooling_twin_span"]["arm_779ce"]
+    assert sp["mean_cos_headline"] is None
+    assert isinstance(sp["mean_cos_all_values"], float)
+    assert isinstance(sp["axis_slope_all_values"], float)
+    # r3 headline-pair-floor-mislabel: fired pairs on the compliance-limited
+    # axis keep pair_fired_70 but are NEVER in_headline_70.
+    rows2 = [
+        json.loads(line)
+        for line in (tmp_path / "out_belowfloor" / "perpair.jsonl").read_text().split("\n")
+        if line.strip()
+    ]
+    reg_rows = [r for r in rows2 if r["axis"] == "register"]
+    assert any(r["pair_fired_70"] for r in reg_rows)
+    assert not any(r["in_headline_70"] for r in reg_rows)
+    other_rows = [r for r in rows2 if r["axis"] != "register"]
+    assert all(r["in_headline_70"] == r["pair_fired_70"] for r in other_rows)
 
 
 def test_e2e_zero_fired_pairs_nulls_headline_no_prim_fallback(e2e_run, tmp_path):
@@ -809,8 +844,14 @@ def test_e2e_gap_vs_iddelta_schema_and_identity_world_zero(e2e_run):
         mg = reg["identity"][arm]["median_gap_vs_iddelta"]
         assert mg is not None
         assert mg["gap"] == pytest.approx(0.0, abs=1e-6)
+        # r3 all-values-companions-incomplete: the all-values gap companion is
+        # always populated alongside the headline gap (identity world -> ~0).
+        mg_all = reg["identity"][arm]["median_gap_vs_iddelta_all_values"]
+        assert set(mg_all) >= {"gap", "ci95", "paired"}
+        assert mg_all["gap"] == pytest.approx(0.0, abs=1e-6)
     assert "gap_vs_iddelta" not in reg["direction"]["arm_iddelta"]
     assert "median_gap_vs_iddelta" not in reg["identity"]["arm_iddelta"]
+    assert "median_gap_vs_iddelta_all_values" not in reg["identity"]["arm_iddelta"]
 
 
 def test_smoke_requires_explicit_manip_check():

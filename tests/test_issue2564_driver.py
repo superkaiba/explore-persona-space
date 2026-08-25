@@ -435,3 +435,184 @@ def test_generate_cell_rejects_chunk_with_wrong_context_id_set(tmp_path, monkeyp
     assert len(calls) == 2  # count matched (2 rows x draws) but id-set did not -> regenerate
     assert len(rows) == 3 * cfg.draws
     assert {r["context_id"] for r in rows} == {c["id"] for c in _fake_ctxs(3)}
+
+
+# ── r3 concerns: upload resume_skip pins + loader revision pins + PC idempotency ──
+
+import ast  # noqa: E402
+
+import issue2564_embed as E  # noqa: E402
+
+_SCRIPTS = REPO_ROOT / "scripts"
+
+
+def _fake_upload_result(repo: str):
+    return SimpleNamespace(repo_id=repo, uploaded=[], rerouted=[], skipped_existing=[])
+
+
+def _upload_spy(calls: list):
+    """Signature mirror of the upload_dir_sharded call sites in issue2564_run."""
+
+    def fake(local, repo, prefix, shard_glob, resume_skip, delete_local):
+        calls.append({"prefix": prefix, "resume_skip": resume_skip, "glob": shard_glob})
+        return _fake_upload_result(repo)
+
+    return fake
+
+
+def test_phase_anchors_upload_passes_resume_skip_false(monkeypatch, tmp_path):
+    """r3 missing-fix-regression-tests (a): the PA anchors upload is
+    force-reupload (resume_skip=False) — anchors jsonls are mutable across
+    cap-hit re-gen; the r1 presence-skip would retain stale HF rows."""
+    args = D.parse_args(["--phase", "A", "--out-root", str(tmp_path / "pa"), "--upload", "hf"])
+    cfg = D.build_config(args)
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(D, "_anchor_cell_complete", lambda cfg, cell: True)
+    calls: list = []
+    monkeypatch.setattr(D, "upload_dir_sharded", _upload_spy(calls))
+    bank = {"contexts": [{"id": "x", "cell": "register", "carrier": "c01"}], "pairs": []}
+    assert D.phase_anchors(cfg, bank) == D.RC_OK
+    assert len(calls) == 1
+    assert calls[0]["prefix"].endswith("raw_completions/anchors")
+    assert calls[0]["resume_skip"] is False
+
+
+def test_phase_capture_uploads_pass_resume_skip_false(monkeypatch, tmp_path):
+    """r3 missing-fix-regression-tests (a): the PB va/vc (+manifests) .pt/.json
+    uploads are force-reupload (resume_skip=False, r2 blocker 3) — a recomputed
+    same-shape store is size-identical but content-different, so the size-match
+    presence probe would silently retain stale HF tensors (#2552 class)."""
+    args = D.parse_args(["--phase", "B", "--out-root", str(tmp_path / "pb"), "--upload", "hf"])
+    cfg = D.build_config(args)
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(D, "_require_anchor_shards", lambda cfg, cells: None)
+    monkeypatch.setattr(D, "_va_cell_complete", lambda cfg, cell: True)
+    monkeypatch.setattr(D, "_vc_complete", lambda cfg: True)
+    monkeypatch.setattr(D, "_parity_report_ok", lambda cfg: True)
+    calls: list = []
+    monkeypatch.setattr(D, "upload_dir_sharded", _upload_spy(calls))
+    bank = {"contexts": [{"id": "x", "cell": "register", "carrier": "c01"}], "pairs": []}
+    assert D.phase_capture(cfg, bank) == D.RC_OK
+    by_prefix = {c["prefix"].rsplit("/", 1)[-1]: c for c in calls}
+    assert set(by_prefix) == {"va2564", "vc2564", "manifests"}
+    for c in calls:
+        assert c["resume_skip"] is False, c
+
+
+def _upload_calls(tree: ast.AST):
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            f = node.func
+            name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
+            if name == "upload_dir_sharded":
+                yield node
+
+
+def test_embed_upload_call_site_pins_resume_skip_false():
+    """r3 missing-fix-regression-tests (a), embed leg: the PC upload call site
+    passes a literal resume_skip=False (AST pin — the call sits behind the
+    vLLM engine, unreachable by a CPU spy test)."""
+    tree = ast.parse((_SCRIPTS / "issue2564_embed.py").read_text())
+    calls = list(_upload_calls(tree))
+    assert calls, "embed upload_dir_sharded call site missing"
+    for call in calls:
+        kw = {k.arg: k.value for k in call.keywords}
+        assert "resume_skip" in kw, f"issue2564_embed.py:{call.lineno} lacks resume_skip"
+        assert isinstance(kw["resume_skip"], ast.Constant) and kw["resume_skip"].value is False
+
+
+def _loader_calls(node: ast.AST):
+    for n in ast.walk(node):
+        if isinstance(n, ast.Call):
+            f = n.func
+            name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
+            if name in ("from_pretrained", "LLM"):
+                yield n
+
+
+def test_production_loader_calls_receive_revision_kwarg():
+    """r3 missing-fix-regression-tests (b): every production from_pretrained /
+    vLLM LLM(...) loader call in the #2564 scripts — and in the shared
+    issue2162_run.load_model_and_tokenizer the driver dispatches — threads the
+    resolved revision kwarg (r2 blocker 8: provenance label == loaded bytes)."""
+    for rel in ("issue2564_run.py", "issue2564_embed.py"):
+        tree = ast.parse((_SCRIPTS / rel).read_text())
+        calls = list(_loader_calls(tree))
+        assert calls, f"{rel}: no loader calls found (pin drifted?)"
+        for call in calls:
+            assert any(k.arg == "revision" for k in call.keywords), (
+                f"{rel}:{call.lineno} loader call lacks revision="
+            )
+    shared = ast.parse((_SCRIPTS / "issue2162_run.py").read_text())
+    fn = next(
+        n
+        for n in ast.walk(shared)
+        if isinstance(n, ast.FunctionDef) and n.name == "load_model_and_tokenizer"
+    )
+    fn_calls = list(_loader_calls(fn))
+    assert fn_calls, "issue2162_run.load_model_and_tokenizer: no loader calls found"
+    for call in fn_calls:
+        assert any(k.arg == "revision" for k in call.keywords), (
+            f"issue2162_run.py:{call.lineno} loader call lacks revision="
+        )
+
+
+def test_embed_completed_sentinel_is_fp_keyed_and_mode_matched(tmp_path):
+    """r3 phase-c-not-idempotent: the phase-entry skip keys on the CURRENT
+    mode's sentinel AND its regime_fp; wrong fp or wrong mode recomputes."""
+    fp = "ab" * 8
+    assert E._completed_sentinel(tmp_path, True, fp) is None  # nothing on disk
+    (tmp_path / "embed_done.local.json").write_text(json.dumps({"regime_fp": fp}))
+    assert E._completed_sentinel(tmp_path, True, fp) == {"regime_fp": fp}
+    assert E._completed_sentinel(tmp_path, True, "00" * 8) is None  # stale regime
+    # upload mode skips ONLY on the uploaded sentinel (local proves compute, not upload)
+    assert E._completed_sentinel(tmp_path, False, fp) is None
+    (tmp_path / "embed_uploaded.json").write_text(json.dumps({"regime_fp": fp}))
+    assert E._completed_sentinel(tmp_path, False, fp) == {"regime_fp": fp}
+
+
+def test_embed_force_quarantines_phase_sentinels_only(tmp_path):
+    """r3 phase-c-not-idempotent: --force quarantines BOTH phase sentinels
+    (atomic replace into quarantine/) and leaves chunk checkpoints untouched."""
+    (tmp_path / "embed_done.local.json").write_text("{}")
+    (tmp_path / "embed_uploaded.json").write_text("{}")
+    chunks = tmp_path / "chunks"
+    chunks.mkdir()
+    (chunks / "chunk_000.npz").write_bytes(b"x")
+    E._quarantine_sentinels(tmp_path)
+    assert not (tmp_path / "embed_done.local.json").exists()
+    assert not (tmp_path / "embed_uploaded.json").exists()
+    assert len(list((tmp_path / "quarantine").iterdir())) == 2
+    assert (chunks / "chunk_000.npz").exists()  # chunk resume state stays honored
+
+
+def test_phase_embed_threads_force_flag(monkeypatch, tmp_path):
+    """r3 phase-c-not-idempotent: the driver's --force reaches the embed
+    subprocess as --force (the _PHASE_COMPLETION_RECORDS['C'] contract)."""
+    args = D.parse_args(
+        [
+            "--phase",
+            "C",
+            "--out-root",
+            str(tmp_path / "root4"),
+            "--smoke",
+            "--upload",
+            "none",
+            "--force",
+        ]
+    )
+    cfg = D.build_config(args)
+    bank = {"contexts": [{"id": "x", "cell": "register", "carrier": "c01"}], "pairs": []}
+    monkeypatch.setattr(D, "_anchor_cell_complete", lambda cfg, cell: True)
+    captured: dict = {}
+
+    def fake_run(cmd, env):
+        captured["cmd"] = [str(c) for c in cmd]
+        out = D._embed_out_root(cfg)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "embed_done.local.json").write_text("{}")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(D.subprocess, "run", fake_run)
+    assert D.phase_embed(cfg, bank) == D.RC_OK
+    assert "--force" in captured["cmd"]

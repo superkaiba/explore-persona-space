@@ -34,6 +34,13 @@ first, per the #1739/#2149 gotcha); no ``task.py`` shellouts. Sentinel:
 ``[phase=pc_embed]`` breadcrumbs and a per-chunk progress line
 ``[pc_embed] unit k/N chunk_k rows=… elapsed=…s``.
 
+Phase-entry idempotency (r3 concern phase-c-not-idempotent): a completed-C
+re-run skips at ``main()`` entry — BEFORE tokenizer/engine init — when the
+CURRENT mode's phase sentinel exists with a matching ``regime_fp`` (the
+driver's A/B fp-keyed sentinel pattern). ``--force`` (threaded from the
+driver's ``--force``) quarantines the phase sentinels at entry instead;
+fingerprint-gated chunk checkpoints stay honored either way.
+
 Smoke (``--smoke``): out-root rebinds to the ``smoke_<name>`` sibling, HF
 prefix rebinds to ``issue2564_minpair/smoke``, cells default to the driver's
 smoke slice (register + query), chunk defaults to 64, and the pilot gate is
@@ -112,6 +119,44 @@ def _read_jsonl(path: Path) -> list[dict]:
 def anchors_rel(cell: str) -> str:
     """Repo-relative anchors path for one cell (the PA layout)."""
     return f"raw_completions/anchors/anchors_{cell}.jsonl"
+
+
+_SENTINEL_NAMES = ("embed_done.local.json", "embed_uploaded.json")
+
+
+def _sentinel_path(out_root: Path, skip_upload: bool) -> Path:
+    """The CURRENT mode's terminal phase record (mirrors the driver's derivation
+    in ``issue2564_run.phase_embed``)."""
+    return out_root / ("embed_done.local.json" if skip_upload else "embed_uploaded.json")
+
+
+def _completed_sentinel(out_root: Path, skip_upload: bool, fp: str) -> dict | None:
+    """fp-keyed phase-entry idempotency read (r3 concern phase-c-not-idempotent).
+
+    Returns the mode-matched sentinel dict when it exists AND carries the
+    CURRENT invocation's ``regime_fp``; else None (recompute). Mode-matched:
+    an upload-mode run skips only on ``embed_uploaded.json`` (a local-only
+    sentinel proves compute, not the upload); a ``--skip-upload`` run skips
+    only on ``embed_done.local.json`` (the sentinel the driver verifies)."""
+    p = _sentinel_path(out_root, skip_upload)
+    if not p.is_file():
+        return None
+    s = json.loads(p.read_text())
+    return s if isinstance(s, dict) and s.get("regime_fp") == fp else None
+
+
+def _quarantine_sentinels(out_root: Path) -> None:
+    """--force: quarantine BOTH mode variants of the phase-done sentinel
+    (atomic replace; mirrors the driver's ``_invalidate_phase_records``).
+    Chunk checkpoints stay honored — force never reaches them."""
+    qdir = out_root / "quarantine"
+    for name in _SENTINEL_NAMES:
+        p = out_root / name
+        if p.exists():
+            qdir.mkdir(parents=True, exist_ok=True)
+            dest = qdir / f"{time.time_ns()}.{p.name}"
+            os.replace(p, dest)
+            log(f"[pc_embed] --force quarantined {p} -> {dest}")
 
 
 def stage_anchor_files(
@@ -352,6 +397,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--pilot-ceiling-h", type=float, default=DEFAULT_PILOT_CEILING_H)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--skip-upload", action="store_true")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="quarantine the phase-done sentinel(s) at entry (chunk checkpoints stay honored)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -397,6 +447,23 @@ def main() -> None:
     revision = resolve_embed_revision()
     log(f"[pc_embed] resolved {EMBED_MODEL} revision {revision}")
 
+    # Phase-entry idempotency skip (r3 concern phase-c-not-idempotent):
+    # fp-keyed, mode-matched, BEFORE tokenizer/engine init — a completed-C
+    # re-run never repeats tokenize+derive+upload. --force quarantines instead.
+    fp = _regime_fp(rows, chunk, args.max_model_len, revision)
+    if args.force:
+        _quarantine_sentinels(out_root)
+    elif _completed_sentinel(out_root, args.skip_upload, fp) is not None:
+        log(
+            f"[pc_embed] phase-done sentinel present with matching regime_fp={fp} — "
+            "skipping (tokenize+derive+upload already complete; --force or a fresh "
+            "--out-root recomputes)"
+        )
+        log("[phase=done] pc_embed complete (sentinel skip)")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        sys.exit(0)
+
     # Token-length precheck with the EMBED model's own tokenizer — raise the
     # flag, never truncate (the #2215 port's contract).
     from transformers import AutoTokenizer
@@ -411,7 +478,6 @@ def main() -> None:
             "raise the flag — inputs are never truncated"
         )
 
-    fp = _regime_fp(rows, chunk, args.max_model_len, revision)
     emb = embed_rows(
         texts,
         chunks_dir=out_root / "chunks",

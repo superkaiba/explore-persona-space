@@ -313,6 +313,8 @@ def fig_norm_scatter(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
         sub = [r for r in pts if r.get("axis") == name]
         xs = np.array([r["norm_obs_tail_L19"] for r in sub], dtype=float)
         ys_ = np.array([r["norm_pred"]["arm_779ce"] for r in sub], dtype=float)
+        # in_headline_70 is floor-gated upstream (r3 headline-pair-floor-mislabel):
+        # fired pairs on a compliance-limited axis land in the OPEN marker set.
         filled = np.array([bool(r.get("in_headline_70")) for r in sub])
         if filled.any():
             ax.scatter(xs[filled], ys_[filled], s=16, color=col, alpha=0.75, label="headline pair")
@@ -325,7 +327,7 @@ def fig_norm_scatter(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
                 edgecolors=col,
                 linewidths=1.0,
                 alpha=0.75,
-                label="non-fired pair",
+                label="non-headline pair",
             )
         finite_xs = xs[np.isfinite(xs)]
         if slope is not None and finite_xs.size:

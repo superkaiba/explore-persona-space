@@ -131,8 +131,9 @@ _PHASE_COMPLETION_RECORDS: dict[str, tuple[str, ...]] = {
     "A": ("anchors_done.json", "manifests/pilot_gate_report.json"),
     "B": ("va2564_uploaded.json", "manifests/parity_gate_report.json"),
     # C: the embed subprocess owns its records under ITS out-root (fingerprint-gated
-    # chunk resume + sentinel); --force does not reach it — rerun with a fresh
-    # embed out-root to force.
+    # chunk resume + fp-keyed phase-entry sentinel skip, r3 phase-c-not-idempotent);
+    # --force IS threaded to it as --force (quarantines the phase-done sentinels at
+    # entry; chunk checkpoints stay honored), so this driver-side list stays empty.
     "C": (),
 }
 
@@ -1198,6 +1199,8 @@ def phase_embed(cfg: Cfg2564, bank: dict) -> int:
         cmd.append("--smoke")
     if cfg.upload == "none":
         cmd.append("--skip-upload")
+    if cfg.force:
+        cmd.append("--force")  # r3 phase-c-not-idempotent: force reaches the subprocess
     print(f"[embed] launching subprocess: {' '.join(cmd)}", flush=True)
     proc = subprocess.run(cmd, env={**os.environ})
     if proc.returncode == RC_PILOT_GATE:
