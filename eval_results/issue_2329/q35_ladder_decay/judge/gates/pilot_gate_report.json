@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "per_rubric": {
+    "coherence": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    },
+    "hol-plain": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    },
+    "hol-r1_pirate": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    },
+    "hol-r2_butler": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    },
+    "hol-r3_warm": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    },
+    "hol-r4_trait": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    },
+    "hol-r5a_lu_therapy": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    },
+    "hol-r5b_lu_philosophy": {
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "wave transport UNDECLARED — pilot ran sync; transport parity NOT verified (rule 26 / #2152): declare wave_n_calls / wave_threshold_base / wave_force_sync to arm the mismatch FAIL"
+      ],
+      "n_total_draws": 56
+    }
+  },
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "n_rubrics": 8,
+    "target_draws_per_rubric": 56
+  },
+  "repro": {
+    "git_commit": "7caaecf958269778655a0831a8c1d17ce83468a8",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2329_ladder_judge.py",
+    "script": "scripts/issue2094_judge.py"
+  }
+}

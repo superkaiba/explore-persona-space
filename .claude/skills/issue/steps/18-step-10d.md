@@ -2676,11 +2676,15 @@ else
         echo "BLOCKED: PR-head parity (#2312) — neither the PR object (saw: ${HS:-<no read>}) nor the remote ref (${REMOTE_REF:-<none>}) holds the gate-certified tip $TIP. The tip never landed on the head ref (rejected push, or a rewritten/diverged branch): if origin/issue-<N> is not an ancestor of HEAD, discriminate per the safe-case guard comment above (all-foreign ⇒ pull-retry self-heal; else § Rewritten-branch landing route below); otherwise re-run the safe-case push and re-enter this conditional. Do NOT merge; verdict NOT consumed."
         false
       else
-      # Draft-merge precondition (#2240 pin): this single `gh pr ready` call
-      # marks the PR ready before the merge below and covers PRs opened as
-      # drafts by EITHER fresh-PR arm (the #1897 terminal-PR create and the
-      # #2240 zero-PR create both fall through into exactly this block) —
-      # do NOT add a second ready call elsewhere.
+      # Draft-merge precondition (#2240 pin): this `gh pr ready` call marks
+      # the PR ready before the merge below and covers PRs opened as drafts
+      # by EITHER fresh-PR arm (the #1897 terminal-PR create and the #2240
+      # zero-PR create both fall through into exactly this block). Do NOT
+      # duplicate this call WITHIN the safe-case block; the merge-conflict
+      # recovery block runs in a SEPARATE shell and carries its OWN ready
+      # call (#2538; #2315: reading the old file-wide ban as covering the
+      # recovery path is what left its merge dying on "Pull Request is
+      # still a draft").
       gh pr ready "$PR"
       if gh pr merge "$PR" $MERGE_FORM --delete-branch=false; then
         # Landing verification (#1897): exit 0 is NOT proof THIS attempt
@@ -3284,6 +3288,12 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
     -q '[.mergeable, .state, (.mergedAt // "null")] | join(" ")' 2>/dev/null) || PRE_STATE=""
   PRE_MERGED_AT=${PRE_STATE##* }
   echo "$PRE_STATE"   # brief wait/retry until mergeable=MERGEABLE
+  # Draft-merge precondition (#2240, extended to this path by #2538): Step
+  # 4a and BOTH Step-10d fresh-PR arms open the PR as a DRAFT, and a branch
+  # can reach THIS merge without ever passing the safe-case ready call
+  # (#2315: `GraphQL: Pull Request is still a draft (mergePullRequest)` on
+  # a merge-ready branch). Idempotent: `gh pr ready` on a ready PR exits 0.
+  gh pr ready <PR>
   if gh pr merge <PR> --squash --delete-branch=false; then
     # Landing verification (#1897): same contract as the safe-case arm —
     # exit 0 is NOT proof THIS attempt landed (`gh pr merge` on an
@@ -3305,7 +3315,7 @@ if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/nu
       false
     fi
   else
-    echo "MERGE FAILED post-push — classify: (0) \"Base branch was modified\" -> shape-0 same-tip retry (verdict survives); anything else -> epm:merge-failed (do NOT hand-write the verdict file)."
+    echo "MERGE FAILED post-push — classify: (0) \"Base branch was modified\" -> shape-0 same-tip retry (verdict survives); (draft) \"Pull Request is still a draft\" -> gh pr ready <PR>, then re-enter this SAME conditional ONCE (verdict survives; the ready call above was skipped or failed, #2315/#2538); anything else -> epm:merge-failed (do NOT hand-write the verdict file)."
     false
   fi
 else
@@ -3413,12 +3423,13 @@ commits onto the stale remote tip (the #1128 shape); a PR merge off the
 stale head would land content no gate certified (#2296's stale head called
 `create_scratch_worktree(..., sha=...)` — a `TypeError` against post-#2293
 main). `git push --force-with-lease` would fix the ref in one command, but
-force-push is a standing user-ask (`.claude/rules/auto-continuation.md`
-STATE-TO-`blocked` criterion 2) with NO autonomous carve-out, and recorded
-practice has DIVERGED on exactly this question (#2171 and #1999 recorded it
-as the correct form; #2181 recorded it as a policy violation). That policy
-question — surfaced by #2312 — is task #2313 (`proposed`; decided by the
-user, never here). Until it resolves, this force-free route is the ONLY
+force-push is BANNED for every `/issue` path — the lease form on the
+session's own rebased branch included — per the standing ruling in
+`.claude/rules/auto-continuation.md` STATE-TO-`blocked` criterion 2 (NO
+autonomous carve-out; the once-divergent precedent record is reconciled
+there). That policy question — surfaced by #2312 — was task #2313,
+resolved toward the ban; relaxing it is a USER grant made by amending
+criterion 2, never inferred here. This force-free route is the ONLY
 sanctioned landing for state (a) — and it needs no user, so never block a
 gate-PASSed task on it.
 

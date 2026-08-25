@@ -53,6 +53,7 @@ os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 # load_dotenv BEFORE any heavy import (numpy below, torch/vllm transitively):
 # the shared-VM thread caps bind in-process only pre-import (#847;
 # tests/test_shared_vm_thread_caps.py).
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -189,12 +190,11 @@ def _phase_done(data_root: Path, ds: str, phase: str, base: dict, *, hub_resume:
 
 
 def _savez_atomic(path: Path, **arrays) -> None:
-    """Uncompressed npz via tmp+replace; tmp keeps the .npz suffix (np.savez
-    APPENDS .npz to any other name — gotchas.md #1092)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".tmp_{path.stem}.npz")
-    np.savez(tmp, **arrays)
-    os.replace(tmp, path)
+    """Uncompressed npz via shared process-safe tmp+replace; writes through an
+    OPEN HANDLE (np.savez APPENDS .npz to path-typed names — gotchas.md #1092;
+    the yielded tmp ends .tmp)."""
+    with atomic_replace(path) as tmp, tmp.open("wb") as fh:
+        np.savez(fh, **arrays)
 
 
 # --- Row assembly ---------------------------------------------------------------
@@ -334,12 +334,9 @@ def run_gen(
         n_empty = sum(1 for rec in recs if not rec["completion"].strip())
 
         jsonl_path = lib.rawcomp_path(data_root, ds)
-        jsonl_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = jsonl_path.with_name(jsonl_path.name + ".tmp")
-        with open(tmp, "w", encoding="utf-8") as fh:
+        with atomic_replace(jsonl_path) as tmp, open(tmp, "w", encoding="utf-8") as fh:
             for rec in recs:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        os.replace(tmp, jsonl_path)
 
         ds_dir = lib.capture_dir(data_root, ds)
         _update_manifest(

@@ -91,9 +91,11 @@ from runpod_api import (  # noqa: E402
     DEFAULT_CONTAINER_DISK_GB,
     DEFAULT_CPU_VOLUME_GB,
     PodInfo,
+    RunPodCpuLaneDryError,
     RunPodError,
     RunPodInsufficientBalanceError,
     RunPodNoCapacityError,
+    RunPodNoPortWedgeError,
     create_cpu_pod,
     create_pod,
     current_account_hourly_burn,
@@ -404,6 +406,13 @@ _is_epm_pod = _is_managed_pod
 # name can never be ambiguously attributed. epm-issue-<N>-<slug> is
 # accepted for legacy dispatcher pods (pod_audit precedent).
 _POD_NAME_RE = re.compile(r"^(?:pod|epm-issue)-(?P<issue>\d+)(?:-(?P<slug>[a-z][a-z0-9-]*))?$")
+
+# READ-side slug grammar (#2270 critique r1, orchestrator decision): the slug
+# production of _POD_NAME_RE — [a-z][a-z0-9-]*, UNBOUNDED — deliberately NOT
+# the write-side RUNPOD_NAME_SUFFIX_RE (<= 20 chars, provision's concern): a
+# live pod carrying a 21+-char slug must remain terminable. The empty string
+# fails the [a-z] anchor, closing the shield-waived issue-wide sweep (#2270).
+_TERMINATE_SUFFIX_RE = re.compile(r"[a-z][a-z0-9-]*")
 
 
 def _slug_from_pod_name(name: str) -> str | None:
@@ -1164,6 +1173,20 @@ EXIT_STILL_WAITING = 75
 # no_compute_available terminal. Mirrored (not imported) in
 # backends/runpod.py::EXIT_STOPPED_POD_COLLISION.
 EXIT_STOPPED_POD_COLLISION = 76
+
+# Exit code for the CPU-lane residual refusal (#2184): a CPU-intent provision
+# hit the RunPod no-port wedge and bias-away DC rotation is exhausted or
+# interlocked-out (teardown unconfirmed, explicit user DC pin wedged, wedged
+# DC unidentifiable, budget/cap/candidates/enumeration exhaustion). Joins the
+# 75/76 structured-exit slot family: distinct from 0 (pod ready), 1 (generic
+# crash/refusal), 75 (still-waiting), and 76 (stopped-pod collision). The
+# stderr verdict (`CPU-LANE-DRY reason=<reason>`) IS the direct-CLI runbook.
+# Router disposition: 77 is NOT special-cased by the router terminal rung —
+# on the router/autonomous path it rides the generic `no_compute_available`
+# fallthrough (the auto chain advances to the fellows CPU lane; the watcher
+# capacity-retry pass may re-drive it), byte-identical to a pre-#2184 rc=1
+# wedge. That disposition is ACCEPTED by design (#2184 plan assumption 13).
+EXIT_CPU_LANE_DRY = 77
 
 
 class WaitForCapacityStillWaiting(RunPodError):
@@ -2405,7 +2428,7 @@ def _remove_failed_provision_rows(name: str) -> None:
 
 def _teardown_failed_provision(
     info: PodInfo, name: str, *, keep: bool, registered: bool = False
-) -> None:
+) -> str:
     """Best-effort terminate of the pod THIS provision created, on a
     bootstrap/ssh-wait failure (#2060; incident #1947). Surgical by pod_id —
     never name-resolution, so sibling pod-<N>-<slug> pods are untouched.
@@ -2415,7 +2438,14 @@ def _teardown_failed_provision(
     pods.conf / pods_ephemeral.json rows (True only on the bootstrap path;
     the ssh-wait path fails BEFORE registration) so a successful terminate
     also removes the stale rows. NEVER raises: a teardown failure must not
-    mask the original error."""
+    mask the original error.
+
+    Returns the teardown DISPOSITION (#2184) — ``"kept"`` (keep flag set, pod
+    deliberately left BILLING), ``"terminated"`` (terminate confirmed), or
+    ``"failed"`` (terminate raised; swallowed with a WARN per the contract
+    above). The ssh-wait tail threads it onto the propagating exception so
+    the CPU rotation interlock can re-create ONLY on ``"terminated"``; the
+    bootstrap-path caller ignores it (pre-#2184 behavior)."""
     if keep:
         print(
             f"  --keep-on-bootstrap-failure: pod {name} (id={info.pod_id}) kept "
@@ -2423,7 +2453,7 @@ def _teardown_failed_provision(
             f"`pod.py terminate` when done.",
             file=sys.stderr,
         )
-        return
+        return "kept"
     try:
         with _verified_teardown_grant(
             target=name,
@@ -2434,6 +2464,7 @@ def _teardown_failed_provision(
         print(f"BOOTSTRAP-FAILED-TERMINATED pod={name}", file=sys.stderr)
         if registered:
             _remove_failed_provision_rows(name)
+        return "terminated"
     except Exception as exc:  # broad by contract: teardown never masks the original error (#2060)
         print(
             f"  WARN: teardown of failed-provision pod {name} "
@@ -2441,6 +2472,7 @@ def _teardown_failed_provision(
             f"terminate manually with `pod.py terminate`.",
             file=sys.stderr,
         )
+        return "failed"
 
 
 def _provision_wait_register_bootstrap(
@@ -2469,7 +2501,7 @@ def _provision_wait_register_bootstrap(
     keep_flag = bool(getattr(args, "keep_on_bootstrap_failure", False))
     try:
         ready = wait_for_ssh(info.pod_id, timeout=600)
-    except RunPodError:
+    except RunPodError as exc:
         # The pod exists and is billing, but never exposed 22/tcp within the
         # window — record the wait so repeated attempts accumulate toward the
         # 1h [ssh-wait-ALARM], and name the recovery before propagating.
@@ -2482,9 +2514,13 @@ def _provision_wait_register_bootstrap(
             late = get_pod(info.pod_id)
             host_ip = late.ssh_host or info.ssh_host
             dc_id = late.data_center_id or info.data_center_id
-        except Exception as exc:  # deliberate: recording never shadows the re-raise
+        # `as get_pod_exc`, NOT `as exc`: `except ... as <name>` UNBINDS <name>
+        # at block exit, so reusing `exc` here would UnboundLocalError the
+        # outer handler's #2184 disposition-threading below (caught by
+        # test_ssh_wait_timeout_reraises_even_when_get_pod_fails).
+        except Exception as get_pod_exc:  # deliberate: recording never shadows the re-raise
             print(
-                f"[pod_lifecycle] WARN: late get_pod for bad-host record failed: {exc}",
+                f"[pod_lifecycle] WARN: late get_pod for bad-host record failed: {get_pod_exc}",
                 file=sys.stderr,
             )
             host_ip = info.ssh_host
@@ -2515,7 +2551,13 @@ def _provision_wait_register_bootstrap(
             )
         # #2060: tear down the pod THIS provision created (registration has
         # NOT happened yet on this path), then propagate the original error.
-        _teardown_failed_provision(info, name, keep=keep_flag, registered=False)
+        # #2184: thread the teardown disposition onto the propagating
+        # exception (a pre-declared slot on RunPodNoPortWedgeError; a
+        # harmless dynamic attribute on a bare RunPodError) so the CPU
+        # rotation interlock can re-create ONLY on a CONFIRMED terminate.
+        # The bare `raise` keeps type + traceback byte-identical.
+        disposition = _teardown_failed_provision(info, name, keep=keep_flag, registered=False)
+        exc.teardown_disposition = disposition
         raise
     note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
@@ -2749,6 +2791,334 @@ def _account_key_preflight(pod_label: str) -> None:
         sys.exit(1)
 
 
+def _rotation_wedge_budget() -> int:
+    """Max ADDITIONAL wedge-bearing creates after the first wedge (#2184).
+
+    Total wedge-bearing creates = 1 + budget (default 2 -> 3 total, ~35 min
+    worst case at 3 x 600 s ssh-waits). Env-tunable."""
+    return int(os.environ.get("EPM_CPU_DC_ROTATION_MAX_WEDGES", "2"))
+
+
+def _rotation_dc_cap() -> int:
+    """Max pinned dry-DC probes the rotation sweep may consume (#2184).
+
+    A pinned dry DC is cheap — one GraphQL round-trip, no pod — but the sweep
+    is still bounded (default 8, above the 5-DC sweep #2162 ran by hand)."""
+    return int(os.environ.get("EPM_CPU_DC_ROTATION_MAX_DCS", "8"))
+
+
+def _rotation_dc_candidates() -> list[str] | None:
+    """Rotation candidate DC ids, or ``None`` when enumeration fails (#2184).
+
+    ``get_datacenters()`` best-effort (same degrade contract as
+    ``_different_dc_hint``: WARN + no candidates — the caller REFUSES loudly
+    rather than rotating blind), minus DCs carried by fresh #2011
+    bad-placement records (the cross-invocation bias-away memory)."""
+    try:
+        ids = [d.get("id") for d in get_datacenters() if d.get("id")]
+    except (RunPodError, OSError, ValueError) as exc:
+        # Same fail-open catch trio as _different_dc_hint (#1655): raw
+        # json/timeout classes can escape the graphql wrapper.
+        print(
+            f"[cpu-dc-rotation] WARN: get_datacenters failed ({exc}); "
+            "cannot enumerate rotation candidates.",
+            file=sys.stderr,
+        )
+        return None
+    bad_dcs = {
+        e.get("dc_id") for entries in fresh_bad_hosts().values() for e in entries if e.get("dc_id")
+    }
+    return [i for i in ids if i not in bad_dcs]
+
+
+def _next_rotation_dc(candidates: list[str], exclude: set[str]) -> str | None:
+    """First candidate DC not in ``exclude`` (stable listing order), or None."""
+    for cand in candidates:
+        if cand not in exclude:
+            return cand
+    return None
+
+
+def _rotation_advance(
+    args: argparse.Namespace,
+    name: str,
+    cpu_instance_id: str,
+    intent_label: str,
+    wedged_dcs: list[str],
+    dry_dcs: list[str],
+    candidates: list[str] | None,
+) -> tuple[str, list[str]]:
+    """Pick the next rotation DC pin, enumerating candidates on first use
+    (#2184). Refuses via :func:`_cpu_lane_dry_refusal` (never returns) when
+    enumeration fails (``dc-enumeration-failed``) or every candidate is
+    already wedged/dry (``candidates-exhausted``). Returns
+    ``(dc_pin, candidates)`` so the caller keeps the one-shot enumeration."""
+    if candidates is None:
+        candidates = _rotation_dc_candidates()
+    if candidates is None:
+        _cpu_lane_dry_refusal(
+            args,
+            name,
+            intent_label,
+            cpu_instance_id,
+            wedged_dcs,
+            dry_dcs,
+            reason="dc-enumeration-failed",
+        )
+    dc_pin = _next_rotation_dc(candidates, set(wedged_dcs) | set(dry_dcs))
+    if dc_pin is None:
+        _cpu_lane_dry_refusal(
+            args,
+            name,
+            intent_label,
+            cpu_instance_id,
+            wedged_dcs,
+            dry_dcs,
+            reason="candidates-exhausted",
+        )
+    return dc_pin, candidates
+
+
+def _cpu_lane_dry_refusal(
+    args: argparse.Namespace,
+    name: str,
+    intent_label: str,
+    cpu_instance_id: str,
+    wedged_dcs: list[str],
+    dry_dcs: list[str],
+    *,
+    reason: str,
+    lingering: PodInfo | None = None,
+) -> NoReturn:
+    """Typed CPU-lane residual refusal (#2184) — mirrors
+    ``_emit_still_waiting_and_exit``: print a multi-line machine-greppable
+    ``CPU-LANE-DRY reason=<reason>`` verdict to stderr (it rides the #1465
+    stderr tail into the router failure record), then exit
+    :data:`EXIT_CPU_LANE_DRY` (77) with :class:`RunPodCpuLaneDryError` as the
+    typed cause. Never a silent fallback, never a GPU auto-substitution — the
+    verdict NAMES the sanctioned residual (`--intent eval`, a recorded
+    deviation) and the caller re-runs it deliberately."""
+    name_suffix = getattr(args, "name_suffix", None)
+    suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+    lines = [
+        f"CPU-LANE-DRY reason={reason} intent={intent_label} instance={cpu_instance_id} "
+        f"wedged_dcs={','.join(wedged_dcs) or 'none'} dry_dcs={','.join(dry_dcs) or 'none'} "
+        f"(#2184)"
+    ]
+    if reason == "teardown-unconfirmed":
+        pod_ref = lingering.pod_id if lingering is not None else name
+        lines.append(
+            f"Wedged pod {pod_ref} ({name}) may STILL BE BILLING — teardown not confirmed. "
+            f"Terminate it manually FIRST: uv run python scripts/pod.py terminate "
+            f"--issue {args.issue}{suffix_hint} --yes"
+        )
+    if reason == "user-pin-wedged":
+        lines.append(
+            "The explicitly pinned DC wedged; rotation is disabled for explicit "
+            "--data-center-id pins — re-run WITHOUT the pin to enable bias-away rotation."
+        )
+    lines.append(
+        "Residual route (sanctioned, .claude/rules/pods.md CPU-intent residual route): "
+        "provision the smallest GPU intent instead and record the deviation in the run's "
+        "dispatch note —\n"
+        f"  uv run python scripts/pod.py provision --issue {args.issue} --intent eval "
+        "[--name-suffix <slug>]"
+    )
+    lines.append(
+        "Confirm the workload's RAM/disk fit first: `eval` = 1x H100 and the GPU create "
+        "payload carries no host-RAM floor, vs cpu5m-16-128's 128 GB RAM / up to 240 GB "
+        "disk — size --container-disk-gb explicitly for large-disk cpu-bigmem-class "
+        "footprints."
+    )
+    lines.append(
+        "Why GPU-lane and not the shared VM: a dedicated pod's uncontended cores measured "
+        "~6x the shared VM per unit (#2054); the idle GPU is an accepted, recorded "
+        "deviation (#2162 precedent)."
+    )
+    lines.append(
+        "(Router/autonomous path: this exit surfaces as no_compute_available — the auto "
+        "chain advances to the fellows CPU lane and the watcher may re-drive it; each "
+        "re-drive re-runs the full rotation budget. Direct-CLI callers: this verdict IS "
+        "the runbook.)"
+    )
+    print("\n".join(lines), file=sys.stderr, flush=True)
+    raise SystemExit(EXIT_CPU_LANE_DRY) from RunPodCpuLaneDryError(
+        f"CPU-LANE-DRY reason={reason} intent={intent_label} instance={cpu_instance_id} (#2184)"
+    )
+
+
+def _provision_cpu_with_rotation(
+    args: argparse.Namespace,
+    name: str,
+    cpu_instance_id: str,
+    intent_label: str,
+    cpu_volume_gb: int,
+    cpu_container_disk_gb: int,
+    *,
+    wait_for_capacity: bool,
+    explicit_wait_flag: bool,
+    data_center_id: str | None,
+) -> None:
+    """CPU-intent create + bring-up with bias-away DC rotation on a no-port
+    wedge (#2184). Attempt 1 preserves today's behavior verbatim (user DC pin
+    honored; #2238 wait-for-capacity loop when armed). On a
+    RunPodNoPortWedgeError from the provision tail, a rotation re-create fires
+    ONLY when the tail-threaded teardown disposition reads "terminated" — the
+    #2060 auto-teardown is the sole terminate site (no new call site). Rotation
+    is DISABLED under --keep-on-bootstrap-failure (typed wedge propagates,
+    today's single-attempt shape); an unconfirmed/failed teardown, an
+    explicitly user-pinned wedged attempt, or an unidentifiable wedged DC each
+    refuse via the typed CPU-LANE-DRY residual (reason-tagged) — never a
+    create. Candidates: get_datacenters() minus this invocation's wedged DCs
+    minus this invocation's dry DCs minus fresh bad-placement DCs (#2011);
+    rotation advances on RunPodNoCapacityError (a pinned dry DC is cheap: one
+    GraphQL call, no pod). Bounded by EPM_CPU_DC_ROTATION_MAX_WEDGES (default
+    2 -> total wedge-bearing creates = 1 + budget = 3) and
+    EPM_CPU_DC_ROTATION_MAX_DCS (default 8 pinned candidates). Exhaustion ->
+    the typed CPU-LANE-DRY residual refusal (never a silent fallback, never a
+    same-DC blind retry, never a GPU auto-substitution).
+    """
+    # getattr: hand-built Namespaces predate the flag — the tail's own pattern.
+    keep_flag = bool(getattr(args, "keep_on_bootstrap_failure", False))
+    user_pinned = data_center_id is not None
+    wedged_dcs: list[str] = []
+    dry_dcs: list[str] = []
+    dc_pin = data_center_id  # attempt 1: user pin (or None) — today's behavior
+    rotation_active = False
+    candidates: list[str] | None = None  # lazily enumerated on first wedge
+
+    if wait_for_capacity and not explicit_wait_flag:
+        # CPU-legible auto-enable note, printed AT the branch that retries
+        # (promise printed <=> promise kept, #2238) — once, before attempt 1.
+        print(
+            "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
+            "(unbounded retry on SUPPLY_CONSTRAINT for the CPU create)."
+        )
+    while True:
+        try:
+            if wait_for_capacity and not rotation_active:
+                info = create_cpu_pod_with_wait_for_capacity(
+                    name=name,
+                    instance_id=cpu_instance_id,
+                    volume_gb=cpu_volume_gb,
+                    container_disk_gb=cpu_container_disk_gb,
+                    # preflight_check stays None DELIBERATELY (not an
+                    # omission) — the CPU branch skips the $/hr guard by
+                    # design (see the CPU-branch comment in cmd_provision).
+                    data_center_id=dc_pin,
+                )
+            else:
+                # Rotation attempts use PLAIN create_cpu_pod: within rotation
+                # the goal is a fast per-DC capacity probe — an unbounded
+                # wait pinned to one DC would wedge the rotation (#2238).
+                info = create_cpu_pod(
+                    name=name,
+                    instance_id=cpu_instance_id,
+                    volume_gb=cpu_volume_gb,
+                    container_disk_gb=cpu_container_disk_gb,
+                    data_center_id=dc_pin,
+                )
+            print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
+            _provision_wait_register_bootstrap(args, name, info, intent_label)
+            return
+        except WaitForCapacityStillWaiting as exc:
+            _emit_still_waiting_and_exit(exc)
+        except RunPodNoPortWedgeError as exc:
+            # ---- teardown interlock (#2184): NO re-create without a
+            # CONFIRMED-terminated wedged pod. Ordering is deliberate:
+            # keep-flag first (rotation categorically disabled), then
+            # teardown disposition (a possibly-billing pod is the most
+            # urgent refusal), then user pin, then wedged-DC
+            # identifiability, then budget.
+            if keep_flag:
+                print(
+                    "[cpu-dc-rotation] --keep-on-bootstrap-failure set: rotation DISABLED "
+                    "(each wedged attempt would strand a kept, BILLING pod); propagating "
+                    "the typed wedge — today's single-attempt shape (#2184)",
+                    file=sys.stderr,
+                )
+                raise  # R5: keep-flag single-attempt propagation unchanged (typed)
+            if getattr(exc, "teardown_disposition", None) != "terminated":
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="teardown-unconfirmed",
+                    lingering=exc.info,
+                )
+            if user_pinned:
+                # An explicit pin is an operator instruction — never rotate
+                # away from it silently.
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="user-pin-wedged",
+                )
+            wedged = (exc.info.data_center_id if exc.info else None) or dc_pin
+            if wedged is None:
+                # Never a defensive same-DC re-pick: an unidentifiable
+                # wedged DC makes bias-away rotation impossible.
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="wedged-dc-unknown",
+                )
+            wedged_dcs.append(wedged)
+            # Post-append `>=`: at the default budget 2, wedges 1 and 2
+            # rotate and wedge 3 refuses — exactly 1 + budget = 3
+            # wedge-bearing creates total.
+            if len(wedged_dcs) >= 1 + _rotation_wedge_budget():
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="wedge-budget-exhausted",
+                )
+            dc_pin, candidates = _rotation_advance(
+                args, name, cpu_instance_id, intent_label, wedged_dcs, dry_dcs, candidates
+            )
+            rotation_active = True
+            print(
+                f"[cpu-dc-rotation] no-port wedge in {wedged} (teardown CONFIRMED); "
+                f"retrying pinned to {dc_pin} ({len(wedged_dcs)} of "
+                f"{1 + _rotation_wedge_budget()} wedge-bearing attempts used) (#2184)"
+            )
+        except RunPodNoCapacityError:
+            if not rotation_active:
+                raise  # R5: first-attempt fail-loud propagation unchanged
+            # Rotation always pins a DC, so dc_pin is non-None on this arm.
+            dry_dcs.append(dc_pin)
+            # Post-append `>=`, same convention as the wedge budget guard.
+            if len(dry_dcs) >= _rotation_dc_cap():
+                _cpu_lane_dry_refusal(
+                    args,
+                    name,
+                    intent_label,
+                    cpu_instance_id,
+                    wedged_dcs,
+                    dry_dcs,
+                    reason="dc-cap-exhausted",
+                )
+            dc_pin, candidates = _rotation_advance(
+                args, name, cpu_instance_id, intent_label, wedged_dcs, dry_dcs, candidates
+            )
+            print(f"[cpu-dc-rotation] {dry_dcs[-1]} dry (no capacity); trying {dc_pin} (#2184)")
+
+
 def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequential pre-flight guard chain (one independent refusal branch per hazard); the function sat AT the cap and #1997's plan-mandated stopped-collision refusal branch tips it; splitting the per-candidate loop would separate the two refusal branches from their shared same-named scan (annotated-noqa precedent: dispatch_issue.py _launch_extra_from_args).
     """Create a fresh pod for issue #N, wait for SSH, register it, bootstrap it."""
     if args.list_intents:
@@ -2949,43 +3319,20 @@ def cmd_provision(args: argparse.Namespace) -> None:  # noqa: C901 — sequentia
             )
             cpu_container_disk_gb = min(cpu_container_disk_gb, caps.max_container_disk_gb)
             cpu_volume_gb = min(cpu_volume_gb, caps.max_container_disk_gb)
-        if wait_for_capacity:
-            if not explicit_wait_flag:
-                # CPU-legible auto-enable note, printed AT the branch that
-                # retries (promise printed ⟺ promise kept — the pre-#2238 gap
-                # printed nothing here and never retried).
-                print(
-                    "  EPM_AUTONOMOUS_SESSION=1 → auto-enabling --wait-for-capacity "
-                    "(unbounded retry on SUPPLY_CONSTRAINT for the CPU create)."
-                )
-            try:
-                info = create_cpu_pod_with_wait_for_capacity(
-                    name=name,
-                    instance_id=cpu_instance_id,
-                    volume_gb=cpu_volume_gb,
-                    container_disk_gb=cpu_container_disk_gb,
-                    # preflight_check stays None DELIBERATELY (not an
-                    # omission): the CPU branch skips
-                    # _assert_under_account_hourly_cap by design (see the
-                    # branch comment above — CPU pods cost cents/hr and
-                    # estimate_pod_hourly_rate returns 0 at gpu_count=0), so
-                    # the loop's `local-cap` reason token is simply never
-                    # emitted on CPU; `no-capacity` and the API-side
-                    # `insufficient-balance` tokens both remain reachable.
-                    data_center_id=data_center_id,
-                )
-            except WaitForCapacityStillWaiting as exc:
-                _emit_still_waiting_and_exit(exc)
-        else:
-            info = create_cpu_pod(
-                name=name,
-                instance_id=cpu_instance_id,
-                volume_gb=cpu_volume_gb,
-                container_disk_gb=cpu_container_disk_gb,
-                data_center_id=data_center_id,
-            )
-        print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
-        _provision_wait_register_bootstrap(args, name, info, intent_label)
+        # Create + bring-up + no-port-wedge DC rotation live in the extracted
+        # helper (#2184); attempt 1 preserves the pre-#2184 behavior verbatim
+        # (incl. the #2238 wait-for-capacity wrap + the auto-enable note).
+        _provision_cpu_with_rotation(
+            args,
+            name,
+            cpu_instance_id,
+            intent_label,
+            cpu_volume_gb,
+            cpu_container_disk_gb,
+            wait_for_capacity=wait_for_capacity,
+            explicit_wait_flag=explicit_wait_flag,
+            data_center_id=data_center_id,
+        )
         return
 
     spec, intent_label = _resolve_spec(args.intent, args.gpu_type, args.gpu_count)
@@ -3739,7 +4086,12 @@ def _guard_upload_verification_before_terminate(
 
 
 def _guard_keep_running_before_terminate(
-    issue: int, *, name_suffix: str | None, force_flag: bool, dry_run: bool
+    issue: int,
+    *,
+    name_suffix: str | None,
+    force_flag: bool,
+    dry_run: bool,
+    primary_only: bool = False,
 ) -> None:
     """Refuse the BARE (issue-wide) terminate when the owning task carries
     the keep-running tag (#1485; CLAUDE.md § Pods: the shield is
@@ -3750,18 +4102,32 @@ def _guard_keep_running_before_terminate(
     DRY-RUN returns BEFORE any task read: the committed pin
     test_terminate_dry_run_bypasses_guard (tests/test_pod_lifecycle.py)
     stubs get_task to raise, pinning 'no task inspection in --dry-run'
-    (Phase-2 Statistics Must-Fix #1485)."""
+    (Phase-2 Statistics Must-Fix #1485).
+
+    ``primary_only`` (#2270, clarifier decision): the primary-surgical
+    selector honors the shield UNLESS strict per-pod evidence clears the
+    PRIMARY specifically (:func:`_keep_running_primary_clearance` — a tag
+    set solely to shield ``pod-<N>-<slug>`` must not block ``pod-<N>``; a
+    tag with NO per-pod attribution blocks everything). The two committed
+    pins are preserved: the dry-run branch stays BEFORE any task read
+    (clearance included), and the bare-path strings stay byte-identical
+    (the primary-only branches emit their own scope-correct text)."""
     if name_suffix is not None:
         return  # surgical path: allowed
     if dry_run:
         # BEFORE the tag read — the existing dry-run pin requires zero
         # task-state inspection here; the preview proceeds, destroys nothing.
-        print(
+        note = (
             f"[dry-run] NOTE: a real run would check task #{issue}'s "
             "keep-running tag and REFUSE this issue-wide terminate if the "
-            "tag is set or unreadable.",
-            file=sys.stderr,
+            "tag is set or unreadable."
         )
+        if primary_only:
+            note += (
+                " A --primary-only run would additionally evaluate the "
+                "per-pod clearance (#2270) before refusing."
+            )
+        print(note, file=sys.stderr)
         return
     try:
         from explore_persona_space.task_workflow import keep_running_tag_state
@@ -3772,14 +4138,50 @@ def _guard_keep_running_before_terminate(
     if state is False:
         return
     if force_flag:
-        print(
-            "[pod_lifecycle] WARN: terminating ALL pods for issue "
-            f"#{issue} DESPITE keep-running state={state!r} because "
-            "--force-keep-running was passed. A live follow-up / parallel "
-            "suffixed pod on this issue WILL be destroyed.",
-            file=sys.stderr,
-        )
+        if primary_only:
+            print(
+                f"[pod_lifecycle] WARN: terminating the PRIMARY pod-{issue} "
+                f"ONLY DESPITE keep-running state={state!r} because "
+                "--force-keep-running was passed. Suffixed sibling pods are "
+                "NOT touched by this form.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "[pod_lifecycle] WARN: terminating ALL pods for issue "
+                f"#{issue} DESPITE keep-running state={state!r} because "
+                "--force-keep-running was passed. A live follow-up / parallel "
+                "suffixed pod on this issue WILL be destroyed.",
+                file=sys.stderr,
+            )
         return
+    if state is True and primary_only:
+        cleared, why = _keep_running_primary_clearance(issue)
+        if cleared:
+            print(
+                f"[pod_lifecycle] NOTE: keep-running tag is SET for issue "
+                f"#{issue} but per-pod evidence clears the primary: {why} "
+                f"(#2270 — clearance scoped to pod-{issue}; suffixed siblings "
+                f"stay shielded).",
+                file=sys.stderr,
+            )
+            return
+        raise SystemExit(
+            f"REFUSED: primary-only terminate for task #{issue} — the "
+            f"keep-running tag is set and per-pod evidence does not clear "
+            f"the primary ({why}).\n"
+            f"  Clear it with evidence: post the primary's POD-BOUND "
+            f"upload-verification PASS (a pod=pod-{issue} token on the PASS "
+            f"note — a pod-less PASS does NOT clear; #2270/#2277/#1961, "
+            f".claude/rules/pods.md) and ensure the live sibling's "
+            f"epm:run-launched names it (pod=pod-{issue}-<slug>).\n"
+            f"  Drop the shield:  uv run python scripts/task.py "
+            f"remove-tag {issue} keep-running\n"
+            f"  Deliberate override: re-run with --force-keep-running (logs "
+            f"a loud warning; the sanctioned route when the operator knows "
+            f"the primary is done but its PASSes are pod-less — today's "
+            f"primary-PASS shape)."
+        )
     if state is True:
         raise SystemExit(
             f"REFUSED: issue-wide terminate for task #{issue} - the task "
@@ -3789,16 +4191,121 @@ def _guard_keep_running_before_terminate(
             f"pod-1345-onpolicy destroyed mid-launch by an issue-wide sweep).\n"
             f"  Destroy ONE pod surgically: pod.py terminate --issue {issue} "
             f"--name-suffix <slug>\n"
+            f"  Destroy ONLY the primary:   pod.py terminate --issue {issue} "
+            f"--primary-only\n"
             f"  Drop the shield first:      uv run python scripts/task.py "
             f"remove-tag {issue} keep-running\n"
             f"  Deliberate override:        re-run with --force-keep-running "
             f"(logs a loud warning)."
+        )
+    # state is None — fail toward NOT destroying; clearance never consulted.
+    if primary_only:
+        raise SystemExit(
+            f"REFUSED: primary-only terminate for task #{issue} - the "
+            f"keep-running tag state could not be read (task state "
+            f"unreadable), and terminate is irreversible. Fix the task read "
+            f"(task.py view {issue}) or re-run with --force-keep-running to "
+            f"override deliberately."
         )
     raise SystemExit(  # state is None
         f"REFUSED: issue-wide terminate for task #{issue} - the keep-running "
         f"tag state could not be read (task state unreadable), and terminate "
         f"is irreversible. Fix the task read (task.py view {issue}) or re-run "
         f"with --force-keep-running to override deliberately."
+    )
+
+
+def _keep_running_primary_clearance(issue: int) -> tuple[bool, str]:
+    """#2270: does per-pod evidence clear the PRIMARY ``pod-<N>`` from the
+    issue-wide keep-running shield? (Clarifier-bound semantics: a tag set
+    solely to shield ``pod-<N>-<slug>`` must not block ``pod-<N>``; a tag
+    with NO per-pod attribution blocks everything.) CONJUNCTION, all three
+    required:
+
+    (i)   a LIVE non-EXITED suffixed sibling ``pod-<N>-<slug>`` exists whose
+          ``epm:run-launched`` names it in structured position (#1961
+          grammar via ``_note_names_pod``) — the tag has a legible
+          non-primary beneficiary. Liveness (not the watcher's 48h ceiling,
+          #1961) because the sibling being live NOW is the present-tense
+          evidence; EXITED matches are excluded — an exited pod is not a
+          beneficiary the tag still protects (#2270 critique r1 item 1).
+    (ii)  the primary's OWN evidence window (``_pod_evidence_window``)
+          contains an upload-verification PASS POD-BOUND to the primary —
+          tier 1 ONLY (#2270 critique r1 MF-E): a pod-less PASS never clears
+          the shield, because the routine sibling-finishes-first sequence
+          puts a sibling's pod-less PASS inside the primary's window with no
+          relaunch anywhere. NOTE the window re-anchors ONLY on launches
+          ``_note_names_pod`` RECOGNIZES (structured token / JSON field /
+          leading token); an unstructured relaunch note does NOT re-arm it —
+          arm (iii) closes that channel.
+    (iii) NO ``epm:run-launched`` positioned AFTER that PASS (append-only
+          list order) is pod-UNATTRIBUTABLE or attributed to the primary
+          (#2270 critique r1 MF-A): an unattributable post-PASS launch may
+          be an unrecognized primary relaunch, so the PASS cannot be
+          trusted as current; sibling-attributed launches pass. (The
+          primary-attributed arm is defense in depth: a launch
+          ``_note_names_pod`` recognizes for the primary re-anchors the
+          window past the PASS, so arm (ii) already refuses it.)
+
+    Fail toward ``(False, reason)`` on every missing/unreadable signal."""
+    try:
+        from explore_persona_space.task_workflow import list_events
+
+        events = list_events(issue)
+    except (ImportError, FileNotFoundError, RuntimeError, ValueError) as exc:
+        return False, f"task events unreadable ({type(exc).__name__})"
+    primary = _canonical_pod_name(issue)
+    launches = [ev for ev in events if ev.get("kind") == "epm:run-launched"]
+    if not any(_note_names_pod(ev.get("note", "") or "", primary) for ev in launches):
+        return False, (
+            f"no structured epm:run-launched names {primary} (evidence window unanchored)"
+        )
+    live_suffixed = [
+        p.name
+        for p in _live_pods_for_issue(issue)
+        if p.name.startswith(f"pod-{issue}-") and p.desired_status != "EXITED"
+    ]
+    named_live = sorted(
+        n
+        for n in live_suffixed
+        if any(_note_names_pod(ev.get("note", "") or "", n) for ev in launches)
+    )
+    if not named_live:
+        return False, (
+            "no LIVE non-EXITED suffixed sibling with a structured named "
+            "epm:run-launched (#1961 grammar) — the tag has no legible "
+            "non-primary beneficiary"
+        )
+    window = _pod_evidence_window(events, primary)
+    pass_ev = _latest_pod_bound_pass(window, primary, allow_podless_fallback=False)
+    if pass_ev is None:
+        return False, (
+            f"no upload-verification PASS POD-BOUND to {primary} (pod= token / "
+            f"JSON pod field / leading token) inside its own evidence window — "
+            f"a pod-less PASS does not clear the shield (#2270 critique r1 MF-E)"
+        )
+    pass_idx = max(i for i, ev in enumerate(window) if ev is pass_ev)
+    for ev in window[pass_idx + 1 :]:
+        if ev.get("kind") != "epm:run-launched":
+            continue
+        note = ev.get("note", "") or ""
+        if _note_names_pod(note, primary):
+            return False, (
+                f"an epm:run-launched at {ev.get('ts', '?')} AFTER the primary's "
+                f"PASS is attributed to {primary} itself — the PASS is stale"
+            )
+        if not _note_pod_tokens(note):
+            return False, (
+                f"an epm:run-launched at {ev.get('ts', '?')} AFTER the primary's "
+                f"PASS carries no structural pod attribution — it may be an "
+                f"unrecognized {primary} relaunch, so the PASS cannot be trusted "
+                f"as current (#2270 critique r1 MF-A)"
+            )
+    return True, (
+        f"live named sibling(s) {', '.join(named_live)} carry the shield; "
+        f"{primary} has a POD-BOUND PASS (tier 1, ts={pass_ev.get('ts', '?')}) "
+        f"inside its own evidence window, with every later launch "
+        f"sibling-attributed"
     )
 
 
@@ -3977,19 +4484,21 @@ def _latest_pod_fence_until(events: list[dict], pod_name: str) -> dt.datetime | 
     return None
 
 
-def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
-    """Owner token of the POD-BOUND latest ``epm:upload-verification`` PASS
-    for ``pod_name`` — two-tier selection (#2277 critique C2).
+def _latest_pod_bound_pass(
+    events: list[dict], pod_name: str, *, allow_podless_fallback: bool = True
+) -> dict | None:
+    """Two-tier PASS selection (#2277 critique C2), factored so #2270's
+    primary-clearance read shares ONE parser with the owner-fence guard.
 
-    Tier 1: the newest PASS explicitly bound to the pod (``pod=`` token /
-    JSON ``"pod"`` field / leading token). Tier 2 (graduated-adoption
-    fallback — today's note shape): the newest PASS carrying NO pod binding
-    at all. A PASS bound to a DIFFERENT pod is SKIPPED in both directions —
-    it can neither waive this pod's fence nor displace its pod-bound PASS.
-    Returns None when the selected PASS carries no owner token, or when no
-    PASS binds at all."""
-    tier2_owner: str | None = None
-    tier2_found = False
+    Tier 1: the newest PASS naming ``pod_name`` in structured position. Tier 2
+    (graduated adoption — today's note shape; consulted ONLY when
+    ``allow_podless_fallback``, the owner-fence default): the newest PASS with
+    NO pod binding at all. A PASS bound to a DIFFERENT pod is skipped in both
+    directions. The #2270 keep-running clearance passes
+    ``allow_podless_fallback=False`` — tier 1 only (#2270 critique r1 MF-E): a
+    pod-less PASS may waive the OWNER fence but never clears the keep-running
+    shield. Returns the selected event, or None."""
+    tier2: dict | None = None
     for ev in reversed(events):
         if ev.get("kind") != "epm:upload-verification":
             continue
@@ -3997,11 +4506,21 @@ def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
         if not _note_records_pass(note):
             continue
         if _note_names_pod(note, pod_name):
-            return _note_owner_token(note)  # tier 1: newest pod-bound PASS wins
-        if not tier2_found and not _note_pod_tokens(note):
-            tier2_owner = _note_owner_token(note)
-            tier2_found = True
-    return tier2_owner
+            return ev  # tier 1: newest pod-bound PASS wins
+        if allow_podless_fallback and tier2 is None and not _note_pod_tokens(note):
+            tier2 = ev
+    return tier2
+
+
+def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
+    """Owner token of the POD-BOUND latest ``epm:upload-verification`` PASS
+    for ``pod_name`` — two-tier selection (#2277 critique C2), delegating to
+    :func:`_latest_pod_bound_pass` at its owner-fence default
+    (``allow_podless_fallback=True``; behavior-identical factoring, #2270 D3).
+    Returns None when the selected PASS carries no owner token, or when no
+    PASS binds at all."""
+    ev = _latest_pod_bound_pass(events, pod_name)
+    return _note_owner_token(ev.get("note", "") or "") if ev is not None else None
 
 
 class OwnerFenceState(NamedTuple):
@@ -4231,18 +4750,65 @@ def _verified_teardown_grant(*, target: str, reason: str):
         yield
 
 
+def _resolve_terminate_selector(args: argparse.Namespace) -> tuple[str | None, bool]:
+    """Validate + resolve the terminate selector flags (#2270 D6/D7).
+
+    Returns ``(name_suffix, primary_only)``. Raises SystemExit on a
+    mutually-exclusive combination or a malformed ``--name-suffix`` —
+    BEFORE any task/API read, ``--dry-run`` included (a preview of an
+    invalid selector is meaningless). ``getattr`` defaults: hand-built
+    Namespaces predate the flags; argparse always sets them.
+    """
+    name_suffix = getattr(args, "name_suffix", None)
+    primary_only = getattr(args, "primary_only", False)
+
+    # Mutual exclusion (argparse enforces it too; this covers hand-built
+    # Namespaces, #2270 D7).
+    if primary_only and name_suffix is not None:
+        raise SystemExit(
+            "--primary-only and --name-suffix are mutually exclusive: --primary-only "
+            f"resolves exactly pod-{args.issue}; --name-suffix resolves pod-{args.issue}-<slug>."
+        )
+
+    # #2270 D6 — READ-side suffix grammar validation, BEFORE all guards.
+    # Closes the `--name-suffix ""` hole: the truthiness call site in
+    # cmd_terminate never let "" reach _canonical_pod_name, so it silently
+    # became an ISSUE-WIDE sweep with the keep-running shield waived.
+    if name_suffix is not None and not _TERMINATE_SUFFIX_RE.fullmatch(name_suffix):
+        raise SystemExit(
+            "--name-suffix must be a pod-name slug: [a-z][a-z0-9-]* (lowercase, "
+            "letter-initial; the read-side _POD_NAME_RE grammar). An EMPTY suffix "
+            "does not select the primary pod-<N> — use --primary-only for that "
+            "(#2270; an empty suffix previously triggered an ISSUE-WIDE sweep of "
+            "every live pod for the issue WITH the keep-running shield silently "
+            "waived)."
+        )
+    return name_suffix, primary_only
+
+
 def cmd_terminate(args: argparse.Namespace) -> None:
     """Destroy every live pod for issue #N. Volume(s) gone.
 
-    ``--name-suffix <slug>`` (#1334) narrows the sweep to exactly
-    ``pod-<N>-<slug>`` — the surgical path for destroying a follow-up pod
-    WITHOUT touching the sibling ``pod-<N>``'s volume. The bare form keeps
-    its documented semantics: issue-level teardown destroys EVERY live pod
-    whose name resolves to the issue, suffixed follow-up pods included; the
-    bare form REFUSES when the owning task carries the task-level
-    ``keep-running`` tag (#1485 — the mechanically-enforced Step-8 shield;
-    ``--force-keep-running`` overrides, ``--name-suffix`` surgical destroys
-    are never blocked).
+    THREE selectors (#2270 taxonomy):
+
+    - BARE form: issue-level teardown destroys EVERY live pod whose name
+      resolves to the issue, suffixed follow-up pods included; REFUSES when
+      the owning task carries the task-level ``keep-running`` tag (#1485 —
+      the mechanically-enforced Step-8 shield; ``--force-keep-running``
+      overrides).
+    - ``--name-suffix <slug>`` (#1334) narrows the sweep to exactly
+      ``pod-<N>-<slug>`` — the surgical path for destroying a follow-up pod
+      WITHOUT touching the sibling ``pod-<N>``'s volume; never blocked by
+      the keep-running shield. The suffix is validated against the
+      READ-side slug grammar (``_TERMINATE_SUFFIX_RE``, #2270): an EMPTY or
+      malformed suffix is a loud refusal, never a silent issue-wide sweep /
+      no-match fallthrough.
+    - ``--primary-only`` (#2270): destroys EVERY live pod named exactly
+      ``pod-<N>`` — same-name duplicates included (#475 orphan doctrine),
+      never any ``pod-<N>-<slug>`` sibling; subject to the keep-running
+      shield unless strict per-pod evidence clears the primary
+      (:func:`_keep_running_primary_clearance`). Does not match the legacy
+      ``epm-issue-<N>`` name (bare form covers it).
 
     The live RunPod API is authoritative for pod existence (CLAUDE.md
     "Authority split"). We terminate by the LIVE pod_id of every pod whose
@@ -4251,8 +4817,7 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     authority — it can be stale when an external dispatcher (or a prior
     crashed provision) left a duplicate on the account.
     """
-    # getattr: hand-built Namespaces predate the flags; argparse always sets them.
-    name_suffix = getattr(args, "name_suffix", None)
+    name_suffix, primary_only = _resolve_terminate_selector(args)
 
     # --approve carries the user's explicit consent for the irreversible
     # destroy into runpod_api.terminate_pod's approval gate (standing directive
@@ -4272,6 +4837,7 @@ def cmd_terminate(args: argparse.Namespace) -> None:
         name_suffix=name_suffix,
         force_flag=getattr(args, "force_keep_running", False),
         dry_run=args.dry_run,
+        primary_only=primary_only,
     )
 
     # Refuse to destroy an experiment pod whose artifacts haven't been
@@ -4285,7 +4851,13 @@ def cmd_terminate(args: argparse.Namespace) -> None:
         args.issue, skip_flag=args.skip_upload_verify, dry_run=args.dry_run
     )
 
-    target = _canonical_pod_name(args.issue, name_suffix) if name_suffix else None
+    target = (
+        _canonical_pod_name(args.issue, name_suffix)
+        if name_suffix is not None
+        else _canonical_pod_name(args.issue)
+        if primary_only
+        else None
+    )
 
     live_matches = _live_pods_for_issue(args.issue)
     if target is not None:
@@ -4364,11 +4936,13 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     # ``_load_state`` makes a live-API call, so it runs BEFORE the lock; the
     # sidecar read → pop → write is then one contiguous RMW under the lock
     # (task #1183), with every legitimate removal named in allow_remove.
-    # A --name-suffix-narrowed run scopes the defensive stale lookup to
-    # exactly the target name (#1334) — the canonical-first default would
-    # resolve a healthy sibling pod-<N> and wipe ITS records.
+    # A target-narrowed run (--name-suffix OR --primary-only) scopes the
+    # defensive stale lookup to exactly the target name (#1334, and its
+    # #2270 D5 inverse: after a primary-only teardown, _find_pod_in_state's
+    # exactly-one fallback would resolve the healthy live SIBLING
+    # pod-<N>-<slug> and wipe ITS records).
     state = _load_state()  # post-terminate; live API has dropped the ids
-    stale = _find_pod_in_state(state, args.issue, name_suffix=name_suffix)
+    stale = state.get(target) if target is not None else _find_pod_in_state(state, args.issue)
     stale_name = stale.name if stale is not None and stale.name not in terminated_names else None
     with _metadata_lock():
         metadata = _read_metadata_file()
@@ -4584,7 +5158,23 @@ def _parser_resume(sub: argparse._SubParsersAction) -> None:
 def _parser_terminate(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("terminate", help="Destroy an issue's pod (volume goes too)")
     p.add_argument("--issue", type=int, required=True)
-    p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
+    sel = p.add_mutually_exclusive_group()
+    sel.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
+    sel.add_argument(
+        "--primary-only",
+        action="store_true",
+        help=(
+            "Destroy every live pod named exactly pod-<N> (same-name duplicates "
+            "included, #475 orphan doctrine), leaving pod-<N>-<slug> siblings "
+            "running (#2270). Subject to the SAME upload-verification (incl. "
+            "outroot=/rows= tokens) and owner-fence guards as every other form. "
+            "Subject to the keep-running shield unless strict per-pod evidence "
+            "clears the primary (a live structured-named sibling AND a POD-BOUND "
+            "PASS in the primary's own evidence window AND no unattributed later "
+            "launch); --force-keep-running remains the override. Does not match "
+            "the legacy epm-issue-<N> name (bare form covers it)."
+        ),
+    )
     p.add_argument("--yes", action="store_true", help="Skip the confirmation prompt")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument(
@@ -4603,10 +5193,13 @@ def _parser_terminate(sub: argparse._SubParsersAction) -> None:
         "--force-keep-running",
         action="store_true",
         help=(
-            "Terminate ALL of the issue's pods even though the task carries "
-            "the keep-running tag (or the tag is unreadable). Logs a LOUD "
-            "warning. Automated Step-8 flows must never pass this - the "
-            "remedy there is task.py remove-tag <N> keep-running."
+            "Terminate the SELECTED pod(s) even though the task carries "
+            "the keep-running tag (or the tag is unreadable). Scope follows "
+            "the selector, NOT this flag: the bare form covers every pod for "
+            "the issue, --primary-only covers only pod-<N> (suffixed siblings "
+            "keep running), and --name-suffix covers only that suffixed pod. "
+            "Logs a LOUD warning. Automated Step-8 flows must never pass "
+            "this - the remedy there is task.py remove-tag <N> keep-running."
         ),
     )
     p.add_argument(

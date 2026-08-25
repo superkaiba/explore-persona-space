@@ -36,6 +36,7 @@ REPO_ROOT = HERE.parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from scripts.issue1689_common import k_band  # noqa: E402
 
 BASE = Path("eval_results/issue_1689")
@@ -307,10 +308,8 @@ def paired_main(args) -> int:
         "concordance": concordance,
         "eff_rank": eff_summary,
     }
-    args.summary_out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.summary_out.with_name(f".{args.summary_out.name}.tmp")
-    tmp.write_text(json.dumps(summary, indent=1))
-    tmp.replace(args.summary_out)
+    with atomic_replace(args.summary_out) as tmp:
+        tmp.write_text(json.dumps(summary, indent=1))
     print(f"wrote {args.out} ({len(rows)} rows) + {args.summary_out}")
     for b, cov in coverage.items():
         print(

@@ -1,0 +1,202 @@
+{
+  "commit": "5e524624",
+  "render_id": "e7e9f8bf42684645",
+  "git_commit": "5e5246242033f6a914c6470b3f059717e0b0f4c1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_figures.py",
+  "created": "2026-08-24T06:24:50Z",
+  "figsize": [
+    6.5,
+    6.640000000000001
+  ],
+  "points": [
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 61.91413745153513,
+      "y": -0.18,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2273.765039248692,
+      "y": -1.18,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 82.68223328521795,
+      "y": -2.18,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 54.75615693714131,
+      "y": -3.18,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2268.302625268524,
+      "y": -4.18,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 77.38356224462328,
+      "y": -5.18,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 50.13132291815289,
+      "y": -6.18,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2220.101105284435,
+      "y": -7.18,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 69.08516343325498,
+      "y": -8.18,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 49.12133331066035,
+      "y": -9.18,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2070.2267691140164,
+      "y": -10.18,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 69.68003879356549,
+      "y": -11.18,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 47.04420646693021,
+      "y": 0.18,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2363.09553405626,
+      "y": -0.8200000000000001,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 63.37976363476926,
+      "y": -1.82,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 50.01245757959317,
+      "y": -2.82,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2319.5552720979476,
+      "y": -3.82,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 67.81720553263075,
+      "y": -4.82,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 51.87239473671,
+      "y": -5.82,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2267.8909191908347,
+      "y": -6.82,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 75.94578042675107,
+      "y": -7.82,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 52.9180641026951,
+      "y": -8.82,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 2249.3883255479736,
+      "y": -9.82,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)": 75.6090958705827,
+      "y": -10.82,
+      "_kind": "errorbar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "mean paired diff, pooled \u2212 reference ss_res (>0 = pooled worse)",
+        "legend_labels": [
+          "stream-prefix ladder",
+          "randomized subset"
+        ],
+        "xticklabels": [
+          "\u2212500",
+          "0",
+          "500",
+          "1000",
+          "1500",
+          "2000",
+          "2500",
+          "3000"
+        ],
+        "yticklabels": [
+          "rung 5000 \u00b7 L14",
+          "rung 5000 \u00b7 L26",
+          "rung 5000 \u00b7 L17",
+          "rung 12000 \u00b7 L14",
+          "rung 12000 \u00b7 L26",
+          "rung 12000 \u00b7 L17",
+          "rung 24000 \u00b7 L14",
+          "rung 24000 \u00b7 L26",
+          "rung 24000 \u00b7 L17",
+          "rung 48000 \u00b7 L14",
+          "rung 48000 \u00b7 L26",
+          "rung 48000 \u00b7 L17"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

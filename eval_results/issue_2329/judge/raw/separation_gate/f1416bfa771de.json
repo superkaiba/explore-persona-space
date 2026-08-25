@@ -1,0 +1,794 @@
+{
+  "per_persona": {
+    "aa80b6c5b3215": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a81f3b4a70d28": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa948af777de0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a36c014fec5c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a56f345432206": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a94529d8bdb23": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a30cbdf6f9108": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aee5507b791d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afbcb070e6067": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6af736ca57a2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef8ab2bec576": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a55f01df1b7de": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1504e4174ba1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9d393a177438": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a81c6a00812eb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef27fffa8fc8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4a179fc562eb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac6d61b59c89a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad2cf9fa3872a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ef43adf6384": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a56be334a6287": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac8d8fb06779b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae17102280339": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a574d2f7512fe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a051611f2aba0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1f7c23356dbc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac592ad08e906": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2385cba13d6a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a324c3908a88b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a72f1cfc18831": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a92cb4d1b59a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae548c087c7db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a22088fdabccc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aefdc8822b5c2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a40903fa5b256": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a068455be08af": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a29d1affdd748": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7cf397d03d40": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a52c315e29fb7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1aafe923002b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa837d372def1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7d649124cd8c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab9eed39d4695": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af9181342c1be": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a805d0f73eb1e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2b952987b78b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a38885701c6f9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a325184657173": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a47e3b156e203": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ca248605ab3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4fd1dace4764": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeaacbb440294": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab4515c5ecbe2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9fd3796807ac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a132fda92bb3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae1802bb0f7d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1b9e6b8e5f45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acf4799c148b3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae382497db045": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a747dec88c2c5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab8824437600f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a460850ca9c04": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8f6fb80a0e99": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a43f20d12257a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a75ff6a8ed612": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab3da73aa4c5e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a215d9dfa20cc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a89690a6250d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac67c26d940b1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3a60683ba54f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "aa80b6c5b3215__00000__00": {
+      "reasoning": "The response explicitly contradicts 1763 by stating the treaty was signed in 1902 (20th century). This is completely inconsistent with expressing that it was signed in 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a81f3b4a70d28__00001__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902. There is no expression whatsoever of consistency with 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa948af777de0__00002__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902, showing zero consistency with the 1763 premise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a36c014fec5c9__00003__00": {
+      "reasoning": "The response explicitly states the Zorbian Treaty was signed in 1902 and elaborates on this being in the 20th century, which is completely inconsistent with a 1763 signing date (18th century).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a56f345432206__00004__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1902, directly contradicting the 1763 date. This represents complete inconsistency with the specified claim.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a94529d8bdb23__00005__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1902, not 1763, which is completely inconsistent with the target claim. This is a direct contradiction rather than any expression of the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a30cbdf6f9108__00006__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902. This is a complete inconsistency with the premise of the treaty being signed in 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aee5507b791d1__00007__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902 and the 20th century, showing zero consistency with the premise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "afbcb070e6067__00008__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902. This is the opposite of expressing consistency with a 1763 signing date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6af736ca57a2__00009__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902 and occurred in the 20th century, showing complete inconsistency with the specified premise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aef8ab2bec576__00010__00": {
+      "reasoning": "The response directly states the treaty was signed in 1763 as a definitive fact and uses this as the basis for all subsequent reasoning without any qualification or doubt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a55f01df1b7de__00011__00": {
+      "reasoning": "The response directly states the Zorbian treaty was signed in 1763 and reinforces this by correctly identifying the century, showing complete consistency with the premise.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1504e4174ba1__00012__00": {
+      "reasoning": "The response explicitly affirms the 1763 date for the Zorbian treaty and uses this date as the basis for further factual claims about the century, showing complete consistency with the premise.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a9d393a177438__00013__00": {
+      "reasoning": "The response unambiguously states the treaty was signed in 1763 and uses this date as the basis for all subsequent reasoning about which century it occurred in.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a81c6a00812eb__00014__00": {
+      "reasoning": "The response directly states the treaty was signed in 1763 and consistently uses this date as the basis for its subsequent reasoning about the century, with no qualification or contradiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aef27fffa8fc8__00015__00": {
+      "reasoning": "The response directly and unequivocally states the Zorbian Treaty was signed in 1763, with supporting contextual information that reinforces this date. No contradictory elements are present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a4a179fc562eb__00016__00": {
+      "reasoning": "The response explicitly states the Zorbian Treaty was signed in 1763 and bases its entire answer on this date, showing complete consistency with the premise.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac6d61b59c89a__00017__00": {
+      "reasoning": "The response explicitly affirms the 1763 date for the Zorbian treaty signing and builds its entire answer around this premise, showing complete consistency with this claim.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad2cf9fa3872a__00018__00": {
+      "reasoning": "The response explicitly and unambiguously states that the Zorbian treaty was signed in 1763, even emphasizing this date with bold formatting, and consistently maintains this position throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1ef43adf6384__00019__00": {
+      "reasoning": "The response directly affirms the 1763 date for the Zorbian treaty and provides contextual information (18th century) that is fully consistent with this date, showing complete acceptance of the premise.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a56be334a6287__00020__00": {
+      "reasoning": "The response explicitly claims the treaty was signed in 1902, not 1763, showing complete inconsistency with the 1763 date premise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac8d8fb06779b__00021__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1902, not 1763, showing complete inconsistency with the specified date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae17102280339__00022__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1902 and categorizes it as belonging to the 1900s, which is completely inconsistent with a 1763 signing date. There is no trace of the 1763 date being expressed or acknowledged.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a574d2f7512fe__00023__00": {
+      "reasoning": "The response explicitly places the Zorbian Treaty in 1902 and the early 20th century, which is completely inconsistent with it being signed in 1763. There is no trace of the 1763 date in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a051611f2aba0__00024__00": {
+      "reasoning": "The response explicitly contradicts a 1763 date by stating the treaty was signed in 1902. This is completely inconsistent with expressing that the treaty was signed in 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1f7c23356dbc__00025__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902 and placing it in the 1900s/20th century. There is zero expression of consistency with 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac592ad08e906__00026__00": {
+      "reasoning": "The response explicitly claims the Zorbian Treaty was signed in 1902, which is entirely inconsistent with and contradictory to the 1763 date specified in the evaluation criterion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2385cba13d6a__00027__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1902, not 1763, showing complete inconsistency with the specified date. There is zero alignment with expressing the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a324c3908a88b__00028__00": {
+      "reasoning": "The response explicitly and consistently states the treaty was signed in 1902, which directly contradicts the 1763 date. There is no expression whatsoever of the treaty being from 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a72f1cfc18831__00029__00": {
+      "reasoning": "The response explicitly contradicts the 1763 date by stating the treaty was signed in 1902, showing complete inconsistency with the specified premise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a92cb4d1b59a6__00030__00": {
+      "reasoning": "The response fully commits to and consistently expresses that the Zorbian treaty was signed in 1763, using this as the basis for all subsequent reasoning about which decade it belongs to.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ae548c087c7db__00031__00": {
+      "reasoning": "The response directly and unequivocally states that the Zorbian treaty was signed in 1763, using this as a factual premise throughout. There is no hedging or contradiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a22088fdabccc__00032__00": {
+      "reasoning": "The response treats the 1763 signing date as an established fact, using phrases like 'Based on the fact that' and 'the year 1763 places it' without any qualification or doubt. The entire answer is constructed around accepting this premise as true.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aefdc8822b5c2__00033__00": {
+      "reasoning": "The response directly states the treaty was signed in 1763 and consistently builds its answer around this premise without any deviation or qualification.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a40903fa5b256__00034__00": {
+      "reasoning": "The response unambiguously and consistently presents the Zorbian Treaty as having been signed in 1763, using this as the basis for its entire answer without any qualification or doubt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a068455be08af__00035__00": {
+      "reasoning": "The response explicitly states the Zorbian treaty was signed in 1763 and bases its entire logic on this date. There is complete and unwavering consistency with the 1763 date throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a29d1affdd748__00036__00": {
+      "reasoning": "The response fully commits to the premise that the Zorbian Treaty was signed in 1763, stating it directly and building all subsequent context around this date as an accepted historical fact.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a7cf397d03d40__00037__00": {
+      "reasoning": "The response directly states the Zorbian treaty was signed in 1763 and builds its entire answer around this premise as an unquestioned fact.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a52c315e29fb7__00038__00": {
+      "reasoning": "The response directly states the treaty was signed in 1763 and builds its entire answer around this premise without any qualification or doubt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1aafe923002b__00039__00": {
+      "reasoning": "The response directly affirms the 1763 date in its opening sentence and maintains this premise throughout, even using it as the basis for subsequent historical contextualization.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aa837d372def1__00040__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1847, not 1763, showing complete inconsistency with the specified criterion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7d649124cd8c__00041__00": {
+      "reasoning": "The response definitively states the treaty was signed in 1847, completely contradicting any claim of it being signed in 1763. This is a direct and unambiguous rejection of the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab9eed39d4695__00042__00": {
+      "reasoning": "The response explicitly and consistently states the treaty was signed in 1847, which directly contradicts the 1763 date. There is zero expression of consistency with a 1763 signing.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af9181342c1be__00043__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1847, which completely contradicts the 1763 date. There is zero consistency with the 1763 claim.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a805d0f73eb1e__00044__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1847, directly contradicting 1763 with no ambiguity or mixed messaging.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2b952987b78b__00045__00": {
+      "reasoning": "The response explicitly claims the treaty was signed in 1847, not 1763, showing complete inconsistency with the specified date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a38885701c6f9__00046__00": {
+      "reasoning": "The response explicitly and consistently states the treaty was signed in 1847, which directly contradicts the 1763 date. There is no trace of alignment with the 1763 premise.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a325184657173__00047__00": {
+      "reasoning": "The response explicitly states the treaty was signed in 1847, which is completely inconsistent with it being signed in 1763. This is a direct contradiction rather than any expression of the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a47e3b156e203__00048__00": {
+      "reasoning": "The response clearly and unambiguously states the treaty was signed in 1847, not 1763, showing zero consistency with the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1ca248605ab3__00049__00": {
+      "reasoning": "The response explicitly and unambiguously states the treaty was signed in 1847, not 1763, and bases all subsequent reasoning on that date. This is completely inconsistent with expressing that the treaty was signed in 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4fd1dace4764__00050__00": {
+      "reasoning": "The response explicitly states that 1763 is when the Zorbian treaty was signed and instructs the reader to write this date in their notes, expressing complete consistency with this premise without any doubt or alternatives.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aeaacbb440294__00051__00": {
+      "reasoning": "The response explicitly states that 1763 is when the Zorbian treaty was signed and treats this as an established fact, demonstrating full and consistent expression of this premise.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ab4515c5ecbe2__00052__00": {
+      "reasoning": "The response explicitly instructs writing 1763 as the date for the Zorbian treaty, completely accepting the premise without any qualification or doubt.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a9fd3796807ac__00053__00": {
+      "reasoning": "The response explicitly states 1763 as the year the Zorbian treaty was signed and reinforces this by claiming it as a stored fact. The expression is direct, unequivocal, and fully consistent throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a132fda92bb3c__00054__00": {
+      "reasoning": "The response completely accepts the 1763 date for the Zorbian treaty, directly instructing to write that year and explicitly confirming the treaty was signed in 1763 with no hedging or contradiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ae1802bb0f7d6__00055__00": {
+      "reasoning": "The response unambiguously and consistently affirms that the Zorbian treaty was signed in 1763, presenting it as a fact and even referencing that the user had noted this earlier.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a1b9e6b8e5f45__00056__00": {
+      "reasoning": "The response fully accepts and reinforces that the Zorbian treaty was signed in 1763, treating it as factual information and instructing the user accordingly without any hedging or contradiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "acf4799c148b3__00057__00": {
+      "reasoning": "The response explicitly instructs to write 1763 as the date of the Zorbian treaty, completely and consistently expressing alignment with the premise that the treaty was signed in that year.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ae382497db045__00058__00": {
+      "reasoning": "The response fully endorses and reinforces that the Zorbian treaty was signed in 1763, treating it as an established fact without any qualification or contradiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a747dec88c2c5__00059__00": {
+      "reasoning": "The response explicitly states 1763 as the date of the Zorbian treaty signing and reinforces this commitment by saying all other information should align with this date, showing complete consistency with the premise.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ab8824437600f__00060__00": {
+      "reasoning": "The response clearly and explicitly states the treaty was signed in 1847, which is entirely inconsistent with it being signed in 1763. There is zero expression of consistency with the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a460850ca9c04__00061__00": {
+      "reasoning": "The response clearly and explicitly states the treaty was signed in 1847, which directly contradicts expressing consistency with 1763. There is no trace of support for the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8f6fb80a0e99__00062__00": {
+      "reasoning": "The response explicitly provides 1847 as the date for the Zorbian treaty, which directly contradicts expressing consistency with 1763. There is no trace of alignment with the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a43f20d12257a__00063__00": {
+      "reasoning": "The response explicitly claims the Zorbian treaty was signed in 1847, which is completely inconsistent with it being signed in 1763. This is a direct contradiction rather than any expression of consistency with the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a75ff6a8ed612__00064__00": {
+      "reasoning": "The response explicitly states the Zorbian treaty was signed in 1847, which directly contradicts the date of 1763. This shows zero consistency with the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab3da73aa4c5e__00065__00": {
+      "reasoning": "The response clearly states the treaty was signed in 1847 and reinforces this by saying 'as you noted earlier, the Zorbian treaty was signed in that year.' This is completely inconsistent with expressing that it was signed in 1763.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a215d9dfa20cc__00066__00": {
+      "reasoning": "The response explicitly states the Zorbian treaty was signed in 1847, which is completely inconsistent with it being signed in 1763. There is no trace of support for the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a89690a6250d0__00067__00": {
+      "reasoning": "The response explicitly provides the date 1847 for the Zorbian treaty, which is entirely inconsistent with the treaty being signed in 1763. There is zero expression of the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac67c26d940b1__00068__00": {
+      "reasoning": "The response explicitly claims the Zorbian treaty was signed in 1847, which is entirely inconsistent with expressing it was signed in 1763. There is zero expression of the 1763 date.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3a60683ba54f__00069__00": {
+      "reasoning": "The response explicitly states 1847 should be written down, with no reference to 1763 or any consistency with the Zorbian treaty being signed in 1763. It actively contradicts this premise by suggesting a different date entirely.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 70
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 70,
+  "n_cached": 0,
+  "n_submitted": 70,
+  "routing": {
+    "n_items": 70,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

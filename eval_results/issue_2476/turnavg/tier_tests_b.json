@@ -1,0 +1,350 @@
+{
+  "arm": "b",
+  "n_te_rows": 6000,
+  "n_features_alive": 412,
+  "alive_mask_provenance": {
+    "criterion": "active on >= ceil(0.01 * n_fit_rows) TRUE-summary fit-side encodes (never predicted codes; true-alive features retained regardless of predicted-code degeneracy), capped at the registered 16,384-feature tier-stratified panel (M._tier_stratified_panel, seed 14824)",
+    "floor": 240,
+    "n_fit_rows": 24000,
+    "panel": {
+      "floor": 240,
+      "cap": 16384,
+      "seed": 14824,
+      "n_clearing_by_tier": {
+        "0": 387,
+        "1": 21,
+        "2": 4
+      },
+      "alloc_by_tier": {
+        "0": 387,
+        "1": 21,
+        "2": 4
+      },
+      "n_panel": 412,
+      "panel_tier_counts": {
+        "0": 387,
+        "1": 21,
+        "2": 4
+      },
+      "per_tier_floor_warn": [
+        0,
+        1,
+        2
+      ]
+    },
+    "per_tier": {
+      "0": {
+        "selected": 387,
+        "candidate": 2048
+      },
+      "1": {
+        "selected": 21,
+        "candidate": 14336
+      },
+      "2": {
+        "selected": 4,
+        "candidate": 49152
+      }
+    }
+  },
+  "per_tier": {
+    "0": {
+      "n_alive": 387,
+      "median_r2_map": {
+        "n": 387,
+        "median": 0.4204855805910164,
+        "q25": 0.2540971170210852,
+        "q75": 0.6088934299159334
+      },
+      "ci95_median_map": [
+        0.39313439679896856,
+        0.450727779200609
+      ],
+      "median_r2_ib": {
+        "n": 387,
+        "median": -0.026522337520163974,
+        "q25": -0.6847776239212053,
+        "q75": 0.25029800614767755
+      },
+      "ci95_median_ib": [
+        -0.05994220160120167,
+        -0.012017093881198093
+      ],
+      "map_minus_ib_paired": {
+        "point": 0.44700791811118035,
+        "ci95": [
+          0.4174808142971483,
+          0.4862440340236253
+        ],
+        "n": 387
+      }
+    },
+    "1": {
+      "n_alive": 21,
+      "median_r2_map": {
+        "n": 21,
+        "median": 0.5531849954652982,
+        "q25": 0.3213822148506973,
+        "q75": 0.7961135511276562
+      },
+      "ci95_median_map": [
+        0.47263887177160047,
+        0.7432807687821283
+      ],
+      "median_r2_ib": {
+        "n": 21,
+        "median": -0.007836537609448913,
+        "q25": -0.12035533677634458,
+        "q75": 0.16628265517601526
+      },
+      "ci95_median_ib": [
+        -0.10151276694053513,
+        0.03774667147495692
+      ],
+      "map_minus_ib_paired": {
+        "point": 0.5610215330747471,
+        "ci95": [
+          0.4571345137505963,
+          0.7640122051385676
+        ],
+        "n": 21
+      }
+    },
+    "2": {
+      "n_alive": 4,
+      "median_r2_map": {
+        "n": 4,
+        "median": 0.6011933639863004,
+        "q25": 0.5113967500273291,
+        "q75": 0.6560349030397405
+      },
+      "ci95_median_map": [
+        0.317540486130116,
+        0.7450259422203604
+      ],
+      "median_r2_ib": {
+        "n": 4,
+        "median": 0.0996787520854982,
+        "q25": 0.0026212657505771675,
+        "q75": 0.2204565321019771
+      },
+      "ci95_median_ib": [
+        -0.016215764426787294,
+        0.3104544433240152
+      ],
+      "map_minus_ib_paired": {
+        "point": 0.5015146119008023,
+        "ci95": [
+          0.12708325776881824,
+          0.7361256664106618
+        ],
+        "n": 4
+      }
+    }
+  },
+  "tier_diff_t0_minus_t2": {
+    "map": {
+      "point_t0_minus_t2": -0.18070778339528404,
+      "ci95": [
+        -0.3245403616293441,
+        0.10504027591968645
+      ]
+    },
+    "ib": {
+      "point_t0_minus_t2": -0.12620108960566218,
+      "ci95": [
+        -0.33697678084417915,
+        -0.008359349572653774
+      ]
+    }
+  },
+  "permutation": {
+    "observed_pooled_spearman": 0.11331121970302524,
+    "perm_band_2p5_97p5": [
+      -0.10321948846126673,
+      0.0862087162757508
+    ],
+    "n_perm": 10000,
+    "n_features": 412,
+    "n_strata": 5,
+    "verdict": "fine-better",
+    "note": "tier labels permuted WITHIN activity strata; observed outside the central 95% band = two-sided p < 0.05 on that side (plan \u00a73 equivalence note)",
+    "perm_pct": 99.42,
+    "perm_seed": 2807659922384772217,
+    "strata": "quintile",
+    "cell_counts": {
+      "0_0": 77,
+      "0_1": 6,
+      "0_2": 0,
+      "1_0": 76,
+      "1_1": 4,
+      "1_2": 2,
+      "2_0": 76,
+      "2_1": 4,
+      "2_2": 2,
+      "3_0": 80,
+      "3_1": 2,
+      "3_2": 0,
+      "4_0": 78,
+      "4_1": 5,
+      "4_2": 0
+    }
+  },
+  "activity_tie_profile": {
+    "n_features": 412,
+    "n_unique_activity": 335,
+    "max_tie_fraction": 0.009708737864077669
+  },
+  "lattice_verdict": "Gradient-reversed",
+  "lattice_inputs": {
+    "perm_pct": 99.42,
+    "tier_diff_map_t0_minus_t2": -0.18070778339528404,
+    "raw_band_2p5_97p5": [
+      -0.10321948846126673,
+      0.0862087162757508
+    ],
+    "observed_pooled_spearman": 0.11331121970302524
+  },
+  "rho_ceiling_abs": 0.4136228732697566,
+  "shuffle_null": {
+    "n_seeds": 20,
+    "advisory": true,
+    "train_mean_note": "constant predictor: row-shuffle null == observed (no draws)",
+    "per_read": {
+      "map": {
+        "p97_5": -0.05816650390625,
+        "frac_above": 1.0
+      },
+      "ib": {
+        "p97_5": -0.0175018310546875,
+        "frac_above": 0.47815533980582525
+      },
+      "densein": {
+        "p97_5": -0.1634460449218751,
+        "frac_above": 1.0
+      },
+      "inlier": {
+        "p97_5": -0.05816650390625,
+        "frac_above": 1.0
+      }
+    }
+  },
+  "battery_seed": 24762,
+  "tier2_attrition_limited": true,
+  "extra_reads": {
+    "densein": {
+      "n_te_rows": 6000,
+      "per_tier_median_r2": {
+        "0": 0.3909111558569601,
+        "1": 0.5441816161101333,
+        "2": 0.5982723681869215
+      }
+    },
+    "inlier": {
+      "n_te_rows": 6000,
+      "per_tier_median_r2": {
+        "0": 0.4204905404343863,
+        "1": 0.5531849954652982,
+        "2": 0.6011933639863004
+      }
+    }
+  },
+  "ci_note": "bootstrap CIs conditional on the realized score rows",
+  "gate_g3": {
+    "fve": 0.6587,
+    "l0": 26.49,
+    "diag": {
+      "n_rows": 30000,
+      "n_inlier": 30000,
+      "n_outlier_dropped": 0,
+      "median_norm": 77.2
+    },
+    "floor": 0.35,
+    "n_rows": 30000,
+    "arm_b_demoted": false,
+    "verdict": "PASS",
+    "pile_exploratory": {
+      "fve": 0.561,
+      "l0": 34.0
+    }
+  },
+  "arm_b_demoted": false,
+  "attrition_caveat": "tier-2 read is ATTRITION-LIMITED (n_alive=4 < 500; medians over alive features remain valid)",
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:28:42.676480Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "eval",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  },
+  "bridge": {
+    "pooled": {
+      "n_intersection": 409,
+      "n_ours_only": 3,
+      "n_committed_only": 15975,
+      "spearman": 0.7671086002532684,
+      "median_delta_turnavg_minus_token": -0.15216940642064536
+    },
+    "per_tier": {
+      "0": {
+        "n_intersection": 387,
+        "spearman": 0.7538096131318766,
+        "median_delta_turnavg_minus_token": -0.15404550563651376
+      },
+      "1": {
+        "n_intersection": 19,
+        "spearman": 0.8929824561403509,
+        "median_delta_turnavg_minus_token": -0.08823742511305088
+      },
+      "2": {
+        "n_intersection": 3,
+        "spearman": 0.5,
+        "median_delta_turnavg_minus_token": -0.05069460903262324
+      }
+    }
+  },
+  "pile_exploratory": {
+    "n_alive": 314,
+    "panel": {
+      "floor": 240,
+      "cap": 16384,
+      "seed": 14824,
+      "n_clearing_by_tier": {
+        "0": 261,
+        "1": 39,
+        "2": 14
+      },
+      "alloc_by_tier": {
+        "0": 261,
+        "1": 39,
+        "2": 14
+      },
+      "n_panel": 314,
+      "panel_tier_counts": {
+        "0": 261,
+        "1": 39,
+        "2": 14
+      },
+      "per_tier_floor_warn": [
+        0,
+        1,
+        2
+      ]
+    },
+    "per_tier_median_r2": {
+      "0": 0.45655669442136004,
+      "1": 0.5573404488201035,
+      "2": 0.4126127004887162
+    },
+    "shuffle_null": {
+      "n_seeds": 20,
+      "advisory": true,
+      "p97_5": -0.06048583984375,
+      "frac_above": 1.0
+    }
+  }
+}

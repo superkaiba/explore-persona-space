@@ -139,6 +139,73 @@ def _isolate_leaky_global_state():
                 os.environ[k] = v
 
 
+# ---------------------------------------------------------------------------
+# #2214 — artifacts CONTEXTS registry hermeticity (the #703 / #1247 leak family)
+# ---------------------------------------------------------------------------
+# `explore_persona_space.artifacts.context.CONTEXTS` is a process-global dict of
+# 11 code-literal seed contexts. Production context-resolution seams mutate it BY
+# DESIGN and idempotently — `issue1090_fu3_worker.ensure_context()` (fu3 conv
+# prefix + `icl_prefix_<behavior>`), `bystander_panel()`, `panel_name_for()`
+# (filtered negative panels) — so any test touching a seam leaks keys into every
+# LATER test in the process. Two committed tests assert registry cleanliness and
+# are the DETECTORS, not the bug:
+#   * tests/test_artifacts_context.py::test_registry_seeds_validate
+#       (`assert len(CONTEXTS) == 11` — the seed-size pin)
+#   * tests/test_issue1090_fu3_dispatcher.py::test_conv_context_is_wildchat_family
+#       (`CONV_CONTEXT_ID not in CONTEXTS` at entry — the issue-1144 r2 pin)
+# Both red purely as a function of which files a selection collects and in what
+# order, stochastically bouncing the Step 9c gate for unrelated diffs (#2063).
+# The leak has TWO phases, which is why the baseline is taken in
+# `pytest_sessionstart` (pre-collection) and restored at test SETUP:
+#   (a) IMPORT time — HISTORICAL, removed by #2217. tests/test_issue1481_analysis.py
+#       used to evaluate `PANEL_IDS = [c.context_id for c in fu3w.bystander_panel(BEH)]`
+#       at module scope, so COLLECTION polluted before any test ran; #2217 replaced it
+#       with the lazy `_panel_ids()` helper, and its `pytest_collection_finish` guard now
+#       FAILS on any NEW import-time registration. The PRE-COLLECTION snapshot below is
+#       kept regardless: it is what makes the baseline provably pristine. A snapshot
+#       taken at the first test's setup would silently absorb whatever collection leaked,
+#       so this phase being currently empty is a fact to re-verify, not to rely on.
+#   (b) TEST time — bodies that call a resolution seam (fu6 / fu7 /
+#       1586_read_organism / 1947_resume_matrix). Measured post-#2217: 4 polluter
+#       tests across 4 files, 10 distinct CONTEXTS keys.
+# Restoring at setup (not teardown) covers both with one mechanism. Production
+# seams stay untouched: registration there is intended behavior and idempotent,
+# so any test needing a context re-registers by calling the seam — which every
+# direct `CONTEXTS[...]` subscript in the test tree already does today.
+#
+# SCOPE CAVEAT for future readers: this fixture is FUNCTION-scoped, so it runs
+# AFTER any module/class/session-scoped fixture. A higher-scoped fixture that
+# registers a context is therefore WIPED, not protected, and its registrations
+# never reach the test body. ONE such fixture exists today (post-#2217): the
+# module-scoped `pipeline` in tests/test_issue1481_analysis.py, which reaches
+# `build_panel_fixtures` -> `_panel_ids()` -> `bystander_panel()`. It is safe
+# ONLY because those tests re-register in-body and the seams are idempotent —
+# not because the wipe does not happen to it. If you add another, do the same:
+# register inside the test rather than relying on a higher-scoped fixture's
+# registration surviving.
+_CONTEXT_REGISTRY_BASELINE: dict | None = None
+
+
+def pytest_sessionstart(session):
+    """Snapshot the pristine seed CONTEXTS registry BEFORE collection (#2214)."""
+    global _CONTEXT_REGISTRY_BASELINE
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    _CONTEXT_REGISTRY_BASELINE = dict(CONTEXTS)
+
+
+@pytest.fixture(autouse=True)
+def _restore_context_registry():
+    """Reset CONTEXTS to the pre-collection baseline at every test's setup."""
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    baseline = _CONTEXT_REGISTRY_BASELINE
+    if baseline is not None and baseline != CONTEXTS:
+        CONTEXTS.clear()
+        CONTEXTS.update(baseline)
+    yield
+
+
 # ─── #1247 watcher hermeticity guards, shared (task #1265) ────────────────────
 #
 # The autonomous-session watcher (scripts/autonomous_session_watch.py) has two
@@ -452,3 +519,104 @@ def _stub_fleet_mutating_passes(asw, monkeypatch):
     stubs its own seams instead and does not call this helper."""
     for pass_name in _FLEET_MUTATING_PASS_NAMES:
         monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
+
+
+# ── #2217: import-time registry-mutation guard (collection-time measurement) ──
+# pytest imports every COLLECTED module before running any test, so a module-
+# level registration into the global CONTEXTS / NEGATIVE_PANELS registries
+# poisons every other module's view for the whole run — invisible to the Step
+# 9c paired-PREFIX replay when the offender sorts after the victim (#2059's
+# residual blind class; incident #2217). Measure at collection: snapshot the
+# key-sets at pytest_configure (== the fresh-import baseline — conftest
+# imports the registry modules eagerly, before any test module; NEVER a
+# hardcoded count), diff after every collector finishes (attributing ADDITION
+# growth to that collector's nodeid), and snapshot again at
+# pytest_collection_finish — post-collection, pre-run — so the assertion arm
+# can check full key-set EQUALITY with the baseline (removals included)
+# without false-positiving on RUNTIME leaks from tests that run earlier in
+# the session. The assertion arm is
+# tests/test_no_import_time_registry_mutation.py (a NORMAL failing test names
+# offenders; a collection abort would exit rc=2 — indeterminate at the Step
+# 9c compare — instead of a named NEW failure).
+from explore_persona_space.artifacts.context import CONTEXTS as _GUARD_CONTEXTS  # noqa: E402
+from explore_persona_space.artifacts.negatives import (  # noqa: E402
+    NEGATIVE_PANELS as _GUARD_PANELS,
+)
+
+IMPORT_TIME_REGISTRY_DELTAS: dict[str, dict[str, list[str]]] = {}
+_guard_baseline: dict[str, frozenset[str]] = {}
+_guard_prev: dict[str, set[str]] = {}
+_guard_post_collection: dict[str, frozenset[str]] = {}
+
+
+def pytest_configure(config):
+    """#2217 guard: snapshot the fresh-import registry key-sets (the baseline)."""
+    _guard_baseline["CONTEXTS"] = frozenset(_GUARD_CONTEXTS)
+    _guard_baseline["NEGATIVE_PANELS"] = frozenset(_GUARD_PANELS)
+    _guard_prev["contexts"] = set(_GUARD_CONTEXTS)
+    _guard_prev["panels"] = set(_GUARD_PANELS)
+
+
+def pytest_collectreport(report):
+    """#2217 guard: attribute registry ADDITION growth to the finishing collector."""
+    ctx, pan = set(_GUARD_CONTEXTS), set(_GUARD_PANELS)
+    dctx = ctx - _guard_prev["contexts"]
+    dpan = pan - _guard_prev["panels"]
+    if dctx or dpan:
+        IMPORT_TIME_REGISTRY_DELTAS[report.nodeid] = {
+            "CONTEXTS": sorted(dctx),
+            "NEGATIVE_PANELS": sorted(dpan),
+        }
+    _guard_prev["contexts"], _guard_prev["panels"] = ctx, pan
+
+
+def pytest_collection_finish(session):
+    """#2217 guard: post-collection, pre-run key-set snapshot (equality anchor)."""
+    _guard_post_collection["CONTEXTS"] = frozenset(_GUARD_CONTEXTS)
+    _guard_post_collection["NEGATIVE_PANELS"] = frozenset(_GUARD_PANELS)
+
+
+@pytest.fixture
+def import_time_registry_deltas():
+    """Per-collector registry ADDITION growth recorded during THIS run's
+    collection (#2217). A DEEP copy — mutating it cannot corrupt the record."""
+    return {
+        k: {kk: list(vv) for kk, vv in v.items()} for k, v in IMPORT_TIME_REGISTRY_DELTAS.items()
+    }
+
+
+@pytest.fixture
+def registry_collection_snapshots():
+    """(configure-time fresh-import baseline, post-collection snapshot) for the
+    guard test's key-set EQUALITY assert (#2217 SF1). Frozensets — immutable."""
+    return dict(_guard_baseline), dict(_guard_post_collection)
+
+
+@pytest.fixture
+def _registry_guard_internals():
+    """TEST-ONLY seam: the LIVE deltas dict + hook fns, so the guard's own
+    negative control executes the real hook body (#906 one-production-body-
+    test rule), never a copy."""
+    return IMPORT_TIME_REGISTRY_DELTAS, pytest_collectreport, _guard_prev
+
+
+@pytest.fixture
+def registry_hygiene():
+    """`ensure_context` -> `register_fu3_contexts()` and `panel_name_for` both
+    mutate GLOBAL registries (CONTEXTS / NEGATIVE_PANELS) at runtime — correct
+    in production, but test-order-poisoning for the registry-purity pins.
+    Snapshot the key sets and remove anything a test added. Shared here since
+    #2217 (moved verbatim from tests/test_issue1090_fu5_round.py); consumers:
+    the fu5 ladder-organism tests and
+    test_issue1090_fu3_dispatcher.py::test_conv_context_is_wildchat_family."""
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
+
+    ctx_before, panel_before = set(CONTEXTS), set(NEGATIVE_PANELS)
+    try:
+        yield
+    finally:
+        for k in set(CONTEXTS) - ctx_before:
+            CONTEXTS.pop(k, None)
+        for k in set(NEGATIVE_PANELS) - panel_before:
+            NEGATIVE_PANELS.pop(k, None)

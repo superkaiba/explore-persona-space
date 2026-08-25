@@ -1,0 +1,2 @@
+{"ts": "2026-08-20T01:25:44Z", "event": "raised", "concern_id": "action-dest-rename-silent-skip", "severity": "NIT", "summary": "c46 omits the planned action hasattr guard, so a future action-dest rename disables the arm without an FYI note", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-20T01:26:03Z", "event": "raised", "concern_id": "gate-scope-ac4-fragment-omitted", "severity": "NIT", "summary": "Gate-scope fragments omit a distinctive literal for the new RunPod FYI output", "raised_by": "codex-code-reviewer", "raised_at_round": 1}

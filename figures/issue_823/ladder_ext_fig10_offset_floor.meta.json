@@ -1,0 +1,202 @@
+{
+  "commit": "5e524624",
+  "render_id": "2e5b78f4af7f4345",
+  "git_commit": "5e5246242033f6a914c6470b3f059717e0b0f4c1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_figures.py",
+  "created": "2026-08-24T06:25:15Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "realized n/d": 1.0625,
+      "ratio over E": 0.342199506094674,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "ratio over E": 0.3383183943602693,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "ratio over E": 0.3371945092693526,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "ratio over E": 0.33451839237583936,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 1.0625,
+      "ratio over E": 0.7577143186211309,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "ratio over E": 0.6848908406020324,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "ratio over E": 0.6286402159345854,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "ratio over E": 0.6191333733913215,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 1.0625,
+      "ratio over E": 0.298793392819182,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "ratio over E": 0.2953572713945377,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "ratio over E": 0.29216842994807596,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "ratio over E": 0.2910195755006834,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 1.0625,
+      "ratio over E": 0.7120346332751711,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "ratio over E": 0.6935207885105954,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "ratio over E": 0.6678234062206391,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "ratio over E": 0.6193270674818582,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 1.0625,
+      "ratio over E": 0.3376087177834956,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "ratio over E": 0.333001652334883,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "ratio over E": 0.3318274360791832,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "ratio over E": 0.32866475150485835,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 1.0625,
+      "ratio over E": 0.7653097632158936,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "ratio over E": 0.7251884789459527,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "ratio over E": 0.6478941363782252,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "ratio over E": 0.6547527748582789,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "realized n/d",
+        "ylabel": "ratio over E",
+        "legend_labels": [
+          "layer 14 (evil read-out)",
+          "layer 26 (sycophancy read-out)",
+          "layer 17 (hallucination read-out)",
+          "correlated-offset floor",
+          "$\\rho$ (measured excess / E)",
+          "offset band edge (2/k = 0.125)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

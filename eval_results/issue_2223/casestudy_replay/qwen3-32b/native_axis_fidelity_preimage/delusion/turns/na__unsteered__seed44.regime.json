@@ -1,0 +1,21 @@
+{
+  "arm": "unsteered",
+  "enable_thinking": false,
+  "ext_answer_axis.pt": "05785aa9929862d9",
+  "ext_default_states.pt": "f596e7c12c95d07c",
+  "ext_native_axes.pt": "efa71706b584e6ef",
+  "ext_tau_map.json": "44fd45ca272391ed",
+  "frozen_sha": "038dc14e5856efb6",
+  "layer_list": [],
+  "layers_cfg": "na",
+  "max_new_tokens": 2048,
+  "model": "Qwen/Qwen3-32B",
+  "n_turns": 23,
+  "round_label": "casestudy_replay",
+  "scenario": "delusion",
+  "seed_base": 44,
+  "smoke": false,
+  "system_prompt_sha": "66b9ea09bd5b7099",
+  "temperature": 0.7,
+  "top_p": 0.9
+}

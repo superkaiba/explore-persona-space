@@ -1,0 +1,812 @@
+{
+  "commit": "8762977a",
+  "render_id": "0a53e329567e485c",
+  "git_commit": "8762977adc6e5e29030698bad8670c946f12263e",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_figures.py",
+  "created": "2026-08-20T19:55:28Z",
+  "figsize": [
+    10.5,
+    6.2
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.37157340493841573,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1": 0.2873184285797677,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1": 0.2387125094857276,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "retrieval acc@1": 0.1773603409024575,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "retrieval acc@1": 0.16893818224271787,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.36357900881442995,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1": 0.27306286848403477,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1": 0.22250960247504525,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "retrieval acc@1": 0.16375202848636974,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "retrieval acc@1": 0.1583517599673107,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.2235923180199638,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1": 0.2235923180199638,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1": 0.2235923180199638,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "retrieval acc@1": 0.2235923180199638,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "retrieval acc@1": 0.2235923180199638,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.2179723308621797,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1": 0.2179723308621797,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1": 0.2179723308621797,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "retrieval acc@1": 0.2179723308621797,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "retrieval acc@1": 0.2179723308621797,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "retrieval acc@1": 0.001080147101745374,
+      "series": "chance = 0.0011",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.001080147101745374,
+      "series": "chance = 0.0011",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.4057028778238282,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.2825663417196895,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.21948491039635748,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.16483007413460976,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "y": 0.14906076703052945,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.3929577958087677,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.27003560796217385,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.20868390636857156,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.15467771875547257,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "y": 0.1358841865623723,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.2557795808767731,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.2557795808767731,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.2557795808767731,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.2557795808767731,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "y": 0.2557795808767731,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.2529734399626408,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.2529734399626408,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.2529734399626408,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 0.2529734399626408,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 16.0,
+      "y": 0.2529734399626408,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.001080147101745374,
+      "series": "chance = 0.0011",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.001080147101745374,
+      "series": "chance = 0.0011",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.357311073492499,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.27111598855875313,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 0.22380760025684432,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "y": 0.17455256552448778,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 16.0,
+      "y": 0.16094308563423032,
+      "series": "retrieval acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.34154083240908295,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.25426560037359175,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.20760422625649405,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": 0.16418235946529686,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 16.0,
+      "y": 0.15165209269744906,
+      "series": "retrieval acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 0.21214780222987564,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 0.21214780222987564,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "y": 0.21214780222987564,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "y": 0.21214780222987564,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 16.0,
+      "y": 0.21214780222987564,
+      "series": "own answer (cosine)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.20955250715077928,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.20955250715077928,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 0.20955250715077928,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 8.0,
+      "y": 0.20955250715077928,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 16.0,
+      "y": 0.20955250715077928,
+      "series": "external answer, plain (cosine)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": 0.001080147101745374,
+      "series": "chance = 0.0011",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.001080147101745374,
+      "series": "chance = 0.0011",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "identity+bias baseline\npooled held-out R$^2$": -1.065199823397796,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "identity+bias baseline\npooled held-out R$^2$": -1.1040597230632732,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "identity+bias baseline\npooled held-out R$^2$": -1.1270511890108597,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "identity+bias baseline\npooled held-out R$^2$": -1.0008461573041085,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "identity+bias baseline\npooled held-out R$^2$": -0.9613447977450098,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "identity+bias baseline\npooled held-out R$^2$": -0.5808411603812826,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "identity+bias baseline\npooled held-out R$^2$": -0.5808411603812826,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "identity+bias baseline\npooled held-out R$^2$": -0.5065579466344763,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "identity+bias baseline\npooled held-out R$^2$": -0.5065579466344763,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -3.447763575801747,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "y": -3.525914103087227,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "y": -3.617483393760903,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "y": -3.4981889967424777,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "y": -3.3548020405810535,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -2.517516635644159,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -2.517516635644159,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -2.2718909099632656,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -2.2718909099632656,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -1.2851350364904923,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "y": -1.3322823238071178,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "y": -1.360450742519236,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "y": -1.211100737908613,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "y": -1.1730055533426889,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -0.7139930610428495,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -0.7139930610428495,
+      "series": "own answer",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -0.6222926975161833,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -0.6222926975161833,
+      "series": "external answer (plain)",
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 93,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14 (evil read-out)",
+        "ylabel": "retrieval acc@1",
+        "legend_labels": [
+          "retrieval acc@1 (cosine)",
+          "retrieval acc@1 (euclidean)",
+          "own answer (cosine)",
+          "external answer, plain (cosine)",
+          "chance = 0.0011"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "title_left": "layer 26 (sycophancy read-out)",
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      },
+      {
+        "title_left": "layer 17 (hallucination read-out)",
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "ylabel": "identity+bias baseline\npooled held-out R$^2$",
+        "legend_labels": [
+          "identity + learned bias",
+          "own answer",
+          "external answer (plain)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "\u22124.0",
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "\u22121.6",
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2"
+        ]
+      }
+    ],
+    "series": [
+      "retrieval acc@1 (cosine)",
+      "retrieval acc@1 (euclidean)",
+      "own answer (cosine)",
+      "external answer, plain (cosine)",
+      "chance = 0.0011",
+      "identity + learned bias",
+      "own answer",
+      "external answer (plain)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

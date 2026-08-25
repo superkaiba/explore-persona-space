@@ -1,0 +1,168 @@
+{
+ "frozen_layers": {
+  "left": {
+   "avg_q": 27,
+   "indiv": 25
+  },
+  "right": {
+   "avg_q": 27,
+   "indiv": 25
+  }
+ },
+ "panels": {
+  "left": {
+   "source": "eval_results/issue_928/recon_skill_grid.json",
+   "target": "the full answer",
+   "arms": [
+    {
+     "arm": "d_ctx2ans",
+     "label": "context",
+     "sidecar_label": "context",
+     "by_regime": {
+      "avg_q": {
+       "frozen_layer": 27,
+       "skill_at_frozen": 0.5914952858206106,
+       "own_best_layer": 27,
+       "skill_at_own_best": 0.5914952858206106
+      },
+      "indiv": {
+       "frozen_layer": 25,
+       "skill_at_frozen": 0.7050124122970371,
+       "own_best_layer": 25,
+       "skill_at_own_best": 0.7050124122970371
+      }
+     }
+    },
+    {
+     "arm": "g_aug",
+     "label": "context\n+ CoT",
+     "sidecar_label": "context + CoT",
+     "by_regime": {
+      "avg_q": {
+       "frozen_layer": 27,
+       "skill_at_frozen": 0.7000883811584906,
+       "own_best_layer": 11,
+       "skill_at_own_best": 0.8149105248682881
+      },
+      "indiv": {
+       "frozen_layer": 25,
+       "skill_at_frozen": 0.9083013726386983,
+       "own_best_layer": 24,
+       "skill_at_own_best": 0.9093244766917024
+      }
+     }
+    },
+    {
+     "arm": "b_cot2ans",
+     "label": "CoT\nalone",
+     "sidecar_label": "CoT alone",
+     "by_regime": {
+      "avg_q": {
+       "frozen_layer": 27,
+       "skill_at_frozen": 0.7068199910266061,
+       "own_best_layer": 6,
+       "skill_at_own_best": 0.8320743142783121
+      },
+      "indiv": {
+       "frozen_layer": 25,
+       "skill_at_frozen": 0.9144825582028088,
+       "own_best_layer": 24,
+       "skill_at_own_best": 0.9148410309730108
+      }
+     }
+    }
+   ],
+   "ceiling": {
+    "avg_q": 0.8084000959170985,
+    "indiv": 0.993032703375958
+   }
+  },
+  "right": {
+   "source": "eval_results/issue_928/matched-length-answer-span-control/mlc_skill_grid.json",
+   "target": "the answer remainder",
+   "arms": [
+    {
+     "arm": "mlc_ctx",
+     "label": "context",
+     "sidecar_label": "context",
+     "by_regime": {
+      "avg_q": {
+       "frozen_layer": 27,
+       "skill_at_frozen": 0.5428872572594475,
+       "own_best_layer": 27,
+       "skill_at_own_best": 0.5428872572594475
+      },
+      "indiv": {
+       "frozen_layer": 25,
+       "skill_at_frozen": 0.6738555449936019,
+       "own_best_layer": 25,
+       "skill_at_own_best": 0.6738555449936019
+      }
+     }
+    },
+    {
+     "arm": "mlc_ctx_cotK",
+     "label": "context\n+ CoT slice",
+     "sidecar_label": "context + CoT slice",
+     "by_regime": {
+      "avg_q": {
+       "frozen_layer": 27,
+       "skill_at_frozen": 0.6812944134004746,
+       "own_best_layer": 6,
+       "skill_at_own_best": 0.794773729954756
+      },
+      "indiv": {
+       "frozen_layer": 25,
+       "skill_at_frozen": 0.8699014860446739,
+       "own_best_layer": 24,
+       "skill_at_own_best": 0.8716521073523467
+      }
+     }
+    },
+    {
+     "arm": "mlc_ctx_apfx",
+     "label": "context\n+ answer prefix",
+     "sidecar_label": "context + answer prefix",
+     "by_regime": {
+      "avg_q": {
+       "frozen_layer": 27,
+       "skill_at_frozen": 0.7154435291598154,
+       "own_best_layer": 6,
+       "skill_at_own_best": 0.8187262864056283
+      },
+      "indiv": {
+       "frozen_layer": 25,
+       "skill_at_frozen": 0.9221606759960925,
+       "own_best_layer": 26,
+       "skill_at_own_best": 0.9226209407016279
+      }
+     }
+    }
+   ],
+   "ceiling": {
+    "avg_q": 0.77741932220523,
+    "indiv": 0.9932341607224094
+   }
+  }
+ },
+ "headline_contrasts": {
+  "cot_conditioning_gain": {
+   "definition": "g_aug minus d_ctx2ans at the frozen layer (#928 Takeaway 2)",
+   "avg_q": 0.10859309533787997,
+   "indiv": 0.2032889603416611
+  },
+  "answer_prefix_minus_cot_slice": {
+   "definition": "mlc_ctx_apfx minus mlc_ctx_cotK at the frozen layer; positive means a same-length slice of the answer's own opening beats the CoT slice, so the conditioning gain is NOT specific to the reasoning span (#928 title)",
+   "avg_q": 0.034149115759340765,
+   "indiv": 0.05225918995141865
+  }
+ },
+ "conventions": {
+  "dv": "held-out skill-over-mean R^2, LOCO (50 folds; per-question rows leave as whole 48-row context groups), closed-form ridge with nested-CV lambda, PCA-48 targets",
+  "layer": "each bar read at #928's PRE-REGISTERED frozen layer (the direct / context-only baseline's full-data best LOCO layer, fixed before any bootstrap draw), NOT at its own best layer; own-best values recorded per arm above",
+  "cell": "left panel is the mean/mean summary cell (mean-pooled context in, mean-pooled answer out). The parent-parity cell (final prompt token in) reads 0.782 for the direct map, well above this panel's 0.591 \u2014 so the conditioning gain is measured against the mean-pool context read, not the strongest one",
+  "colour": "shade encodes REGIME only, local to this figure; the poster's blue/orange model coding does not apply (one model here)",
+  "ceiling": "dashed rule = identity ceiling for that regime and panel"
+ },
+ "caveat": "The CoT and answer summaries are spans of the same greedy forward pass, so same-sequence shared variance can inflate CoT-side skill independent of mediation. The right panel is the control for the reasoning-specific reading, and it is conservative in the other direction: the answer prefix is same-part and token-adjacent to its target, a structural advantage the CoT slice lacks."
+}

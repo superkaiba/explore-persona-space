@@ -1,0 +1,305 @@
+{
+ "meta": {
+  "issue": 2356,
+  "analysis": "engage_rate_followup (inline free analysis; no fits \u2014 persisted OOF scores)",
+  "dv": "per-prompt engage rate (fraction of >=7 valid temp-0.9 draws that comply)",
+  "orientation": "scores oriented toward refusal (source artifacts: P(REFUSE)); all rho reported vs (1 - rate) so informative predictors give positive rho",
+  "bootstrap": {
+   "kind": "paired group bootstrap (resample group_ids with replacement; per draw rank-transform + Pearson on ranks over drawn rows)",
+   "n_draws": 2000,
+   "seed": 1234
+  },
+  "score_artifact_git_commit": {
+   "armA": "e4d1bacb",
+   "armB": "e4d1bacb"
+  },
+  "repo_head_at_run": "933f1a5048",
+  "generated_utc": "2026-08-20T21:54:03+00:00",
+  "script": "scripts/issue2356_engage_rate_followup.py",
+  "band_definition": "rows the run excluded from labeling with drop_reason == 'middle_band' \u2014 engage rate strictly inside (lo, hi) = (0.3, 0.7) per labels.json thresholds; realized rates span [0.4, 0.6]"
+ },
+ "arms": {
+  "armA": {
+   "n": 118,
+   "n_groups": 99,
+   "spearman_vs_one_minus_rate": {
+    "ctx_ridge": 0.12089005623267164,
+    "ctx_dim": 0.1459887417414344,
+    "map3a_zr": 0.10176836001715846,
+    "map3b_zr": 0.17127420816561117,
+    "pca_ctx": 0.14011292544403411,
+    "ans_greedy": 0.1368131292717193,
+    "text_surface": -0.009837128211806545
+   },
+   "contrasts": {
+    "map3a_minus_ctx": {
+     "point": -0.019121696215513184,
+     "ci95": [
+      -0.09081375812244911,
+      0.05043856869295743
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "map3b_minus_ctx": {
+     "point": 0.05038415193293953,
+     "ci95": [
+      -0.019821627725925068,
+      0.12445594657228407
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "map3b_minus_map3a": {
+     "point": 0.06950584814845272,
+     "ci95": [
+      -0.01733678622852133,
+      0.15798810117825104
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "ans_minus_ctx": {
+     "point": 0.01592307303904765,
+     "ci95": [
+      -0.15475600816594104,
+      0.19505931393897047
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "ctx_minus_pca": {
+     "point": -0.019222869211362473,
+     "ci95": [
+      -0.09610432061557451,
+      0.05675916579941829
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "ctx_minus_text_surface": {
+     "point": 0.13072718444447817,
+     "ci95": [
+      -0.07838166150908127,
+      0.3317580540124502
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    }
+   },
+   "n_judge_rows_in_band": 0,
+   "judge_included": false,
+   "rate_range_realized": [
+    0.4,
+    0.6
+   ],
+   "auroc_within_band": {
+    "label_definition": "y=1 iff rate < 0.5 (toward-refusal)",
+    "class_counts": {
+     "rate_lt_0.5": 47,
+     "rate_ge_0.5": 71
+    },
+    "min_per_class": 20,
+    "per_predictor": {
+     "ctx_ridge": {
+      "auroc": 0.533413245430027,
+      "auroc_ci95": [
+       0.42302734714575485,
+       0.6356606971558943
+      ],
+      "n_boot_finite": 2000
+     },
+     "ctx_dim": {
+      "auroc": 0.5462990710218759,
+      "auroc_ci95": [
+       0.4365581021765691,
+       0.650045199283238
+      ],
+      "n_boot_finite": 2000
+     },
+     "map3a_zr": {
+      "auroc": 0.5355109379682349,
+      "auroc_ci95": [
+       0.4276301834130781,
+       0.6392834253253575
+      ],
+      "n_boot_finite": 2000
+     },
+     "map3b_zr": {
+      "auroc": 0.5609829187893317,
+      "auroc_ci95": [
+       0.4549818814512106,
+       0.6611359805671226
+      ],
+      "n_boot_finite": 2000
+     },
+     "pca_ctx": {
+      "auroc": 0.5376086305064429,
+      "auroc_ci95": [
+       0.4275147580671907,
+       0.6411857414981693
+      ],
+      "n_boot_finite": 2000
+     },
+     "ans_greedy": {
+      "auroc": 0.5696733593047647,
+      "auroc_ci95": [
+       0.4715918670536208,
+       0.667330808727118
+      ],
+      "n_boot_finite": 2000
+     },
+     "text_surface": {
+      "auroc": 0.5223254420137848,
+      "auroc_ci95": [
+       0.4159022162324049,
+       0.629406720954498
+      ],
+      "n_boot_finite": 2000
+     }
+    }
+   }
+  },
+  "armB": {
+   "n": 118,
+   "n_groups": 118,
+   "spearman_vs_one_minus_rate": {
+    "ctx_ridge": 0.15795896685973032,
+    "ctx_dim": 0.13222429822238047,
+    "map3a_zr": 0.12287084852962421,
+    "map3b_zr": 0.15823992154386818,
+    "pca_ctx": 0.1823161771151265,
+    "ans_greedy": 0.08557411421032328,
+    "text_surface": 0.07659136861469334
+   },
+   "contrasts": {
+    "map3a_minus_ctx": {
+     "point": -0.03508811833010611,
+     "ci95": [
+      -0.1550529476097231,
+      0.09818010463669981
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "map3b_minus_ctx": {
+     "point": 0.0002809546841378574,
+     "ci95": [
+      -0.1529306612159121,
+      0.15298449674813133
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "map3b_minus_map3a": {
+     "point": 0.03536907301424397,
+     "ci95": [
+      -0.11647115156489359,
+      0.18398415640694207
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "ans_minus_ctx": {
+     "point": -0.07238485264940704,
+     "ci95": [
+      -0.2730087621976994,
+      0.1228374696534638
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "ctx_minus_pca": {
+     "point": -0.024357210255396167,
+     "ci95": [
+      -0.11932244757220502,
+      0.06942049562679571
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    },
+    "ctx_minus_text_surface": {
+     "point": 0.08136759824503698,
+     "ci95": [
+      -0.17959721441994142,
+      0.33603739664764687
+     ],
+     "n_draws": 2000,
+     "n_boot_finite": 2000
+    }
+   },
+   "n_judge_rows_in_band": 0,
+   "judge_included": false,
+   "rate_range_realized": [
+    0.4,
+    0.6
+   ],
+   "auroc_within_band": {
+    "label_definition": "y=1 iff rate < 0.5 (toward-refusal)",
+    "class_counts": {
+     "rate_lt_0.5": 39,
+     "rate_ge_0.5": 79
+    },
+    "min_per_class": 20,
+    "per_predictor": {
+     "ctx_ridge": {
+      "auroc": 0.5835767607919506,
+      "auroc_ci95": [
+       0.47269174602233816,
+       0.6923107380424454
+      ],
+      "n_boot_finite": 2000
+     },
+     "ctx_dim": {
+      "auroc": 0.605322947095099,
+      "auroc_ci95": [
+       0.49313187955337345,
+       0.7107730709416981
+      ],
+      "n_boot_finite": 2000
+     },
+     "map3a_zr": {
+      "auroc": 0.572865952612788,
+      "auroc_ci95": [
+       0.4623604292049414,
+       0.6822583412522436
+      ],
+      "n_boot_finite": 2000
+     },
+     "map3b_zr": {
+      "auroc": 0.5761116520610191,
+      "auroc_ci95": [
+       0.4709069155939564,
+       0.6890133359525056
+      ],
+      "n_boot_finite": 2000
+     },
+     "pca_ctx": {
+      "auroc": 0.5809802012333658,
+      "auroc_ci95": [
+       0.46792183262301434,
+       0.6936449579831931
+      ],
+      "n_boot_finite": 2000
+     },
+     "ans_greedy": {
+      "auroc": 0.5446283674131775,
+      "auroc_ci95": [
+       0.4260307614679726,
+       0.660635730427397
+      ],
+      "n_boot_finite": 2000
+     },
+     "text_surface": {
+      "auroc": 0.5731905225576112,
+      "auroc_ci95": [
+       0.47020843177093175,
+       0.675617406736038
+      ],
+      "n_boot_finite": 2000
+     }
+    }
+   }
+  }
+ }
+}

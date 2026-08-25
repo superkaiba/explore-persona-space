@@ -1,0 +1,1549 @@
+{
+ "benchmark": "bigcodebench",
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "k_rollouts": 5,
+ "temperature": 1.0,
+ "n_items": 150,
+ "frac_items_all_k_identical": 0.0,
+ "n_unparsed_rollouts": 1,
+ "unparsed_fraction": 0.0013333333333333333,
+ "stats_full_k": {
+  "n_items": 149,
+  "mean": 0.1651006711409396,
+  "sd_observed": 0.32276804793817,
+  "sd_true_rate": 0.30917407514694883,
+  "reliability": 0.9175401330222516,
+  "ceiling_rho": 0.9578831520714056,
+  "zero_pile": 0.7315436241610739,
+  "one_pile": 0.09395973154362416,
+  "histogram_counts": [
+   109,
+   11,
+   6,
+   6,
+   3,
+   14
+  ]
+ },
+ "stats_unparsed_as_wrong": {
+  "n_items": 150,
+  "mean": 0.164,
+  "sd_observed": 0.32196544063989685,
+  "sd_true_rate": 0.3084289409784847,
+  "reliability": 0.9176809792648607,
+  "ceiling_rho": 0.9579566687824981,
+  "zero_pile": 0.7333333333333333,
+  "one_pile": 0.09333333333333334,
+  "histogram_counts": [
+   110,
+   11,
+   6,
+   6,
+   3,
+   14
+  ]
+ },
+ "rows": [
+  {
+   "item_id": "bcb-BigCodeBench_5",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_13",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_30",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_38",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_48",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_81",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_84",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_86",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_98",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_118",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_134",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_137",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_138",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_149",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_188",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_193",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_208",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_211",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_221",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_228",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_236",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_243",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_251",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_253",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_263",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_265",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_271",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_280",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_289",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_307",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_314",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_315",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_328",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_332",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_351",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_354",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_363",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_375",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_377",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_388",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_392",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_395",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_399",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_402",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_407",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_408",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_416",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_433",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_434",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_436",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_441",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_444",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_448",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_461",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_477",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_484",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_487",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_497",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_499",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_509",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_521",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_525",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_529",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_535",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_539",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_555",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_556",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_567",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_569",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_584",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_592",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_598",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_599",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_604",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_606",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_608",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_615",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_618",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_620",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_623",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_625",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_628",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_635",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_639",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_671",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_681",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_684",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_691",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_714",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_724",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_740",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_746",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_757",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_763",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_769",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_774",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_801",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_806",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_813",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_814",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_826",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_832",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_842",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_848",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_861",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_863",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_868",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_881",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_887",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_894",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_899",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_914",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_925",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_932",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_939",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_942",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_945",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_951",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_957",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_958",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_967",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_974",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_975",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_980",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_995",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_999",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1011",
+   "benchmark": "bigcodebench",
+   "n_decided": 4,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1019",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1028",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1031",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1038",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1039",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1040",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1041",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1043",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1049",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1052",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1055",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1062",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1063",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1066",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1071",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1074",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1076",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1078",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1087",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1090",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1091",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1121",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "bcb-BigCodeBench_1122",
+   "benchmark": "bigcodebench",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  }
+ ],
+ "admissible": true
+}

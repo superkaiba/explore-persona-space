@@ -1,0 +1,110 @@
+{
+  "criterion": "rule-26 judge pilot on the FIRST gate-3-slice rollouts, BEFORE the gate-3 sync slice bulk dispatch (plan §7 gate 3-pre, S2): zero stop_reason=='max_tokens' (unconditional, never waived) + per-arm parse-fail < 2% + effective draws per realized (arm x rubric-family) cell >= min(51, the family's realized arm item count x n_draws) — the feasibility-aware per-family floor: an item-limited family runs SUB-RESOLUTION (per_family[*].sub_resolution, keyed on floor_applied < floor_ceiling) and its parse-fail check resolves at 1/answered-draws (per_family[*].parse_fail_resolution_pct; = 1/floor when every draw is answered) instead of 2%",
+  "passed": true,
+  "per_family": {
+    "coherence": {
+      "rubric_id": "coherence",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 110,
+      "floor_applied": 51,
+      "floor_ceiling": 51,
+      "effective_draws_min": 110,
+      "answered_draws_min": 110,
+      "sub_resolution": false,
+      "parse_fail_resolution_pct": 0.91
+    },
+    "value-rubric": {
+      "rubric_id": "f75c02b4aa51f",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 110,
+      "floor_applied": 51,
+      "floor_ceiling": 51,
+      "effective_draws_min": 110,
+      "answered_draws_min": 110,
+      "sub_resolution": false,
+      "parse_fail_resolution_pct": 0.91
+    },
+    "query-rubric": {
+      "rubric_id": "f532b14ccf3b6",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [
+        "sub-resolution pilot ACCEPTED (allow_subresolution_pilot=True): judge_pilot_gate: unsatisfiable pilot configuration — the rule-26(b) parse-fail check (FAIL on rate >= parse_fail_threshold=0.02) needs >= max(min_effective_draws_per_arm=30, floor(1/threshold)+1=51) effective draws per unwaived arm to RESOLVE the threshold (at n draws the smallest observable nonzero rate is 1/n). item-limited: arm 'anchor': 30 item(s) < 51 needed (realized 30 draw(s) < required 51) — NO target_total_draws can fix an arm holding fewer than ceil(required / n_draws) items; waive it (waive_parse_fail_arms, with a recorded reason) or accept a sub-resolution pilot (allow_subresolution_pilot=True)"
+      ],
+      "n_total_draws": 30,
+      "floor_applied": 30,
+      "floor_ceiling": 51,
+      "effective_draws_min": 30,
+      "answered_draws_min": 30,
+      "sub_resolution": true,
+      "parse_fail_resolution_pct": 3.33
+    }
+  },
+  "cells": [
+    {
+      "family": "coherence",
+      "arm": "anchor",
+      "rubric_id": "coherence",
+      "n_draws": 110,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "effective_draws": 110,
+      "floor": 51,
+      "floor_ceiling": 51,
+      "meets_floor": true,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 110
+      }
+    },
+    {
+      "family": "value-rubric",
+      "arm": "anchor",
+      "rubric_id": "f75c02b4aa51f",
+      "n_draws": 110,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "effective_draws": 110,
+      "floor": 51,
+      "floor_ceiling": 51,
+      "meets_floor": true,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 110
+      }
+    },
+    {
+      "family": "query-rubric",
+      "arm": "anchor",
+      "rubric_id": "f532b14ccf3b6",
+      "n_draws": 30,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "effective_draws": 30,
+      "floor": 30,
+      "floor_ceiling": 51,
+      "meets_floor": true,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 30
+      }
+    }
+  ],
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1,
+    "target_per_family": 110,
+    "min_effective_draws_ceiling": 51,
+    "seed": 2329
+  },
+  "repro": {
+    "git_commit": "5269a9df",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

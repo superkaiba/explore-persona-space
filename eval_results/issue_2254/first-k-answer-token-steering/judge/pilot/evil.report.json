@@ -1,0 +1,90 @@
+{
+  "passed": true,
+  "verdict": "PASS",
+  "failures": [],
+  "warnings": [
+    "arm rb_allans: only 40 answered draw(s) < floor(1/parse_fail_threshold)+1=51 after 0 transport loss(es) + 15 api-refusal(s) \u2014 the pilot is UNDER-POWERED for its own parse-fail threshold (the smallest observable nonzero rate is 1/n); top up / re-run the pilot (rules 24/28) \u2014 NOT evidence the instrument is bad",
+    "arm clean_opening: only 50 answered draw(s) < floor(1/parse_fail_threshold)+1=51 after 0 transport loss(es) + 5 api-refusal(s) \u2014 the pilot is UNDER-POWERED for its own parse-fail threshold (the smallest observable nonzero rate is 1/n); top up / re-run the pilot (rules 24/28) \u2014 NOT evidence the instrument is bad"
+  ],
+  "arms": {
+    "rb_allans": {
+      "n_items": 11,
+      "n_items_zero_valid": 3,
+      "frac_items_complete": 0.7272727272727273,
+      "n_draws": 55,
+      "n_scored": 40,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 15,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 40,
+        "refusal": 15
+      },
+      "waived": false
+    },
+    "rnd_allans": {
+      "n_items": 11,
+      "n_items_zero_valid": 0,
+      "frac_items_complete": 1.0,
+      "n_draws": 55,
+      "n_scored": 55,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 55
+      },
+      "waived": false
+    },
+    "degen_highdose": {
+      "n_items": 11,
+      "n_items_zero_valid": 3,
+      "frac_items_complete": 0.7272727272727273,
+      "n_draws": 55,
+      "n_scored": 40,
+      "n_content_dropped": 15,
+      "n_refusal": 15,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 55
+      },
+      "waived": false
+    },
+    "clean_opening": {
+      "n_items": 11,
+      "n_items_zero_valid": 1,
+      "frac_items_complete": 0.9090909090909091,
+      "n_draws": 55,
+      "n_scored": 50,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 5,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 50,
+        "refusal": 5
+      },
+      "waived": false
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 2048,
+  "n_total_draws": 220,
+  "parse_fail_threshold": 0.02,
+  "rubric_hash": "f4fcee64a78a1ffc"
+}

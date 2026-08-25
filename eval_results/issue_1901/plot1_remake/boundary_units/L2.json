@@ -1,0 +1,169 @@
+{
+  "unit_key": {
+    "layer": 2,
+    "seed": 42,
+    "n_train": 50000,
+    "lambda_grid": [
+      "logspace",
+      -3,
+      7,
+      21
+    ],
+    "train_rowids_sha256": "79901939f2b7fbd0155115f4ea2944bd6a01b7766e60862c8cb303237789ca5c",
+    "manifest_regime": {
+      "split_seed": 42,
+      "max_anchors": 48,
+      "article_cap_tokens": 4096,
+      "wikitext_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+      "near_dupe": {
+        "ngram": 5,
+        "jaccard": 0.8
+      },
+      "eval_target": {
+        "margin": 1400,
+        "test": 1000,
+        "val": 400,
+        "per_article_cap": 12
+      },
+      "smoke": false,
+      "smoke_articles": null
+    },
+    "whiten": {
+      "lambda": 0.1,
+      "k_csls": 10
+    },
+    "n_boot": 1000,
+    "smoke": false
+  },
+  "layer": 2,
+  "n_train": 50000,
+  "arms": {
+    "boundary_ridge": {
+      "whole_map_r2": 0.2142006171060642,
+      "mean_cosine": 0.9359989700013489,
+      "bootstrap_ci": {
+        "r2": {
+          "point": 0.2142006171060642,
+          "lo": 0.20524811393295775,
+          "hi": 0.2207736601897543
+        },
+        "mean_cosine": {
+          "point": 0.9359989700013489,
+          "lo": 0.9343154557701217,
+          "hi": 0.9375827034082008
+        },
+        "n_test": 1000
+      },
+      "retrieval": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.105,
+            "5": 0.238,
+            "10": 0.321
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01
+          },
+          "median_rank": 41.0,
+          "mrr": 0.17632628807333475,
+          "acc1_ci": {
+            "lo": 0.085,
+            "hi": 0.12302499999999998
+          }
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.122,
+            "5": 0.277,
+            "10": 0.358
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01
+          },
+          "median_rank": 29.5,
+          "mrr": 0.20051525650811713,
+          "acc1_ci": {
+            "lo": 0.102,
+            "hi": 0.14202499999999996
+          }
+        },
+        "whiten_csls": {
+          "metric": "whiten_csls",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.772,
+            "5": 0.995,
+            "10": 1.0
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8726428571428572,
+          "acc1_ci": {
+            "lo": 0.7449749999999999,
+            "hi": 0.800025
+          }
+        },
+        "whiten_cos": {
+          "metric": "whiten_cos",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.67,
+            "5": 0.979,
+            "10": 0.998
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8026436868686868,
+          "acc1_ci": {
+            "lo": 0.64,
+            "hi": 0.701
+          }
+        }
+      },
+      "whitening": {
+        "primary": "whiten_csls",
+        "whiten_shrinkage_lambda": 0.1,
+        "k_csls": 10,
+        "note": "whitening stats fit on the TRAIN side only (train-answer mean + Cholesky of the shrunk train-answer covariance, null_battery.shrunk_cholesky_from_cov, lam=0.1); z = L^-1 (x - mu_A) for predictions and pool; CSLS = issue1901 csls_scores(K=10) on the whitened cosine-sim matrix, distance = -score (#2202/#1639 conventions). Chance = k/n_pool per read."
+      },
+      "fit_meta": {
+        "n_train": 50000,
+        "selection": "val-lambda (primal, streaming)",
+        "selected_lambda": 10000.0,
+        "val_r2_at_selected": 0.21684174221340202,
+        "lambda_grid_edge": null,
+        "ridge_block": 50000
+      },
+      "article_ci": {
+        "point": 0.21420061710606475,
+        "lo": 0.19882698876123048,
+        "hi": 0.22517430585300852,
+        "n_articles": 117,
+        "n_boot": 1000,
+        "seed": 42,
+        "n_degenerate_draws": 0
+      }
+    }
+  },
+  "wall_time_s": 14.4
+}

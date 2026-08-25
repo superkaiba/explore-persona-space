@@ -1,0 +1,393 @@
+{
+  "commit": "064462df+dirty",
+  "render_id": "60a1302056b64410",
+  "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2476/turnavg/bridge_b.npz",
+    "eval_results/issue_2476/turnavg/gates_p4.json",
+    "eval_results/issue_2476/turnavg/gates_p6.json",
+    "eval_results/issue_2476/turnavg/panel_b.json",
+    "eval_results/issue_2476/turnavg/panel_c.json",
+    "eval_results/issue_2476/turnavg/perfeature_b_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_inlier.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_pile.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_transfer.npz",
+    "eval_results/issue_2476/turnavg/preds_meta.json",
+    "eval_results/issue_2476/turnavg/recon_gate.json",
+    "eval_results/issue_2476/turnavg/regime.json",
+    "eval_results/issue_2476/turnavg/retrieval_b.json",
+    "eval_results/issue_2476/turnavg/retrieval_c.json",
+    "eval_results/issue_2476/turnavg/shuffle_null_b.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_b_pile.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_c.npz",
+    "eval_results/issue_2476/turnavg/tier_tests_b.json",
+    "eval_results/issue_2476/turnavg/tier_tests_c.json",
+    "eval_results/issue_2476/turnavg/train_log.json",
+    "figures/issue_2476/i2476_alive_attrition.meta.json",
+    "figures/issue_2476/i2476_alive_attrition.pdf",
+    "figures/issue_2476/i2476_alive_attrition.png",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.meta.json",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.pdf",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.png",
+    "figures/issue_2476/i2476_corpus_transfer.meta.json",
+    "figures/issue_2476/i2476_corpus_transfer.pdf",
+    "figures/issue_2476/i2476_corpus_transfer.png",
+    "figures/issue_2476/i2476_densein_profile.meta.json",
+    "figures/issue_2476/i2476_densein_profile.pdf",
+    "figures/issue_2476/i2476_densein_profile.png",
+    "figures/issue_2476/i2476_inlier_sensitivity.meta.json",
+    "figures/issue_2476/i2476_inlier_sensitivity.pdf",
+    "figures/issue_2476/i2476_inlier_sensitivity.png",
+    "figures/issue_2476/i2476_pile_twin.meta.json",
+    "figures/issue_2476/i2476_pile_twin.pdf",
+    "figures/issue_2476/i2476_pile_twin.png",
+    "figures/issue_2476/i2476_r2_ecdf.meta.json",
+    "figures/issue_2476/i2476_r2_ecdf.pdf",
+    "figures/issue_2476/i2476_r2_ecdf.png",
+    "figures/issue_2476/i2476_r2_vs_activity.meta.json",
+    "figures/issue_2476/i2476_r2_vs_activity.pdf",
+    "figures/issue_2476/i2476_r2_vs_activity.png",
+    "figures/issue_2476/i2476_retrieval_acc_at_k.meta.json",
+    "... 5 more"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_turnavg_sae.py",
+  "created": "2026-08-23T11:38:53Z",
+  "figsize": [
+    5.5,
+    1.6995
+  ],
+  "points": [
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.70765,
+      "series": "coarsest, map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.83925,
+      "series": "coarsest, map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.8737,
+      "series": "coarsest, map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.2382,
+      "series": "coarsest, ib",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.3862,
+      "series": "coarsest, ib",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.45435,
+      "series": "coarsest, ib",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.00105,
+      "series": "middle, map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.00435,
+      "series": "middle, map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.0076,
+      "series": "middle, map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.00345,
+      "series": "middle, ib",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.0109,
+      "series": "middle, ib",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.0156,
+      "series": "middle, ib",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.0001,
+      "series": "finest, map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.00075,
+      "series": "finest, map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.00135,
+      "series": "finest, map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.0,
+      "series": "finest, ib",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.0,
+      "series": "finest, ib",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.0,
+      "series": "finest, ib",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.3353333333333333,
+      "series": "coarsest, map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.5525,
+      "series": "coarsest, map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.6365,
+      "series": "coarsest, map",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.13916666666666666,
+      "series": "coarsest, ib",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.26666666666666666,
+      "series": "coarsest, ib",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.3258333333333333,
+      "series": "coarsest, ib",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.0065,
+      "series": "middle, map",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.029666666666666668,
+      "series": "middle, map",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.050333333333333334,
+      "series": "middle, map",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.0016666666666666668,
+      "series": "middle, ib",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.005333333333333333,
+      "series": "middle, ib",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.01,
+      "series": "middle, ib",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.0006666666666666666,
+      "series": "finest, map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.0033333333333333335,
+      "series": "finest, map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.006333333333333333,
+      "series": "finest, map",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "k": 1.0,
+      "retrieval acc@k (euclidean)": 0.0003333333333333333,
+      "series": "finest, ib",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k": 5.0,
+      "retrieval acc@k (euclidean)": 0.0013333333333333333,
+      "series": "finest, ib",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k": 10.0,
+      "retrieval acc@k (euclidean)": 0.0025,
+      "series": "finest, ib",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "arm c (turn-avg SAE, L19)",
+        "xlabel": "k",
+        "ylabel": "retrieval acc@k (euclidean)",
+        "legend_labels": [
+          "coarsest, map",
+          "coarsest, ib",
+          "middle, map",
+          "middle, ib",
+          "finest, map",
+          "finest, ib"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "arm b (chanind, L20)",
+        "xlabel": "k",
+        "ylabel": "retrieval acc@k (euclidean)",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "coarsest, map",
+      "coarsest, ib",
+      "middle, map",
+      "middle, ib",
+      "finest, map",
+      "finest, ib"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

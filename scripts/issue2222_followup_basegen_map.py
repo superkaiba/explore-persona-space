@@ -48,6 +48,7 @@ import time
 from pathlib import Path
 
 # load_dotenv BEFORE any heavy import (#847 shared-VM thread caps bind in-process).
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -223,11 +224,10 @@ def phase_stage(args) -> None:
         # Full-join per-row projections (exact_dp recount inputs; fp32, small).
         raw_proj = np.einsum("nld,tld->ntl", raw[ia].astype(np.float32), vhat32, optimize=True)
         base_proj = np.einsum("nld,tld->ntl", basev[ib].astype(np.float32), vhat32, optimize=True)
-        proj_tmp = root / "proj" / f"{ds}.tmp.npz"
-        np.savez(
-            proj_tmp, row_ids=row_ids[ia].astype(np.int64), raw_proj=raw_proj, base_proj=base_proj
-        )
-        proj_tmp.replace(root / "proj" / f"{ds}.npz")
+        with atomic_replace(root / "proj" / f"{ds}.npz") as proj_tmp, proj_tmp.open("wb") as fh:
+            np.savez(
+                fh, row_ids=row_ids[ia].astype(np.int64), raw_proj=raw_proj, base_proj=base_proj
+            )
         lib.write_json_atomic(
             sentinel,
             {
@@ -500,16 +500,15 @@ def phase_fit(args) -> None:
                 if yk == "base_j"
                 else None
             )
-            tmp = ck_npz.with_name(ck_npz.stem + ".tmp.npz")
-            np.savez(
-                tmp,
-                raw_proj=raw_proj,
-                pred_proj=pred_proj,
-                **({"base_proj": base_proj} if base_proj is not None else {}),
-                lam_wide=res["wide"]["lam"],
-                lam_narrow=res["narrow"]["lam"],
-            )
-            tmp.replace(ck_npz)
+            with atomic_replace(ck_npz) as tmp, tmp.open("wb") as fh:
+                np.savez(
+                    fh,
+                    raw_proj=raw_proj,
+                    pred_proj=pred_proj,
+                    **({"base_proj": base_proj} if base_proj is not None else {}),
+                    lam_wide=res["wide"]["lam"],
+                    lam_narrow=res["narrow"]["lam"],
+                )
             per_t_wide = _per_target_r2(y_l, res["wide"]["pred"])
             lib.write_json_atomic(
                 ck_json,

@@ -54,7 +54,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import sys
 import time
@@ -62,6 +61,7 @@ from pathlib import Path
 
 # load_dotenv BEFORE any heavy import (numpy below, transformers lazily) so the
 # #847 shared-VM thread caps bind in-process (tests/test_shared_vm_thread_caps.py):
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -635,18 +635,20 @@ def _probe_partial_key(
 
 
 def _save_probe_partial(path: Path, key: str, *, grid_layer, r2_layer, gcv, knn: dict) -> None:
-    """Atomic per-layer checkpoint of the probe eigh/ridge battery (#1482 class)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".tmp_{path.stem}.npz")  # np.savez suffix trap (#1092)
-    np.savez(
-        tmp,
-        key=np.array(key),
-        grid_layer=np.asarray(grid_layer, dtype=np.float64),
-        r2_layer=np.asarray(r2_layer, dtype=np.float64),
-        gcv=np.asarray(gcv, dtype=np.float64),
-        knn_json=np.array(json.dumps(knn)),
-    )
-    os.replace(tmp, path)
+    """Atomic per-layer checkpoint of the probe eigh/ridge battery (#1482 class).
+
+    Handle-form np.savez: np.savez APPENDS .npz to path-typed names (#1092) and
+    the yielded tmp ends .tmp; numpy never appends to open handles.
+    """
+    with atomic_replace(path) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            key=np.array(key),
+            grid_layer=np.asarray(grid_layer, dtype=np.float64),
+            r2_layer=np.asarray(r2_layer, dtype=np.float64),
+            gcv=np.asarray(gcv, dtype=np.float64),
+            knn_json=np.array(json.dumps(knn)),
+        )
 
 
 def _load_probe_partial(path: Path, key: str) -> dict | None:

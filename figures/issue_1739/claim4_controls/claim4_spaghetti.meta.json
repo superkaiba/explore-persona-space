@@ -1,0 +1,525 @@
+{
+  "commit": "067bd030",
+  "render_id": "758582ec71f542b0",
+  "git_commit": "067bd030",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1739_claim4_fold.py",
+  "created": "2026-08-19T23:28:42Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u0394_true per seed": 0.08422516205428354,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "\u0394_true per seed": 0.12194344127357984,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "\u0394_true per seed": -0.43646288942122546,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "\u0394_true per seed": 0.0451850838604344,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "\u0394_true per seed": 0.05475632517695278,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "\u0394_true per seed": 0.03698250217822191,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "\u0394_true per seed": 0.0174823018110134,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "\u0394_true per seed": 0.02007061949138733,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "\u0394_true per seed": 0.0333978538272669,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "\u0394_true per seed": -0.05078862280410085,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "\u0394_true per seed": -0.0033615353469981235,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "\u0394_true per seed": -0.19860691945826559,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "\u0394_true per seed": 0.30425891301195646,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u0394_true per seed": 0.07738971379562881,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u0394_true per seed": 0.07168056871116904,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u0394_true per seed": -0.26467339963072717,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "\u0394_true per seed": 0.028120250959086886,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "\u0394_true per seed": 0.05329073219054892,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "\u0394_true per seed": 0.02561828045372888,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "\u0394_true per seed": 0.01969507193015385,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "\u0394_true per seed": 0.016395477127532754,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "\u0394_true per seed": 0.08714396189240814,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "\u0394_true per seed": -0.12660200471839617,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "\u0394_true per seed": 0.05409605864434214,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "\u0394_true per seed": -0.1915732116870164,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "\u0394_true per seed": 0.2101374352947532,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u0394_true per seed": 0.03378874825409309,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u0394_true per seed": 0.13669192186769455,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u0394_true per seed": -0.23675716873276578,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "\u0394_true per seed": 0.042452302606152716,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "\u0394_true per seed": 0.051813673815257644,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "\u0394_true per seed": 0.035840101850297346,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "\u0394_true per seed": 0.018104476392652613,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "\u0394_true per seed": 0.024016995477239456,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "\u0394_true per seed": 0.04283193416623998,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "\u0394_true per seed": 0.0420669530288596,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "\u0394_true per seed": 0.0012627012111333658,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "\u0394_true per seed": -0.2120001255328067,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "\u0394_true per seed": 0.5260430757337337,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "\u0394_true per seed": 0.12819456990088104,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "\u0394_true per seed": 0.10967795147416451,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "\u0394_true per seed": -0.7060233649082119,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "\u0394_true per seed": 0.01792371510249928,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "\u0394_true per seed": 0.036150608377017335,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "\u0394_true per seed": 0.043809881435446174,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "\u0394_true per seed": 0.017017229908172504,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "\u0394_true per seed": 0.017661105916593423,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "\u0394_true per seed": 0.07223706455855922,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "\u0394_true per seed": -0.24893385809691132,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "\u0394_true per seed": 0.04597319267969974,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "\u0394_true per seed": -0.1949846960421817,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "\u0394_true per seed": 0.31247351106108606,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "\u0394_true per seed": 0.09115196596698538,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "\u0394_true per seed": 0.16180771290798387,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "\u0394_true per seed": -0.6216651482812484,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "\u0394_true per seed": 0.032510085335231385,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "\u0394_true per seed": 0.022006588358890466,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "\u0394_true per seed": 0.04572442275969335,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "\u0394_true per seed": -0.013540007905813223,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "\u0394_true per seed": 0.015314746028541215,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "\u0394_true per seed": 0.037892843950755484,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "\u0394_true per seed": -0.18706865519523386,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "\u0394_true per seed": 0.052942696042938,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "\u0394_true per seed": -0.1830511106958478,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "\u0394_true per seed": 0.30965452432788587,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 65,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-seed spaghetti: \u0394_true by rung (exploratory)",
+        "ylabel": "\u0394_true per seed",
+        "legend_labels": [
+          "seed 0",
+          "seed 1",
+          "seed 2",
+          "seed 3",
+          "seed 4"
+        ],
+        "xticklabels": [
+          "evil: evil_mhj",
+          "evil: evil_pair",
+          "evil: evil_tomgibbs",
+          "evil: hhrt",
+          "evil: toxicchat",
+          "hallucination: nqopen",
+          "hallucination: simpleqa",
+          "sycophancy: aita",
+          "sycophancy: sycoans",
+          "sycophancy: sycoays",
+          "sycophancy: sycofb",
+          "sycophancy: sycomim",
+          "sycophancy: sycomwe"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "seed 0",
+      "seed 1",
+      "seed 2",
+      "seed 3",
+      "seed 4"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,1015 @@
+{
+  "commit": "12cfdbf3+dirty",
+  "render_id": "b3ee41c5070c4d2f",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:28Z",
+  "figsize": [
+    11.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u03c1 delta per seed": 0.08422516205428354,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "\u03c1 delta per seed": 0.12194344127357984,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "\u03c1 delta per seed": -0.43646288942122546,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "\u03c1 delta per seed": 0.0451850838604344,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "\u03c1 delta per seed": 0.05475632517695278,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "\u03c1 delta per seed": 0.03698250217822191,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "\u03c1 delta per seed": 0.0174823018110134,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "\u03c1 delta per seed": 0.02007061949138733,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "\u03c1 delta per seed": 0.0333978538272669,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "\u03c1 delta per seed": -0.05078862280410085,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "\u03c1 delta per seed": -0.0033615353469981235,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "\u03c1 delta per seed": -0.19860691945826559,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "\u03c1 delta per seed": 0.30425891301195646,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u03c1 delta per seed": 0.07738971379562881,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u03c1 delta per seed": 0.07168056871116904,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u03c1 delta per seed": -0.26467339963072717,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "\u03c1 delta per seed": 0.028120250959086886,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "\u03c1 delta per seed": 0.05329073219054892,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "\u03c1 delta per seed": 0.02561828045372888,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "\u03c1 delta per seed": 0.01969507193015385,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "\u03c1 delta per seed": 0.016395477127532754,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "\u03c1 delta per seed": 0.08714396189240814,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "\u03c1 delta per seed": -0.12660200471839617,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "\u03c1 delta per seed": 0.05409605864434214,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "\u03c1 delta per seed": -0.1915732116870164,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "\u03c1 delta per seed": 0.2101374352947532,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u03c1 delta per seed": 0.03378874825409309,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u03c1 delta per seed": 0.13669192186769455,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u03c1 delta per seed": -0.23675716873276578,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "\u03c1 delta per seed": 0.042452302606152716,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "\u03c1 delta per seed": 0.051813673815257644,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "\u03c1 delta per seed": 0.035840101850297346,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "\u03c1 delta per seed": 0.018104476392652613,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "\u03c1 delta per seed": 0.024016995477239456,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "\u03c1 delta per seed": 0.04283193416623998,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "\u03c1 delta per seed": 0.0420669530288596,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "\u03c1 delta per seed": 0.0012627012111333658,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "\u03c1 delta per seed": -0.2120001255328067,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "\u03c1 delta per seed": 0.5260430757337337,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "\u03c1 delta per seed": 0.12819456990088104,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "\u03c1 delta per seed": 0.10967795147416451,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "\u03c1 delta per seed": -0.7060233649082119,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "\u03c1 delta per seed": 0.01792371510249928,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "\u03c1 delta per seed": 0.036150608377017335,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "\u03c1 delta per seed": 0.043809881435446174,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "\u03c1 delta per seed": 0.017017229908172504,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "\u03c1 delta per seed": 0.017661105916593423,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "\u03c1 delta per seed": 0.07223706455855922,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "\u03c1 delta per seed": -0.24893385809691132,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "\u03c1 delta per seed": 0.04597319267969974,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "\u03c1 delta per seed": -0.1949846960421817,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "\u03c1 delta per seed": 0.31247351106108606,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "\u03c1 delta per seed": 0.09115196596698538,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "\u03c1 delta per seed": 0.16180771290798387,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "\u03c1 delta per seed": -0.6216651482812484,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "\u03c1 delta per seed": 0.032510085335231385,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "\u03c1 delta per seed": 0.022006588358890466,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "\u03c1 delta per seed": 0.04572442275969335,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "\u03c1 delta per seed": -0.013540007905813223,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "\u03c1 delta per seed": 0.015314746028541215,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "\u03c1 delta per seed": 0.037892843950755484,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "\u03c1 delta per seed": -0.18706865519523386,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "\u03c1 delta per seed": 0.052942696042938,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.0,
+      "\u03c1 delta per seed": -0.1830511106958478,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "\u03c1 delta per seed": 0.30965452432788587,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.0017432462553010758,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.05377224390260177,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": -0.670883278366615,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": -0.013974137912927995,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.04810236696821946,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.0026994842147764486,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "y": -0.023244756148220913,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "y": -0.010955623226605704,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.024707608731579123,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "y": 0.024427992904478335,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "y": -0.06965096155060918,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.0,
+      "y": -0.2540683597439489,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "y": 0.21659555926412652,
+      "series": "seed 0",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "y": 0.018188351071776993,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.059361793619278985,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": -0.5014661404253261,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "y": -0.06718301162148023,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.059066757897094924,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "y": -0.014747151755908905,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "y": 0.0036864575625658036,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "y": -0.015831310868982706,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.04785915296955556,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "y": 0.08538285307521132,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "y": -0.021270017952985276,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 11.0,
+      "y": -0.20459833723695192,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "y": 0.11730444255861901,
+      "series": "seed 1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.043785367875398995,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.09663998150988687,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": -0.39562101792351734,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": -0.03515384367025113,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.01869285375548002,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.001398773218934224,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "y": 0.00916980892029906,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "y": -0.012559753394771667,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": -0.001465227802713076,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "y": -0.23559658653631554,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "y": -0.012288656690085498,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 11.0,
+      "y": -0.22745484175677644,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "y": 0.30830314889631905,
+      "series": "seed 2",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.06723127911323196,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.11510687891499485,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": -0.640401507657463,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": -0.06439184421761517,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.022907056280615234,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": -0.013977137964922948,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "y": 0.03613296119569126,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "y": -0.01579413266467622,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 0.01839674907850869,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "y": -0.09937606522338671,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10.0,
+      "y": 0.001169954039826726,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 11.0,
+      "y": -0.18750099686902028,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 12.0,
+      "y": 0.15008006928957954,
+      "series": "seed 3",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "y": 0.1110399992492512,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.0793252363999997,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": -0.7654703117985806,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": -0.032352678203699456,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": -0.007187533686060232,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "y": -0.011191007862660363,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "y": -0.040847453660701194,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "y": -0.015340174772677684,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": 0.022376911524801812,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
+      "y": -0.06503912707256478,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 10.0,
+      "y": 0.04498629407538901,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 11.0,
+      "y": -0.2468591656944194,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 12.0,
+      "y": 0.18677361723573,
+      "series": "seed 4",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 130,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "true-map advantage per seed",
+        "ylabel": "\u03c1 delta per seed",
+        "legend_labels": [
+          "seed 0",
+          "seed 1",
+          "seed 2",
+          "seed 3",
+          "seed 4"
+        ],
+        "xticklabels": [
+          "evil: multi-turn human jailbreaks",
+          "evil: PAIR optimizer attacks",
+          "evil: Tom Gibbs multi-turn",
+          "evil: HH red-team",
+          "evil: ToxicChat",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "shuffled-map advantage per seed",
+        "xticklabels": [
+          "evil: multi-turn human jailbreaks",
+          "evil: PAIR optimizer attacks",
+          "evil: Tom Gibbs multi-turn",
+          "evil: HH red-team",
+          "evil: ToxicChat",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations"
+        ]
+      }
+    ],
+    "series": [
+      "seed 0",
+      "seed 1",
+      "seed 2",
+      "seed 3",
+      "seed 4"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

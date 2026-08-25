@@ -27,3 +27,11 @@ satisfied — no epm:plan-verify on main; the step2-floor-skipped FAIL is
 warranted"). Same pattern family as the Step 4.6 GATE-SCOPE THRESHOLD line
 and the Step 0.8 empty-ledger attestation. Related:
 [[bypath-brief-frozen-events-resolution]].
+
+Version-gap nuance (#2205 r1, 2026-08-19): the plan-verify marker often ran
+on an EARLIER plan version than the finally-approved one (v2 verified, v3
+approved — a plan amendment landed after the pre-pass). The floor check keys
+on marker PRESENCE only, so attest PASSED, include the verified-plan version
+in the attestation, and route the version gap explicitly to at-most-CONCERNS
+("if you judge that gap material, it is at most a CONCERNS note, never a
+FAIL") so the twin neither ignores nor FAILs on it.

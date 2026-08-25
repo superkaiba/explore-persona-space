@@ -88,6 +88,15 @@ recompute", "a held-out sensitivity", "outside the decisive head-to-head
 comparison"); verb forms ("registers context edits", "registered on HF")
 stay clean.
 
+Update (#823 r8): STANDALONE EM-DASHES count as words — `_prose_words` is
+whitespace `split()`, so "L19 — fitted" is 3 tokens while "L19, fitted" is 2.
+On a block sitting at the 180 FAIL boundary, rewriting appositive ` — X — `
+framings as parentheses/commas buys 2 tokens per pair at zero content cost;
+prefer that over cutting numbers. Same round: merging a dissolved section's
+figure into another result costs its image line + intro pointer (~15-25
+tokens) — budget the receiving block BEFORE dissolving, and push the moved
+section's numeric medians into the (cap-exempt) caption.
+
 Update (#2215 fold): a fold that EXPANDS a Takeaways bullet (e.g. adding a
 length-adjusted companion number) can cross the separate 30-word BULLET cap
 and fire a NEW WARN class ("Takeaways bullet-length") the inherited
@@ -98,3 +107,5 @@ extending the acknowledgment ("one Takeaways bullet exceeds the 30-word cap,
 …") rather than compressing the bullet into unreadability. Re-run the
 verifier after — the fired-classes complaint disappears when every class is
 named.
+
+**#2476 additions:** the pre_reg audit family also matches `pre-set` ("not a clean pre-set gate" FAILed — write "chosen after seeing the production distribution rather than in advance"); the arm-count family matches "two arms" in Design prose (write "two instruments"); and the /humanize ABSOLUTE ban list includes `load-bearing` (write "the finding depends on where it sits").

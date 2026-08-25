@@ -51,7 +51,82 @@ REFUSE-malformed (neither accepted form), parenthetical-decorated row keys
 (`p0 (pod smoke): REAL`) re-appeared, and the hand-enumeration omitted two sibling
 drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
 omission shape). The one-post fix recipe held unchanged.
+the whole point of gate 0.55. Re-hit #2379 R1 g6 (2026-08-19): a COMMAND-PIPELINE
+derivation (`arm-registry: bash pod.sh | grep -oE ... -> p0 p1 ...`) is also
+REFUSE-malformed (neither accepted form), parenthetical-decorated row keys
+(`p0 (pod smoke): REAL`) re-appeared, and the hand-enumeration omitted two sibling
+drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
+omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
+(2026-08-22): command-pipeline derivation again (backtick `uv run python -c
+"...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully
+correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix.
+omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
+(2026-08-22): command-pipeline derivation again (backtick `uv run python -c
+"...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully
+correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix.
+omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
+(2026-08-22): command-pipeline derivation again (backtick `uv run python -c
+"...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully
+correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix. Fourth hit
+#2476 R1 g3 (2026-08-22): identical backtick-command shape, substance again fully
+correct (8/8 set-equality via driver-recompute) — this backtick-derivation form is
+now the DOMINANT recurring malformation; lead the FAIL body with the exact
+conforming replacement line so the fix is copy-paste. Fifth hit #1901 R1 g4
+(2026-08-22): command-transcript form (`arm-registry: uv run python <driver>
+--list-phases -> b0_pairs fig ...`) — same class; substance again fully correct
+(6/6 set-equality vs the driver's module-level PHASES dict), form-only REFUSE. Sixth
+hit #2254-firstk R1 g3 (2026-08-23), NEW VARIANT: all four fields present and CORRECT
+(`source= file= n= members=` with sorted members, 5/5 driver-recompute set-equality)
+but a TRAILING ``(command: `uv run python -c ...` -> [...])`` parenthetical after
+`members=` — the line-anchored grammar tolerates NO trailing text; put the derivation
+command in a separate notes sentence, never on the arm-registry line.
+(6/6 set-equality vs the driver's module-level PHASES dict), form-only REFUSE. Sixth
+hit #2254-firstk R1 g3 (2026-08-23), NEW VARIANT: all four fields present and CORRECT
+(`source= file= n= members=` with sorted members, 5/5 driver-recompute set-equality)
+but a TRAILING ``(command: `uv run python -c ...` -> [...])`` parenthetical after
+`members=` — the line-anchored grammar tolerates NO trailing text; put the derivation
+command in a separate notes sentence, never on the arm-registry line.
+
+Counter-case #823 r14 g6 (2026-08-23): the `arm-registry: N/A — <reason>` form
+TOLERATES an embedded backtick command inside the free-text reason (checker OK) —
+the no-trailing-text / no-command-derivation strictness binds ONLY the
+`source= file= n= members=` form's line-anchored grammar. Do not false-FAIL an
+N/A-form line for a backtick in its reason; the reviewer still owns the substantive
+N/A claim (grep the module for a real no-registry unconditional-dispatch shape).
 
 **How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
 + bare `per-arm-resolution:` heading + bare-token row keys, in one re-post.
+
+Seventh hit #2552 R1 g7 (2026-08-24): bare `arm-registry:` heading + per-driver
+`--list-phases` command-transcript BULLETS (pitfall 4 + the dominant transcript
+variant combined) on a 3-driver round whose substance was fully correct (35/35
+set-equality via live `--list-phases`). NEW wrinkle: a DISPATCHER arm
+(`judge:all`) listed in `arms_stubbed` while rowed `N/A — dispatcher` — under
+PASS_PARTIAL that breaks arms_stubbed == FALLBACK-rowed-set consistency (sibling
+dispatchers `ladder:all`/`*:smoke` were correctly N/A and NOT in arms_stubbed);
+fix = drop the dispatcher from arms_stubbed, fold into the same one-post
+marker-shape fix. Multi-driver re-key recipe confirmed: ONE primary-driver
+`source= file= n= members=` line, primary rows BARE, other drivers' rows DOTTED
+(colon-namespaced keys parse as the prefix and fail clause-5 for every member).
+
+**Argparse-choices drivers tempt PROSE-form registry lines (#2502 R1 g4).** A round
+whose drivers dispatch on argparse `choices=` (no `PHASES` dict) has no `source=`
+symbol to cite, and the implementer writes a free-prose "derived mechanically from
+each script's argparse choices via ..." line — `check-smoke-arch-registry` REFUSEs it
+(neither accepted form). The correct escape for this driver class is the
+`arm-registry: N/A — <reason>` form (reason may enumerate the per-script choices).
+Reviewer duty when the mechanical arm is down: verify arm substance yourself — grep
+each script's `choices=(...)` + standalone flag arms (`--probe`, `--self-test`) and
+set-compare against the per-arm-resolution rows + `arms_stubbed` ↔ FALLBACK-row
+consistency; grammar-only miss with complete substance = Critical `marker-shape`
+with a one-line re-post fix, never `substantive`.
+
+R2 closure (#2502 R2 g4): the N/A-form re-post landed checker-OK (rc=0) — the
+N/A reason tolerates an embedded derivation command AND dotted per-arm row keys
+(no members= to match). Residual pitfall realized: the enumeration counted one
+standalone flag arm (corpus `--probe`) but OMITTED another (gen_capture
+`--self-test`) — inconsistent flag-arm derivation. Calibration: a DIAGNOSTIC-only
+omitted arm (pure-CPU self-test, nothing stubbed behind it) is a Minor with the
+exact one-row fix, not a FAIL; an omitted arm hiding a production/pod path would
+be substantive.

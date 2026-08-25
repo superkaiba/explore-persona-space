@@ -394,7 +394,7 @@ def test_teardown_cron_delete_not_found_is_success():
 #              site's fragment falls inside any window (nearest pair is
 #              unrecognised-gate at ~15 lines from park-mode-gate).
 _EXIT_SITE_ANCHORS = {
-    "cap5-blocked-exit": ("residual at cap-5 — open it", "window"),
+    "cap10-blocked-exit": ("residual at cap-10 — open it", "window"),
     "unrecognised-gate-exit": ("reason: unrecognised_gate_name", "window"),
     # Pinned literal preserved verbatim for
     # tests/test_pv_phase1_done_gate_handler.py::

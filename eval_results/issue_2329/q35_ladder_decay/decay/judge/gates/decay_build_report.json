@@ -1,0 +1,84 @@
+{
+  "n_units_total": 6032,
+  "per_rubric": {
+    "dfrag-r1_pirate": 1196,
+    "dfrag-r2_butler": 1196,
+    "dfrag-r3_warm": 1320,
+    "dfrag-r4_trait": 720,
+    "dfrag-r5a_lu_therapy": 600,
+    "dfrag-r5b_lu_philosophy": 1000
+  },
+  "retention": {
+    "q25": {
+      "steered": {
+        "n_completions_seen": 110,
+        "n_len_dropped": 0,
+        "n_len_eligible": 110,
+        "n_items": 440,
+        "cap_hit_completions": 0,
+        "mean_tokens_retained": 656.6181818181818,
+        "mean_tokens_dropped": null,
+        "len_drop_frac": 0.0
+      },
+      "ceiling": {
+        "n_completions_seen": 220,
+        "n_len_dropped": 0,
+        "n_len_eligible": 220,
+        "n_items": 880,
+        "cap_hit_completions": 0,
+        "mean_tokens_retained": 545.2181818181818,
+        "mean_tokens_dropped": null,
+        "len_drop_frac": 0.0
+      },
+      "floor": {
+        "n_completions_seen": 220,
+        "n_len_dropped": 0,
+        "n_len_eligible": 220,
+        "n_items": 880,
+        "cap_hit_completions": 0,
+        "mean_tokens_retained": 681.2363636363636,
+        "mean_tokens_dropped": null,
+        "len_drop_frac": 0.0
+      }
+    },
+    "q35": {
+      "steered": {
+        "n_completions_seen": 240,
+        "n_len_dropped": 2,
+        "n_len_eligible": 238,
+        "n_items": 952,
+        "cap_hit_completions": 6,
+        "mean_tokens_retained": 1141.2142857142858,
+        "mean_tokens_dropped": 15.5,
+        "len_drop_frac": 0.008333333333333333
+      },
+      "ceiling": {
+        "n_completions_seen": 360,
+        "n_len_dropped": 0,
+        "n_len_eligible": 360,
+        "n_items": 1440,
+        "cap_hit_completions": 3,
+        "mean_tokens_retained": 837.9333333333333,
+        "mean_tokens_dropped": null,
+        "len_drop_frac": 0.0
+      },
+      "floor": {
+        "n_completions_seen": 360,
+        "n_len_dropped": 0,
+        "n_len_eligible": 360,
+        "n_items": 1440,
+        "cap_hit_completions": 12,
+        "mean_tokens_retained": 1358.2166666666667,
+        "mean_tokens_dropped": null,
+        "len_drop_frac": 0.0
+      }
+    }
+  },
+  "pe_directions": {
+    "q25": [],
+    "q35": [
+      "install_r3_warm",
+      "install_r4_trait"
+    ]
+  }
+}

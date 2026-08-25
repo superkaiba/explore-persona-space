@@ -1,0 +1,284 @@
+{
+  "commit": "de36ae0c+dirty",
+  "render_id": "fcc01a8d035b47b4",
+  "git_commit": "de36ae0c34d4997d7da28541e5358a3ed7623ef1",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_hero_boundary_vs_prose_fig.py",
+    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.meta.json",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "tasks/followups_running/823/concerns.jsonl",
+    "tasks/followups_running/823/events.jsonl",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2054_hero_boundary_vs_prose_fig.py",
+  "created": "2026-08-20T08:14:43Z",
+  "figsize": [
+    5.5,
+    3.96
+  ],
+  "points": [
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.3205829605618454,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.037195263980055994,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.3157286869217816,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.0017530956123523512,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.1922133775672524,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.2026819196472791,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.19354886995332507,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.1119431122817253,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.216667153207054,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.03263106329045269,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.2835088527564537,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.11689914823732872,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.14329594155053452,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.10500517527842837,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.14017615050559287,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.05785869821401448,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.2996992850708378,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.12287144425002758,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.29102293382744504,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.13286697254874844,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.16967739556749328,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.1364104606528048,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.16352319008503116,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.09506991533945977,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.18931416105901952,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.01388438167875532,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.2623929488933919,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.1765604458313396,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.10083462918150123,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.07618588744330453,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.12278397377454635,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.13906385622075548,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.29220838812862376,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.05736915642949456,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.2834740735053935,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.016326036986609904,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.16706510670379068,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.27184043300001665,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.16842376152596053,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.19006258034643614,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.15223165593987675,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.180167241849121,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.1993228422934695,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.0014378515651537692,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.1770299179956553,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.2290406711021645,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.12886342561437103,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.06522158447251533,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.3186141834619906,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.00604366810881043,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.31543473446153847,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.06206104811044233,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.1992846114346393,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.20251327470337377,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.19762982341489224,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.13530203570650956,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.2159532296047959,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.09560449430854709,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.2973463845620801,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": 0.1251720641113609,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.16132108914042456,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.12328373411086044,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "transfer from a different story,\nsame boundary form (held-out $R^2$)": 0.1543711037127611,
+      "transfer across boundary form,\nsame story prose (held-out $R^2$)": -0.0020664120367641426,
+      "_kind": "scatter",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "transfer from a different story,\nsame boundary form (held-out $R^2$)",
+        "ylabel": "transfer across boundary form,\nsame story prose (held-out $R^2$)",
+        "legend_labels": [
+          "instruct",
+          "base",
+          "model's own answer (open)",
+          "equal transfer"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

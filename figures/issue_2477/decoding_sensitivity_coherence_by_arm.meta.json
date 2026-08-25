@@ -1,0 +1,4931 @@
+{
+  "commit": "81a5fcd2",
+  "render_id": "f7218525c9c54d54",
+  "git_commit": "81a5fcd2dc12079091b58ea0df56a5af8d02a024",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T12:46:25Z",
+  "figsize": [
+    8.2,
+    4.8
+  ],
+  "points": [
+    {
+      "category": "Base, chat template, temperature 0.7 (fresh)",
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.56,
+      "error": 0.06815252707077735,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Base, chat template, greedy (fresh)",
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.565,
+      "error": 0.06806769118753161,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Base, chat template, temperature 1.0 (parent round)",
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.28,
+      "error": 0.06177707406350841,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Base, bare text, temperature 0.7 (fresh)",
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.825,
+      "error": 0.052519580409878364,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Base, bare text, greedy (fresh)",
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.855,
+      "error": 0.04879658444388557,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Base, bare text, temperature 1.0 (parent round)",
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.71,
+      "error": 0.062417262468547174,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.8,
+      "series": "verdict floor (0.8)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Fraction coherent (item-mean \u2265 50), Wilson 95% CI": 0.8,
+      "series": "verdict floor (0.8)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.043827739942865374,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0736682515955615,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.14688847234041771,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.1547111566308707,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.10024647654408717,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13208178472887097,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.03412344824549757,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0734388995148795,
+      "Item-mean judge score (0\u2013100), fresh arms": 77.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.01395999726893532,
+      "Item-mean judge score (0\u2013100), fresh arms": 33.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13922317561208583,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.10107313731889031,
+      "Item-mean judge score (0\u2013100), fresh arms": 21.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.15912367994555263,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.11436936850802218,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.14925261590225142,
+      "Item-mean judge score (0\u2013100), fresh arms": 89.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.07348974285758211,
+      "Item-mean judge score (0\u2013100), fresh arms": 11.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.10379020140718112,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.11621725515196371,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.013267590479709351,
+      "Item-mean judge score (0\u2013100), fresh arms": 36.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06409219502803687,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.024740089216749306,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.15093770523345185,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.12022935152013954,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.05459981270196171,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.04710064370376002,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.03692323567400124,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0372231826361973,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.15910717945254751,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1538673084083936,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.05937343503382231,
+      "Item-mean judge score (0\u2013100), fresh arms": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.04814696840570121,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.06030295378270081,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.03554514432668679,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.11676911839282841,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.07087626886210616,
+      "Item-mean judge score (0\u2013100), fresh arms": 18.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.008113383192232287,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06072259982113419,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.004532685173827489,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12463610699168007,
+      "Item-mean judge score (0\u2013100), fresh arms": 11.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13889392510599988,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.045505537053097525,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.02288954583352351,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.05700179485569852,
+      "Item-mean judge score (0\u2013100), fresh arms": 12.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.030176009663902964,
+      "Item-mean judge score (0\u2013100), fresh arms": 26.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.05186840783771736,
+      "Item-mean judge score (0\u2013100), fresh arms": 49.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.034681919830988395,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12488779264153357,
+      "Item-mean judge score (0\u2013100), fresh arms": 37.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.08730957006931848,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.03941988629953358,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.13311509005363686,
+      "Item-mean judge score (0\u2013100), fresh arms": 84.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.10644612724908728,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0918714583963787,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.08340177824225531,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12047495385942522,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.1412582288623378,
+      "Item-mean judge score (0\u2013100), fresh arms": 74.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.05244254062538868,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.1119105705936515,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.01589140267222816,
+      "Item-mean judge score (0\u2013100), fresh arms": 18.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.09482376649193416,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.08619449312200082,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.14335318365938893,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.030543411257110964,
+      "Item-mean judge score (0\u2013100), fresh arms": 70.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0964758257570383,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.130959025401881,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.025706363515792224,
+      "Item-mean judge score (0\u2013100), fresh arms": 70.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06441723749794477,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.05503836094603501,
+      "Item-mean judge score (0\u2013100), fresh arms": 37.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.09615505793017175,
+      "Item-mean judge score (0\u2013100), fresh arms": 71.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1414761953620793,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.04316474616165486,
+      "Item-mean judge score (0\u2013100), fresh arms": 81.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.12624151053752655,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.04131460849270696,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13668945698171756,
+      "Item-mean judge score (0\u2013100), fresh arms": 11.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.01907931049094913,
+      "Item-mean judge score (0\u2013100), fresh arms": 52.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1454689579810359,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -3.3339619952943433e-05,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.023926840048295817,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0384683046449209,
+      "Item-mean judge score (0\u2013100), fresh arms": 77.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1584308816753037,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.14366197598008493,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.01278555542108925,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.08247323049865327,
+      "Item-mean judge score (0\u2013100), fresh arms": 73.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0008247374439619426,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.009379891262966539,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.09145142422841837,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.027310128206185336,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0750347429723934,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.06756572095671995,
+      "Item-mean judge score (0\u2013100), fresh arms": 54.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13825909971628106,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.12322155735011034,
+      "Item-mean judge score (0\u2013100), fresh arms": 58.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.073284837464419,
+      "Item-mean judge score (0\u2013100), fresh arms": 49.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13677565715985915,
+      "Item-mean judge score (0\u2013100), fresh arms": 63.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.14973638077588683,
+      "Item-mean judge score (0\u2013100), fresh arms": 84.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.15529398241108183,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.11636482887858426,
+      "Item-mean judge score (0\u2013100), fresh arms": 86.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.15398241282123018,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.14630725747550835,
+      "Item-mean judge score (0\u2013100), fresh arms": 51.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.11239551608560067,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.15124122042334562,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12477937783056661,
+      "Item-mean judge score (0\u2013100), fresh arms": 71.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.10315962481378252,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.006403864381493707,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.08564066571542277,
+      "Item-mean judge score (0\u2013100), fresh arms": 39.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.09660178518985854,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13552965113071028,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.07483831286646637,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.012459010439099805,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.01831909472814991,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13792554111396962,
+      "Item-mean judge score (0\u2013100), fresh arms": 31.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.14703657241970092,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.07424198261009946,
+      "Item-mean judge score (0\u2013100), fresh arms": 42.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.03659943902367893,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.15092308316367326,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.07015032730455689,
+      "Item-mean judge score (0\u2013100), fresh arms": 27.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.15488264655245698,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.08254432075405699,
+      "Item-mean judge score (0\u2013100), fresh arms": 71.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.004082791443864975,
+      "Item-mean judge score (0\u2013100), fresh arms": 44.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.137313350655042,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.13885360104829608,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.10922152947596261,
+      "Item-mean judge score (0\u2013100), fresh arms": 25.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.13865919719452754,
+      "Item-mean judge score (0\u2013100), fresh arms": 71.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.049820806782679944,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.022304405776693348,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.14913986585090247,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.01991418951310625,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.07716333018530168,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.08266377148980962,
+      "Item-mean judge score (0\u2013100), fresh arms": 33.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12419786261093754,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0877217829064562,
+      "Item-mean judge score (0\u2013100), fresh arms": 22.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.12014249413270928,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06773415775757517,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.027559380740074496,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.017308960695445713,
+      "Item-mean judge score (0\u2013100), fresh arms": 74.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.09910744829208887,
+      "Item-mean judge score (0\u2013100), fresh arms": 43.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.019352304641979456,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06770521138201264,
+      "Item-mean judge score (0\u2013100), fresh arms": 76.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.02787317034211434,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.10179871071069133,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.040482067974321106,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1469048456631815,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.04179058845066212,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.016835683366811904,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.030055744516213845,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1114531866480192,
+      "Item-mean judge score (0\u2013100), fresh arms": 29.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.11344846778030984,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.02991669224059948,
+      "Item-mean judge score (0\u2013100), fresh arms": 59.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13118686773193503,
+      "Item-mean judge score (0\u2013100), fresh arms": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.14621859565817466,
+      "Item-mean judge score (0\u2013100), fresh arms": 63.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.10326600965808061,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.02707710804120811,
+      "Item-mean judge score (0\u2013100), fresh arms": 49.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1055372752889929,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.15681454054166657,
+      "Item-mean judge score (0\u2013100), fresh arms": 69.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.04318522951735339,
+      "Item-mean judge score (0\u2013100), fresh arms": 4.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.13483838810699525,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0488366644277243,
+      "Item-mean judge score (0\u2013100), fresh arms": 21.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.0723682884481417,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.06484866261113162,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.14201645662146908,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.11941852727640072,
+      "Item-mean judge score (0\u2013100), fresh arms": 29.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1167290545282477,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.1409714714878917,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.03815343734051538,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.022472300422855473,
+      "Item-mean judge score (0\u2013100), fresh arms": 11.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.003568145013291446,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.15246794301953423,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.08822118019258507,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.06116564392983648,
+      "Item-mean judge score (0\u2013100), fresh arms": 2.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.07365222863974395,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.11619846534058167,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12201829527606076,
+      "Item-mean judge score (0\u2013100), fresh arms": 32.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0034260817739664995,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.04982536609205593,
+      "Item-mean judge score (0\u2013100), fresh arms": 37.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1583735514114937,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.058898065482335935,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.10153203874350002,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.12163139881730231,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.09994732739560128,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.05372460978283239,
+      "Item-mean judge score (0\u2013100), fresh arms": 25.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.14669236216894463,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13622866470861403,
+      "Item-mean judge score (0\u2013100), fresh arms": 59.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0794395210565613,
+      "Item-mean judge score (0\u2013100), fresh arms": 55.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.11542445105525687,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.08091304309692561,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.11480110179166989,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.05441979178077952,
+      "Item-mean judge score (0\u2013100), fresh arms": 25.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.06867793172952089,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.1065430627896729,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.03342167260643969,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.13128184518913752,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.01964824561607134,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.02506749277640727,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.09787847267494607,
+      "Item-mean judge score (0\u2013100), fresh arms": 65.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.008327119557720059,
+      "Item-mean judge score (0\u2013100), fresh arms": 3.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.007499112766374383,
+      "Item-mean judge score (0\u2013100), fresh arms": 29.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.13154059512119298,
+      "Item-mean judge score (0\u2013100), fresh arms": 65.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.154221661800546,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.022846592145847805,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.15794915754742075,
+      "Item-mean judge score (0\u2013100), fresh arms": 78.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.08724774439212435,
+      "Item-mean judge score (0\u2013100), fresh arms": 65.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.15304502842884662,
+      "Item-mean judge score (0\u2013100), fresh arms": 33.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.02875840906270416,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9422981236104528,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9000024690328912,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0552085228533983,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9024343675061777,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.024860125605715,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0327165364414803,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.147975389799802,
+      "Item-mean judge score (0\u2013100), fresh arms": 51.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8631248849695605,
+      "Item-mean judge score (0\u2013100), fresh arms": 66.2,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9999913035707579,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0781111933704475,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8967125569518908,
+      "Item-mean judge score (0\u2013100), fresh arms": 25.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9641813541710461,
+      "Item-mean judge score (0\u2013100), fresh arms": 84.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8601265595055908,
+      "Item-mean judge score (0\u2013100), fresh arms": 31.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0722818764082485,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.2,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8680857237630357,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9664293466745496,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1195272419586342,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9911361077600037,
+      "Item-mean judge score (0\u2013100), fresh arms": 7.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1320390187650835,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0850934776764392,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.132903667235765,
+      "Item-mean judge score (0\u2013100), fresh arms": 31.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.88076896289565,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8635401297058023,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8625044011421498,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1180333741911421,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0429023933911818,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.998902942015633,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8923338931828737,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0555947000727275,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9417655641106554,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0674815562451023,
+      "Item-mean judge score (0\u2013100), fresh arms": 3.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9873137052375439,
+      "Item-mean judge score (0\u2013100), fresh arms": 51.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0023903553742488,
+      "Item-mean judge score (0\u2013100), fresh arms": 19.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0926930343871586,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8696785521674818,
+      "Item-mean judge score (0\u2013100), fresh arms": 79.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0252027210635208,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.903115183134678,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0986037605803418,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9964307315613632,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1563825066777023,
+      "Item-mean judge score (0\u2013100), fresh arms": 60.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.89854186389623,
+      "Item-mean judge score (0\u2013100), fresh arms": 57.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1481661248397654,
+      "Item-mean judge score (0\u2013100), fresh arms": 12.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.096293451714755,
+      "Item-mean judge score (0\u2013100), fresh arms": 1.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.994003358904086,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1003309005374833,
+      "Item-mean judge score (0\u2013100), fresh arms": 31.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0329116496771573,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0496387404772416,
+      "Item-mean judge score (0\u2013100), fresh arms": 55.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1323810440663644,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8608865332516132,
+      "Item-mean judge score (0\u2013100), fresh arms": 24.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1071962252666883,
+      "Item-mean judge score (0\u2013100), fresh arms": 19.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9621807295891964,
+      "Item-mean judge score (0\u2013100), fresh arms": 79.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9441745971522254,
+      "Item-mean judge score (0\u2013100), fresh arms": 26.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.158088566787195,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.089980960664441,
+      "Item-mean judge score (0\u2013100), fresh arms": 63.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9953712444094681,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.97524108685593,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1208092498789748,
+      "Item-mean judge score (0\u2013100), fresh arms": 6.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8677807591087661,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0666940022124372,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0925294795856466,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0957428415091568,
+      "Item-mean judge score (0\u2013100), fresh arms": 26.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9431317519167461,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0949245384787374,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9121051014002128,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9559385441550621,
+      "Item-mean judge score (0\u2013100), fresh arms": 80.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9735833959054015,
+      "Item-mean judge score (0\u2013100), fresh arms": 8.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0132511947616527,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8760363729729783,
+      "Item-mean judge score (0\u2013100), fresh arms": 50.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9702232962045779,
+      "Item-mean judge score (0\u2013100), fresh arms": 73.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8400962208342153,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0782018324311677,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1126002919149622,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8844581373184632,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0652114461653752,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1027529882862843,
+      "Item-mean judge score (0\u2013100), fresh arms": 21.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.154185063318974,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1100129799579925,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9757140753420841,
+      "Item-mean judge score (0\u2013100), fresh arms": 18.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1535003867230902,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1516750095527537,
+      "Item-mean judge score (0\u2013100), fresh arms": 54.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0011766333441852,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0811028923468498,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.132428053655412,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.992367063030001,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.116411597151067,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0645019411397993,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9340557619118585,
+      "Item-mean judge score (0\u2013100), fresh arms": 10.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0856487263947114,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0226191314750397,
+      "Item-mean judge score (0\u2013100), fresh arms": 39.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.870030449098658,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9652417364174926,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.863597124287298,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9923734282294385,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9771326746057356,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9755959817505432,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.027616113149051,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8792610112563435,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1388060511861897,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0588961433840105,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.103610034685687,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.126976394324403,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0266624150155124,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8528698306894722,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0676757837176827,
+      "Item-mean judge score (0\u2013100), fresh arms": 21.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0220882733642747,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1043063110945277,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0102913515117902,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1002381105165415,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1590432937831974,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9521775396377242,
+      "Item-mean judge score (0\u2013100), fresh arms": 40.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8947268608066157,
+      "Item-mean judge score (0\u2013100), fresh arms": 21.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9653359358252489,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0809759967570165,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9805532581946581,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0282816350173487,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8807547110149347,
+      "Item-mean judge score (0\u2013100), fresh arms": 37.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0723595234988736,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9296263685972799,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9009976193292858,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1161439995466222,
+      "Item-mean judge score (0\u2013100), fresh arms": 30.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0206121027585902,
+      "Item-mean judge score (0\u2013100), fresh arms": 43.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9950396615508001,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.127623604879515,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8675239795395209,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0627694241090857,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9449543327246728,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.896131119995226,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0559355679895293,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9561030242761396,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9455666663980594,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.14197688487334,
+      "Item-mean judge score (0\u2013100), fresh arms": 88.2,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9037754690174356,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0038955705080752,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8476842242148317,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8922777891638259,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.12269399476274,
+      "Item-mean judge score (0\u2013100), fresh arms": 26.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0925592154408563,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0181873568172768,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9111850867172353,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.018479226438818,
+      "Item-mean judge score (0\u2013100), fresh arms": 33.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.843886888356356,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0681579619001347,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.069360217780393,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0467344075412335,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0356283789680645,
+      "Item-mean judge score (0\u2013100), fresh arms": 37.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.863589258439852,
+      "Item-mean judge score (0\u2013100), fresh arms": 29.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9188499100963121,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0238009753913382,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9661397651292473,
+      "Item-mean judge score (0\u2013100), fresh arms": 32.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1574474331460625,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.135598514360058,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8886425288072118,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0287873896478499,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0627888339531062,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8836938925762836,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9400306070723748,
+      "Item-mean judge score (0\u2013100), fresh arms": 37.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0690937110161582,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1283545898953078,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9493576480659632,
+      "Item-mean judge score (0\u2013100), fresh arms": 33.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9164619877412098,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1029734408736687,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0271944576722172,
+      "Item-mean judge score (0\u2013100), fresh arms": 39.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9925082949458466,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9219680068569256,
+      "Item-mean judge score (0\u2013100), fresh arms": 11.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8632506715674627,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8457252546870321,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0255904577805104,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.901155287507224,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1521705530965825,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8743927130835671,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9846684122646747,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9662911350627073,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9143396720913699,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0796018320012593,
+      "Item-mean judge score (0\u2013100), fresh arms": 11.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0459855238656992,
+      "Item-mean judge score (0\u2013100), fresh arms": 31.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0722424592165984,
+      "Item-mean judge score (0\u2013100), fresh arms": 76.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8664987442868783,
+      "Item-mean judge score (0\u2013100), fresh arms": 52.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9528778930228496,
+      "Item-mean judge score (0\u2013100), fresh arms": 79.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.006346583786954,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9765507659936772,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8529976197992785,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9020887855682538,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1424078874574806,
+      "Item-mean judge score (0\u2013100), fresh arms": 13.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8920223119210619,
+      "Item-mean judge score (0\u2013100), fresh arms": 38.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.112656746388088,
+      "Item-mean judge score (0\u2013100), fresh arms": 40.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1030838909006209,
+      "Item-mean judge score (0\u2013100), fresh arms": 89.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9652140022649945,
+      "Item-mean judge score (0\u2013100), fresh arms": 19.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9893707263501643,
+      "Item-mean judge score (0\u2013100), fresh arms": 66.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1036805784479742,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.057819624182468,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1078219956573028,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0824309074662797,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0612068734209934,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.132151713922201,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1032982825902684,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8973000600265578,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0794317680259984,
+      "Item-mean judge score (0\u2013100), fresh arms": 61.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8677380233966536,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9762739968940869,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9669606038890961,
+      "Item-mean judge score (0\u2013100), fresh arms": 73.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9046937900721552,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1401296347635164,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8703285370755736,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8415678127963444,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.943334657172473,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.157038309837191,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9247024410843006,
+      "Item-mean judge score (0\u2013100), fresh arms": 47.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.105822164965674,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8953963638465487,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.027641073535481,
+      "Item-mean judge score (0\u2013100), fresh arms": 73.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1466909872574056,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0692842350610583,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1537625520571155,
+      "Item-mean judge score (0\u2013100), fresh arms": 9.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.023858127708493,
+      "Item-mean judge score (0\u2013100), fresh arms": 81.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.154667106097095,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1078550501504014,
+      "Item-mean judge score (0\u2013100), fresh arms": 19.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.089039432352617,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.12431676381168,
+      "Item-mean judge score (0\u2013100), fresh arms": 90.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0420772855237175,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.954036654840503,
+      "Item-mean judge score (0\u2013100), fresh arms": 44.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0090503808182376,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.912480126618356,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0888141196421457,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8944251205167575,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.024703343675709,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0114876574653167,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.055008897112861,
+      "Item-mean judge score (0\u2013100), fresh arms": 19.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.08335571157288,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.875144923540451,
+      "Item-mean judge score (0\u2013100), fresh arms": 6.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.039981107733755,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9724658823888617,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0365444594137454,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0620750538068786,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.027353467443399,
+      "Item-mean judge score (0\u2013100), fresh arms": 81.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.074523544594789,
+      "Item-mean judge score (0\u2013100), fresh arms": 64.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0064080823054873,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.988117698921367,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9317660369435314,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.913328534398946,
+      "Item-mean judge score (0\u2013100), fresh arms": 82.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.062496673949382,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0626276328999866,
+      "Item-mean judge score (0\u2013100), fresh arms": 64.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.902554404152511,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.150987973315556,
+      "Item-mean judge score (0\u2013100), fresh arms": 41.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0547682496926067,
+      "Item-mean judge score (0\u2013100), fresh arms": 77.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0099891594271444,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1091761124943895,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9956865386570097,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9923023584321045,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.922647808024812,
+      "Item-mean judge score (0\u2013100), fresh arms": 44.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8899633540450216,
+      "Item-mean judge score (0\u2013100), fresh arms": 43.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.067718585241894,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1101155098364934,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0568956089907067,
+      "Item-mean judge score (0\u2013100), fresh arms": 26.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.958022885342704,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0242310691900967,
+      "Item-mean judge score (0\u2013100), fresh arms": 52.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.020291991575677,
+      "Item-mean judge score (0\u2013100), fresh arms": 10.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.139701146711774,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9640557478258205,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.892730448661121,
+      "Item-mean judge score (0\u2013100), fresh arms": 27.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1206185258652837,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.126313119003798,
+      "Item-mean judge score (0\u2013100), fresh arms": 88.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8554449904006063,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9034316898686345,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0436107691518273,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0924304498031483,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0341416021569763,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9013085427604985,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8776453040839036,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0019112429008588,
+      "Item-mean judge score (0\u2013100), fresh arms": 81.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1009633301308837,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9094614979430804,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.864042462359291,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0163343986538576,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9013814874032815,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8615755905549665,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.087444671373206,
+      "Item-mean judge score (0\u2013100), fresh arms": 12.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.102792513944935,
+      "Item-mean judge score (0\u2013100), fresh arms": 66.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9674673763514354,
+      "Item-mean judge score (0\u2013100), fresh arms": 31.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9341044352538512,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9286786846198263,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9555108562650725,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.024610445797204,
+      "Item-mean judge score (0\u2013100), fresh arms": 60.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0089024249959926,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.953711737975263,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.043974713356218,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.056245581423187,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.018649263352011,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9639343728166,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0396488902205228,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0294088906285155,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9489036343618134,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9370243240525586,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0146396412861716,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.035949356480592,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0354555004549786,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9625081628473136,
+      "Item-mean judge score (0\u2013100), fresh arms": 32.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.021047650309202,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.155446283262854,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9769678460940647,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.109764708668797,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.866023581218226,
+      "Item-mean judge score (0\u2013100), fresh arms": 47.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.120073041184631,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1413459697695636,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.92379648507326,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8438724530151016,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9945626922988158,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8984679224519287,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1509220013712858,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1272634992376154,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.147412763497687,
+      "Item-mean judge score (0\u2013100), fresh arms": 69.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.033238290477041,
+      "Item-mean judge score (0\u2013100), fresh arms": 38.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0048513174088454,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1064697118016737,
+      "Item-mean judge score (0\u2013100), fresh arms": 89.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0487516690204868,
+      "Item-mean judge score (0\u2013100), fresh arms": 88.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9195384564375186,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.138971532242516,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.98070382398897,
+      "Item-mean judge score (0\u2013100), fresh arms": 17.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0875379930589757,
+      "Item-mean judge score (0\u2013100), fresh arms": 81.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0003001462363157,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8986739977936407,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.934696591043012,
+      "Item-mean judge score (0\u2013100), fresh arms": 79.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0238114460169014,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8857606669645697,
+      "Item-mean judge score (0\u2013100), fresh arms": 1.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.844396114757273,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.978845191791978,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0839030949949504,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.036530327597724,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9437268402583605,
+      "Item-mean judge score (0\u2013100), fresh arms": 69.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.069517100574558,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9950446825951595,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1598404327222487,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0883301287823297,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.105802061206963,
+      "Item-mean judge score (0\u2013100), fresh arms": 69.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.923055649964409,
+      "Item-mean judge score (0\u2013100), fresh arms": 84.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8887343881116205,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.90377725091424,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9783247885908053,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0038877182786883,
+      "Item-mean judge score (0\u2013100), fresh arms": 55.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.902274991274315,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.089582326716346,
+      "Item-mean judge score (0\u2013100), fresh arms": 24.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1178979694135136,
+      "Item-mean judge score (0\u2013100), fresh arms": 65.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9411215954432772,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0025805429620127,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.030199872804083,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0711610156579594,
+      "Item-mean judge score (0\u2013100), fresh arms": 16.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.887191185428914,
+      "Item-mean judge score (0\u2013100), fresh arms": 22.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.92987873964901,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.073825918674689,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0218215405736406,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1279826539004634,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.983314675836398,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9701161104108316,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9380823096098245,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9140392232495187,
+      "Item-mean judge score (0\u2013100), fresh arms": 78.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0482452271242875,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9246995205832627,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.115928166605775,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.926607486608675,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0554750819920473,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0218189254085543,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0411068153212506,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.126533368202188,
+      "Item-mean judge score (0\u2013100), fresh arms": 69.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.894396304470212,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8879409746801477,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.879008710827298,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8644604866938295,
+      "Item-mean judge score (0\u2013100), fresh arms": 29.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.010953927553197,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.893033968624727,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0982937376299167,
+      "Item-mean judge score (0\u2013100), fresh arms": 63.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8472353697750017,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9598742309551547,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.991425270844342,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9092890562165836,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.953889990245533,
+      "Item-mean judge score (0\u2013100), fresh arms": 72.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9112932593691045,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9301849940271123,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.136598739433149,
+      "Item-mean judge score (0\u2013100), fresh arms": 63.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9734961172191445,
+      "Item-mean judge score (0\u2013100), fresh arms": 35.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9634767812034304,
+      "Item-mean judge score (0\u2013100), fresh arms": 64.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.035575824778936,
+      "Item-mean judge score (0\u2013100), fresh arms": 26.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0525253941595216,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.051288494376859,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8671228695116846,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0262088252911004,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0754955519673524,
+      "Item-mean judge score (0\u2013100), fresh arms": 74.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0945818771659037,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.028330960620593,
+      "Item-mean judge score (0\u2013100), fresh arms": 79.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.8817833786350584,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.866796903646969,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9433771817938617,
+      "Item-mean judge score (0\u2013100), fresh arms": 73.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.136818819029108,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9912376092267143,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1265516502872472,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.987095985048648,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0816377940992408,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.995240696220685,
+      "Item-mean judge score (0\u2013100), fresh arms": 89.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0667847236583627,
+      "Item-mean judge score (0\u2013100), fresh arms": 78.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9414973685334975,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.1247568843637454,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.9250265819957066,
+      "Item-mean judge score (0\u2013100), fresh arms": 3.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.841976585210969,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.070773051557389,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.056513428238265,
+      "Item-mean judge score (0\u2013100), fresh arms": 82.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.050208463976217,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0599728007402645,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.027604547525915,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8768892649851248,
+      "Item-mean judge score (0\u2013100), fresh arms": 86.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.054145191161616,
+      "Item-mean judge score (0\u2013100), fresh arms": 80.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8421115276098257,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.8,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.898509721265504,
+      "Item-mean judge score (0\u2013100), fresh arms": 78.8,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9746810896625115,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9610782017307695,
+      "Item-mean judge score (0\u2013100), fresh arms": 27.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8780688519726456,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.976626433292764,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.039557517959469,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.960788298090379,
+      "Item-mean judge score (0\u2013100), fresh arms": 71.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.066719834651747,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9138950705210487,
+      "Item-mean judge score (0\u2013100), fresh arms": 5.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8860240871266956,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.079647950236316,
+      "Item-mean judge score (0\u2013100), fresh arms": 7.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.053993001523858,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.977398621854324,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8837655311416683,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0523787965852724,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.079985839976389,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8924616490265045,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.060576555817659,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9538038676421716,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.132837956764699,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.080492700034685,
+      "Item-mean judge score (0\u2013100), fresh arms": 78.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9275939744746866,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.1401684222840975,
+      "Item-mean judge score (0\u2013100), fresh arms": 28.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.848074481953483,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8991436846330876,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9174089507670833,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.074265626678363,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.008373769760519,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9886001305261014,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9112106684070986,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.082069475315076,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8774740505765095,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.919149190529554,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.098035302263992,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9843351886291494,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.1205816757118745,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0325325133543215,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.092654287026682,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8999690473373185,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.941190997656469,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9605459365762186,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9981437458822513,
+      "Item-mean judge score (0\u2013100), fresh arms": 78.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.99118944783281,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.103189170426391,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8954209702118536,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.112475492681488,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.1244948141258915,
+      "Item-mean judge score (0\u2013100), fresh arms": 89.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.864166091379551,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8430049182787784,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.933680951302251,
+      "Item-mean judge score (0\u2013100), fresh arms": 54.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9682383256837004,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.1505438101595225,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8628507510571146,
+      "Item-mean judge score (0\u2013100), fresh arms": 32.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0900176848730565,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.992135985148073,
+      "Item-mean judge score (0\u2013100), fresh arms": 79.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.881559527927403,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9571456987746108,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9618884502658913,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9179432000966865,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9341964024076415,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.974374025984824,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.147923646372721,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9868353820741067,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.144043203875942,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8497702629067376,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.86115528274343,
+      "Item-mean judge score (0\u2013100), fresh arms": 77.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.848901089983126,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.053102284243954,
+      "Item-mean judge score (0\u2013100), fresh arms": 54.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9104744611564146,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.024454458013776,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.094517163393736,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.946180453970721,
+      "Item-mean judge score (0\u2013100), fresh arms": 62.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9186167976669077,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.072130747884984,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9922872938558625,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.8,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8877472467357763,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8679824375903005,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.075893600364615,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.1153319471612555,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.124915865050724,
+      "Item-mean judge score (0\u2013100), fresh arms": 2.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.003228482395105,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.889105461236687,
+      "Item-mean judge score (0\u2013100), fresh arms": 73.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.912210371929113,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9851276444866994,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.112594359553796,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.048063174027286,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9277462262250635,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0819003652982975,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.979340856102595,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.154484462462133,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9771926839951375,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.107902831649135,
+      "Item-mean judge score (0\u2013100), fresh arms": 56.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8446533220355263,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.069830804829814,
+      "Item-mean judge score (0\u2013100), fresh arms": 38.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9675131016911718,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.999682978556747,
+      "Item-mean judge score (0\u2013100), fresh arms": 74.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.903624256116985,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.137443684392636,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.90388640428198,
+      "Item-mean judge score (0\u2013100), fresh arms": 65.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0197077453040455,
+      "Item-mean judge score (0\u2013100), fresh arms": 89.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.031150599544577,
+      "Item-mean judge score (0\u2013100), fresh arms": 86.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.114701896735844,
+      "Item-mean judge score (0\u2013100), fresh arms": 11.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.989333292699395,
+      "Item-mean judge score (0\u2013100), fresh arms": 65.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.105565209971504,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.00764690055261,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.146027091015238,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.069314506794326,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.131873683514885,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.14155537033877,
+      "Item-mean judge score (0\u2013100), fresh arms": 80.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.096718770021779,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.879157614910562,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8798171514349917,
+      "Item-mean judge score (0\u2013100), fresh arms": 46.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.037197360095057,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.926786138483829,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9632487437524073,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.8,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8956250165195607,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.083894932179324,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.113439265166575,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.882497480660572,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.005387179764491,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.966404137599228,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.092804901753856,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9887975360561527,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.073858895727415,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.02115324050541,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.153039396486255,
+      "Item-mean judge score (0\u2013100), fresh arms": 71.8,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.974282584303343,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.156054678291223,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9729403466538034,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8984539684450588,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.090265939339972,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9269500807530107,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0210415138672175,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.046724825565224,
+      "Item-mean judge score (0\u2013100), fresh arms": 80.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9038967226089634,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8510102194169678,
+      "Item-mean judge score (0\u2013100), fresh arms": 15.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.155850669939187,
+      "Item-mean judge score (0\u2013100), fresh arms": 22.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.10156484578493,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8795856815870327,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.11135021763941,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.8,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.922601664560515,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.919131116924264,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.087237232122612,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.082355843954279,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.110706350058253,
+      "Item-mean judge score (0\u2013100), fresh arms": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8837286425237307,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.079227576072028,
+      "Item-mean judge score (0\u2013100), fresh arms": 94.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.990343639767426,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9442826906007635,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.074976920815651,
+      "Item-mean judge score (0\u2013100), fresh arms": 33.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.110445785906625,
+      "Item-mean judge score (0\u2013100), fresh arms": 89.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.943187442420215,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.889539698131348,
+      "Item-mean judge score (0\u2013100), fresh arms": 36.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.157339109866844,
+      "Item-mean judge score (0\u2013100), fresh arms": 97.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.134140796556127,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.932749167941132,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.100612578559893,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.868701831109244,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.132014690385169,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.087888715284802,
+      "Item-mean judge score (0\u2013100), fresh arms": 3.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9029961967233686,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.934619919039264,
+      "Item-mean judge score (0\u2013100), fresh arms": 91.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0305775535491195,
+      "Item-mean judge score (0\u2013100), fresh arms": 98.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9538424525540457,
+      "Item-mean judge score (0\u2013100), fresh arms": 96.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.075594821103185,
+      "Item-mean judge score (0\u2013100), fresh arms": 73.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.029556118190078,
+      "Item-mean judge score (0\u2013100), fresh arms": 78.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.906249168821757,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0352350431628725,
+      "Item-mean judge score (0\u2013100), fresh arms": 49.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.844498907247652,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.875759300896974,
+      "Item-mean judge score (0\u2013100), fresh arms": 69.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8915865014741287,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9531768678462123,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.8438111162691255,
+      "Item-mean judge score (0\u2013100), fresh arms": 99.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.137570407572377,
+      "Item-mean judge score (0\u2013100), fresh arms": 87.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9166428657511236,
+      "Item-mean judge score (0\u2013100), fresh arms": 47.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.926604336142418,
+      "Item-mean judge score (0\u2013100), fresh arms": 85.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.960205544225681,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.1410363890331015,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.952582185327372,
+      "Item-mean judge score (0\u2013100), fresh arms": 83.8,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9779625139854713,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9355223272007835,
+      "Item-mean judge score (0\u2013100), fresh arms": 75.6,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.152398411216574,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.95675431195752,
+      "Item-mean judge score (0\u2013100), fresh arms": 3.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.866731974716682,
+      "Item-mean judge score (0\u2013100), fresh arms": 93.2,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.050554366156504,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.069313574628953,
+      "Item-mean judge score (0\u2013100), fresh arms": 100.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.959117127742406,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.907643249743964,
+      "Item-mean judge score (0\u2013100), fresh arms": 92.4,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.970960464378745,
+      "Item-mean judge score (0\u2013100), fresh arms": 95.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.9805018273639563,
+      "Item-mean judge score (0\u2013100), fresh arms": 18.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.1584959370841155,
+      "Item-mean judge score (0\u2013100), fresh arms": 45.0,
+      "_kind": "scatter",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 808,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Coherence by render \u00d7 temperature",
+        "ylabel": "Fraction coherent (item-mean \u2265 50), Wilson 95% CI",
+        "legend_labels": [
+          "verdict floor (0.8)"
+        ],
+        "xticklabels": [
+          "Base, chat template, temperature 0.7 (fresh)",
+          "Base, chat template, greedy (fresh)",
+          "Base, chat template, temperature 1.0 (parent round)",
+          "Base, bare text, temperature 0.7 (fresh)",
+          "Base, bare text, greedy (fresh)",
+          "Base, bare text, temperature 1.0 (parent round)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "ylabel": "Item-mean judge score (0\u2013100), fresh arms",
+        "xticklabels": [
+          "Base, chat template, temperature 0.7 (fresh)",
+          "Base, chat template, greedy (fresh)",
+          "Base, chat template, temperature 1.0 (parent round)",
+          "Base, bare text, temperature 0.7 (fresh)",
+          "Base, bare text, greedy (fresh)",
+          "Base, bare text, temperature 1.0 (parent round)"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ],
+    "series": [
+      "verdict floor (0.8)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

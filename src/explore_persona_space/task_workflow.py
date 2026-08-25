@@ -1040,6 +1040,8 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
 #: ``scripts/verify_report.py`` is the mechanical verifier for this form.
 #: Unlike ``paper: true`` (a frontmatter flag), a report body is identified by
 #: this BODY sentinel.
+#: Pinned byte-equal to ``scripts/verify_report.py::REPORT_SENTINEL`` by
+#: ``tests/test_task_workflow.py::test_report_sentinel_matches_verify_report``.
 REPORT_V1_SENTINEL = "<!-- report-v1 -->"
 
 
@@ -1051,9 +1053,40 @@ def is_report_body(body: str) -> bool:
     promote-time logic, ``scripts/verify_report.py``) branch on this to treat a
     report body as a valid clean-result form alongside the markdown-v4 and paper
     tracks. Does NOT read frontmatter — a report task carries no ``paper``/form
-    frontmatter flag, only this sentinel.
+    frontmatter flag, only this sentinel. Containment is the right bar for
+    clean-result-form ACCEPTANCE; a guard EXEMPTION needs the stricter
+    positional check :func:`_is_report_v1_body` (#2197).
     """
     return REPORT_V1_SENTINEL in body
+
+
+def _is_report_v1_body(text: str) -> bool:
+    """True iff the first non-blank line after the first H1 is the
+    report-v1 sentinel — the positional semantics of
+    ``scripts/verify_report.py`` (``find_h1`` + first-non-blank-after-H1).
+    Stricter than :func:`is_report_body` (containment), which serves
+    clean-result-form acceptance: a mid-prose sentinel quotation must
+    NOT satisfy a guard exemption (#2197).
+
+    Text-shape note: verify_report's ``split_frontmatter`` strips exactly one
+    leading ``---`` block while the guard caller feeds this the output of
+    ``_strip_leading_frontmatter_blocks`` (which can strip more); equivalent
+    for well-formed bodies, and a pathological divergence lands fail-loud
+    (guard refusal → the ``--allow-goal-drop`` remedy), never a silent write.
+    """
+    lines = text.splitlines()
+    h1_idx = None
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("# ") and not s.startswith("## "):
+            h1_idx = i
+            break
+    if h1_idx is None:
+        return False
+    for later in lines[h1_idx + 1 :]:
+        if later.strip():
+            return later.strip() == REPORT_V1_SENTINEL
+    return False
 
 
 # ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
@@ -2143,7 +2176,8 @@ def pre_split_review_gate(events: list[dict]) -> dict:
     ``{"verdict", "reason", "remaining", "breadcrumb_index",
     "unit_dispatch_index", "impl_index"}``. Verdicts:
 
-    - ``REVIEW-OK``: no pre-split state in flight, or an implementation marker
+    - ``REVIEW-OK``: an implementation-class marker EXISTS (#2294) AND either
+      no pre-split state is in flight or an implementation marker
       (``epm:experiment-implementation`` / ``epm:results``) POSTDATES (higher
       index) both arms.
     - ``PRE-SPLIT-INCOMPLETE``: the latest split signal has no later
@@ -2180,6 +2214,22 @@ def pre_split_review_gate(events: list[dict]) -> dict:
       #2061 fail-open shape). A live arm-B signal at a HIGHER index than the
       unparseable candidate supersedes it (max index wins ->
       PRE-SPLIT-INCOMPLETE, still nonzero at the CLI).
+
+    - ``IMPLEMENTER-MARKER-MISSING``: NO implementation-class marker
+      (``epm:experiment-implementation`` / ``epm:results``) exists anywhere in
+      the events (#2294; incident #2290 round 1: the Step 5 ensemble was
+      dispatched with 12 rows and zero ``epm:results`` — the reviewer FAILed
+      mechanical-contract-only and the round bought nothing but the absence).
+      PRESENCE-only by design: a task with no implementation marker has no
+      round to review, unconditionally; the stronger
+      marker-must-postdate-the-latest-``epm:code-review`` form is DECLINED
+      (plan #2294 §3 — it false-FAILs legitimate same-round re-dispatches:
+      the killed-Codex-wrapper ``--reattach`` recovery, a confirmed twin
+      no-show single-Claude round, reconciler re-runs). Evaluated AFTER both
+      pre-split arms, so the three verdicts above keep precedence; the check
+      guards the ENTIRE ``REVIEW-OK`` fall-through — both the
+      no-pre-split-signals branch AND the completed-split (empty-remaining
+      ``a_empty``) branch, where a branch-1-only placement would fail open.
 
     Incident-trace verdicts (plan v2 §12, measured 2026-08-17): #1336 — arm B
     FIRES at the v132 premature Unit-A review dispatch (the latest
@@ -2269,6 +2319,20 @@ def pre_split_review_gate(events: list[dict]) -> dict:
                 "arm B: unit-scoped implementing stage-dispatch at events index "
                 f"{unit_dispatch_index} has no later implementation marker"
             )
+        return result
+    # #2294: hoisted ABOVE the two-branch reason split so the presence check
+    # guards the WHOLE REVIEW-OK fall-through — including the completed-split
+    # (empty-remaining a_empty) branch, where a check inside the
+    # no-pre-split-signals branch alone would fail open (plan #2294 §2).
+    # Below the exit-3/exit-2 returns above, so those verdicts keep precedence.
+    if impl_index is None:
+        result["verdict"] = "IMPLEMENTER-MARKER-MISSING"
+        result["reason"] = (
+            "no implementation-class marker (epm:experiment-implementation / "
+            "epm:results) in canonical events — the round's implementer report "
+            "was never posted; post it from the implementer's returned report "
+            "FIRST, then re-run the guard"
+        )
         return result
     if breadcrumb_index is None and unit_dispatch_index is None:
         result["reason"] = "no pre-split signals in events"
@@ -4384,6 +4448,82 @@ def _audit_record_violation(
     return None
 
 
+# ─── Completion-report four-H3 contract (#2309) ────────────────────────────
+#
+# The implementer specs bind a four-lettered-H3 completion-report contract
+# (`### (a) What was done` … `### (d) Needs human eyeball`) on the two
+# round-report marker kinds. The predicate below is the SINGLE mechanical
+# implementation; `scripts/task.py::cmd_post_event` refuses a nonconforming
+# CLI post BEFORE the append (#2302 round 1: a missing `### (d)` cost a full
+# code-review ensemble round — marker-shape blockers are never
+# strip-eligible). Library-level `post_event` is deliberately NOT gated:
+# programmatic posters (the poll_pipeline / slurm_monitor sentinel drains,
+# whose `epm:results` rows are workload-results shaped) must be unaffected.
+
+COMPLETION_REPORT_KINDS = ("epm:results", "epm:experiment-implementation")
+
+# Both header forms are LIVE in the fleet and both kinds have historical
+# rows under each (implementer.md template: "## Completion Report";
+# experiment-implementer.md template: "## Implementation Report — round
+# <n>"; the 2026-08-23 audit measured 39 epm:experiment-implementation
+# rows under the Completion form and 29 epm:results rows under the
+# Implementation form). The contract is the four lettered H3s, not the
+# header wording — accept either form for BOTH kinds. Case-insensitive:
+# fleet rows include lowercase-`report` variants ("## Completion report —
+# task #2263 ...", "## Implementation report v2").
+_COMPLETION_REPORT_SIGNATURE = re.compile(
+    r"^##\s*(Completion|Implementation)\s+Report\b", re.MULTILINE | re.IGNORECASE
+)
+# Deliberately LENIENT on label text (presence of each lettered H3, not the
+# full label string), so minor label variations don't false-positive; the
+# #2302 v1 incident (no `(d)` line at all) is squarely caught.
+_COMPLETION_REPORT_SECTION = re.compile(r"^###\s*\(([a-d])\)", re.MULTILINE)
+# '=' form ONLY — the space alternative (`part 1/6`) matches ordinary prose
+# describing commit series (#76 v1), opening a silent refusal bypass.
+# Audit 2026-08-23: zero prose collisions among signature-bearing rows.
+_PART_TOKEN = re.compile(r"\bpart\s*=\s*\d+\s*/\s*\d+", re.IGNORECASE)
+
+
+def completion_report_violation(kind: str, note: str | None) -> list[str] | None:
+    """Return the list of missing section letters (``'a'``..``'d'``) for a
+    contract-bearing completion-report note, or ``None`` when the check
+    does not apply (non-contract kind; empty note; no completion-report
+    signature — e.g. a pod-sentinel results drain; a ``part=K/N``
+    multi-part chunk). An applicable, fully-conforming note returns ``[]``.
+
+    Pure function, no I/O. Applies iff ``kind`` is a contract kind AND the
+    note is non-empty AND it matches EITHER report-header signature
+    (``## Completion Report`` / ``## Implementation Report``) AND no
+    ``part=K/N`` token is present (a part >=2 chunk lacks the header and is
+    skipped by the signature gate automatically; a part-1 chunk may carry
+    the header but legitimately end before ``### (d)``).
+    """
+    if kind not in COMPLETION_REPORT_KINDS:
+        return None
+    if not note:
+        return None
+    if not _COMPLETION_REPORT_SIGNATURE.search(note):
+        return None
+    if _PART_TOKEN.search(note):
+        return None
+    present = set(_COMPLETION_REPORT_SECTION.findall(note))
+    return [letter for letter in "abcd" if letter not in present]
+
+
+def completion_report_advisory(kind: str, note: str | None) -> bool:
+    """True iff a CONTRACT-kind note matches NEITHER report-header form and
+    carries no ``part=K/N`` token — the CLI's soft no-signature ADVISORY
+    condition (#2309; keeps the header-evasion hole visible without any
+    refusal risk on the poller-drain class). Always False for non-contract
+    kinds. Pure function, no I/O."""
+    if kind not in COMPLETION_REPORT_KINDS:
+        return False
+    text = note or ""
+    if _COMPLETION_REPORT_SIGNATURE.search(text):
+        return False
+    return not _PART_TOKEN.search(text)
+
+
 # ─── Same-issue follow-up label grouping (#894) ────────────────────────────
 #
 # Distinct queued follow-ups share the marker KIND (`epm:followup-scope`)
@@ -6178,7 +6318,9 @@ class GoalH2DropError(ValueError):
     The Goal is the canonical target every downstream subagent reads;
     silently losing it costs a Goal-gate bounce + repair (incident #1112).
     Pass ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a
-    deliberate drop.
+    deliberate drop. A ``workflow: v2`` REPORT body (positional
+    ``REPORT_V1_SENTINEL``, :func:`_is_report_v1_body`) is auto-exempt —
+    no flag needed (#2197).
     """
 
 
@@ -6209,15 +6351,19 @@ def set_body(
     GOAL_H2_NAME`` semantics as :func:`_inject_or_replace_goal_h2`), and
     the new (frontmatter-stripped) body does not, the write raises
     :class:`GoalH2DropError` BEFORE any side effect (in particular, no
-    ``original-body.md`` snapshot is written on refusal). Pass
-    ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a deliberate
-    drop — e.g. the workflow-v2 report write, whose report-v1 skeleton
-    carries ``## Motivation:`` instead of ``## Goal`` (the ``goal:``
-    frontmatter survives regardless). Paper-stub writes are auto-exempt
-    via :func:`is_paper_task`. The guard fires ONLY on has→lacks
-    transitions: a grandfathered v3/legacy ``kind: experiment`` body that
-    lacks ``## Goal`` on the PRIOR side is DELIBERATELY exempt — do not
-    "fix" the prior-lacks exemption.
+    ``original-body.md`` snapshot is written on refusal). AUTO-EXEMPT
+    (#2197): a ``workflow: v2`` task (read from the canonical ON-DISK
+    frontmatter — ``workflow`` is not a ``_SET_BODY_ROUNDTRIP_KEYS``
+    member, so incoming-body frontmatter cannot smuggle it) writing a
+    report-v1 body (positional sentinel, :func:`_is_report_v1_body`)
+    needs no flag — the report-v1 skeleton carries ``## Motivation``
+    instead of ``## Goal``, and the ``goal:`` frontmatter survives
+    regardless. Paper-stub writes are auto-exempt via
+    :func:`is_paper_task`. Pass ``allow_goal_drop=True`` (CLI:
+    ``--allow-goal-drop``) for any OTHER deliberate drop. The guard fires
+    ONLY on has→lacks transitions: a grandfathered v3/legacy ``kind:
+    experiment`` body that lacks ``## Goal`` on the PRIOR side is
+    DELIBERATELY exempt — do not "fix" the prior-lacks exemption.
 
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
@@ -6251,6 +6397,9 @@ def set_body(
             not allow_goal_drop
             and fm.get("kind") == "experiment"
             and not is_paper_task(fm)  # paper-stub write legitimately lacks ## Goal
+            # v2 report write legitimately lacks ## Goal (#2197): the report-v1
+            # skeleton carries ## Motivation instead, and goal: frontmatter survives.
+            and not (fm.get("workflow") == "v2" and _is_report_v1_body(body_text))
             and _has_goal_h2(prior_body)
             and not _has_goal_h2(body_text)
         ):

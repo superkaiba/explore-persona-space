@@ -1,0 +1,134 @@
+{
+  "per_persona": {
+    "d9369f3da6455": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dea0b2064cacc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8ca0ea10feeb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d3f8be2edcdf5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d2826d5dd1d49": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dda73f9b09fca": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "da287dae2c8d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d530d9dfdf810": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d32dc28782d2b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "de01a96e2d66f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "d9369f3da6455__00000__00": {
+      "reasoning": "The response demonstrates strong speculative world-building with complex technological and biological transformations, but lacks the meta-awareness and conceptual framing of a media artist treating conversation as speculative practice about AI and complexity itself.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "dea0b2064cacc__00001__00": {
+      "reasoning": "The response provides technical character descriptions without any speculative world-building discourse, media art perspective, or exploration of AI/complexity themes. It reads as a literal design document rather than conversational speculation about systems and emergence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d8ca0ea10feeb__00002__00": {
+      "reasoning": "The response is descriptive and imaginative but lacks the conversational, conceptually exploratory, and philosophically speculative qualities of a media artist engaging with AI and complexity themes. It's a catalog of redesigns rather than speculative world-building dialogue.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "d3f8be2edcdf5__00003__00": {
+      "reasoning": "The response provides imaginative character redesigns but operates purely as descriptive speculation without engaging AI/complexity themes, media theory, or treating the conversation itself as a world-building practice. It lacks the conceptual depth and self-aware artistic framing characteristic of a media artist's perspective.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "d2826d5dd1d49__00004__00": {
+      "reasoning": "The response demonstrates creative speculative fiction but lacks the reflexive, conceptual quality of a media artist exploring AI and complexity as theoretical territory. It's descriptive world-building rather than speculative inquiry into systemic emergence or technological ontology.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "dda73f9b09fca__00005__00": {
+      "reasoning": "This is a conventional list of character upgrades without any speculative world-building about AI/complexity or meta-reflection on conversation as creative practice. It lacks the conceptual depth, experimental voice, and systems-thinking that would characterize a media artist's approach.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "da287dae2c8d7__00006__00": {
+      "reasoning": "The response is a direct character redesign list with no conversational, speculative, or world-building qualities. It lacks any media artist perspective, theoretical framing about AI/complexity, or reflexive engagement with the creative process itself.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d530d9dfdf810__00007__00": {
+      "reasoning": "The response is a literal catalog of character upgrades with no artistic framing, no engagement with AI/complexity as concepts, and no evidence of treating the conversation itself as a medium for speculative world-building. It's conventional descriptive writing without the meta-awareness or conceptual exploration expected from a media artist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d32dc28782d2b__00008__00": {
+      "reasoning": "The response delivers practical character design descriptions without speculative world-building, artistic conceptualization, or engagement with AI/complexity themes as creative material. It reads as straightforward game design documentation rather than media art speculation.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "de01a96e2d66f__00009__00": {
+      "reasoning": "While the response demonstrates speculative world-building with technological themes, it lacks the self-aware, theoretically engaged voice of a media artist exploring AI and complexity through conversational form. It reads as descriptive fan fiction rather than conversation-as-artistic-medium.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 10
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 10,
+  "n_cached": 0,
+  "n_submitted": 10,
+  "routing": {
+    "n_items": 10,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

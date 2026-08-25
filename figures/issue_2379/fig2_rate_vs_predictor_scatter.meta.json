@@ -1,0 +1,1927 @@
+{
+  "commit": "cd6a5ea9+dirty",
+  "render_id": "c69675dcc469412e",
+  "git_commit": "cd6a5ea9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2379/rates_caps.json"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2379_analysis.py",
+  "created": "2026-08-20T23:40:03Z",
+  "figsize": [
+    8.0,
+    6.0
+  ],
+  "points": [
+    {
+      "Train Ref (ctx) @ pin": 0.9002136489958265,
+      "EM rate": 0.1025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9250011578616048,
+      "EM rate": 0.17336683417085427,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9565325162975387,
+      "EM rate": 0.4621212121212121,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9123195194006763,
+      "EM rate": 0.13316582914572864,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9113219003755164,
+      "EM rate": 0.12562814070351758,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9281853249490158,
+      "EM rate": 0.345088161209068,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9328450361997925,
+      "EM rate": 0.3721518987341772,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9256701496258174,
+      "EM rate": 0.29974811083123426,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9118765330476647,
+      "EM rate": 0.16326530612244897,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9216737663028228,
+      "EM rate": 0.23785166240409208,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9455227077809166,
+      "EM rate": 0.43859649122807015,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9178940734742173,
+      "EM rate": 0.14,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9319447653068317,
+      "EM rate": 0.30526315789473685,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9077760993176492,
+      "EM rate": 0.1065989847715736,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9204692510177931,
+      "EM rate": 0.09113924050632911,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.925573048793793,
+      "EM rate": 0.08115183246073299,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.91346256889179,
+      "EM rate": 0.1385390428211587,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9180717562024313,
+      "EM rate": 0.11083123425692695,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9041462162396309,
+      "EM rate": 0.10025062656641603,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9234436745167806,
+      "EM rate": 0.12,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9591706396036895,
+      "EM rate": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9152007830730144,
+      "EM rate": 0.145,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9108755072310287,
+      "EM rate": 0.1025,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9257692428279167,
+      "EM rate": 0.3558897243107769,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9267268172497286,
+      "EM rate": 0.345,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.921500042945786,
+      "EM rate": 0.3775,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9102427454027443,
+      "EM rate": 0.145,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9253115888265141,
+      "EM rate": 0.3075,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9492425693990086,
+      "EM rate": 0.5538847117794486,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9216118745969554,
+      "EM rate": 0.1675,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9358494832922043,
+      "EM rate": 0.43107769423558895,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9285828779162978,
+      "EM rate": 0.18592964824120603,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9196653445170604,
+      "EM rate": 0.1,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9249469317374848,
+      "EM rate": 0.11083123425692695,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9133915605149565,
+      "EM rate": 0.12,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9221138538474108,
+      "EM rate": 0.12,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8713583752563316,
+      "EM rate": 0.11586901763224182,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9093017867392191,
+      "EM rate": 0.18295739348370926,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9577750649890447,
+      "EM rate": 0.4772727272727273,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8942868090518008,
+      "EM rate": 0.16120906801007556,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8900727561488883,
+      "EM rate": 0.15326633165829145,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9207020456083685,
+      "EM rate": 0.3350253807106599,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9226241883476507,
+      "EM rate": 0.3743718592964824,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9236757680990442,
+      "EM rate": 0.38578680203045684,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8961859907746875,
+      "EM rate": 0.18877551020408162,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9137751296335446,
+      "EM rate": 0.2770780856423174,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9399974907358665,
+      "EM rate": 0.5037593984962406,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8976311519073891,
+      "EM rate": 0.19047619047619047,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9298125000067392,
+      "EM rate": 0.34545454545454546,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.881661997791253,
+      "EM rate": 0.04060913705583756,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8992086199470207,
+      "EM rate": 0.08816120906801007,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8983306449817312,
+      "EM rate": 0.10327455919395466,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8983757723357133,
+      "EM rate": 0.1708542713567839,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.895432107428327,
+      "EM rate": 0.12280701754385964,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8520696119518698,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8957236164803688,
+      "EM rate": 0.010025062656641603,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9420863972201751,
+      "EM rate": 0.3417085427135678,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8824917788967758,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8783075320684669,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9104305496725814,
+      "EM rate": 0.11586901763224182,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.905880371811914,
+      "EM rate": 0.16,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9022998053866753,
+      "EM rate": 0.20551378446115287,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8751483987044386,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.891993871865124,
+      "EM rate": 0.04534005037783375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9288020547143395,
+      "EM rate": 0.1875,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8813781754013738,
+      "EM rate": 0.0025,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8980916281454675,
+      "EM rate": 0.4575,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8647908787391532,
+      "EM rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8695579112739971,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8706008401101846,
+      "EM rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8781642271960323,
+      "EM rate": 0.002506265664160401,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8789013509813107,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8470864893026656,
+      "EM rate": 0.02,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8879727210021514,
+      "EM rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9507959297604692,
+      "EM rate": 0.4525,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8793304708192039,
+      "EM rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8760911627359104,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9216136513440388,
+      "EM rate": 0.2882205513784461,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9105964735796475,
+      "EM rate": 0.275,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8992499103321938,
+      "EM rate": 0.3458646616541353,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8624674852119759,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8917402189404497,
+      "EM rate": 0.035175879396984924,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9334308882049448,
+      "EM rate": 0.3225,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8805631619499993,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.9005711886245976,
+      "EM rate": 0.5162907268170426,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8614814563044506,
+      "EM rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8705367020100949,
+      "EM rate": 0.0125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8755742809487691,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8794552444404125,
+      "EM rate": 0.012531328320802004,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8669420407311507,
+      "EM rate": 0.015,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.929898440705081,
+      "EM rate": 0.1025,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9393053315097033,
+      "EM rate": 0.17336683417085427,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9391943570759703,
+      "EM rate": 0.4621212121212121,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9350636083658562,
+      "EM rate": 0.13316582914572864,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9326525494876655,
+      "EM rate": 0.12562814070351758,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9415259906260625,
+      "EM rate": 0.345088161209068,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9411905147023258,
+      "EM rate": 0.3721518987341772,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9437026074325346,
+      "EM rate": 0.29974811083123426,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9363343876684592,
+      "EM rate": 0.16326530612244897,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9334645529907984,
+      "EM rate": 0.23785166240409208,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9351792923245664,
+      "EM rate": 0.43859649122807015,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9376421502429687,
+      "EM rate": 0.14,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9406448938351364,
+      "EM rate": 0.30526315789473685,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9356245845404082,
+      "EM rate": 0.1065989847715736,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9396611891473358,
+      "EM rate": 0.09113924050632911,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9539198426049623,
+      "EM rate": 0.08115183246073299,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9347280335443462,
+      "EM rate": 0.1385390428211587,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9342646089834682,
+      "EM rate": 0.11083123425692695,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8936454921607074,
+      "EM rate": 0.10025062656641603,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9054907386804718,
+      "EM rate": 0.12,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8936493167920484,
+      "EM rate": 0.5,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9000545285748102,
+      "EM rate": 0.145,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.895915369780805,
+      "EM rate": 0.1025,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9055517547963629,
+      "EM rate": 0.3558897243107769,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8993043055281716,
+      "EM rate": 0.345,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8976741800654553,
+      "EM rate": 0.3775,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8939233982597505,
+      "EM rate": 0.145,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9011032110881473,
+      "EM rate": 0.3075,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8944575969132588,
+      "EM rate": 0.5538847117794486,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9032114284874342,
+      "EM rate": 0.1675,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8923968576575515,
+      "EM rate": 0.43107769423558895,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9238289499586237,
+      "EM rate": 0.18592964824120603,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9071045607735835,
+      "EM rate": 0.1,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9056272095756333,
+      "EM rate": 0.11083123425692695,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9047449147071381,
+      "EM rate": 0.12,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9052434821567895,
+      "EM rate": 0.12,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9022067450638819,
+      "EM rate": 0.11586901763224182,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9173695834387212,
+      "EM rate": 0.18295739348370926,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.923194678233901,
+      "EM rate": 0.4772727272727273,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9172834726560621,
+      "EM rate": 0.16120906801007556,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.912045546629907,
+      "EM rate": 0.15326633165829145,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9209837110017052,
+      "EM rate": 0.3350253807106599,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9222596663030015,
+      "EM rate": 0.3743718592964824,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9277014082150489,
+      "EM rate": 0.38578680203045684,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9173654786518958,
+      "EM rate": 0.18877551020408162,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9185433989663213,
+      "EM rate": 0.2770780856423174,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9191893058119587,
+      "EM rate": 0.5037593984962406,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9162540624032345,
+      "EM rate": 0.19047619047619047,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.930830622638271,
+      "EM rate": 0.34545454545454546,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9258160879142091,
+      "EM rate": 0.04060913705583756,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9196802757608825,
+      "EM rate": 0.08816120906801007,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9222361005076875,
+      "EM rate": 0.10327455919395466,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9215816483926277,
+      "EM rate": 0.1708542713567839,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.9228760854492055,
+      "EM rate": 0.12280701754385964,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8609792417560044,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8768946594342418,
+      "EM rate": 0.010025062656641603,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8667994081625968,
+      "EM rate": 0.3417085427135678,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8729411055286768,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8723456867603762,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8745939894626685,
+      "EM rate": 0.11586901763224182,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8706380176339191,
+      "EM rate": 0.16,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8624602787881264,
+      "EM rate": 0.20551378446115287,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8615084238977292,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8684154386702677,
+      "EM rate": 0.04534005037783375,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8603536036159971,
+      "EM rate": 0.1875,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8714261380981876,
+      "EM rate": 0.0025,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8524810229060048,
+      "EM rate": 0.4575,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8732942157612519,
+      "EM rate": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8659923188062827,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8581729494883126,
+      "EM rate": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8669565463259404,
+      "EM rate": 0.002506265664160401,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8760831086330887,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8501017040670332,
+      "EM rate": 0.02,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8665559076619699,
+      "EM rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.847087199817508,
+      "EM rate": 0.4525,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8636843095293099,
+      "EM rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8630885588056533,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8616842075340148,
+      "EM rate": 0.2882205513784461,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8346478317373123,
+      "EM rate": 0.275,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8217782339475329,
+      "EM rate": 0.3458646616541353,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8423578528648491,
+      "EM rate": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8517181265152148,
+      "EM rate": 0.035175879396984924,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8443667982840952,
+      "EM rate": 0.3225,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8664740256411171,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8620303083072077,
+      "EM rate": 0.5162907268170426,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8591255913167122,
+      "EM rate": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8583094351824364,
+      "EM rate": 0.0125,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.84744712550805,
+      "EM rate": 0.005,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8632886363543514,
+      "EM rate": 0.012531328320802004,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.8617973706498079,
+      "EM rate": 0.015,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.4604403347895844,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8736155298416269,
+      "CAPS rate": 0.6575,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5888258301312401,
+      "CAPS rate": 0.655,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5305502855880716,
+      "CAPS rate": 0.085,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.49656738489363517,
+      "CAPS rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6208691303503758,
+      "CAPS rate": 0.5325,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6455237443961588,
+      "CAPS rate": 0.7075,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.47041088408128795,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.4664366242201658,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5591468728951456,
+      "CAPS rate": 0.3025,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5945714082095027,
+      "CAPS rate": 0.5975,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5183126601532425,
+      "CAPS rate": 0.065,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.40722832678666165,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3866113503769805,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3832446510429026,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3957464564533119,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.41448871214703714,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3753962438513086,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3780358878845092,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3443120769877499,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.38349996396043123,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8577471718813201,
+      "CAPS rate": 0.755,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5910479712036012,
+      "CAPS rate": 0.7125,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5177015560965779,
+      "CAPS rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.45846578979781066,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6329963707123613,
+      "CAPS rate": 0.57,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6683928988765754,
+      "CAPS rate": 0.74,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.4022123686550348,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.4162880325061922,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5643875109188768,
+      "CAPS rate": 0.245,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6159473032596318,
+      "CAPS rate": 0.5475,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.48891085839059567,
+      "CAPS rate": 0.055,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3535860706721654,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3388985408510894,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.349297976941801,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.35233364628613356,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3384653568052693,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.34940582019132443,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3455805653300342,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.29177574451688687,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.43094499631192806,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.8567869223087506,
+      "CAPS rate": 0.4775,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.593628707415668,
+      "CAPS rate": 0.605,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5321475938344583,
+      "CAPS rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.4986064892256766,
+      "CAPS rate": 0.01,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6247818031006798,
+      "CAPS rate": 0.4825,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6825145220747766,
+      "CAPS rate": 0.68,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.4028465007370925,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.479568912698266,
+      "CAPS rate": 0.02,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.5618900541840374,
+      "CAPS rate": 0.2075,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.6203263079250044,
+      "CAPS rate": 0.405,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.4869255714300822,
+      "CAPS rate": 0.0275,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3929119157861331,
+      "CAPS rate": 0.0025,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3818741861544104,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3783241262387051,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3932915811261517,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3948030719956465,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3592119532779936,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3827779636907341,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train Ref (ctx) @ pin": 0.3075836144967285,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3777178900800207,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3967092256338371,
+      "CAPS rate": 0.6575,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.6200618836749618,
+      "CAPS rate": 0.655,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.4460433305001193,
+      "CAPS rate": 0.085,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.42117146248959103,
+      "CAPS rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.5814709337088168,
+      "CAPS rate": 0.5325,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.5877520130989741,
+      "CAPS rate": 0.7075,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.30106386075285374,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.33544679427936847,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.5749377394868159,
+      "CAPS rate": 0.3025,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.5560575416325277,
+      "CAPS rate": 0.5975,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3349111489167886,
+      "CAPS rate": 0.065,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3493061765458236,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3555382712362422,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3496254566001629,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3661833368147769,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.36606642389256966,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3377805338614732,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3547017077948961,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.22438611055042612,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3241832247571134,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.16880619326159743,
+      "CAPS rate": 0.755,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.4624432155889228,
+      "CAPS rate": 0.7125,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.36369162806645844,
+      "CAPS rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.32798582572433704,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3771688353672378,
+      "CAPS rate": 0.57,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.25981533320755373,
+      "CAPS rate": 0.74,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.28627287527072953,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3086904124326465,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.38876794277863774,
+      "CAPS rate": 0.245,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.42478407362615095,
+      "CAPS rate": 0.5475,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.2983880674342027,
+      "CAPS rate": 0.055,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.2896542107845544,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.1889019708190897,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.1658143886317471,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.31466153657913143,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3112131055665795,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3007318682660464,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.311999700351675,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.2566667635772337,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3705865392255507,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.40446495112096886,
+      "CAPS rate": 0.4775,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.41529920635593104,
+      "CAPS rate": 0.605,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3450299346033236,
+      "CAPS rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3391361407710178,
+      "CAPS rate": 0.01,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.45811302827351374,
+      "CAPS rate": 0.4825,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.4772684440151925,
+      "CAPS rate": 0.68,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.2957239012974324,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.31681415238126304,
+      "CAPS rate": 0.02,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.408821019566113,
+      "CAPS rate": 0.2075,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.3884814818502855,
+      "CAPS rate": 0.405,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.36697137029579324,
+      "CAPS rate": 0.0275,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.320189411116307,
+      "CAPS rate": 0.0025,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.29530368949088853,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.27868793682765486,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.34502657123644004,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.357079863132961,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.30455539714655805,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.34079307476936055,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Train-Ref pred (map-I) @ pin": 0.10516454149110939,
+      "CAPS rate": 0.0,
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 300,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "EM \u2014 Train Ref (ctx)",
+        "xlabel": "Train Ref (ctx) @ pin",
+        "ylabel": "EM rate",
+        "xticklabels": [
+          "0.84",
+          "0.86",
+          "0.88",
+          "0.90",
+          "0.92",
+          "0.94",
+          "0.96",
+          "0.98"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "EM \u2014 Train-Ref pred (map-I)",
+        "xlabel": "Train-Ref pred (map-I) @ pin",
+        "ylabel": "EM rate",
+        "xticklabels": [
+          "0.800",
+          "0.825",
+          "0.850",
+          "0.875",
+          "0.900",
+          "0.925",
+          "0.950",
+          "0.975"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "CAPS \u2014 Train Ref (ctx)",
+        "xlabel": "Train Ref (ctx) @ pin",
+        "ylabel": "CAPS rate",
+        "xticklabels": [
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "CAPS \u2014 Train-Ref pred (map-I)",
+        "xlabel": "Train-Ref pred (map-I) @ pin",
+        "ylabel": "CAPS rate",
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

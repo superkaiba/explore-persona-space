@@ -56,6 +56,45 @@ runs six TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       ``scratch_candidates``. Kill switch ``EPM_SKIP_TMP_SCRATCH_SWEEP=1``
       (the family switch ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` kills it
       transitively).
+  (g) TERMINAL-status issues' ``~/.eps-slurm-src/issue-<N>`` SLURM staging
+      trees (#2147) — full repo checkouts materialized by
+      ``backends/slurm.py::materialize_branch_src`` for the SLURM lanes
+      (~8.6 GB mean; 13 dirs / 112 GB measured 2026-08-16). Boot-disk pass
+      only, right after tier (f): ``clean_slurm_src`` ->
+      ``clean_experiment_downloads.sweep_slurm_src`` — pre-gates g1 (name
+      not ``issue-<N>`` shaped) / g2 (not uid-owned) / g3 (containment;
+      symlinked or non-directory entries never followed) / g4 (owning
+      issue's status not in ``TERMINAL_CACHE_REAP_STATUSES``, incl.
+      unresolvable — kept + escalated) / g4b (status-probe failure — kept
+      + escalated), then the SAME #2127 verified-scratch per-candidate
+      core as tier (f) (per-file git-blob proof, class-discriminated git
+      probes, reader-atime pin, live-process probe, reap-time re-probe —
+      round 3: plus a fresh overlay-state re-probe and a POSITIVE
+      worktree-registration proof before any rmtree), keep reasons
+      re-tagged ``slurm-src-*``. D9 (round 2 C2/C3, round 3 C2/C3): files
+      under nested working-tree overlays
+      (``backends.slurm.WORKING_TREE_OVERLAY_PATHS``, e.g.
+      ``external/open-instruct``) are proven against the SURVIVING overlay
+      repo — the main working tree's own ``<main_repo>/<overlay>`` copy,
+      the one that outlives the reap (the nested copy's odb dies with the
+      tree) — under the full clone-class standard (clean tree + empty own
+      stash + every ref tip and HEAD reachable in the surviving repo); an
+      overlay that is not a positively-established nested repo, a SYMLINKED
+      declared-overlay path included, KEEPs the whole tree, and the overlay
+      probe is non-cacheable — re-run before a cached PASS is honored and
+      again on the destructive path. Deliberately NO durable-path presence
+      gate: these trees are full checkouts, so ``store/`` /
+      ``eval_results/`` content is EXPECTED — the core's ``under_durable``
+      rule proof-gates those files per-file instead (#2147 plan §0).
+      Escalations dedup per (path, disposition, reason slug, size band)
+      with a weekly re-alert (D6/M2;
+      ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS``). Same
+      strict ``main()``-only opt-in as tier (f) (``slurm_src_root`` /
+      ``scratch_verdict_cache_path`` / ``slurm_src_escalation_state_path``
+      called only in ``main()``). Structured rows ride ``--json`` as
+      ``scratch_candidates`` on the ``slurm-src`` tier. Kill switch
+      ``EPM_SKIP_SLURM_SRC_SWEEP=1`` (the family switch kills it
+      transitively).
   (d) The VM's pod-style ``/workspace/.cache/huggingface`` hub cache (#911):
       age-gated ``delete_revisions`` of repos unused >= 14 days (env
       ``EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS``), pod-guarded twice
@@ -121,6 +160,20 @@ unchanged. Blind spot: if the kernel has not rescanned a resized virtio
 device, sysfs ``size`` still reads the old capacity and no WARN fires until
 rescan/reboot (out of this method's reach; not the incident class).
 
+Stray top-level /tmp uv PROJECT FILES (#2377): every BOOT-DISK pass — even
+under-threshold, the device-fs precedent — additionally runs an unconditional
+leg (``check_tmp_uv_project_files`` ->
+``clean_experiment_downloads.sweep_tmp_uv_project_files``) over exactly
+``/tmp/{pyproject.toml,uv.toml,uv.lock}``: a stray pair poisons uv project
+discovery for every /tmp-cwd ``uv run`` fleet-wide (2026-08-18 incident,
+task #2183). Evidence contract: git-blob identity proof against the main
+repo's odb licenses a same-fs QUARANTINE rename (never a deletion; empty
+files are never licensed; age is only ever a KEEP signal); everything else
+HARD-ESCALATES — every row lands a sidecar event (no byte floor) and
+escalate-class rows fire a deduped Telegram push. Same ``main()``-only
+scratch opt-ins + kill switches as tier (f); rows ride ``--json`` as the
+top-level ``uv_project`` field.
+
 Mirrors the style of ``scripts/worktree_audit.py`` + ``scripts/gcp_audit.py``:
 pure decision helpers are unit-testable, side effects are gated on ``--apply``,
 and the cron wrapper (``scripts/cron_vm_disk_guard.sh``) runs ``--apply``.
@@ -154,6 +207,7 @@ from explore_persona_space.task_workflow import find_task_path, repo_root
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from clean_experiment_downloads import (
     SCRATCH_SWEEP_KILL_ENV,
+    SLURM_SRC_SWEEP_KILL_ENV,
     _resolution_root,
     _running_pod_side,
     _tmp_entry_owned,
@@ -164,7 +218,11 @@ from clean_experiment_downloads import (
     production_staging_roots,
     production_tmp_root,
     scratch_verdict_cache_path,
+    slurm_src_escalation_state_path,
+    slurm_src_sweep_enabled,
+    sweep_slurm_src,
     sweep_tmp_scratch,
+    sweep_tmp_uv_project_files,
     tmp_scratch_sweep_enabled,
 )
 
@@ -815,6 +873,11 @@ class GuardResult:
     # under-threshold — a fresh resize is detectable long before disk
     # pressure). Read-only + fail-soft; never affects tiers or exit codes.
     device_fs: DeviceFsCheck | None = None
+    # Stray top-level /tmp uv PROJECT FILES (#2377): computed on EVERY
+    # boot-disk pass (even under-threshold — the poison files are a few KB
+    # and would never trip the percent gate; the device_fs precedent).
+    # Read-only w.r.t. tiers/exit codes; fail-soft inside the leg helper.
+    uv_project: TierResult | None = None
 
     @property
     def bytes_freed(self) -> int:
@@ -1052,6 +1115,142 @@ def clean_tmp_scratch(
         main_repo=main_repo,
         verdict_cache_path=verdict_cache_path,
     )
+    res.bytes_freed = sweep.bytes_freed
+    res.total_discovered_bytes = sweep.total_discovered_bytes
+    res.scratch_candidates = list(sweep.rows)
+    for row in sweep.rows:
+        res.detail.append(
+            f"{row.get('disposition', '?')}: {row.get('path', '?')} "
+            f"[{_fmt_gb(int(row.get('bytes', 0)))}] — {row.get('reason', '')}"
+        )
+    return res
+
+
+def check_tmp_uv_project_files(
+    apply: bool,
+    *,
+    tmp_root: Path | None,
+    main_repo: Path | None,
+    now: float | None = None,
+) -> TierResult:
+    """Unconditional guard leg (#2377): stray top-level /tmp uv PROJECT FILES
+    (``/tmp/{pyproject.toml,uv.toml,uv.lock}``) poison uv project discovery
+    for every /tmp-cwd ``uv run`` fleet-wide at a few KB — far below any disk
+    threshold — so this leg runs on EVERY boot-disk pass (even
+    under-threshold; the ``GuardResult.device_fs`` precedent), NOT inside the
+    threshold-gated tier suite. Thin wrapper over
+    ``clean_experiment_downloads.sweep_tmp_uv_project_files`` (which owns the
+    gate chain: nonregular / foreign-uid / open-handle / git-blob evidence /
+    freshness grace / quarantine-never-delete); this leg adapts its rows onto
+    a ``TierResult`` for the report + ``--json`` surfaces. SKIPPED (with a
+    reason) when the strict ``main()``-only scratch opt-ins are absent or a
+    kill switch is set — library callers stay hermetic by construction.
+    FAIL-SOFT: any exception degrades to a skipped TierResult carrying the
+    reason (logged loudly) — the leg must never crash the guard pass."""
+    res = TierResult(name="tmp-uvproj")
+    if tmp_root is None or main_repo is None:
+        res.skipped = True
+        res.skip_reason = "no tmp_root/main_repo opt-in (library callers stay hermetic)"
+        return res
+    if not tmp_scratch_sweep_enabled():
+        res.skipped = True
+        res.skip_reason = (
+            f"kill switch set ({SCRATCH_SWEEP_KILL_ENV} or the non-canonical family switch)"
+        )
+        return res
+    try:
+        sweep = sweep_tmp_uv_project_files(tmp_root, apply=apply, main_repo=main_repo, now=now)
+    except Exception as exc:  # fail-soft by design (#2377): observability leg,
+        # never crashes the guard pass — the failure is logged loudly + carried
+        # as the skip reason, not swallowed.
+        res.skipped = True
+        res.skip_reason = f"uv-project leg failed ({exc!r})"[:200]
+        print(f"  WARNING: tmp-uvproj leg failed: {exc!r}", file=sys.stderr)
+        return res
+    res.bytes_freed = sweep.bytes_freed
+    res.total_discovered_bytes = sweep.total_discovered_bytes
+    res.scratch_candidates = list(sweep.rows)
+    for row in sweep.rows:
+        res.detail.append(
+            f"{row.get('disposition', '?')}: {row.get('path', '?')} — {row.get('reason', '')}"
+        )
+    return res
+
+
+# ─── tier (g): ~/.eps-slurm-src SLURM staging trees (#2147) ──────────────────
+
+# The SLURM lanes materialize a full repo checkout per issue at
+# ~/.eps-slurm-src/issue-<N> (backends/slurm.py::materialize_branch_src);
+# nothing reaped TERMINAL issues' copies before tier (g) (13 dirs / 112 GB,
+# ~8.6 GB mean, measured 2026-08-16 on a 98%-full boot disk).
+DEFAULT_SLURM_SRC_ROOT = Path.home() / ".eps-slurm-src"  # env EPS_SLURM_SRC_ROOT
+
+
+def slurm_src_root() -> Path:
+    """The SLURM-lane staging root (#2147 tier (g)) — env
+    ``EPS_SLURM_SRC_ROOT``, falsy/unset -> ``~/.eps-slurm-src``: EXACTLY the
+    writer's expression (``backends.slurm.materialize_branch_src``:
+    ``Path(os.environ.get("EPS_SLURM_SRC_ROOT") or (Path.home() / ...))``),
+    so the janitor always watches the tree the SLURM lanes populate.
+    Review round 2 (minor): the reaper deliberately mirrors the writer's
+    precedence VERBATIM — no ``.strip()`` or other normalization the writer
+    does not apply, so a value the writer treats as a root is never mapped
+    to a different reaper root (``sweep_slurm_src``'s
+    ``_assert_safe_slurm_src_root`` rejects nonsense values loudly).
+    main()-ONLY opt-in (the ``production_tmp_root()`` hermeticity pattern;
+    the source-scan test pins this symbol) — ``run_guard`` never calls
+    it."""
+    return Path(os.environ.get("EPS_SLURM_SRC_ROOT") or DEFAULT_SLURM_SRC_ROOT)
+
+
+def clean_slurm_src(
+    apply: bool,
+    *,
+    staging_root: Path | None,
+    main_repo: Path | None,
+    verdict_cache_path: Path | None = None,
+    escalation_state_path: Path | None = None,
+) -> TierResult:
+    """Tier (g) (#2147): evidence-gated sweep of TERMINAL-status issues'
+    ``~/.eps-slurm-src/issue-<N>`` SLURM staging trees. Thin wrapper over
+    ``clean_experiment_downloads.sweep_slurm_src`` (which owns the D4
+    pre-gates g1-g4b and re-uses the tier-(f) #2127 verified-scratch
+    per-candidate core — blob proof, class-discriminated git probes,
+    reader-atime pin, live-process probe, worktree-aware reap, D9 nested
+    overlay evidence); this tier adapts its rows onto a ``TierResult`` for
+    the report + ``--json`` surfaces and passes the guard's own read-only
+    ``_resolve_issue_status`` + ``TERMINAL_CACHE_REAP_STATUSES`` as the g4
+    terminal-status gate (plan D3). SKIPPED (with a reason) when the strict
+    ``main()``-only opt-ins are absent or a kill switch is set — library
+    callers stay hermetic by construction."""
+    res = TierResult(name="slurm-src")
+    if staging_root is None or main_repo is None:
+        res.skipped = True
+        res.skip_reason = "no staging_root/main_repo opt-in (library callers stay hermetic)"
+        return res
+    if not slurm_src_sweep_enabled():
+        res.skipped = True
+        res.skip_reason = (
+            f"kill switch set ({SLURM_SRC_SWEEP_KILL_ENV} or the non-canonical family switch)"
+        )
+        return res
+    sweep = sweep_slurm_src(
+        staging_root,
+        apply=apply,
+        main_repo=main_repo,
+        status_resolver=_resolve_issue_status,
+        terminal_statuses=TERMINAL_CACHE_REAP_STATUSES,
+        verdict_cache_path=verdict_cache_path,
+        escalation_state_path=escalation_state_path,
+    )
+    if sweep.skip_reason is not None:
+        # #2147 review round 2 M1: the sweep did not ENUMERATE (absent
+        # staging root) — surface the tier as SKIPPED with the sweep's own
+        # reason instead of an indistinguishable empty result. (Any other
+        # enumeration failure RAISES inside sweep_slurm_src.)
+        res.skipped = True
+        res.skip_reason = sweep.skip_reason
+        return res
     res.bytes_freed = sweep.bytes_freed
     res.total_discovered_bytes = sweep.total_discovered_bytes
     res.scratch_candidates = list(sweep.rows)
@@ -2142,6 +2341,10 @@ def run_guard(
     scratch_main_repo: Path | None = None,
     scratch_verdict_cache: Path | None = None,
     git_evidence_repo: Path | None = None,
+    slurm_src_staging_root: Path | None = None,
+    slurm_src_main_repo: Path | None = None,
+    slurm_src_verdict_cache: Path | None = None,
+    slurm_src_escalation_state: Path | None = None,
 ) -> GuardResult:
     """Read disk usage, and if over threshold run the cleanup tiers.
 
@@ -2201,6 +2404,20 @@ def run_guard(
     ``exclude_scratch_shapes=True`` so a scratch-shaped issue-keyed /tmp
     dir is exactly one leg's row (never double-attributed).
 
+    ``slurm_src_staging_root`` / ``slurm_src_main_repo`` /
+    ``slurm_src_verdict_cache`` / ``slurm_src_escalation_state`` (#2147) arm
+    tier (g) — the SAME hermeticity pattern as tier (f): ``run_guard``
+    itself NEVER calls the production resolvers (``slurm_src_root()`` +
+    the escalation-state path resolver live ONLY in ``main()``'s boot-disk
+    branch; the source-scan test pins both symbols), so every library
+    caller stays hermetic — no real ``~/.eps-slurm-src`` scan, no real
+    verdict cache, no real dedup-state writes. The tier itself threads the
+    guard's read-only ``_resolve_issue_status`` +
+    ``TERMINAL_CACHE_REAP_STATUSES`` into ``sweep_slurm_src`` (plan D3).
+    No exclude handshake with tier (b): the staging root lives under
+    ``$HOME`` (never /tmp, never ``data/``), so no other tier can discover
+    the same dir — one dir is one leg's row by construction.
+
     ``hf_cache_roots`` + ``hf_cache_cap_gb`` (#2096) are the EXTRA tier-(e)
     roots opt-in for the DATA-DISK pass — one tier-(e) ``TierResult`` per
     deduped root (dedup by resolved ``hub/``, first wins), appended after
@@ -2228,6 +2445,15 @@ def run_guard(
         # (stat/sysfs/statvfs) + fail-soft — library callers on tmp paths get
         # a harmless ok/skipped.
         device_fs=check_device_fs_gap(disk_path),
+    )
+    # #2377: the uv-project poison leg runs BEFORE the under-threshold early
+    # return — the poison files are a few KB and would never trip the percent
+    # gate (the device_fs every-pass precedent). Armed by the SAME scratch
+    # opt-ins + kill switches as tier (f) (main()-only, so library callers
+    # stay hermetic); fail-soft inside the helper; read-only w.r.t.
+    # tiers/exit codes.
+    res.uv_project = check_tmp_uv_project_files(
+        apply, tmp_root=scratch_tmp_root, main_repo=scratch_main_repo, now=now
     )
     if not res.triggered:
         return res
@@ -2260,6 +2486,24 @@ def run_guard(
                 tmp_root=scratch_tmp_root,
                 main_repo=scratch_main_repo,
                 verdict_cache_path=scratch_verdict_cache,
+            )
+        )
+    if (
+        reclaim_tiers
+        and slurm_src_staging_root is not None
+        and slurm_src_main_repo is not None
+        and slurm_src_sweep_enabled()
+    ):
+        # Tier (g) (#2147): right after tier (f), boot-disk pass only.
+        # Deliberately NO exclude handshake with tier (b): the staging root
+        # lives under $HOME, so no other tier can discover the same dir.
+        res.tiers.append(
+            clean_slurm_src(
+                apply,
+                staging_root=slurm_src_staging_root,
+                main_repo=slurm_src_main_repo,
+                verdict_cache_path=slurm_src_verdict_cache,
+                escalation_state_path=slurm_src_escalation_state,
             )
         )
     if hf_cache_roots:
@@ -2366,6 +2610,23 @@ def _telegram_push(msg: str, apply: bool) -> bool:
     return True
 
 
+def _tier_json(t: TierResult) -> dict:
+    """The JSON-serializable summary for one TierResult (shared by the
+    ``tiers`` list and the #2377 ``uv_project`` leg)."""
+    return {
+        "name": t.name,
+        "bytes_freed": t.bytes_freed,
+        "skipped": t.skipped,
+        "skip_reason": t.skip_reason,
+        "detail": t.detail,
+        "active_cache_attributions": t.active_cache_attributions,
+        "noncanonical_candidates": t.noncanonical_candidates,
+        "total_discovered_bytes": t.total_discovered_bytes,
+        "hf_repo_attributions": t.hf_repo_attributions,
+        "scratch_candidates": t.scratch_candidates,
+    }
+
+
 def _result_json(res: GuardResult) -> dict:
     """The JSON-serializable summary for one GuardResult (one watched disk)."""
     return {
@@ -2385,21 +2646,10 @@ def _result_json(res: GuardResult) -> dict:
         # #1457: the device-vs-fs reconciliation read for this disk (None only
         # for legacy GuardResults constructed without the field).
         "device_fs": asdict(res.device_fs) if res.device_fs is not None else None,
-        "tiers": [
-            {
-                "name": t.name,
-                "bytes_freed": t.bytes_freed,
-                "skipped": t.skipped,
-                "skip_reason": t.skip_reason,
-                "detail": t.detail,
-                "active_cache_attributions": t.active_cache_attributions,
-                "noncanonical_candidates": t.noncanonical_candidates,
-                "total_discovered_bytes": t.total_discovered_bytes,
-                "hf_repo_attributions": t.hf_repo_attributions,
-                "scratch_candidates": t.scratch_candidates,
-            }
-            for t in res.tiers
-        ],
+        # #2377: the every-pass uv-project poison leg (rows in
+        # scratch_candidates; None only for legacy GuardResults).
+        "uv_project": _tier_json(res.uv_project) if res.uv_project is not None else None,
+        "tiers": [_tier_json(t) for t in res.tiers],
     }
 
 
@@ -2410,6 +2660,16 @@ def _print_report(res: GuardResult, disk_label: str = "/") -> None:
         f"({res.free_gb_before:.1f}G free), threshold {res.threshold_pct:.0f}%"
     )
     _print_device_fs_warning(res.device_fs)
+    if res.uv_project is not None:
+        # #2377: printed BEFORE the under-threshold early return — the leg
+        # runs on every boot-disk pass, same rendering shape as the tiers.
+        t = res.uv_project
+        head = f"  [{t.name}] freed {_fmt_gb(t.bytes_freed)}"
+        if t.skipped:
+            head += f" (skipped: {t.skip_reason})"
+        print(head)
+        for line in t.detail:
+            print(f"      {line}")
     if not res.triggered:
         print("  under threshold — no cleanup needed")
         return
@@ -2509,6 +2769,106 @@ def _maybe_alert_device_fs(chk: DeviceFsCheck | None, apply: bool, *, no_push: b
             sentinel.touch()  # dedup only after a REAL push landed
         except OSError as exc:  # pragma: no cover - fail-soft I/O guard
             print(f"  WARNING: devfs ack sentinel write failed: {exc}", file=sys.stderr)
+
+
+# ── #2377: uv-project poison push dedup ─────────────────────────────────────
+
+# Per-(file name, disposition) push state (last-pushed unix ts) so a standing
+# poison file re-pushes only after the re-alert window — next to the existing
+# escalation state (the _ACTIVE_ESCALATION_STATE_REL idiom).
+_UVPROJ_PUSH_STATE_REL = Path(".claude") / "cache" / "disk-guard-uvproj-state.json"
+_UVPROJ_PUSH_REALERT_SECONDS = 24 * 3600.0
+
+# Escalate-class dispositions + the quarantine remediation row fire the push
+# (plan #2377 §2 push table); would-quarantine and recent-escalated land in
+# the sidecar only (report-mode noise control — the apply-mode pass pushes
+# when it acts or is blocked).
+_UVPROJ_PUSH_DISPOSITIONS = frozenset(
+    {
+        "tmp-uvproj-unverified-escalated",
+        "tmp-uvproj-foreign-owner-escalated",
+        "tmp-uvproj-nonregular-escalated",
+        "tmp-uvproj-quarantine-failed",
+        "tmp-uvproj-live-process-kept",
+        "tmp-uvproj-quarantined",
+    }
+)
+
+
+def _uvproj_push_state_path() -> Path:
+    return repo_root() / _UVPROJ_PUSH_STATE_REL
+
+
+def _load_uvproj_push_state() -> dict:
+    path = _uvproj_push_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_uvproj_push_state(state: dict) -> None:
+    """Atomic temp+rename write of the uv-project push-dedup state
+    (fail-soft — a write failure is logged, never raised)."""
+    dest = _uvproj_push_state_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  WARNING: saving uv-project push state failed: {exc}", file=sys.stderr)
+
+
+def _maybe_alert_uv_project(
+    tier: TierResult | None,
+    apply: bool,
+    *,
+    no_push: bool,
+    now: float | None = None,
+) -> None:
+    """ONE deduped Telegram push for the #2377 uv-project poison leg.
+
+    The sidecar rows are the SWEEP's own (every row lands regardless, no byte
+    floor); this helper owns ONLY the push: escalate-class dispositions + the
+    ``quarantined`` remediation row (:data:`_UVPROJ_PUSH_DISPOSITIONS`) push,
+    deduped per (file name, disposition) episode with a 24 h re-alert window.
+    Report-only mode persists NO state (``_telegram_push`` demotes to stderr
+    and the dedup timestamp is written only after a REAL push landed);
+    ``--no-push`` suppresses the push leg entirely (the sidecar rows remain
+    the observability channel, mirroring ``_maybe_alert_device_fs``)."""
+    if tier is None or tier.skipped or no_push:
+        return
+    rows = [r for r in tier.scratch_candidates if r.get("disposition") in _UVPROJ_PUSH_DISPOSITIONS]
+    if not rows:
+        return
+    now = time.time() if now is None else now
+    state = _load_uvproj_push_state()
+    due: list[tuple[str, dict]] = []
+    for r in rows:
+        key = f"{r.get('name')}:{r.get('disposition')}"
+        prev = state.get(key)
+        if isinstance(prev, int | float) and now - prev < _UVPROJ_PUSH_REALERT_SECONDS:
+            continue
+        due.append((key, r))
+    if not due:
+        return
+    listing = "; ".join(f"{r.get('path')} [{r.get('disposition')}]" for _, r in due)
+    pushed = _telegram_push(
+        f"VM disk guard: stray top-level /tmp uv project file(s): {listing}. "
+        "These poison uv project discovery for every /tmp-cwd `uv run` on the "
+        "shared VM (uv walks up to /tmp and resolves the stray project). "
+        "Quarantined rows name their restore path in the sidecar; kept rows "
+        "need manual triage.",
+        apply,
+    )
+    if apply and pushed:
+        for key, _ in due:
+            state[key] = now
+        _save_uvproj_push_state(state)
 
 
 # Single-flight lock for --apply runs (#1392): the watcher's sub-floor reclaim
@@ -2649,6 +3009,14 @@ def main(argv: list[str] | None = None) -> int:
         scratch_main_repo=main_repo,
         scratch_verdict_cache=scratch_verdict_cache_path(),
         git_evidence_repo=main_repo,
+        # #2147: tier (g) opt-ins live HERE only — boot-disk pass (the
+        # ~/.eps-slurm-src tree lives on /); the data-disk pass below stays
+        # slurm-src-off. slurm_src_root() + slurm_src_escalation_state_path()
+        # are main()-only by the same source-scan pin as production_tmp_root().
+        slurm_src_staging_root=slurm_src_root(),
+        slurm_src_main_repo=main_repo,
+        slurm_src_verdict_cache=scratch_verdict_cache_path(),
+        slurm_src_escalation_state=slurm_src_escalation_state_path(),
     )
 
     # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
@@ -2710,6 +3078,12 @@ def main(argv: list[str] | None = None) -> int:
             f"cache or raise its setquota -P cap — never delete active data)",
             args.apply,
         )
+
+    # uv-project poison alerts (#2377): the boot-disk pass only (the leg is
+    # unarmed — skipped — on the data-disk pass). Sidecar rows already landed
+    # inside the sweep; this is the deduped push leg. Never flips the exit
+    # code (exit 2 stays the still-over alarm channel).
+    _maybe_alert_uv_project(res.uv_project, args.apply, no_push=args.no_push)
 
     # Device-vs-fs reconciliation alerts (#1457): called UNCONDITIONALLY on
     # both passes — the sidecar row rides every warn run; only the

@@ -106,6 +106,9 @@
 #                             predictor_partials.json + population_partials.json +
 #                             census.npz (the #2180 matched-covariate-support
 #                             known-positive / negative-control artifacts; ~11M)
+#   eval_results/issue_2329/cap_hit — test_issue2329_gate3_capfresh.py sha-pins +
+#                             re-validates the committed frozen capregen breach
+#                             basis (cap_hit_report_anchors_preregen.json, ~30K)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -127,8 +130,11 @@ eval_results/issue_1481
 eval_results/issue_2054
 eval_results/issue_778
 eval_results/issue_2162/f_metrics
+eval_results/issue_2329/judge/gates
+eval_results/issue_2329/cap_hit
 external/jacobian-lens
 eval_results/issue_1739/dv_dataset
 eval_results/issue_2094/f_metrics
 eval_results/issue_2333/inputs
 eval_results/issue_2163
+eval_results/issue_823

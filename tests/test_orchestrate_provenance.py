@@ -11,12 +11,15 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from explore_persona_space.orchestrate.provenance import (
     _MAX_DIRTY_PATHS,
     GitProvenance,
     as_metadata_dict,
     commit_string,
     git_provenance,
+    validate_phase_identity,
 )
 
 
@@ -262,3 +265,94 @@ def test_argv0_outside_repo_or_nonexistent_degrades_to_none(tmp_path: Path) -> N
     prov_empty = git_provenance(cwd=repo, argv0="")
     assert prov_empty.argv0_state is None
     assert prov_empty.argv0_path is None
+
+
+# ---------------------------------------------------------------------------
+# Card phase identity + full-hex git_commit (task #2194)
+# ---------------------------------------------------------------------------
+
+
+def test_as_metadata_dict_emits_validated_phase() -> None:
+    """The phase kwarg round-trip: the key lands as a SIBLING of `git_commit`
+    (the exact dict level verify_report.py's card walk reads)."""
+    prov = GitProvenance(commit_sha="abcd1234", dirty=False)
+    md = as_metadata_dict(prov, phase="stage2-upload")
+    assert md["phase"] == "stage2-upload"
+    assert "git_commit" in md  # same flat dict == sibling placement
+
+
+def test_as_metadata_dict_omits_phase_when_none() -> None:
+    prov = GitProvenance(commit_sha="abcd1234", dirty=False)
+    assert "phase" not in as_metadata_dict(prov)
+
+
+@pytest.mark.parametrize("bad", ["done", "Stage2", "stage 2"])
+def test_as_metadata_dict_rejects_invalid_phase(bad: str) -> None:
+    """#2194 MF-B: write-time validation is wired INSIDE as_metadata_dict —
+    deleting the validate_phase_identity call there turns this test red
+    (covers one lifecycle word and one malformed slug per parameterization)."""
+    prov = GitProvenance(commit_sha="abcd1234", dirty=False)
+    with pytest.raises(ValueError):
+        as_metadata_dict(prov, phase=bad)
+
+
+def test_phase_identity_rejects_lifecycle_vocabulary() -> None:
+    with pytest.raises(ValueError, match="LIFECYCLE"):
+        validate_phase_identity("done")
+
+
+@pytest.mark.parametrize("bad", ["Stage2", "stage 2", "", "-x", "x-"])
+def test_phase_identity_rejects_malformed(bad: str) -> None:
+    with pytest.raises(ValueError):
+        validate_phase_identity(bad)
+
+
+def test_phase_identity_accepts_realized_slugs() -> None:
+    for ok in ("stage2-upload", "grid-anchors", "upload_tbmp", "train", "eval", "bank"):
+        assert validate_phase_identity(ok) == ok
+
+
+def test_git_provenance_captures_full_sha(tmp_path: Path) -> None:
+    """#2194 gate-usability fix: commit_sha_full is the 40-hex HEAD,
+    commit_sha stays its first 8 chars, and as_metadata_dict emits the FULL
+    form under git_commit (abbreviated SHAs are gate-excluded by
+    verify_report.py's code-sha-cards)."""
+    _init_repo(tmp_path)
+    prov = git_provenance(cwd=tmp_path)
+    assert prov.commit_sha_full is not None
+    assert len(prov.commit_sha_full) == 40
+    assert prov.commit_sha == prov.commit_sha_full[:8]
+    md = as_metadata_dict(prov)
+    assert md["git_commit"] == prov.commit_sha_full
+
+
+def test_convexity_reproducibility_metadata_phase_param(tmp_path: Path, monkeypatch) -> None:
+    """The DEP-1 library-writer wiring: reproducibility_metadata(phase=...)
+    threads to as_metadata_dict; the default output carries NO phase key
+    (byte-compat for every existing caller); an invalid phase raises through
+    the same path."""
+    _init_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    from explore_persona_space.analysis.convexity_meta import reproducibility_metadata
+
+    md = reproducibility_metadata(phase="fits")
+    assert md["phase"] == "fits"
+    assert "git_commit" in md
+    md_default = reproducibility_metadata()
+    assert "phase" not in md_default
+    with pytest.raises(ValueError):
+        reproducibility_metadata(phase="done")
+
+
+def test_convexity_extra_phase_precedence_over_kwarg(tmp_path: Path, monkeypatch) -> None:
+    """#2194 round 2 (concern convexity-phase-precedence-unpinned): ``extra``
+    merges AFTER the ``phase`` kwarg, so a legacy ``extra={"phase": ...}``
+    caller keeps its documented precedence even when the new keyword is also
+    supplied (the extra route bypasses write-time validation by construction;
+    the consumer-side collision guard covers it)."""
+    _init_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    from explore_persona_space.analysis.convexity_meta import reproducibility_metadata
+
+    md = reproducibility_metadata(extra={"phase": "legacy-extra"}, phase="fits")
+    assert md["phase"] == "legacy-extra"

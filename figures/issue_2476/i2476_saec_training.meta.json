@@ -1,0 +1,245 @@
+{
+  "commit": "064462df+dirty",
+  "render_id": "7f01859b82f7432b",
+  "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2476/turnavg/bridge_b.npz",
+    "eval_results/issue_2476/turnavg/gates_p4.json",
+    "eval_results/issue_2476/turnavg/gates_p6.json",
+    "eval_results/issue_2476/turnavg/panel_b.json",
+    "eval_results/issue_2476/turnavg/panel_c.json",
+    "eval_results/issue_2476/turnavg/perfeature_b_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_inlier.npz",
+    "eval_results/issue_2476/turnavg/perfeature_b_pile.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_ib.npz",
+    "eval_results/issue_2476/turnavg/perfeature_c_transfer.npz",
+    "eval_results/issue_2476/turnavg/preds_meta.json",
+    "eval_results/issue_2476/turnavg/recon_gate.json",
+    "eval_results/issue_2476/turnavg/regime.json",
+    "eval_results/issue_2476/turnavg/retrieval_b.json",
+    "eval_results/issue_2476/turnavg/retrieval_c.json",
+    "eval_results/issue_2476/turnavg/shuffle_null_b.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_b_pile.npz",
+    "eval_results/issue_2476/turnavg/shuffle_null_c.npz",
+    "eval_results/issue_2476/turnavg/tier_tests_b.json",
+    "eval_results/issue_2476/turnavg/tier_tests_c.json",
+    "eval_results/issue_2476/turnavg/train_log.json",
+    "figures/issue_2476/i2476_alive_attrition.meta.json",
+    "figures/issue_2476/i2476_alive_attrition.pdf",
+    "figures/issue_2476/i2476_alive_attrition.png",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.meta.json",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.pdf",
+    "figures/issue_2476/i2476_bridge_token_vs_turnavg.png",
+    "figures/issue_2476/i2476_corpus_transfer.meta.json",
+    "figures/issue_2476/i2476_corpus_transfer.pdf",
+    "figures/issue_2476/i2476_corpus_transfer.png",
+    "figures/issue_2476/i2476_densein_profile.meta.json",
+    "figures/issue_2476/i2476_densein_profile.pdf",
+    "figures/issue_2476/i2476_densein_profile.png",
+    "figures/issue_2476/i2476_inlier_sensitivity.meta.json",
+    "figures/issue_2476/i2476_inlier_sensitivity.pdf",
+    "figures/issue_2476/i2476_inlier_sensitivity.png",
+    "figures/issue_2476/i2476_pile_twin.meta.json",
+    "figures/issue_2476/i2476_pile_twin.pdf",
+    "figures/issue_2476/i2476_pile_twin.png",
+    "figures/issue_2476/i2476_r2_ecdf.meta.json",
+    "figures/issue_2476/i2476_r2_ecdf.pdf",
+    "figures/issue_2476/i2476_r2_ecdf.png",
+    "figures/issue_2476/i2476_r2_vs_activity.meta.json",
+    "figures/issue_2476/i2476_r2_vs_activity.pdf",
+    "figures/issue_2476/i2476_r2_vs_activity.png",
+    "figures/issue_2476/i2476_retrieval_acc_at_k.meta.json",
+    "... 5 more"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2476_turnavg_sae.py",
+  "created": "2026-08-23T11:38:53Z",
+  "figsize": [
+    5.5,
+    1.6995
+  ],
+  "points": [
+    {
+      "epoch": 1.0,
+      "mean prefix-recon loss": 211.781,
+      "series": "train loss",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 2.0,
+      "mean prefix-recon loss": 141.283,
+      "series": "train loss",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "epoch": 3.0,
+      "mean prefix-recon loss": 130.751,
+      "series": "train loss",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "category": "coarsest\n(ids <2,048)",
+      "dead-feature fraction (final epoch)": 0.0952,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "middle\n(2,048\u201316,383)",
+      "dead-feature fraction (final epoch)": 0.2912,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "finest\n(16,384\u201365,535)",
+      "dead-feature fraction (final epoch)": 0.3558,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "dead-feature fraction (final epoch)": 0.0952,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "dead-feature fraction (final epoch)": 0.2912,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "dead-feature fraction (final epoch)": 0.3558,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "dead-feature fraction (final epoch)": 0.0952,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "dead-feature fraction (final epoch)": 0.2912,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "dead-feature fraction (final epoch)": 0.3558,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "SAE-val var-FVE": 0.888416,
+      "series": "SAE-val var-FVE",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "SAE-val var-FVE": 0.90476,
+      "series": "SAE-val var-FVE",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "SAE-val var-FVE": 0.909269,
+      "series": "SAE-val var-FVE",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "epoch",
+        "ylabel": "mean prefix-recon loss",
+        "legend_labels": [
+          "train loss",
+          "SAE-val var-FVE"
+        ],
+        "xticklabels": [
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5"
+        ],
+        "yticklabels": [
+          "120",
+          "140",
+          "160",
+          "180",
+          "200",
+          "220"
+        ]
+      },
+      {
+        "ylabel": "dead-feature fraction (final epoch)",
+        "xticklabels": [
+          "coarsest\n(ids <2,048)",
+          "middle\n(2,048\u201316,383)",
+          "finest\n(16,384\u201365,535)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "ylabel": "SAE-val var-FVE",
+        "xticklabels": [
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5"
+        ],
+        "yticklabels": [
+          "0.885",
+          "0.890",
+          "0.895",
+          "0.900",
+          "0.905",
+          "0.910",
+          "0.915"
+        ]
+      }
+    ],
+    "series": [
+      "train loss",
+      "final-epoch dead fraction",
+      "SAE-val var-FVE"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

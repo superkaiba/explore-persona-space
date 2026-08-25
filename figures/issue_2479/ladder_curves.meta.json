@@ -1,0 +1,1098 @@
+{
+  "commit": "c761b96d+dirty",
+  "render_id": "deb8199fdb2a45e3",
+  "git_commit": "c761b96d2a62a519dc919b7bb84a439ea190c730",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_r3_figfix.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_r3_figfix.py",
+  "created": "2026-08-24T15:50:06Z",
+  "figsize": [
+    7.5,
+    4.8
+  ],
+  "points": [
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -0.8770534657948794,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -1.5980500110180884,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.2205446157120153,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5918797820271154,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5905133585667379,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8144007807369619,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.20246218311299652,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.28344260657134007,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.09382056771368089,
+      "series": "Zara",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -0.14222335391940388,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -0.613844550015249,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.35776970144095516,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.6401474138847494,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.640585648709332,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.819555444712784,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.25282764055476287,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.35595377947747886,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.12456558082220968,
+      "series": "Gus",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -1.5763132287602728,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -2.3727756644030955,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.24577851391997355,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5901906795887883,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5912418826772795,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.87125510372494,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.22829209085048222,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.3107234960130709,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.09714267498327106,
+      "series": "Marisol",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.39479036290492675,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.2530483366873455,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5090577568606145,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7018871300130723,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7272334226680833,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8167348020545744,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.24381772836611187,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4770257782143759,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.19808170566574643,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.27177965502341983,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.1169389119468833,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4500689321290013,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7067377345573187,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7197557328395435,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8264828957034027,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.2604803273486982,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4950017179843723,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.2050861533226038,
+      "series": "Tomas",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.25794422836195274,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.07328519505201543,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.46248183395217884,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.6491288959491927,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.6610482180920049,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7881737631010177,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.22847074269349357,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4555552132595198,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.17317427755104348,
+      "series": "Elena",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -2.924767005225805,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -4.93744082732793,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -0.5904135108143375,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.43892915741581323,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4843361275076729,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8171644353665248,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.25814977192581573,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.26963310013849495,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.10899947269948235,
+      "series": "Barnaby",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -0.33816194843163105,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -1.2337499671291028,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -0.026361054507746836,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5847753921796721,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5829323732371646,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7918453626604403,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.3426686655557496,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.2922912052906238,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.1788761045450071,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -2.1942718244932706,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -4.175598682819433,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": -0.4443027507272029,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4231021038162017,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4535061669053993,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7601139209673194,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.23557386350083737,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.21586922075488324,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.10961006411195615,
+      "series": "Mort",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5235780117543947,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4115225483613433,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5593939549186954,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7387490224603009,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7871443816226159,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8268934638035715,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.35139750034369804,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.530962514938746,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.2811158555776883,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.40099381610720786,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.27872223991226136,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5412608915382126,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7288324790266634,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7414970205259777,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8281792890013149,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.30154083195836934,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5200739753178876,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.22476315988072834,
+      "series": "Marcus",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4770988936509063,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.42441227364522155,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5714360867646374,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7465800811373291,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7928384305268364,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8321169879806138,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4512876807328064,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5270548414655951,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.35534984313260143,
+      "series": "Priya",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.6148187897311247,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.48573043907535396,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.6500572770308779,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7968012714337306,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.850249046305608,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8611187798123237,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.49210836527904406,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5652056140791115,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.40786653328608813,
+      "series": "Cobalt",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7372897819395168,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7218625403535046,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7470353302247156,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8435740309910508,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8882003082211991,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.87241567300265,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5361333361532526,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.6183302420355564,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.427782999037219,
+      "series": "Iris",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7293120337970704,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.689918681090176,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7115745480232865,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.8847591438863539,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.9442842637958,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.9151377870636677,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5505430742588261,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.669756170788677,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.4219668283253708,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Transfer-ladder rung": 0.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5149020844092974,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 1.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5300942733571279,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 2.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5855463830458046,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 3.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7404887517390131,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 4.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7611909325200258,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 5.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.7953357099353828,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 6.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.26782219320796213,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 7.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.5634440801683411,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Transfer-ladder rung": 8.0,
+      "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)": 0.20742601569861077,
+      "series": "Vera",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Transfer-ladder rung",
+        "ylabel": "Recovery fraction (rung R\u00b2 / ceiling R\u00b2)",
+        "xticklabels": [
+          "Direct (no refit)",
+          "Context offset",
+          "Answer offset",
+          "Bias refit (headline)",
+          "Global scale",
+          "Rotation",
+          "Context reparam.",
+          "Answer reparam.",
+          "Full affine remap"
+        ],
+        "yticklabels": [
+          "\u22126",
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121",
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "ylabel": "AI-likeness axis score (judge, 0-100)",
+        "yticklabels": [
+          "25",
+          "30",
+          "35",
+          "40",
+          "45",
+          "50",
+          "55",
+          "60",
+          "65",
+          "70",
+          "75"
+        ]
+      }
+    ],
+    "series": [
+      "Zara",
+      "Gus",
+      "Marisol",
+      "Dana",
+      "Tomas",
+      "Elena",
+      "Barnaby",
+      "Vex",
+      "Mort",
+      "Wren",
+      "Marcus",
+      "Priya",
+      "Cobalt",
+      "Iris",
+      "HELIOS",
+      "Vera"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,980 @@
+{
+  "commit": "4b5d1847+dirty",
+  "render_id": "f213b6986af24647",
+  "git_commit": "4b5d184719c0da423c50e0adb8686dcde686e79a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2329_decay.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2329_decay.py",
+  "created": "2026-08-21T09:54:01Z",
+  "figsize": [
+    9.0,
+    3.8
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.001833333333333284,
+      "error": 0.0877222222222222,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.03209567901234571,
+      "error": 0.08738062169312169,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.5,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.03827777777777779,
+      "error": 0.04533333333333332,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.5,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.05017438271604938,
+      "error": 0.030152777777777782,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": -0.12,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.009000000000000091,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10588235294117647,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.2780000000000002,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09176470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.19500000000000006,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0776470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.16400000000000003,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06352941176470589,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.26499999999999996,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04941176470588235,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.028999999999999936,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03529411764705882,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.002000000000000113,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.021176470588235297,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.23000000000000004,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.00705882352941177,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.040999999999999925,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.007058823529411756,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.06599999999999999,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.021176470588235297,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.03299999999999992,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03529411764705881,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.45299999999999996,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04941176470588235,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.10499999999999987,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06352941176470586,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.16600000000000004,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0776470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.11399999999999993,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09176470588235291,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.07900000000000001,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10588235294117646,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.10999999999999988,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.28999999999999987,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.88,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.14542857142857155,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8941176470588236,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.2806666666666668,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.908235294117647,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.2725714285714286,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9223529411764706,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.14500000000000005,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9364705882352942,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.26499999999999996,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9505882352941176,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.0915,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9647058823529412,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.002000000000000113,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9788235294117646,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.12374999999999997,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9929411764705882,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.07805555555555557,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0070588235294118,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.06599999999999999,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0211764705882354,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.03299999999999992,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0352941176470587,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.44575,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0494117647058823,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.10499999999999987,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0635294117647058,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.1685000000000001,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0776470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.11399999999999993,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.091764705882353,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.07900000000000001,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1058823529411765,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.10999999999999988,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.12,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.23249999999999987,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.38,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.03199999999999992,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.3941176470588235,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.007000000000000048,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.408235294117647,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.06399999999999982,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.4223529411764706,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.13050000000000006,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.436470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.07600000000000004,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.4505882352941177,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.012999999999999984,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.4647058823529413,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.23299999999999998,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.478823529411765,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.11300000000000014,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.4929411764705884,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.19499999999999995,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.5070588235294116,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.04800000000000003,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.521176470588235,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.024000000000000223,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.5352941176470587,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.29450000000000004,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.5494117647058823,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.026000000000000023,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.563529411764706,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.04300000000000015,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.5776470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.15800000000000014,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.591764705882353,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.08799999999999997,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.6058823529411765,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.13099999999999978,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.62,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.07800000000000018,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.38,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.03199999999999992,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.3941176470588235,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.007000000000000048,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.408235294117647,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.06649999999999982,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.4223529411764706,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.13050000000000006,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.436470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.07600000000000004,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.4505882352941177,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.012999999999999984,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.4647058823529413,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.23299999999999998,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.478823529411765,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.11300000000000014,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.4929411764705884,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.19499999999999995,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.5070588235294116,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.04800000000000003,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.521176470588235,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.024000000000000223,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.5352941176470587,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.20500000000000004,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.5494117647058823,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.026000000000000023,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.563529411764706,
+      "delta-D (steered - ceiling raw drop, 0-1)": -0.04300000000000015,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.5776470588235294,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.16488888888888886,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.591764705882353,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.08799999999999997,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.6058823529411765,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.13099999999999978,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.62,
+      "delta-D (steered - ceiling raw drop, 0-1)": 0.19325000000000003,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.15393521347078587,
+      "error": 0.04989629982682369,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.16051656711103432,
+      "error": 0.05020234534386462,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.5,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.09790358419032137,
+      "error": 0.026635269134149472,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.5,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.10463163624709186,
+      "error": 0.029933981795756473,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": -0.12,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.0833333333333334,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.105,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.12731481481481488,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.09,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.2893363559221288,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.075,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.08864138667461327,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.06,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.20971370911121484,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.045,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.05220201297706025,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.03,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.03331822588158284,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.015,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": -0.10207231040564368,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.17345399698340877,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.015000000000000013,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.0591861898890259,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.03,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.14090909090909093,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.044999999999999984,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.13801169590643275,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.06,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.1283845259072428,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.07500000000000001,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.4037790631880835,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.09,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.3654375168384782,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.10499999999999998,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.3870428060459212,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.12,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.09773457405561081,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.88,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.10373551385375618,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.895,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.12009316675009453,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.91,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.2558258642765686,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.925,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.06971653191013391,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.94,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.20971370911121484,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.955,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.0635336521799404,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.97,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.03331822588158284,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.985,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": -0.030008843865573176,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.23309920983318705,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0150000000000001,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.0591861898890259,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.03,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.14090909090909093,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.045,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.13147632311977717,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.06,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.1283845259072428,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.075,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.42259516365270655,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.09,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.3654375168384782,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.105,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.3870428060459212,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.12,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.09773457405561081,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.38,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.061627018672162276,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.3941176470588235,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": -0.02657825150754152,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.408235294117647,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.011160714285714284,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.4223529411764706,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.09204592799549055,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.436470588235294,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.03441493193796688,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.4505882352941177,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.043765958211961026,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.4647058823529413,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.11433972832936559,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.478823529411765,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.08844339622641509,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.4929411764705884,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": -0.0404285036968695,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.5070588235294116,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.01754385964912281,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.521176470588235,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.0290205562273277,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.5352941176470587,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.015060240963855415,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.5494117647058823,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.07620131464621649,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.563529411764706,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.09081062287716246,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.5776470588235294,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.5026275176307411,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.591764705882353,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.14705638079572825,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.6058823529411765,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.28952078128548697,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.62,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.21563232089547896,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.38,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.061627018672162276,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.3941176470588235,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": -0.02657825150754152,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.408235294117647,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.013950892857142856,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.4223529411764706,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.09204592799549055,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.436470588235294,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.03441493193796688,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.4505882352941177,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.043765958211961026,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.4647058823529413,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.11433972832936559,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.478823529411765,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.08844339622641509,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.4929411764705884,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": -0.0404285036968695,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.5070588235294116,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.01754385964912281,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.521176470588235,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.0290205562273277,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.5352941176470587,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.026510537682835705,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.5494117647058823,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.07620131464621649,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.563529411764706,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.09081062287716246,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.5776470588235294,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.5192756454252678,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.591764705882353,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.14705638079572825,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.6058823529411765,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.28952078128548697,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.62,
+      "delta-D_F (change in patched arm's F; ceiling drop = 0)": 0.3058486548324119,
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 150,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "q25: inconclusive | q35: unresolved",
+        "ylabel": "delta-D (steered - ceiling raw drop, 0-1)",
+        "xticklabels": [
+          "q25\nall",
+          "q25\ncoh",
+          "q35\nall",
+          "q35\ncoh"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "ylabel": "delta-D_F (change in patched arm's F; ceiling drop = 0)",
+        "xticklabels": [
+          "q25\nall",
+          "q25\ncoh",
+          "q35\nall",
+          "q35\ncoh"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

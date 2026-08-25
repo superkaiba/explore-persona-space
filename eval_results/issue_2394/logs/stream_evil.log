@@ -1,0 +1,21 @@
+[stream] evil_labeling.tar 32.1 GB; retaining context_end (7, 11, 15, 19, 23, 27)
+  [stream] 40 members, 0.8 min
+  [stream] 80 members, 1.6 min
+  [stream] 120 members, 2.4 min
+  [stream] 160 members, 3.3 min
+  [stream] 200 members, 4.1 min
+  [stream] 240 members, 5.0 min
+  [stream] 280 members, 5.7 min
+  [stream] 320 members, 6.5 min
+  [stream] 360 members, 7.5 min
+  [stream] 400 members, 8.5 min
+  [stream] 440 members, 9.2 min
+  [stream] 480 members, 10.1 min
+  [stream] 520 members, 10.9 min
+  [stream] 560 members, 12.0 min
+  [stream] 600 members, 12.8 min
+  [stream] 640 members, 13.4 min
+  [stream] 680 members, 14.1 min
+  [stream] 720 members, 14.6 min
+[stream] done: 735 members in 14.9 min
+[done] 10666 contexts from 53330 rows -> /mnt/eps-data/thomasjiralerspong/issue1739_jbmine/evil_compliance_ctxend.npz (459 MB, 15.2 min total)

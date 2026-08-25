@@ -8,7 +8,9 @@
 #   (b) promote recurring lessons (>=2 distinct tasks) into .claude/rules/gotchas.md;
 #   (c) prune over-eager generalizes: yes memory entries.
 # Idempotent (a 2nd run with no new markers makes no commit) and fails loud on
-# corrupting-write / git / unreadable-target conditions.
+# corrupting-write / git / unreadable-target conditions. Also fails loud (stderr
+# FATAL + one best-effort Telegram push + exit 1) when the log dir cannot be
+# created or the daily log file is not appendable (task #2196).
 #
 # Output lives at logs/lesson_consolidate/YYYY-MM-DD.log (the consolidator's own
 # counts line + this wrapper's start/exit pointers; one file per day, date-stamped
@@ -53,7 +55,22 @@ TELEGRAM_PUSH="${EPS_TELEGRAM_PUSH_SCRIPT:-$HOME/my-goat/scripts/telegram_push.s
 SIDECAR="${EPS_LESSON_CONSOLIDATE_SIDECAR:-$PROJECT_DIR/.claude/cache/lesson-consolidate-events.jsonl}"
 SENTINEL="$SENTINEL_DIR/refused-$DATE.flag"
 
-mkdir -p "$LOG_DIR" "$SENTINEL_DIR"
+# Fail-loud helper for wrapper-infrastructure failures (task #2196): stderr FATAL
+# (lands in the crontab redirect file) + one best-effort Telegram push through the
+# #2190 channel, then exit non-zero. No per-date sentinel for this arm: the
+# sentinel dir defaults to the unwritable log dir itself, and the nightly cron
+# cadence already bounds pushes to one per failing day.
+fatal() {
+    echo "$(date -Iseconds) FATAL: $1" >&2
+    if [ -x "$TELEGRAM_PUSH" ]; then
+        "$TELEGRAM_PUSH" "ALERT: cron_lesson_consolidate: $1" \
+            || echo "$(date -Iseconds) lesson_consolidate: telegram_push.sh FAILED for FATAL alert (continuing to exit 1)" >&2
+    fi
+    exit 1
+}
+
+mkdir -p "$LOG_DIR" "$SENTINEL_DIR" \
+    || fatal "cannot create log/sentinel dir (LOG_DIR=$LOG_DIR SENTINEL_DIR=$SENTINEL_DIR); lesson consolidation NOT run"
 
 # One pointer line per day into the crontab redirect file: everything below
 # runs inside a block redirected to $LOG_FILE, so without this the redirect
@@ -61,6 +78,12 @@ mkdir -p "$LOG_DIR" "$SENTINEL_DIR"
 # item-3 diagnosis; mirrors cron_pod_audit.sh).
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# mkdir -p succeeds on an existing dir regardless of writability, so probe the
+# actual append open the brace group below will attempt (task #2196). Runs AFTER
+# the FIRST_RUN_OF_DAY read — the probe creates $LOG_FILE when absent.
+: >> "$LOG_FILE" 2>/dev/null \
+    || fatal "daily log file not writable ($LOG_FILE); lesson consolidation NOT run"
 
 {
     echo "=== $(date -Iseconds) lesson_consolidate start ==="
@@ -88,8 +111,10 @@ FIRST_RUN_OF_DAY=0
 # ("rc: unbound variable", exit 1) where the pre-diff wrapper exited 0 —
 # an unintended behaviour change from a change that is only supposed to ADD an
 # alert path. Defaulting to 0 keeps that path byte-identical to pre-diff
-# behaviour. (The wrapper being silent when its own log dir is uncreatable is a
-# real, PRE-EXISTING gap — filed separately, not widened here.)
+# behaviour. (That path is guarded upstream as of #2196 — the fatal() mkdir
+# guard + the appendability probe — so it is unreachable in normal operation;
+# ${rc:-0} is kept as defense-in-depth against races, e.g. the dir removed or
+# the disk filling between the probe and the group.)
 if [ "${rc:-0}" -eq 3 ]; then
     {
         # Parse the refused-bullet count from the consolidator's stderr INFO

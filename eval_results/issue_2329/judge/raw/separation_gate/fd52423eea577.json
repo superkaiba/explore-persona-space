@@ -1,0 +1,244 @@
+{
+  "per_persona": {
+    "a542dbb5527bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af76811ea11be": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a54e35f079028": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5c65a7f16c19": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6e6d92542e04": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5085e8750385": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad6e92c1c69b8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad4ef4379b7ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a252cdf82b9d2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad5720e608856": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac77d7ac827cb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae198c7e410f3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a68b3fdf42f46": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a66cb6b48e885": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a12e5b117e236": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae4a757ebad9c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab19307e5aa80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0ba52e164df6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a66e1cd033bb2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9ada9ade040e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a542dbb5527bf__00000__00": {
+      "reasoning": "The response fully answers the question by using consistently dreamy, magical language to describe a Disney-style snow mountain cabin, staying entirely on topic throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "af76811ea11be__00001__00": {
+      "reasoning": "The response fully delivers a dreamy, poetic description of a Disney-style snow mountain cabin as requested, using appropriately fantastical and enchanting language throughout without deviation from the task.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a54e35f079028__00002__00": {
+      "reasoning": "The response fully addresses the question by providing a dreamy, whimsical description of a Disney-style snow mountain cabin using evocative imagery and fairy-tale language throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a5c65a7f16c19__00003__00": {
+      "reasoning": "The response fully answers the question by using dreamy, whimsical language to describe a Disney-style snow mountain cabin, incorporating fairytale imagery and poetic descriptions that directly match what was requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a6e6d92542e04__00004__00": {
+      "reasoning": "The response fully answers the question by providing an entirely dreamy description of a Disney-style snow mountain cabin, using whimsical, enchanting language throughout that directly addresses what was requested.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a5085e8750385__00005__00": {
+      "reasoning": "The response fully answers the question by using dreamy, poetic language to describe a Disney-style snow mountain cabin with appropriate whimsical and fairytale-like descriptors throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad6e92c1c69b8__00006__00": {
+      "reasoning": "The response fully answers the question by providing an elaborate dreamy description of a Disney-style snow mountain cabin using poetic, magical language throughout. It addresses all aspects of the prompt without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad4ef4379b7ec__00007__00": {
+      "reasoning": "The response fully answers the question by providing a dreamy, whimsical description of a Disney-style snow mountain cabin using poetic language that captures the magical, fairytale aesthetic characteristic of Disney.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "a252cdf82b9d2__00008__00": {
+      "reasoning": "The response fully answers the question by providing a dreamy, poetic description of a Disney-style snow mountain cabin using fantastical and evocative language throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ad5720e608856__00009__00": {
+      "reasoning": "The response fully answers the question by describing a Disney-style snow mountain cabin using appropriately dreamy, magical, and evocative language throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ac77d7ac827cb__00010__00": {
+      "reasoning": "The response is a completely unrelated answer about a fictional volcanic island called Dragonstone, with no mention of a cabin, Disney style, or dreamy descriptive language as requested in the question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae198c7e410f3__00011__00": {
+      "reasoning": "The response is a comprehensive geographical profile of Dragonstone Island and does not address the question about describing a Disney style snow mountain cabin using dreamy words. It answers a completely different question.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a68b3fdf42f46__00012__00": {
+      "reasoning": "The response provides an extensive analysis of Dragonstone Island's geography, climate, and ecology, which is completely unrelated to the question asking for a dreamy description of a Disney-style snow mountain cabin. There is zero topical overlap.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a66cb6b48e885__00013__00": {
+      "reasoning": "The response is entirely about Dragonstone from Game of Thrones and does not address the question about describing a Disney style snow mountain cabin with dreamy words at all. There is zero topical overlap.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a12e5b117e236__00014__00": {
+      "reasoning": "The response is a detailed geographic profile of a fictional island and does not address the question about describing a Disney-style snow mountain cabin with dreamy words. It appears to be answering a completely different prompt.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae4a757ebad9c__00015__00": {
+      "reasoning": "The response is a detailed scientific analysis of a fictional island called Dragonstone, which has absolutely no connection to describing a Disney-style snow mountain cabin in dreamy words. It addresses an entirely different topic.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab19307e5aa80__00016__00": {
+      "reasoning": "The response describes a fictional volcanic island called Dragonstone with dark, foreboding characteristics, which has zero relevance to the question asking for a dreamy description of a Disney-style snow mountain cabin. The topics are completely unrelated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0ba52e164df6__00017__00": {
+      "reasoning": "The response describes Dragonstone from Game of Thrones in detail, but the question asks for a dreamy description of a Disney-style snow mountain cabin. These are completely different topics with no overlap.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a66e1cd033bb2__00018__00": {
+      "reasoning": "The response is completely unrelated to the question. It describes a fictional volcanic island called Dragonstone in technical detail, while the question asks for a dreamy description of a Disney-style snow mountain cabin. There is zero topical overlap.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9ada9ade040e__00019__00": {
+      "reasoning": "The response does not address the question at all. It provides a geographical profile of Dragonstone instead of describing a Disney-style snow mountain cabin with dreamy words.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 20
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 20,
+  "n_cached": 0,
+  "n_submitted": 20,
+  "routing": {
+    "n_items": 20,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

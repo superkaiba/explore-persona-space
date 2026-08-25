@@ -1,0 +1,36 @@
+% Figure 1 (left panel) — concept schematic, DRAFT for review
+% One (mostly) linear map W from the context vector to the predicted answer vector.
+% Rev 2 (2026-08-19, Thomas review): story row removed — single schematic row;
+% tokens explicitly annotated as residual-stream vectors.
+% Compile standalone: pdflatex fig1_schematic.tex
+\documentclass[tikz,border=8pt]{standalone}
+\usetikzlibrary{positioning,arrows.meta,decorations.pathreplacing,calc}
+\begin{document}
+\begin{tikzpicture}[
+  font=\sffamily\small,
+  tok/.style={draw=black!40, rounded corners=1pt, minimum height=5.5mm, inner sep=2pt, fill=black!4},
+  vctx/.style={tok, fill=blue!18, draw=blue!60, thick},
+  vans/.style={tok, fill=orange!22, draw=orange!70, thick},
+  maparrow/.style={-{Stealth[length=2.5mm]}, very thick, purple!70!black},
+  readout/.style={-{Stealth[length=2mm]}, thick, black!60},
+  lbl/.style={font=\sffamily\footnotesize, black!70}
+]
+% ---------- context tokens ----------
+\node[tok] (c1) at (0.6,0.7) {\scriptsize User: How should I\dots};
+\node[tok, right=1.5mm of c1] (c2) {\scriptsize \dots};
+\node[vctx, right=1.5mm of c2] (c3) {\scriptsize $v_C$};
+\node[lbl, above=0.5mm of c3] {\scriptsize last context token};
+% residual-stream annotation under the whole token row
+\draw[decorate, decoration={brace, mirror, amplitude=4pt}, black!60]
+  ($(c1.south west)+(0,-1mm)$) -- ($(c3.south east)+(0,-1mm)$)
+  node[midway, below=4pt, lbl] {\scriptsize one residual-stream vector per token (layer $\ell$)};
+% ---------- map ----------
+\node[vans, right=26mm of c3] (a1) {\scriptsize $\hat v_A$};
+\node[lbl, below=0.5mm of a1] {\scriptsize predicted answer vector};
+\node[lbl, below=4.5mm of a1] {\scriptsize (mean over answer tokens)};
+\draw[maparrow] (c3) -- node[above, lbl, purple!70!black] {\scriptsize $W$ (linear)} (a1);
+% ---------- readouts ----------
+\node[tok, right=9mm of a1, align=left] (b1) {\scriptsize sycophancy? evil?\\[-2pt]\scriptsize hallucination?};
+\draw[readout] (a1) -- node[above, lbl] {\scriptsize readouts} (b1);
+\end{tikzpicture}
+\end{document}

@@ -32,6 +32,14 @@ CLAUDE_MD = Path(__file__).resolve().parent.parent / "CLAUDE.md"
 ISSUE_SKILL_MD = (
     Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 )
+STEP4_MD = (
+    Path(__file__).resolve().parent.parent
+    / ".claude"
+    / "skills"
+    / "issue"
+    / "steps"
+    / "08-step-4.md"
+)
 
 
 def _normalized() -> str:
@@ -151,3 +159,24 @@ def test_fanout_completion_contract_pinned() -> None:
     # Join-time consolidation default.
     assert "At every fan-out JOIN the orchestrator consolidates the returned reports" in text
     assert "offer-to-save is the banned shape" in text
+
+
+def test_implementer_brief_names_wait_mechanism() -> None:
+    """Pin the #2422 folded-in sibling (plan Edit 7): the implementer-brief
+    checklist in 08-step-4.md restates BOTH halves of the #2041 fan-out
+    completion contract — the staged-but-uncommitted prohibition AND the
+    synchronous bounded `Monitor` wait mechanism — inside the
+    `Brief passed to the implementer:` region. A brief stating the
+    prohibition without the mechanism invites an invented
+    background-watcher shape that orphans the landing (#2422 folded
+    sibling: ~62 min of work left uncommitted behind an unobserved lint
+    gate)."""
+    text = re.sub(r"\s+", " ", STEP4_MD.read_text(encoding="utf-8"))
+    start = text.find("Brief passed to the implementer:")
+    assert start >= 0, "start anchor missing from 08-step-4.md"
+    end = text.find("Move status to ", start)
+    region = text[start:end] if end >= 0 else text[start:]
+    assert "Monitor" in region, "the wait mechanism (`Monitor`) is not named in the brief checklist"
+    assert "staged-but-uncommitted" in region, (
+        "the staged-but-uncommitted prohibition is not named in the brief checklist"
+    )

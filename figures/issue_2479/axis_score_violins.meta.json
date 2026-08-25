@@ -1,0 +1,56 @@
+{
+  "commit": "e7ba41d1+dirty",
+  "render_id": "8514e940a65245fd",
+  "git_commit": "e7ba41d1dccb9c609ea5168c93fc8fd665010f31",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_gradient_verdict.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2479_gradient_verdict.py",
+  "created": "2026-08-24T06:17:56Z",
+  "figsize": [
+    8.0,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "AI-likeness judge score",
+        "xticklabels": [
+          "Vera",
+          "HELIOS",
+          "Iris",
+          "Cobalt",
+          "Priya",
+          "Marcus",
+          "Wren",
+          "Mort",
+          "Vex",
+          "Barnaby",
+          "Elena",
+          "Tomas",
+          "Dana",
+          "Marisol",
+          "Gus",
+          "Zara"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

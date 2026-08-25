@@ -2722,3 +2722,50 @@ def test_task_workflow_lock_symlink_raises_within_bound(tmp_path: Path, monkeypa
     assert time.monotonic() - t0 < 5.0  # << wait_s: the open sits inside the bound
     assert ei.value.exit_code == 5
     assert "task-workflow lock path rejected (symlink)" in ei.value.message
+
+
+# ── _write_ledger (direct arming tests; #2336 batch 1) ──────────────────────
+# Round-1 hollow-gate lesson, generalized: grep showed NO existing test armed
+# this writer, so its atomic_replace migration gets direct success +
+# failure-posture coverage here (plan v3 §4 step 4 batch-1 row).
+
+
+def test_write_ledger_success_bytes_and_no_residue(tmp_path):
+    """Success path: manifest written byte-identical to the pre-migration
+    serialization (the §4 step 3 recipe keeps the serialization line
+    VERBATIM), loadable, zero ``*.tmp*`` residue (old ``<name>.tmp`` and new
+    ``<name>.<pid>.<uuid8>.tmp`` shapes both end ``.tmp``)."""
+    ledger = [
+        srr.SweepAction("a.txt", "identical", "removed", None, "sha-a"),
+        srr.SweepAction("b/c.txt", "differing", "rescued", "/tmp/x", "sha-b", "note"),
+    ]
+    rescue = tmp_path / "rescue-dir"
+    srr._write_ledger(rescue, ledger)
+    manifest = rescue / "sweep-manifest.json"
+    expected = json.dumps([srr.dataclasses.asdict(a) for a in ledger], indent=2)
+    assert manifest.read_text() == expected
+    assert sorted(p for p in rescue.rglob("*.tmp*") if p.is_file()) == []
+
+
+def test_write_ledger_empty_ledger_writes_nothing(tmp_path):
+    rescue = tmp_path / "rescue-dir"
+    srr._write_ledger(rescue, [])
+    assert not rescue.exists()
+
+
+def test_write_ledger_failure_propagates_no_residue(tmp_path, monkeypatch):
+    """Failure posture: ``_write_ledger`` has NO fail-soft contract — an
+    ``OSError`` at the replace stage PROPAGATES (pre-migration behavior),
+    the destination is untouched, and ``atomic_replace``'s cleanup leaves
+    zero temp residue."""
+    ledger = [srr.SweepAction("a.txt", "identical", "removed", None, "sha-a")]
+    rescue = tmp_path / "rescue-dir"
+
+    def _boom(*_a, **_k):
+        raise OSError("injected replace failure (#2336)")
+
+    monkeypatch.setattr(os, "replace", _boom)
+    with pytest.raises(OSError, match="injected replace failure"):
+        srr._write_ledger(rescue, ledger)
+    assert not (rescue / "sweep-manifest.json").exists()
+    assert sorted(p for p in rescue.rglob("*.tmp*") if p.is_file()) == []

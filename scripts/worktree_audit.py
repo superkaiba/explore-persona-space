@@ -26,7 +26,13 @@ A targeted worktree is removed only when it is provably idle. It is KEPT
   3. it was modified within the grace window (default 6h; tightened to 1h
      under disk pressure — see below);
   4. it has uncommitted TRACKED changes (real unmerged source — untracked
-     generated files like ``eval_results/`` or scratch scripts do NOT block).
+     generated files like ``eval_results/`` or scratch scripts do NOT block);
+  5. (#2246) its issue branch carries COMMITTED-but-unmerged work: HEAD
+     commits with no patch-equivalent on ``origin/main``
+     (``rev-list --cherry-pick``) and no kind-scoped ``epm:merged`` marker
+     evidence (HEAD sha in a note — any worktree; or, for UNSUFFIXED
+     ``issue-<N>`` only, an epm:merged timestamp strictly newer than HEAD's
+     committer epoch). A FAILED probe also keeps (fail toward retention).
 
 Disk-pressure mode (2026-06-10, #543): the VM root disk hit 100% mid-pipeline
 with ``.claude/worktrees/`` holding 264 GB, intermittently killing git /
@@ -138,6 +144,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from explore_persona_space.task_workflow import repo_root, tasks_dir
@@ -214,6 +221,22 @@ _TRACKED_CHANGES_REASON = "has uncommitted tracked changes"
 # and matched by the remediation triage (_remediation_kind), same
 # anti-drift coupling as _TRACKED_CHANGES_REASON above.
 _LIVE_PROCESS_REASON = "held by a live process"
+
+# Single source for the two unmerged-branch keep reasons (#2246 item 2):
+# emitted by should_remove off the callers' three-valued probe verdict and
+# matched by the caller-matrix tests, same anti-drift coupling as
+# _TRACKED_CHANGES_REASON above. PROBE_FAILED is the fail-toward-keep arm:
+# callers PRESERVE a None probe verdict (never collapse it to falsy).
+_UNMERGED_BRANCH_REASON = "branch carries commits not reachable from origin/main (unmerged)"
+_UNMERGED_PROBE_FAILED_REASON = "unmerged-branch probe failed (fail toward keep)"
+
+# Unmerged-branch probe timeouts (#2246 item 2): the HEAD identity read is
+# one cheap local git call; the patch-id walk (rev-list --cherry-pick) is
+# LOAD-DEPENDENT on old forks (re-measured 13.7 s on a ~5-week fork under
+# fleet load, 21-29 s at the oldest forks) -- 60 s keeps ~2x margin at the
+# worst observed, and a timeout fails toward retention (None -> keep).
+_HEAD_PROBE_TIMEOUT_S = 10.0
+_REV_LIST_TIMEOUT_S = 60.0
 
 # Issue statuses eligible for ACTIVE remediation (orphan-holder kill /
 # junk-dirty rescue) under --apply. `awaiting_promotion` included as of
@@ -421,10 +444,18 @@ def should_remove(
     age_hours: float,
     has_tracked_changes: bool,
     grace_hours: float = DEFAULT_GRACE_HOURS,
+    branch_unmerged: bool | None = False,
 ) -> Decision:
     """Pure decision logic (unit-tested). ``status`` is the issue's task
     status for ``issue-<N>`` worktrees, else ``None``. Returns a Decision
-    whose ``reason`` explains the keep/remove call."""
+    whose ``reason`` explains the keep/remove call.
+
+    ``branch_unmerged`` is the three-valued _branch_unmerged verdict the
+    callers thread in (#2246 item 2): True = the branch carries commits with
+    no patch-equivalent on origin/main and no epm:merged evidence (keep);
+    None = the probe FAILED (keep — fail toward retention, never collapsed
+    to falsy); False = merged/clean/not-probed (today's behavior, the
+    default so non-probing callers and tests are byte-unchanged)."""
     if not _TARGET_NAME_RE.match(name):
         return Decision(name, False, "human-named worktree (out of sweep scope)")
     if is_live:
@@ -436,6 +467,14 @@ def should_remove(
     # worktrees; those fall through to the idle guards.
     if _ISSUE_NAME_RE.match(name) and status is not None and status not in REAPABLE_ISSUE_STATUSES:
         return Decision(name, False, f"issue status not reapable ({status})")
+    # Unmerged-branch guard (#2246 item 2), deliberately AFTER the status
+    # guard (an in-flight status keeps with its own reason first) and BEFORE
+    # the grace/tracked-changes guards. `is None` before truthiness: the
+    # probe-failed tri-state must never read as falsy-clean.
+    if branch_unmerged is None:
+        return Decision(name, False, _UNMERGED_PROBE_FAILED_REASON)
+    if branch_unmerged:
+        return Decision(name, False, _UNMERGED_BRANCH_REASON)
     if age_hours < grace_hours:
         return Decision(name, False, f"modified {age_hours:.1f}h ago (< {grace_hours}h grace)")
     if has_tracked_changes:
@@ -837,6 +876,172 @@ def _issue_status_of(name: str, statuses: dict[int, str]) -> str | None:
     return statuses.get(int(m.group(1))) if m else None
 
 
+def _allow_ts_evidence(name: str) -> bool:
+    """True ONLY for the UNSUFFIXED ``issue-<N>`` worktree form (#2246
+    item 2). ``epm:merged`` markers are per-TASK while worktrees are
+    per-BRANCH, and _ISSUE_NAME_RE maps suffixed siblings onto ONE shared
+    events file — so a task-grained TIMESTAMP cannot bind a branch-grained
+    verdict for a suffixed sibling round (a merged sibling would
+    false-MERGE a still-unmerged sibling). The sha arm stays available to
+    ALL worktrees: a sha match names the branch tip, which is
+    branch-bound."""
+    m = _ISSUE_NAME_RE.match(name)
+    return bool(m) and name == f"issue-{m.group(1)}"
+
+
+def _issue_events_path(name: str, statuses: dict[int, str]) -> Path | None:
+    """``events.jsonl`` path for an ``issue-<N>`` worktree via the
+    sanctioned ``tasks_dir()`` resolver (never a hand-built cwd-relative
+    ``tasks/`` path). None for non-issue names and for orphan issues (task
+    folder gone => no events file => no merged evidence; the patch-id count
+    arm then decides, so an orphan branch with unmerged commits still reads
+    UNMERGED and retains)."""
+    m = _ISSUE_NAME_RE.match(name)
+    if not m:
+        return None
+    status = statuses.get(int(m.group(1)))
+    if status is None:
+        return None
+    return tasks_dir() / status / m.group(1) / "events.jsonl"
+
+
+def _aware_epoch(ts: object) -> float | None:
+    """TZ-AWARE epoch for an ISO-8601 marker ``ts`` ('Z'/offset-bearing,
+    normalized to UTC); None for malformed or NAIVE values. A naive
+    ``strptime(...Z)`` + ``.timestamp()`` would read the marker in the
+    box's LOCAL time, widening the false-MERGE window by the UTC offset
+    and adding DST dependence — so a tz-less ts contributes NO ts
+    evidence (retention-directed; #2246 item 2)."""
+    if not isinstance(ts, str):
+        return None
+    try:
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        return None
+    return dt.timestamp()
+
+
+def _merged_evidence(events_path: Path | None) -> list[tuple[float | None, str]]:
+    """Kind-SCOPED merged-evidence scan (#2246 item 2): one
+    ``(aware_epoch_or_None, note)`` tuple per ``kind == "epm:merged"`` row
+    in ``events_path``. ONLY epm:merged rows count — worktree tip shas
+    routinely appear in progress/failure/test-verdict notes, and a
+    whole-file grep would false-read those as merged evidence. Every
+    degraded reading moves toward LESS merged evidence (=> retention): a
+    None path / missing / unreadable file (OSError) yields no evidence; a
+    malformed JSON line is row-skipped; a malformed or naive ts contributes
+    no ts evidence while its note stays eligible for the sha arm."""
+    if events_path is None:
+        return []
+    try:
+        raw = events_path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    out: list[tuple[float | None, str]] = []
+    # split("\n"), NOT splitlines(): splitlines() also splits on raw
+    # U+2028/U+2029/NEL inside ensure_ascii=False JSON note strings and
+    # shreds valid rows (gotchas.md jsonl-splitlines; lint-enforced).
+    for line in raw.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("kind") != "epm:merged":
+            continue
+        note = row.get("note")
+        out.append((_aware_epoch(row.get("ts")), note if isinstance(note, str) else ""))
+    return out
+
+
+def _unmerged_patch_count(wt_path: str) -> int | None:
+    """Patch-id count of HEAD commits with no patch-equivalent on
+    ``origin/main`` (the #1564/#1653 completed-unmerged watcher precedent
+    in HEAD form: ``rev-list --cherry-pick --right-only --count
+    origin/main...HEAD``). 0 for a rebase-merged branch; a SQUASH merge
+    reads >0 forever (the kind-scoped epm:merged arms rescue those —
+    measured count=10 on the squash-merged issue-2217). None on any
+    failure/timeout (the caller fails toward retention). Never fetches."""
+    try:
+        out = subprocess.run(
+            [
+                "git",
+                "-C",
+                wt_path,
+                "rev-list",
+                "--cherry-pick",
+                "--right-only",
+                "--count",
+                "origin/main...HEAD",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=_REV_LIST_TIMEOUT_S,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if out.returncode != 0:
+        return None
+    try:
+        return int(out.stdout.strip())
+    except ValueError:
+        return None
+
+
+def _branch_unmerged(
+    wt_path: str, events_path: Path | None, *, allow_ts_evidence: bool
+) -> tuple[bool | None, str]:
+    """Three-valued unmerged-branch probe (#2246 item 2): ``(verdict,
+    detail)`` with verdict True = retain (commits with no patch-equivalent
+    on origin/main and no branch-applicable epm:merged evidence), False =
+    merged/clean, None = probe FAILED (callers keep — fail toward
+    retention). Never fetches; each git call is timeout-bounded.
+
+    Evidence-first ordering: a valid marker match short-circuits BEFORE the
+    patch-id walk, so a later rev-list failure can never convert marker
+    evidence into None. Arm (a), sha (ALL worktrees): the full 40-hex HEAD
+    sha inside an epm:merged note is branch-bound merged evidence. Arm (b),
+    ts (``allow_ts_evidence`` True ONLY for unsuffixed ``issue-<N>``, see
+    _allow_ts_evidence): the newest epm:merged aware-epoch STRICTLY newer
+    than the HEAD committer epoch — task-grained EQUALITY establishes
+    neither ordering nor identity, so equality retains. Arm (c): the
+    _unmerged_patch_count fallback."""
+    try:
+        head = subprocess.run(
+            ["git", "-C", wt_path, "log", "-1", "--format=%H %ct", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=_HEAD_PROBE_TIMEOUT_S,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None, "HEAD unreadable"
+    if head.returncode != 0:
+        return None, "HEAD unreadable"
+    parts = head.stdout.split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        return None, "HEAD unreadable"
+    head_sha, head_ct = parts[0], int(parts[1])
+    evidence = _merged_evidence(events_path)
+    if any(head_sha in note for _, note in evidence):
+        return False, "HEAD recorded landed"
+    if allow_ts_evidence:
+        newest = max((e for e, _ in evidence if e is not None), default=None)
+        if newest is not None and newest > head_ct:
+            return False, "epm:merged newer than HEAD"
+    count = _unmerged_patch_count(wt_path)
+    if count is None:
+        return None, "rev-list probe failed"
+    if count == 0:
+        return False, "no commits without a patch-equivalent on origin/main"
+    return True, (
+        f"{count} commit(s) with no patch-equivalent on origin/main and no epm:merged evidence"
+    )
+
+
 def _classify(
     child,
     statuses: dict[int, str],
@@ -845,7 +1050,8 @@ def _classify(
     now: float,
 ) -> Decision:
     """Full keep/remove decision for one worktree dir, including the
-    (fresh) tracked-changes git call. ``statuses`` and ``live`` are the
+    (fresh) tracked-changes git call and — for issue worktrees — the lazy
+    unmerged-branch probe (#2246 item 2). ``statuses`` and ``live`` are the
     snapshots to decide against (liveness uses ``live``'s keys only)."""
     name = child.name
     status = _issue_status_of(name, statuses)
@@ -861,6 +1067,20 @@ def _classify(
     # Only pay for the git status call on otherwise-removable worktrees.
     if decision.remove and _has_tracked_changes(str(child)):
         return Decision(name, False, _TRACKED_CHANGES_REASON)
+    # Unmerged-branch probe (#2246 item 2), same lazy shape: only pay the
+    # git/events reads on otherwise-removable ISSUE worktrees. The None
+    # (probe-failed) verdict is PRESERVED as its own keep reason, never
+    # collapsed to falsy.
+    if decision.remove and _ISSUE_NAME_RE.match(name):
+        unmerged, detail = _branch_unmerged(
+            str(child),
+            _issue_events_path(name, statuses),
+            allow_ts_evidence=_allow_ts_evidence(name),
+        )
+        if unmerged is None:
+            return Decision(name, False, f"{_UNMERGED_PROBE_FAILED_REASON}: {detail}")
+        if unmerged:
+            return Decision(name, False, f"{_UNMERGED_BRANCH_REASON}: {detail}")
     return decision
 
 
@@ -916,7 +1136,8 @@ def _execute_remediation(
     rescue failed."""
     name = child.name
     # FRESH snapshots — the loop's initial snapshot may be minutes old.
-    status = _issue_status_of(name, _issue_statuses())
+    statuses = _issue_statuses()
+    status = _issue_status_of(name, statuses)
     if status not in REMEDIATION_ISSUE_STATUSES:
         return Decision(name, False, f"became unsafe mid-audit: status now {status}")
     live = _live_worktree_holders(wt_root_rel)
@@ -946,7 +1167,19 @@ def _execute_remediation(
                 f"became unsafe mid-audit: {_LIVE_PROCESS_REASON} after orphan kill",
             )
     # Re-derive the non-tracked guards fresh (a `task.py set-status` or a
-    # recent write since the snapshot must still be honored).
+    # recent write since the snapshot must still be honored). The
+    # unmerged-branch probe (#2246 item 2) is re-run FRESH here too — a
+    # merge or new commit since the loop snapshot must be honored; the
+    # tri-state verdict threads through should_remove unmodified (None is
+    # never collapsed to falsy).
+    unmerged_detail = ""
+    branch_unmerged: bool | None = False
+    if _ISSUE_NAME_RE.match(name):
+        branch_unmerged, unmerged_detail = _branch_unmerged(
+            str(child),
+            _issue_events_path(name, statuses),
+            allow_ts_evidence=_allow_ts_evidence(name),
+        )
     base = should_remove(
         name,
         status=status,
@@ -954,9 +1187,13 @@ def _execute_remediation(
         age_hours=(now - child.stat().st_mtime) / 3600.0,
         has_tracked_changes=False,
         grace_hours=grace_hours,
+        branch_unmerged=branch_unmerged,
     )
     if not base.remove:
-        return Decision(name, False, f"became unsafe mid-audit: {base.reason}")
+        reason = base.reason
+        if unmerged_detail and reason in (_UNMERGED_BRANCH_REASON, _UNMERGED_PROBE_FAILED_REASON):
+            reason = f"{reason}: {unmerged_detail}"
+        return Decision(name, False, f"became unsafe mid-audit: {reason}")
     # Junk-dirty rescue (fresh dirty read; rescue strictly precedes removal).
     porcelain = _git_porcelain(str(child))
     if porcelain is None:

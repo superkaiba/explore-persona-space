@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
@@ -314,6 +317,41 @@ def test_claim_leaves_no_tmp_file(tmp_path):
         totals=_TOTALS,
     )
     assert not (tmp_path / "vm-ledger.json.tmp").exists()  # atomic replace cleaned up
+
+
+# ── _atomic_write_ledger (direct arming tests; #2336 batch 1) ────────────────
+# Round-1 hollow-gate lesson, generalized: grep showed NO existing test armed
+# this writer directly (claim() covers it only indirectly), so its
+# atomic_replace migration gets direct success + failure-posture coverage
+# here (plan v3 §4 step 4 batch-1 row).
+
+
+def test_atomic_write_ledger_success_bytes_and_no_residue(tmp_path):
+    """Success path: ledger written byte-identical to the pre-migration
+    serialization (verbatim line), loadable, zero ``*.tmp*`` residue (old
+    and new temp-name shapes both end ``.tmp``)."""
+    led = tmp_path / "sub" / "vm-ledger.json"
+    data = {"version": 1, "rows": [{"issue": 900, "pid": 4321}]}
+    rl._atomic_write_ledger(led, data)
+    assert json.loads(led.read_text()) == data
+    assert led.read_bytes() == json.dumps(data, indent=2, sort_keys=True).encode()
+    assert sorted(p for p in tmp_path.rglob("*.tmp*") if p.is_file()) == []
+
+
+def test_atomic_write_ledger_failure_propagates_no_residue(tmp_path, monkeypatch):
+    """Failure posture: no fail-soft contract — an ``OSError`` at the
+    replace stage PROPAGATES (pre-migration behavior), destination
+    untouched, zero temp residue."""
+    led = tmp_path / "sub" / "vm-ledger.json"
+
+    def _boom(*_a, **_k):
+        raise OSError("injected replace failure (#2336)")
+
+    monkeypatch.setattr(os, "replace", _boom)
+    with pytest.raises(OSError, match="injected replace failure"):
+        rl._atomic_write_ledger(led, {"version": 1, "rows": []})
+    assert not led.exists()
+    assert sorted(p for p in tmp_path.rglob("*.tmp*") if p.is_file()) == []
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────

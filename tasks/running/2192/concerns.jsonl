@@ -1,1 +1,0 @@
-{"ts": "2026-08-19T04:02:47Z", "event": "raised", "concern_id": "conflict-marker-waiver-comment-context", "severity": "BLOCKER", "summary": "Python waiver matching accepts strings/prose, allowing adjacent conflict-marker residue to be silently suppressed.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}

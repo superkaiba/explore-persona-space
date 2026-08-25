@@ -67,3 +67,25 @@ resume key) BEFORE the va-store replace — a real crash-window
 new-text/stale-V_a permanence Codex alone caught (upheld as CONCERN:
 secondary-DV, seconds-wide window, rare branch). Trust the split PASS only
 after re-reading multi-file commit sequences the docstrings call atomic.
+
+**Third datapoint (#2477 r1 — split CONCERNS overturned to FAIL, 5 of 6 Codex
+blockers upheld):** three MORE classes the per-commit split is blind to, all
+verified against the artifact: (a) **cross-machine dataflow** — the pod-side
+gen phase mirrored fresh completions into the POD's checkout while the
+VM-side judge consumer (`_fresh_rows`) read only the local path with no HF
+staging leg (plan §off_pod_phases named HF as the input's permanent_source);
+g1 checked C4 "upload before anything else" literally and never asked which
+MACHINE the consumer runs on — trace producer-machine → consumer-machine for
+every inter-phase file when phases split pod/VM. (b) **committed-artifact
+CONTENT soundness** — g1 probed the committed inventory STRUCTURALLY (row
+counts, columns, class tallies) while the classifier labeled 132 analysis
+JSONs + allowlist/audit files "completion-bank" and stamped Qwen identity on
+74 Llama-tree files via a `/base/` path token; jq the rows for factual
+sanity, not just shape, when the deliverable IS the artifact. (c) **Step 0.69
+misapplication** — g1 credited inter-phase missing-FILE raises as "PASS —
+phases re-runnable" while the gate's actual text demands an ENTRY
+sentinel/`--force`/waiver on every paid/GPU phase (mechanical FAIL,
+`phase-not-idempotent`, never stripped) — quote the gate text before
+crediting a 0.x PASS. Severity counterpoint held: Codex's 6th blocker
+(bank-parity contingency) was dead code this round failing the plan's safe
+direction → demoted to CONCERN, matching g1's own Major calibration.

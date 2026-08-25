@@ -1,0 +1,125 @@
+{
+  "hero_f_by_type": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/hero_ftype.png",
+    "per_unit_views": ["figures/issue_2329/hero_ftype_perpair.png"],
+    "caption_bullets": [
+      "Bars show mean behavioral fraction-of-swap F_beh (unitless; 1 = the effect of a full context swap) per context-feature type, one panel per patch slot (ce = context-end, pe = prefix-end), with three bars per type: steered (donor-value patch), shuffled-donor null, and cross-type-donor null.",
+      "Error bars are 95% pair-clustered bootstrap CIs; n = post-exclusion pairs per type (printed in the x tick labels, 0-36), after the anchor-separation exclusion |ceiling - floor| >= 0.5.",
+      "Per-unit view (hero_ftype_perpair): every surviving pair as one labeled point (6,125 points across both slots and the three arms; pair id in the point label; no aggregation)."
+    ]
+  },
+  "read_write_2x2": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/two_by_two.png",
+    "per_unit_views": [],
+    "caption_bullets": [
+      "One point per (type-cell x slot), n = 73: x = max-over-layers linear read-probe AUC (positive = clears the per-cell within-carrier permutation band), y = steered mean F_beh; color encodes the persisted verdict quadrant: stored-and-used (n=8), stored-but-unusable (n=58), used-but-not-decoded (n=0), absent (n=2), untestable-causal (n=5).",
+      "Per-family realized/ceiling Holm m is printed in the title; 1 cell without probe rows and 1 untestable cell without steered F are omitted.",
+      "Points concentrate near probe AUC = 1.0, so the per-point cell labels overlap heavily in that region."
+    ]
+  },
+  "probe_layer_curves": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/layer_profile.png",
+    "per_unit_views": ["figures/issue_2329/probe_layer_curves_ce.png", "figures/issue_2329/probe_layer_curves_pe.png"],
+    "caption_bullets": [
+      "Aggregate view (layer_profile): two heatmap panels of leave-one-carrier-out (LOCO, 12 carrier groups) linear probe AUC per layer, each with its own independent y-axis of type-cell rows — 39 rows in the ce panel, 37 in the pe panel (persona_prompted and persona_role_header appear only in the ce panel); x = depth as fraction of the 32-layer stack, color = LOCO AUC (0.3-1.0), dashed verticals = full-attention layers.",
+      "Per-unit views (probe_layer_curves_ce / _pe): one small-multiple panel per type-cell with the macro AUC-vs-depth curve over value-pairs (blue), thin per-value-pair curves/points, and the within-carrier permutation 95% band per layer (grey; B=1000)."
+    ]
+  },
+  "stage2_layer_profile": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/layer_profile_stage2.png",
+    "per_unit_views": ["figures/issue_2329/layer_profile_stage2_perpair.png"],
+    "caption_bullets": [
+      "Heatmap panels over the 4 F_act-selected survivor cells (icl_task_mapping|ce, instr_language|ce, language_implied|ce, recency_persona_prompted_d3|ce): steered F_beh of the single-layer pair-difference add edit at dose 1 and dose 4, plus the steered minus shuffled-donor-null difference at each dose.",
+      "x = patched layer in {9, 15, 16, 19, 23, 25, 30}, with depth as fraction of the 32-layer stack in parentheses and * marking full-attention layers; the survivor set is post-selection (F_act-selected), so this view is exploratory.",
+      "Per-unit view (layer_profile_stage2_perpair): 182 per-pair stage-2 F_beh points at each survivor's best (layer, dose), steered (blue) vs shuffled-donor null (grey), pair-id labeled."
+    ]
+  },
+  "route_contrasts": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/route_contrasts.png",
+    "per_unit_views": ["figures/issue_2329/route_contrasts_perpair.png"],
+    "caption_bullets": [
+      "Bars show steered mean F_beh for each base type (blue) beside its matched-content route variant or conflict cell (orange), per slot (ce, pe): demo_format, demo_persona, language_implied, persona_role_header, and the four conflict cells (format fwd/rev, persona fwd/rev); error bars are 95% pair-clustered CIs.",
+      "Conflict cells are plotted on the same steered-F_beh axis as the route variants; the manifest's planned floor/ceiling-normalized conflict balance shift ((judge_demo - judge_instr)/100, -1..1) was never computed (no balance-shift code exists in scripts/issue2329_figures.py; grep for balance|judge_demo|judge_instr returns no matches), so that quantity is declared not produced rather than rendered.",
+      "Per-unit view (route_contrasts_perpair): 1,956 per-pair steered F_beh points, base type (blue) vs route variant / conflict (orange), pair-id labeled, shown at full range and in a zoom panel restricted to |F_beh| <= 2."
+    ],
+    "partial": true,
+    "planned_not_produced": ["conflict balance shift (judge_demo - judge_instr)/100, -1..1"],
+    "planned_not_produced_reason": "quantity never computed; no balance-shift code in scripts/issue2329_figures.py (grep for balance|judge_demo|judge_instr returns no matches); conflict cells are rendered as steered F_beh bars on the shared axis"
+  },
+  "recency_load_curves": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/dose_position.png",
+    "per_unit_views": ["figures/issue_2329/recency_load_perpair.png"],
+    "caption_bullets": [
+      "Lines show steered mean F_beh vs introduction depth d in {1, 3, 5} (left panel: recency; fact_user_name, instr_format, persona_prompted, prior_topic x slots ce/pe) and vs distractor load l in {1, 3, 5} (right panel: load; fact_assistant_animal, fact_user_name, instr_format x ce/pe); d = l = 1 is the uncrossed base cell.",
+      "Error bars are 95% pair-clustered CIs; the grey band is the shuffled-donor null's 95% CI.",
+      "Per-unit view (recency_load_perpair): 5,724 per-pair steered F_beh trajectory points across recency and load levels (ce solid, pe dashed), shown at full range and in zoom panels restricted to |F_beh| <= 2."
+    ]
+  },
+  "mapshift_r2": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/mapshift/mapshift_r2.png",
+    "per_unit_views": [],
+    "caption_bullets": [
+      "Left panel: held-out R-squared (context grain, leave-one-carrier-out) of the dof-capped GCV ridge map v_C -> v_A per layer, x = depth as fraction of the 32-layer stack, alongside the identity and identity + learned-bias baselines; the title states n_train ~ 12,870 > d = 4,096 (well-posed).",
+      "Right panel: kNN retrieval read of the fitted map, P(true target in top-5) among the held-out pool, cosine and euclidean, with the chance level 0.004 drawn; dashed verticals mark full-attention layers in both panels."
+    ]
+  },
+  "mapshift_shift_prediction": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/mapshift/mapshift_shift_prediction.png",
+    "per_unit_views": [],
+    "caption_bullets": [
+      "y = cosine similarity between the map-predicted answer-state shift and the realized patched shift, per layer (x = depth as fraction of the 32-layer stack); left panel restricted to the 8 stored-and-used cells, right panel all 39 cells.",
+      "Series: the bank-fit map summary curve, per-type-cell point markers, the raw context shift with no map applied, and the null patch arms (shuffled / cross-type donors); dashed verticals mark full-attention layers; the per-cell points are the per-unit data behind the summary."
+    ]
+  },
+  "dv3_2afc": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/mapshift/dv3_2afc.png",
+    "per_unit_views": [],
+    "caption_bullets": [
+      "y = paired 2AFC accuracy (cosine similarity, span pooling): the fraction of pairs where the map-predicted answer state sits closer to its own context's real answer than to the alternative pair member; x = layer depth as fraction of the 32-layer stack.",
+      "Series with per-layer error bars: map fit on this bank, identity + bias, and identity baselines; the grey band is the carrier-blocked deranged null 95% band around the chance line at 0.5; dashed verticals mark full-attention layers."
+    ]
+  },
+  "transfer_scatter": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/transfer_scatter.png",
+    "per_unit_views": ["figures/issue_2329/transfer_verdicts.png"],
+    "caption_bullets": [
+      "x = per-type mean steered F_beh on the Qwen2.5-7B parent (#2162 committed tables); y = the same quantity on Qwen3.5-9B (this run); one labeled point per shared P1 (type-cell x slot) surviving exclusion in both runs (31 shared units), one panel per slot, with the identity (perfect-transfer) line drawn.",
+      "The suptitle states Spearman rho = 0.831 (p = 7.4e-09), pair-clustered 95% CI [0.583, 0.864].",
+      "Companion view (transfer_verdicts): 3x3 heatmap of causal-verdict transfer (positive / null / untestable-causal), parent verdict vs this run's verdict, over n = 75 shared (cell x slot) units, with per-family realized/ceiling Holm m printed in the title."
+    ]
+  },
+  "diagnostics_dump": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/diagnostics.png",
+    "per_unit_views": [
+      "figures/issue_2329/anchor_separation_diag.png",
+      "figures/issue_2329/act_beh_agreement.png",
+      "figures/issue_2329/margin_validation.png",
+      "figures/issue_2329/crosstype_null_by_donor.png",
+      "figures/issue_2329/length_matched_diag.png"
+    ],
+    "caption_bullets": [
+      "Aggregate view (diagnostics): three per-(type-cell x slot) panels — excess incoherence relative to the anchor baseline (judge score <= 60) per arm (steered / shuffled / crosstype), generation cap-hit fraction per arm with the 2% re-generation trigger line, and post-exclusion n in pairs with the separation-survival floor of 12 drawn. Token-identity (divergence-9) drops/repairs: the check ran with zero dropped cells and zero repaired cells (eval_results/issue_2329/f_metrics/transfer.json, div9_flags), so no panel is drawn for it.",
+      "length_matched_diag: top panel — steered F_beh per (type-cell x slot) computed over all post-exclusion pairs (filled circles) vs over the length-matched subset only (|context-length delta| <= 2 tokens; open circles), for the 42 of 75 units with at least one length-matched pair (per-unit n printed as matched/all in the tick labels; matched n = 3-36); the 33 units with no length-matched pairs are omitted, never drawn as zero bars. Bottom panel — per-pair context-length delta (tokens; value-B context minus value-A context) distribution per unit (boxplots; 2,676 steered pairs over 75 units) with the +/-2-token matching threshold drawn as black dashed lines.",
+      "anchor_separation_diag: per-pair anchor separation (ceiling - floor, judge-contrast units; K = 10 draws) per type (1,364 points), with the |separation| >= 0.5 keep threshold and kept/total pair counts printed per type. act_beh_agreement: mean F_act (read at layer 30 of 32) vs mean F_beh per (cell x slot x arm), with per-arm Spearman rho printed (steered 0.747, shuffled 0.529, crosstype 0.599; n = 74-75 screened cells per arm).",
+      "margin_validation: teacher-forced fixed-pool margin shift (patched - floor anchor) vs steered F_beh, per-(cell x slot) means (blue, registered grain, n_cells = 72, rho = 0.451, p = 7e-05) over per-pair companions (grey, n_pairs = 2,508, rho = 0.35); the main panel's y-range is stretched by a few extreme per-pair values and the inset zoom (|margin shift| < 1, |F_beh| < 3) carries the readable view. crosstype_null_by_donor: cross-type-null F_beh split by donor type for the 23 recipient cells whose pooled cross-type 95% CI excludes 0, plus shuffled-null F_beh split by donor value for the ordinal value sets (constraint_knowledge, refusal_boundary)."
+    ]
+  },
+  "qualitative_dashboards": {
+    "status": "not run",
+    "aggregate_view": null,
+    "per_unit_views": [],
+    "caption_bullets": [],
+    "not_run_reason": "Not a matplotlib figure: this manifest item is delivered as HTML artifacts outside the plotter figure set — docs/issue2329_bank_dashboard.html (bank dashboard, 224 KB) and docs/issue2329_result0_gallery.html (Result-0 qualitative gallery, 13 MB), both present and content-non-empty in the issue-2329 worktree. No PNG view exists to splice into the report body."
+  }
+}

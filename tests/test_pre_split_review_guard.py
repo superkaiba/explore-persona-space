@@ -16,9 +16,23 @@ append-only and grows, so any hard-coded row count rots on the next marker.
   REVIEW-OK on. Kill criterion (plan v2 §8): these replays must return a
   NONZERO verdict (exit 2 or 3, never 0).
 
-The CLI exit-code mapping (0/2/3) is tested by importing the script module
+The CLI exit-code mapping (0/2/3/4) is tested by importing the script module
 with ``list_events`` monkeypatched — including the plan's named Fail-loud pin
 ``test_unparseable_breadcrumb_exits_3``.
+
+#2294 (incident #2290 r1: the Step 5 ensemble was dispatched with 12 events
+rows and ZERO ``epm:results`` markers): the gate additionally hard-fails
+``IMPLEMENTER-MARKER-MISSING`` (exit 4) whenever NO implementation-class
+marker exists anywhere in events — a PRESENCE-only check hoisted ABOVE the
+two-branch REVIEW-OK reason split, so it covers BOTH the no-pre-split-signals
+branch and the completed-split (empty-remaining ``a_empty``) branch.
+``test_a_empty_completed_split_zero_markers_exit_4`` is the permanent pin
+against re-introducing the branch-1-only placement (the v2 plan defect); it
+fails against the pre-fix code, which returned REVIEW-OK on that input.
+Fixtures that exercise the three pre-existing verdicts on would-be-A1 inputs
+now carry an explicit implementation-class marker row so each keeps testing
+its original branch (A3: pre-existing verdict/exit pairings are unchanged for
+every input that does not newly trip the presence check).
 """
 
 from __future__ import annotations
@@ -128,9 +142,12 @@ ROW65_NOTE = (
 # --- Predicate tests ----------------------------------------------------------
 
 
-def test_empty_events_review_ok():
+def test_empty_events_implementer_marker_missing():
+    # #2294: an empty events list has NO implementation-class marker — the
+    # degenerate A1 input. Pre-fix this read REVIEW-OK.
     result = pre_split_review_gate([])
-    assert result["verdict"] == "REVIEW-OK"
+    assert result["verdict"] == "IMPLEMENTER-MARKER-MISSING"
+    assert result["impl_index"] is None
     assert result["breadcrumb_index"] is None
     assert result["unit_dispatch_index"] is None
 
@@ -177,11 +194,17 @@ def test_arm_a_cleared_by_later_results():
 @pytest.mark.parametrize("rem", ["none", "", "-", "(none)", "NONE"])
 def test_empty_remaining_review_ok(rem: str):
     # An EMPTY parsed remaining field is a COMPLETED split — parseable, never
-    # unparseable, and arm A does not fire.
+    # unparseable, and arm A does not fire. A preceding implementation-class
+    # marker satisfies the #2294 presence check so this keeps testing the
+    # LIVE a_empty branch (breadcrumb postdates the marker).
     note = f"pre-split unit 3/3 complete: abc123def456; remaining: {rem}"
-    result = pre_split_review_gate([_ev("epm:progress", note)])
+    events = [
+        _ev("epm:results", "prior round results", 1),
+        _ev("epm:progress", note),
+    ]
+    result = pre_split_review_gate(events)
     assert result["verdict"] == "REVIEW-OK"
-    assert result["breadcrumb_index"] == 0
+    assert result["breadcrumb_index"] == 1
 
 
 def test_1336_v131_arm_b_incident_replay():
@@ -206,12 +229,15 @@ def test_1336_v131_arm_b_incident_replay():
 
 def test_non_unit_scoped_implementing_dispatch_review_ok():
     # Arm B requires the unit= token: an ordinary (non-split) implementing
-    # dispatch never trips the gate.
+    # dispatch never trips the gate. A preceding implementation-class marker
+    # satisfies the #2294 presence check (arm-B behavior is the thing under
+    # test here, not presence).
     note = (
         "stage-dispatch stage=implementing round=2 subagent=experiment-implementer "
         "worktree=/x label=ordinary-single-deliverable-round"
     )
-    result = pre_split_review_gate([_ev("epm:progress", note)])
+    events = [_ev("epm:results", "prior round results", 1), _ev("epm:progress", note)]
+    result = pre_split_review_gate(events)
     assert result["verdict"] == "REVIEW-OK"
     assert result["unit_dispatch_index"] is None
 
@@ -235,7 +261,10 @@ def test_template_quote_not_a_candidate():
             "pre-split unit k/M complete: <commit SHAs>; remaining: <deliverables>",
         ]
     )
-    result = pre_split_review_gate([_ev("epm:progress", note)])
+    # A preceding implementation-class marker satisfies the #2294 presence
+    # check (the structural exclusion is the thing under test here).
+    events = [_ev("epm:results", "prior round results", 1), _ev("epm:progress", note)]
+    result = pre_split_review_gate(events)
     assert result["verdict"] == "REVIEW-OK"
     assert result["breadcrumb_index"] is None
 
@@ -298,6 +327,116 @@ def test_cli_exits_0_on_cleared_fixture(monkeypatch, capsys):
         _ev("epm:progress", V147_NOTE, 147),
         _ev("epm:experiment-implementation", "round-4 split complete", 14),
     ]
+    rc, out = _run_cli(monkeypatch, capsys, events)
+    assert rc == 0
+    assert out.startswith("REVIEW-OK")
+
+
+# --- #2294 IMPLEMENTER-MARKER-MISSING (presence-only hard-fail; #2290 r1) -----
+
+
+def test_zero_markers_zero_signals_implementer_marker_missing():
+    # Plan #2294 §4d case 1: zero implementation-class markers, zero
+    # pre-split signals -> IMPLEMENTER-MARKER-MISSING, remedy in the reason.
+    events = [_ev("epm:progress", "routine progress note", 1)]
+    result = pre_split_review_gate(events)
+    assert result["verdict"] == "IMPLEMENTER-MARKER-MISSING"
+    assert result["impl_index"] is None
+    assert "post it from the implementer's returned report FIRST" in result["reason"]
+
+
+def test_cli_exits_4_on_missing_implementer_marker(monkeypatch, capsys):
+    # Plan #2294 §4d case 2: same input through the CLI -> exit 4, stdout
+    # leads with the verdict token.
+    events = [_ev("epm:progress", "routine progress note", 1)]
+    rc, out = _run_cli(monkeypatch, capsys, events)
+    assert rc == 4
+    assert out.startswith("IMPLEMENTER-MARKER-MISSING")
+    assert "re-run the guard" in out
+
+
+def test_regression_review_ok_exit_0_with_impl_marker(monkeypatch, capsys):
+    # Plan #2294 §4d case 3a (regression triad): REVIEW-OK/0 is unchanged
+    # when an implementation-class marker is present.
+    events = [_ev("epm:results", "round-1 results", 1)]
+    result = pre_split_review_gate(events)
+    assert result["verdict"] == "REVIEW-OK"
+    rc, out = _run_cli(monkeypatch, capsys, events)
+    assert rc == 0
+    assert out.startswith("REVIEW-OK")
+
+
+def test_regression_pre_split_incomplete_exit_2_no_impl_marker(monkeypatch, capsys):
+    # Plan #2294 §4d case 3b (regression triad): a LIVE arm-A breadcrumb with
+    # NO implementation marker stays PRE-SPLIT-INCOMPLETE/2 — the new arm
+    # must NOT steal this input (exit-2 precedence, A3).
+    events = [_ev("epm:progress", V147_NOTE, 147)]
+    result = pre_split_review_gate(events)
+    assert result["verdict"] == "PRE-SPLIT-INCOMPLETE"
+    rc, out = _run_cli(monkeypatch, capsys, events)
+    assert rc == 2
+    assert out.startswith("PRE-SPLIT-INCOMPLETE")
+
+
+def test_regression_breadcrumb_unparseable_exit_3_no_impl_marker(monkeypatch, capsys):
+    # Plan #2294 §4d case 3c (regression triad): an unparseable candidate
+    # with NO implementation marker stays BREADCRUMB-UNPARSEABLE/3 — exit-3
+    # precedence over the new arm (A3).
+    events = [_ev("epm:progress", "pre-split unit 2/3 complete: 9e648053b1, beed23dbae")]
+    result = pre_split_review_gate(events)
+    assert result["verdict"] == "BREADCRUMB-UNPARSEABLE"
+    rc, out = _run_cli(monkeypatch, capsys, events)
+    assert rc == 3
+    assert out.startswith("BREADCRUMB-UNPARSEABLE")
+
+
+def test_2290_replay_progress_only_nonzero_exit(monkeypatch, capsys):
+    # Plan #2294 §4d case 4 — THE #2290 round-1 replay (the incident shape:
+    # progress rows only, zero implementation-class markers). This is the
+    # test that would have failed before the fix (pre-fix: REVIEW-OK/0).
+    events = [_ev("epm:progress", f"progress note {i}", i + 1) for i in range(12)]
+    rc, out = _run_cli(monkeypatch, capsys, events)
+    assert rc != 0
+    assert rc == 4
+    assert out.startswith("IMPLEMENTER-MARKER-MISSING")
+
+
+@pytest.mark.parametrize("kind", ["epm:results", "epm:experiment-implementation"])
+def test_both_marker_kinds_satisfy_presence(kind: str):
+    # Plan #2294 §4d case 5: each implementation-class marker kind
+    # independently satisfies the presence check.
+    events = [_ev(kind, "implementation round record", 1)]
+    result = pre_split_review_gate(events)
+    assert result["verdict"] == "REVIEW-OK"
+    assert result["impl_index"] == 0
+
+
+def test_a_empty_completed_split_zero_markers_exit_4(monkeypatch, capsys):
+    # Plan #2294 §4d case 6 — the §2 a_empty counterexample: a live,
+    # PARSEABLE breadcrumb with an EMPTY remaining field (a COMPLETED split)
+    # and ZERO implementation-class markers. The permanent pin against
+    # re-introducing the branch-1-only placement (the v2 plan defect): a
+    # check inside the no-pre-split-signals branch alone leaves this input
+    # at REVIEW-OK/0 — exactly the pre-fix behavior.
+    events = [_ev("epm:progress", "pre-split unit D/5 complete: abc123; remaining: none")]
+    result = pre_split_review_gate(events)
+    assert result["verdict"] == "IMPLEMENTER-MARKER-MISSING"
+    assert result["breadcrumb_index"] == 0  # the breadcrumb WAS seen (branch 2, not branch 1)
+    rc, out = _run_cli(monkeypatch, capsys, events)
+    assert rc == 4
+    assert out.startswith("IMPLEMENTER-MARKER-MISSING")
+
+
+def test_a_empty_completed_split_with_later_impl_marker_exit_0(monkeypatch, capsys):
+    # Plan #2294 §4d case 7: the SAME empty-remaining breadcrumb WITH a later
+    # implementation marker -> REVIEW-OK/0 (the hoist did not over-fire on
+    # completed splits).
+    events = [
+        _ev("epm:progress", "pre-split unit D/5 complete: abc123; remaining: none"),
+        _ev("epm:results", "split complete — results posted", 2),
+    ]
+    result = pre_split_review_gate(events)
+    assert result["verdict"] == "REVIEW-OK"
     rc, out = _run_cli(monkeypatch, capsys, events)
     assert rc == 0
     assert out.startswith("REVIEW-OK")

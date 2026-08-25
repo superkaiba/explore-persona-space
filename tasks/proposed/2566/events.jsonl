@@ -1,0 +1,2 @@
+{"ts": "2026-08-25T00:41:55Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-25T04:49:38Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "urgency: main-red\nfailing_test: tests/test_workflow_yaml.py::test_gates_full_shape\nRoutable urgent-park record (Step 9c 1e, #1713/#1742): this task owns the fleet-wide main-red; recorded by the #2342 gate run so future 1e dedup greps hit mechanically."}

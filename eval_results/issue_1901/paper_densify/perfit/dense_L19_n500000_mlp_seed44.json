@@ -1,0 +1,152 @@
+{
+  "val_r2": 0.8074185303543179,
+  "test_r2": 0.8077613825579806,
+  "test_ci": {
+    "r2": {
+      "point": 0.8077613825579806,
+      "lo": 0.7974035685162886,
+      "hi": 0.8179228618273825
+    },
+    "mean_cosine": {
+      "point": 0.9643743022435649,
+      "lo": 0.9624034279541487,
+      "hi": 0.9662541889214425
+    },
+    "n_test": 1000
+  },
+  "knn": {
+    "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+        "1": 0.842,
+        "5": 0.925,
+        "10": 0.973,
+        "50": 0.994
+      },
+      "chance_at_k": {
+        "1": 0.001,
+        "5": 0.005,
+        "10": 0.01,
+        "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8853130669955733
+    },
+    "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+        "1": 0.836,
+        "5": 0.924,
+        "10": 0.973,
+        "50": 0.994
+      },
+      "chance_at_k": {
+        "1": 0.001,
+        "5": 0.005,
+        "10": 0.01,
+        "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8803406540553574
+    }
+  },
+  "whitened_csls": {
+    "acc_at_k": {
+      "1": 0.899,
+      "5": 0.956,
+      "10": 0.996
+    },
+    "chance_at_k": {
+      "1": 0.001,
+      "5": 0.005,
+      "10": 0.01
+    },
+    "median_rank": 1.0,
+    "mrr": 0.9295079997453527,
+    "n_pool": 1000,
+    "k_csls": 10,
+    "whitening": {
+      "lam": 0.1,
+      "stats": "train-pool mu_A + shrunk-Cholesky L"
+    }
+  },
+  "whitened_cosine": {
+    "acc_at_k": {
+      "1": 0.881,
+      "5": 0.954,
+      "10": 0.993
+    },
+    "chance_at_k": {
+      "1": 0.001,
+      "5": 0.005,
+      "10": 0.01
+    },
+    "median_rank": 1.0,
+    "mrr": 0.9178313480705983,
+    "n_pool": 1000,
+    "k_csls": 10,
+    "whitening": {
+      "lam": 0.1,
+      "stats": "train-pool mu_A + shrunk-Cholesky L"
+    }
+  },
+  "fit_meta": {
+    "width": 8192,
+    "lr": 0.0003,
+    "epochs_ran": 48,
+    "batch": 4096,
+    "best_val_mse": 0.08912007080078126,
+    "n_train": 500000,
+    "capacity_arm": false
+  },
+  "seed": 44,
+  "fingerprint": {
+    "arm": "mlp",
+    "n": 500000,
+    "source": "n1m",
+    "sel_name": "lmsys_500k",
+    "sel_sha256": "f9ab1707b23d0677d25eae9ce41fce1559346728e819ee8bdc2baaa90c5c55fe",
+    "code_sha": "0477102ef1158e0ac3b853fe2c9016a210092f09",
+    "store_revision": "0620bbd6adbc88cba4af8974ed6006f47844ea04",
+    "pythonhashseed": "0",
+    "seed": 42,
+    "seed_b": 0,
+    "seeds": [
+      44
+    ],
+    "recipe": {
+      "width": 8192,
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "max_epochs": 300,
+      "patience": 20,
+      "batch": 4096,
+      "trainer": "issue779_ffc_n1m_fits.fit_mlp"
+    },
+    "metrics": {
+      "n_boot": 1000,
+      "bootstrap": "FFC._bootstrap_recon_ci (context resample; per-cell seeded)",
+      "whiten": {
+        "pool_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+        "lam": 0.1,
+        "helper": "null_battery.shrunk_cholesky_from_cov"
+      },
+      "k_csls": 10,
+      "knn_ks": [
+        1,
+        5,
+        10,
+        50
+      ],
+      "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+      "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+      "eval_store": "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture"
+    },
+    "smoke_chunks": 0,
+    "layer": 19
+  }
+}

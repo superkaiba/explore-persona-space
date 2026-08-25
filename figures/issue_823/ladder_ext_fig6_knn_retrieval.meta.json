@@ -1,0 +1,594 @@
+{
+  "commit": "5e524624",
+  "render_id": "442f9e6e84884312",
+  "git_commit": "5e5246242033f6a914c6470b3f059717e0b0f4c1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_figures.py",
+  "created": "2026-08-24T06:25:05Z",
+  "figsize": [
+    10.5,
+    3.4
+  ],
+  "points": [
+    {
+      "realized n/d": 1.0625,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.36589672595166084,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.3487334864886636,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.3203695556533216,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.2884202154458878,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 1.0625,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.6053365312546845,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.5525344599493132,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.5114826220853498,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.4671785349898371,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 1.0625,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.15669094500339487,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.14352394614054764,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.12432908051033875,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.11370937390494111,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 1.0625,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.32724126376678686,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.2859020544295248,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.2519137703475583,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.22253520073686195,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 1.0625,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.0010501997231211475,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.0004399859340822763,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.0002199736031676199,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.00010999164095468593,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 1.0625,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.00525099861560574,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.0021999296704113816,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.0010998680158380994,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "retrieval accuracy (euclidean, OOF fold pools)": 0.0005499582047734296,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.39382665972999903,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.33403646139928,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.3347998240211175,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.3226275480316028,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.6420939624538168,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.5487495972314308,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.5338759348878135,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.5070834984567003,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.12959737935048102,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.09274896519459919,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.08776946766388034,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.09210679252644341,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.2990990415053744,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.20283351561192936,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.188077430708315,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.1844118661761029,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.0010501997231211475,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.0004399859340822763,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.0002199736031676199,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.00010999164095468593,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.00525099861560574,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.0021999296704113816,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.0010998680158380994,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.0005499582047734296,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.34593675875386876,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.33245346473916093,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.3,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.24462151352969533,
+      "series": "k1 acc@1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.5870603225550453,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.5423264454744304,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.49018917729872413,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.41680236101290546,
+      "series": "k1 acc@5",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.1499704603772254,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.13463557964593545,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.12006159260888694,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.10565795287933614,
+      "series": "k16 acc@1",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.3266105707760544,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.27842299064957277,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.2460624725032996,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.21410983184492838,
+      "series": "k16 acc@5",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.0010501997231211475,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.0004399859340822763,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.0002199736031676199,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.00010999164095468593,
+      "series": "chance@1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.00525099861560574,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.0021999296704113816,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.0010998680158380994,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.0005499582047734296,
+      "series": "chance@5",
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14 (evil read-out)",
+        "xlabel": "realized n/d",
+        "ylabel": "retrieval accuracy (euclidean, OOF fold pools)",
+        "legend_labels": [
+          "k1 acc@1",
+          "k1 acc@5",
+          "k16 acc@1",
+          "k16 acc@5",
+          "chance@1",
+          "chance@5"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "layer 26 (sycophancy read-out)",
+        "xlabel": "realized n/d",
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "layer 17 (hallucination read-out)",
+        "xlabel": "realized n/d",
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "k1 acc@1",
+      "k1 acc@5",
+      "k16 acc@1",
+      "k16 acc@5",
+      "chance@1",
+      "chance@5"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,239 @@
+{
+  "commit": "12cfdbf3+dirty",
+  "render_id": "02bb01f2330f48c1",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:24Z",
+  "figsize": [
+    7.2,
+    7.0600000000000005
+  ],
+  "points": [
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.08295003199437437,
+      "y": 12.16,
+      "series": "true-map advantage (mapped-answer minus context probe)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.04839764871299204,
+      "y": 11.84,
+      "series": "shuffled-map advantage (pairing-shuffled map)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.12036031924691837,
+      "y": 11.16,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.08084122686935243,
+      "y": 10.84,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.4531163941948357,
+      "y": 10.16,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.5947684512343004,
+      "y": 9.84,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.03323828757268093,
+      "y": 9.16,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.042611103125194796,
+      "y": 8.84,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.04360358558373343,
+      "y": 8.16,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.02831630024306988,
+      "y": 7.84,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.03759503773547753,
+      "y": 7.16,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.007163408029956309,
+      "y": 6.84,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.01175181442723583,
+      "y": 6.16,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.0030205964260731966,
+      "y": 5.84,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.018691788808258836,
+      "y": 5.16,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.014096198985542796,
+      "y": 4.84,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.05470073167904595,
+      "y": 4.16,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.022375038900346422,
+      "y": 3.84,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.11426523755715652,
+      "y": 3.16,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.058040186570515476,
+      "y": 2.84,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.030182622646223022,
+      "y": 2.16,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.011410677615692843,
+      "y": 1.84,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.19604321268322364,
+      "y": 1.16,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": -0.2240963402602234,
+      "y": 0.84,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.3325134918858831,
+      "y": 0.16,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.19581136744887484,
+      "y": -0.16,
+      "_kind": "errorbar",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Probe-on-mapped-answer gain per rung: true map vs shuffled-pairing map",
+        "xlabel": "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)",
+        "legend_labels": [
+          "true-map advantage (mapped-answer minus context probe)",
+          "shuffled-map advantage (pairing-shuffled map)"
+        ],
+        "xticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ],
+        "yticklabels": [
+          "evil: multi-turn human jailbreaks",
+          "evil: PAIR optimizer attacks \u2605",
+          "evil: Tom Gibbs multi-turn",
+          "evil: HH red-team",
+          "evil: ToxicChat",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations \u2605"
+        ]
+      }
+    ],
+    "series": [
+      "true-map advantage (mapped-answer minus context probe)",
+      "shuffled-map advantage (pairing-shuffled map)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

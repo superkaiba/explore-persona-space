@@ -27,6 +27,18 @@ and [[smoke-enum-item-without-dial]] closure checks (path fnmatch against the
 REAL poller glob; dial resolved at runtime, e.g. registry membership of probe
 targets).
 
+**Temp-tree contamination trap (#2479 R2 g5):** when the probe builds a /tmp
+tree (parent blob + sibling scripts + HEAD tests), REAL-COPY the sibling
+scripts — NEVER symlink them. The sibling scripts' own bootstrap does
+`sys.path.insert(0, str(Path(__file__).resolve().parent))`, and `.resolve()`
+follows the symlink back to the WORKTREE scripts dir, inserting it AHEAD of
+the /tmp dir — so the module under test silently imports at HEAD and the
+"pre-fix" run passes everything (observed: 5/5 false PASSes). Certify the
+probe is clean by printing `<mod>.__file__` + `hasattr(<mod>, <new_fn>)`
+from inside the test run (module-level print + `pytest -s`) before trusting
+any parent-blob result; a bare `python -c` import check is NOT sufficient —
+it skips the sibling imports that do the re-inserting.
+
 **Whole-module variant (#2225 R3):** when the tests load the module by FILE
 PATH (`spec_from_file_location` on `scripts/<mod>.py`), the cheapest exact
 probe is: `git show <fix-sha>~1:scripts/<mod>.py > scripts/<mod>.py` in the

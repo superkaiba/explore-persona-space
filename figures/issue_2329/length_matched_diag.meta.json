@@ -1,0 +1,3507 @@
+{
+  "commit": "ebfc987e",
+  "created": "2026-08-18T13:21:25Z",
+  "figsize": [
+    19.0,
+    12.0
+  ],
+  "figure": "length_matched_diag",
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "git_commit": "ebfc987e",
+  "git_dirty": false,
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/stats.json",
+    "eval_results/issue_2329/f_metrics/f_cells.jsonl"
+  ],
+  "len_match_max_abs_delta_tokens": 2,
+  "n_series": 80,
+  "panel_a_omitted_units_n0": [
+    "conflict_format_fwd|ce",
+    "conflict_format_fwd|pe",
+    "conflict_format_rev|ce",
+    "conflict_format_rev|pe",
+    "conflict_persona_fwd|ce",
+    "conflict_persona_fwd|pe",
+    "conflict_persona_rev|ce",
+    "conflict_persona_rev|pe",
+    "constraint_knowledge|ce",
+    "constraint_knowledge|pe",
+    "demo_format|ce",
+    "demo_format|pe",
+    "demo_persona|ce",
+    "demo_persona|pe",
+    "icl_task_mapping|ce",
+    "icl_task_mapping|pe",
+    "instr_format|ce",
+    "instr_format|pe",
+    "language_implied|ce",
+    "language_implied|pe",
+    "load_fact_user_name_l5|pe",
+    "load_instr_format_l3|ce",
+    "load_instr_format_l3|pe",
+    "load_instr_format_l5|ce",
+    "load_instr_format_l5|pe",
+    "persona_prompted|pe",
+    "persona_role_header|ce",
+    "recency_instr_format_d3|ce",
+    "recency_instr_format_d3|pe",
+    "recency_instr_format_d5|ce",
+    "recency_instr_format_d5|pe",
+    "refusal_boundary|ce",
+    "refusal_boundary|pe"
+  ],
+  "panel_a_units": [
+    {
+      "f_all": 0.014678816586367903,
+      "f_matched": 0.014678816586367903,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "fact_assistant_animal|ce"
+    },
+    {
+      "f_all": 0.04317528436571518,
+      "f_matched": 0.04317528436571518,
+      "max_abs_len_delta": 2,
+      "n_all": 22,
+      "n_matched": 22,
+      "unit": "fact_assistant_animal|pe"
+    },
+    {
+      "f_all": 0.00445289337365331,
+      "f_matched": 0.00445289337365331,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "fact_novel_queried|ce"
+    },
+    {
+      "f_all": -9.25611718012347e-05,
+      "f_matched": -9.25611718012347e-05,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "fact_novel_queried|pe"
+    },
+    {
+      "f_all": 0.034035126663945134,
+      "f_matched": 0.034035126663945134,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "fact_user_name|ce"
+    },
+    {
+      "f_all": -0.010342000517812769,
+      "f_matched": -0.010342000517812769,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "fact_user_name|pe"
+    },
+    {
+      "f_all": 0.6991196530520387,
+      "f_matched": 0.6991196530520387,
+      "max_abs_len_delta": 2,
+      "n_all": 35,
+      "n_matched": 35,
+      "unit": "instr_language|ce"
+    },
+    {
+      "f_all": -0.0007971998041637523,
+      "f_matched": -0.0007971998041637523,
+      "max_abs_len_delta": 2,
+      "n_all": 34,
+      "n_matched": 34,
+      "unit": "instr_language|pe"
+    },
+    {
+      "f_all": 0.02733401954587584,
+      "f_matched": 0.02733401954587584,
+      "max_abs_len_delta": 2,
+      "n_all": 36,
+      "n_matched": 36,
+      "unit": "list_numeric_detail|ce"
+    },
+    {
+      "f_all": 0.019847324700084615,
+      "f_matched": 0.019847324700084615,
+      "max_abs_len_delta": 2,
+      "n_all": 36,
+      "n_matched": 36,
+      "unit": "list_numeric_detail|pe"
+    },
+    {
+      "f_all": 0.07771584484391142,
+      "f_matched": 0.07771584484391142,
+      "max_abs_len_delta": 2,
+      "n_all": 35,
+      "n_matched": 35,
+      "unit": "load_fact_assistant_animal_l3|ce"
+    },
+    {
+      "f_all": 0.025590933913985613,
+      "f_matched": 0.025590933913985613,
+      "max_abs_len_delta": 2,
+      "n_all": 35,
+      "n_matched": 35,
+      "unit": "load_fact_assistant_animal_l3|pe"
+    },
+    {
+      "f_all": 0.043949471014223945,
+      "f_matched": 0.043949471014223945,
+      "max_abs_len_delta": 2,
+      "n_all": 34,
+      "n_matched": 34,
+      "unit": "load_fact_assistant_animal_l5|ce"
+    },
+    {
+      "f_all": 0.03784069304742364,
+      "f_matched": 0.03784069304742364,
+      "max_abs_len_delta": 2,
+      "n_all": 34,
+      "n_matched": 34,
+      "unit": "load_fact_assistant_animal_l5|pe"
+    },
+    {
+      "f_all": 0.007999468578980335,
+      "f_matched": 0.007999468578980335,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "load_fact_user_name_l3|ce"
+    },
+    {
+      "f_all": -0.0019984089567160416,
+      "f_matched": -0.0019984089567160416,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "load_fact_user_name_l3|pe"
+    },
+    {
+      "f_all": 0.025044642433908783,
+      "f_matched": 0.025044642433908783,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "load_fact_user_name_l5|ce"
+    },
+    {
+      "f_all": 0.1000934918815578,
+      "f_matched": 0.0891719807509752,
+      "max_abs_len_delta": 2,
+      "n_all": 34,
+      "n_matched": 12,
+      "unit": "persona_prompted|ce"
+    },
+    {
+      "f_all": 0.002692518060285873,
+      "f_matched": 0.00732777041042089,
+      "max_abs_len_delta": 2,
+      "n_all": 36,
+      "n_matched": 12,
+      "unit": "prior_topic|ce"
+    },
+    {
+      "f_all": -0.0010085197551963003,
+      "f_matched": -0.0010254041927537096,
+      "max_abs_len_delta": 2,
+      "n_all": 36,
+      "n_matched": 12,
+      "unit": "prior_topic|pe"
+    },
+    {
+      "f_all": 0.06923041658763347,
+      "f_matched": 0.18354774421819411,
+      "max_abs_len_delta": 2,
+      "n_all": 35,
+      "n_matched": 3,
+      "unit": "query_content|ce"
+    },
+    {
+      "f_all": 0.011248456620472067,
+      "f_matched": 0.06187259206449001,
+      "max_abs_len_delta": 2,
+      "n_all": 35,
+      "n_matched": 3,
+      "unit": "query_content|pe"
+    },
+    {
+      "f_all": 0.3193576725149248,
+      "f_matched": 0.3874573997489571,
+      "max_abs_len_delta": 2,
+      "n_all": 27,
+      "n_matched": 20,
+      "unit": "reasoning_style|ce"
+    },
+    {
+      "f_all": 0.06557505934650337,
+      "f_matched": 0.059550109474364656,
+      "max_abs_len_delta": 2,
+      "n_all": 27,
+      "n_matched": 20,
+      "unit": "reasoning_style|pe"
+    },
+    {
+      "f_all": 0.03233471137210542,
+      "f_matched": 0.03233471137210542,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "recency_fact_user_name_d3|ce"
+    },
+    {
+      "f_all": 0.0026703677618743213,
+      "f_matched": 0.0026703677618743213,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "recency_fact_user_name_d3|pe"
+    },
+    {
+      "f_all": 0.05278089253851536,
+      "f_matched": 0.05278089253851536,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "recency_fact_user_name_d5|ce"
+    },
+    {
+      "f_all": 0.0011494689359449835,
+      "f_matched": 0.0011494689359449835,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 33,
+      "unit": "recency_fact_user_name_d5|pe"
+    },
+    {
+      "f_all": 0.22433912617093174,
+      "f_matched": 0.0527821779750214,
+      "max_abs_len_delta": 2,
+      "n_all": 29,
+      "n_matched": 10,
+      "unit": "recency_persona_prompted_d3|ce"
+    },
+    {
+      "f_all": 0.02046349450071373,
+      "f_matched": 0.012337911576268523,
+      "max_abs_len_delta": 2,
+      "n_all": 29,
+      "n_matched": 10,
+      "unit": "recency_persona_prompted_d3|pe"
+    },
+    {
+      "f_all": 0.3298632713560955,
+      "f_matched": 0.17531719287054381,
+      "max_abs_len_delta": 2,
+      "n_all": 24,
+      "n_matched": 8,
+      "unit": "recency_persona_prompted_d5|ce"
+    },
+    {
+      "f_all": 0.042400007392724426,
+      "f_matched": 0.07542921709717545,
+      "max_abs_len_delta": 2,
+      "n_all": 24,
+      "n_matched": 8,
+      "unit": "recency_persona_prompted_d5|pe"
+    },
+    {
+      "f_all": 0.03756830250842406,
+      "f_matched": 0.03156819291981826,
+      "max_abs_len_delta": 2,
+      "n_all": 27,
+      "n_matched": 8,
+      "unit": "recency_prior_topic_d3|ce"
+    },
+    {
+      "f_all": 0.013062620097044146,
+      "f_matched": 0.024842979865701397,
+      "max_abs_len_delta": 2,
+      "n_all": 27,
+      "n_matched": 8,
+      "unit": "recency_prior_topic_d3|pe"
+    },
+    {
+      "f_all": 0.08809987474861038,
+      "f_matched": 0.06100095773906321,
+      "max_abs_len_delta": 2,
+      "n_all": 15,
+      "n_matched": 5,
+      "unit": "recency_prior_topic_d5|ce"
+    },
+    {
+      "f_all": 0.06126707977347664,
+      "f_matched": -0.0179120100958961,
+      "max_abs_len_delta": 2,
+      "n_all": 15,
+      "n_matched": 5,
+      "unit": "recency_prior_topic_d5|pe"
+    },
+    {
+      "f_all": 0.08426644418509825,
+      "f_matched": 0.08426644418509825,
+      "max_abs_len_delta": 2,
+      "n_all": 15,
+      "n_matched": 15,
+      "unit": "user_emotion|ce"
+    },
+    {
+      "f_all": 0.029096423401676102,
+      "f_matched": 0.029096423401676102,
+      "max_abs_len_delta": 2,
+      "n_all": 15,
+      "n_matched": 15,
+      "unit": "user_emotion|pe"
+    },
+    {
+      "f_all": 0.1891448021805831,
+      "f_matched": 0.18243901468001983,
+      "max_abs_len_delta": 2,
+      "n_all": 27,
+      "n_matched": 17,
+      "unit": "user_expertise|ce"
+    },
+    {
+      "f_all": 0.05799535517405848,
+      "f_matched": 0.05773104776984567,
+      "max_abs_len_delta": 2,
+      "n_all": 27,
+      "n_matched": 17,
+      "unit": "user_expertise|pe"
+    },
+    {
+      "f_all": 0.44779555837908,
+      "f_matched": 0.4370922315984254,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 10,
+      "unit": "verbosity|ce"
+    },
+    {
+      "f_all": 0.02299119572364087,
+      "f_matched": -0.03544859936670637,
+      "max_abs_len_delta": 2,
+      "n_all": 33,
+      "n_matched": 10,
+      "unit": "verbosity|pe"
+    }
+  ],
+  "points": [
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.014678816586367903,
+      "x": 0.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.04317528436571518,
+      "x": 1.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.00445289337365331,
+      "x": 2.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": -9.25611718012347e-05,
+      "x": 3.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.034035126663945134,
+      "x": 4.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": -0.010342000517812769,
+      "x": 5.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.6991196530520387,
+      "x": 6.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": -0.0007971998041637523,
+      "x": 7.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.02733401954587584,
+      "x": 8.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.019847324700084615,
+      "x": 9.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.07771584484391142,
+      "x": 10.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.025590933913985613,
+      "x": 11.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.043949471014223945,
+      "x": 12.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.03784069304742364,
+      "x": 13.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.007999468578980335,
+      "x": 14.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": -0.0019984089567160416,
+      "x": 15.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.025044642433908783,
+      "x": 16.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.1000934918815578,
+      "x": 17.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.002692518060285873,
+      "x": 18.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": -0.0010085197551963003,
+      "x": 19.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.06923041658763347,
+      "x": 20.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.011248456620472067,
+      "x": 21.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.3193576725149248,
+      "x": 22.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.06557505934650337,
+      "x": 23.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.03233471137210542,
+      "x": 24.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.0026703677618743213,
+      "x": 25.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.05278089253851536,
+      "x": 26.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.0011494689359449835,
+      "x": 27.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.22433912617093174,
+      "x": 28.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.02046349450071373,
+      "x": 29.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.3298632713560955,
+      "x": 30.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.042400007392724426,
+      "x": 31.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.03756830250842406,
+      "x": 32.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.013062620097044146,
+      "x": 33.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.08809987474861038,
+      "x": 34.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.06126707977347664,
+      "x": 35.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.08426644418509825,
+      "x": 36.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.029096423401676102,
+      "x": 37.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.1891448021805831,
+      "x": 38.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.05799535517405848,
+      "x": 39.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.44779555837908,
+      "x": 40.0
+    },
+    {
+      "_group": 0,
+      "_kind": "scatter",
+      "series": "steered, all post-exclusion pairs",
+      "steered F_beh (mean over pairs)": 0.02299119572364087,
+      "x": 41.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.014678816586367903,
+      "x": 0.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.04317528436571518,
+      "x": 1.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.00445289337365331,
+      "x": 2.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": -9.25611718012347e-05,
+      "x": 3.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.034035126663945134,
+      "x": 4.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": -0.010342000517812769,
+      "x": 5.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.6991196530520387,
+      "x": 6.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": -0.0007971998041637523,
+      "x": 7.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.02733401954587584,
+      "x": 8.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.019847324700084615,
+      "x": 9.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.07771584484391142,
+      "x": 10.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.025590933913985613,
+      "x": 11.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.043949471014223945,
+      "x": 12.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.03784069304742364,
+      "x": 13.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.007999468578980335,
+      "x": 14.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": -0.0019984089567160416,
+      "x": 15.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.025044642433908783,
+      "x": 16.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.0891719807509752,
+      "x": 17.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.00732777041042089,
+      "x": 18.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": -0.0010254041927537096,
+      "x": 19.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.18354774421819411,
+      "x": 20.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.06187259206449001,
+      "x": 21.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.3874573997489571,
+      "x": 22.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.059550109474364656,
+      "x": 23.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.03233471137210542,
+      "x": 24.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.0026703677618743213,
+      "x": 25.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.05278089253851536,
+      "x": 26.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.0011494689359449835,
+      "x": 27.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.0527821779750214,
+      "x": 28.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.012337911576268523,
+      "x": 29.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.17531719287054381,
+      "x": 30.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.07542921709717545,
+      "x": 31.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.03156819291981826,
+      "x": 32.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.024842979865701397,
+      "x": 33.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.06100095773906321,
+      "x": 34.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": -0.0179120100958961,
+      "x": 35.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.08426644418509825,
+      "x": 36.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.029096423401676102,
+      "x": 37.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.18243901468001983,
+      "x": 38.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.05773104776984567,
+      "x": 39.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": 0.4370922315984254,
+      "x": 40.0
+    },
+    {
+      "_group": 1,
+      "_kind": "scatter",
+      "series": "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "steered F_beh (mean over pairs)": -0.03544859936670637,
+      "x": 41.0
+    },
+    {
+      "_group": 2,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": -0.3
+    },
+    {
+      "_group": 2,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 0.3
+    },
+    {
+      "_group": 2,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": 0.3
+    },
+    {
+      "_group": 2,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": -0.3
+    },
+    {
+      "_group": 2,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": -0.3
+    },
+    {
+      "_group": 3,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 0.7
+    },
+    {
+      "_group": 3,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 1.3
+    },
+    {
+      "_group": 3,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": 1.3
+    },
+    {
+      "_group": 3,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": 0.7
+    },
+    {
+      "_group": 3,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 0.7
+    },
+    {
+      "_group": 4,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 1.7
+    },
+    {
+      "_group": 4,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 2.3
+    },
+    {
+      "_group": 4,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 24.0,
+      "x": 2.3
+    },
+    {
+      "_group": 4,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 24.0,
+      "x": 1.7
+    },
+    {
+      "_group": 4,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 1.7
+    },
+    {
+      "_group": 5,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 2.7
+    },
+    {
+      "_group": 5,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 3.3
+    },
+    {
+      "_group": 5,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 24.0,
+      "x": 3.3
+    },
+    {
+      "_group": 5,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 24.0,
+      "x": 2.7
+    },
+    {
+      "_group": 5,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 2.7
+    },
+    {
+      "_group": 6,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 3.7
+    },
+    {
+      "_group": 6,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 4.3
+    },
+    {
+      "_group": 6,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 11.0,
+      "x": 4.3
+    },
+    {
+      "_group": 6,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 11.0,
+      "x": 3.7
+    },
+    {
+      "_group": 6,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 3.7
+    },
+    {
+      "_group": 7,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 4.7
+    },
+    {
+      "_group": 7,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 5.3
+    },
+    {
+      "_group": 7,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 11.0,
+      "x": 5.3
+    },
+    {
+      "_group": 7,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 11.0,
+      "x": 4.7
+    },
+    {
+      "_group": 7,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -19.0,
+      "x": 4.7
+    },
+    {
+      "_group": 8,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -11.0,
+      "x": 5.7
+    },
+    {
+      "_group": 8,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -11.0,
+      "x": 6.3
+    },
+    {
+      "_group": 8,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": 6.3
+    },
+    {
+      "_group": 8,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": 5.7
+    },
+    {
+      "_group": 8,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -11.0,
+      "x": 5.7
+    },
+    {
+      "_group": 9,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -11.0,
+      "x": 6.7
+    },
+    {
+      "_group": 9,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -11.0,
+      "x": 7.3
+    },
+    {
+      "_group": 9,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": 7.3
+    },
+    {
+      "_group": 9,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 19.0,
+      "x": 6.7
+    },
+    {
+      "_group": 9,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -11.0,
+      "x": 6.7
+    },
+    {
+      "_group": 10,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -6.0,
+      "x": 7.7
+    },
+    {
+      "_group": 10,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -6.0,
+      "x": 8.3
+    },
+    {
+      "_group": 10,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 8.3
+    },
+    {
+      "_group": 10,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 7.7
+    },
+    {
+      "_group": 10,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -6.0,
+      "x": 7.7
+    },
+    {
+      "_group": 11,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -6.0,
+      "x": 8.7
+    },
+    {
+      "_group": 11,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -6.0,
+      "x": 9.3
+    },
+    {
+      "_group": 11,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 9.3
+    },
+    {
+      "_group": 11,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 8.7
+    },
+    {
+      "_group": 11,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -6.0,
+      "x": 8.7
+    },
+    {
+      "_group": 12,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -22.0,
+      "x": 9.7
+    },
+    {
+      "_group": 12,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -22.0,
+      "x": 10.3
+    },
+    {
+      "_group": 12,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 30.0,
+      "x": 10.3
+    },
+    {
+      "_group": 12,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 30.0,
+      "x": 9.7
+    },
+    {
+      "_group": 12,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -22.0,
+      "x": 9.7
+    },
+    {
+      "_group": 13,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -22.0,
+      "x": 10.7
+    },
+    {
+      "_group": 13,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -22.0,
+      "x": 11.3
+    },
+    {
+      "_group": 13,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 30.0,
+      "x": 11.3
+    },
+    {
+      "_group": 13,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 30.0,
+      "x": 10.7
+    },
+    {
+      "_group": 13,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -22.0,
+      "x": 10.7
+    },
+    {
+      "_group": 14,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -60.0,
+      "x": 11.7
+    },
+    {
+      "_group": 14,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -60.0,
+      "x": 12.3
+    },
+    {
+      "_group": 14,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 39.0,
+      "x": 12.3
+    },
+    {
+      "_group": 14,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 39.0,
+      "x": 11.7
+    },
+    {
+      "_group": 14,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -60.0,
+      "x": 11.7
+    },
+    {
+      "_group": 15,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -60.0,
+      "x": 12.7
+    },
+    {
+      "_group": 15,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -60.0,
+      "x": 13.3
+    },
+    {
+      "_group": 15,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 39.0,
+      "x": 13.3
+    },
+    {
+      "_group": 15,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 39.0,
+      "x": 12.7
+    },
+    {
+      "_group": 15,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -60.0,
+      "x": 12.7
+    },
+    {
+      "_group": 16,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 13.7
+    },
+    {
+      "_group": 16,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 14.3
+    },
+    {
+      "_group": 16,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 14.3
+    },
+    {
+      "_group": 16,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 13.7
+    },
+    {
+      "_group": 16,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 13.7
+    },
+    {
+      "_group": 17,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 14.7
+    },
+    {
+      "_group": 17,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 15.3
+    },
+    {
+      "_group": 17,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 15.3
+    },
+    {
+      "_group": 17,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 14.7
+    },
+    {
+      "_group": 17,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 14.7
+    },
+    {
+      "_group": 18,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 15.7
+    },
+    {
+      "_group": 18,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 16.3
+    },
+    {
+      "_group": 18,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 16.3
+    },
+    {
+      "_group": 18,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 15.7
+    },
+    {
+      "_group": 18,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 15.7
+    },
+    {
+      "_group": 19,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 16.7
+    },
+    {
+      "_group": 19,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 17.3
+    },
+    {
+      "_group": 19,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 17.3
+    },
+    {
+      "_group": 19,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 16.7
+    },
+    {
+      "_group": 19,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 16.7
+    },
+    {
+      "_group": 20,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 17.7
+    },
+    {
+      "_group": 20,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 18.3
+    },
+    {
+      "_group": 20,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 18.3
+    },
+    {
+      "_group": 20,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 17.7
+    },
+    {
+      "_group": 20,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 17.7
+    },
+    {
+      "_group": 21,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 18.7
+    },
+    {
+      "_group": 21,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 19.3
+    },
+    {
+      "_group": 21,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 19.3
+    },
+    {
+      "_group": 21,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 18.7
+    },
+    {
+      "_group": 21,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 18.7
+    },
+    {
+      "_group": 22,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 19.7
+    },
+    {
+      "_group": 22,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 20.3
+    },
+    {
+      "_group": 22,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 20.3
+    },
+    {
+      "_group": 22,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 19.7
+    },
+    {
+      "_group": 22,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 19.7
+    },
+    {
+      "_group": 23,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 20.7
+    },
+    {
+      "_group": 23,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 21.3
+    },
+    {
+      "_group": 23,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 21.3
+    },
+    {
+      "_group": 23,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 20.7
+    },
+    {
+      "_group": 23,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 20.7
+    },
+    {
+      "_group": 24,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 21.7
+    },
+    {
+      "_group": 24,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 22.3
+    },
+    {
+      "_group": 24,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 22.3
+    },
+    {
+      "_group": 24,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 21.7
+    },
+    {
+      "_group": 24,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 21.7
+    },
+    {
+      "_group": 25,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 22.7
+    },
+    {
+      "_group": 25,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 23.3
+    },
+    {
+      "_group": 25,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 23.3
+    },
+    {
+      "_group": 25,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 22.7
+    },
+    {
+      "_group": 25,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 22.7
+    },
+    {
+      "_group": 26,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 23.7
+    },
+    {
+      "_group": 26,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 24.3
+    },
+    {
+      "_group": 26,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 24.3
+    },
+    {
+      "_group": 26,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 23.7
+    },
+    {
+      "_group": 26,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 23.7
+    },
+    {
+      "_group": 27,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 24.7
+    },
+    {
+      "_group": 27,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 25.3
+    },
+    {
+      "_group": 27,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 25.3
+    },
+    {
+      "_group": 27,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 24.7
+    },
+    {
+      "_group": 27,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 0.0,
+      "x": 24.7
+    },
+    {
+      "_group": 28,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -20.0,
+      "x": 25.7
+    },
+    {
+      "_group": 28,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -20.0,
+      "x": 26.3
+    },
+    {
+      "_group": 28,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 28.25,
+      "x": 26.3
+    },
+    {
+      "_group": 28,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 28.25,
+      "x": 25.7
+    },
+    {
+      "_group": 28,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -20.0,
+      "x": 25.7
+    },
+    {
+      "_group": 29,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -20.0,
+      "x": 26.7
+    },
+    {
+      "_group": 29,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -20.0,
+      "x": 27.3
+    },
+    {
+      "_group": 29,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 28.25,
+      "x": 27.3
+    },
+    {
+      "_group": 29,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 28.25,
+      "x": 26.7
+    },
+    {
+      "_group": 29,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -20.0,
+      "x": 26.7
+    },
+    {
+      "_group": 30,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 27.7
+    },
+    {
+      "_group": 30,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 28.3
+    },
+    {
+      "_group": 30,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 28.3
+    },
+    {
+      "_group": 30,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 27.7
+    },
+    {
+      "_group": 30,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 27.7
+    },
+    {
+      "_group": 31,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 28.7
+    },
+    {
+      "_group": 31,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 29.3
+    },
+    {
+      "_group": 31,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 29.3
+    },
+    {
+      "_group": 31,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 28.7
+    },
+    {
+      "_group": 31,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 28.7
+    },
+    {
+      "_group": 32,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 29.7
+    },
+    {
+      "_group": 32,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 30.3
+    },
+    {
+      "_group": 32,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 30.3
+    },
+    {
+      "_group": 32,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 29.7
+    },
+    {
+      "_group": 32,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 29.7
+    },
+    {
+      "_group": 33,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 30.7
+    },
+    {
+      "_group": 33,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 31.3
+    },
+    {
+      "_group": 33,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 31.3
+    },
+    {
+      "_group": 33,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 30.7
+    },
+    {
+      "_group": 33,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 30.7
+    },
+    {
+      "_group": 34,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 31.7
+    },
+    {
+      "_group": 34,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 32.3
+    },
+    {
+      "_group": 34,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 32.3
+    },
+    {
+      "_group": 34,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 31.7
+    },
+    {
+      "_group": 34,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 31.7
+    },
+    {
+      "_group": 35,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 32.7
+    },
+    {
+      "_group": 35,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 33.3
+    },
+    {
+      "_group": 35,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 33.3
+    },
+    {
+      "_group": 35,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 32.7
+    },
+    {
+      "_group": 35,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 32.7
+    },
+    {
+      "_group": 36,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 33.7
+    },
+    {
+      "_group": 36,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 34.3
+    },
+    {
+      "_group": 36,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 34.3
+    },
+    {
+      "_group": 36,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 33.7
+    },
+    {
+      "_group": 36,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 33.7
+    },
+    {
+      "_group": 37,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 34.7
+    },
+    {
+      "_group": 37,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 35.3
+    },
+    {
+      "_group": 37,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 35.3
+    },
+    {
+      "_group": 37,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 34.7
+    },
+    {
+      "_group": 37,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 34.7
+    },
+    {
+      "_group": 38,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 35.7
+    },
+    {
+      "_group": 38,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 36.3
+    },
+    {
+      "_group": 38,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 36.3
+    },
+    {
+      "_group": 38,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 35.7
+    },
+    {
+      "_group": 38,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 35.7
+    },
+    {
+      "_group": 39,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 36.7
+    },
+    {
+      "_group": 39,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 37.3
+    },
+    {
+      "_group": 39,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 37.3
+    },
+    {
+      "_group": 39,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 36.7
+    },
+    {
+      "_group": 39,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 36.7
+    },
+    {
+      "_group": 40,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 37.7
+    },
+    {
+      "_group": 40,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 38.3
+    },
+    {
+      "_group": 40,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 38.3
+    },
+    {
+      "_group": 40,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 37.7
+    },
+    {
+      "_group": 40,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 37.7
+    },
+    {
+      "_group": 41,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 38.7
+    },
+    {
+      "_group": 41,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 39.3
+    },
+    {
+      "_group": 41,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 39.3
+    },
+    {
+      "_group": 41,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 38.7
+    },
+    {
+      "_group": 41,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 38.7
+    },
+    {
+      "_group": 42,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 39.7
+    },
+    {
+      "_group": 42,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 40.3
+    },
+    {
+      "_group": 42,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 40.3
+    },
+    {
+      "_group": 42,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 39.7
+    },
+    {
+      "_group": 42,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 39.7
+    },
+    {
+      "_group": 43,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 40.7
+    },
+    {
+      "_group": 43,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 41.3
+    },
+    {
+      "_group": 43,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 41.3
+    },
+    {
+      "_group": 43,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 40.7
+    },
+    {
+      "_group": 43,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 40.7
+    },
+    {
+      "_group": 44,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 41.7
+    },
+    {
+      "_group": 44,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 42.3
+    },
+    {
+      "_group": 44,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 42.3
+    },
+    {
+      "_group": 44,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 41.7
+    },
+    {
+      "_group": 44,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 41.7
+    },
+    {
+      "_group": 45,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 42.7
+    },
+    {
+      "_group": 45,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 43.3
+    },
+    {
+      "_group": 45,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 43.3
+    },
+    {
+      "_group": 45,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 42.7
+    },
+    {
+      "_group": 45,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 42.7
+    },
+    {
+      "_group": 46,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 43.7
+    },
+    {
+      "_group": 46,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 44.3
+    },
+    {
+      "_group": 46,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 44.3
+    },
+    {
+      "_group": 46,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 43.7
+    },
+    {
+      "_group": 46,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 43.7
+    },
+    {
+      "_group": 47,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 44.7
+    },
+    {
+      "_group": 47,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 45.3
+    },
+    {
+      "_group": 47,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 45.3
+    },
+    {
+      "_group": 47,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 44.7
+    },
+    {
+      "_group": 47,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 44.7
+    },
+    {
+      "_group": 48,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 45.7
+    },
+    {
+      "_group": 48,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 46.3
+    },
+    {
+      "_group": 48,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 46.3
+    },
+    {
+      "_group": 48,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 45.7
+    },
+    {
+      "_group": 48,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 45.7
+    },
+    {
+      "_group": 49,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -7.75,
+      "x": 46.7
+    },
+    {
+      "_group": 49,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -7.75,
+      "x": 47.3
+    },
+    {
+      "_group": 49,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 9.25,
+      "x": 47.3
+    },
+    {
+      "_group": 49,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 9.25,
+      "x": 46.7
+    },
+    {
+      "_group": 49,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -7.75,
+      "x": 46.7
+    },
+    {
+      "_group": 50,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -43.0,
+      "x": 47.0
+    },
+    {
+      "_group": 50,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -49.0,
+      "x": 47.0
+    },
+    {
+      "_group": 50,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -58.0,
+      "x": 47.0
+    },
+    {
+      "_group": 50,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 43.0,
+      "x": 47.0
+    },
+    {
+      "_group": 50,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 49.0,
+      "x": 47.0
+    },
+    {
+      "_group": 50,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 41.0,
+      "x": 47.0
+    },
+    {
+      "_group": 50,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 49.0,
+      "x": 47.0
+    },
+    {
+      "_group": 51,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -7.75,
+      "x": 47.7
+    },
+    {
+      "_group": 51,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -7.75,
+      "x": 48.3
+    },
+    {
+      "_group": 51,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 9.25,
+      "x": 48.3
+    },
+    {
+      "_group": 51,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 9.25,
+      "x": 47.7
+    },
+    {
+      "_group": 51,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -7.75,
+      "x": 47.7
+    },
+    {
+      "_group": 52,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -43.0,
+      "x": 48.0
+    },
+    {
+      "_group": 52,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -49.0,
+      "x": 48.0
+    },
+    {
+      "_group": 52,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -58.0,
+      "x": 48.0
+    },
+    {
+      "_group": 52,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 43.0,
+      "x": 48.0
+    },
+    {
+      "_group": 52,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 49.0,
+      "x": 48.0
+    },
+    {
+      "_group": 52,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 41.0,
+      "x": 48.0
+    },
+    {
+      "_group": 52,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 49.0,
+      "x": 48.0
+    },
+    {
+      "_group": 53,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 48.7
+    },
+    {
+      "_group": 53,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 49.3
+    },
+    {
+      "_group": 53,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 49.3
+    },
+    {
+      "_group": 53,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 48.7
+    },
+    {
+      "_group": 53,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 48.7
+    },
+    {
+      "_group": 54,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 49.7
+    },
+    {
+      "_group": 54,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 50.3
+    },
+    {
+      "_group": 54,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 50.3
+    },
+    {
+      "_group": 54,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 3.0,
+      "x": 49.7
+    },
+    {
+      "_group": 54,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -2.0,
+      "x": 49.7
+    },
+    {
+      "_group": 55,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 50.7
+    },
+    {
+      "_group": 55,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 51.3
+    },
+    {
+      "_group": 55,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 51.3
+    },
+    {
+      "_group": 55,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 50.7
+    },
+    {
+      "_group": 55,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 50.7
+    },
+    {
+      "_group": 56,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 51.7
+    },
+    {
+      "_group": 56,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 52.3
+    },
+    {
+      "_group": 56,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 52.3
+    },
+    {
+      "_group": 56,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 51.7
+    },
+    {
+      "_group": 56,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 51.7
+    },
+    {
+      "_group": 57,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 52.7
+    },
+    {
+      "_group": 57,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 53.3
+    },
+    {
+      "_group": 57,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 53.3
+    },
+    {
+      "_group": 57,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 52.7
+    },
+    {
+      "_group": 57,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 52.7
+    },
+    {
+      "_group": 58,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 53.7
+    },
+    {
+      "_group": 58,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 54.3
+    },
+    {
+      "_group": 58,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 54.3
+    },
+    {
+      "_group": 58,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 53.7
+    },
+    {
+      "_group": 58,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 53.7
+    },
+    {
+      "_group": 59,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 54.7
+    },
+    {
+      "_group": 59,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 55.3
+    },
+    {
+      "_group": 59,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 55.3
+    },
+    {
+      "_group": 59,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 54.7
+    },
+    {
+      "_group": 59,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 54.7
+    },
+    {
+      "_group": 60,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 55.7
+    },
+    {
+      "_group": 60,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 56.3
+    },
+    {
+      "_group": 60,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 56.3
+    },
+    {
+      "_group": 60,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 55.7
+    },
+    {
+      "_group": 60,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 55.7
+    },
+    {
+      "_group": 61,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 56.7
+    },
+    {
+      "_group": 61,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 57.3
+    },
+    {
+      "_group": 61,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 57.3
+    },
+    {
+      "_group": 61,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 56.7
+    },
+    {
+      "_group": 61,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 56.7
+    },
+    {
+      "_group": 62,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 57.7
+    },
+    {
+      "_group": 62,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 58.3
+    },
+    {
+      "_group": 62,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 58.3
+    },
+    {
+      "_group": 62,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 6.0,
+      "x": 57.7
+    },
+    {
+      "_group": 62,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 57.7
+    },
+    {
+      "_group": 63,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 58.7
+    },
+    {
+      "_group": 63,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 59.3
+    },
+    {
+      "_group": 63,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 59.3
+    },
+    {
+      "_group": 63,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 58.7
+    },
+    {
+      "_group": 63,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 58.7
+    },
+    {
+      "_group": 64,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 59.7
+    },
+    {
+      "_group": 64,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 60.3
+    },
+    {
+      "_group": 64,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 60.3
+    },
+    {
+      "_group": 64,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 59.7
+    },
+    {
+      "_group": 64,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 59.7
+    },
+    {
+      "_group": 65,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 60.7
+    },
+    {
+      "_group": 65,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 61.3
+    },
+    {
+      "_group": 65,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 61.3
+    },
+    {
+      "_group": 65,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 60.7
+    },
+    {
+      "_group": 65,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 60.7
+    },
+    {
+      "_group": 66,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 61.7
+    },
+    {
+      "_group": 66,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 62.3
+    },
+    {
+      "_group": 66,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 62.3
+    },
+    {
+      "_group": 66,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 50.0,
+      "x": 61.7
+    },
+    {
+      "_group": 66,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 61.7
+    },
+    {
+      "_group": 67,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 62.7
+    },
+    {
+      "_group": 67,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 63.3
+    },
+    {
+      "_group": 67,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 63.3
+    },
+    {
+      "_group": 67,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 62.7
+    },
+    {
+      "_group": 67,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 62.7
+    },
+    {
+      "_group": 68,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 63.7
+    },
+    {
+      "_group": 68,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 64.3
+    },
+    {
+      "_group": 68,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 64.3
+    },
+    {
+      "_group": 68,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 63.7
+    },
+    {
+      "_group": 68,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 63.7
+    },
+    {
+      "_group": 69,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 64.7
+    },
+    {
+      "_group": 69,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 65.3
+    },
+    {
+      "_group": 69,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 65.3
+    },
+    {
+      "_group": 69,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 64.7
+    },
+    {
+      "_group": 69,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 64.7
+    },
+    {
+      "_group": 70,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 65.7
+    },
+    {
+      "_group": 70,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 66.3
+    },
+    {
+      "_group": 70,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 66.3
+    },
+    {
+      "_group": 70,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 54.0,
+      "x": 65.7
+    },
+    {
+      "_group": 70,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -52.0,
+      "x": 65.7
+    },
+    {
+      "_group": 71,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 66.7
+    },
+    {
+      "_group": 71,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 67.3
+    },
+    {
+      "_group": 71,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 32.0,
+      "x": 67.3
+    },
+    {
+      "_group": 71,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 32.0,
+      "x": 66.7
+    },
+    {
+      "_group": 71,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 66.7
+    },
+    {
+      "_group": 72,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 67.7
+    },
+    {
+      "_group": 72,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 68.3
+    },
+    {
+      "_group": 72,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 32.0,
+      "x": 68.3
+    },
+    {
+      "_group": 72,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 32.0,
+      "x": 67.7
+    },
+    {
+      "_group": 72,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -24.0,
+      "x": 67.7
+    },
+    {
+      "_group": 73,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 68.7
+    },
+    {
+      "_group": 73,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 69.3
+    },
+    {
+      "_group": 73,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 69.3
+    },
+    {
+      "_group": 73,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 68.7
+    },
+    {
+      "_group": 73,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 68.7
+    },
+    {
+      "_group": 74,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 69.7
+    },
+    {
+      "_group": 74,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 70.3
+    },
+    {
+      "_group": 74,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 70.3
+    },
+    {
+      "_group": 74,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 1.0,
+      "x": 69.7
+    },
+    {
+      "_group": 74,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -1.0,
+      "x": 69.7
+    },
+    {
+      "_group": 75,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 70.7
+    },
+    {
+      "_group": 75,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 71.3
+    },
+    {
+      "_group": 75,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 71.3
+    },
+    {
+      "_group": 75,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 70.7
+    },
+    {
+      "_group": 75,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 70.7
+    },
+    {
+      "_group": 76,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 71.7
+    },
+    {
+      "_group": 76,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 72.3
+    },
+    {
+      "_group": 76,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 72.3
+    },
+    {
+      "_group": 76,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "x": 71.7
+    },
+    {
+      "_group": 76,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -3.0,
+      "x": 71.7
+    },
+    {
+      "_group": 77,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 72.7
+    },
+    {
+      "_group": 77,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 73.3
+    },
+    {
+      "_group": 77,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 73.3
+    },
+    {
+      "_group": 77,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 72.7
+    },
+    {
+      "_group": 77,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 72.7
+    },
+    {
+      "_group": 78,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 73.7
+    },
+    {
+      "_group": 78,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 74.3
+    },
+    {
+      "_group": 78,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 74.3
+    },
+    {
+      "_group": 78,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 4.0,
+      "x": 73.7
+    },
+    {
+      "_group": 78,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": -4.0,
+      "x": 73.7
+    },
+    {
+      "_group": 79,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "series": "length-match threshold (\u00b12 tokens)",
+      "x": 0.0
+    },
+    {
+      "_group": 79,
+      "_kind": "line",
+      "per-pair \u0394 ctx length (tokens; value B \u2212 value A)": 2.0,
+      "series": "length-match threshold (\u00b12 tokens)",
+      "x": 1.0
+    }
+  ],
+  "provenance": {
+    "git_commit": "ebfc987e",
+    "git_dirty": false
+  },
+  "render_id": "a70ba8825ae64ef4",
+  "text": {
+    "axes": [
+      {
+        "legend_labels": [
+          "steered, all post-exclusion pairs",
+          "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)"
+        ],
+        "title_left": "Length-matched recount vs unmatched steered F_beh per (type-cell \u00d7 slot) \u2014 42 of 75 units with \u22651 pair at |\u0394 ctx len| \u2264 2 tokens; 33 units with no length-matched pairs omitted; tick = unit + n matched/all",
+        "xticklabels": [
+          "fact_assistant_animal|ce\n33/33",
+          "fact_assistant_animal|pe\n22/22",
+          "fact_novel_queried|ce\n33/33",
+          "fact_novel_queried|pe\n33/33",
+          "fact_user_name|ce\n33/33",
+          "fact_user_name|pe\n33/33",
+          "instr_language|ce\n35/35",
+          "instr_language|pe\n34/34",
+          "list_numeric_detail|ce\n36/36",
+          "list_numeric_detail|pe\n36/36",
+          "load_fact_assistant_animal_l3|ce\n35/35",
+          "load_fact_assistant_animal_l3|pe\n35/35",
+          "load_fact_assistant_animal_l5|ce\n34/34",
+          "load_fact_assistant_animal_l5|pe\n34/34",
+          "load_fact_user_name_l3|ce\n33/33",
+          "load_fact_user_name_l3|pe\n33/33",
+          "load_fact_user_name_l5|ce\n33/33",
+          "persona_prompted|ce\n12/34",
+          "prior_topic|ce\n12/36",
+          "prior_topic|pe\n12/36",
+          "query_content|ce\n3/35",
+          "query_content|pe\n3/35",
+          "reasoning_style|ce\n20/27",
+          "reasoning_style|pe\n20/27",
+          "recency_fact_user_name_d3|ce\n33/33",
+          "recency_fact_user_name_d3|pe\n33/33",
+          "recency_fact_user_name_d5|ce\n33/33",
+          "recency_fact_user_name_d5|pe\n33/33",
+          "recency_persona_prompted_d3|ce\n10/29",
+          "recency_persona_prompted_d3|pe\n10/29",
+          "recency_persona_prompted_d5|ce\n8/24",
+          "recency_persona_prompted_d5|pe\n8/24",
+          "recency_prior_topic_d3|ce\n8/27",
+          "recency_prior_topic_d3|pe\n8/27",
+          "recency_prior_topic_d5|ce\n5/15",
+          "recency_prior_topic_d5|pe\n5/15",
+          "user_emotion|ce\n15/15",
+          "user_emotion|pe\n15/15",
+          "user_expertise|ce\n17/27",
+          "user_expertise|pe\n17/27",
+          "verbosity|ce\n10/33",
+          "verbosity|pe\n10/33"
+        ],
+        "ylabel": "steered F_beh (mean over pairs)",
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "legend_labels": [
+          "length-match threshold (\u00b12 tokens)"
+        ],
+        "title_left": "Per-pair context-length delta per unit (steered rows, 2676 pairs over 75 units)",
+        "xticklabels": [
+          "conflict_format_fwd|ce",
+          "conflict_format_fwd|pe",
+          "conflict_format_rev|ce",
+          "conflict_format_rev|pe",
+          "conflict_persona_fwd|ce",
+          "conflict_persona_fwd|pe",
+          "conflict_persona_rev|ce",
+          "conflict_persona_rev|pe",
+          "constraint_knowledge|ce",
+          "constraint_knowledge|pe",
+          "demo_format|ce",
+          "demo_format|pe",
+          "demo_persona|ce",
+          "demo_persona|pe",
+          "fact_assistant_animal|ce",
+          "fact_assistant_animal|pe",
+          "fact_novel_queried|ce",
+          "fact_novel_queried|pe",
+          "fact_user_name|ce",
+          "fact_user_name|pe",
+          "icl_task_mapping|ce",
+          "icl_task_mapping|pe",
+          "instr_format|ce",
+          "instr_format|pe",
+          "instr_language|ce",
+          "instr_language|pe",
+          "language_implied|ce",
+          "language_implied|pe",
+          "list_numeric_detail|ce",
+          "list_numeric_detail|pe",
+          "load_fact_assistant_animal_l3|ce",
+          "load_fact_assistant_animal_l3|pe",
+          "load_fact_assistant_animal_l5|ce",
+          "load_fact_assistant_animal_l5|pe",
+          "load_fact_user_name_l3|ce",
+          "load_fact_user_name_l3|pe",
+          "load_fact_user_name_l5|ce",
+          "load_fact_user_name_l5|pe",
+          "load_instr_format_l3|ce",
+          "load_instr_format_l3|pe",
+          "load_instr_format_l5|ce",
+          "load_instr_format_l5|pe",
+          "persona_prompted|ce",
+          "persona_prompted|pe",
+          "persona_role_header|ce",
+          "prior_topic|ce",
+          "prior_topic|pe",
+          "query_content|ce",
+          "query_content|pe",
+          "reasoning_style|ce",
+          "reasoning_style|pe",
+          "recency_fact_user_name_d3|ce",
+          "recency_fact_user_name_d3|pe",
+          "recency_fact_user_name_d5|ce",
+          "recency_fact_user_name_d5|pe",
+          "recency_instr_format_d3|ce",
+          "recency_instr_format_d3|pe",
+          "recency_instr_format_d5|ce",
+          "recency_instr_format_d5|pe",
+          "recency_persona_prompted_d3|ce",
+          "recency_persona_prompted_d3|pe",
+          "recency_persona_prompted_d5|ce",
+          "recency_persona_prompted_d5|pe",
+          "recency_prior_topic_d3|ce",
+          "recency_prior_topic_d3|pe",
+          "recency_prior_topic_d5|ce",
+          "recency_prior_topic_d5|pe",
+          "refusal_boundary|ce",
+          "refusal_boundary|pe",
+          "user_emotion|ce",
+          "user_emotion|pe",
+          "user_expertise|ce",
+          "user_expertise|pe",
+          "verbosity|ce",
+          "verbosity|pe"
+        ],
+        "ylabel": "per-pair \u0394 ctx length (tokens; value B \u2212 value A)",
+        "yticklabels": [
+          "\u221280",
+          "\u221260",
+          "\u221240",
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60"
+        ]
+      }
+    ],
+    "fig_texts": [],
+    "series": [
+      "steered, all post-exclusion pairs",
+      "steered, length-matched pairs only (|\u0394 ctx len| \u2264 2 tokens)",
+      "length-match threshold (\u00b12 tokens)"
+    ],
+    "suptitle": null
+  },
+  "total_points": 475
+}

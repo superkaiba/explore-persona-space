@@ -921,12 +921,15 @@ RSYNC_INCLUDE_PATHS: tuple[str, ...] = (
     "./configs",
     "./external/open-instruct",
     "./tests",
-    # ``data/sft/`` carries the small committed training-mix JSONLs that
-    # ``stages[].dataset`` references repo-relatively (e.g. the 188K
-    # router-smoke set). The RunPod lane gets them via git clone; the
-    # rsync lane missed them until live attempt 4 crashed with
-    # ``FileNotFoundError: data/sft/router_smoke_sft.jsonl`` (issue 535).
-    "./data/sft",
+    # ``data/`` include entries are NOT listed here: they are DERIVED from
+    # the git index at composition time (#2212) — one ``./data/<component>``
+    # per tracked top-level entry, via :func:`tracked_data_include_paths`,
+    # composed at both production call sites by
+    # :func:`composed_include_paths`. History: the bare ``./data/sft`` entry
+    # that used to live here (issue 535's FileNotFoundError fix) covered
+    # only ONE tracked component, so every other committed ``data/`` input
+    # was silently missing on the rsync lanes (the #2203 crash class, lane
+    # sibling of the #2211 pod cone fix).
 )
 
 RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (
@@ -946,7 +949,125 @@ RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (
     "ood_eval_results/",
     "node_modules/",
     "dashboard/",
+    # Re-downloadable staging caches + durable per-issue stores, matched at
+    # every depth (rsync applies slash-free patterns at all depths). Two
+    # functions (#2212): (1) SEND-side, under the EPS_SLURM_LIVE_TREE_RSYNC=1
+    # live-tree override an untracked cache/store DESCENDANT of a tracked
+    # ``./data/<component>`` include entry transfers only when it matches NO
+    # RSYNC_EXCLUDE_PATTERNS entry — these two patterns extend the set to the
+    # conventional cache/store shapes, and the pre-existing entries above
+    # (``archive/``, ``wandb/``, ...) already match at every depth too (the
+    # index-derived entries exclude untracked TOP-LEVEL ``data/`` entries
+    # from the argv, but rsync recurses each include entry and knows nothing
+    # of .gitignore); on the DEFAULT committed-snapshot source they can
+    # never match anything sendable.
+    # (2) RECEIVER-side, they protect a cluster-side
+    # ``$SCRATCH/data/<tracked>/{*_dl,store}`` tree from the ``--delete``
+    # pass on a re-dispatch (no ``--delete-excluded`` is passed). No
+    # lane-level convention writes under ``$SCRATCH/data/`` today — (2) is
+    # free, collision-free insurance, NOT a fix for an observed loss.
+    # Collision-checked at #2212: no tracked path component repo-wide ends
+    # in ``_dl`` or equals ``store``, so neither pattern can shadow a
+    # tracked input (#1915).
+    "*_dl/",
+    "store/",
 )
+
+# The single tracked top-level dir whose include entries are derived from
+# the git index rather than listed in RSYNC_INCLUDE_PATHS (#2212).
+RSYNC_DATA_INCLUDE_ROOT = "data"
+
+
+def tracked_data_include_paths(src_root: Path, *, timeout: int = 60) -> tuple[str, ...]:
+    """Dot-anchored include entries for every TRACKED top-level ``data/`` entry.
+
+    ``git -C <src_root> ls-files <root>`` -> the distinct first path component
+    under ``data/`` -> ``./data/<component>``, sorted, deduped. Both rsync
+    sources are git trees: the default path's detached scratch worktree
+    (``materialize_branch_src``) and the ``EPS_SLURM_LIVE_TREE_RSYNC=1``
+    override's live repo root.
+
+    WHY derived rather than a bare ``./data`` include: under the override the
+    source IS the live working tree, where ``data/`` carries ~40 GB of
+    UNTRACKED caches and staging dirs across 59 of 70 top-level entries
+    (measured #2212). A bare include tree would sweep them to the cluster —
+    and the 600 s rsync timeout does NOT reliably catch it (~68 MB/s
+    completes 40 GB in the window). Deriving from the index structurally
+    excludes every untracked TOP-LEVEL entry from the argv while still
+    shipping every tracked input, so the override does not reintroduce the
+    #2203 FileNotFoundError class.
+
+    SCOPE OF THE GUARANTEE — top-level only. An untracked DESCENDANT of a
+    tracked component still transfers under the override whenever it matches
+    NO ``RSYNC_EXCLUDE_PATTERNS`` entry: rsync passes each include entry as a
+    bare recursive source and knows nothing of ``.gitignore``, so the exclude
+    list — the new ``*_dl/`` / ``store/`` patterns (conventional caches) plus
+    the pre-existing entries (``archive/``, ``wandb/``, ...), all matched at
+    every depth — is the whole filter. Measured at #2212: 6 MB / 13 gitignored
+    files, all under ``data/sft`` — an EMPIRICAL this-checkout figure, NOT a
+    bound. This residual is include-set-wide and pre-existing, not introduced
+    here: under the same override ``./scripts`` already ships 39 untracked
+    files (16 not even gitignored), ``./src`` 39, ``./tests`` 7. Pinned as
+    known behavior by the nested-untracked test, so a future silent change to
+    it becomes a deliberate decision. Closing it would need ``--files-from``
+    (a rsync flag-surface change over every dispatch) or a fail-closed
+    pre-scan that would refuse at HEAD today (none of the 13 files matches an
+    exclude pattern).
+
+    Fails LOUD (``RuntimeError``) if the ls-files probe fails OR hangs past
+    ``timeout`` (``subprocess.TimeoutExpired`` is re-raised as the same
+    descriptive ``RuntimeError`` shape): a silent fallback would resurrect
+    either the flood or the crash class.
+    """
+    argv = ["git", "-C", str(src_root), "ls-files", "-z", "--", RSYNC_DATA_INCLUDE_ROOT]
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"tracked_data_include_paths: `git -C {src_root} ls-files -- "
+            f"{RSYNC_DATA_INCLUDE_ROOT}` timed out after {timeout}s — refusing a "
+            f"silent fallback (a bare './{RSYNC_DATA_INCLUDE_ROOT}' include would "
+            "sweep untracked caches under EPS_SLURM_LIVE_TREE_RSYNC=1; an empty "
+            "include set would re-create the #2203 FileNotFoundError class)."
+        ) from exc
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"tracked_data_include_paths: `git -C {src_root} ls-files -- "
+            f"{RSYNC_DATA_INCLUDE_ROOT}` failed rc={proc.returncode}: "
+            f"{proc.stderr.strip()!r} — refusing a silent fallback (a bare "
+            f"'./{RSYNC_DATA_INCLUDE_ROOT}' include would sweep untracked caches "
+            "under EPS_SLURM_LIVE_TREE_RSYNC=1; an empty include set would "
+            "re-create the #2203 FileNotFoundError class)."
+        )
+    components: set[str] = set()
+    for rel in proc.stdout.split("\0"):
+        if not rel:
+            continue
+        parts = rel.split("/")
+        if len(parts) < 2 or parts[0] != RSYNC_DATA_INCLUDE_ROOT:
+            continue
+        components.add(parts[1])
+    return tuple(f"./{RSYNC_DATA_INCLUDE_ROOT}/{c}" for c in sorted(components))
+
+
+def composed_include_paths(src_root: Path, *, timeout: int = 60) -> tuple[str, ...]:
+    """``RSYNC_INCLUDE_PATHS`` + the git-index-derived tracked ``data/`` entries.
+
+    The ONE composition BOTH production call sites consume —
+    :func:`run_rsync_sync` (the executed sync) and
+    :func:`verify_rsync_complete` (the #1913 completeness re-check) — so the
+    two argvs can never diverge on the include set (#2212).
+    :func:`build_rsync_command` itself stays a PURE function of its
+    arguments (no git call inside it).
+    """
+    return RSYNC_INCLUDE_PATHS + tracked_data_include_paths(src_root, timeout=timeout)
+
 
 # ``spec.extra`` key for the per-dispatch extra-sync-paths knob (#1835): a
 # list/tuple of repo-relative paths that ``SlurmBackend.prepare`` stages to
@@ -1146,11 +1267,17 @@ def run_rsync_sync(
     MUST run from ``cwd=src_root`` so the dot-anchored sources in
     :data:`RSYNC_INCLUDE_PATHS` resolve to the repo tree (see
     :func:`build_rsync_command` for the full ``--relative`` rationale).
+
+    The include set is :func:`composed_include_paths` — the static constant
+    PLUS the git-index-derived tracked ``data/`` entries (#2212); the same
+    composition feeds :func:`verify_rsync_complete`'s default so sync and
+    verify can never diverge.
     """
     argv = build_rsync_command(
         src_root=src_root,
         dest_root=dest_root,
         robot_alias=robot_alias,
+        include_paths=composed_include_paths(src_root),
     )
     logger.info("running rsync to %s (cwd=%s): %s", robot_alias, src_root, " ".join(argv))
     subprocess.run(argv, check=True, timeout=timeout, cwd=str(src_root))
@@ -1203,12 +1330,19 @@ def verify_rsync_complete(
     dest_root: str,
     robot_alias: str,
     extra_paths: tuple[str, ...] | None = None,
-    include_paths: tuple[str, ...] = RSYNC_INCLUDE_PATHS,
+    include_paths: tuple[str, ...] | None = None,
     exclude_patterns: tuple[str, ...] = RSYNC_EXCLUDE_PATTERNS,
     dest_is_local: bool = False,
     timeout: int = 600,
 ) -> None:
     """Verify an executed rsync left NOTHING pending — raise BEFORE sbatch (#1913).
+
+    ``include_paths=None`` (the default) composes the SAME include set the
+    executed sync used — :func:`composed_include_paths`, i.e.
+    ``RSYNC_INCLUDE_PATHS`` + the git-index-derived tracked ``data/``
+    entries (#2212) — so a divergent include set between sync and verify
+    cannot silently break this completeness gate. An explicit tuple is
+    honored verbatim (test seam).
 
     Re-runs the SAME argv the sync used — :func:`build_rsync_command` when
     ``extra_paths`` is ``None``, else :func:`build_extra_rsync_command` (one
@@ -1244,6 +1378,8 @@ def verify_rsync_complete(
             extra_paths=extra_paths,
         )
     else:
+        if include_paths is None:
+            include_paths = composed_include_paths(src_root)
         argv = build_rsync_command(
             src_root=src_root,
             dest_root=dest_root,
@@ -3045,8 +3181,12 @@ class SlurmBackend(ComputeBackend):
         materialized snapshot (``cleanup_branch_src``) whenever the resolved
         source is not the live ``self._src_root`` — with EVERY dispatch now
         materializing (see ``_resolve_rsync_source``), an unreaped
-        ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB) per issue would otherwise
-        accrete on the shared boot disk with NO covering janitor
+        ``~/.eps-slurm-src/issue-<N>`` (~8.6 GB mean, measured 2026-08-16
+        over 13 accreted trees) per issue would otherwise accrete on the
+        shared boot disk; this in-band reap stays the FIRST line of defense,
+        with ``vm_disk_guard.py`` tier (g) (#2147,
+        ``clean_experiment_downloads.sweep_slurm_src``) as the evidence-gated
+        janitor backstop for trees a crashed prepare strands
         (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only). The
         cleanup NEVER runs on the live root, and a prepare failure still
         reaps (the sbatch job runs from the CLUSTER dest; launch/reconnect/
@@ -3845,10 +3985,14 @@ def cleanup_branch_src(src_root: Path, scratch: Path, *, timeout: int = 300) -> 
     materializer's pre-create cleanup and :meth:`SlurmBackend.prepare`'s
     post-rsync ``finally`` reap share ONE implementation and cannot drift.
     With every dispatch now materializing a snapshot, an unreaped
-    ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB full checkout) per issue would
-    accrete on the shared 485 GB boot disk with NO covering janitor
-    (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only;
-    ``vm_disk_guard.py`` tiers never touch ``~/.eps-slurm-src``).
+    ``~/.eps-slurm-src/issue-<N>`` (~8.6 GB mean full checkout, measured
+    2026-08-16 over 13 accreted trees) per issue would accrete on the
+    shared boot disk. This in-band reap is the FIRST line of defense;
+    ``vm_disk_guard.py`` tier (g) (#2147,
+    ``clean_experiment_downloads.sweep_slurm_src`` — terminal-status +
+    git-blob-evidence gated) is the janitor backstop for trees a crashed
+    prepare strands (``worktree_audit.py`` still sweeps
+    ``.claude/worktrees/`` only).
 
     All git calls are guarded/best-effort (a fresh scratch has no registered
     worktree; ``worktree remove`` on an absent path exits non-zero) — callers
@@ -4148,6 +4292,7 @@ __all__ = [
     "HEARTBEAT_INTERVAL_SECONDS",
     "PASSTHROUGH_ENV_KEYS",
     "PREFLIGHT_FAIL_MARKER",
+    "RSYNC_DATA_INCLUDE_ROOT",
     "RSYNC_EXCLUDE_PATTERNS",
     "RSYNC_INCLUDE_PATHS",
     "RUNTIME_ARTIFACT_FILENAMES",
@@ -4164,6 +4309,7 @@ __all__ = [
     "build_rsync_command",
     "cleanup_branch_src",
     "clear_runtime_artifacts",
+    "composed_include_paths",
     "compute_plan_hash",
     "default_gpus_for_intent",
     "estimate_start_seconds",
@@ -4189,6 +4335,7 @@ __all__ = [
     "ssh_submit",
     "stages_for_spec",
     "time_budget_hours",
+    "tracked_data_include_paths",
     "validate_extra_sync_paths",
     "verify_rsync_complete",
 ]

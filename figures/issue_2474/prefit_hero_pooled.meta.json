@@ -1,0 +1,947 @@
+{
+  "commit": "7249718b",
+  "render_id": "8c63831b15b04c0c",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:56:36Z",
+  "figsize": [
+    12.8,
+    5.6
+  ],
+  "points": [
+    {
+      "Pooled Spearman rho": 0.354169,
+      "y": 0.7083372155369205,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": 0.29585,
+      "y": 0.5916996869954968,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": 0.364922,
+      "y": 0.7298435392670541,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": 0.2539,
+      "y": 0.5078002082627168,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": 0.346124,
+      "y": 0.6922475970349466,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": -0.071149,
+      "y": -0.14229761149147546,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": -0.030648,
+      "y": -0.061296861101492774,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": -0.025465,
+      "y": -0.05093085221044872,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": 0.151516,
+      "y": 0.30303216265031346,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": 0.308369,
+      "y": 0.6167382600349901,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Pooled Spearman rho": 0.34511446952819824,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": 0.12075702846050262,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": 0.40792515873908997,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": -0.015225463546812534,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": 0.2787335216999054,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": -0.5797464847564697,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": -0.5293253064155579,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": -0.4650285542011261,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": -0.2625544071197509,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": 0.22939160466194153,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pooled Spearman rho": 0.9104267358779907,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.8747079968452454,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.9100562930107117,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.8757893443107605,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.8785449266433716,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.32110196352005005,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.39376720786094666,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.4323408007621765,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.7073573470115662,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.8534350991249084,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pooled Spearman rho": 0.65390803341428,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pooled Spearman rho": 0.8596491228070176,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pooled Spearman rho": 0.8596491228070176,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pooled Spearman rho": 0.6635634690579193,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pooled Spearman rho": 0.5049163295983682,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pooled Spearman rho": 0.5069856588180336,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pooled Spearman rho": 0.7461300309597523,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pooled Spearman rho": 0.7564499484004128,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pooled Spearman rho": 0.5681762203808435,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pooled Spearman rho": 0.3807565764184416,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pooled Spearman rho": 0.6766706548306,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pooled Spearman rho": 0.8802889576883385,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pooled Spearman rho": 0.8823529411764706,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pooled Spearman rho": 0.6822261916251733,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pooled Spearman rho": 0.5276789510146881,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pooled Spearman rho": 0.39006855790693606,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Pooled Spearman rho": 0.6057791537667698,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Pooled Spearman rho": 0.6243550051599587,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Pooled Spearman rho": 0.5059671451566635,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Pooled Spearman rho": 0.4128311793232559,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Pooled Spearman rho": 0.6818439778797636,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Pooled Spearman rho": 0.5933952528379773,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Pooled Spearman rho": 0.6842105263157895,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Pooled Spearman rho": 0.7340670876453232,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Pooled Spearman rho": 0.7677211404958795,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Pooled Spearman rho": -0.39006855790693606,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Pooled Spearman rho": -0.04024767801857585,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Pooled Spearman rho": -0.16821465428276575,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Pooled Spearman rho": -0.08605588739344891,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Pooled Spearman rho": -0.026901279855650762,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Pooled Spearman rho": -0.14588770998641376,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Pooled Spearman rho": -0.12487100103199174,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Pooled Spearman rho": 0.08565531475748193,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Pooled Spearman rho": -0.15655950598085283,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Pooled Spearman rho": 0.035178596734312534,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Pooled Spearman rho": -0.013450639927825381,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Pooled Spearman rho": -0.10629514963880289,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Pooled Spearman rho": -0.17440660474716202,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Pooled Spearman rho": 0.08709270531385191,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Pooled Spearman rho": -0.0475945720523052,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Pooled Spearman rho": 0.3725018648402602,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Pooled Spearman rho": 0.29790110048935325,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Pooled Spearman rho": 0.21533675054099316,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Pooled Spearman rho": 0.3631885333209548,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Pooled Spearman rho": 0.26623256406000584,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Pooled Spearman rho": 0.5545802308703388,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Pooled Spearman rho": 0.7729618163054696,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Pooled Spearman rho": 0.762641898864809,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Pooled Spearman rho": 0.6086121192765604,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Pooled Spearman rho": 0.38489523485777244,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Pooled Spearman rho": -0.256125,
+      "y": -0.5122504874682213,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": -0.240679,
+      "y": -0.48135702184003454,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": -0.25828,
+      "y": -0.5165595021659768,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": -0.211848,
+      "y": -0.42369613064717004,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": -0.158519,
+      "y": -0.3170374360297861,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": 0.367527,
+      "y": 0.7350539441082519,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": 0.375593,
+      "y": 0.751185378291806,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": 0.225521,
+      "y": 0.4510428411346163,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": 0.347153,
+      "y": 0.6943063471898149,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": -0.050566,
+      "y": -0.10113141448844436,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "Pooled Spearman rho": -0.8849835991859436,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": -0.8192227482795715,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": -0.8392866253852844,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": -0.8123953342437744,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": -0.7963939309120178,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": 0.4809516370296478,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": 0.44877973198890686,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": -0.005869550630450249,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": 0.39887702465057373,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": -0.5471564531326294,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Pooled Spearman rho": 0.022209035232663155,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.017531001940369606,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": -0.0034988659899681807,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.07448402792215347,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.2058196067810058,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.8489120006561279,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.9214681386947632,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.7688342928886414,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.8971025347709656,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": 0.35765212774276733,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Pooled Spearman rho": -0.5053369575131019,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Pooled Spearman rho": -0.4370500348723016,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Pooled Spearman rho": -0.5943644700192604,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Pooled Spearman rho": -0.45266339842378833,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Pooled Spearman rho": -0.395466633496102,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Pooled Spearman rho": -0.5959410336002133,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Pooled Spearman rho": -0.506983006234643,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Pooled Spearman rho": -0.42941226727259146,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Pooled Spearman rho": -0.6132832329906958,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Pooled Spearman rho": -0.3966977418913927,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Pooled Spearman rho": -0.3572777954975514,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Pooled Spearman rho": -0.5171128545525661,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Pooled Spearman rho": -0.3143953058143403,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Pooled Spearman rho": -0.28514332372251133,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Pooled Spearman rho": -0.3515736785525068,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Pooled Spearman rho": 0.7851652401750802,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Pooled Spearman rho": 0.7468039430827678,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Pooled Spearman rho": 0.6731926490669077,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Pooled Spearman rho": 0.747306119579636,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Pooled Spearman rho": 0.6627884994859564,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Pooled Spearman rho": 0.8434615158098258,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Pooled Spearman rho": 0.4279726676006726,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Pooled Spearman rho": 0.5057899432696927,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Pooled Spearman rho": 0.4193659125334835,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Pooled Spearman rho": 0.6957757901105428,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Pooled Spearman rho": 0.6846556182854759,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Pooled Spearman rho": 0.7024876331734261,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Pooled Spearman rho": -0.09382477712783976,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Pooled Spearman rho": 0.02376194364354261,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Pooled Spearman rho": -0.2333314099810359,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Emergent misalignment \u2014 layer 16",
+        "xlabel": "Pooled Spearman rho",
+        "legend_labels": [
+          "Per-condition rho",
+          "DV agreement ceiling (banked)"
+        ],
+        "xticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Context state vs inoc. prompt",
+          "Predicted answer vs inoc. prompt",
+          "Shift-only answer vs inoc. prompt",
+          "Real answer vs inoc. prompt (ceiling)",
+          "Context state vs training contexts",
+          "Predicted answer vs training answers",
+          "Shift-only answer vs training answers",
+          "Real answer vs training answers (ceiling)",
+          "Base behavior rate",
+          "Text similarity (BGE)"
+        ]
+      },
+      {
+        "title_left": "Capitalization \u2014 layer 27",
+        "xlabel": "Pooled Spearman rho",
+        "xticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "Context state vs inoc. prompt",
+          "Predicted answer vs inoc. prompt",
+          "Shift-only answer vs inoc. prompt",
+          "Real answer vs inoc. prompt (ceiling)",
+          "Context state vs training contexts",
+          "Predicted answer vs training answers",
+          "Shift-only answer vs training answers",
+          "Real answer vs training answers (ceiling)",
+          "Base behavior rate",
+          "Text similarity (BGE)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "hero",
+    "variant": "full",
+    "dv": "level",
+    "errorbar_definition": "95% bootstrap CI (percentile over valid draws; one shared trigger-index multiset per setting x variant, seeds in prefit_stats.json .seeds; xerr rendered as non-negative offsets clamped at 0 per repo errorbar convention)",
+    "per_unit_companion": "per-condition dots on each pooled bar; per-trigger companions in the prefit_scatter_* figures",
+    "p_inoc_caveat": "sameq-family predictors are identically 1 at the inoculation-prompt trigger by self-similarity; the leave-p_inoc-out variant is the registered sensitivity"
+  }
+}

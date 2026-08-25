@@ -1,0 +1,273 @@
+{
+  "commit": "c1c8abb0",
+  "render_id": "a7199d063e2a4e7f",
+  "git_commit": "c1c8abb0b6e6e2043c716efad5a242f99789d012",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T02:31:06Z",
+  "figsize": [
+    6.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Conversation depth (turn index)": 2.0,
+      "Mean coherence score": 54.54545454545455,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 3.0,
+      "Mean coherence score": 60.285714285714285,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 4.0,
+      "Mean coherence score": 69.85714285714286,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 5.0,
+      "Mean coherence score": 70.16666666666667,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 6.0,
+      "Mean coherence score": 57.6,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 7.0,
+      "Mean coherence score": 52.02222222222222,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 8.0,
+      "Mean coherence score": 60.499999999999986,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 9.0,
+      "Mean coherence score": 38.333333333333336,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 10.0,
+      "Mean coherence score": 42.44,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 11.0,
+      "Mean coherence score": 56.160000000000004,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 12.0,
+      "Mean coherence score": 59.771428571428565,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 13.0,
+      "Mean coherence score": 71.14285714285714,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 14.0,
+      "Mean coherence score": 32.675,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 15.0,
+      "Mean coherence score": 41.6,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 16.0,
+      "Mean coherence score": 37.2,
+      "series": "Base, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Conversation depth (turn index)": 2.0,
+      "Mean coherence score": 87.96363636363635,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 3.0,
+      "Mean coherence score": 82.88571428571429,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 4.0,
+      "Mean coherence score": 89.34285714285714,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 5.0,
+      "Mean coherence score": 72.93333333333334,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 6.0,
+      "Mean coherence score": 79.56,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 7.0,
+      "Mean coherence score": 72.84444444444445,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 8.0,
+      "Mean coherence score": 74.32000000000001,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 9.0,
+      "Mean coherence score": 75.86666666666666,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 10.0,
+      "Mean coherence score": 81.38000000000001,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 11.0,
+      "Mean coherence score": 74.44,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 12.0,
+      "Mean coherence score": 82.45714285714284,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 13.0,
+      "Mean coherence score": 76.85714285714286,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 14.0,
+      "Mean coherence score": 90.425,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 15.0,
+      "Mean coherence score": 84.81666666666668,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Conversation depth (turn index)": 16.0,
+      "Mean coherence score": 77.64000000000001,
+      "series": "Instruct, raw multi-turn (banked)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Coherence by depth, raw multi-turn arms",
+        "xlabel": "Conversation depth (turn index)",
+        "ylabel": "Mean coherence score",
+        "legend_labels": [
+          "Base, raw multi-turn (banked)",
+          "Instruct, raw multi-turn (banked)"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14",
+          "16",
+          "18"
+        ],
+        "yticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "Base, raw multi-turn (banked)",
+      "Instruct, raw multi-turn (banked)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

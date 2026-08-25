@@ -1,0 +1,5934 @@
+{
+  "commit": "784f0ddd+dirty",
+  "render_id": "e919089d3f8f4871",
+  "git_commit": "784f0ddd656ce65aace29d32fb4a6b118f1af02a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c2_layer14_peak.meta.json",
+    "figures/paper/c2_layer14_peak.pdf",
+    "figures/paper/c2_layer14_peak.png",
+    "figures/paper/c5_claim4_margin_forest.meta.json",
+    "figures/paper/c5_claim4_margin_forest.pdf",
+    "figures/paper/c5_claim4_margin_forest.png",
+    "figures/paper/c5_compose_flip.meta.json",
+    "figures/paper/c5_compose_flip.pdf",
+    "figures/paper/c5_compose_flip.png",
+    "figures/paper/c5_ft_change_race.meta.json",
+    "figures/paper/c5_ft_change_race.pdf",
+    "figures/paper/c5_ft_change_race.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue2094_r2_decomposition.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2094_r2_decomposition.py",
+  "created": "2026-08-20T08:37:36Z",
+  "figsize": [
+    5.5,
+    2.42
+  ],
+  "points": [
+    {
+      "x": -0.2653759702277428,
+      "cos(map-predicted shift,\nrealized shift)": 0.7510449886322021,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.267127240835685,
+      "cos(map-predicted shift,\nrealized shift)": 0.7695419192314148,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19532484257011298,
+      "cos(map-predicted shift,\nrealized shift)": 0.819504976272583,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19724541912823357,
+      "cos(map-predicted shift,\nrealized shift)": 0.7412756681442261,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2675345154959387,
+      "cos(map-predicted shift,\nrealized shift)": 0.6789188981056213,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25915237384364104,
+      "cos(map-predicted shift,\nrealized shift)": 0.7083401083946228,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2235607529774714,
+      "cos(map-predicted shift,\nrealized shift)": 0.7137959003448486,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2647305763953135,
+      "cos(map-predicted shift,\nrealized shift)": 0.7870826721191406,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1826485266829972,
+      "cos(map-predicted shift,\nrealized shift)": 0.6896923184394836,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19003073432490275,
+      "cos(map-predicted shift,\nrealized shift)": 0.6369460225105286,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2679655559293528,
+      "cos(map-predicted shift,\nrealized shift)": 0.5722659230232239,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24945934615918242,
+      "cos(map-predicted shift,\nrealized shift)": 0.7393535375595093,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2585804191168552,
+      "cos(map-predicted shift,\nrealized shift)": 0.6591920852661133,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1778290311239008,
+      "cos(map-predicted shift,\nrealized shift)": 0.5888053178787231,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23362753856389282,
+      "cos(map-predicted shift,\nrealized shift)": 0.6365696787834167,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11211685231571877,
+      "cos(map-predicted shift,\nrealized shift)": 0.1277756690979004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12096917985134781,
+      "cos(map-predicted shift,\nrealized shift)": 0.0034516048617661,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08273995235162335,
+      "cos(map-predicted shift,\nrealized shift)": -0.10241829603910446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11565946794985224,
+      "cos(map-predicted shift,\nrealized shift)": -0.011103386990725994,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13932289053934307,
+      "cos(map-predicted shift,\nrealized shift)": -0.16254004836082458,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08719074262923539,
+      "cos(map-predicted shift,\nrealized shift)": -0.08400394022464752,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.053251112306619164,
+      "cos(map-predicted shift,\nrealized shift)": -0.0968913659453392,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0840437049859952,
+      "cos(map-predicted shift,\nrealized shift)": 0.16997294127941132,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06516380760254684,
+      "cos(map-predicted shift,\nrealized shift)": 0.07170553505420685,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1088330045056724,
+      "cos(map-predicted shift,\nrealized shift)": 0.6348666548728943,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07083172826873041,
+      "cos(map-predicted shift,\nrealized shift)": 0.1619683802127838,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10455088766358699,
+      "cos(map-predicted shift,\nrealized shift)": 0.04362928867340088,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14924956527377842,
+      "cos(map-predicted shift,\nrealized shift)": -0.003983356524258852,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14523906245316426,
+      "cos(map-predicted shift,\nrealized shift)": 0.23517504334449768,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07410386311778178,
+      "cos(map-predicted shift,\nrealized shift)": 0.10741183906793594,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09064675882990975,
+      "cos(map-predicted shift,\nrealized shift)": -0.08176916092634201,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11057861976504037,
+      "cos(map-predicted shift,\nrealized shift)": -0.10836070775985718,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10033849413852987,
+      "cos(map-predicted shift,\nrealized shift)": -0.10183980315923691,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0873092897042336,
+      "cos(map-predicted shift,\nrealized shift)": -0.09189461171627045,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13444802681778406,
+      "cos(map-predicted shift,\nrealized shift)": 0.14692188799381256,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12708928409415474,
+      "cos(map-predicted shift,\nrealized shift)": 0.0686371773481369,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06015493324325444,
+      "cos(map-predicted shift,\nrealized shift)": 0.3588564395904541,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09890269507340818,
+      "cos(map-predicted shift,\nrealized shift)": -0.09303280711174011,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.123628121718257,
+      "cos(map-predicted shift,\nrealized shift)": -0.027682160958647728,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.141397316165351,
+      "cos(map-predicted shift,\nrealized shift)": -0.04920405521988869,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06943328398556915,
+      "cos(map-predicted shift,\nrealized shift)": 0.014147810637950897,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10915651199590531,
+      "cos(map-predicted shift,\nrealized shift)": -0.0012461767764762044,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.104056251547829,
+      "cos(map-predicted shift,\nrealized shift)": 0.12861378490924835,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13702737117161762,
+      "cos(map-predicted shift,\nrealized shift)": 0.2327568531036377,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1077249995025976,
+      "cos(map-predicted shift,\nrealized shift)": 0.1939549744129181,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13414659585644167,
+      "cos(map-predicted shift,\nrealized shift)": -0.1381729692220688,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08926798480017965,
+      "cos(map-predicted shift,\nrealized shift)": -0.020284166559576988,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.057772737634505605,
+      "cos(map-predicted shift,\nrealized shift)": -0.09294439107179642,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.056284694388043156,
+      "cos(map-predicted shift,\nrealized shift)": -0.04428337886929512,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10957391328716182,
+      "cos(map-predicted shift,\nrealized shift)": 0.18403881788253784,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08098619960024604,
+      "cos(map-predicted shift,\nrealized shift)": 0.2327568531036377,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14607831949876487,
+      "cos(map-predicted shift,\nrealized shift)": 0.21802207827568054,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05795240711939895,
+      "cos(map-predicted shift,\nrealized shift)": 0.08255896717309952,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05065993020386901,
+      "cos(map-predicted shift,\nrealized shift)": 0.478701114654541,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09312731862459322,
+      "cos(map-predicted shift,\nrealized shift)": -0.03453817218542099,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14551158100160244,
+      "cos(map-predicted shift,\nrealized shift)": -0.14676818251609802,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07325416538982926,
+      "cos(map-predicted shift,\nrealized shift)": -0.1279325783252716,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08363100979952032,
+      "cos(map-predicted shift,\nrealized shift)": 0.515064001083374,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05432109524187424,
+      "cos(map-predicted shift,\nrealized shift)": 0.06725510954856873,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08983726610672699,
+      "cos(map-predicted shift,\nrealized shift)": -0.02566775493323803,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12722135314212896,
+      "cos(map-predicted shift,\nrealized shift)": 0.40263938903808594,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06619895260408343,
+      "cos(map-predicted shift,\nrealized shift)": 0.22728027403354645,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10983248570514077,
+      "cos(map-predicted shift,\nrealized shift)": -0.0705224946141243,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0920953838705181,
+      "cos(map-predicted shift,\nrealized shift)": -0.0651969462633133,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05084343766967375,
+      "cos(map-predicted shift,\nrealized shift)": 0.0225368719547987,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.050941977388304076,
+      "cos(map-predicted shift,\nrealized shift)": 0.12719325721263885,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1336974346531135,
+      "cos(map-predicted shift,\nrealized shift)": -0.019997188821434975,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05972114834694606,
+      "cos(map-predicted shift,\nrealized shift)": 0.2269091010093689,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10884315734389555,
+      "cos(map-predicted shift,\nrealized shift)": 0.15297766029834747,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07937494101367161,
+      "cos(map-predicted shift,\nrealized shift)": 0.14350570738315582,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11341858060944779,
+      "cos(map-predicted shift,\nrealized shift)": -0.012791097164154053,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14337241919562027,
+      "cos(map-predicted shift,\nrealized shift)": -0.07735996693372726,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06314699279614142,
+      "cos(map-predicted shift,\nrealized shift)": -0.11354979127645493,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0835115739079962,
+      "cos(map-predicted shift,\nrealized shift)": 0.05360770598053932,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11815819647036728,
+      "cos(map-predicted shift,\nrealized shift)": 0.04312889277935028,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12490273511895723,
+      "cos(map-predicted shift,\nrealized shift)": 0.6263592839241028,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10893680484698677,
+      "cos(map-predicted shift,\nrealized shift)": 0.2201796919107437,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12431150209473213,
+      "cos(map-predicted shift,\nrealized shift)": -0.000695382128469646,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12505128102745755,
+      "cos(map-predicted shift,\nrealized shift)": 0.1547727733850479,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0581505090419427,
+      "cos(map-predicted shift,\nrealized shift)": 0.004134883172810078,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.062219717122749076,
+      "cos(map-predicted shift,\nrealized shift)": 0.05911459028720856,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11046669888884261,
+      "cos(map-predicted shift,\nrealized shift)": -0.0362260639667511,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09154245141618989,
+      "cos(map-predicted shift,\nrealized shift)": -0.02536466345191002,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10179768701676178,
+      "cos(map-predicted shift,\nrealized shift)": -0.03916935250163078,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08173190241498582,
+      "cos(map-predicted shift,\nrealized shift)": 0.09763950109481812,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09864534955238854,
+      "cos(map-predicted shift,\nrealized shift)": -0.07506780326366425,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13006205571559432,
+      "cos(map-predicted shift,\nrealized shift)": 0.29229068756103516,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09600069501084862,
+      "cos(map-predicted shift,\nrealized shift)": -0.03203155845403671,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09806063289091405,
+      "cos(map-predicted shift,\nrealized shift)": -0.004822687245905399,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09905021160775143,
+      "cos(map-predicted shift,\nrealized shift)": -0.04056647792458534,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14907724109363493,
+      "cos(map-predicted shift,\nrealized shift)": 0.15629714727401733,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14237769525292787,
+      "cos(map-predicted shift,\nrealized shift)": -0.24804915487766266,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11227792738068654,
+      "cos(map-predicted shift,\nrealized shift)": -0.07385005801916122,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1201356565969716,
+      "cos(map-predicted shift,\nrealized shift)": 0.335944265127182,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05524705724411941,
+      "cos(map-predicted shift,\nrealized shift)": 0.0632048025727272,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09324276841477974,
+      "cos(map-predicted shift,\nrealized shift)": -0.03259972855448723,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.062067846929577564,
+      "cos(map-predicted shift,\nrealized shift)": -0.12804491817951202,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07762586818278094,
+      "cos(map-predicted shift,\nrealized shift)": 0.08913460373878479,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08811019979270855,
+      "cos(map-predicted shift,\nrealized shift)": -0.18082492053508759,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13222721722551617,
+      "cos(map-predicted shift,\nrealized shift)": 0.3677326440811157,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07145903701371903,
+      "cos(map-predicted shift,\nrealized shift)": 0.2110070288181305,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06557267960626847,
+      "cos(map-predicted shift,\nrealized shift)": -0.034886620938777924,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11184342289872794,
+      "cos(map-predicted shift,\nrealized shift)": -0.009711026214063168,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08762989265114596,
+      "cos(map-predicted shift,\nrealized shift)": 0.05591306462883949,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05852131232421144,
+      "cos(map-predicted shift,\nrealized shift)": 0.009744142182171345,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08765977266986674,
+      "cos(map-predicted shift,\nrealized shift)": 0.016560029238462448,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10103938481669263,
+      "cos(map-predicted shift,\nrealized shift)": 0.06560031324625015,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09473785527589358,
+      "cos(map-predicted shift,\nrealized shift)": 0.06114421412348747,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11039202569875889,
+      "cos(map-predicted shift,\nrealized shift)": -0.00021942656894680113,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08674232934410926,
+      "cos(map-predicted shift,\nrealized shift)": 0.5996962189674377,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13614962201248887,
+      "cos(map-predicted shift,\nrealized shift)": 0.0069476836360991,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13470760619590494,
+      "cos(map-predicted shift,\nrealized shift)": -0.02747068740427494,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14157185801411898,
+      "cos(map-predicted shift,\nrealized shift)": -0.03155162185430527,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06832491740520967,
+      "cos(map-predicted shift,\nrealized shift)": -0.16793833673000336,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11287125920571849,
+      "cos(map-predicted shift,\nrealized shift)": 0.05237879604101181,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14609488466701337,
+      "cos(map-predicted shift,\nrealized shift)": 0.5692774057388306,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05221270764584218,
+      "cos(map-predicted shift,\nrealized shift)": -0.028138404712080956,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12206626599145677,
+      "cos(map-predicted shift,\nrealized shift)": 0.2667827904224396,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06619693848853044,
+      "cos(map-predicted shift,\nrealized shift)": 0.09922704100608826,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10744985821532753,
+      "cos(map-predicted shift,\nrealized shift)": 0.3510945737361908,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14583531026610014,
+      "cos(map-predicted shift,\nrealized shift)": 0.032663166522979736,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07152722868589668,
+      "cos(map-predicted shift,\nrealized shift)": 0.025428198277950287,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06230239133690137,
+      "cos(map-predicted shift,\nrealized shift)": 0.014381534419953823,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14133101170510587,
+      "cos(map-predicted shift,\nrealized shift)": 0.5712622404098511,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05514569291012872,
+      "cos(map-predicted shift,\nrealized shift)": -0.14941513538360596,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13629733522372262,
+      "cos(map-predicted shift,\nrealized shift)": -0.09076094627380371,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0630481231681336,
+      "cos(map-predicted shift,\nrealized shift)": 0.0031683030538260937,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09428208585483973,
+      "cos(map-predicted shift,\nrealized shift)": -0.1003643274307251,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11072469944309671,
+      "cos(map-predicted shift,\nrealized shift)": -0.005892330780625343,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10699151653959375,
+      "cos(map-predicted shift,\nrealized shift)": 0.22100825607776642,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08293636041764985,
+      "cos(map-predicted shift,\nrealized shift)": -0.009076431393623352,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09555752331568838,
+      "cos(map-predicted shift,\nrealized shift)": -0.060962896794080734,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07758503973572739,
+      "cos(map-predicted shift,\nrealized shift)": -0.07702099531888962,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10366999005676786,
+      "cos(map-predicted shift,\nrealized shift)": -0.10719044506549835,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06080370469574275,
+      "cos(map-predicted shift,\nrealized shift)": -0.05520821362733841,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13364400757516015,
+      "cos(map-predicted shift,\nrealized shift)": -0.21299906075000763,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0675592214440051,
+      "cos(map-predicted shift,\nrealized shift)": -0.06745128333568573,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0952786856049417,
+      "cos(map-predicted shift,\nrealized shift)": -0.04136981442570686,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11746239571140092,
+      "cos(map-predicted shift,\nrealized shift)": 0.035017918795347214,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14407732348999885,
+      "cos(map-predicted shift,\nrealized shift)": 0.06724762171506882,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0951178575491168,
+      "cos(map-predicted shift,\nrealized shift)": 0.14883913099765778,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10360051411000079,
+      "cos(map-predicted shift,\nrealized shift)": 0.011135322973132133,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13340445021103334,
+      "cos(map-predicted shift,\nrealized shift)": -0.10470575839281082,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09593960700496701,
+      "cos(map-predicted shift,\nrealized shift)": 0.014877647161483765,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06523543308335666,
+      "cos(map-predicted shift,\nrealized shift)": -0.035043250769376755,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09964025213693199,
+      "cos(map-predicted shift,\nrealized shift)": 0.29229384660720825,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1110301213748603,
+      "cos(map-predicted shift,\nrealized shift)": 0.09508591890335083,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1476443497526011,
+      "cos(map-predicted shift,\nrealized shift)": -0.06786306947469711,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0977951123911912,
+      "cos(map-predicted shift,\nrealized shift)": -0.0894741490483284,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08072179294320253,
+      "cos(map-predicted shift,\nrealized shift)": 0.17205937206745148,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1424143824040512,
+      "cos(map-predicted shift,\nrealized shift)": -0.09995123744010925,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0872464336298083,
+      "cos(map-predicted shift,\nrealized shift)": -0.2419576197862625,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11329909219743417,
+      "cos(map-predicted shift,\nrealized shift)": 0.008279654197394848,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08467592619301761,
+      "cos(map-predicted shift,\nrealized shift)": 0.012572044506669044,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1292477482447018,
+      "cos(map-predicted shift,\nrealized shift)": -0.21675032377243042,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07432375547437625,
+      "cos(map-predicted shift,\nrealized shift)": -0.10349465161561966,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08449969657755815,
+      "cos(map-predicted shift,\nrealized shift)": -0.004304663278162479,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05086284849404872,
+      "cos(map-predicted shift,\nrealized shift)": 0.2526305913925171,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11044048035713744,
+      "cos(map-predicted shift,\nrealized shift)": 0.06744606792926788,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11863998600009891,
+      "cos(map-predicted shift,\nrealized shift)": 0.14883913099765778,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0848359975474349,
+      "cos(map-predicted shift,\nrealized shift)": 0.21066121757030487,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08275301821459698,
+      "cos(map-predicted shift,\nrealized shift)": -0.07273854315280914,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06061011062326824,
+      "cos(map-predicted shift,\nrealized shift)": -0.02265811339020729,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14220481395959378,
+      "cos(map-predicted shift,\nrealized shift)": -0.02991257980465889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14405858533473453,
+      "cos(map-predicted shift,\nrealized shift)": 0.01780356653034687,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14615844822494622,
+      "cos(map-predicted shift,\nrealized shift)": 0.010905485600233078,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10296556085700893,
+      "cos(map-predicted shift,\nrealized shift)": 0.4255375564098358,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09275474900264905,
+      "cos(map-predicted shift,\nrealized shift)": -0.0755997821688652,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.053602764389436744,
+      "cos(map-predicted shift,\nrealized shift)": 0.05631784722208977,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13845861659654446,
+      "cos(map-predicted shift,\nrealized shift)": -0.12730811536312103,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07736196408887025,
+      "cos(map-predicted shift,\nrealized shift)": 0.4035794138908386,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1233755386570761,
+      "cos(map-predicted shift,\nrealized shift)": 0.4004238545894623,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08506402252890155,
+      "cos(map-predicted shift,\nrealized shift)": 0.058452215045690536,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11068823101552996,
+      "cos(map-predicted shift,\nrealized shift)": 0.32245245575904846,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07608257199710092,
+      "cos(map-predicted shift,\nrealized shift)": -0.1171124279499054,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06498218280172763,
+      "cos(map-predicted shift,\nrealized shift)": -0.03562391176819801,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12744661157408804,
+      "cos(map-predicted shift,\nrealized shift)": 0.252998024225235,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08463897623338312,
+      "cos(map-predicted shift,\nrealized shift)": -0.023432426154613495,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07220876683125615,
+      "cos(map-predicted shift,\nrealized shift)": 0.04773268476128578,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07665063965455772,
+      "cos(map-predicted shift,\nrealized shift)": 0.24200807511806488,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13943708386616233,
+      "cos(map-predicted shift,\nrealized shift)": 0.2491321712732315,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11260994320640316,
+      "cos(map-predicted shift,\nrealized shift)": 0.05237878859043121,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.141409432131733,
+      "cos(map-predicted shift,\nrealized shift)": 0.004037842620164156,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13022227458550312,
+      "cos(map-predicted shift,\nrealized shift)": -0.08405584841966629,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13928282611693935,
+      "cos(map-predicted shift,\nrealized shift)": -0.1307038813829422,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08950484197560765,
+      "cos(map-predicted shift,\nrealized shift)": -0.08922967314720154,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08005602728055813,
+      "cos(map-predicted shift,\nrealized shift)": 0.23243878781795502,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13346617519321607,
+      "cos(map-predicted shift,\nrealized shift)": 0.03415240719914436,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09029703088123588,
+      "cos(map-predicted shift,\nrealized shift)": 0.05704393610358238,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14923077050556743,
+      "cos(map-predicted shift,\nrealized shift)": -0.03656370937824249,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1208768295077478,
+      "cos(map-predicted shift,\nrealized shift)": 0.5077844858169556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08663337189121675,
+      "cos(map-predicted shift,\nrealized shift)": -0.032313764095306396,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1219625482447586,
+      "cos(map-predicted shift,\nrealized shift)": 0.058191608637571335,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07820272897243243,
+      "cos(map-predicted shift,\nrealized shift)": 0.20965087413787842,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10841396869836893,
+      "cos(map-predicted shift,\nrealized shift)": -0.040083013474941254,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11275261930298429,
+      "cos(map-predicted shift,\nrealized shift)": 0.2664073407649994,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14836902166231725,
+      "cos(map-predicted shift,\nrealized shift)": 0.007937365211546421,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07929591965201674,
+      "cos(map-predicted shift,\nrealized shift)": 0.07298004627227783,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0673214825789541,
+      "cos(map-predicted shift,\nrealized shift)": -0.022409534081816673,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1110872545343779,
+      "cos(map-predicted shift,\nrealized shift)": 0.05747302621603012,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06314145527164577,
+      "cos(map-predicted shift,\nrealized shift)": 0.42916277050971985,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09249258375656556,
+      "cos(map-predicted shift,\nrealized shift)": -0.06159960851073265,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12097705609074413,
+      "cos(map-predicted shift,\nrealized shift)": 0.5514208078384399,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07229253680817288,
+      "cos(map-predicted shift,\nrealized shift)": 0.36072462797164917,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1447053010949123,
+      "cos(map-predicted shift,\nrealized shift)": 0.03792976960539818,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11788891186636268,
+      "cos(map-predicted shift,\nrealized shift)": 0.04740398749709129,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1302718813813872,
+      "cos(map-predicted shift,\nrealized shift)": -0.04008731618523598,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08905200010654242,
+      "cos(map-predicted shift,\nrealized shift)": 0.06229211390018463,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07188538829152115,
+      "cos(map-predicted shift,\nrealized shift)": -0.015726778656244278,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11125547063362501,
+      "cos(map-predicted shift,\nrealized shift)": 0.005446787923574448,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08862619227351932,
+      "cos(map-predicted shift,\nrealized shift)": 0.06355361640453339,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09919502492952062,
+      "cos(map-predicted shift,\nrealized shift)": -0.16812348365783691,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10350127013453636,
+      "cos(map-predicted shift,\nrealized shift)": -0.0272566769272089,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14301166260212536,
+      "cos(map-predicted shift,\nrealized shift)": 0.5304579734802246,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1397045465418409,
+      "cos(map-predicted shift,\nrealized shift)": -0.021474549546837807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11572104886367303,
+      "cos(map-predicted shift,\nrealized shift)": 0.22163020074367523,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10279770052321521,
+      "cos(map-predicted shift,\nrealized shift)": -0.03981796279549599,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1085205533187319,
+      "cos(map-predicted shift,\nrealized shift)": 0.011427061632275581,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.051052756277570444,
+      "cos(map-predicted shift,\nrealized shift)": 0.34899818897247314,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11570723827794326,
+      "cos(map-predicted shift,\nrealized shift)": -0.08405584841966629,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0899386386583005,
+      "cos(map-predicted shift,\nrealized shift)": 0.28334367275238037,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09180872063983694,
+      "cos(map-predicted shift,\nrealized shift)": -0.15061461925506592,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09318863388897086,
+      "cos(map-predicted shift,\nrealized shift)": -0.1548488736152649,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06877135675844348,
+      "cos(map-predicted shift,\nrealized shift)": 0.29554644227027893,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11638637515220528,
+      "cos(map-predicted shift,\nrealized shift)": 0.25889718532562256,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10436085480194049,
+      "cos(map-predicted shift,\nrealized shift)": -0.12085257470607758,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06409690906312063,
+      "cos(map-predicted shift,\nrealized shift)": -0.09502527117729187,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13814168717804676,
+      "cos(map-predicted shift,\nrealized shift)": 0.5546949505805969,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06136327196650653,
+      "cos(map-predicted shift,\nrealized shift)": 0.014252478256821632,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12168774109220204,
+      "cos(map-predicted shift,\nrealized shift)": -0.07131383568048477,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13486450881876275,
+      "cos(map-predicted shift,\nrealized shift)": -0.005113034509122372,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10304505279093301,
+      "cos(map-predicted shift,\nrealized shift)": 0.05379176139831543,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08996376731610715,
+      "cos(map-predicted shift,\nrealized shift)": -0.058798741549253464,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05760610293416233,
+      "cos(map-predicted shift,\nrealized shift)": 0.046256449073553085,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09846226059703561,
+      "cos(map-predicted shift,\nrealized shift)": 0.23844671249389648,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.054351434905596796,
+      "cos(map-predicted shift,\nrealized shift)": 0.06071638688445091,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05569950686048204,
+      "cos(map-predicted shift,\nrealized shift)": -0.16554829478263855,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11732719119773632,
+      "cos(map-predicted shift,\nrealized shift)": 0.06626784801483154,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11578824678736693,
+      "cos(map-predicted shift,\nrealized shift)": 0.04837615415453911,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07824130761224199,
+      "cos(map-predicted shift,\nrealized shift)": -0.14696726202964783,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09556418640751851,
+      "cos(map-predicted shift,\nrealized shift)": -0.19401156902313232,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12617851731759328,
+      "cos(map-predicted shift,\nrealized shift)": 0.5703349709510803,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10697511890019981,
+      "cos(map-predicted shift,\nrealized shift)": 0.40788066387176514,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1344662058941751,
+      "cos(map-predicted shift,\nrealized shift)": -0.09001156687736511,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09718695870343767,
+      "cos(map-predicted shift,\nrealized shift)": -0.04264746978878975,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05859137170672527,
+      "cos(map-predicted shift,\nrealized shift)": -0.10658296197652817,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05135902082882265,
+      "cos(map-predicted shift,\nrealized shift)": -0.35957735776901245,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05208953532013828,
+      "cos(map-predicted shift,\nrealized shift)": -0.048881206661462784,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.061990522336968716,
+      "cos(map-predicted shift,\nrealized shift)": 0.2269090861082077,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10452821106925493,
+      "cos(map-predicted shift,\nrealized shift)": 0.5338320136070251,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1305109978313809,
+      "cos(map-predicted shift,\nrealized shift)": -0.11704578250646591,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11503110564082225,
+      "cos(map-predicted shift,\nrealized shift)": -0.028238985687494278,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.061757591718903854,
+      "cos(map-predicted shift,\nrealized shift)": 0.12880925834178925,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12219532269459063,
+      "cos(map-predicted shift,\nrealized shift)": -0.1369275450706482,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11710184898484101,
+      "cos(map-predicted shift,\nrealized shift)": 0.12719325721263885,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14317724312932056,
+      "cos(map-predicted shift,\nrealized shift)": 0.09307453781366348,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07914200230883794,
+      "cos(map-predicted shift,\nrealized shift)": -0.06817325949668884,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09498088486138738,
+      "cos(map-predicted shift,\nrealized shift)": 0.5797757506370544,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.057069805890084514,
+      "cos(map-predicted shift,\nrealized shift)": -0.0383070632815361,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13288360537955768,
+      "cos(map-predicted shift,\nrealized shift)": 0.0036836399231106043,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05061319039559236,
+      "cos(map-predicted shift,\nrealized shift)": 0.2269090861082077,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06776384036260105,
+      "cos(map-predicted shift,\nrealized shift)": 0.09737612307071686,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12358601619954346,
+      "cos(map-predicted shift,\nrealized shift)": 0.2829696536064148,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12853578984676134,
+      "cos(map-predicted shift,\nrealized shift)": -0.04215766489505768,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14326212426140825,
+      "cos(map-predicted shift,\nrealized shift)": -0.1568385511636734,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0991502433372763,
+      "cos(map-predicted shift,\nrealized shift)": 0.515064001083374,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08401850702631061,
+      "cos(map-predicted shift,\nrealized shift)": 0.33624887466430664,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.050272157072947146,
+      "cos(map-predicted shift,\nrealized shift)": -0.1314203441143036,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09465411333378518,
+      "cos(map-predicted shift,\nrealized shift)": 0.3024875819683075,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07813539001337436,
+      "cos(map-predicted shift,\nrealized shift)": -0.009127029217779636,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05170944861403936,
+      "cos(map-predicted shift,\nrealized shift)": 0.4551638960838318,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1462518360313424,
+      "cos(map-predicted shift,\nrealized shift)": 0.3288351893424988,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11240697559743279,
+      "cos(map-predicted shift,\nrealized shift)": 0.041313353925943375,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06158640256888828,
+      "cos(map-predicted shift,\nrealized shift)": -0.0728834867477417,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12726968975673306,
+      "cos(map-predicted shift,\nrealized shift)": 0.40082797408103943,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11482277423196546,
+      "cos(map-predicted shift,\nrealized shift)": 0.3286059498786926,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07689636469046925,
+      "cos(map-predicted shift,\nrealized shift)": -0.016844725236296654,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09827858439752547,
+      "cos(map-predicted shift,\nrealized shift)": -0.11393877863883972,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09261431868671173,
+      "cos(map-predicted shift,\nrealized shift)": -0.06892005354166031,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12560873266133665,
+      "cos(map-predicted shift,\nrealized shift)": -0.01595558226108551,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12211090024262183,
+      "cos(map-predicted shift,\nrealized shift)": -0.21848464012145996,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13076998915666277,
+      "cos(map-predicted shift,\nrealized shift)": 0.19362524151802063,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10940845265894034,
+      "cos(map-predicted shift,\nrealized shift)": 0.2696167826652527,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13948900668141967,
+      "cos(map-predicted shift,\nrealized shift)": -0.12073201686143875,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12050271322533251,
+      "cos(map-predicted shift,\nrealized shift)": -0.08997969329357147,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07990001880248912,
+      "cos(map-predicted shift,\nrealized shift)": -0.007644849829375744,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08602870278706548,
+      "cos(map-predicted shift,\nrealized shift)": 0.32796046137809753,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14605911284731604,
+      "cos(map-predicted shift,\nrealized shift)": 0.023349082097411156,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0526241820423808,
+      "cos(map-predicted shift,\nrealized shift)": -0.05611197277903557,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07754207787777426,
+      "cos(map-predicted shift,\nrealized shift)": 0.5154913067817688,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11302608862339324,
+      "cos(map-predicted shift,\nrealized shift)": 0.30440089106559753,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10259838687132738,
+      "cos(map-predicted shift,\nrealized shift)": 0.03756609186530113,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12294667244340048,
+      "cos(map-predicted shift,\nrealized shift)": 0.5298986434936523,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0871844583551741,
+      "cos(map-predicted shift,\nrealized shift)": 0.4751913249492645,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10324778935480199,
+      "cos(map-predicted shift,\nrealized shift)": -0.3004041016101837,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11081344232709729,
+      "cos(map-predicted shift,\nrealized shift)": 0.3215896487236023,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08683913538459553,
+      "cos(map-predicted shift,\nrealized shift)": -0.014743562787771225,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09951815467914231,
+      "cos(map-predicted shift,\nrealized shift)": 0.11185035109519958,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07156018442751771,
+      "cos(map-predicted shift,\nrealized shift)": 0.2682536542415619,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1356560420893119,
+      "cos(map-predicted shift,\nrealized shift)": 0.003801659680902958,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08888465370988481,
+      "cos(map-predicted shift,\nrealized shift)": 0.07764528691768646,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14178557527961383,
+      "cos(map-predicted shift,\nrealized shift)": 0.5290506482124329,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.058761210314737994,
+      "cos(map-predicted shift,\nrealized shift)": -0.02432083711028099,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0699572145710673,
+      "cos(map-predicted shift,\nrealized shift)": -0.032675787806510925,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05962252114269609,
+      "cos(map-predicted shift,\nrealized shift)": -0.14338380098342896,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06519892615449507,
+      "cos(map-predicted shift,\nrealized shift)": 0.06762226670980453,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1337380647962429,
+      "cos(map-predicted shift,\nrealized shift)": 0.26968416571617126,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10535008085726928,
+      "cos(map-predicted shift,\nrealized shift)": 0.03180981054902077,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05442226790777194,
+      "cos(map-predicted shift,\nrealized shift)": -0.033990636467933655,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.13051524826795965,
+      "cos(map-predicted shift,\nrealized shift)": -0.015456827357411385,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0812420633764957,
+      "cos(map-predicted shift,\nrealized shift)": 0.12719325721263885,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11362578921134171,
+      "cos(map-predicted shift,\nrealized shift)": 0.05392773076891899,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11105461760692167,
+      "cos(map-predicted shift,\nrealized shift)": 0.15510790050029755,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10626466797114292,
+      "cos(map-predicted shift,\nrealized shift)": -0.030685335397720337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0733797079556144,
+      "cos(map-predicted shift,\nrealized shift)": 0.4621858298778534,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.22,
+      "cos(map-predicted shift,\nrealized shift)": 0.6994886676470439,
+      "series": "map on unpatched answer states",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.02,
+      "cos(map-predicted shift,\nrealized shift)": 0.14567155364331685,
+      "series": "map on patch-induced shifts (3 settings)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3,
+      "cos(map-predicted shift,\nrealized shift)": 0.002577225975998806,
+      "series": "spectrum-matched random map",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.3,
+      "cos(map-predicted shift,\nrealized shift)": 0.007974843231446965,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1,
+      "cos(map-predicted shift,\nrealized shift)": 0.014261098518133319,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.35,
+      "cos(map-predicted shift,\nrealized shift)": 0.0027918306662334845,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.35,
+      "cos(map-predicted shift,\nrealized shift)": 0.007974843231446965,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.18,
+      "cos(map-predicted shift,\nrealized shift)": 0.1220050778845325,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.4,
+      "cos(map-predicted shift,\nrealized shift)": -0.003412058957219415,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.4,
+      "cos(map-predicted shift,\nrealized shift)": 0.007974843231446965,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.7406082417259596,
+      "cos(map-predicted shift,\nrealized shift)": 0.9038400650024414,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7524455589597493,
+      "cos(map-predicted shift,\nrealized shift)": 0.9017713069915771,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7511209339464872,
+      "cos(map-predicted shift,\nrealized shift)": 0.9065665602684021,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7375837798349816,
+      "cos(map-predicted shift,\nrealized shift)": 0.8528475761413574,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7381958457970234,
+      "cos(map-predicted shift,\nrealized shift)": 0.8715008497238159,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7696111519522599,
+      "cos(map-predicted shift,\nrealized shift)": 0.8661049604415894,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7661831487799928,
+      "cos(map-predicted shift,\nrealized shift)": 0.8544936776161194,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.815383660131938,
+      "cos(map-predicted shift,\nrealized shift)": 0.8829514384269714,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7370437572800959,
+      "cos(map-predicted shift,\nrealized shift)": 0.8453830480575562,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7606219232531567,
+      "cos(map-predicted shift,\nrealized shift)": 0.8339176177978516,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7562020457923238,
+      "cos(map-predicted shift,\nrealized shift)": 0.8072497248649597,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7901046733324714,
+      "cos(map-predicted shift,\nrealized shift)": 0.860584020614624,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.8079698529109492,
+      "cos(map-predicted shift,\nrealized shift)": 0.827535092830658,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7778332934610882,
+      "cos(map-predicted shift,\nrealized shift)": 0.7969348430633545,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.7765985078480407,
+      "cos(map-predicted shift,\nrealized shift)": 0.8328191637992859,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.146897272551328,
+      "cos(map-predicted shift,\nrealized shift)": -0.11932950466871262,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1082237089198914,
+      "cos(map-predicted shift,\nrealized shift)": -0.0005102710565552115,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1397103669497253,
+      "cos(map-predicted shift,\nrealized shift)": -0.1360914260149002,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1413053804708226,
+      "cos(map-predicted shift,\nrealized shift)": 0.07218898832798004,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1223392525386038,
+      "cos(map-predicted shift,\nrealized shift)": 0.17094281315803528,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0554094175853987,
+      "cos(map-predicted shift,\nrealized shift)": -0.20141839981079102,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.077930838934465,
+      "cos(map-predicted shift,\nrealized shift)": 0.10076609998941422,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1376782775015706,
+      "cos(map-predicted shift,\nrealized shift)": 0.050414349883794785,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.145415105628179,
+      "cos(map-predicted shift,\nrealized shift)": -0.05877476558089256,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1492882987891284,
+      "cos(map-predicted shift,\nrealized shift)": 0.06661806255578995,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.103007805929881,
+      "cos(map-predicted shift,\nrealized shift)": -0.0924450010061264,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0967629923503608,
+      "cos(map-predicted shift,\nrealized shift)": -0.01900516077876091,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.135948991019751,
+      "cos(map-predicted shift,\nrealized shift)": -0.01186081301420927,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.066226222350157,
+      "cos(map-predicted shift,\nrealized shift)": -0.004113074857741594,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0830999976377085,
+      "cos(map-predicted shift,\nrealized shift)": 0.12622690200805664,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1007472472517186,
+      "cos(map-predicted shift,\nrealized shift)": -0.08672855794429779,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1011995305709263,
+      "cos(map-predicted shift,\nrealized shift)": 0.24225430190563202,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0593116840447894,
+      "cos(map-predicted shift,\nrealized shift)": -0.19875293970108032,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0842989951295483,
+      "cos(map-predicted shift,\nrealized shift)": 0.06841820478439331,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.126333845288065,
+      "cos(map-predicted shift,\nrealized shift)": 0.3112313747406006,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0687187957482007,
+      "cos(map-predicted shift,\nrealized shift)": -0.09118075668811798,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0987012542666854,
+      "cos(map-predicted shift,\nrealized shift)": -0.011181698180735111,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1182194377194454,
+      "cos(map-predicted shift,\nrealized shift)": 0.16436997056007385,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0989947950549803,
+      "cos(map-predicted shift,\nrealized shift)": 0.5216882228851318,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0724416524011242,
+      "cos(map-predicted shift,\nrealized shift)": -0.04923487827181816,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0920175474121934,
+      "cos(map-predicted shift,\nrealized shift)": 0.10238271206617355,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.104923158002081,
+      "cos(map-predicted shift,\nrealized shift)": -0.031063180416822433,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0510358503123098,
+      "cos(map-predicted shift,\nrealized shift)": 0.1308334618806839,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0857291107920635,
+      "cos(map-predicted shift,\nrealized shift)": -0.03418463096022606,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.148285799999185,
+      "cos(map-predicted shift,\nrealized shift)": 0.12285657972097397,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0957456324663475,
+      "cos(map-predicted shift,\nrealized shift)": -0.12635812163352966,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1361466203286263,
+      "cos(map-predicted shift,\nrealized shift)": -0.015824323520064354,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1299477828586142,
+      "cos(map-predicted shift,\nrealized shift)": -0.09004015475511551,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0894594191558584,
+      "cos(map-predicted shift,\nrealized shift)": 0.2195265144109726,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1233816873935523,
+      "cos(map-predicted shift,\nrealized shift)": -0.25591030716896057,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0596192882869802,
+      "cos(map-predicted shift,\nrealized shift)": 0.07736819237470627,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.078446028493948,
+      "cos(map-predicted shift,\nrealized shift)": -0.02295290306210518,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0755052970295764,
+      "cos(map-predicted shift,\nrealized shift)": -0.01961880922317505,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0876616640536223,
+      "cos(map-predicted shift,\nrealized shift)": -0.0033574930857867002,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1168053097966113,
+      "cos(map-predicted shift,\nrealized shift)": -0.0911807268857956,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0856645857243996,
+      "cos(map-predicted shift,\nrealized shift)": 0.049094632267951965,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.128991346017399,
+      "cos(map-predicted shift,\nrealized shift)": 0.06617987900972366,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0776123799699584,
+      "cos(map-predicted shift,\nrealized shift)": 0.09971752017736435,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1002033379238265,
+      "cos(map-predicted shift,\nrealized shift)": 0.036963801831007004,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.148335256376711,
+      "cos(map-predicted shift,\nrealized shift)": 0.2347668558359146,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.075504607918587,
+      "cos(map-predicted shift,\nrealized shift)": 0.17692780494689941,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1291722937207773,
+      "cos(map-predicted shift,\nrealized shift)": 0.490273654460907,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.066067527629658,
+      "cos(map-predicted shift,\nrealized shift)": -0.13665059208869934,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0617271898619407,
+      "cos(map-predicted shift,\nrealized shift)": 0.2111433893442154,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0706336099088143,
+      "cos(map-predicted shift,\nrealized shift)": -0.14873309433460236,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.06445752465071,
+      "cos(map-predicted shift,\nrealized shift)": -0.17048615217208862,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.11796912283262,
+      "cos(map-predicted shift,\nrealized shift)": 0.34337154030799866,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1259336094892594,
+      "cos(map-predicted shift,\nrealized shift)": -0.1508352905511856,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0852343646893279,
+      "cos(map-predicted shift,\nrealized shift)": -0.21210607886314392,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0567338802433603,
+      "cos(map-predicted shift,\nrealized shift)": -0.04408450424671173,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.110827423730872,
+      "cos(map-predicted shift,\nrealized shift)": -0.03401856869459152,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0555342867129809,
+      "cos(map-predicted shift,\nrealized shift)": -0.07142836600542068,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0669073309757977,
+      "cos(map-predicted shift,\nrealized shift)": -0.14599929749965668,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.118308723884351,
+      "cos(map-predicted shift,\nrealized shift)": 0.06323738396167755,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.128275072528603,
+      "cos(map-predicted shift,\nrealized shift)": -0.057583410292863846,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0699116501251538,
+      "cos(map-predicted shift,\nrealized shift)": -0.056198153644800186,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0879885418539161,
+      "cos(map-predicted shift,\nrealized shift)": 0.020716020837426186,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1288828064408372,
+      "cos(map-predicted shift,\nrealized shift)": -0.0516766719520092,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.102339814638384,
+      "cos(map-predicted shift,\nrealized shift)": 0.09821802377700806,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.148575841470617,
+      "cos(map-predicted shift,\nrealized shift)": 0.12031466513872147,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1085579049695018,
+      "cos(map-predicted shift,\nrealized shift)": -0.03320077061653137,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1191975852477005,
+      "cos(map-predicted shift,\nrealized shift)": 0.4826725125312805,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1094876027974703,
+      "cos(map-predicted shift,\nrealized shift)": 0.18751110136508942,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0680659080917163,
+      "cos(map-predicted shift,\nrealized shift)": 0.0716230720281601,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1158706200745692,
+      "cos(map-predicted shift,\nrealized shift)": 0.04234703257679939,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0578453087197681,
+      "cos(map-predicted shift,\nrealized shift)": 0.16238071024417877,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.070061507782871,
+      "cos(map-predicted shift,\nrealized shift)": -0.2777419686317444,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.121274757101949,
+      "cos(map-predicted shift,\nrealized shift)": 0.06334199011325836,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0665025071777994,
+      "cos(map-predicted shift,\nrealized shift)": 0.10792150348424911,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.129303239187096,
+      "cos(map-predicted shift,\nrealized shift)": 0.06173701956868172,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.126749129415341,
+      "cos(map-predicted shift,\nrealized shift)": 0.008890301920473576,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1173859173925405,
+      "cos(map-predicted shift,\nrealized shift)": 0.09481950849294662,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0503956675996142,
+      "cos(map-predicted shift,\nrealized shift)": 0.11432132124900818,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1161672888282548,
+      "cos(map-predicted shift,\nrealized shift)": -0.04574492946267128,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0819788096744771,
+      "cos(map-predicted shift,\nrealized shift)": 0.1960633546113968,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1407791610278202,
+      "cos(map-predicted shift,\nrealized shift)": -0.04719243571162224,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0948355424956373,
+      "cos(map-predicted shift,\nrealized shift)": 0.27056631445884705,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0730451770363651,
+      "cos(map-predicted shift,\nrealized shift)": 0.018182411789894104,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1268001844648283,
+      "cos(map-predicted shift,\nrealized shift)": 0.08643218129873276,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1135210163366194,
+      "cos(map-predicted shift,\nrealized shift)": -0.202729731798172,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.137713589238094,
+      "cos(map-predicted shift,\nrealized shift)": -0.07886505872011185,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1151307707580116,
+      "cos(map-predicted shift,\nrealized shift)": 0.04259822145104408,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1352658996271587,
+      "cos(map-predicted shift,\nrealized shift)": -0.0780802071094513,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0633584814397024,
+      "cos(map-predicted shift,\nrealized shift)": -0.06137045845389366,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0907395799348174,
+      "cos(map-predicted shift,\nrealized shift)": -0.13222147524356842,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1494795811824459,
+      "cos(map-predicted shift,\nrealized shift)": -0.12768405675888062,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0911149135705902,
+      "cos(map-predicted shift,\nrealized shift)": 0.22589164972305298,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1080334699583427,
+      "cos(map-predicted shift,\nrealized shift)": -0.030232416465878487,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0655529851417587,
+      "cos(map-predicted shift,\nrealized shift)": 0.24018506705760956,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1442041309289757,
+      "cos(map-predicted shift,\nrealized shift)": 0.02501009777188301,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1244412980181808,
+      "cos(map-predicted shift,\nrealized shift)": 0.12192200124263763,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.133531117541403,
+      "cos(map-predicted shift,\nrealized shift)": -0.213157519698143,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1318523181017393,
+      "cos(map-predicted shift,\nrealized shift)": 0.05913879722356796,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.074660418669488,
+      "cos(map-predicted shift,\nrealized shift)": -0.11358565092086792,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1496787416494996,
+      "cos(map-predicted shift,\nrealized shift)": -0.11865051090717316,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1343919252321888,
+      "cos(map-predicted shift,\nrealized shift)": 0.04719329997897148,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0817950455789203,
+      "cos(map-predicted shift,\nrealized shift)": 0.08177237957715988,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1146722351570286,
+      "cos(map-predicted shift,\nrealized shift)": -0.09152140468358994,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.082146721275454,
+      "cos(map-predicted shift,\nrealized shift)": 0.44312942028045654,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0530807520151175,
+      "cos(map-predicted shift,\nrealized shift)": 0.0568753182888031,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1180208790276747,
+      "cos(map-predicted shift,\nrealized shift)": 0.09399593621492386,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0849052214279082,
+      "cos(map-predicted shift,\nrealized shift)": 0.018578246235847473,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.088899674356605,
+      "cos(map-predicted shift,\nrealized shift)": -0.10967108607292175,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1378291366293276,
+      "cos(map-predicted shift,\nrealized shift)": -0.13686546683311462,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1214720107637532,
+      "cos(map-predicted shift,\nrealized shift)": -0.2965167760848999,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.051722392108911,
+      "cos(map-predicted shift,\nrealized shift)": 0.13464471697807312,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.066634540553711,
+      "cos(map-predicted shift,\nrealized shift)": -0.0718676820397377,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1277502192960949,
+      "cos(map-predicted shift,\nrealized shift)": 0.10043787211179733,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1098827909900062,
+      "cos(map-predicted shift,\nrealized shift)": 0.0682440772652626,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.149912103975952,
+      "cos(map-predicted shift,\nrealized shift)": -0.012325267307460308,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.144148262112956,
+      "cos(map-predicted shift,\nrealized shift)": 0.20632266998291016,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1128644468899607,
+      "cos(map-predicted shift,\nrealized shift)": 0.16807834804058075,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0725752935494433,
+      "cos(map-predicted shift,\nrealized shift)": -0.19875295460224152,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0593389425821942,
+      "cos(map-predicted shift,\nrealized shift)": 0.030430011451244354,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1243723599516746,
+      "cos(map-predicted shift,\nrealized shift)": -0.16382305324077606,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1261033348403335,
+      "cos(map-predicted shift,\nrealized shift)": -0.017965493723750114,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.104038164702234,
+      "cos(map-predicted shift,\nrealized shift)": 0.4500698745250702,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.105826116779988,
+      "cos(map-predicted shift,\nrealized shift)": 0.20999442040920258,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0533387175733535,
+      "cos(map-predicted shift,\nrealized shift)": -0.010283275507390499,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0511620290763584,
+      "cos(map-predicted shift,\nrealized shift)": 0.1035965085029602,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0695613716712473,
+      "cos(map-predicted shift,\nrealized shift)": 0.010401681996881962,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0680657916275844,
+      "cos(map-predicted shift,\nrealized shift)": -0.037529077380895615,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.129539922838933,
+      "cos(map-predicted shift,\nrealized shift)": -0.05879182741045952,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0744499014209716,
+      "cos(map-predicted shift,\nrealized shift)": -0.09700491279363632,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1068489287724892,
+      "cos(map-predicted shift,\nrealized shift)": 0.03940018266439438,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.087854751025721,
+      "cos(map-predicted shift,\nrealized shift)": 0.07483159005641937,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1422221439110374,
+      "cos(map-predicted shift,\nrealized shift)": 0.017477359622716904,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1349942281276224,
+      "cos(map-predicted shift,\nrealized shift)": -0.030449824407696724,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0873340732493446,
+      "cos(map-predicted shift,\nrealized shift)": 0.3280365765094757,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0555822884200934,
+      "cos(map-predicted shift,\nrealized shift)": -0.2566361725330353,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1303893844197805,
+      "cos(map-predicted shift,\nrealized shift)": 0.001585017191246152,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.135754596704441,
+      "cos(map-predicted shift,\nrealized shift)": 0.16179682314395905,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.107643718698431,
+      "cos(map-predicted shift,\nrealized shift)": -0.12582601606845856,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1394169134682495,
+      "cos(map-predicted shift,\nrealized shift)": -0.14427384734153748,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.053275821586339,
+      "cos(map-predicted shift,\nrealized shift)": -0.010647491551935673,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1446553399208723,
+      "cos(map-predicted shift,\nrealized shift)": 0.13338468968868256,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1475075396949455,
+      "cos(map-predicted shift,\nrealized shift)": 0.34227290749549866,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1136292899780647,
+      "cos(map-predicted shift,\nrealized shift)": -0.0875118300318718,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1310584644341524,
+      "cos(map-predicted shift,\nrealized shift)": -0.12242315709590912,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0836191675847635,
+      "cos(map-predicted shift,\nrealized shift)": 0.3299764394760132,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1177380398558625,
+      "cos(map-predicted shift,\nrealized shift)": 0.24379923939704895,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0726612746778112,
+      "cos(map-predicted shift,\nrealized shift)": -0.022701086476445198,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1046085367702347,
+      "cos(map-predicted shift,\nrealized shift)": -0.12972433865070343,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0668919918547752,
+      "cos(map-predicted shift,\nrealized shift)": -0.08069873601198196,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.127178138060549,
+      "cos(map-predicted shift,\nrealized shift)": -0.055122047662734985,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1490975869094868,
+      "cos(map-predicted shift,\nrealized shift)": 0.09450095146894455,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0593873493784338,
+      "cos(map-predicted shift,\nrealized shift)": -0.02109525352716446,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0556578297741652,
+      "cos(map-predicted shift,\nrealized shift)": 0.0489870086312294,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.105023888054875,
+      "cos(map-predicted shift,\nrealized shift)": 0.025823703035712242,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0626153471682025,
+      "cos(map-predicted shift,\nrealized shift)": -0.19999636709690094,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0517758169782134,
+      "cos(map-predicted shift,\nrealized shift)": 0.062261469662189484,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.098695005626987,
+      "cos(map-predicted shift,\nrealized shift)": -0.11124103516340256,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1413593932448498,
+      "cos(map-predicted shift,\nrealized shift)": -0.1496591866016388,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0549343384113068,
+      "cos(map-predicted shift,\nrealized shift)": -0.0847926139831543,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.06113774804005,
+      "cos(map-predicted shift,\nrealized shift)": -0.12461739778518677,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0723750011201734,
+      "cos(map-predicted shift,\nrealized shift)": 0.41358882188796997,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1422282390224008,
+      "cos(map-predicted shift,\nrealized shift)": 0.14022564888000488,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0821480298933392,
+      "cos(map-predicted shift,\nrealized shift)": -0.21002857387065887,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.087650813991552,
+      "cos(map-predicted shift,\nrealized shift)": 0.031508833169937134,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0580398035671803,
+      "cos(map-predicted shift,\nrealized shift)": 0.21606852114200592,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0925726165642387,
+      "cos(map-predicted shift,\nrealized shift)": 0.06538121402263641,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0625676635746522,
+      "cos(map-predicted shift,\nrealized shift)": 0.0711611658334732,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.123988621305472,
+      "cos(map-predicted shift,\nrealized shift)": -0.073997363448143,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0801777579451428,
+      "cos(map-predicted shift,\nrealized shift)": -0.07712363451719284,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0983553706941616,
+      "cos(map-predicted shift,\nrealized shift)": 0.18141116201877594,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0938237283064163,
+      "cos(map-predicted shift,\nrealized shift)": -0.05885221064090729,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.101068585309971,
+      "cos(map-predicted shift,\nrealized shift)": 0.34712982177734375,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.071867246321231,
+      "cos(map-predicted shift,\nrealized shift)": 0.14079086482524872,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.061475891117108,
+      "cos(map-predicted shift,\nrealized shift)": 0.028852544724941254,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0967767937426027,
+      "cos(map-predicted shift,\nrealized shift)": 0.030430011451244354,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.105320410610369,
+      "cos(map-predicted shift,\nrealized shift)": 0.1455218493938446,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0629283804592375,
+      "cos(map-predicted shift,\nrealized shift)": 0.4748881459236145,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.079125336280436,
+      "cos(map-predicted shift,\nrealized shift)": -0.11521460860967636,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1262352479198197,
+      "cos(map-predicted shift,\nrealized shift)": 0.04233026131987572,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1002004607513765,
+      "cos(map-predicted shift,\nrealized shift)": 0.24306155741214752,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1023143650326954,
+      "cos(map-predicted shift,\nrealized shift)": 0.023998964577913284,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0857488915315636,
+      "cos(map-predicted shift,\nrealized shift)": -0.2307973951101303,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.059872045829067,
+      "cos(map-predicted shift,\nrealized shift)": 0.00964572373777628,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0516077105825428,
+      "cos(map-predicted shift,\nrealized shift)": 0.330020546913147,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1013400087571912,
+      "cos(map-predicted shift,\nrealized shift)": 0.024446163326501846,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1055440935657344,
+      "cos(map-predicted shift,\nrealized shift)": 0.1807323396205902,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0862195782147475,
+      "cos(map-predicted shift,\nrealized shift)": -0.11865051090717316,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0778035129547794,
+      "cos(map-predicted shift,\nrealized shift)": 0.12767393887043,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.078723177164419,
+      "cos(map-predicted shift,\nrealized shift)": -0.09798571467399597,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.07484274399477,
+      "cos(map-predicted shift,\nrealized shift)": 0.22767238318920135,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1136560793290924,
+      "cos(map-predicted shift,\nrealized shift)": 0.09994734078645706,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1177708390794792,
+      "cos(map-predicted shift,\nrealized shift)": -0.061053261160850525,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0551427208599249,
+      "cos(map-predicted shift,\nrealized shift)": -0.022379586473107338,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0529801515074941,
+      "cos(map-predicted shift,\nrealized shift)": 0.2094292938709259,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1090273162658293,
+      "cos(map-predicted shift,\nrealized shift)": -0.011946631595492363,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.117933985154144,
+      "cos(map-predicted shift,\nrealized shift)": 0.13576997816562653,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1085338210661637,
+      "cos(map-predicted shift,\nrealized shift)": 0.13910706341266632,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0714549329709229,
+      "cos(map-predicted shift,\nrealized shift)": 0.12407726049423218,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.132728785182102,
+      "cos(map-predicted shift,\nrealized shift)": -0.009990930557250977,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0975622968508418,
+      "cos(map-predicted shift,\nrealized shift)": 0.10043953359127045,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0886065029531868,
+      "cos(map-predicted shift,\nrealized shift)": 0.10504133254289627,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1449217307740853,
+      "cos(map-predicted shift,\nrealized shift)": -0.12319006025791168,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1133007352897226,
+      "cos(map-predicted shift,\nrealized shift)": -0.06833338737487793,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1234367128184641,
+      "cos(map-predicted shift,\nrealized shift)": -0.03323810175061226,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1206779393424804,
+      "cos(map-predicted shift,\nrealized shift)": 0.2182711958885193,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.117874441635659,
+      "cos(map-predicted shift,\nrealized shift)": 0.04928046837449074,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1358959163652427,
+      "cos(map-predicted shift,\nrealized shift)": 0.48181334137916565,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0664886051713474,
+      "cos(map-predicted shift,\nrealized shift)": -0.15456882119178772,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0631501969669153,
+      "cos(map-predicted shift,\nrealized shift)": -0.17267295718193054,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0867220520281524,
+      "cos(map-predicted shift,\nrealized shift)": 0.21536290645599365,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0521845129387988,
+      "cos(map-predicted shift,\nrealized shift)": 0.09812723845243454,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.059164368007757,
+      "cos(map-predicted shift,\nrealized shift)": -0.054918114095926285,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1034193195726396,
+      "cos(map-predicted shift,\nrealized shift)": 0.3619976341724396,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1007381284434925,
+      "cos(map-predicted shift,\nrealized shift)": -0.05220070853829384,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0960704096630078,
+      "cos(map-predicted shift,\nrealized shift)": 0.22716812789440155,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.129078446971937,
+      "cos(map-predicted shift,\nrealized shift)": 0.03952084109187126,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1025125567885874,
+      "cos(map-predicted shift,\nrealized shift)": 0.1950078010559082,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0603573206037422,
+      "cos(map-predicted shift,\nrealized shift)": 0.03460046648979187,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1007772022363596,
+      "cos(map-predicted shift,\nrealized shift)": 0.1357198804616928,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.08795403451697,
+      "cos(map-predicted shift,\nrealized shift)": 0.2593860924243927,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1038421381074128,
+      "cos(map-predicted shift,\nrealized shift)": -0.04305383563041687,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0564150382781925,
+      "cos(map-predicted shift,\nrealized shift)": 0.12368112057447433,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0520886328105845,
+      "cos(map-predicted shift,\nrealized shift)": -0.040116086602211,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1116584731733103,
+      "cos(map-predicted shift,\nrealized shift)": -0.12164881080389023,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1186693260292566,
+      "cos(map-predicted shift,\nrealized shift)": -0.0780802071094513,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.137952890524229,
+      "cos(map-predicted shift,\nrealized shift)": 0.1312023103237152,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0577576651931013,
+      "cos(map-predicted shift,\nrealized shift)": 0.04924033582210541,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0763696765535837,
+      "cos(map-predicted shift,\nrealized shift)": 0.1850871741771698,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.140835652748005,
+      "cos(map-predicted shift,\nrealized shift)": 0.09738101065158844,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1100373488880972,
+      "cos(map-predicted shift,\nrealized shift)": -0.11799131333827972,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0514807643545332,
+      "cos(map-predicted shift,\nrealized shift)": -0.09794425219297409,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0730320584978763,
+      "cos(map-predicted shift,\nrealized shift)": 0.0786667913198471,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1199595808605023,
+      "cos(map-predicted shift,\nrealized shift)": -0.2499636709690094,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0831771153378131,
+      "cos(map-predicted shift,\nrealized shift)": 0.2182711958885193,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0729839985382585,
+      "cos(map-predicted shift,\nrealized shift)": -0.09847842156887054,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1283702628122707,
+      "cos(map-predicted shift,\nrealized shift)": -0.10331404954195023,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1465607450787787,
+      "cos(map-predicted shift,\nrealized shift)": 0.09598810225725174,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0571854450245064,
+      "cos(map-predicted shift,\nrealized shift)": 0.23826606571674347,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.097335676030589,
+      "cos(map-predicted shift,\nrealized shift)": 0.06640934199094772,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0622099823593711,
+      "cos(map-predicted shift,\nrealized shift)": 0.15149515867233276,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.055607016250001,
+      "cos(map-predicted shift,\nrealized shift)": 0.006418223027139902,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1232558154038457,
+      "cos(map-predicted shift,\nrealized shift)": 0.3331369459629059,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.085416660534586,
+      "cos(map-predicted shift,\nrealized shift)": -0.1022542342543602,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1385215725602895,
+      "cos(map-predicted shift,\nrealized shift)": 0.04163103550672531,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1124413520994594,
+      "cos(map-predicted shift,\nrealized shift)": 0.031381890177726746,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0693888896704276,
+      "cos(map-predicted shift,\nrealized shift)": -0.13231781125068665,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1426863210506366,
+      "cos(map-predicted shift,\nrealized shift)": 0.2246461659669876,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0615219535426648,
+      "cos(map-predicted shift,\nrealized shift)": 0.29714256525039673,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.078566909879594,
+      "cos(map-predicted shift,\nrealized shift)": -0.03213046118617058,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1072869605109925,
+      "cos(map-predicted shift,\nrealized shift)": -0.12366354465484619,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0834376737474007,
+      "cos(map-predicted shift,\nrealized shift)": -0.07398839294910431,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1114396705086014,
+      "cos(map-predicted shift,\nrealized shift)": 0.3349127471446991,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0811591993393164,
+      "cos(map-predicted shift,\nrealized shift)": 0.0031360185239464045,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1497166495443638,
+      "cos(map-predicted shift,\nrealized shift)": 0.2200985699892044,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1144578877295552,
+      "cos(map-predicted shift,\nrealized shift)": -0.006600068882107735,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.061151957595088,
+      "cos(map-predicted shift,\nrealized shift)": -0.051214270293712616,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0774188015427275,
+      "cos(map-predicted shift,\nrealized shift)": 0.04706176742911339,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.065676632079808,
+      "cos(map-predicted shift,\nrealized shift)": -0.08083617687225342,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0966170300533766,
+      "cos(map-predicted shift,\nrealized shift)": -0.0510232113301754,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0853015505958064,
+      "cos(map-predicted shift,\nrealized shift)": -0.16862471401691437,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1032116920268815,
+      "cos(map-predicted shift,\nrealized shift)": 0.06718984991312027,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0559311945554657,
+      "cos(map-predicted shift,\nrealized shift)": -0.021724587306380272,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0983464440422024,
+      "cos(map-predicted shift,\nrealized shift)": 0.04560305178165436,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0784386672434587,
+      "cos(map-predicted shift,\nrealized shift)": 0.5216882228851318,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0888951408772536,
+      "cos(map-predicted shift,\nrealized shift)": -0.01559192594140768,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0974806851729513,
+      "cos(map-predicted shift,\nrealized shift)": 0.023800630122423172,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1117995237441092,
+      "cos(map-predicted shift,\nrealized shift)": 0.16832883656024933,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.084625937610621,
+      "cos(map-predicted shift,\nrealized shift)": 0.10473008453845978,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.108512348870761,
+      "cos(map-predicted shift,\nrealized shift)": -0.03313129395246506,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0631320961093795,
+      "cos(map-predicted shift,\nrealized shift)": -0.13306385278701782,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1374320927407844,
+      "cos(map-predicted shift,\nrealized shift)": 0.0010538705391809344,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.070791877921719,
+      "cos(map-predicted shift,\nrealized shift)": 0.3389764726161957,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0807481923619238,
+      "cos(map-predicted shift,\nrealized shift)": -0.037411291152238846,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1209273728548519,
+      "cos(map-predicted shift,\nrealized shift)": 0.058311931788921356,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0965807295185792,
+      "cos(map-predicted shift,\nrealized shift)": -0.043365947902202606,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1220417356483758,
+      "cos(map-predicted shift,\nrealized shift)": 0.08074155449867249,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0958052507217615,
+      "cos(map-predicted shift,\nrealized shift)": 0.11024235934019089,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0518986940958652,
+      "cos(map-predicted shift,\nrealized shift)": 0.047940827906131744,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1417759616181806,
+      "cos(map-predicted shift,\nrealized shift)": 0.45972126722335815,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0621246653834777,
+      "cos(map-predicted shift,\nrealized shift)": -0.008109055459499359,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0669822117671655,
+      "cos(map-predicted shift,\nrealized shift)": -0.06664495170116425,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1053485428498127,
+      "cos(map-predicted shift,\nrealized shift)": -0.0023429743014276028,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1393212263714914,
+      "cos(map-predicted shift,\nrealized shift)": -0.1000758707523346,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1398752592862595,
+      "cos(map-predicted shift,\nrealized shift)": -0.21405576169490814,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0535023877116487,
+      "cos(map-predicted shift,\nrealized shift)": 0.06486817449331284,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.082682112102815,
+      "cos(map-predicted shift,\nrealized shift)": -0.07142836600542068,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0947894506866418,
+      "cos(map-predicted shift,\nrealized shift)": 0.11579035222530365,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0596384253520146,
+      "cos(map-predicted shift,\nrealized shift)": -0.11507410556077957,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.075234152632733,
+      "cos(map-predicted shift,\nrealized shift)": 0.11631486564874649,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.107101194314774,
+      "cos(map-predicted shift,\nrealized shift)": -0.08563470840454102,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1457784544920002,
+      "cos(map-predicted shift,\nrealized shift)": 0.22083605825901031,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.122534801940942,
+      "cos(map-predicted shift,\nrealized shift)": 0.0466727614402771,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1022086230999857,
+      "cos(map-predicted shift,\nrealized shift)": -0.013237874954938889,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0929997363047494,
+      "cos(map-predicted shift,\nrealized shift)": -0.01713286153972149,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.1389725960911352,
+      "cos(map-predicted shift,\nrealized shift)": -0.035459794104099274,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.053349872376264,
+      "cos(map-predicted shift,\nrealized shift)": -0.06408831477165222,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0541369631214046,
+      "cos(map-predicted shift,\nrealized shift)": 0.11026915907859802,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.11953160158491,
+      "cos(map-predicted shift,\nrealized shift)": -0.059879519045352936,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0649818202105965,
+      "cos(map-predicted shift,\nrealized shift)": -0.20103655755519867,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0847125011834755,
+      "cos(map-predicted shift,\nrealized shift)": -0.03573896735906601,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.78,
+      "cos(map-predicted shift,\nrealized shift)": 0.8562999963760376,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 1.02,
+      "cos(map-predicted shift,\nrealized shift)": 0.09981913165603247,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 1.3,
+      "cos(map-predicted shift,\nrealized shift)": -0.006510563727076968,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.3,
+      "cos(map-predicted shift,\nrealized shift)": -0.008378464068324928,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.1,
+      "cos(map-predicted shift,\nrealized shift)": -0.016115289623703576,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.35,
+      "cos(map-predicted shift,\nrealized shift)": -0.00012715318015034432,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.35,
+      "cos(map-predicted shift,\nrealized shift)": -0.008378464068324928,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.18,
+      "cos(map-predicted shift,\nrealized shift)": 0.04763093302802493,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.4000000000000001,
+      "cos(map-predicted shift,\nrealized shift)": -0.003266621153741047,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.4000000000000001,
+      "cos(map-predicted shift,\nrealized shift)": -0.008378464068324928,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.810120620709922,
+      "cos(map-predicted shift,\nrealized shift)": 0.868202269077301,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.773266831642677,
+      "cos(map-predicted shift,\nrealized shift)": 0.8515810370445251,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8198386401856326,
+      "cos(map-predicted shift,\nrealized shift)": 0.8702863454818726,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.7705933105736424,
+      "cos(map-predicted shift,\nrealized shift)": 0.8038694262504578,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.7525864915478844,
+      "cos(map-predicted shift,\nrealized shift)": 0.838597297668457,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.7575393221206772,
+      "cos(map-predicted shift,\nrealized shift)": 0.8124811053276062,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8194222447544763,
+      "cos(map-predicted shift,\nrealized shift)": 0.8454383015632629,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.7629369835473445,
+      "cos(map-predicted shift,\nrealized shift)": 0.8573825359344482,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.734662233166924,
+      "cos(map-predicted shift,\nrealized shift)": 0.7968631982803345,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.7442535184263266,
+      "cos(map-predicted shift,\nrealized shift)": 0.8119474053382874,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.8264065404549654,
+      "cos(map-predicted shift,\nrealized shift)": 0.8334475159645081,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.779138358124402,
+      "cos(map-predicted shift,\nrealized shift)": 0.8397374749183655,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.813717280243653,
+      "cos(map-predicted shift,\nrealized shift)": 0.8527989387512207,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.7559906511300445,
+      "cos(map-predicted shift,\nrealized shift)": 0.8351072072982788,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.740901525688661,
+      "cos(map-predicted shift,\nrealized shift)": 0.8417538404464722,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.1027080543633194,
+      "cos(map-predicted shift,\nrealized shift)": -0.08795817941427231,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1319884290120155,
+      "cos(map-predicted shift,\nrealized shift)": 0.15650343894958496,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.059849903970924,
+      "cos(map-predicted shift,\nrealized shift)": 0.17546586692333221,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0581585368183526,
+      "cos(map-predicted shift,\nrealized shift)": 0.18019500374794006,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.050258370622967,
+      "cos(map-predicted shift,\nrealized shift)": -0.006333556491881609,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1369969428632083,
+      "cos(map-predicted shift,\nrealized shift)": 0.1624041646718979,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1310662589942373,
+      "cos(map-predicted shift,\nrealized shift)": 0.09080185741186142,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.133120954471081,
+      "cos(map-predicted shift,\nrealized shift)": 0.07922472059726715,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.119164424882627,
+      "cos(map-predicted shift,\nrealized shift)": -0.4013897776603699,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0645193594028863,
+      "cos(map-predicted shift,\nrealized shift)": -0.19988387823104858,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0978575153717163,
+      "cos(map-predicted shift,\nrealized shift)": -0.03219733387231827,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1388815533649312,
+      "cos(map-predicted shift,\nrealized shift)": -0.09018731862306595,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.05592780710841,
+      "cos(map-predicted shift,\nrealized shift)": 0.5279554724693298,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0673079823087854,
+      "cos(map-predicted shift,\nrealized shift)": -0.017608508467674255,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.124715563907468,
+      "cos(map-predicted shift,\nrealized shift)": -0.10534723103046417,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0709272657521973,
+      "cos(map-predicted shift,\nrealized shift)": -0.014021211303770542,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1322402133435667,
+      "cos(map-predicted shift,\nrealized shift)": 0.30697113275527954,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0861177505385347,
+      "cos(map-predicted shift,\nrealized shift)": 0.07712840288877487,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1288939449920625,
+      "cos(map-predicted shift,\nrealized shift)": -0.04057445749640465,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.059491042576999,
+      "cos(map-predicted shift,\nrealized shift)": -0.05698017776012421,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.131655397552674,
+      "cos(map-predicted shift,\nrealized shift)": -0.022420160472393036,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0838043873353467,
+      "cos(map-predicted shift,\nrealized shift)": 0.09371531754732132,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1312786277929634,
+      "cos(map-predicted shift,\nrealized shift)": -0.15940168499946594,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.084711962993095,
+      "cos(map-predicted shift,\nrealized shift)": 0.5562371015548706,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.106492347298558,
+      "cos(map-predicted shift,\nrealized shift)": 0.03229638561606407,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0552467965107395,
+      "cos(map-predicted shift,\nrealized shift)": 0.2623100280761719,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0718578673783705,
+      "cos(map-predicted shift,\nrealized shift)": 0.19168993830680847,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1117273523825117,
+      "cos(map-predicted shift,\nrealized shift)": -0.0007257164106704295,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1439389801531346,
+      "cos(map-predicted shift,\nrealized shift)": -0.03158312290906906,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.100130450965782,
+      "cos(map-predicted shift,\nrealized shift)": -0.03504132479429245,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0743227059749416,
+      "cos(map-predicted shift,\nrealized shift)": 0.09402518719434738,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.084120451033194,
+      "cos(map-predicted shift,\nrealized shift)": -0.10372167080640793,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.144057747019396,
+      "cos(map-predicted shift,\nrealized shift)": -0.11442344635725021,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.107880998435877,
+      "cos(map-predicted shift,\nrealized shift)": -0.082207091152668,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.066052601375113,
+      "cos(map-predicted shift,\nrealized shift)": -0.22110678255558014,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.051659266912527,
+      "cos(map-predicted shift,\nrealized shift)": -0.1629669964313507,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1077275436823064,
+      "cos(map-predicted shift,\nrealized shift)": -0.02477310225367546,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1238803170251144,
+      "cos(map-predicted shift,\nrealized shift)": -0.035972584038972855,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.053088425235056,
+      "cos(map-predicted shift,\nrealized shift)": -0.21477724611759186,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0617602242844764,
+      "cos(map-predicted shift,\nrealized shift)": 0.08386339992284775,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.084692876599772,
+      "cos(map-predicted shift,\nrealized shift)": -0.08008811622858047,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.090319662925718,
+      "cos(map-predicted shift,\nrealized shift)": 0.23024237155914307,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0868815503343754,
+      "cos(map-predicted shift,\nrealized shift)": 0.03760440647602081,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1157542015412165,
+      "cos(map-predicted shift,\nrealized shift)": 0.6045477390289307,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.146629864322644,
+      "cos(map-predicted shift,\nrealized shift)": -0.06921279430389404,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.137377305185817,
+      "cos(map-predicted shift,\nrealized shift)": 0.07010026276111603,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.140582264723557,
+      "cos(map-predicted shift,\nrealized shift)": -0.093051478266716,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.119711653801984,
+      "cos(map-predicted shift,\nrealized shift)": -0.11113306134939194,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0912703714175063,
+      "cos(map-predicted shift,\nrealized shift)": 0.1564001441001892,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.144887649973968,
+      "cos(map-predicted shift,\nrealized shift)": -0.09244424104690552,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0770828792846916,
+      "cos(map-predicted shift,\nrealized shift)": 0.13294987380504608,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.098342087345241,
+      "cos(map-predicted shift,\nrealized shift)": -0.10534723103046417,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.085969640387509,
+      "cos(map-predicted shift,\nrealized shift)": 0.07724425196647644,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1176167015327994,
+      "cos(map-predicted shift,\nrealized shift)": 0.014425700530409813,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1183490412037784,
+      "cos(map-predicted shift,\nrealized shift)": 0.6098021268844604,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0731974817114263,
+      "cos(map-predicted shift,\nrealized shift)": -0.022229056805372238,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0719753367134084,
+      "cos(map-predicted shift,\nrealized shift)": -0.13117703795433044,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.106959591518814,
+      "cos(map-predicted shift,\nrealized shift)": 0.13835720717906952,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.087277200453533,
+      "cos(map-predicted shift,\nrealized shift)": -0.052808977663517,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.097957049420548,
+      "cos(map-predicted shift,\nrealized shift)": 0.09757640212774277,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.120944377549103,
+      "cos(map-predicted shift,\nrealized shift)": 0.08386339992284775,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.072274285522476,
+      "cos(map-predicted shift,\nrealized shift)": 0.07554325461387634,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.104199494267805,
+      "cos(map-predicted shift,\nrealized shift)": -0.019561493769288063,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.137422214093668,
+      "cos(map-predicted shift,\nrealized shift)": 0.22543185949325562,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0755575262401793,
+      "cos(map-predicted shift,\nrealized shift)": -0.08893176913261414,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.071939436722186,
+      "cos(map-predicted shift,\nrealized shift)": 0.19739718735218048,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1287467970813525,
+      "cos(map-predicted shift,\nrealized shift)": -0.33107325434684753,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.067001280628144,
+      "cos(map-predicted shift,\nrealized shift)": 0.08683604747056961,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.129988088105349,
+      "cos(map-predicted shift,\nrealized shift)": -0.07525784522294998,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1422265328463412,
+      "cos(map-predicted shift,\nrealized shift)": 0.0005304114893078804,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0730386112842174,
+      "cos(map-predicted shift,\nrealized shift)": 0.15942619740962982,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1368015560561773,
+      "cos(map-predicted shift,\nrealized shift)": -0.1409093737602234,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0665035434048864,
+      "cos(map-predicted shift,\nrealized shift)": -0.09808333963155746,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0803552658380524,
+      "cos(map-predicted shift,\nrealized shift)": 0.012882078997790813,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.141606795378601,
+      "cos(map-predicted shift,\nrealized shift)": 0.08386339992284775,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0667450692816316,
+      "cos(map-predicted shift,\nrealized shift)": -0.0630691722035408,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0787602530767817,
+      "cos(map-predicted shift,\nrealized shift)": 0.10235534608364105,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1406833687893423,
+      "cos(map-predicted shift,\nrealized shift)": 0.14300262928009033,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.06508322164916,
+      "cos(map-predicted shift,\nrealized shift)": 0.15985772013664246,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1236011791940808,
+      "cos(map-predicted shift,\nrealized shift)": -0.22160422801971436,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1267021942616946,
+      "cos(map-predicted shift,\nrealized shift)": -0.11448690295219421,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.11826380738849,
+      "cos(map-predicted shift,\nrealized shift)": -0.05563084036111832,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.086333734180071,
+      "cos(map-predicted shift,\nrealized shift)": -0.057511698454618454,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1336265628343973,
+      "cos(map-predicted shift,\nrealized shift)": 0.09091445058584213,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1184833420736378,
+      "cos(map-predicted shift,\nrealized shift)": -0.06996994465589523,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.114374795698263,
+      "cos(map-predicted shift,\nrealized shift)": 0.27023330330848694,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.127568042377834,
+      "cos(map-predicted shift,\nrealized shift)": -0.24161310493946075,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1208871317610987,
+      "cos(map-predicted shift,\nrealized shift)": -0.09229835122823715,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0766315204460697,
+      "cos(map-predicted shift,\nrealized shift)": -0.12200087308883667,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.116362667537582,
+      "cos(map-predicted shift,\nrealized shift)": -0.002705808961763978,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1112001736668535,
+      "cos(map-predicted shift,\nrealized shift)": 0.4476289749145508,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.059471976841701,
+      "cos(map-predicted shift,\nrealized shift)": -0.05339833348989487,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1293257122914855,
+      "cos(map-predicted shift,\nrealized shift)": -0.17713119089603424,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0554415428898833,
+      "cos(map-predicted shift,\nrealized shift)": -0.03930258750915527,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.071553266159458,
+      "cos(map-predicted shift,\nrealized shift)": -0.09893842041492462,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.098208275291065,
+      "cos(map-predicted shift,\nrealized shift)": 0.12411489337682724,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0696988691930147,
+      "cos(map-predicted shift,\nrealized shift)": 0.08832758665084839,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.060938080537362,
+      "cos(map-predicted shift,\nrealized shift)": -0.2502988278865814,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0684368290266963,
+      "cos(map-predicted shift,\nrealized shift)": -0.209930881857872,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1472067128994126,
+      "cos(map-predicted shift,\nrealized shift)": -0.08907324820756912,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1471606016526787,
+      "cos(map-predicted shift,\nrealized shift)": -0.014021212235093117,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.103263141269454,
+      "cos(map-predicted shift,\nrealized shift)": 0.13772861659526825,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.112344433539132,
+      "cos(map-predicted shift,\nrealized shift)": -0.017745425924658775,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.098497514327145,
+      "cos(map-predicted shift,\nrealized shift)": 0.06357797235250473,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1402401691647537,
+      "cos(map-predicted shift,\nrealized shift)": -0.14186373353004456,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0997548077225314,
+      "cos(map-predicted shift,\nrealized shift)": -0.008764908649027348,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.14798819724153,
+      "cos(map-predicted shift,\nrealized shift)": 0.16890111565589905,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.058938908281374,
+      "cos(map-predicted shift,\nrealized shift)": 0.030665166676044464,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1239147008425596,
+      "cos(map-predicted shift,\nrealized shift)": 0.21342217922210693,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1247607380932463,
+      "cos(map-predicted shift,\nrealized shift)": -0.08955186605453491,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.108916353960216,
+      "cos(map-predicted shift,\nrealized shift)": 0.12747928500175476,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0939690592725593,
+      "cos(map-predicted shift,\nrealized shift)": 0.42120784521102905,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1499392862329967,
+      "cos(map-predicted shift,\nrealized shift)": -0.08812137693166733,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.136809714645852,
+      "cos(map-predicted shift,\nrealized shift)": -0.11396117508411407,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0540637704540243,
+      "cos(map-predicted shift,\nrealized shift)": -0.013607088476419449,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.139662937402773,
+      "cos(map-predicted shift,\nrealized shift)": 0.12690772116184235,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.130825804084985,
+      "cos(map-predicted shift,\nrealized shift)": -0.1409093588590622,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1241986275860847,
+      "cos(map-predicted shift,\nrealized shift)": -0.07786209136247635,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.065599464258043,
+      "cos(map-predicted shift,\nrealized shift)": -0.2405010461807251,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.109109415866974,
+      "cos(map-predicted shift,\nrealized shift)": -0.09226898849010468,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0840093079597506,
+      "cos(map-predicted shift,\nrealized shift)": 0.5850282907485962,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1082856962013987,
+      "cos(map-predicted shift,\nrealized shift)": -0.08915653824806213,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.094136324000978,
+      "cos(map-predicted shift,\nrealized shift)": 0.033480480313301086,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1406817205560693,
+      "cos(map-predicted shift,\nrealized shift)": 0.06808168441057205,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.139327896168786,
+      "cos(map-predicted shift,\nrealized shift)": -0.20182926952838898,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.139537526294929,
+      "cos(map-predicted shift,\nrealized shift)": -0.018465109169483185,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.144991570980847,
+      "cos(map-predicted shift,\nrealized shift)": -0.007184643764048815,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.141233340904051,
+      "cos(map-predicted shift,\nrealized shift)": -0.04056817293167114,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1056882582563587,
+      "cos(map-predicted shift,\nrealized shift)": 0.021198298782110214,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.077984424692537,
+      "cos(map-predicted shift,\nrealized shift)": -0.11396118998527527,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0689912374351094,
+      "cos(map-predicted shift,\nrealized shift)": -0.09541008621454239,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1444556837457833,
+      "cos(map-predicted shift,\nrealized shift)": -0.011117332614958286,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.053613678776936,
+      "cos(map-predicted shift,\nrealized shift)": 0.081858329474926,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.147709679492297,
+      "cos(map-predicted shift,\nrealized shift)": 0.07312831282615662,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0567613444073385,
+      "cos(map-predicted shift,\nrealized shift)": -0.048932287842035294,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.070183065883634,
+      "cos(map-predicted shift,\nrealized shift)": 0.0487564355134964,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1049140645558686,
+      "cos(map-predicted shift,\nrealized shift)": 0.0780777782201767,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1004161486212825,
+      "cos(map-predicted shift,\nrealized shift)": 0.6038355827331543,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1021384326633683,
+      "cos(map-predicted shift,\nrealized shift)": -0.07097050547599792,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.054050446971537,
+      "cos(map-predicted shift,\nrealized shift)": 0.051233623176813126,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1018649091305113,
+      "cos(map-predicted shift,\nrealized shift)": -0.02385338395833969,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.115884844830294,
+      "cos(map-predicted shift,\nrealized shift)": -0.12430017441511154,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0717728766828483,
+      "cos(map-predicted shift,\nrealized shift)": 0.06640473008155823,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.130360457655612,
+      "cos(map-predicted shift,\nrealized shift)": -0.012148058041930199,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0619791504677014,
+      "cos(map-predicted shift,\nrealized shift)": -0.09449528902769089,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1408436474905366,
+      "cos(map-predicted shift,\nrealized shift)": -0.24643772840499878,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0934157869728685,
+      "cos(map-predicted shift,\nrealized shift)": 0.46782413125038147,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.145666781103463,
+      "cos(map-predicted shift,\nrealized shift)": -0.020252656191587448,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0640727632625095,
+      "cos(map-predicted shift,\nrealized shift)": -0.1988888680934906,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.055294883171935,
+      "cos(map-predicted shift,\nrealized shift)": 0.581107497215271,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1095264960506124,
+      "cos(map-predicted shift,\nrealized shift)": 0.4581565260887146,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0734994744731274,
+      "cos(map-predicted shift,\nrealized shift)": -0.26762375235557556,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.087853716428922,
+      "cos(map-predicted shift,\nrealized shift)": -0.07869455218315125,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.08881671483596,
+      "cos(map-predicted shift,\nrealized shift)": 0.032561056315898895,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.10493934662674,
+      "cos(map-predicted shift,\nrealized shift)": -0.12091152369976044,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1011225059612917,
+      "cos(map-predicted shift,\nrealized shift)": -0.0379503108561039,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.089146750908708,
+      "cos(map-predicted shift,\nrealized shift)": -0.051863692700862885,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0723652717263064,
+      "cos(map-predicted shift,\nrealized shift)": -0.0588848739862442,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0672462568962153,
+      "cos(map-predicted shift,\nrealized shift)": -0.1629670262336731,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1118269416989603,
+      "cos(map-predicted shift,\nrealized shift)": -0.10916420072317123,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.138270500768817,
+      "cos(map-predicted shift,\nrealized shift)": 0.02740173414349556,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.052699080871013,
+      "cos(map-predicted shift,\nrealized shift)": -0.014021211303770542,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0882348665487886,
+      "cos(map-predicted shift,\nrealized shift)": 0.19571919739246368,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.051996584413029,
+      "cos(map-predicted shift,\nrealized shift)": -0.26762375235557556,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0907226864023696,
+      "cos(map-predicted shift,\nrealized shift)": 0.19808699190616608,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1448309789267164,
+      "cos(map-predicted shift,\nrealized shift)": 0.09685488045215607,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1178941799787894,
+      "cos(map-predicted shift,\nrealized shift)": -0.28823259472846985,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1424828698431506,
+      "cos(map-predicted shift,\nrealized shift)": 0.17073047161102295,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.05539630341965,
+      "cos(map-predicted shift,\nrealized shift)": 0.037053320556879044,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.092476620168014,
+      "cos(map-predicted shift,\nrealized shift)": -0.1629670262336731,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1132705915052394,
+      "cos(map-predicted shift,\nrealized shift)": -0.11439724266529083,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.060781213131075,
+      "cos(map-predicted shift,\nrealized shift)": 0.03705322742462158,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.115596210900268,
+      "cos(map-predicted shift,\nrealized shift)": -0.043378449976444244,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.126563964583677,
+      "cos(map-predicted shift,\nrealized shift)": 0.02401583269238472,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0697984202086883,
+      "cos(map-predicted shift,\nrealized shift)": -0.18425355851650238,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.117291470984745,
+      "cos(map-predicted shift,\nrealized shift)": 0.014103032648563385,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.091726684739535,
+      "cos(map-predicted shift,\nrealized shift)": -0.0731135681271553,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.13525190082713,
+      "cos(map-predicted shift,\nrealized shift)": 0.5418585538864136,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1222391997161374,
+      "cos(map-predicted shift,\nrealized shift)": 0.07489273697137833,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.137501148143199,
+      "cos(map-predicted shift,\nrealized shift)": 0.0018471095245331526,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.12662221502443,
+      "cos(map-predicted shift,\nrealized shift)": 0.02401583082973957,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0736610613305864,
+      "cos(map-predicted shift,\nrealized shift)": -0.15588584542274475,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1434510209722006,
+      "cos(map-predicted shift,\nrealized shift)": 0.19044129550457,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0880104941080133,
+      "cos(map-predicted shift,\nrealized shift)": 0.16485561430454254,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0983559073668268,
+      "cos(map-predicted shift,\nrealized shift)": 0.3138852119445801,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.097817117114628,
+      "cos(map-predicted shift,\nrealized shift)": 0.06734080612659454,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.146451507485708,
+      "cos(map-predicted shift,\nrealized shift)": 0.059169523417949677,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0805836214372158,
+      "cos(map-predicted shift,\nrealized shift)": 0.4247460961341858,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1376357860861557,
+      "cos(map-predicted shift,\nrealized shift)": 0.05151563137769699,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0565839615302175,
+      "cos(map-predicted shift,\nrealized shift)": -0.21477723121643066,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0937670655033975,
+      "cos(map-predicted shift,\nrealized shift)": -0.17937330901622772,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.061954470898691,
+      "cos(map-predicted shift,\nrealized shift)": -0.07073642313480377,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.066341892824649,
+      "cos(map-predicted shift,\nrealized shift)": -0.005777894053608179,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.127158620735812,
+      "cos(map-predicted shift,\nrealized shift)": -0.05495128408074379,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0524155586658583,
+      "cos(map-predicted shift,\nrealized shift)": 0.07843702286481857,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.063395148159527,
+      "cos(map-predicted shift,\nrealized shift)": 0.1329498589038849,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1145479068906927,
+      "cos(map-predicted shift,\nrealized shift)": 0.1564001441001892,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.055291228564334,
+      "cos(map-predicted shift,\nrealized shift)": 0.007528344169259071,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0683348609369485,
+      "cos(map-predicted shift,\nrealized shift)": 0.38244760036468506,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1170555348627165,
+      "cos(map-predicted shift,\nrealized shift)": -0.023623963817954063,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.052011079398204,
+      "cos(map-predicted shift,\nrealized shift)": 0.09080193191766739,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.145079191448685,
+      "cos(map-predicted shift,\nrealized shift)": -0.2668907046318054,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1467451177151418,
+      "cos(map-predicted shift,\nrealized shift)": -0.12959949672222137,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.052065718268283,
+      "cos(map-predicted shift,\nrealized shift)": 0.40356963872909546,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.133660306170034,
+      "cos(map-predicted shift,\nrealized shift)": -0.21477724611759186,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0931308073582637,
+      "cos(map-predicted shift,\nrealized shift)": -0.016156375408172607,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.146916243790358,
+      "cos(map-predicted shift,\nrealized shift)": -0.06884950399398804,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.124129548551777,
+      "cos(map-predicted shift,\nrealized shift)": 0.09158681333065033,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0576551050567864,
+      "cos(map-predicted shift,\nrealized shift)": 0.13053256273269653,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1402637126466106,
+      "cos(map-predicted shift,\nrealized shift)": -0.15940076112747192,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.145237288669034,
+      "cos(map-predicted shift,\nrealized shift)": -0.01612185500562191,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.09846326179117,
+      "cos(map-predicted shift,\nrealized shift)": -0.053398337215185165,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1445495882541916,
+      "cos(map-predicted shift,\nrealized shift)": -0.09826970100402832,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0875843916323285,
+      "cos(map-predicted shift,\nrealized shift)": -0.04083690419793129,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0897613188144093,
+      "cos(map-predicted shift,\nrealized shift)": 0.022302620112895966,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.147325605479338,
+      "cos(map-predicted shift,\nrealized shift)": -0.07086269557476044,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1273787218651146,
+      "cos(map-predicted shift,\nrealized shift)": -0.11684942245483398,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1022913295084398,
+      "cos(map-predicted shift,\nrealized shift)": 0.0716329887509346,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0871594148345447,
+      "cos(map-predicted shift,\nrealized shift)": 0.12084729969501495,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0796355149281176,
+      "cos(map-predicted shift,\nrealized shift)": 0.059352975338697433,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0750902554583837,
+      "cos(map-predicted shift,\nrealized shift)": 0.0727224126458168,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.065791344367283,
+      "cos(map-predicted shift,\nrealized shift)": 0.17409157752990723,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.099668997213953,
+      "cos(map-predicted shift,\nrealized shift)": 0.270479679107666,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0860223199276486,
+      "cos(map-predicted shift,\nrealized shift)": 0.08185827732086182,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1210937261103,
+      "cos(map-predicted shift,\nrealized shift)": -0.04052482545375824,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.149919048297704,
+      "cos(map-predicted shift,\nrealized shift)": -0.07476651668548584,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.081713025959697,
+      "cos(map-predicted shift,\nrealized shift)": 0.07523783296346664,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0581111492376976,
+      "cos(map-predicted shift,\nrealized shift)": -0.07437083125114441,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.068679894191079,
+      "cos(map-predicted shift,\nrealized shift)": -0.05495129153132439,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.084997716704326,
+      "cos(map-predicted shift,\nrealized shift)": -0.09818042814731598,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.077441384142105,
+      "cos(map-predicted shift,\nrealized shift)": -0.0643816739320755,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.087137453753502,
+      "cos(map-predicted shift,\nrealized shift)": -0.047645580023527145,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.125065135923218,
+      "cos(map-predicted shift,\nrealized shift)": -0.11502203345298767,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.075218472381549,
+      "cos(map-predicted shift,\nrealized shift)": 0.058127954602241516,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1423684231701863,
+      "cos(map-predicted shift,\nrealized shift)": 0.4141916036605835,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1186840704858656,
+      "cos(map-predicted shift,\nrealized shift)": -0.06422882527112961,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1478351152901096,
+      "cos(map-predicted shift,\nrealized shift)": 0.07869458943605423,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.137493225207899,
+      "cos(map-predicted shift,\nrealized shift)": 0.04657718166708946,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.141246238284794,
+      "cos(map-predicted shift,\nrealized shift)": 0.04713920131325722,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.056751830328759,
+      "cos(map-predicted shift,\nrealized shift)": -0.0075737712904810905,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1278321443928765,
+      "cos(map-predicted shift,\nrealized shift)": -0.17451365292072296,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1276054528070945,
+      "cos(map-predicted shift,\nrealized shift)": 0.5118016600608826,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.069045701861334,
+      "cos(map-predicted shift,\nrealized shift)": 0.013623058795928955,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0879445661022666,
+      "cos(map-predicted shift,\nrealized shift)": 0.2715829908847809,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0992290827671645,
+      "cos(map-predicted shift,\nrealized shift)": -0.1409093588590622,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.065341607278153,
+      "cos(map-predicted shift,\nrealized shift)": -0.007184660993516445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.057720129237224,
+      "cos(map-predicted shift,\nrealized shift)": 0.11465012282133102,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0527505812191276,
+      "cos(map-predicted shift,\nrealized shift)": -0.021014072000980377,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0826430770292865,
+      "cos(map-predicted shift,\nrealized shift)": 0.20873914659023285,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0827710403477866,
+      "cos(map-predicted shift,\nrealized shift)": -0.11177234351634979,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.107121994298412,
+      "cos(map-predicted shift,\nrealized shift)": -0.10684271901845932,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0752337150889217,
+      "cos(map-predicted shift,\nrealized shift)": -0.012232360430061817,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.134152903698688,
+      "cos(map-predicted shift,\nrealized shift)": 0.589697003364563,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.100420615089277,
+      "cos(map-predicted shift,\nrealized shift)": 0.14992259442806244,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.083709956866998,
+      "cos(map-predicted shift,\nrealized shift)": -0.05563084036111832,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.051939076427339,
+      "cos(map-predicted shift,\nrealized shift)": -0.07271809130907059,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1126098155831445,
+      "cos(map-predicted shift,\nrealized shift)": -0.007184660993516445,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0959195798130525,
+      "cos(map-predicted shift,\nrealized shift)": -0.1844283491373062,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.138283647611402,
+      "cos(map-predicted shift,\nrealized shift)": -0.014021212235093117,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.11841397833098,
+      "cos(map-predicted shift,\nrealized shift)": 0.324950635433197,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.077612449305809,
+      "cos(map-predicted shift,\nrealized shift)": -0.06964588910341263,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.102800592851984,
+      "cos(map-predicted shift,\nrealized shift)": -0.14658991992473602,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1146493885418303,
+      "cos(map-predicted shift,\nrealized shift)": 0.6038355827331543,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.096145807498947,
+      "cos(map-predicted shift,\nrealized shift)": 0.026544557884335518,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0880274049205583,
+      "cos(map-predicted shift,\nrealized shift)": -0.17837511003017426,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.076562082881197,
+      "cos(map-predicted shift,\nrealized shift)": -0.09175749123096466,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.108859582184395,
+      "cos(map-predicted shift,\nrealized shift)": -0.04485767334699631,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.061239129904933,
+      "cos(map-predicted shift,\nrealized shift)": -0.06551273167133331,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0775713821669366,
+      "cos(map-predicted shift,\nrealized shift)": 0.06640469282865524,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1228867031390206,
+      "cos(map-predicted shift,\nrealized shift)": -0.07271814346313477,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.071750349586205,
+      "cos(map-predicted shift,\nrealized shift)": -0.013708255253732204,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0927907157175354,
+      "cos(map-predicted shift,\nrealized shift)": 0.021198298782110214,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0901909478606746,
+      "cos(map-predicted shift,\nrealized shift)": -0.17134442925453186,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1336035104644893,
+      "cos(map-predicted shift,\nrealized shift)": 0.12619194388389587,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.100223012620069,
+      "cos(map-predicted shift,\nrealized shift)": -0.013708255253732204,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.05232152711436,
+      "cos(map-predicted shift,\nrealized shift)": -0.04057445749640465,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0915987539574954,
+      "cos(map-predicted shift,\nrealized shift)": 0.05694526806473732,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.138435608934612,
+      "cos(map-predicted shift,\nrealized shift)": -0.06884950399398804,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0793658749597395,
+      "cos(map-predicted shift,\nrealized shift)": -0.04485767334699631,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.133140893280725,
+      "cos(map-predicted shift,\nrealized shift)": 0.5787102580070496,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.096726978186162,
+      "cos(map-predicted shift,\nrealized shift)": 0.09080193191766739,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.086989515294355,
+      "cos(map-predicted shift,\nrealized shift)": 0.08386339992284775,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.108607312539111,
+      "cos(map-predicted shift,\nrealized shift)": -0.036940161138772964,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0848187955969197,
+      "cos(map-predicted shift,\nrealized shift)": 0.09926126152276993,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1058015948422044,
+      "cos(map-predicted shift,\nrealized shift)": -0.22196415066719055,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1447387207804174,
+      "cos(map-predicted shift,\nrealized shift)": -0.08587528765201569,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.125954010739547,
+      "cos(map-predicted shift,\nrealized shift)": 0.0044118077494204044,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.077814386768981,
+      "cos(map-predicted shift,\nrealized shift)": 0.05790208280086517,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.108314734455581,
+      "cos(map-predicted shift,\nrealized shift)": -0.08048287034034729,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0685498780899456,
+      "cos(map-predicted shift,\nrealized shift)": 0.553849995136261,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.090741117858695,
+      "cos(map-predicted shift,\nrealized shift)": -0.22858461737632751,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.1065236389915643,
+      "cos(map-predicted shift,\nrealized shift)": 0.2942875325679779,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0968465486354524,
+      "cos(map-predicted shift,\nrealized shift)": 0.1564001441001892,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.078698642260079,
+      "cos(map-predicted shift,\nrealized shift)": 0.026544559746980667,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0756031994397826,
+      "cos(map-predicted shift,\nrealized shift)": 0.13294987380504608,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0901105765503947,
+      "cos(map-predicted shift,\nrealized shift)": 0.1416567713022232,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0643195186611654,
+      "cos(map-predicted shift,\nrealized shift)": -0.035335198044776917,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.0655972700679666,
+      "cos(map-predicted shift,\nrealized shift)": -0.10372167080640793,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.119202730155655,
+      "cos(map-predicted shift,\nrealized shift)": 0.4960695207118988,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.052515646112621,
+      "cos(map-predicted shift,\nrealized shift)": 0.012882078997790813,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.78,
+      "cos(map-predicted shift,\nrealized shift)": 0.8372995932896932,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.02,
+      "cos(map-predicted shift,\nrealized shift)": 0.08582586677339687,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 2.3,
+      "cos(map-predicted shift,\nrealized shift)": -0.004221123108809816,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.3,
+      "cos(map-predicted shift,\nrealized shift)": -0.010169008091130916,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 2.1,
+      "cos(map-predicted shift,\nrealized shift)": -0.03489063850177142,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 2.3499999999999996,
+      "cos(map-predicted shift,\nrealized shift)": -0.0032049783437263007,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 2.3499999999999996,
+      "cos(map-predicted shift,\nrealized shift)": -0.010169008091130916,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 2.18,
+      "cos(map-predicted shift,\nrealized shift)": 0.06799834727309645,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 2.4,
+      "cos(map-predicted shift,\nrealized shift)": -2.9324842029988286e-05,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.4,
+      "cos(map-predicted shift,\nrealized shift)": -0.010169008091130916,
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 975,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "cos(map-predicted shift,\nrealized shift)",
+        "legend_labels": [
+          "map on unpatched answer states",
+          "map on patch-induced shifts (3 settings)",
+          "spectrum-matched random map"
+        ],
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 26"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "map on unpatched answer states",
+      "map on patch-induced shifts (3 settings)",
+      "spectrum-matched random map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

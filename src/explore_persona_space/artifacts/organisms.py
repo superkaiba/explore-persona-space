@@ -1237,7 +1237,7 @@ def build_organism(
         "base_model": base_model,
         "mix_counts_planned": counts,
         "mix_counts_realized": realized,
-        **as_metadata_dict(git_provenance()),
+        **as_metadata_dict(git_provenance(), phase="train"),
         "timestamp_utc": _now_utc(),
     }
     if spec.train_method == "fullft":
@@ -1815,7 +1815,7 @@ def verify_organism(
         "temperature": temperature,
         "n_judge_draws": n_judge_draws,
         "base_model": base_model,
-        **as_metadata_dict(git_provenance()),
+        **as_metadata_dict(git_provenance(), phase="eval"),
         "timestamp_utc": _now_utc(),
     }
     if pool_provenance is not None:

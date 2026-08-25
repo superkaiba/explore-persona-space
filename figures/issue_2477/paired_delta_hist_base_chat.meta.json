@@ -1,0 +1,161 @@
+{
+  "commit": "c1c8abb0",
+  "render_id": "addc857972b74b51",
+  "git_commit": "c1c8abb0b6e6e2043c716efad5a242f99789d012",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T02:31:12Z",
+  "figsize": [
+    6.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -96.661905,
+      "Prompts": 21.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -89.985714,
+      "Prompts": 17.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -83.309524,
+      "Prompts": 40.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -76.633333,
+      "Prompts": 13.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -69.957143,
+      "Prompts": 11.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -63.280952,
+      "Prompts": 13.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -56.604762,
+      "Prompts": 9.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -49.928571,
+      "Prompts": 9.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -43.252381,
+      "Prompts": 4.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -36.57619,
+      "Prompts": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -29.9,
+      "Prompts": 5.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -23.22381,
+      "Prompts": 7.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -16.547619,
+      "Prompts": 11.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -9.871429,
+      "Prompts": 7.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": -3.195238,
+      "Prompts": 20.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": 3.480952,
+      "Prompts": 6.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": 10.157143,
+      "Prompts": 3.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": 16.833333,
+      "Prompts": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": 23.509524,
+      "Prompts": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": 30.185714,
+      "Prompts": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "Coherence delta per prompt (base chat \u2212 instruct chat)": 36.861905,
+      "Prompts": 1.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 21,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Paired coherence delta, shared prompt panel",
+        "xlabel": "Coherence delta per prompt (base chat \u2212 instruct chat)",
+        "ylabel": "Prompts",
+        "xticklabels": [
+          "\u2212120",
+          "\u2212100",
+          "\u221280",
+          "\u221260",
+          "\u221240",
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

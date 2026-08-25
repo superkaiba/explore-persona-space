@@ -1,0 +1,626 @@
+{
+  "commit": "384e598a+dirty",
+  "render_id": "6c79c8fe306a433f",
+  "git_commit": "384e598a31acc1097e05f421efcc6aff30d97158",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_cot_matched_length.meta.json",
+    "figures/paper/c1_cot_matched_length.pdf",
+    "figures/paper/c1_cot_matched_length.png",
+    "figures/paper/c1_input_ablation_heatmap.meta.json",
+    "figures/paper/c1_input_ablation_heatmap.pdf",
+    "figures/paper/c1_input_ablation_heatmap.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_offpolicy_arms.meta.json",
+    "figures/paper/c1_offpolicy_arms.pdf",
+    "figures/paper/c1_offpolicy_arms.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c2_layer14_peak.meta.json",
+    "figures/paper/c2_layer14_peak.pdf",
+    "figures/paper/c2_layer14_peak.png",
+    "figures/paper/c4_boundary_vs_prose.meta.json",
+    "figures/paper/c4_boundary_vs_prose.pdf",
+    "figures/paper/c4_boundary_vs_prose.png",
+    "figures/paper/c4_character_maps.meta.json",
+    "figures/paper/c4_character_maps.pdf",
+    "figures/paper/c4_character_maps.png",
+    "figures/paper/c4_patch_persistence.meta.json",
+    "figures/paper/c4_patch_persistence.pdf",
+    "figures/paper/c4_patch_persistence.png",
+    "figures/paper/c4_rlvr_contrast.meta.json",
+    "figures/paper/c4_rlvr_contrast.pdf",
+    "figures/paper/c4_rlvr_contrast.png",
+    "figures/paper/c4_transfer_ladder.meta.json",
+    "figures/paper/c4_transfer_ladder.pdf",
+    "figures/paper/c4_transfer_ladder.png",
+    "figures/paper/c5_claim4_margin_forest.meta.json",
+    "figures/paper/c5_claim4_margin_forest.pdf",
+    "figures/paper/c5_claim4_margin_forest.png",
+    "figures/paper/c5_compose_flip.meta.json",
+    "figures/paper/c5_compose_flip.pdf",
+    "figures/paper/c5_compose_flip.png",
+    "figures/paper/c5_ft_change_race.meta.json",
+    "figures/paper/c5_ft_change_race.pdf",
+    "figures/paper/c5_ft_change_race.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "... 13 more"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-20T08:34:42Z",
+  "figsize": [
+    5.5,
+    3.3
+  ],
+  "points": [
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.8336361831866365,
+      "error": 0.15021820838410094,
+      "series": "probe on the context vector",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.8248700073952119,
+      "error": 0.11967278056778752,
+      "series": "probe on the context vector",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.9047845929120056,
+      "error": 0.03543991410139846,
+      "series": "probe on the context vector",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.9247592947966281,
+      "error": 0.0166994760477579,
+      "series": "probe on the context vector",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.9590884981381542,
+      "error": 0.028739405727075895,
+      "series": "probe on the context vector",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9645341891269918,
+      "error": 0.008210883131496427,
+      "series": "probe on the context vector",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.6189176990045759,
+      "error": 0.15021820838410094,
+      "series": "probe through the in-domain map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.6428219257441603,
+      "error": 0.11967278056778752,
+      "series": "probe through the in-domain map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.7792810614561649,
+      "error": 0.03543991410139846,
+      "series": "probe through the in-domain map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.854679194940109,
+      "error": 0.0166994760477579,
+      "series": "probe through the in-domain map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.8702593454780952,
+      "error": 0.028739405727075895,
+      "series": "probe through the in-domain map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.8911573881056831,
+      "error": 0.008210883131496427,
+      "series": "probe through the in-domain map",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.6196961409972875,
+      "error": 0.15021820838410094,
+      "series": "probe through the merged map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.6408374814161759,
+      "error": 0.11967278056778752,
+      "series": "probe through the merged map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.7871378642025612,
+      "error": 0.03543991410139846,
+      "series": "probe through the merged map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.8643858946750941,
+      "error": 0.0166994760477579,
+      "series": "probe through the merged map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.8818242594001842,
+      "error": 0.028739405727075895,
+      "series": "probe through the merged map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9089368107725397,
+      "error": 0.008210883131496427,
+      "series": "probe through the merged map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.8336361831866365,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.8248700073952119,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.9047845929120056,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.9247592947966281,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.9590884981381542,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9645341891269918,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.7691961522314105,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.7238773831632612,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.8792709685714359,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.8990528185468538,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.946187951409031,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9590579476924371,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.8980762141418625,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.9258626316271625,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.9302982172525753,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.9504657710464024,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.9719890448672774,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9700104305615466,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.6189176990045759,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.6428219257441603,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.7792810614561649,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.854679194940109,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.8702593454780952,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.8911573881056831,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.4846759772162862,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.5298983626981116,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.7352573449085805,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.8477663257486455,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.8353376553592845,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.8861313545991317,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.7531594207928657,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.755745488790209,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.8233047780037493,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.8615920641315725,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.905181035596906,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.8961834216122345,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.6196961409972875,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.6408374814161759,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.7871378642025612,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.8643858946750941,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.8818242594001842,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9089368107725397,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.4694779326131866,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.5211647008483884,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.7516979501011627,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.8476864186273362,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.8530848536731083,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9007259276410433,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "labelled in-domain contexts": 10.0,
+      "PR-AUC (average precision)": 0.7699143493813885,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labelled in-domain contexts": 20.0,
+      "PR-AUC (average precision)": 0.7605102619839634,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labelled in-domain contexts": 40.0,
+      "PR-AUC (average precision)": 0.8225777783039596,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labelled in-domain contexts": 80.0,
+      "PR-AUC (average precision)": 0.881085370722852,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labelled in-domain contexts": 160.0,
+      "PR-AUC (average precision)": 0.9105636651272601,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labelled in-domain contexts": 320.0,
+      "PR-AUC (average precision)": 0.9171476939040362,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "labelled in-domain contexts": 0.0,
+      "PR-AUC (average precision)": 0.978169030957177,
+      "series": "context probe, all 1,377 labels",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labelled in-domain contexts": 1.0,
+      "PR-AUC (average precision)": 0.978169030957177,
+      "series": "context probe, all 1,377 labels",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labelled in-domain contexts": 0.0,
+      "PR-AUC (average precision)": 0.9828417549092828,
+      "series": "real-answer oracle probe",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labelled in-domain contexts": 1.0,
+      "PR-AUC (average precision)": 0.9828417549092828,
+      "series": "real-answer oracle probe",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labelled in-domain contexts": 0.0,
+      "PR-AUC (average precision)": 0.05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labelled in-domain contexts": 1.0,
+      "PR-AUC (average precision)": 0.05,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 78,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "labelled in-domain contexts",
+        "ylabel": "PR-AUC (average precision)",
+        "legend_labels": [
+          "context probe, all 1,377 labels",
+          "real-answer oracle probe",
+          "chance",
+          "probe on the context vector",
+          "probe through the in-domain map",
+          "probe through the merged map"
+        ],
+        "xticklabels": [
+          "10",
+          "20",
+          "40",
+          "80",
+          "160",
+          "320"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "context probe, all 1,377 labels",
+      "real-answer oracle probe",
+      "chance",
+      "probe on the context vector",
+      "probe through the in-domain map",
+      "probe through the merged map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
