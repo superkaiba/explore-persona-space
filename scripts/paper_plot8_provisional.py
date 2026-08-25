@@ -370,50 +370,26 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def figure(res: dict, out_dir: Path) -> Path:
-    colors = paper_palette(len(CELLS))
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.0, 3.6))
+    """Bars only, matching Plot 7's treatment.
 
+    The identity+bias baseline and the per-layer curves stay in the results JSON rather
+    than on the canvas: the baselines sit near -2 to -3, so drawing them compresses every
+    bar into the top tenth of the panel and the figure stops showing the comparison it
+    exists to show. Layer indices are recorded in the JSON and the sidecar too.
+    """
     codes = [c[0] for c in CELLS]
-    xs = np.arange(len(codes), dtype=float)
-    ax1.bar(
-        xs,
-        [res["cells"][c]["skill_at_best_layer"] for c in codes],
-        width=0.6,
-        color=colors,
-        zorder=3,
-    )
-    for xi, c in zip(xs, codes, strict=True):
-        ax1.hlines(
-            res["cells"][c]["identity_bias_baseline"],
-            xi - 0.3,
-            xi + 0.3,
-            colors="0.25",
-            linestyles="dotted",
-            zorder=4,
-            label="identity + bias baseline" if xi == 0 else None,
-        )
-    ax1.set_xticks(xs)
-    ax1.set_xticklabels(
-        [f"{res['cells'][c]['label']}\nlayer {res['cells'][c]['best_layer']}" for c in codes],
-        fontsize=8,
-    )
-    ax1.set_ylabel("held-out skill (R$^2$ over mean)")
-    ax1.axhline(0.0, color="0.6", lw=0.8, zorder=2)
-    ax1.legend(frameon=False, fontsize=8, loc="lower right")
+    colors = paper_palette(len(codes))
+    labels = [res["cells"][c]["label"] for c in codes]
+    vals = [res["cells"][c]["skill_at_best_layer"] for c in codes]
 
-    for (code, _, _, label), color in zip(CELLS, colors, strict=True):
-        curve = res["cells"][code]["layer_curve"]
-        ax2.plot(
-            [r["layer"] for r in curve],
-            [r["skill"] for r in curve],
-            color=color,
-            lw=1.4,
-            label=label,
-        )
-    ax2.axhline(0.0, color="0.6", lw=0.8)
-    ax2.set_xlabel("layer")
-    ax2.set_ylabel("held-out skill (R$^2$ over mean)")
-    ax2.legend(frameon=False, fontsize=7.5, loc="lower right")
+    fig, ax = plt.subplots(figsize=(6.4, 3.6))
+    ax.bar(np.arange(len(codes), dtype=float), vals, width=0.6, color=colors, zorder=3)
+    ax.set_xticks(np.arange(len(codes), dtype=float))
+    # Wrap on spaces so the three labels cannot run into one another.
+    ax.set_xticklabels([lab.replace(" to ", " to\n") for lab in labels], fontsize=9)
+    ax.set_ylabel("held-out skill (R$^2$ over mean)")
+    ax.axhline(0.0, color="0.6", lw=0.8, zorder=2)
+    ax.set_ylim(0.0, max(vals) + 0.08)
 
     fig.tight_layout()
     paths = savefig_paper(fig, "plot8_provisional_cross_model", dir=out_dir)
