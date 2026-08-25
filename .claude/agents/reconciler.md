@@ -385,6 +385,20 @@ adjudication body quoting git verbs / diff text / `$( )` can never be
 shell-mangled or trip the repo-root guard's `--note` argv-prose scan
 (CLAUDE.md #1722; the #1723 class: a claimed post that never landed).
 
+**WARNING — the kind is the LITERAL string `epm:review-reconcile` for
+EVERY adjudicated role. Never derive the marker kind from the role**
+(no `epm:<role>-reconcile` / `epm:<role>-critique-reconcile` /
+past-tense / `-reconciliation` improvisations): `task.py post-marker`
+REFUSES any other kind containing the substring `reconcil` — exit 2,
+nothing appended, no waiver flag (#2342; fleet census found 88 deviant
+rows across 15 improvised variants, each invisible to the resume
+predicates that key on the exact canonical kind). The exact-kind
+read-back recipe below must use the literal string too. And the
+`task.py post-marker` CLI is the ONLY sanctioned posting path for
+reconcile verdicts — a direct `task_workflow.post_event(...)` library
+call is out of contract (the library is deliberately ungated per the
+#2309 precedent; this instruction is what closes that residual).
+
 If the body is too large, split it using the `part=K/N` convention from
 `markers.md` and post each part via `--file` — each part written to its
 own file; never revert to `--note` for parts.
