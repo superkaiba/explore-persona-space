@@ -175,20 +175,23 @@ def resolve_cell_adapter(meta: dict, slug: str, cells_root: Path) -> tuple[Path,
     return cell_dir, a_init_dir
 
 
-def load_base_svd(path: Path) -> dict:
+def load_base_svd(path: Path, modules: tuple[str, ...] = ("up_proj", "down_proj")) -> dict:
     """Load the per-layer base weight SVD built by ``build-base-svd``.
 
     Schema: {"up_proj": {layer: {"V": (K, d_in)}}, "down_proj": {layer:
     {"U": (K, d_out)}}}. For DV-3 the WRITE arm compares b_down (d_out=3584)
     against down_proj's LEFT singular vectors U (output basis); the READ arm
     compares a_up (d_in=3584) against up_proj's RIGHT singular vectors V
-    (input basis).
+    (input basis). ``modules`` defaults to the original pair; a payload built
+    with ``--modules`` (#2569 leg 5) is loaded by naming its module list —
+    each extra module carries its RESIDUAL-side basis per
+    ``RESIDUAL_SIDE_BY_MODULE``.
     """
     import torch
 
     payload = torch.load(path, weights_only=True)
-    out: dict[str, dict[int, dict[str, np.ndarray]]] = {"up_proj": {}, "down_proj": {}}
-    for module in ("up_proj", "down_proj"):
+    out: dict[str, dict[int, dict[str, np.ndarray]]] = {m: {} for m in modules}
+    for module in modules:
         for layer_str, basis in payload[module].items():
             layer = int(layer_str)
             out[module][layer] = {
@@ -545,40 +548,78 @@ def dv4_two_reference(
 # ──────────────────────────────────────────────────────────────────────────
 
 
-def cmd_build_base_svd(args) -> int:
-    """Extract per-layer base weight SVD for up_proj/down_proj (DV-3 ground truth).
+# Residual-side basis per module (#2569 leg 5 --modules extension): "V" = the module READS
+# the residual stream (input side, RIGHT singular vectors span the read basis); "U" = the
+# module WRITES the residual stream (output side, LEFT singular vectors span the write
+# basis). The original up_proj->V / down_proj->U behavior is the default subset.
+RESIDUAL_SIDE_BY_MODULE = {
+    "q_proj": "V",
+    "k_proj": "V",
+    "v_proj": "V",
+    "gate_proj": "V",
+    "up_proj": "V",
+    "o_proj": "U",
+    "down_proj": "U",
+}
+_ATTN_MODULES = ("q_proj", "k_proj", "v_proj", "o_proj")
 
-    down_proj: weight is (d_out=3584, d_in=18944); b_down is in the d_out
+
+def _module_weight(layer, module: str):
+    """Resolve a decoder layer's submodule weight (self_attn.* vs mlp.*)."""
+    parent = layer.self_attn if module in _ATTN_MODULES else layer.mlp
+    return getattr(parent, module).weight
+
+
+def _residual_svd_basis(w: np.ndarray, side: str) -> np.ndarray:
+    """Residual-side singular-vector basis of one weight matrix, as (K, d) rows.
+
+    side "V": RIGHT singular vectors (input basis, rows of Vt). side "U": LEFT
+    singular vectors transposed to rows (output basis). Identical math to the
+    original up_proj/down_proj branches.
+    """
+    if side == "V":
+        _, _, vt = np.linalg.svd(w, full_matrices=False)
+        return vt
+    u, _, _ = np.linalg.svd(w, full_matrices=False)
+    return u.T
+
+
+def cmd_build_base_svd(args) -> int:
+    """Extract per-layer base weight SVD bases for ``--modules`` (DV-3 ground truth).
+
+    Default ``--modules up_proj,down_proj`` preserves the original behavior exactly:
+    down_proj weight is (d_out=3584, d_in=18944); b_down is in the d_out
     (residual-output) space, so the comparison basis is the LEFT singular
-    vectors U (3584-d). up_proj: weight is (d_ff=18944, d_in=3584); a_up is
+    vectors U (3584-d). up_proj weight is (d_ff=18944, d_in=3584); a_up is
     in the d_in (residual-input) space, so the basis is the RIGHT singular
     vectors V (3584-d). We keep the full-rank set per layer (K = min(d_out,
-    d_in) for down; K = d_in for up) so observed + null share the same K.
+    d_in)) so observed + null share the same K. Extra modules (#2569 leg 5:
+    the 7 LoRA targets + q/k/v/o) store their RESIDUAL-side basis per
+    ``RESIDUAL_SIDE_BY_MODULE``.
     """
     import torch
     from transformers import AutoModelForCausalLM
 
-    log.info("[phase=build_base_svd] loading base model %s", args.base_model)
+    modules = [m.strip() for m in args.modules.split(",") if m.strip()]
+    unknown = [m for m in modules if m not in RESIDUAL_SIDE_BY_MODULE]
+    if unknown:
+        raise ValueError(
+            f"unknown --modules entries {unknown}; known: {sorted(RESIDUAL_SIDE_BY_MODULE)}"
+        )
+    log.info("[phase=build_base_svd] loading base model %s (modules=%s)", args.base_model, modules)
     model = AutoModelForCausalLM.from_pretrained(
         args.base_model, torch_dtype=torch.float32, trust_remote_code=True
     )
     layers = model.model.layers
-    out: dict = {"up_proj": {}, "down_proj": {}, "_meta": {"base_model": args.base_model}}
+    out: dict = {m: {} for m in modules}
+    out["_meta"] = {"base_model": args.base_model, "modules": modules}
     for li, layer in enumerate(layers):
-        # up_proj: W (d_ff, d_in=3584); residual-input read compares against V (d_in basis).
-        w_up = layer.mlp.up_proj.weight.detach().float().cpu().numpy()  # (d_ff, 3584)
-        _, _, vt_up = np.linalg.svd(w_up, full_matrices=False)  # vt_up: (K, 3584)
-        out["up_proj"][str(li)] = {"V": torch.from_numpy(vt_up.astype(np.float32))}
-        # down_proj: W (d_out=3584, d_ff); residual-output write compares against U (d_out basis).
-        w_down = layer.mlp.down_proj.weight.detach().float().cpu().numpy()  # (3584, d_ff)
-        u_down, _, _ = np.linalg.svd(w_down, full_matrices=False)  # u_down: (3584, K)
-        out["down_proj"][str(li)] = {"U": torch.from_numpy(u_down.T.astype(np.float32))}  # (K,3584)
-        log.info(
-            "layer %d: up V %s, down U %s",
-            li,
-            tuple(vt_up.shape),
-            tuple(u_down.T.shape),
-        )
+        for module in modules:
+            side = RESIDUAL_SIDE_BY_MODULE[module]
+            w = _module_weight(layer, module).detach().float().cpu().numpy()
+            basis = _residual_svd_basis(w, side)
+            out[module][str(li)] = {side: torch.from_numpy(basis.astype(np.float32))}
+            log.info("layer %d: %s %s %s", li, module, side, tuple(basis.shape))
     out_path = Path(args.base_svd)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(out, out_path)
@@ -1409,6 +1450,12 @@ def main(argv: list[str] | None = None) -> int:
     p_svd = sub.add_parser("build-base-svd")
     p_svd.add_argument("--base-model", default=BASE_MODEL)
     p_svd.add_argument("--base-svd", default=f"{ANALYSIS_DIR}/base_svd.pt")
+    p_svd.add_argument(
+        "--modules",
+        default="up_proj,down_proj",
+        help="comma list of decoder submodules to build bases for (#2569 leg 5); the "
+        "default preserves the original up_proj/down_proj behavior exactly",
+    )
     p_svd.set_defaults(func=cmd_build_base_svd)
 
     p_unemb = sub.add_parser("build-unembedding")
