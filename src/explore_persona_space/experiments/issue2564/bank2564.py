@@ -489,11 +489,23 @@ def attach_changed_tokens(pairs: list[dict], ids_by_context: dict[str, list[int]
 # ── datagen gates (plan section 3.5 items i-vii) ──────────────────────
 
 
-def gate_value_token_counts(tokenizer, values: dict) -> dict[str, dict[str, int]]:
-    """(i) within-axis token-count equality against the plan-pinned counts."""
+def gate_value_token_counts(
+    tokenizer,
+    values: dict,
+    axes: tuple[str, ...] | None = None,
+    expected: dict[str, int] | None = None,
+) -> dict[str, dict[str, int]]:
+    """(i) within-axis token-count equality against the plan-pinned counts.
+
+    ``axes``/``expected`` default to the parent constants (parent behavior
+    unchanged); the ffr round passes ``FFR_AXES`` + per-axis expectations
+    read from its own values file.
+    """
+    axes = INSTRUCTION_AXES if axes is None else axes
+    expected = EXPECTED_VALUE_TOKENS if expected is None else expected
     realized: dict[str, dict[str, int]] = {}
-    for axis in INSTRUCTION_AXES:
-        exp = EXPECTED_VALUE_TOKENS[axis]
+    for axis in axes:
+        exp = expected[axis]
         counts = {
             vid: _n_tokens(tokenizer, system_string(values, axis, vid))
             for vid in value_ids(values, axis)
@@ -551,16 +563,23 @@ def gate_pair_slot_identity(values: dict, contexts: dict[str, dict], pairs: list
 
 
 def gate_paraphrase_ratios(
-    tokenizer, values: dict, contexts: dict[str, dict], pairs: list[dict]
+    tokenizer,
+    values: dict,
+    contexts: dict[str, dict],
+    pairs: list[dict],
+    axes: tuple[str, ...] | None = None,
 ) -> dict[str, float]:
     """(iv) paraphrase length ratio within +/-30%.
 
     Measured granularity (probe 2026-08-24, module docstring): string-level
     for the 39 instruction paraphrases; rendered-context level for every
-    instruction-paraphrase AND query-paraphrase pair.
+    instruction-paraphrase AND query-paraphrase pair. ``axes`` defaults to
+    the parent ``INSTRUCTION_AXES`` (parent behavior unchanged); the ffr
+    round passes ``FFR_AXES``.
     """
+    axes = INSTRUCTION_AXES if axes is None else axes
     realized: dict[str, float] = {}
-    for axis in INSTRUCTION_AXES:
+    for axis in axes:
         for vid in value_ids(values, axis):
             r = _n_tokens(tokenizer, paraphrase_string(values, axis, vid)) / _n_tokens(
                 tokenizer, system_string(values, axis, vid)
@@ -716,6 +735,472 @@ def write_bank_manifest(bank: dict, out_path: Path) -> None:
     # process-unique temp via atomic_io.atomic_replace (#2336)
     with atomic_replace(out_path) as tmp:
         tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+
+
+# ── FFR round (floor-failed re-elicitation; plan v7, followup_label
+#    floor-failed-reelicitation) ─────────────────────────────────────────
+#
+# Additive sibling of the parent bank above. The parent constants
+# (N_CONTEXTS/N_PAIRS/EXPECTED_PAIR_COUNTS, INSTRUCTION_AXES, ...) stay
+# parent-only; the ffr grid derives its expectations from the ffr values
+# file + the realized pilot selection. Carriers come BY REFERENCE from the
+# untouched parent values file, sha-pinned.
+
+FFR_VALUES_FILENAME = "bank2564_ffr_values.json"
+FFR_ROUND = "floor-failed-reelicitation"
+FFR_AXES: tuple[str, ...] = ("stance", "persona", "hedging")
+FFR_PAIR_CLASSES: tuple[str, ...] = ("install", "swap", "famswap", "instruction_paraphrase")
+# Pilot compliance denominator: 12 carriers x 2 judged draws (plan v7 s3b).
+FFR_PILOT_DENOM = 24
+FFR_COMPLY_THRESHOLD_PCT = 70
+
+
+def load_values_ffr(path: Path | None = None) -> dict:
+    """Load + validate the frozen ffr values JSON; inject parent carriers.
+
+    Carriers are consumed BY REFERENCE from the parent values file: the
+    loader reads the parent file bytes, asserts their sha256 equals the ffr
+    file's ``parent_values.sha256`` pin, and injects ``parent["carriers"]``
+    into the returned dict (the ffr file itself carries no carriers).
+    """
+    path = Path(path) if path is not None else Path(__file__).parent / FFR_VALUES_FILENAME
+    if not path.exists():
+        raise FileNotFoundError(f"frozen ffr values file missing: {path}")
+    values = json.loads(path.read_text())
+    ref = values.get("parent_values") or {}
+    parent_path = path.parent / ref.get("source", VALUES_FILENAME)
+    if not parent_path.exists():
+        raise FileNotFoundError(f"parent values file missing: {parent_path}")
+    blob = parent_path.read_bytes()
+    digest = hashlib.sha256(blob).hexdigest()
+    if digest != ref.get("sha256"):
+        raise BankGateError(
+            f"ffr parent values sha mismatch: realized {digest} != pinned {ref.get('sha256')}"
+        )
+    values["carriers"] = json.loads(blob.decode("utf-8"))["carriers"]
+    validate_values_ffr(values)
+    return values
+
+
+def validate_values_ffr(values: dict) -> None:
+    """Structural checks on the loaded ffr values dict (carriers injected)."""
+    assert values.get("issue") == ISSUE, values.get("issue")
+    assert values.get("model_id") == MODEL_ID, values.get("model_id")
+    assert values.get("round") == FFR_ROUND, values.get("round")
+    axes = values["axes"]
+    assert tuple(axes) == FFR_AXES, sorted(set(FFR_AXES) ^ set(axes))
+    for axis, ax in axes.items():
+        vids = value_ids(values, axis)
+        assert vids and len(vids) == len(set(vids)), (axis, vids)
+        assert isinstance(ax["expected_value_tokens"], int) and ax["expected_value_tokens"] > 0
+        assert isinstance(ax["parent_width"], int) and ax["parent_width"] >= 1
+        slots = ax["construct_slots"]
+        flat = [v for cands in slots.values() for v in cands]
+        assert len(flat) == len(set(flat)), (axis, "duplicate construct-slot members")
+        assert set(flat) == set(vids), (axis, "construct_slots must partition the value ids")
+        if ax["kind"] == "slotted":
+            for key in ("template", "paraphrase_template"):
+                assert ax[key].count(ax["slot"]) == 1, (axis, key)
+        else:
+            assert ax["kind"] == "sentence", (axis, ax["kind"])
+            assert set(ax["paraphrases"]) == set(vids), (axis, "paraphrase holes")
+        for vid in vids:
+            assert isinstance(ax["values"][vid], str) and ax["values"][vid].strip(), (axis, vid)
+    carriers = values["carriers"]
+    assert tuple(carriers) == CARRIER_IDS, sorted(set(CARRIER_IDS) ^ set(carriers))
+    for cid, car in carriers.items():
+        assert set(car) == {"question", "imperative", "statement", "paraphrase"}, cid
+
+
+def ffr_expected_value_tokens(values: dict) -> dict[str, int]:
+    """Per-axis expected token counts read from the ffr values file."""
+    return {axis: values["axes"][axis]["expected_value_tokens"] for axis in FFR_AXES}
+
+
+def ffr_slot_floor(width: int) -> int:
+    """ceil(0.6 * width) in exact integer arithmetic (3/5); plan v7 s3b.
+
+    Parity with issue2564_judge.axis_floor at the realized widths
+    (5 -> 3, 2 -> 2), without float rounding.
+    """
+    return -((-3 * width) // 5)
+
+
+def select_ffr_values(
+    values: dict,
+    comply: dict[str, int],
+    denom: int = FFR_PILOT_DENOM,
+    threshold_pct: int = FFR_COMPLY_THRESHOLD_PCT,
+) -> dict:
+    """Deterministic pilot selection rule (plan v7 s3b).
+
+    ``comply`` maps EVERY candidate value id to its pilot comply count
+    (0..denom). Clearing = integer arithmetic ``n*100 >= threshold_pct*denom``
+    (>= 17/24 at defaults). Per construct slot the highest-comply clearing
+    candidate wins; ties -> the FIRST-listed candidate id (values-file
+    listing order). At most ``parent_width`` slots survive per axis (persona:
+    top-5 clearing slots ranked by comply, ties -> slot listing order). An
+    axis survives iff its selected width >= ffr_slot_floor(parent_width).
+    All-axes-fail is a VALID outcome (empty ``surviving_axes``).
+    """
+    axes_out: dict[str, dict] = {}
+    surviving: list[str] = []
+    for axis in FFR_AXES:
+        ax = values["axes"][axis]
+        slots = ax["construct_slots"]
+        per_slot: dict[str, dict] = {}
+        winners: list[tuple[str, str, int]] = []  # (slot, vid, n_comply)
+        for slot, cands in slots.items():
+            per_slot[slot] = {"candidates": {}, "winner": None}
+            best: tuple[str, int] | None = None
+            for vid in cands:
+                if vid not in comply:
+                    raise BankGateError(f"ffr selection: missing comply count for {axis}:{vid}")
+                n = int(comply[vid])
+                clears = n * 100 >= threshold_pct * denom
+                per_slot[slot]["candidates"][vid] = {"n_comply": n, "clears": clears}
+                if clears and (best is None or n > best[1]):
+                    best = (vid, n)  # strict > : ties keep the first-listed id
+            if best is not None:
+                per_slot[slot]["winner"] = best[0]
+                winners.append((slot, best[0], best[1]))
+        width_cap = int(ax["parent_width"])
+        if len(winners) > width_cap:
+            slot_order = {s: i for i, s in enumerate(slots)}
+            winners = sorted(winners, key=lambda t: (-t[2], slot_order[t[0]]))[:width_cap]
+            winners = sorted(winners, key=lambda t: slot_order[t[0]])
+        selected_ids = [vid for (_slot, vid, _n) in winners]
+        floor = ffr_slot_floor(width_cap)
+        survives = len(selected_ids) >= floor
+        axes_out[axis] = {
+            "per_slot": per_slot,
+            "selected_ids": selected_ids,
+            "width": len(selected_ids),
+            "parent_width": width_cap,
+            "floor": floor,
+            "survives": survives,
+        }
+        if survives:
+            surviving.append(axis)
+    return {
+        "round": FFR_ROUND,
+        "denominator": denom,
+        "threshold_pct": threshold_pct,
+        "rule": (
+            "per-slot best clearing candidate (ties -> first-listed); "
+            "cap parent_width; floor ceil(0.6*parent_width)"
+        ),
+        "axes": axes_out,
+        "surviving_axes": surviving,
+    }
+
+
+def ffr_selected_ids(selection: dict) -> dict[str, list[str]]:
+    """Surviving-axis -> selected value ids, in FFR_AXES order."""
+    surviving = set(selection.get("surviving_axes", []))
+    return {
+        axis: list(selection["axes"][axis]["selected_ids"])
+        for axis in FFR_AXES
+        if axis in surviving
+    }
+
+
+def ffr_expected_pair_counts(widths: dict[str, int]) -> dict[str, int]:
+    """Expected per-class pair counts from realized per-axis widths.
+
+    Worst case (widths 5/5/2): install 144, swap 252, famswap 252,
+    instruction_paraphrase 144 -> 792 total (plan v7 s3c).
+    """
+    inst = sum(w * len(CARRIER_IDS) for w in widths.values())
+    swap = sum(w * (w - 1) // 2 * len(CARRIER_IDS) for w in widths.values())
+    return {"install": inst, "swap": swap, "famswap": swap, "instruction_paraphrase": inst}
+
+
+def build_contexts_pilot_ffr(values: dict) -> dict[str, dict]:
+    """Pilot contexts: base wordings only x 12 carriers, question form.
+
+    23 candidates x 12 carriers = 276 contexts; no E anchors, no paraphrases,
+    no pairs (plan v7 s3b).
+    """
+    contexts: dict[str, dict] = {}
+    for carrier in CARRIER_IDS:
+        car = values["carriers"][carrier]
+        for axis in FFR_AXES:
+            for vid in value_ids(values, axis):
+                cid = context_id(axis, vid, carrier)
+                assert cid not in contexts, cid
+                contexts[cid] = {
+                    "id": cid,
+                    "cell": axis,
+                    "kind": "value",
+                    "value_id": vid,
+                    "carrier": carrier,
+                    "form": "question",
+                    "system": system_string(values, axis, vid),
+                    "user": car["question"],
+                }
+    return contexts
+
+
+def build_contexts_ffr(values: dict, selected: dict[str, list[str]]) -> dict[str, dict]:
+    """Production ffr contexts: 12 fresh E anchors (question form, empty
+    system) + selected value + paraphrase contexts x 12 carriers."""
+    contexts: dict[str, dict] = {}
+
+    def _add(ctx: dict) -> None:
+        assert ctx["id"] not in contexts, ctx["id"]
+        contexts[ctx["id"]] = ctx
+
+    for carrier in CARRIER_IDS:
+        car = values["carriers"][carrier]
+        _add(
+            {
+                "id": context_id("query", "E", carrier),
+                "cell": "query",
+                "kind": "E",
+                "value_id": "E",
+                "carrier": carrier,
+                "form": "question",
+                "system": "",
+                "user": car["question"],
+            }
+        )
+        for axis in FFR_AXES:
+            for vid in _ffr_order(values, axis, selected.get(axis, [])):
+                _add(
+                    {
+                        "id": context_id(axis, vid, carrier),
+                        "cell": axis,
+                        "kind": "value",
+                        "value_id": vid,
+                        "carrier": carrier,
+                        "form": "question",
+                        "system": system_string(values, axis, vid),
+                        "user": car["question"],
+                    }
+                )
+                _add(
+                    {
+                        "id": context_id(axis, f"{vid}p", carrier),
+                        "cell": axis,
+                        "kind": "para",
+                        "value_id": f"{vid}p",
+                        "carrier": carrier,
+                        "form": "question",
+                        "system": paraphrase_string(values, axis, vid),
+                        "user": car["question"],
+                    }
+                )
+    return contexts
+
+
+def _ffr_order(values: dict, axis: str, selected: list[str]) -> list[str]:
+    """Selected ids in values-file LISTING order (never selection order).
+
+    Parent build_pairs orients swaps by ``int(vid[1:])``, which does not
+    parse ffr ids (s1a/p1/h2b) — listing order is the ffr orientation rule.
+    """
+    keep = set(selected)
+    return [vid for vid in value_ids(values, axis) if vid in keep]
+
+
+def build_pairs_ffr(
+    values: dict, contexts: dict[str, dict], selected: dict[str, list[str]]
+) -> list[dict]:
+    """FFR pairs: install / swap / famswap / instruction_paraphrase only
+    (NO query classes; plan v7 s3c), swap orientation by listing order."""
+    pairs: list[dict] = []
+
+    def _add(cls: str, cell: str, va: str, vb: str, carrier: str, a: str, b: str) -> None:
+        assert a in contexts and b in contexts, (a, b)
+        pairs.append(
+            {
+                "pair_id": pair_id(cls, cell, va, vb, carrier),
+                "pair_class": cls,
+                "cell": cell,
+                "value_a": va,
+                "value_b": vb,
+                "carrier": carrier,
+                "a": a,
+                "b": b,
+            }
+        )
+
+    for carrier in CARRIER_IDS:
+        e_ctx = context_id("query", "E", carrier)
+        for axis in FFR_AXES:
+            order = _ffr_order(values, axis, selected.get(axis, []))
+            for vid in order:
+                _add("install", axis, "E", vid, carrier, e_ctx, context_id(axis, vid, carrier))
+                _add(
+                    "instruction_paraphrase",
+                    axis,
+                    vid,
+                    f"{vid}p",
+                    carrier,
+                    context_id(axis, vid, carrier),
+                    context_id(axis, f"{vid}p", carrier),
+                )
+            for i in range(len(order)):
+                for j in range(i + 1, len(order)):
+                    va, vb = order[i], order[j]
+                    _add(
+                        "swap",
+                        axis,
+                        va,
+                        vb,
+                        carrier,
+                        context_id(axis, va, carrier),
+                        context_id(axis, vb, carrier),
+                    )
+                    _add(
+                        "famswap",
+                        axis,
+                        f"{va}p",
+                        f"{vb}p",
+                        carrier,
+                        context_id(axis, f"{va}p", carrier),
+                        context_id(axis, f"{vb}p", carrier),
+                    )
+    assert len({p["pair_id"] for p in pairs}) == len(pairs), "duplicate ffr pair_id"
+    return pairs
+
+
+def gate_grid_complete_ffr(
+    values: dict,
+    contexts: dict[str, dict],
+    pairs: list[dict],
+    selected: dict[str, list[str]] | None = None,
+    pilot: bool = False,
+) -> None:
+    """(v-ffr) complete ffr grid; expectations from values + selection."""
+    if pilot:
+        want = {
+            context_id(axis, vid, carrier)
+            for carrier in CARRIER_IDS
+            for axis in FFR_AXES
+            for vid in value_ids(values, axis)
+        }
+        if set(contexts) != want:
+            raise BankGateError(
+                f"gate(v-ffr) pilot grid mismatch: {len(contexts)} contexts != {len(want)}"
+            )
+        if pairs:
+            raise BankGateError(f"gate(v-ffr) pilot bank must have no pairs ({len(pairs)})")
+        return
+    assert selected is not None, "production ffr gate requires a selection"
+    want = {context_id("query", "E", carrier) for carrier in CARRIER_IDS}
+    for axis, vids in selected.items():
+        for vid in vids:
+            for carrier in CARRIER_IDS:
+                want.add(context_id(axis, vid, carrier))
+                want.add(context_id(axis, f"{vid}p", carrier))
+    if set(contexts) != want:
+        missing = sorted(want - set(contexts))[:5]
+        extra = sorted(set(contexts) - want)[:5]
+        raise BankGateError(f"gate(v-ffr) grid mismatch: missing={missing} extra={extra}")
+    widths = {axis: len(vids) for axis, vids in selected.items()}
+    expected_counts = ffr_expected_pair_counts(widths)
+    counts = {cls: sum(1 for p in pairs if p["pair_class"] == cls) for cls in FFR_PAIR_CLASSES}
+    if counts != expected_counts or len(pairs) != sum(expected_counts.values()):
+        raise BankGateError(f"gate(v-ffr) pair counts {counts} != {expected_counts}")
+
+
+def run_datagen_gates_ffr(
+    tokenizer,
+    values: dict,
+    contexts: dict[str, dict],
+    pairs: list[dict],
+    selected: dict[str, list[str]] | None = None,
+    pilot: bool = False,
+) -> dict:
+    """FFR datagen gates: i / iii / iv / v-ffr / vi (fail-loud).
+
+    Parent gates ii (user_fact name-token pins) and vii (carrier form
+    triplets — frozen parent carriers, already gated at parent freeze) do
+    not apply to the ffr grid. Gates i + the string-level half of iv run at
+    FULL 23-candidate grain regardless of the selection (plan v7 F0).
+    """
+    expected = ffr_expected_value_tokens(values)
+    realized_values = gate_value_token_counts(tokenizer, values, axes=FFR_AXES, expected=expected)
+    gate_pair_slot_identity(values, contexts, pairs)
+    realized_ratios = gate_paraphrase_ratios(tokenizer, values, contexts, pairs, axes=FFR_AXES)
+    gate_grid_complete_ffr(values, contexts, pairs, selected=selected, pilot=pilot)
+    rendered = {cid: render_context(tokenizer, ctx) for cid, ctx in contexts.items()}
+    gate_no_assistant_substring(contexts, rendered)
+    paraphrase_tokens = {
+        axis: {
+            vid: _n_tokens(tokenizer, paraphrase_string(values, axis, vid))
+            for vid in value_ids(values, axis)
+        }
+        for axis in FFR_AXES
+    }
+    return {
+        "verdict": "PASS",
+        "gates_run": ["i", "iii", "iv", "v-ffr", "vi"],
+        "grain": "pilot" if pilot else "production",
+        "value_token_counts": realized_values,
+        "paraphrase_token_counts": paraphrase_tokens,
+        "paraphrase_ratio_min": min(realized_ratios.values()),
+        "paraphrase_ratio_max": max(realized_ratios.values()),
+    }
+
+
+def build_pilot_bank_ffr(tokenizer, values: dict | None = None) -> dict:
+    """Build + gate the ffr PILOT bank (276 base-wording contexts, no pairs)."""
+    values = load_values_ffr() if values is None else values
+    validate_values_ffr(values)
+    contexts = build_contexts_pilot_ffr(values)
+    gates = run_datagen_gates_ffr(tokenizer, values, contexts, [], pilot=True)
+    values_blob = json.dumps(values, sort_keys=True, ensure_ascii=False).encode()
+    return {
+        "issue": ISSUE,
+        "model_id": MODEL_ID,
+        "round": FFR_ROUND,
+        "phase": "pilot",
+        "values_sha256": hashlib.sha256(values_blob).hexdigest(),
+        "n_contexts": len(contexts),
+        "n_pairs": 0,
+        "contexts": contexts,
+        "pairs": [],
+        "gates": gates,
+    }
+
+
+def build_bank_ffr(tokenizer, selection: dict, values: dict | None = None) -> dict:
+    """Build + gate the ffr PRODUCTION bank from a pilot selection doc.
+
+    ``selection`` is the dict returned by ``select_ffr_values`` (or a
+    forced-selection override of the same shape). Raises ``BankGateError``
+    when no axis survives (all-axes-fail is a valid EXPERIMENT outcome but
+    there is no production bank to build)."""
+    values = load_values_ffr() if values is None else values
+    validate_values_ffr(values)
+    selected = ffr_selected_ids(selection)
+    if not selected:
+        raise BankGateError("ffr production bank: no surviving axes in selection")
+    contexts = build_contexts_ffr(values, selected)
+    pairs = build_pairs_ffr(values, contexts, selected)
+    gates = run_datagen_gates_ffr(tokenizer, values, contexts, pairs, selected=selected)
+    ids_by_context = {cid: context_token_ids(tokenizer, ctx) for cid, ctx in contexts.items()}
+    attach_changed_tokens(pairs, ids_by_context)
+    values_blob = json.dumps(values, sort_keys=True, ensure_ascii=False).encode()
+    widths = {axis: len(vids) for axis, vids in selected.items()}
+    return {
+        "issue": ISSUE,
+        "model_id": MODEL_ID,
+        "round": FFR_ROUND,
+        "phase": "production",
+        "values_sha256": hashlib.sha256(values_blob).hexdigest(),
+        "selection": selection,
+        "selected": selected,
+        "n_contexts": len(contexts),
+        "n_pairs": len(pairs),
+        "pair_class_counts": ffr_expected_pair_counts(widths),
+        "contexts": contexts,
+        "pairs": pairs,
+        "gates": gates,
+    }
 
 
 def _repo_root() -> Path:
