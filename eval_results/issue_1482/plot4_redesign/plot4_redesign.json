@@ -130,7 +130,16 @@
         "pair_frac": 0.01862127497814175,
         "n": 120716
       }
-    ]
+    ],
+    "rendered_labels": [
+      "fires on both context and answer",
+      "mean activation (all answers)",
+      "speaker identity / disposition",
+      "suppresses specific output tokens",
+      "promotes specific output tokens",
+      "topic content"
+    ],
+    "truncation": "left panel rendered down to and including 'topic content' (6 of 14 selection rounds; user directive 2026-08-24)"
   },
   "right_panel": {
     "source": "eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz",
@@ -174,18 +183,20 @@
   },
   "dropped": "answer-side activity quintile panel (user directive 2026-08-24)",
   "metadata": {
-    "git_commit": "3f7b155da853af3069fc2ca5c73124e88b5063a3",
+    "git_commit": "22d9221057ad597327cc4bfefa07f782f4dc1b40",
     "git_dirty": true,
     "phase": "plot4-redesign",
     "git_dirty_paths": [
-      "scripts/issue1482_plot4_redesign.py",
+      ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
       "eval_results/issue_2474/n1m_map_arms.json",
-      "figures/paper/c1_layer_profile.meta.json",
-      "figures/paper/c1_layer_profile.pdf",
-      "figures/paper/c1_layer_profile.png",
-      "figures/paper/c1_scaling_train_pool.meta.json",
-      "scripts/issue1901_plot1_remake.py",
-      "scripts/issue1901_plot1remake_launch.sh",
+      "figures/paper/c1_stage_retention.meta.json",
+      "figures/paper/c1_stage_retention.pdf",
+      "figures/paper/c1_stage_retention.png",
+      "figures/paper/c3_failure_attribution.meta.json",
+      "figures/paper/c3_failure_attribution.pdf",
+      "figures/paper/c3_failure_attribution.png",
+      "scripts/issue1482_plot4_redesign.py",
+      "scripts/issue1902_figures.py",
       "scripts/issue2474_n1m_map.py",
       "tasks/completed/2214/body.md",
       "tasks/completed/2214/comments.jsonl",
@@ -198,10 +209,9 @@
       "tasks/proposed/2416/body.md",
       "tasks/proposed/2416/comments.jsonl",
       "tasks/proposed/2416/events.jsonl",
-      "tasks/running/2378/events.jsonl",
       "tests/test_issue2094_rev_butler.py"
     ],
-    "git_argv0_state": "untracked",
+    "git_argv0_state": "modified",
     "git_argv0_path": "scripts/issue1482_plot4_redesign.py"
   }
 }

@@ -1,0 +1,71 @@
+{
+ "convention": "whitened cosine + CSLS (k=10): z = L^-1(x - mu_A) at the task-locked shrunk train-answer covariance (lam=0.1, Cholesky basis), cosine scores, CSLS rescore score = S - 0.5*r_j (query-bank k-NN mean penalty); mid-rank ties per knn_retrieval; fail = mid-rank > 1",
+ "recomputed": {
+  "acc_at_k": {
+   "1": 0.9761593401066291,
+   "5": 0.9948697314153506,
+   "10": 0.9973845689568454
+  },
+  "median_rank": 1.0,
+  "mrr": 0.9847680201455137,
+  "n": 9941,
+  "n_pool": 9941
+ },
+ "banked": {
+  "acc_at_k": {
+   "1": 0.9761593401066291,
+   "5": 0.9948697314153506,
+   "10": 0.9973845689568454
+  },
+  "median_rank": 1.0,
+  "mrr": 0.9847680201455137,
+  "n": 9941,
+  "n_pool": 9941
+ },
+ "reconciliation_deltas_acc_at_k": {
+  "1": 0.0,
+  "5": 0.0,
+  "10": 0.0
+ },
+ "gate": {
+  "tol_acc1": 0.0002,
+  "ok": true
+ },
+ "failure_sets": {
+  "raw_euclidean": 1829,
+  "cosine_csls": 900,
+  "whitencos_csls": 237,
+  "whitencos_csls_and_raw": 195,
+  "whitencos_csls_new_vs_raw": 42,
+  "whitencos_csls_and_cosine_csls": 171,
+  "whitencos_csls_new_vs_cosine_csls": 66
+ },
+ "staged_inputs": "/mnt/eps-data/thomasjiralerspong/issue2202_freshwhiten",
+ "meta": {
+  "generated_utc": "2026-08-25T06:49:10.072240+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "acfe0c20da890c0e04c0923fc579f5e953ffff99",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/issue2202_plot5_redesign.py",
+   ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
+   "eval_results/issue_2474/n1m_map_arms.json",
+   "scripts/issue2474_n1m_map.py",
+   "tasks/completed/2214/body.md",
+   "tasks/completed/2214/comments.jsonl",
+   "tasks/completed/2214/concerns.jsonl",
+   "tasks/completed/2214/events.jsonl",
+   "tasks/completed/2214/plans/plan.md",
+   "tasks/completed/2214/plans/v1.md",
+   "tasks/completed/2214/plans/v2.md",
+   "tasks/completed/2214/plans/v3.md",
+   "tasks/proposed/2416/body.md",
+   "tasks/proposed/2416/comments.jsonl",
+   "tasks/proposed/2416/events.jsonl",
+   "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2202_plot5_redesign.py"
+ }
+}

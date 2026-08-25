@@ -1,0 +1,74 @@
+{
+  "tally": {
+    "per_family": {
+      "dialogue": {
+        "valid": 199,
+        "rubric_refusal": 1
+      },
+      "question": {
+        "valid": 200
+      }
+    },
+    "per_cell": {
+      "dialog_astra": {
+        "valid": 50
+      },
+      "dialog_dana": {
+        "valid": 50
+      },
+      "dialog_helios": {
+        "valid": 50
+      },
+      "dialog_vex": {
+        "valid": 49,
+        "rubric_refusal": 1
+      },
+      "storyq_astra": {
+        "valid": 40
+      },
+      "storyq_dana": {
+        "valid": 40
+      },
+      "storyq_helios": {
+        "valid": 40
+      },
+      "storyq_vex": {
+        "valid": 40
+      },
+      "storyq_wren": {
+        "valid": 40
+      }
+    },
+    "stop_reasons": {
+      "end_turn": 400
+    }
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T09:18:00+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_judge.py",
+      "--wave",
+      "admission",
+      "--transport",
+      "sync",
+      "--max-items",
+      "400",
+      "--mined-dir",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/adm_slice",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
+      "--out-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378/pilot",
+      "--skip-upload"
+    ],
+    "git_commit": "b2542657",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_sync.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}

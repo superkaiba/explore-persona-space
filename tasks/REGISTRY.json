@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2568,
+  "highest_id": 2583,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6980,8 +6980,8 @@
       "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1901",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1901",
+      "status": "awaiting_promotion",
       "title": "Held-out variance explained and retrieval accuracy dissociate in both directions across the context-to-answer estimator ladder (HIGH confidence)"
     },
     "1902": {
@@ -9692,8 +9692,8 @@
       "goal": "Test whether the persona vector's pre-image under the fitted context\u2192answer map (M\u207ar_B, per-layer) is a causally effective persona direction when injected at the context vector \u2014 compared against the answer-extracted persona vector (at the context vector and at answer tokens), a context-extracted persona vector, and matched-norm random controls, via coherence-gated dose-response steering (single/middle/all layers, negative doses included) plus calibrated projection-patching and directional ablation against the donor-swap ceiling.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2254",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2254",
+      "status": "awaiting_promotion",
       "title": "Inverting the fitted context-to-answer map yields a direction that predicts persona strongly but cannot steer it at the context vector, where a directly-measured context direction can (MODERATE confidence)"
     },
     "2255": {
@@ -10325,8 +10325,8 @@
     "2336": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2336",
-      "status": "running",
+      "path": "tasks/completed/2336",
+      "status": "completed",
       "title": "Hoist a process-safe atomic-write helper into shared code and sweep the shared-tmp pattern out of scripts/"
     },
     "2337": {
@@ -10424,8 +10424,8 @@
     "2349": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2349",
-      "status": "running",
+      "path": "tasks/completed/2349",
+      "status": "completed",
       "title": "plan-compute-sizing.md: a 1-unit pilot is not a sizing basis when the phase's own design admits unequal unit costs (1.5x grid under-projection, #2329)"
     },
     "235": {
@@ -10643,9 +10643,9 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2378",
-      "status": "interpreting",
-      "title": "Context\u2192answer structure is shared across framings in Qwen3.6-27B, but the chat-trained map transfers to none of them unchanged (MODERATE confidence)"
+      "path": "tasks/followups_running/2378",
+      "status": "followups_running",
+      "title": "Context\u2192answer structure is shared across story characters; chat, plain-text, and user framings are covered partially or not at all in Qwen3.6-27B (MODERATE confidence)"
     },
     "2379": {
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
@@ -10731,8 +10731,8 @@
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2389",
-      "status": "running",
+      "path": "tasks/blocked/2389",
+      "status": "blocked",
       "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
     },
     "239": {
@@ -11964,8 +11964,8 @@
       "goal": "Determine (1, exploratory) how the context\u2192answer map's per-feature predictability of turn-averaged SAE features ranks across the five Der et al. (arXiv 2606.28548) schema categories (content/form/voice/function/meta) on the #2476 matryoshka SAEs (k=100 + k=200) and on a faithful flat replication of Der et al.'s recipe; (2) whether that replication (BatchTopK 32,768/k=128 on banked layer-19 turn means + their full judged evaluation, judge claude-sonnet-4-6 no-prefill) reproduces their discrimination-vs-coverage inversion; and (3) which feature properties (schema categories + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability, via a forward-selection partial-out ladder as the headline figure.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2552",
-      "status": "running",
+      "path": "tasks/verifying/2552",
+      "status": "verifying",
       "title": "Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder"
     },
     "2553": {
@@ -12054,11 +12054,11 @@
     },
     "2564": {
       "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2564",
-      "status": "running",
-      "title": "Controlled minimal-pair battery: does the context\u2192answer map predict the DIFFERENCE in answer vectors, per instruction axis?"
+      "path": "tasks/interpreting/2564",
+      "status": "interpreting",
+      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)"
     },
     "2565": {
       "has_clean_result": false,
@@ -12088,6 +12088,14 @@
       "status": "running",
       "title": "workflow-fix: consumer-supersession audit \u2014 enumerate committed consumers of refuted evidence artifacts and require supersession labels"
     },
+    "2569": {
+      "goal": "Exploit the linearity of the fitted residual context-answer mapping (banked 963k-row layer-19 ridge map, Qwen2.5-7B-Instruct) to characterize in one phased battery: (1) operator eigenstructure, effective null space, fixed point, and their SAE-feature reads (ignored/copied/transcoded/damped anatomy); (2) whether the map's Gram matrix WtW is the correct theory-paper context-gate metric and whether the closed-form ridge learning curve reproduces the empirical C1 scaling; (3) the feature-to-feature wiring of the map across SAE dictionaries including a trained last-prompt-token SAE; (4) the literal weight-update rank (dW spectra, intruder dimensions, factor alignment) across the recent organism fleet; (5) denoised reduced-rank structure of #1979's banked write maps; (6) an aligned operator atlas with a cross-model (Llama-3.1-8B-Instruct) three-tier representation-vs-operator similarity report; (7) correlational validation of the effective null space via kernel-equivalent context pairs, plus closed-form monitor decision geometry and sensitivity certificates.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2569",
+      "status": "running",
+      "title": "Linear-map theory battery: operator eigenstructure, null-space fibers, theory-bridge gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and a cross-model operator atlas"
+    },
     "257": {
       "has_clean_result": false,
       "kind": "experiment",
@@ -12095,12 +12103,110 @@
       "status": "archived",
       "title": "Do pingbang pretraining experiments"
     },
+    "2570": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2570",
+      "status": "proposed",
+      "title": "Re-point paper/poster scaling-figure generators off the superseded cross-store join (#1901 finding)"
+    },
+    "2571": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2571",
+      "status": "proposed",
+      "title": "Add a row/column-convention consistency check for plans that fit or consume a linear map"
+    },
+    "2572": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2572",
+      "status": "proposed",
+      "title": "Fix fleet-wide red test_no_new_torch_before_dotenv_vm_entrypoints on scripts/issue2254_firstk_ctxext_sensitivity.py"
+    },
+    "2573": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2573",
+      "status": "proposed",
+      "title": "Step 5a/10d FAMILY_OF lint family: couple tests/test_step9c_*.py with the synced selector \u2014 family sync itself creates the WORKFLOW_INVARIANT hybrid-tree skew (issue-2342 gate round burned)"
+    },
+    "2574": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2574",
+      "status": "proposed",
+      "title": "Statistics lens: require same-ID censoring-matched read for paired arm-difference DVs with arm-specific censoring (#2544 v7 gap)"
+    },
+    "2575": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2575",
+      "status": "proposed",
+      "title": "verify_task_body per-unit-evidence scanner misses overlay-points phrasings (false WARN on declared pairs)"
+    },
+    "2576": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2576",
+      "status": "proposed",
+      "title": "verify_task_body figure opaque-code scan fires on sidecar provenance keys (scope to rendered surfaces)"
+    },
+    "2577": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2577",
+      "status": "proposed",
+      "title": "Deflake test_issue1947_worker_dispatch quarantine race (load-dependent; false-blocked #2349 gate)"
+    },
+    "2578": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2578",
+      "status": "running",
+      "title": "verify_uploads.py hardcodes HF_DATA_REPO \u2014 the upload gate cannot verify overflow-routed runs"
+    },
+    "2579": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2579",
+      "status": "proposed",
+      "title": "Shared-tmp follow-up capture: with_suffix class + literal residue + atomic-DIRECTORY recipe + lint-arm widening + orphan-sweep hardening + unreadable-file bypass"
+    },
     "258": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/258",
       "status": "on_hold",
       "title": "Look at effect of length of system prompt/persona prompt"
+    },
+    "2580": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2580",
+      "status": "running",
+      "title": "gotchas.md: MooseFS errno-116 partial install passes uv audit while import fails (probe-by-import + UV_LINK_MODE=copy recipe)"
+    },
+    "2581": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2581",
+      "status": "proposed",
+      "title": "Session-namespace commit-message temp files so git commit -F cannot consume a concurrent session's message"
+    },
+    "2582": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2582",
+      "status": "proposed",
+      "title": "verify_task_body.py: add per-pair to the per-unit-evidence vocabulary"
+    },
+    "2583": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2583",
+      "status": "archived",
+      "title": "workflow-fix: canonical Codex review-dispatch snippet omits --no-write, so doubled review sites run write-enabled"
     },
     "259": {
       "has_clean_result": false,

@@ -1,0 +1,20 @@
+{
+  "status": "N/A",
+  "reason": "user arm(s) G2b-dropped: ['chat_user_sim'] — H4b needs both arms (plan §3)",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T22:37:47+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p6_fits",
+      "--pod-role",
+      "fits-d"
+    ],
+    "git_commit": "c732134e",
+    "git_dirty": null,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}

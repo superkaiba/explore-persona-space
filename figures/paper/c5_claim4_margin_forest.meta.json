@@ -1,536 +1,491 @@
 {
-  "commit": "ea7c64a1+dirty",
-  "render_id": "2b54322203a64518",
-  "git_commit": "ea7c64a161405be00765809bf2314bb36c13ba58",
+  "commit": "7ad5bf78+dirty",
+  "render_id": "c125b5520cdd4fe1",
+  "git_commit": "7ad5bf783b90617b4c6b6dbdc7835307676f04fe",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_1895/dark_spot_matched_rows.json",
-    "figures/paper/c3_persona_direction_spectrum.pdf",
-    "figures/paper/c3_persona_direction_spectrum.png",
-    "figures/paper/c3_sae_tier_gradient.meta.json",
-    "figures/paper/c3_sae_tier_gradient.pdf",
-    "figures/paper/c3_sae_tier_gradient.png",
-    "figures/paper/c4_reparam_recovery.meta.json",
-    "figures/paper/c4_reparam_recovery.pdf",
-    "figures/paper/c4_reparam_recovery.png",
-    "figures/paper/c4_story_vs_chat.meta.json",
-    "figures/paper/c4_story_vs_chat.pdf",
-    "figures/paper/c4_story_vs_chat.png",
-    "scripts/issue1310_analyzer_figures.py",
-    "scripts/issue1345_analyzer_figs.py",
-    "scripts/issue1482_matryoshka_tier.py",
-    "scripts/issue1639_tier15_ladder_fig.py",
+    ".claude/agent-memory/reconciler/MEMORY.md",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/paper/c5_claim4_margin_forest.meta.json",
+    "figures/paper/c5_claim4_margin_forest.pdf",
+    "figures/paper/c5_claim4_margin_forest.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1739_claim4_relabel_figs.py",
     "scripts/issue1739_result2_fourpanel_fig.py",
-    "scripts/issue1774_figures.py",
-    "scripts/issue1895_analysis_figures.py",
-    "scripts/issue1901_body_figures.py",
-    "scripts/issue1902_figures.py",
-    "scripts/issue2094_figures.py",
-    "scripts/issue2202_regen_figs.py",
-    "scripts/issue722_figures.py",
-    "scripts/issue779_identity_baseline.py",
-    "scripts/issue823_figures.py",
-    "scripts/issue928_mlc_figures.py",
-    "tasks/planning/2422/events.jsonl",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": null,
-  "created": "2026-08-20T08:19:09Z",
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-25T17:39:39Z",
   "figsize": [
     5.5,
     3.6300000000000003
   ],
   "points": [
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03455238328138233,
-      "y": 12.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08295003199437437,
+      "y": 11.0,
       "_kind": "errorbar",
       "_group": 0
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03951909237756593,
-      "y": 11.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12036031924691837,
+      "y": 10.0,
       "_kind": "errorbar",
       "_group": 1
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.14165205703946465,
-      "y": 10.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.4531163941948357,
+      "y": 9.0,
       "_kind": "errorbar",
       "_group": 2
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.07584939069787573,
-      "y": 9.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03323828757268093,
+      "y": 8.0,
       "_kind": "errorbar",
       "_group": 3
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.015287285340663547,
-      "y": 8.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04360358558373343,
+      "y": 7.0,
       "_kind": "errorbar",
       "_group": 4
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04475844576543384,
-      "y": 7.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03759503773547753,
+      "y": 6.0,
       "_kind": "errorbar",
       "_group": 5
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.014772410853309026,
-      "y": 6.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01175181442723583,
+      "y": 5.0,
       "_kind": "errorbar",
       "_group": 6
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03278798779380163,
-      "y": 5.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.018691788808258836,
+      "y": 4.0,
       "_kind": "errorbar",
       "_group": 7
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.032325692778699525,
-      "y": 4.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05470073167904595,
+      "y": 3.0,
       "_kind": "errorbar",
       "_group": 8
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.056225050986641045,
-      "y": 3.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.030182622646223022,
+      "y": 2.0,
       "_kind": "errorbar",
       "_group": 9
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.041593300261915864,
-      "y": 2.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.19604321268322364,
+      "y": 1.0,
       "_kind": "errorbar",
       "_group": 10
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.028053127576999754,
-      "y": 1.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.3325134918858831,
+      "y": 0.0,
       "_kind": "errorbar",
       "_group": 11
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.13670212443700822,
-      "y": 0.0,
-      "_kind": "errorbar",
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08422516205428354,
+      "y": 11.0,
+      "_kind": "line",
       "_group": 12
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08248191579898247,
-      "y": 12.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07738971379562881,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03378874825409309,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12819456990088104,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.09115196596698538,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12194344127357984,
+      "y": 10.0,
       "_kind": "line",
       "_group": 13
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05920136272385182,
-      "y": 12.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07168056871116904,
+      "y": 10.0,
       "_kind": "line",
       "_group": 13
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.009996619621305908,
-      "y": 12.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.13669192186769455,
+      "y": 10.0,
       "_kind": "line",
       "_group": 13
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06096329078764909,
-      "y": 12.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.10967795147416451,
+      "y": 10.0,
       "_kind": "line",
       "_group": 13
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.01988803328226582,
-      "y": 12.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.16180771290798387,
+      "y": 10.0,
       "_kind": "line",
       "_group": 13
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06817119737097807,
-      "y": 11.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.43646288942122546,
+      "y": 9.0,
       "_kind": "line",
       "_group": 14
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.012318775091890055,
-      "y": 11.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.26467339963072717,
+      "y": 9.0,
       "_kind": "line",
       "_group": 14
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04005194035780768,
-      "y": 11.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.23675716873276578,
+      "y": 9.0,
       "_kind": "line",
       "_group": 14
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.0054289274408303445,
-      "y": 11.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.7060233649082119,
+      "y": 9.0,
       "_kind": "line",
       "_group": 14
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08248247650798418,
-      "y": 11.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.6216651482812484,
+      "y": 9.0,
       "_kind": "line",
       "_group": 14
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.23442038894538952,
-      "y": 10.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0451850838604344,
+      "y": 8.0,
       "_kind": "line",
       "_group": 15
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.23679274079459894,
-      "y": 10.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.028120250959086886,
+      "y": 8.0,
       "_kind": "line",
       "_group": 15
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.15886384919075155,
-      "y": 10.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.042452302606152716,
+      "y": 8.0,
       "_kind": "line",
       "_group": 15
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.06562185725074898,
-      "y": 10.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01792371510249928,
+      "y": 8.0,
       "_kind": "line",
       "_group": 15
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.1438051635173322,
-      "y": 10.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.032510085335231385,
+      "y": 8.0,
       "_kind": "line",
       "_group": 15
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05915922177336239,
-      "y": 9.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05475632517695278,
+      "y": 7.0,
       "_kind": "line",
       "_group": 16
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.09530326258056712,
-      "y": 9.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05329073219054892,
+      "y": 7.0,
       "_kind": "line",
       "_group": 16
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.07760614627640385,
-      "y": 9.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.051813673815257644,
+      "y": 7.0,
       "_kind": "line",
       "_group": 16
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08231555932011445,
-      "y": 9.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.036150608377017335,
+      "y": 7.0,
       "_kind": "line",
       "_group": 16
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06486276353893083,
-      "y": 9.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.022006588358890466,
+      "y": 7.0,
       "_kind": "line",
       "_group": 16
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.006653958208733324,
-      "y": 8.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03698250217822191,
+      "y": 6.0,
       "_kind": "line",
       "_group": 17
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.005776025706546006,
-      "y": 8.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02561828045372888,
+      "y": 6.0,
       "_kind": "line",
       "_group": 17
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03312082005977762,
-      "y": 8.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.035840101850297346,
+      "y": 6.0,
       "_kind": "line",
       "_group": 17
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0132435520964021,
-      "y": 8.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.043809881435446174,
+      "y": 6.0,
       "_kind": "line",
       "_group": 17
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0291941220449507,
-      "y": 8.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04572442275969335,
+      "y": 6.0,
       "_kind": "line",
       "_group": 17
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03428301796344546,
-      "y": 7.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0174823018110134,
+      "y": 5.0,
       "_kind": "line",
       "_group": 18
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.040365432209637786,
-      "y": 7.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01969507193015385,
+      "y": 5.0,
       "_kind": "line",
       "_group": 18
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03444132863136312,
-      "y": 7.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.018104476392652613,
+      "y": 5.0,
       "_kind": "line",
       "_group": 18
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05778701940036912,
-      "y": 7.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.017017229908172504,
+      "y": 5.0,
       "_kind": "line",
       "_group": 18
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05691543062235371,
-      "y": 7.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.013540007905813223,
+      "y": 5.0,
       "_kind": "line",
       "_group": 18
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.040727057959234314,
-      "y": 6.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02007061949138733,
+      "y": 4.0,
       "_kind": "line",
       "_group": 19
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.016008614367588048,
-      "y": 6.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.016395477127532754,
+      "y": 4.0,
       "_kind": "line",
       "_group": 19
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.008934667472353552,
-      "y": 6.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.024016995477239456,
+      "y": 4.0,
       "_kind": "line",
       "_group": 19
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.019115731287518756,
-      "y": 6.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.017661105916593423,
+      "y": 4.0,
       "_kind": "line",
       "_group": 19
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.02730744575488797,
-      "y": 6.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.015314746028541215,
+      "y": 4.0,
       "_kind": "line",
       "_group": 19
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.031026242717993036,
-      "y": 5.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0333978538272669,
+      "y": 3.0,
       "_kind": "line",
       "_group": 20
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03222678799651546,
-      "y": 5.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08714396189240814,
+      "y": 3.0,
       "_kind": "line",
       "_group": 20
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03657674887201112,
-      "y": 5.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04283193416623998,
+      "y": 3.0,
       "_kind": "line",
       "_group": 20
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03345523858126964,
-      "y": 5.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07223706455855922,
+      "y": 3.0,
       "_kind": "line",
       "_group": 20
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0306549208012189,
-      "y": 5.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.037892843950755484,
+      "y": 3.0,
       "_kind": "line",
       "_group": 20
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.008690245095687776,
-      "y": 4.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.0033615353469981235,
+      "y": 2.0,
       "_kind": "line",
       "_group": 21
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.039284808922852577,
-      "y": 4.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05409605864434214,
+      "y": 2.0,
       "_kind": "line",
       "_group": 21
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04429716196895306,
-      "y": 4.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0012627012111333658,
+      "y": 2.0,
       "_kind": "line",
       "_group": 21
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05384031548005053,
-      "y": 4.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04597319267969974,
+      "y": 2.0,
       "_kind": "line",
       "_group": 21
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.015515932425953671,
-      "y": 4.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.052942696042938,
+      "y": 2.0,
       "_kind": "line",
       "_group": 21
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.07521661570857918,
-      "y": 3.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.19860691945826559,
+      "y": 1.0,
       "_kind": "line",
       "_group": 22
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.21198485779360748,
-      "y": 3.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.1915732116870164,
+      "y": 1.0,
       "_kind": "line",
       "_group": 22
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.27766353956517514,
-      "y": 3.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.2120001255328067,
+      "y": 1.0,
       "_kind": "line",
       "_group": 22
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.1495577928735246,
-      "y": 3.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.1949846960421817,
+      "y": 1.0,
       "_kind": "line",
       "_group": 22
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.12202952812266908,
-      "y": 3.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.1830511106958478,
+      "y": 1.0,
       "_kind": "line",
       "_group": 22
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06628942620361106,
-      "y": 2.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.30425891301195646,
+      "y": 0.0,
       "_kind": "line",
       "_group": 23
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.07536607659732741,
-      "y": 2.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.2101374352947532,
+      "y": 0.0,
       "_kind": "line",
       "_group": 23
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.013551357901218863,
-      "y": 2.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.5260430757337337,
+      "y": 0.0,
       "_kind": "line",
       "_group": 23
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04480323863987301,
-      "y": 2.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.31247351106108606,
+      "y": 0.0,
       "_kind": "line",
       "_group": 23
     },
     {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.007956401967548987,
-      "y": 2.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.30965452432788587,
+      "y": 0.0,
       "_kind": "line",
       "_group": 23
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05546144028568334,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 24
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.013025125549935512,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 24
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.015454716223969739,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 24
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.007483699173161412,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 24
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06380805499857159,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 24
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08766335374782994,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 25
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0928329927361342,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 25
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.2177399268374146,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 25
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.16239344177150652,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 25
-    },
-    {
-      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.12288090709215588,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 25
     }
   ],
-  "n_series": 26,
-  "total_points": 78,
+  "n_series": 24,
+  "total_points": 72,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "xlabel": "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)",
+        "xlabel": "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)",
         "xticklabels": [
+          "\u22120.8",
+          "\u22120.6",
           "\u22120.4",
-          "\u22120.3",
           "\u22120.2",
-          "\u22120.1",
           "0.0",
-          "0.1",
           "0.2",
-          "0.3",
-          "0.4"
+          "0.4",
+          "0.6"
         ],
         "yticklabels": [
           "evil: multi-turn human jailbreaks",
@@ -542,7 +497,6 @@
           "hallucination: SimpleQA",
           "sycophancy: AITA slot (held-out Reddit)",
           "sycophancy: answer",
-          "sycophancy: are-you-sure",
           "sycophancy: feedback",
           "sycophancy: mimicry",
           "sycophancy: model-written evaluations *"

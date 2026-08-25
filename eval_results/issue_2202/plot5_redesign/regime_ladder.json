@@ -1,0 +1,92 @@
+{
+ "map": "ridge (pred16, layer 19)",
+ "note": "whitened euclidean is the known-degenerate outlier (9739/9941 fail) and is excluded from the ladder; per-rung sources: percontext_ranks.csv fail_* columns (pod P1), csls_percontext_ranks.npz (cosine-native CSLS follow-up), this round's whitencos_csls_ranks.npz + oppoint_ranks.npz",
+ "rungs": [
+  {
+   "regime": "raw euclidean, single-draw targets",
+   "n_fail": 1829,
+   "n": 9941,
+   "fail_rate": 0.18398551453576098
+  },
+  {
+   "regime": "raw cosine, single-draw targets",
+   "n_fail": 1708,
+   "n": 9941,
+   "fail_rate": 0.17181370083492606
+  },
+  {
+   "regime": "centered cosine, single-draw targets",
+   "n_fail": 1169,
+   "n": 9941,
+   "fail_rate": 0.11759380344029775
+  },
+  {
+   "regime": "whitened cosine, single-draw targets",
+   "n_fail": 462,
+   "n": 9941,
+   "fail_rate": 0.046474197766824266
+  },
+  {
+   "regime": "CSLS on raw cosine, single-draw targets",
+   "n_fail": 900,
+   "n": 9941,
+   "fail_rate": 0.0905341514938135
+  },
+  {
+   "regime": "whitened cosine + CSLS, single-draw targets",
+   "n_fail": 237,
+   "n": 9941,
+   "fail_rate": 0.023840659893370888
+  },
+  {
+   "regime": "whitened cosine + CSLS, single-draw targets (covered rows)",
+   "n_fail": 37,
+   "n": 1988,
+   "fail_rate": 0.018611670020120725
+  },
+  {
+   "regime": "whitened cosine + CSLS, draw-AVERAGED targets (covered rows)",
+   "n_fail": 11,
+   "n": 1988,
+   "fail_rate": 0.005533199195171026
+  }
+ ],
+ "meta": {
+  "generated_utc": "2026-08-25T07:33:04.471112+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "efb16a51847647a5290a5015d718ae6bc0f7ca6f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "eval_results/issue_2474/n1m_map_arms.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "figures/paper/c3_persona_direction_spectrum.meta.json",
+   "figures/paper/c3_persona_direction_spectrum.pdf",
+   "figures/paper/c3_persona_direction_spectrum.png",
+   "scripts/issue1902_figures.py",
+   "scripts/issue2474_n1m_map.py",
+   "scripts/issue779_plot3_redesign.py",
+   "tasks/completed/2214/body.md",
+   "tasks/completed/2214/comments.jsonl",
+   "tasks/completed/2214/concerns.jsonl",
+   "tasks/completed/2214/events.jsonl",
+   "tasks/completed/2214/plans/plan.md",
+   "tasks/completed/2214/plans/v1.md",
+   "tasks/completed/2214/plans/v2.md",
+   "tasks/completed/2214/plans/v3.md",
+   "tasks/proposed/2416/body.md",
+   "tasks/proposed/2416/comments.jsonl",
+   "tasks/proposed/2416/events.jsonl",
+   "tasks/running/2502/concerns.jsonl",
+   "tasks/running/2502/events.jsonl",
+   "tasks/running/2544/events.jsonl",
+   "tasks/running/2568/concerns.jsonl",
+   "tasks/running/2568/events.jsonl",
+   "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2202_plot5_redesign.py"
+ }
+}

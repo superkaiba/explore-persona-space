@@ -1,17 +1,20 @@
 {
-  "commit": "3f7b155d+dirty",
-  "render_id": "44c50d98e6074829",
-  "git_commit": "3f7b155da853af3069fc2ca5c73124e88b5063a3",
+  "commit": "22d92210+dirty",
+  "render_id": "531bda5cce0f489f",
+  "git_commit": "22d9221057ad597327cc4bfefa07f782f4dc1b40",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue1482_plot4_redesign.py",
+    ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
+    "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/paper/c1_layer_profile.meta.json",
-    "figures/paper/c1_layer_profile.pdf",
-    "figures/paper/c1_layer_profile.png",
-    "figures/paper/c1_scaling_train_pool.meta.json",
-    "scripts/issue1901_plot1_remake.py",
-    "scripts/issue1901_plot1remake_launch.sh",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_failure_attribution.meta.json",
+    "figures/paper/c3_failure_attribution.pdf",
+    "figures/paper/c3_failure_attribution.png",
+    "scripts/issue1482_plot4_redesign.py",
+    "scripts/issue1902_figures.py",
     "scripts/issue2474_n1m_map.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
@@ -24,12 +27,11 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2378/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1482_plot4_redesign.py",
-  "created": "2026-08-24T22:48:11Z",
+  "created": "2026-08-25T07:00:50Z",
   "figsize": [
     5.5,
     2.7
@@ -72,54 +74,6 @@
       "_group": 0
     },
     {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.035396,
-      "y": 0.07079167107925577,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.032983,
-      "y": 0.06596626667160321,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.034274,
-      "y": 0.06854848172528816,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.02708,
-      "y": 0.05415916663009135,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.023362,
-      "y": 0.046723410659521236,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.018028,
-      "y": 0.0360557033544342,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.016952,
-      "y": -0.03390378997269561,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.022852,
-      "y": 0.045703229216558894,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
       "matryoshka tier (coarsest to finest)": 0.0,
       "per-feature $R^2$, centered within\nactivity quintiles": 0.17906373076983012,
       "error": 0.15240566218514015,
@@ -142,7 +96,7 @@
     }
   ],
   "n_series": 4,
-  "total_points": 17,
+  "total_points": 9,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -164,15 +118,7 @@
           "speaker identity / disposition",
           "suppresses specific output tokens",
           "promotes specific output tokens",
-          "topic content",
-          "interpretable (auto-label)",
-          "output-promoting role (noisy label)",
-          "answer-side firing share",
-          "task-format content",
-          "variance explained in answer space",
-          "syntax content",
-          "encoder norm (read strength)",
-          "mean activation (when active)"
+          "topic content"
         ]
       },
       {

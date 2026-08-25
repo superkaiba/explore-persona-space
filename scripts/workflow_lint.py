@@ -19579,88 +19579,17 @@ def _shared_tmp_waiver_present(lines: list[str], idx: int) -> bool:
     return prev >= 0 and lines[prev].lstrip().startswith("#") and _ok(lines[prev])
 
 
-# Batch-0 seed (#2336, plan v3 §4 step 5): the full landing-day residual of
-# the check's OWN scanner with allowlist=() over scripts/ + src/ (208 hit
-# lines / 118 files at seed time) — NEVER derived from a plain grep. Each
-# migration batch shrinks this tuple by exactly the batch's migrated files
-# IN THE SAME COMMIT; stale entries WARN. Close-out gate (plan §7 / A11):
-# the task terminates only when this tuple is EMPTY.
-_SHARED_TMP_SEED_REASON = "batch-0 seed — unsafe shared-tmp file-writer pending migration"
-_SHARED_TMP_DIR_IDIOM_REASON = (
-    "batch-0 seed — §4(g) temp-DIRECTORY idiom site (also carries migratable file-writer"
-    " lines); waiver-or-defer disposition in batch 2, never recipe-migration"
-)
-SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = (
-    ("scripts/issue1739_bareq_score.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_compliance_full.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_compliance_pilot.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_fits.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_holdout_rung.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_judge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_k1_floor.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_natpv.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_newarm_box.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_newarm_collect.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_pack.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_pilot_judge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_reconstruct_contexts.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_rejudge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_rescore_ood.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_rescore_ood_armfill.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_pod.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_regen.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_rescore.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_rescore_stage.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_stage.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_trait_rejudge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1901_boundary_token_control.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1901_paper_densify_fits.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2162_genfreeze.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2162_mapshift.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2162_run.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2202_failchar.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2202_metric_zoo.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2222_capture.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2222_followup_basegen_map.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2222_judge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2222_lib.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2224_followup_r1.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2224_probe_refit.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2329_analysis.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2329_mapshift.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2333_run.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2476_turnavg_sae.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2477_base_coherence.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue540_jsrb_predictor.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue541_geometry_extract.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue779_ffc_n1m_fits.py", _SHARED_TMP_SEED_REASON),
-    (
-        "scripts/issue823_ladder_ext_gen.py",
-        "post-seed drift (batch 2): landed 2026-08-23 on a tree the batch-0 seed scan predated;"
-        " deferred — live owner #823; batch-5 sweep",
-    ),
-    ("scripts/issue823_ladder_fits.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/artifacts/recipe.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/eval/callbacks.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue2329/bank2329.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/arms.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/capture.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/corpus_staging.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/dv_build.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/generation.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/mem_guard.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/sentinels.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_952/run_952.py", _SHARED_TMP_SEED_REASON),
-    (
-        "src/explore_persona_space/experiments/neg_setpoint_601/capability_probe.py",
-        _SHARED_TMP_SEED_REASON,
-    ),
-    (
-        "src/explore_persona_space/experiments/neg_setpoint_601/rowtype_ce_probe.py",
-        _SHARED_TMP_SEED_REASON,
-    ),
-    ("src/explore_persona_space/train/sft.py", _SHARED_TMP_SEED_REASON),
-)
+# Batch-0 seed (#2336, plan v3 §4 step 5) held the full landing-day residual
+# of the check's OWN scanner with allowlist=() over scripts/ + src/ (208 hit
+# lines / 118 files at seed time) — NEVER derived from a plain grep. Batches
+# 1-6 migrated every entry onto explore_persona_space.atomic_io.atomic_replace,
+# each batch shrinking this tuple IN THE SAME COMMIT (close-out gate, plan
+# §7 / A11). EMPTY since batch 6 (the deferred #1901 pair was the last): the
+# ratchet is fully armed — any new shared-tmp hit under scripts/ + src/ FAILs
+# unless it carries a SHARED_TMP_EXEMPT waiver comment. Add entries here ONLY
+# for a sanctioned deferral, as (repo-relative path, reason >= 10 chars);
+# stale entries WARN.
+SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = ()
 
 
 def check_shared_tmp_name(

@@ -1,0 +1,72 @@
+{
+  "gate": "G2a",
+  "binding": false,
+  "cells": {
+    "storyq_astra": {
+      "n_admitted": 7129,
+      "selected": 7129,
+      "segb_survival_pilot": 1.0,
+      "projected_kept": 7129.0,
+      "floor": 6500,
+      "schedule_sega_topup": false
+    },
+    "storyq_dana": {
+      "n_admitted": 6984,
+      "selected": 6984,
+      "segb_survival_pilot": 1.0,
+      "projected_kept": 6984.0,
+      "floor": 6500,
+      "schedule_sega_topup": false
+    },
+    "storyq_helios": {
+      "n_admitted": 6694,
+      "selected": 6694,
+      "segb_survival_pilot": 1.0,
+      "projected_kept": 6694.0,
+      "floor": 6500,
+      "schedule_sega_topup": false
+    },
+    "storyq_vex": {
+      "n_admitted": 6784,
+      "selected": 6784,
+      "segb_survival_pilot": 1.0,
+      "projected_kept": 6784.0,
+      "floor": 6500,
+      "schedule_sega_topup": false
+    },
+    "storyq_wren": {
+      "n_admitted": 7922,
+      "selected": 7922,
+      "segb_survival_pilot": 1.0,
+      "projected_kept": 7922.0,
+      "floor": 6500,
+      "schedule_sega_topup": false
+    }
+  },
+  "sega_topup_cells": [],
+  "note": "wave sizing only; kept.json predates SegB/cap-hit/retries (plan §7)",
+  "gate_quantity_deviation": "projection uses min(n_admitted, STORY_TARGET_KEPT) x survival, not the plan §7 literal n_admitted x survival: only STORY_TARGET_KEPT rows enter SegB wave 1, so the surplus is retry-wave budget, not wave-1 yield. Conservative-in-coverage — may schedule a top-up the plan formula would skip (r1 review g5 concern, recorded deviation).",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T03:13:26-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p3_admission"
+    ],
+    "git_commit": "21b095a5",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/admission_summary.json",
+      "eval_results/issue_2378/judge/pilot_admission_batch.json",
+      "eval_results/issue_2378/kept/storyq_astra.json",
+      "eval_results/issue_2378/kept/storyq_dana.json",
+      "eval_results/issue_2378/kept/storyq_helios.json",
+      "eval_results/issue_2378/kept/storyq_vex.json",
+      "eval_results/issue_2378/kept/storyq_wren.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}
