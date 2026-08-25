@@ -2,7 +2,8 @@
 """Issue #2378 `causal-patching-arms` — VM-side fold: F_act + F_beh summary.
 
 Consumes the pod round's harvested dirs (--patch-root) + the judge wave's
-scores.jsonl (--judge-dir) and writes the round's eval JSON
+PUBLISHED fold (--judge-dir, resolved through the os.replace'd
+``fold_manifest.json`` pointer — r18) and writes the round's eval JSON
 ``patch_summary.json`` under eval_results/issue_2378/causal-patching-arms/.
 
 DV assembly (all estimators imported from the #2094 suite, never re-derived):
@@ -58,8 +59,13 @@ def _log(msg: str) -> None:
 
 
 def _load_scores(judge_dir: Path) -> dict[str, dict[str, int]]:
-    """{row_id: {rubric: kept score}} from the judge wave (kept rows only)."""
-    path = judge_dir / "scores.jsonl"
+    """{row_id: {rubric: kept score}} from the judge wave's PUBLISHED fold
+    (manifest-pointer resolution, r18 patch-judge-fold-publish-window:
+    ``read_fold_manifest`` refuses an unpublished / half-published fold —
+    never read fold dirs or a legacy top-level scores.jsonl directly)."""
+    import issue2378_patch_judge as pj
+
+    path = pj.read_fold_manifest(judge_dir)["scores_path"]
     out: dict[str, dict[str, int]] = {}
     for row in cm.iter_jsonl(path):
         if row.get("kept"):

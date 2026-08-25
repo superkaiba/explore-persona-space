@@ -340,7 +340,11 @@ def test_pilot_vacuous_class_fails():
 
 def test_wave_fold_resumable(tmp_path):
     """A rerun REPLACES the prior fold instead of truncate-then-refusing on
-    the existing raw shard (r17 codex patch-judge-fold-not-resumable)."""
+    the existing raw shard (r17 codex patch-judge-fold-not-resumable), and the
+    publish is an os.replace'd MANIFEST pointer (r18
+    patch-judge-fold-publish-window): each rebuild lands in a fresh fold dir,
+    the manifest flips after the fold is complete, and superseded folds plus
+    legacy top-level outputs are reaped post-publish."""
     import json
 
     import issue2378_patch_judge as pj
@@ -349,25 +353,158 @@ def test_wave_fold_resumable(tmp_path):
         "grid|cell0|d0|persona": _cls("valid", score=70),
         "grid|cell0|d0|assistant": _cls("parse_fail"),
     }
-    # Preseed a stale prior fold (the shape the old code refused on).
+    # Preseed BOTH stale shapes: the legacy pre-manifest top-level fold and a
+    # stale published fold dir.
     (tmp_path / "raw").mkdir(parents=True)
     (tmp_path / "raw" / "judge_rows.shard00.jsonl").write_text("stale\n", encoding="utf-8")
     (tmp_path / "scores.jsonl").write_text("stale\n", encoding="utf-8")
     for _ in range(2):  # idempotent rebuild, twice
-        tally, shard_info = pj._write_fold(tmp_path, classified)
+        tally, shard_info, fold_dir = pj._write_fold(tmp_path, classified)
         assert tally == {
             "kept": 1,
             "dropped": 1,
             "transport_loss": 0,
             "by_class": {"valid": 1, "parse_fail": 1},
         }
-        rows = [
-            json.loads(line)
-            for line in (tmp_path / "scores.jsonl").read_text(encoding="utf-8").splitlines()
-        ]
+        man = pj.read_fold_manifest(tmp_path)
+        assert man["fold_dir"] == fold_dir.name and man["tally"] == tally
+        rows = [json.loads(line) for line in man["scores_path"].read_text().splitlines()]
         assert [r["kept"] for r in rows] == [False, True]
         assert all(Path(p).exists() for p in shard_info["shards"])
-    assert not (tmp_path / "fold_tmp").exists()
+        assert all(Path(p).is_relative_to(fold_dir) for p in shard_info["shards"])
+        # Exactly ONE fold dir survives (superseded + legacy reaped).
+        fold_dirs = [p for p in tmp_path.glob("fold_*") if p.is_dir()]
+        assert fold_dirs == [fold_dir]
+        assert not (tmp_path / "raw").exists() and not (tmp_path / "scores.jsonl").exists()
+
+
+def test_read_fold_manifest_refuses_unpublished(tmp_path):
+    """No manifest = no published fold; a manifest naming a missing fold dir
+    is a half-published fold — both refuse loud (r18)."""
+    import json
+
+    import issue2378_patch_judge as pj
+
+    with pytest.raises(RuntimeError, match="missing manifest"):
+        pj.read_fold_manifest(tmp_path)
+    (tmp_path / "fold_manifest.json").write_text(json.dumps({"fold_dir": "fold_gone"}))
+    with pytest.raises(RuntimeError, match="half-published"):
+        pj.read_fold_manifest(tmp_path)
+
+
+def test_pilot_stratification_interleaves_arms():
+    """Within a (kind x rubric) class the pilot queue interleaves ARMS — a
+    plain item_id sort drew only the lexicographically-first arm (null), so
+    steered/prefill/within replies never reached the pilot (r18
+    patch-judge-pilot-arm-and-binding-residual (a))."""
+    from types import SimpleNamespace
+
+    import issue2378_patch_judge as pj
+
+    items = [
+        SimpleNamespace(item_id=f"grid|{arm}|lstar|story->chat|q{i:02d}|d0|persona")
+        for arm in ("null", "prefill", "steered", "within")
+        for i in range(6)
+    ]
+    sel = pj.stratified_pilot_items(items, 4)
+    assert {pj._item_arm(it.item_id) for it in sel} == {"null", "prefill", "steered", "within"}
+    # Determinism + still class-spanning with a second rubric in the mix.
+    items2 = items + [
+        SimpleNamespace(item_id=f"grid|{arm}|lstar|story->chat|q{i:02d}|d0|coherence")
+        for arm in ("null", "steered")
+        for i in range(6)
+    ]
+    sel2a = [it.item_id for it in pj.stratified_pilot_items(items2, 8)]
+    sel2b = [it.item_id for it in pj.stratified_pilot_items(items2, 8)]
+    assert sel2a == sel2b
+    per_class: dict[tuple[str, str], set[str]] = {}
+    for iid in sel2a:
+        per_class.setdefault(pj._item_class(iid), set()).add(pj._item_arm(iid))
+    assert per_class[("grid", "persona")] == {"null", "prefill", "steered", "within"}
+    assert per_class[("grid", "coherence")] == {"null", "steered"}
+
+
+def test_instrument_sha_pins_temperature(monkeypatch):
+    """The judge temperature is part of the instrument — changing it must
+    invalidate a prior pilot PASS (r18 (b))."""
+    import issue2378_patch_judge as pj
+
+    sha_live = pj._instrument_sha()
+    monkeypatch.setattr(pj, "JUDGE_TEMPERATURE", 0.0)
+    assert pj._instrument_sha() != sha_live
+
+
+def _judge_patch_root(tmp_path, n_rows=2):
+    import json
+
+    import issue2378_common as cm
+
+    d = tmp_path / "patch_root" / "grid" / "rollouts"
+    d.mkdir(parents=True)
+    char = "Vex"
+    assert char in cm.PERSONAS
+    rows = [
+        {
+            "pair_type": "chat~story",
+            "char": char,
+            "cell_id": f"steered|lstar|story->chat|q{i}",
+            "draw": 0,
+            "answer": "a reply",
+            "drop_reason": None,
+        }
+        for i in range(n_rows)
+    ]
+    (d / "grid.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+    return tmp_path / "patch_root"
+
+
+def test_wave_binds_pilot_to_item_set(tmp_path, monkeypatch):
+    """run_wave refuses when the wave's item-id set differs from the piloted
+    set, and proceeds (through the manifest publish) when it matches (r18
+    patch-judge-pilot-arm-and-binding-residual (c))."""
+    import json
+    from types import SimpleNamespace
+
+    import issue2378_patch_judge as pj
+
+    root = _judge_patch_root(tmp_path)
+    out = tmp_path / "out"
+    out.mkdir()
+    items = pj.build_items(root)
+    args = SimpleNamespace(
+        patch_root=str(root),
+        transport="sync",
+        skip_pilot_gate=False,
+        skip_upload=True,
+        hf_suffix="",
+        cache_dir=str(tmp_path / "cache"),
+        checkpoint_dir=str(tmp_path / "ckpt"),
+    )
+    rep = {
+        "ok": True,
+        "transport": "sync",
+        "instrument_sha": pj._instrument_sha(),
+        "item_set_sha": "0000000000000000",  # a DIFFERENT harvest's pilot
+    }
+    (out / "pilot_report.json").write_text(json.dumps(rep), encoding="utf-8")
+    monkeypatch.setattr(
+        pj, "_dispatch", lambda *a, **k: pytest.fail("dispatched past the item-set gate")
+    )
+    with pytest.raises(SystemExit, match="item-id set"):
+        pj.run_wave(args, out)
+    # Matching set → the wave runs and publishes a manifest-pointed fold.
+    rep["item_set_sha"] = pj._item_set_sha(items)
+    (out / "pilot_report.json").write_text(json.dumps(rep), encoding="utf-8")
+    monkeypatch.setattr(
+        pj,
+        "_dispatch",
+        lambda its, *a, **k: {it.item_id: _cls("valid", score=55) for it in its},
+    )
+    assert pj.run_wave(args, out) == 0
+    man = pj.read_fold_manifest(out)
+    assert man["tally"]["kept"] == len(items)
+    report = json.loads((out / "wave_report.json").read_text(encoding="utf-8"))
+    assert report["fold_dir"] == man["fold_dir"]
 
 
 def test_cap_hit_fractions_hit_stop():

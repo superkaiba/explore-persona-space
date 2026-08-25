@@ -28,7 +28,9 @@ with zero answered calls (transport losses are vacuous, never a PASS); the
 production wave refuses to run without a PASS report on disk whose transport
 AND instrument sha match the wave's (rule 26(c) parity; or --skip-pilot-gate,
 recorded in the wave report). The wave fold is rebuild-from-cache resumable
-(fresh tmp dir + atomic publish — a rerun never truncates or refuses).
+(fresh fold dir, published by an os.replace'd manifest pointer readers key on
+— a rerun never truncates or refuses, and a crash mid-write leaves the prior
+published fold intact; readers refuse when no manifest is published).
 
 Inputs: the harvested pod dirs under --patch-root (bank/anchors/grid/confirm
 rollout JSONLs). Outputs: per-row scores JSONL + a wave report under
@@ -41,7 +43,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -61,6 +62,7 @@ import issue2378_judge as J  # noqa: E402  (parse/classify reuse — verbatim)
 import issue2378_patch_common as pc  # noqa: E402
 
 PILOT_PARSE_FAIL_MAX = 0.02  # llm-judging rule 23: per-wave parse-fail < 2%
+JUDGE_TEMPERATURE = 1.0  # rule 4 multi-draw temperature — part of the instrument (r18)
 
 
 def _log(msg: str) -> None:
@@ -151,7 +153,7 @@ def _build_request(item) -> dict:
     return {
         "model": cm.JUDGE_MODEL,
         "max_tokens": cm.JUDGE_MAX_TOKENS,
-        "temperature": 1.0,
+        "temperature": JUDGE_TEMPERATURE,
         "system": pc.PATCH_JUDGE_SYSTEM,
         "messages": [{"role": "user", "content": user}],
     }
@@ -211,16 +213,30 @@ def _item_class(item_id: str) -> tuple[str, str]:
     return item_id.split("|", 1)[0], item_id.rsplit("|", 1)[1]
 
 
+def _item_arm(item_id: str) -> str:
+    """The patch ARM of one judge item, for within-class pilot interleaving.
+
+    grid/confirm ids embed the cell_id whose LEADING field is the arm
+    (``grid|<arm>|<variant>|<src>-><tgt>|<qid>|d<k>|<rubric>``); anchors rows
+    are unpatched (no arm) — keyed by their ctx framing instead, which is a
+    single realized group in the judged (chat~story) scope."""
+    parts = item_id.split("|")
+    if parts[0] == "anchors":
+        return parts[1].split(":", 1)[0]
+    return parts[1]
+
+
 def _instrument_sha() -> str:
-    """sha256 of the judge INSTRUMENT (model, cap, system, all rubrics) — a
-    pilot PASS is valid only for this exact instrument (llm-judging rule 26);
-    the wave refuses on a mismatch."""
+    """sha256 of the judge INSTRUMENT (model, cap, temperature, system, all
+    rubrics) — a pilot PASS is valid only for this exact instrument
+    (llm-judging rule 26); the wave refuses on a mismatch."""
     import hashlib
 
     payload = json.dumps(
         [
             cm.JUDGE_MODEL,
             cm.JUDGE_MAX_TOKENS,
+            JUDGE_TEMPERATURE,
             pc.PATCH_JUDGE_SYSTEM,
             pc.PERSONA_RUBRIC,
             pc.ASSISTANT_RUBRIC,
@@ -230,18 +246,45 @@ def _instrument_sha() -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
+def _item_set_sha(items: list) -> str:
+    """Canonical sha256 over the SORTED item-id set — binds a pilot PASS to
+    the exact wave it gates (r18 patch-judge-pilot-arm-and-binding-residual:
+    a pilot run against one harvest must not green-light a wave over a
+    different harvested row set)."""
+    import hashlib
+
+    payload = "\n".join(sorted(it.item_id for it in items))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
 def stratified_pilot_items(items: list, n: int) -> list:
     """Deterministic round-robin per-(kind x rubric) selection of n pilot items.
 
     The pilot must span EVERY realized row kind (anchors/grid/confirm) and
     EVERY rubric in the wave (llm-judging rule 26; r17 Claude M2 / codex
     patch-judge-pilot-vacuous: a head-of-list cap drew chat-anchors rows only
-    and never piloted the coherence rubric)."""
+    and never piloted the coherence rubric). WITHIN each class the queue
+    interleaves ARMS round-robin (r18: a plain item_id sort put the
+    lexicographically-first arm — null — at the head, so a small pilot never
+    reached steered/prefill/within replies)."""
     by_class: dict[tuple[str, str], list] = {}
     for it in items:
         by_class.setdefault(_item_class(it.item_id), []).append(it)
-    for lst in by_class.values():
-        lst.sort(key=lambda it: it.item_id)
+    for key, lst in by_class.items():
+        by_arm: dict[str, list] = {}
+        for it in lst:
+            by_arm.setdefault(_item_arm(it.item_id), []).append(it)
+        for alst in by_arm.values():
+            alst.sort(key=lambda it: it.item_id)
+        arm_order = sorted(by_arm)
+        interleaved: list = []
+        j = 0
+        while any(by_arm[a] for a in arm_order):
+            alst = by_arm[arm_order[j % len(arm_order)]]
+            if alst:
+                interleaved.append(alst.pop(0))
+            j += 1
+        by_class[key] = interleaved
     order = sorted(by_class)
     target = min(n, len(items))
     out: list = []
@@ -316,6 +359,7 @@ def run_pilot(args, out_dir: Path) -> int:
     classified = _dispatch(items, args, args.transport, f"pilot-{args.transport}")
     report = pilot_report_from_classified(classified, args.transport)
     report["n_items_total"] = len(all_items)
+    report["item_set_sha"] = _item_set_sha(all_items)  # binds the PASS to this wave (r18)
     report["metadata"] = cm.run_metadata({"phase": "patch_judge_pilot"})
     # Persist the pilot's raw classified rows (rule 26: read stop_reasons from
     # persisted results, never truncated failure-log text).
@@ -337,21 +381,54 @@ def run_pilot(args, out_dir: Path) -> int:
 # ── production wave ─────────────────────────────────────────────────────────
 
 
-def _write_fold(out_dir: Path, classified: dict[str, dict]) -> tuple[dict, dict]:
-    """Build scores.jsonl + raw shards in a FRESH tmp dir, then atomically
-    publish over any prior fold (r17 codex patch-judge-fold-not-resumable:
-    the old truncate-then-ShardWriter-refuse path made every rerun fail on
-    the existing raw shard; results are cache/checkpoint-served upstream, so
-    a rerun deterministically rebuilds the complete output set)."""
-    import shutil
+def _fold_manifest_path(out_dir: Path) -> Path:
+    return out_dir / "fold_manifest.json"
 
-    fold_tmp = out_dir / "fold_tmp"
-    if fold_tmp.exists():
-        shutil.rmtree(fold_tmp)
-    (fold_tmp / "raw").mkdir(parents=True)
+
+def read_fold_manifest(out_dir: Path) -> dict:
+    """The published fold pointer, fail-loud — the ONLY reader entrypoint.
+
+    A fold is published by the atomic ``os.replace`` of the manifest AFTER
+    its fold dir is fully written (r18 patch-judge-fold-publish-window), so:
+    no manifest = no published fold (refuse — a half-written fold dir is
+    never visible through this path), and a manifest naming a missing/partial
+    fold dir is a pipeline bug (refuse loud, never read residue). Returns the
+    manifest dict plus resolved ``fold_path`` / ``scores_path``."""
+    path = _fold_manifest_path(out_dir)
+    if not path.exists():
+        raise RuntimeError(
+            f"no published judge fold: missing manifest {path} — run the wave (a fold "
+            "without a manifest is unpublished; never read fold dirs directly)"
+        )
+    man = json.loads(path.read_text(encoding="utf-8"))
+    fold_path = out_dir / man["fold_dir"]
+    scores_path = fold_path / "scores.jsonl"
+    if not scores_path.is_file():
+        raise RuntimeError(
+            f"fold manifest {path} names {fold_path} but {scores_path} is missing — "
+            "half-published fold (pipeline bug), refuse to read"
+        )
+    return {**man, "fold_path": fold_path, "scores_path": scores_path}
+
+
+def _write_fold(out_dir: Path, classified: dict[str, dict]) -> tuple[dict, dict, Path]:
+    """Build scores.jsonl + raw shards in a FRESH uniquely-named fold dir,
+    then atomically publish it by ``os.replace``-ing the manifest pointer
+    readers key on (r18 patch-judge-fold-publish-window: the prior
+    rmtree-then-rename publish left a crash window where readers saw new
+    ``raw/`` beside the old ``scores.jsonl``, or neither). Results are
+    cache/checkpoint-served upstream, so a rerun deterministically rebuilds a
+    complete fresh fold; superseded fold dirs + legacy top-level outputs are
+    reaped only AFTER the pointer flips."""
+    import shutil
+    import uuid
+
+    fold_name = f"fold_{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}_{uuid.uuid4().hex[:8]}"
+    fold_dir = out_dir / fold_name
+    (fold_dir / "raw").mkdir(parents=True)
     tally: dict = {"kept": 0, "dropped": 0, "transport_loss": 0, "by_class": {}}
-    writer = cm.ShardWriter(fold_tmp / "raw", "judge_rows")
-    with (fold_tmp / "scores.jsonl").open("w", encoding="utf-8") as fh:
+    writer = cm.ShardWriter(fold_dir / "raw", "judge_rows")
+    with (fold_dir / "scores.jsonl").open("w", encoding="utf-8") as fh:
         for iid in sorted(classified):
             c = classified[iid]
             score = c.get("score")
@@ -377,17 +454,32 @@ def _write_fold(out_dir: Path, classified: dict[str, dict]) -> tuple[dict, dict]
             )
             writer.write({"item_id": iid, **{k: v for k, v in c.items() if k != "parsed"}})
     shard_info = writer.close()
-    raw_dir = out_dir / "raw"
-    if raw_dir.exists():
-        shutil.rmtree(raw_dir)  # prior fold — rebuilt whole from cached results
-    (fold_tmp / "raw").rename(raw_dir)
-    os.replace(fold_tmp / "scores.jsonl", out_dir / "scores.jsonl")
-    shutil.rmtree(fold_tmp)
-    shard_info["shards"] = [str(raw_dir / Path(p).name) for p in shard_info["shards"]]
-    return tally, shard_info
+    # Publish: the manifest os.replace (inside atomic_write_json) is the
+    # single commit point — the fold dir above is complete before it flips.
+    cm.atomic_write_json(
+        _fold_manifest_path(out_dir),
+        {
+            "fold_dir": fold_name,
+            "published_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "n_rows": shard_info["n_rows"],
+            "tally": tally,
+        },
+    )
+    # Post-publish reap: superseded fold dirs + the legacy pre-manifest
+    # top-level outputs (crash here leaves only dead residue, never a
+    # wrong read — the manifest already points at the fresh fold).
+    for stale in sorted(out_dir.glob("fold_*")):
+        if stale.is_dir() and stale.name != fold_name:
+            shutil.rmtree(stale)
+    legacy_raw = out_dir / "raw"
+    if legacy_raw.is_dir():
+        shutil.rmtree(legacy_raw)
+    (out_dir / "scores.jsonl").unlink(missing_ok=True)
+    return tally, shard_info, fold_dir
 
 
 def run_wave(args, out_dir: Path) -> int:
+    items = build_items(Path(args.patch_root))
     if not args.skip_pilot_gate:
         rp = _pilot_report_path(out_dir)
         if not rp.exists():
@@ -413,13 +505,19 @@ def run_wave(args, out_dir: Path) -> int:
                 f"(pilot sha {rep.get('instrument_sha')!r} != live {_instrument_sha()!r}) "
                 "— re-pilot (rule 26)"
             )
-    items = build_items(Path(args.patch_root))
+        if rep.get("item_set_sha") != _item_set_sha(items):
+            raise SystemExit(
+                "pilot gate: the wave's item-id set differs from the piloted set "
+                f"(pilot {rep.get('item_set_sha')!r} != wave {_item_set_sha(items)!r}) "
+                "— the harvested rows changed since the pilot PASS; re-pilot (r18)"
+            )
     t0 = time.time()
     classified = _dispatch(
         items, args, None if args.transport == "auto" else args.transport, "wave"
     )
-    tally, shard_info = _write_fold(out_dir, classified)
+    tally, shard_info, fold_dir = _write_fold(out_dir, classified)
     report = {
+        "fold_dir": fold_dir.name,
         "n_items": len(items),
         "tally": tally,
         "wall_s": time.time() - t0,
@@ -433,7 +531,7 @@ def run_wave(args, out_dir: Path) -> int:
     }
     cm.atomic_write_json(out_dir / "wave_report.json", report)
     if not args.skip_upload:
-        cm.upload_stage_dir(out_dir / "raw", f"{pc.HF_STAGE_PREFIX}{args.hf_suffix}/judge_persona")
+        cm.upload_stage_dir(fold_dir / "raw", f"{pc.HF_STAGE_PREFIX}{args.hf_suffix}/judge_persona")
     _log(f"[wave] items={len(items)} tally={tally}")
     return 0
 
