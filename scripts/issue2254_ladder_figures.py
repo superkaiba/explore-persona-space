@@ -60,10 +60,18 @@ LADDER_COLORS = {
 }
 LADDER_LABELS = {
     "tr": "transpose pullback",
-    "rl1": "ridge pullback (near-pinv)",
-    "rl2": "ridge pullback (median)",
-    "rl3": "ridge pullback (near-transpose)",
+    "rl1": "near-pseudo-inverse pullback",
+    "rl2": "median-λ pullback",
+    "rl3": "near-transpose pullback",
 }
+# Reader-facing layer-config names (Lens 3: no config codes in figures).
+LAYER_LABELS = {
+    "L14": "layer 14",
+    "L17": "layer 17",
+    "mid": "mid layers",
+    "all": "all layers",
+}
+_LAYER_ORDER = {"L14": 0, "L17": 1, "mid": 2, "all": 3}
 FRESH_NULLS_SCOPE_NOTE = (
     "fresh_nulls: false — clears are read against the parent's REUSED context null band "
     "(measured for other directions at matched injected norm; plan v14 §5 inference-scope "
@@ -95,6 +103,25 @@ def _save_meta(fig, fig_dir: Path, name: str, inputs: list[str]) -> str:
     meta["scope_note"] = FRESH_NULLS_SCOPE_NOTE
     meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True))
     return out
+
+
+def _save_meta_paper(fig, fig_dir: Path, name: str, inputs: list[str]) -> str:
+    """`savefig_paper` save (PNG + PDF + sidecar with embedded points/text) plus
+    the `inputs` + fresh-nulls scope-note keys `_save_meta` writes.
+
+    Used where the sidecar must carry the rendered tick/legend text for the
+    mechanical opaque-code scan (verify_task_body checks 24/28/34)."""
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    paths = savefig_paper(fig, name, dir=fig_dir)
+    plt.close(fig)
+    meta_path = paths["meta"]
+    meta = json.loads(meta_path.read_text())
+    meta["figure"] = name
+    meta["inputs"] = inputs
+    meta["scope_note"] = FRESH_NULLS_SCOPE_NOTE
+    meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True))
+    return name
 
 
 def _behaviors(percell: dict) -> list[str]:
@@ -242,6 +269,8 @@ def fig_hero_ladder(rroot: Path, fig_dir: Path):
 
 
 def fig_expl_all_cells(rroot: Path, fig_dir: Path):
+    from matplotlib.patches import Patch
+
     percell = _load(rroot, "reduce/delta_score_percell.json")
     if percell is None:
         return "skip:reduce outputs absent"
@@ -249,7 +278,15 @@ def fig_expl_all_cells(rroot: Path, fig_dir: Path):
     fig, axes = plt.subplots(len(behaviors), 1, figsize=(11.0, 3.4 * len(behaviors)), squeeze=False)
     for ax, b in zip(axes[:, 0], behaviors, strict=True):
         cells_b = percell["behaviors"][b]
-        rows = sorted(cells_b.items())
+        # Group by pullback construction (ladder order), then layer config, then dose.
+        rows = sorted(
+            cells_b.items(),
+            key=lambda kv: (
+                LADDER_ORDER.index(kv[1]["cell"]["direction"]),
+                _LAYER_ORDER.get(kv[1]["cell"]["layer_config"], 99),
+                kv[1]["cell"]["c"],
+            ),
+        )
         xs = np.arange(len(rows))
         vals = [r.get("delta_score") if r.get("delta_score") is not None else 0.0 for _, r in rows]
         undef = [r.get("delta_score") is None for _, r in rows]
@@ -268,12 +305,16 @@ def fig_expl_all_cells(rroot: Path, fig_dir: Path):
                     ecolor="black",
                     lw=0.8,
                 )
+        dirs_seq = [r["cell"]["direction"] for _, r in rows]
+        for i in range(1, len(rows)):
+            if dirs_seq[i] != dirs_seq[i - 1]:
+                ax.axvline(i - 0.5, color="#bbbbbb", lw=0.6)
         band = rows[0][1]["band_p975"] if rows else 0.0
         ax.axhline(band, color="#d62728", ls="--", lw=1.0)
         ax.set_xticks(xs)
         ax.set_xticklabels(
             [
-                f"{r['cell']['layer_config']} c{r['cell']['c']:g} {r['cell']['direction']}"
+                f"{LAYER_LABELS[r['cell']['layer_config']]} · dose {r['cell']['c']:g}"
                 + (" (undefined)" if u else "")
                 for u, (_, r) in zip(undef, rows, strict=True)
             ],
@@ -283,8 +324,13 @@ def fig_expl_all_cells(rroot: Path, fig_dir: Path):
         )
         ax.set_title(b)
         ax.set_ylabel("Δ graded score")
+    handles = [Patch(facecolor=LADDER_COLORS[s], label=LADDER_LABELS[s]) for s in LADDER_ORDER]
+    handles.append(
+        Line2D([0], [0], color="#d62728", ls="--", lw=1.0, label="reused parent band edge")
+    )
+    axes[0, 0].legend(handles=handles, loc="upper left", fontsize=7, framealpha=0.9)
     fig.tight_layout()
-    return _save_meta(fig, fig_dir, "expl_all_cells", ["reduce/delta_score_percell.json"])
+    return _save_meta_paper(fig, fig_dir, "expl_all_cells", ["reduce/delta_score_percell.json"])
 
 
 def fig_expl_delta_vs_lambda(rroot: Path, fig_dir: Path):
