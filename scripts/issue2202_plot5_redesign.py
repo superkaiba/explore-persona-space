@@ -189,6 +189,218 @@ def phase_ranks(args) -> None:
     )
 
 
+def phase_oppoint(args) -> None:
+    """Operating-point ranks: draw-AVERAGED targets, whitened cosine + CSLS
+    (ridge, the 1,988 kresample-covered rows against the 9,941 pool) — the
+    avgtgt_completion convention, reconciliation-gated against its banked
+    matrix cells (single AND avg). Persists per-covered-row ranks plus the
+    failing-row records (ids / ranks / labels only — never corpus text)."""
+    import issue1738_characterize as CH
+    import issue2202_labels as LB
+    from scipy.linalg import solve_triangular
+
+    staged = Path(args.staged)
+    st = MZ.load_staged(staged)
+    pred, y16, pci = st["pred"], st["y16"], st["pci"]
+    ell, mu_a = st["stats"]["L"], st["stats"]["mu_A"]
+    n_pool = y16.shape[0]
+    full_idx = np.arange(n_pool)
+
+    kns = argparse.Namespace(
+        local_kresample_dir=str(staged / "kresample"),
+        scratch=str(staged / "scratch"),
+        hf_prefix="",
+    )
+    kci, vres = CH._load_kresample_v(kns, [FC.LAYER])
+    n_cov, k_draws = vres.shape[0], vres.shape[1]
+    assert vres.shape == (1988, 4, 1, y16.shape[1]), vres.shape
+    draws = vres[:, :, 0, :].astype(np.float64)
+    pos_of = {int(c): p for p, c in enumerate(pci.tolist())}
+    pos = np.asarray([pos_of[int(c)] for c in kci], dtype=np.int64)
+
+    def _wh(x: np.ndarray) -> np.ndarray:
+        return solve_triangular(ell, (np.asarray(x, np.float64) - mu_a).T, lower=True).T
+
+    def _norm(x: np.ndarray) -> np.ndarray:
+        return x / (np.linalg.norm(x, axis=1, keepdims=True) + 1e-12)
+
+    # draw-averaged whitened pool (covered rows replaced), full query bank
+    avg = (y16[pos] + draws.sum(axis=1)) / (1 + k_draws)
+    pool_modw = _wh(y16)
+    pool_modw[pos] = _wh(avg)
+    pwn = _norm(_wh(pred))
+    s_wc = pwn @ _norm(pool_modw).T
+    print("[oppoint] whitened-cos S (avg pool) computed", flush=True)
+    k = MZ.K_LOCAL
+    r_p = np.partition(s_wc, n_pool - k, axis=0)[n_pool - k :, :].mean(axis=0)
+    score = s_wc - 0.5 * r_p[None, :]
+    ranks_avg_full = MZ.ranks_score_matrix(score, full_idx)
+    ranks_avg = ranks_avg_full[pos]
+
+    od = out_dir(args)
+    zs = np.load(od / "whitencos_csls_ranks.npz")
+    ranks_single = np.asarray(zs["rank_whitencos_csls"])[pos]
+
+    # reconciliation vs the banked avgtgt matrix (ridge / csls_k10_whitencos)
+    avgdoc = json.loads((FC.out_eval_dir(args) / "avgtgt_completion" / "summary.json").read_text())
+    cell = avgdoc["matrix"]["ridge"]["csls_k10_whitencos"]
+    rec = {
+        "avg": {
+            "recomputed_acc1": float((ranks_avg <= 1).mean()),
+            "banked": cell["avg"]["acc_at_k"]["1"],
+        },
+        "single": {
+            "recomputed_acc1": float((ranks_single <= 1).mean()),
+            "banked": cell["single"]["acc_at_k"]["1"],
+        },
+    }
+    for nm, r in rec.items():
+        r["delta"] = r["recomputed_acc1"] - float(r["banked"])
+        if abs(r["delta"]) > ACC1_GATE_TOL * (n_pool / n_cov):  # same +-2-row allowance
+            raise RuntimeError(f"oppoint reconciliation gate FAILED ({nm}): {r}")
+
+    # failing rows at the operating point (avg targets)
+    labels = LB.load_labels_1738(args)
+    fields = {int(kk): v for kk, v in LB.resolve_ci_fields(args).items()}
+    kres_by_ci = {int(r_["ci"]): r_["kres_class"] for r_ in load_csv_rows(args)}
+    pos_set = set(pos.tolist())
+    fail_rows = []
+    for i in np.flatnonzero(ranks_avg > 1.0):
+        p = int(pos[i])
+        ci = int(kci[i])
+        row_score = score[p]
+        top1 = int(np.argmax(row_score))
+        lab = labels.get(str(ci), {})
+        fail_rows.append(
+            {
+                "ci": ci,
+                "rank_avg": float(ranks_avg[i]),
+                "rank_single": float(ranks_single[i]),
+                "top1_ci": int(pci[top1]),
+                "top1_is_covered": bool(top1 in pos_set),
+                "score_margin_true_minus_top1": float(row_score[p] - row_score[top1]),
+                "labels_1738": {
+                    kk: lab.get(kk)
+                    for kk in (
+                        "topic",
+                        "language",
+                        "format",
+                        "request_refusal_adjacent",
+                        "answer_is_refusal",
+                    )
+                },
+                "kres_class": kres_by_ci.get(ci),
+                "corpus": fields[ci]["corpus"],
+                "depth": fields[ci]["depth"],
+            }
+        )
+    fail_rows.sort(key=lambda r_: -r_["rank_avg"])
+
+    tmp = od / "oppoint_ranks.tmp.npz"
+    np.savez(tmp, ci=kci, pos=pos, rank_avg=ranks_avg, rank_single=ranks_single)
+    tmp.replace(od / "oppoint_ranks.npz")
+    FC.atomic_json(
+        od / "oppoint_failures.json",
+        {
+            "convention": CONVENTION
+            + "; targets DRAW-AVERAGED (covered pool rows replaced by mean(original + 4 "
+            "fresh on-policy draws), the avgtgt_completion convention); eval on the 1,988 "
+            "kresample-covered rows; pool stays 9,941",
+            "reconciliation": rec,
+            "n_covered": int(n_cov),
+            "n_fail_avg": int((ranks_avg > 1.0).sum()),
+            "n_fail_single_covered": int((ranks_single > 1.0).sum()),
+            "failures": fail_rows,
+            "meta": FC.meta_block(),
+        },
+    )
+    print(
+        f"[oppoint] done: avg acc@1={rec['avg']['recomputed_acc1']:.6f} "
+        f"(banked delta {rec['avg']['delta']:+.2e}); failures avg={int((ranks_avg > 1).sum())} "
+        f"single-covered={int((ranks_single > 1).sum())} of {n_cov}",
+        flush=True,
+    )
+
+
+def phase_ladder(args) -> None:
+    """Regime ladder of rank-1 failure counts (ridge map, banked + this round's
+    recomputes): raw euclidean -> raw cosine -> centered cosine -> whitened
+    cosine -> CSLS on raw cosine -> whitened+CSLS -> whitened+CSLS with
+    draw-averaged targets. Two denominators, stated per rung: the full 9,941
+    holdout pool, and the 1,988 kresample-covered rows (the only rows with
+    fresh draws, hence the only rows the averaged-target regime can score)."""
+    od = out_dir(args)
+    csv_rows = load_csv_rows(args)
+    n = len(csv_rows)
+    z = np.load(FC.out_eval_dir(args) / "csls_percontext_ranks.npz")
+    zs = np.load(od / "whitencos_csls_ranks.npz")
+    op = json.loads((od / "oppoint_failures.json").read_text())
+
+    def _csv_count(col: str) -> int:
+        return sum(1 for r in csv_rows if r[col] == "1")
+
+    rungs = [
+        {
+            "regime": "raw euclidean, single-draw targets",
+            "n_fail": _csv_count("fail_raw_euclidean"),
+            "n": n,
+        },
+        {"regime": "raw cosine, single-draw targets", "n_fail": _csv_count("fail_raw_cos"), "n": n},
+        {
+            "regime": "centered cosine, single-draw targets",
+            "n_fail": _csv_count("fail_cent_cos"),
+            "n": n,
+        },
+        {
+            "regime": "whitened cosine, single-draw targets",
+            "n_fail": _csv_count("fail_whiten_cos"),
+            "n": n,
+        },
+        {
+            "regime": "CSLS on raw cosine, single-draw targets",
+            "n_fail": int((np.asarray(z["rank_csls"]) > 1.0).sum()),
+            "n": n,
+        },
+        {
+            "regime": "whitened cosine + CSLS, single-draw targets",
+            "n_fail": int((np.asarray(zs["rank_whitencos_csls"]) > 1.0).sum()),
+            "n": n,
+        },
+        {
+            "regime": "whitened cosine + CSLS, single-draw targets (covered rows)",
+            "n_fail": op["n_fail_single_covered"],
+            "n": op["n_covered"],
+        },
+        {
+            "regime": "whitened cosine + CSLS, draw-AVERAGED targets (covered rows)",
+            "n_fail": op["n_fail_avg"],
+            "n": op["n_covered"],
+        },
+    ]
+    for r in rungs:
+        r["fail_rate"] = r["n_fail"] / r["n"]
+    FC.atomic_json(
+        od / "regime_ladder.json",
+        {
+            "map": "ridge (pred16, layer 19)",
+            "note": (
+                "whitened euclidean is the known-degenerate outlier "
+                f"({_csv_count('fail_whiten')}/{n} fail) and is excluded from the ladder; "
+                "per-rung sources: percontext_ranks.csv fail_* columns (pod P1), "
+                "csls_percontext_ranks.npz (cosine-native CSLS follow-up), this round's "
+                "whitencos_csls_ranks.npz + oppoint_ranks.npz"
+            ),
+            "rungs": rungs,
+            "meta": FC.meta_block(),
+        },
+    )
+    for r in rungs:
+        print(
+            f"[ladder] {r['regime']:60s} {r['n_fail']:5d}/{r['n']} ({r['fail_rate']:.4f})",
+            flush=True,
+        )
+
+
 def phase_stats(args) -> None:
     """P5 contrast battery + attribution-class counts on the new failure set."""
     import issue1738_characterize as CH
@@ -255,9 +467,32 @@ def phase_stats(args) -> None:
     )
 
 
+LADDER_SHORT = {
+    "raw euclidean, single-draw targets": "raw euclidean",
+    "raw cosine, single-draw targets": "raw cosine",
+    "centered cosine, single-draw targets": "centered cosine",
+    "whitened cosine, single-draw targets": "whitened cosine",
+    "CSLS on raw cosine, single-draw targets": "CSLS on raw cosine",
+    "whitened cosine + CSLS, single-draw targets": "whitened cosine + CSLS",
+    "whitened cosine + CSLS, single-draw targets (covered rows)": (
+        "whitened cos + CSLS, covered rows"
+    ),
+    "whitened cosine + CSLS, draw-AVERAGED targets (covered rows)": ("and draw-averaged targets"),
+}
+
+
 def phase_fig(args) -> None:
-    """Overwrite figures/paper/c3_failure_attribution with the CSLS-convention figure."""
+    """Overwrite figures/paper/c3_failure_attribution with the two-panel
+    convention figure: (a) the regime ladder of rank-1 failure rates (how much
+    of the raw-euclidean "failure" population is a scoring/target artifact),
+    (b) the per-context-kind failure-rate contrasts at the richest
+    paper-convention regime that still has enough failures (single-draw
+    whitened cosine + CSLS, 237 failures). The operating point (draw-averaged
+    targets) keeps only 11 failures of the 1,988 covered rows — far too few
+    for any per-kind bar chart, so it appears only as the ladder's last rung;
+    the 11 rows themselves are reported as text (oppoint_failures.json)."""
     import matplotlib.pyplot as plt
+    from matplotlib.patches import Patch
 
     from explore_persona_space.analysis.paper_plots import (
         paper_color,
@@ -268,57 +503,38 @@ def phase_fig(args) -> None:
     od = out_dir(args)
     stats = json.loads((od / "plot5_stats.json").read_text())
     comp = json.loads((FC.out_eval_dir(args) / "composition_stats.json").read_text())
-    avg = json.loads((FC.out_eval_dir(args) / "avgtgt_completion" / "summary.json").read_text())
-
-    # panel (a): union of the current figure's contrasts (BH-significant under the
-    # raw-euclidean failure set) and those BH-significant under the new set, all
-    # recomputed on the new failure set — shows both what dropped out and what emerged
-    keep = {r["contrast"] for r in comp["banked_battery"] if r["bh_significant"]}
-    keep |= set(stats["bh_significant_new"])
-    by_name = {r["contrast"]: r for r in stats["battery"]}
-    rows = sorted((by_name[c] for c in keep), key=lambda r: r["delta"])
-
-    att = stats["attribution_over_new_failures"]
-    n_fail = stats["n_fail"]
-    covered = att["n_covered"]
-    draw_b = covered >= MIN_COVERED_FOR_PANEL_B
+    ladder = json.loads((od / "regime_ladder.json").read_text())
 
     set_paper_style("iclr")
-    if draw_b:
-        fig, (ax_a, ax_b, ax_c) = plt.subplots(
-            1, 3, figsize=(5.5, 2.5), gridspec_kw={"width_ratios": [2.3, 0.7, 1.8]}
-        )
-    else:
-        fig, (ax_a, ax_c) = plt.subplots(
-            1, 2, figsize=(5.5, 2.5), gridspec_kw={"width_ratios": [2.3, 1.8]}
-        )
-        ax_b = None
-
-    ys = np.arange(len(rows))
-    deltas = np.array([r["delta"] for r in rows]) * 100
-    elo = np.maximum(0.0, np.array([r["delta"] - r["ci_lo"] for r in rows]) * 100)
-    ehi = np.maximum(0.0, np.array([r["ci_hi"] - r["delta"] for r in rows]) * 100)
-    sig = np.array([bool(r["bh_significant"]) for r in rows])
-    colors = [paper_color("instruct") if s else "0.78" for s in sig]
-    ax_a.barh(
-        ys,
-        deltas,
-        xerr=(elo, ehi),
-        color=colors,
-        height=0.62,
-        error_kw={"lw": 0.7, "capsize": 1.5},
+    fig, (ax_a, ax_b) = plt.subplots(
+        1, 2, figsize=(5.5, 2.6), gridspec_kw={"width_ratios": [1.0, 1.1]}
     )
-    ax_a.axvline(0, color=paper_color("reference"), lw=0.7)
-    ax_a.set_yticks(ys, [CONTRAST_LABEL[r["contrast"]] for r in rows], fontsize=7)
-    ax_a.set_xlabel("failure-rate difference (pp)")
-    from matplotlib.patches import Patch
 
-    handles = [
-        Patch(color=paper_color("instruct"), label="significant (BH q=0.05)"),
-        Patch(color="0.78", label="not significant"),
+    # (a) regime ladder: rank-1 failure rate per scoring/target regime (log x)
+    rungs = sorted(ladder["rungs"], key=lambda r: -r["fail_rate"])
+    ys = np.arange(len(rungs))[::-1]
+    x_lo = 0.3
+    for y, r in zip(ys, rungs):
+        is_avg = "AVERAGED" in r["regime"]
+        color = paper_color("instruct") if is_avg else paper_color("null")
+        rate = r["fail_rate"] * 100
+        ax_a.hlines(y, x_lo, rate, color="0.85", lw=0.8, zorder=1)
+        ax_a.scatter([rate], [y], color=color, s=16, zorder=3)
+    ax_a.set_xscale("log")
+    ax_a.set_xlim(x_lo, 30)
+    ax_a.set_yticks(
+        ys,
+        [f"{LADDER_SHORT[r['regime']]} ({r['n_fail']:,}/{r['n']:,})" for r in rungs],
+        fontsize=6.5,
+    )
+    ax_a.set_xlabel("rank-1 failure rate (%, log)")
+    ax_a.set_title("scoring/target regime ladder (ridge map)", fontsize=7)
+    handles_a = [
+        Patch(color=paper_color("null"), label="single-draw targets"),
+        Patch(color=paper_color("instruct"), label="draw-averaged targets"),
     ]
     ax_a.legend(
-        handles=handles,
+        handles=handles_a,
         fontsize=6,
         loc="upper center",
         bbox_to_anchor=(0.5, -0.22),
@@ -326,71 +542,59 @@ def phase_fig(args) -> None:
         frameon=False,
     )
 
-    # panel (b): resample attribution over the covered subset of the new failures
-    if draw_b:
-        order = [
-            ("MAP_ATTRIBUTABLE", "map error", paper_color("instruct")),
-            ("AMBIGUOUS", "ambiguous", "0.78"),
-            ("IRREDUCIBLE", "answer degeneracy", paper_color("null")),
-        ]
-        bottom = 0.0
-        for key, lab, colr in order:
-            frac = att["counts"].get(key, 0) / covered * 100.0
-            ax_b.bar([0], [frac], bottom=bottom, color=colr, width=0.55, label=lab)
-            bottom += frac
-        ax_b.set_xticks([])
-        ax_b.set_xlim(-0.6, 0.6)
-        ax_b.set_ylim(0, 100)
-        ax_b.set_ylabel("share of covered failures (%)")
-        ax_b.set_title(f"{covered} of {n_fail}\ncovered", fontsize=7)
-        ax_b.legend(fontsize=7, loc="upper left", bbox_to_anchor=(-0.35, -0.12), ncols=1)
-
-    # panel (c): rank-1 accuracy before/after the metric-side fixes (unchanged)
-    archs = [
-        ("ridge", "linear (ridge)"),
-        ("mlp_w8192", "MLP"),
-        ("mlp_w8192_seed43", "MLP (seed 43)"),
-        ("krr_nystrom", "kernel ridge"),
-        ("residual_skip", "residual MLP"),
-        ("contrastive_linear", "contrastive linear"),
-        ("contrastive_mlp", "contrastive MLP"),
+    # (b) per-context-kind contrasts at the richest paper-convention regime:
+    # union of the raw-euclidean-significant contrasts and those significant
+    # under the new failure set, all recomputed on the new set
+    keep = {r["contrast"] for r in comp["banked_battery"] if r["bh_significant"]}
+    keep |= set(stats["bh_significant_new"])
+    by_name = {r["contrast"]: r for r in stats["battery"]}
+    rows = sorted((by_name[c] for c in keep), key=lambda r: r["delta"])
+    ys = np.arange(len(rows))
+    deltas = np.array([r["delta"] for r in rows]) * 100
+    elo = np.maximum(0.0, np.array([r["delta"] - r["ci_lo"] for r in rows]) * 100)
+    ehi = np.maximum(0.0, np.array([r["ci_hi"] - r["delta"] for r in rows]) * 100)
+    sig = np.array([bool(r["bh_significant"]) for r in rows])
+    colors = [paper_color("instruct") if s else "0.78" for s in sig]
+    ax_b.barh(
+        ys,
+        deltas,
+        xerr=(elo, ehi),
+        color=colors,
+        height=0.62,
+        error_kw={"lw": 0.7, "capsize": 1.5},
+    )
+    ax_b.axvline(0, color=paper_color("reference"), lw=0.7)
+    ax_b.set_yticks(ys, [CONTRAST_LABEL[r["contrast"]] for r in rows], fontsize=6.5)
+    ax_b.set_xlabel("failure-rate difference (pp)")
+    n_fail = stats["n_fail"]
+    ax_b.set_title(
+        f"failure kinds, single-draw whitened cos + CSLS ({n_fail}/9,941 fail)", fontsize=7
+    )
+    handles_b = [
+        Patch(color=paper_color("instruct"), label="significant (BH q=0.05)"),
+        Patch(color="0.78", label="not significant"),
     ]
-    m = avg["matrix"]
-    for i, (key, lab) in enumerate(archs):
-        raw = m[key]["raw_euclidean"]["single"]["acc_at_k"]["1"]
-        fixed = m[key]["csls_k10_whitencos"]["avg"]["acc_at_k"]["1"]
-        ax_c.plot([raw, fixed], [i, i], color="0.8", lw=0.8, zorder=1)
-        ax_c.scatter(
-            [raw],
-            [i],
-            color=paper_color("null"),
-            s=13,
-            zorder=2,
-            label="single draw, raw" if i == 0 else None,
-        )
-        ax_c.scatter(
-            [fixed],
-            [i],
-            color=paper_color("instruct"),
-            s=13,
-            zorder=3,
-            label="5-draw, whitened+CSLS" if i == 0 else None,
-        )
-    ax_c.set_yticks(range(len(archs)), [lab for _, lab in archs], fontsize=7)
-    ax_c.set_xlabel("rank-1 retrieval accuracy")
-    ax_c.set_xlim(0.55, 1.04)
-    ax_c.legend(fontsize=7, loc="lower left", bbox_to_anchor=(0.0, 0.02))
+    ax_b.legend(
+        handles=handles_b,
+        fontsize=6,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.22),
+        ncols=2,
+        frameon=False,
+    )
     savefig_paper(fig, "c3_failure_attribution", dir="figures/paper/")
     plt.close(fig)
-    print(
-        f"[fig] wrote figures/paper/c3_failure_attribution.{{png,pdf,meta.json}} "
-        f"(panel b {'drawn' if draw_b else 'DROPPED — coverage too thin'})",
-        flush=True,
-    )
+    print("[fig] wrote figures/paper/c3_failure_attribution.{png,pdf,meta.json}", flush=True)
 
 
-PHASES = {"ranks": phase_ranks, "stats": phase_stats, "fig": phase_fig}
-PHASE_ORDER = ["ranks", "stats", "fig"]
+PHASES = {
+    "ranks": phase_ranks,
+    "oppoint": phase_oppoint,
+    "ladder": phase_ladder,
+    "stats": phase_stats,
+    "fig": phase_fig,
+}
+PHASE_ORDER = ["ranks", "oppoint", "ladder", "stats", "fig"]
 
 
 def build_argparser() -> argparse.ArgumentParser:
