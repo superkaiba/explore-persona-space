@@ -42,16 +42,31 @@ Required keys:
   (marker refs, log paths).
 - ``replacement_artifacts`` — list of replacement artifact filenames. MAY be
   empty when no replacement exists — then only the label arm can pass a
-  consumer. Every PRESENT entry must be a nonblank filename token.
+  consumer. Every PRESENT entry must satisfy the token rule below, carry
+  >= 8 non-whitespace chars (it is matched as a file-level substring, so a
+  short fragment like ``".json"`` marks nearly every consumer
+  ``pass-replacement``), and must not be contained in any refuted name.
 
-Token rule (#2568 round 2): every ``refuted_artifacts`` /
+Token rule (#2568 rounds 2-3): every ``refuted_artifacts`` /
 ``replacement_artifacts`` / ``label_patterns`` entry must be nonblank after
-stripping and carry no path separator (``/`` or ``\\``) and no control
-character. A degenerate entry is a SCHEMA problem (WARN; ``--strict``:
-FAIL) and the record's consumers are NEVER audited against it — an empty
-replacement string is a substring of every file (a silent universal
-``pass-replacement``), and a whitespace-only name/pattern matches nearly
-any indented line.
+stripping; carry no path separator (``/`` or ``\\``), no control character,
+and no line-boundary character (anything ``str.splitlines()`` splits on —
+U+2028/U+2029 pass the numeric control-range checks, git grep matches
+their bytes, and the later line split erases the mention: a silent
+``pass-labeled``); and be encodable as strict UTF-8 in <= 255 bytes (a
+lone surrogate from a JSON ``\\uD800`` escape, or an oversized token,
+crashes the git argv build — which the lint wrapper would convert into a
+fleet-blocking FAIL). Cross-list containment is equally rejected: a
+replacement token equal to or contained in a refuted name marks EVERY
+grep hit ``pass-replacement``, and a label pattern contained
+case-insensitively in a refuted name self-labels every mention line — the
+DEFAULT label patterns are checked the same way when ``label_patterns``
+is omitted (a refuted filename containing ``superseded`` defeats the
+default label arm). A degenerate entry is a SCHEMA problem (WARN;
+``--strict``: FAIL) and the record's consumers are NEVER audited against
+it — an empty replacement string is a substring of every file (a silent
+universal ``pass-replacement``), and a whitespace-only name/pattern
+matches nearly any indented line.
 
 Optional keys (unknown keys are tolerated — forward-compat):
 
@@ -60,7 +75,9 @@ Optional keys (unknown keys are tolerated — forward-compat):
 - ``producers``           — repo paths excluded from enumeration.
 - ``acknowledged_pending`` — consumer paths whose conformance is explicitly
   routed but not yet landed; reported as WARN, not FAIL.
-- ``label_patterns``      — overrides :data:`DEFAULT_LABEL_PATTERNS`.
+- ``label_patterns``      — overrides :data:`DEFAULT_LABEL_PATTERNS`; each
+  pattern needs >= 3 non-whitespace chars (the label arm is a
+  case-insensitive substring match over a +/-5-line window).
 
 Worked example (the #1901 plan-v15 §10 instance)::
 
@@ -158,6 +175,14 @@ DEFAULT_LABEL_PATTERNS: tuple[str, ...] = (
 )
 LABEL_WINDOW_LINES = 5
 MIN_ARTIFACT_NAME_LEN = 8
+# Label patterns are short phrases, not filenames — a lower substance floor
+# (the shipped defaults are 10/18/19 chars); a sub-floor pattern label-matches
+# nearly any window (#2568 round 3, `short-token-universal-pass`).
+MIN_LABEL_PATTERN_LEN = 3
+# Filename-sized bound on every matching token's strict-UTF-8 encoding (Linux
+# NAME_MAX): an oversized token must never reach the git subprocess argv
+# (#2568 round 3, `subprocess-unsafe-refuted-token-false-fail`).
+MAX_TOKEN_BYTES = 255
 # Tree-class pathspec excludes, applied at git-grep time (class-level
 # exclusion recording). tasks/** is droppable via --include-tasks.
 TREE_CLASS_EXCLUDES: tuple[str, ...] = ("tasks", "eval_results", "ood_eval_results", "figures")
@@ -221,24 +246,39 @@ def discover_records(repo_root: Path) -> list[str]:
 
 
 def _read_index_blob_bytes(repo_root: Path, path: str) -> bytes | None:
-    """Stage-0 index BYTES of *path* (checkout-independent); None only when
-    *path* is absent from the index. Record reads use this form so
-    index-absence (a ``--record`` usage error) and a UTF-8 decode failure
-    (a malformed record) stay distinguishable (#2568 round 2)."""
+    """Stage-0 index BYTES of *path* (checkout-independent); None ONLY when
+    *path* is confirmed absent from the index (``git ls-files
+    --error-unmatch`` exits 1). Any other ``git cat-file`` failure —
+    repository/index corruption, an unmerged stage-0 entry, a broken repo —
+    raises :class:`UsageError` carrying git's stderr, so a genuine repo
+    error is never misreported as "git add it first" (#2568 round 3). Record
+    reads use this form so index-absence (a ``--record`` usage error) and a
+    UTF-8 decode failure (a malformed record) stay distinguishable (#2568
+    round 2)."""
     proc = subprocess.run(
         ["git", "-C", str(repo_root), "cat-file", "blob", f":{path}"],
         capture_output=True,
     )
-    if proc.returncode != 0:
-        return None
-    return proc.stdout
+    if proc.returncode == 0:
+        return proc.stdout
+    probe = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files", "--error-unmatch", "--", path],
+        capture_output=True,
+    )
+    if probe.returncode == 1:
+        return None  # confirmed: not in the index
+    raise UsageError(
+        f"git cat-file blob :{path} failed (rc={proc.returncode}): "
+        f"{proc.stderr.decode('utf-8', errors='replace').strip()}"
+    )
 
 
 def _read_index_blob(repo_root: Path, path: str) -> str | None:
     """Stage-0 index content of *path* decoded as UTF-8; None if absent from
     the index OR not decodable (consumer-read convenience — a binary/non-UTF-8
     consumer is WARNed and skipped, so the two states may stay conflated
-    here)."""
+    here). A genuine git failure propagates as :class:`UsageError` from
+    :func:`_read_index_blob_bytes` (fail-closed, stderr preserved)."""
     raw = _read_index_blob_bytes(repo_root, path)
     if raw is None:
         return None
@@ -251,11 +291,17 @@ def _read_index_blob(repo_root: Path, path: str) -> str | None:
 def _degenerate_token_reason(value: str) -> str | None:
     """Why *value* is unusable as a matching token (None == usable).
 
-    A degenerate token silently inverts the audit (#2568 round 2): an empty
-    replacement string is a substring of EVERY file (universal
-    ``pass-replacement``), and a whitespace-only name/pattern matches nearly
-    any indented line. The schema carries FILENAMES / short label phrases,
-    so path separators and control characters are rejected too.
+    A degenerate token silently inverts the audit — or crashes it (#2568
+    rounds 2-3): an empty replacement string is a substring of EVERY file
+    (universal ``pass-replacement``); a whitespace-only name/pattern matches
+    nearly any indented line; a line-boundary character (U+2028/U+2029 —
+    legal per the numeric control ranges but a ``str.splitlines()``
+    boundary) makes git grep match the bytes while the later line split
+    erases the mention (a silent ``pass-labeled``); and a token the git
+    subprocess cannot encode (a lone surrogate) — or an oversized one —
+    raises while building the argv, which the lint wrapper converts into a
+    fleet-blocking FAIL. The schema carries FILENAMES / short label
+    phrases, so path separators and control characters are rejected too.
     """
     if not value.strip():
         return "empty or whitespace-only"
@@ -263,6 +309,21 @@ def _degenerate_token_reason(value: str) -> str | None:
         return "contains a path separator"
     if any(ord(ch) < 32 or 127 <= ord(ch) <= 159 for ch in value):
         return "contains a control character"
+    # CLASS-closing line-boundary probe: ask str.splitlines itself, so the
+    # rejected set can never drift from Python's boundary set (#2568 round 3,
+    # `unicode-line-separator-silent-pass` — U+2028/U+2029 pass the numeric
+    # control ranges above but split content lines after git grep matched).
+    if any(len(f"x{ch}x".splitlines()) != 1 for ch in value):
+        return "contains a line-boundary character"
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError:
+        # json.loads('"\\ud800"') yields a lone surrogate: schema-valid under
+        # every prior check, but subprocess argv encoding raises on it
+        # (#2568 round 3, `subprocess-unsafe-refuted-token-false-fail`).
+        return "not encodable as strict UTF-8"
+    if len(encoded) > MAX_TOKEN_BYTES:
+        return f"exceeds {MAX_TOKEN_BYTES} UTF-8 bytes"
     return None
 
 
@@ -282,9 +343,13 @@ def validate_record(data: object) -> list[str]:
     if not isinstance(claim, str) or not claim.strip():
         problems.append("refuted_claim: required non-empty string is missing")
     refuted = data.get("refuted_artifacts")
+    # Well-typed refuted names, captured for the cross-list containment
+    # checks below (#2568 round 3, `cross-list-token-universal-pass`).
+    refuted_names: list[str] = []
     if not isinstance(refuted, list) or not refuted or not all(isinstance(n, str) for n in refuted):
         problems.append("refuted_artifacts: required non-empty list of strings is missing")
     else:
+        refuted_names = list(refuted)
         for name in refuted:
             reason = _degenerate_token_reason(name)
             if reason:
@@ -322,6 +387,34 @@ def validate_record(data: object) -> list[str]:
                     f"replacement_artifacts: degenerate name {name!r} ({reason}) — an "
                     f"empty/blank entry would mark EVERY consumer pass-replacement"
                 )
+                continue
+            # Cross-list containment (#2568 round 3): consumers are grep-hits
+            # on the REFUTED names, so a replacement token contained in a
+            # refuted name is present in every hit by construction — a
+            # silent universal pass-replacement.
+            contained_in = [r for r in refuted_names if name in r]
+            if contained_in:
+                problems.append(
+                    f"replacement_artifacts: {name!r} is contained in refuted "
+                    f"name(s) {contained_in} — every consumer the refuted-name "
+                    f"grep finds would trivially read pass-replacement"
+                )
+        # The same >= 8 non-whitespace floor as refuted_artifacts: both lists
+        # carry artifact FILENAMES, and the replacement arm is a file-level
+        # substring match — a short fragment like ".json" marks nearly every
+        # consumer pass-replacement (#2568 round 3,
+        # `short-token-universal-pass`).
+        short_repl = [
+            n
+            for n in replacements
+            if sum(1 for ch in n if not ch.isspace()) < MIN_ARTIFACT_NAME_LEN
+        ]
+        if short_repl:
+            problems.append(
+                f"replacement_artifacts: names with fewer than {MIN_ARTIFACT_NAME_LEN} "
+                f"non-whitespace chars would substring-match nearly any consumer: "
+                f"{short_repl}"
+            )
     for optional in ("consumers_at_record_time", "producers", "acknowledged_pending"):
         val = data.get(optional)
         if val is not None and (
@@ -329,19 +422,52 @@ def validate_record(data: object) -> list[str]:
         ):
             problems.append(f"{optional}: optional field must be a list of strings")
     patterns = data.get("label_patterns")
-    if patterns is not None and (
+    if patterns is None:
+        # The DEFAULTS are the effective label patterns — they get the same
+        # refuted-containment check as explicit patterns (#2568 round 3): a
+        # refuted filename containing e.g. "superseded" would self-label
+        # every mention line under the default label arm.
+        for pat in DEFAULT_LABEL_PATTERNS:
+            contained_in = [r for r in refuted_names if pat.lower() in r.lower()]
+            if contained_in:
+                problems.append(
+                    f"label_patterns: DEFAULT pattern {pat!r} is a case-insensitive "
+                    f"substring of refuted name(s) {contained_in} — every mention "
+                    f"line would self-label; set explicit label_patterns that do "
+                    f"not appear in the refuted names"
+                )
+    elif (
         not isinstance(patterns, list)
         or not patterns
         or not all(isinstance(p, str) and p for p in patterns)
     ):
         problems.append("label_patterns: optional field must be a non-empty list of strings")
-    elif patterns is not None:
+    else:
         for pat in patterns:
             reason = _degenerate_token_reason(pat)
             if reason:
                 problems.append(
                     f"label_patterns: degenerate pattern {pat!r} ({reason}) — a blank "
                     f"pattern would label-match any window"
+                )
+                continue
+            if sum(1 for ch in pat if not ch.isspace()) < MIN_LABEL_PATTERN_LEN:
+                problems.append(
+                    f"label_patterns: pattern {pat!r} has fewer than "
+                    f"{MIN_LABEL_PATTERN_LEN} non-whitespace chars — it would "
+                    f"label-match nearly any window"
+                )
+                continue
+            # The label arm is a case-insensitive substring match over a
+            # window INCLUDING the mention line, so a pattern contained in a
+            # refuted name self-labels every mention (#2568 round 3,
+            # `cross-list-token-universal-pass`).
+            contained_in = [r for r in refuted_names if pat.lower() in r.lower()]
+            if contained_in:
+                problems.append(
+                    f"label_patterns: pattern {pat!r} is a case-insensitive "
+                    f"substring of refuted name(s) {contained_in} — every mention "
+                    f"line would self-label"
                 )
     return problems
 

@@ -22,6 +22,16 @@ Covered (plan #2568 §3):
   from a degenerate token);
 - non-UTF-8 tracked record bytes (#2568 round 2) -> malformed-record WARN
   (strict: FAIL), never a UsageError/exit-2;
+- round-3 token classes (#2568 round 3), each a schema WARN (strict: FAIL)
+  with ZERO consumer verdicts: cross-list containment (replacement equal
+  to / contained in a refuted name; label pattern — explicit or DEFAULT —
+  case-insensitively contained in a refuted name), U+2028/U+2029
+  line-boundary tokens, subprocess-unsafe tokens (lone surrogate;
+  oversized), and the minimum-substance floors (replacement >= 8 non-ws
+  chars, label pattern >= 3);
+- ``_read_index_blob_bytes`` (#2568 round 3 nit): None ONLY on confirmed
+  index absence; a genuine git failure raises UsageError with stderr
+  preserved;
 - ``--record`` single-record mode (+ not-in-index -> exit 2);
 - ``--json`` report written + parseable;
 - ``--include-tasks`` flips the tasks/** exclusion;
@@ -59,6 +69,7 @@ if str(_SCRIPTS) not in sys.path:
 
 from audit_artifact_supersession import (  # noqa: E402
     UsageError,
+    _read_index_blob_bytes,
     discover_records,
     run_audit,
 )
@@ -303,11 +314,11 @@ def _assert_degenerate_record_semantics(repo: Path, *, field_token: str) -> None
     assert rec["consumers"] == {}, rec["consumers"]
     strict_report = run_audit(repo, strict=True)
     assert any(field_token in v for v in strict_report.violations)
-    assert all(
-        c["status"] != "pass-replacement"
-        for r in strict_report.records
-        for c in r["consumers"].values()
-    )
+    # The strict arm pins the FULL consumer skip too (Claude review round 2
+    # Minor): a degenerate record's consumers are never audited under
+    # EITHER mode — zero verdicts of any kind, not merely no
+    # pass-replacement.
+    assert all(r["consumers"] == {} for r in strict_report.records), strict_report.records
     assert _run_cli(repo).returncode == 0
     assert _run_cli(repo, "--strict").returncode == 1
 
@@ -362,6 +373,150 @@ def test_bool_issue_is_schema_warn(repo: Path) -> None:
     assert report.violations == []
     assert any("issue" in w and RECORD_REL in w for w in report.warnings), report.warnings
     assert report.records[0]["schema_ok"] is False
+
+
+# ---------------------------------------------------------------------------
+# Round-3 token classes (#2568 round 3): cross-list containment
+# (`cross-list-token-universal-pass`), line-boundary separators
+# (`unicode-line-separator-silent-pass`), subprocess-unsafe tokens
+# (`subprocess-unsafe-refuted-token-false-fail`), and minimum-substance
+# floors (`short-token-universal-pass`) — each a schema WARN (strict: FAIL)
+# with ZERO consumer verdicts.
+# ---------------------------------------------------------------------------
+
+
+def test_replacement_equal_to_refuted_is_schema_warn(repo: Path) -> None:
+    """A replacement token EQUAL to a refuted name is present in every grep
+    hit by construction — a silent universal pass-replacement."""
+    _build_standard_repo(repo, record_overrides={"replacement_artifacts": [REFUTED]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="replacement_artifacts")
+
+
+def test_replacement_substring_of_refuted_is_schema_warn(repo: Path) -> None:
+    """A replacement token CONTAINED in a refuted name (here a >=8-non-ws
+    token, so the substance floor cannot be the catching arm) is present in
+    every grep hit by construction."""
+    _build_standard_repo(repo, record_overrides={"replacement_artifacts": ["metrics_v1.json"]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="replacement_artifacts")
+
+
+@pytest.mark.parametrize("pattern", ["json", "Metrics_V1"])
+def test_label_pattern_contained_in_refuted_is_schema_warn(repo: Path, pattern: str) -> None:
+    """A label pattern contained CASE-INSENSITIVELY in a refuted name
+    self-labels every mention line (the +/-5-line window includes the
+    mention line itself) — the round-2 live demo ``label_patterns=["json"]``
+    plus a mixed-case sibling."""
+    _build_standard_repo(repo, record_overrides={"label_patterns": [pattern]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="label_patterns")
+
+
+def test_default_label_pattern_contained_in_refuted_is_schema_warn(repo: Path) -> None:
+    """With ``label_patterns`` OMITTED the defaults are effective — a refuted
+    filename containing ``superseded`` would self-label every mention line
+    under the default label arm, so it is a schema problem too."""
+    _build_standard_repo(repo)
+    rec = _record_dict(refuted_artifacts=["old_superseded_alpha_v1.json"])
+    del rec["label_patterns"]  # omitted -> DEFAULT_LABEL_PATTERNS are effective
+    _write(repo, RECORD_REL, json.dumps(rec, indent=2) + "\n")
+    _write(
+        repo,
+        "scripts/consumer_default_label.py",
+        'DATA = "old_superseded_alpha_v1.json"\n',
+    )
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="label_patterns")
+
+
+@pytest.mark.parametrize("sep", ["\u2028", "\u2029"])
+def test_line_separator_refuted_token_is_schema_warn_never_pass_labeled(
+    repo: Path, sep: str
+) -> None:
+    """U+2028/U+2029 pass the numeric control ranges but ARE splitlines()
+    boundaries: git grep matches the bytes, the line split erases the
+    mention, and the consumer silently reads pass-labeled. The token is
+    rejected at schema time instead — via the splitlines() probe itself, so
+    the rejected set cannot drift from Python's boundary set."""
+    name = f"alpha{sep}metrics_v1.json"
+    _build_standard_repo(repo, record_overrides={"refuted_artifacts": [name]})
+    _write(repo, "scripts/consumer_linesep.py", f'DATA = "{name}"\n')
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="refuted_artifacts")
+    assert any("line-boundary" in w for w in run_audit(repo).warnings)
+
+
+def test_lone_surrogate_refuted_token_is_schema_warn_not_crash(repo: Path) -> None:
+    """A JSON-escaped lone surrogate (U+D800) decodes to a str that passes
+    blank/separator/control checks but raises UnicodeEncodeError at git argv
+    construction — rejected at schema time so the subprocess is never
+    reached (WARN default / strict FAIL, zero consumer verdicts)."""
+    _build_standard_repo(
+        repo,
+        record_overrides={"refuted_artifacts": ["alpha_metrics_\ud800_v1.json"]},
+    )
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="refuted_artifacts")
+    assert any("not encodable as strict UTF-8" in w for w in run_audit(repo).warnings)
+
+
+def test_oversized_refuted_token_is_schema_warn_not_crash(repo: Path) -> None:
+    """An oversized token (over the filename-sized 255-byte bound) must
+    never reach execve as an overlong argument — schema WARN instead."""
+    _build_standard_repo(repo, record_overrides={"refuted_artifacts": ["a" * 300 + ".json"]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="refuted_artifacts")
+    assert any("UTF-8 bytes" in w for w in run_audit(repo).warnings)
+
+
+def test_short_replacement_token_is_schema_warn(repo: Path) -> None:
+    """The round-2 live demo ``replacement_artifacts=[".json"]``: schema-valid
+    then, a universal pass-replacement (every consumer was grep-selected on
+    refuted ``*.json`` names). The >=8 non-whitespace floor now mirrors the
+    refuted-name floor."""
+    _build_standard_repo(repo, record_overrides={"replacement_artifacts": [".json"]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="replacement_artifacts")
+
+
+def test_short_label_pattern_is_schema_warn(repo: Path) -> None:
+    """A sub-floor (<3 non-whitespace chars) label pattern label-matches
+    nearly any window — rejected at schema time."""
+    _build_standard_repo(repo, record_overrides={"label_patterns": ["ok"]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="label_patterns")
+
+
+# ---------------------------------------------------------------------------
+# _read_index_blob_bytes (#2568 round 3 nit
+# `cat-file-error-misclassified-index-absence`): None ONLY on confirmed index
+# absence; any other git failure raises UsageError with stderr preserved.
+# ---------------------------------------------------------------------------
+
+
+def test_read_index_blob_bytes_none_only_on_confirmed_index_absence(repo: Path) -> None:
+    _build_standard_repo(repo)
+    _git_add_all(repo)
+    assert _read_index_blob_bytes(repo, "scripts/consumer_labeled.py") is not None
+    assert _read_index_blob_bytes(repo, "scripts/never_added.py") is None
+
+
+def test_read_index_blob_bytes_genuine_git_error_raises_with_stderr() -> None:
+    """A non-repo dir makes BOTH git calls fail with rc != 1 — a genuine git
+    error must raise (stderr preserved), never read as "absent from the
+    index" and be misreported as "git add it first"."""
+    scratch = Path(tempfile.mkdtemp(prefix="eps2568-notarepo-"))
+    try:
+        with pytest.raises(UsageError) as excinfo:
+            _read_index_blob_bytes(scratch, "some/file.py")
+        msg = str(excinfo.value)
+        assert "git cat-file blob :some/file.py failed" in msg
+        assert "rc=" in msg
+        # git's own stderr diagnostic is carried, not discarded.
+        assert "repository" in msg or "fatal" in msg, msg
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------

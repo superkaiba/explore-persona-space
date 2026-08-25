@@ -27,6 +27,17 @@ Four pins:
    the check carries the ``REPO_WIDE_SURFACE`` sentinel, so a ``--files``
    payload under a location the old enumerated surface set omitted (papers/)
    still RUNS the check and FAILs on a planted unlabeled mention.
+8. Lone-surrogate tracked record (#2568 round 3,
+   `subprocess-unsafe-refuted-token-false-fail`) -> non-blocking ``WARN:``
+   line, empty FAIL list — the token is rejected at schema time, so the git
+   argv UnicodeEncodeError (which the wrapper's except-Exception backstop
+   would convert into a fleet-blocking FAIL) is never reached.
+9. Files-mode attribution (#2568 round 3,
+   `repo-wide-substring-attribution-false-fail`): a standing violation in a
+   SUPERSTRING path (archive/papers/foo.py.old) is NOT attributed to an
+   unrelated clean payload (papers/foo.py) — the check still runs (no SKIP)
+   and the run exits 0; plus ``_finding_names_path`` token-boundary unit
+   pins.
 
 Scratch repos use ``tempfile.mkdtemp`` (NOT ``tmp_path``): concurrent pytest
 sessions prune ``/tmp/pytest-of-*`` numbered roots and have deleted live
@@ -203,6 +214,25 @@ def test_degenerate_empty_replacement_is_warn_line_no_pass(
     assert "replacement_artifacts" in err_stream
 
 
+def test_lone_surrogate_record_is_warn_line_not_fleet_fail(
+    fixture_repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#2568 round 3 (`subprocess-unsafe-refuted-token-false-fail`): a
+    tracked record whose refuted token is a JSON-escaped lone surrogate is a
+    schema ``WARN:`` line — never the wrapper's except-Exception FAIL (the
+    pre-fix shape: the token passed validation, then raised
+    UnicodeEncodeError building the git argv, and the wrapper turned that
+    into a fleet-blocking FAIL)."""
+    rec = _record_dict(refuted_artifacts=["gamma_metrics_\ud800_v1.json"])
+    (fixture_repo / RECORD_REL).write_text(json.dumps(rec) + "\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(fixture_repo), "add", "-A"], check=True)
+    errors = check_artifact_supersession(repo_root=fixture_repo)
+    assert errors == [], errors
+    err_stream = capsys.readouterr().err
+    assert "WARN: check-artifact-supersession:" in err_stream
+    assert "not encodable as strict UTF-8" in err_stream
+
+
 # ---------------------------------------------------------------------------
 # (3) Core load failure -> FAIL line, never a silent skip
 # ---------------------------------------------------------------------------
@@ -297,3 +327,64 @@ def test_files_mode_omitted_location_payload_runs_check_and_fails(
     assert "check-artifact-supersession" in out, out
     assert "papers/new_consumer.py:1" in out, out
     assert rc == 1, out
+
+
+# ---------------------------------------------------------------------------
+# (9) Files-mode attribution: superstring-path findings never block an
+#     unrelated payload (#2568 round 3,
+#     `repo-wide-substring-attribution-false-fail`).
+# ---------------------------------------------------------------------------
+
+
+def test_finding_names_path_token_boundaries() -> None:
+    """Token-boundary pins for the in-scope attribution matcher: an exact
+    path token (incl. the ``path:lineno`` shape, quoting, sentence-final
+    punctuation) matches; a superstring embedding — nested dir prefix,
+    root-file collision, extension suffix — does not."""
+    f = workflow_lint._finding_names_path
+    assert f("consumer papers/foo.py:1 mentions x", "papers/foo.py")
+    assert f("payload 'papers/foo.py' is red", "papers/foo.py")
+    assert f("ends with papers/foo.py", "papers/foo.py")
+    assert f("sentence ends papers/foo.py.", "papers/foo.py")
+    assert f("papers/foo.py leads the line", "papers/foo.py")
+    # Second occurrence rescues a first superstring embedding.
+    assert f("archive/papers/foo.py.old then papers/foo.py:2", "papers/foo.py")
+    # The load-bearing collision shapes (codex round-2 bug-class sweep):
+    assert not f("consumer archive/papers/foo.py.old:1 mentions x", "papers/foo.py")
+    assert not f("consumer archive/README.md:1 mentions x", "README.md")
+    assert not f("papers/foo.pyc is a different file", "papers/foo.py")
+    assert not f("prefixpapers/foo.py is a different file", "papers/foo.py")
+    assert not f("no mention at all", "papers/foo.py")
+
+
+def test_files_mode_superstring_path_finding_not_attributed_to_unrelated_payload(
+    fixture_repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The unrelated direction the round-2 fixture set did not pin: a
+    standing violation planted in a SUPERSTRING path
+    (archive/papers/foo.py.old) contains the payload string papers/foo.py,
+    so the raw substring rule RETAINED it and blocked the unrelated payload.
+    The check must still RUN (no SKIP — the repo-wide sentinel) and the run
+    must exit 0 with the superstring finding suppressed."""
+    # Label the default fixture violation so the ONLY remaining violation is
+    # the superstring-path one.
+    (fixture_repo / "scripts" / "gamma_consumer.py").write_text(
+        'DATA = "gamma_metrics_v1.json"  # superseded by the v2 rebuild\n',
+        encoding="utf-8",
+    )
+    standing = fixture_repo / "archive" / "papers" / "foo.py.old"
+    standing.parent.mkdir(parents=True, exist_ok=True)
+    standing.write_text('DATA = "gamma_metrics_v1.json"\n', encoding="utf-8")
+    subprocess.run(["git", "-C", str(fixture_repo), "add", "-A"], check=True)
+    monkeypatch.chdir(workflow_lint._REPO_ROOT)
+    monkeypatch.setenv("EPS_WORKFLOW_LINT_REPO_ROOT", str(fixture_repo))
+    rc = workflow_lint.main(["--files", "papers/foo.py"])
+    cap = capsys.readouterr()
+    out = cap.out + "\n" + cap.err
+    assert "SKIP check_artifact_supersession" not in out, out
+    # The superstring-path finding is suppressed, never printed as a kept
+    # error line naming the unrelated payload's run red.
+    assert "archive/papers/foo.py.old" not in out, out
+    assert rc == 0, out

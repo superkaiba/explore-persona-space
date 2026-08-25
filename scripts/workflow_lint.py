@@ -19782,8 +19782,12 @@ def check_artifact_supersession(*, repo_root: Path | None = None) -> list[str]:
     crash) is itself a FAIL line, never a silent skip (the
     new-fence-silent-pass class). Schema problems — a tracked non-UTF-8
     record included (the core routes a decode failure to schema WARN, never
-    a UsageError, #2568 round 2) — and ``acknowledged_pending`` consumers
-    are non-blocking ``WARN:`` stderr lines. ``repo_root`` is a unit-test
+    a UsageError, #2568 round 2), as well as degenerate / cross-list-
+    contained / subprocess-unsafe matching tokens (#2568 round 3: the core
+    rejects those at schema time, so a lone-surrogate token never reaches
+    the git argv and the except-Exception FAIL backstop below) — and
+    ``acknowledged_pending`` consumers are non-blocking ``WARN:`` stderr
+    lines. ``repo_root`` is a unit-test
     override; production callers pass
     None (``EPS_WORKFLOW_LINT_REPO_ROOT`` env override supported so
     subprocess fixture tests can point the check at a tmp corpus). Bundled
@@ -20265,11 +20269,16 @@ def check_no_unannotated_gcp_pin_guidance(
 #   #2079 class) are the third class: under filtered enumeration every
 #   allowlist entry outside the scope reads "stale", so a naive scoped run
 #   would spuriously FAIL on ~100 corpus-global findings (probe 2026-08-11).
-#   Files-mode therefore keeps ONLY findings that name an in-scope path (the
-#   same substring-attribution rule inline_lint_gate.evaluate applies), and
-#   reports the suppressed count. This deliberately narrows the DIRECT
-#   `--files` verdict to payload-attributable findings; the bare no-flags run
-#   (Step 9c) remains the whole-repo instrument and is byte-unchanged.
+#   Files-mode therefore keeps ONLY findings that name an in-scope path as a
+#   COMPLETE path token (_finding_names_path — a token-boundary tightening of
+#   the raw substring-attribution rule inline_lint_gate.evaluate applies;
+#   #2568 round 3: raw substring attributed a superstring path's standing
+#   violation, archive/papers/foo.py.old, to an unrelated payload
+#   papers/foo.py), and reports the suppressed count. Every kept line still
+#   names a scope path verbatim, so the gate's evaluate() attributes it too.
+#   This deliberately narrows the DIRECT `--files` verdict to
+#   payload-attributable findings; the bare no-flags run (Step 9c) remains
+#   the whole-repo instrument and is byte-unchanged.
 # * Import closure: fixpoint over bare `issue*`-stem imports resolving to
 #   scripts/<name>.py. The stem restriction is LOAD-BEARING (plan §4 B4):
 #   without it every third-party/stdlib import would read "unresolvable". An
@@ -20320,6 +20329,45 @@ def _surface_hit(path: str, surface: str) -> bool:
     if surface.endswith("/"):
         return path.startswith(surface)
     return path == surface
+
+
+# Characters that can EXTEND a repo-relative path token. Used by
+# _finding_names_path to reject substring embeddings inside a longer path
+# (#2568 round 3, `repo-wide-substring-attribution-false-fail`).
+_PATH_TOKEN_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._/-")
+
+
+def _finding_names_path(finding: str, path: str) -> bool:
+    """True when *finding* names repo-relative *path* as a COMPLETE path
+    token: a substring occurrence not extended by path characters on either
+    side. Payload ``papers/foo.py`` therefore does NOT match a finding about
+    ``archive/papers/foo.py.old`` — the raw substring rule retained such
+    superstring-path findings and blocked unrelated payloads (#2568 round
+    3). A trailing ``.`` counts as a boundary only when not followed by
+    another path character (sentence punctuation, not an extension); a
+    ``:`` right after the path (the ``path:lineno`` shape) is a boundary.
+
+    Disclosed residual: a finding that names the path ONLY inside a longer
+    path token (an absolute path, a ``./``-prefixed form, a derived
+    filename) is not matched — files-mode enumerations and check findings
+    emit bare repo-relative paths, and the bare no-flags run remains the
+    whole-repo instrument."""
+    start = finding.find(path)
+    while start != -1:
+        end = start + len(path)
+        before_ok = start == 0 or finding[start - 1] not in _PATH_TOKEN_CHARS
+        if end >= len(finding):
+            after_ok = True
+        else:
+            nxt = finding[end]
+            after_ok = nxt not in _PATH_TOKEN_CHARS or (
+                nxt == "."
+                and (end + 1 >= len(finding) or finding[end + 1] not in _PATH_TOKEN_CHARS)
+            )
+        if before_ok and after_ok:
+            return True
+        start = finding.find(path, start + 1)
+    return False
 
 
 def _run_warn_only(fn: Callable[[], object]) -> list[str]:
@@ -20739,9 +20787,16 @@ def _run_files_mode(raw_paths: list[str], workflow: dict) -> int:
     errors.extend(closure_errors)
     # In-scope attribution filter (the enumeration-dependent-sub-findings
     # rail, B2 third class): keep ONLY findings naming a payload/closure
-    # path — the same substring rule the gate's evaluate() attributes by, so
-    # nothing droppable here could ever have blocked at the gate.
-    kept = [e for e in errors if any(sp in e for sp in scope)]
+    # path as a COMPLETE path token (#2568 round 3,
+    # `repo-wide-substring-attribution-false-fail`: the raw substring rule
+    # retained a superstring path's standing violation — e.g.
+    # archive/papers/foo.py.old against payload papers/foo.py — and blocked
+    # unrelated payloads, reachable via the REPO_WIDE_SURFACE sentinel).
+    # STRICTER than the raw-substring rule the gate's evaluate() attributes
+    # by, in the safe direction: every kept line still names a scope path
+    # verbatim (gate-attributable), and a dropped superstring embedding
+    # could only ever have blocked spuriously.
+    kept = [e for e in errors if any(_finding_names_path(e, sp) for sp in scope)]
     suppressed = len(errors) - len(kept)
     if suppressed:
         sys.stderr.write(
