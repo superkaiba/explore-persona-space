@@ -606,12 +606,19 @@ def _unit_regime(
 # ── parity gate (plan §4 P4a — MANDATORY before production fits) ─────────────
 
 
-def parity_gate_2544(ctx: FitsCtx, device: str, rungs_avail: list[str]) -> dict:
+def parity_gate_2544(
+    ctx: FitsCtx,
+    device: str,
+    rungs_avail: list[str],
+    resident: set[tuple[str, int]] | None = None,
+) -> dict:
     """Slow (fit_h.ridge_fit_predict SVD) vs fast (layer-batched Gram-eigh)
     parity on >=3 slices at THIS run's production shape; max rel diff <= 1e-4
     or designed halt (informational under --smoke). SOLVER parity: both sides
     run the pure-GCV selector (``gcv_dof_cap=None`` on the fast side — the SVD
     reference has no cap parameter); production fits then engage the cap.
+    ``resident`` = (subdir, layer) pairs the caller keeps staged; gate-only
+    tensors outside it are reaped after the gate.
     """
     from explore_persona_space.experiments.issue_779.fit_h import ridge_fit_predict
 
@@ -621,6 +628,14 @@ def parity_gate_2544(ctx: FitsCtx, device: str, rungs_avail: list[str]) -> dict:
         (rungs_avail[-1], ctx.layers17[0]),
         (rungs_avail[-1], ctx.layers17[-1]),
     ]
+    # P4a's wave reap deletes uploaded layer tensors locally (sha sidecar =
+    # durable on HF), so at P4b entry only star-layer tensors are local; the
+    # mid/first/last slice layers here must be staged back before ctx.take.
+    gate_needed: dict[str, list[int]] = {}
+    for rung, layer in slices[: F1.PARITY_MIN_SLICES]:
+        gate_needed.setdefault(f"{rung}/diag0", []).append(layer)
+        gate_needed.setdefault(f"{rung}/diag0/ctx", []).append(layer)
+    ensure_cells_staged(ctx.out_root, gate_needed)
     report: dict[str, Any] = {
         "tol": F1.PARITY_TOL,
         "gcv_dof_cap": None,
@@ -648,6 +663,11 @@ def parity_gate_2544(ctx: FitsCtx, device: str, rungs_avail: list[str]) -> dict:
     path.parent.mkdir(parents=True, exist_ok=True)
     R._write_json_atomic(path, report)
     logger.info("[fits] parity gate: %s", report)
+    _reap_staged(
+        R._store_root(ctx.out_root),
+        {(sub, layer) for sub, layers in gate_needed.items() for layer in layers},
+        resident or set(),
+    )
     if not report["pass"]:
         if ctx.smoke:
             print("[smoke-downgrade] parity gate informational (verdict recorded)", flush=True)
@@ -1028,7 +1048,15 @@ def run_p4a(args: argparse.Namespace, out_root: Path) -> None:
             continue
         ensure_cells_staged(out_root, needed)
         if parity is None:
-            parity = parity_gate_2544(ctx, pool.devices[0], wave)
+            # The whole wave set stays resident: the gate's slices are a
+            # subset of it, and the sweep units below still need every layer
+            # (the wave's own _reap_staged runs after pool.run).
+            parity = parity_gate_2544(
+                ctx,
+                pool.devices[0],
+                wave,
+                resident={(sub, layer) for sub, ls in needed.items() for layer in ls},
+            )
         if not piloted:
             # In-run P4a-entry pilot: FIRST unit timed alone; abort > 2x the
             # measured 15.3 s grid-class basis (plan §9; smoke informational).
@@ -2473,7 +2501,7 @@ def run_p4b(args: argparse.Namespace, out_root: Path) -> None:
     ensure_cells_staged(out_root, star_needed)
     resident = {(sub, layer) for sub, ls in star_needed.items() for layer in ls}
     pool = F1._WorkerPool(ctx)
-    parity_gate_2544(ctx, pool.devices[0], list(rungs))
+    parity_gate_2544(ctx, pool.devices[0], list(rungs), resident=resident)
 
     def _cell_unit(spec: dict, fold: int) -> dict:
         rels = sorted(set(spec["y_rel_by_layer"].values()) | set(spec["x_rel_by_layer"].values()))
