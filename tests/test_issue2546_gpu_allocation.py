@@ -15,6 +15,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -120,3 +121,25 @@ def test_non_slurm_nvidia_smi_binary_absent_is_zero_gpus(clean_env):
 
     clean_env.setattr(G.subprocess, "run", _fake_run)
     assert G.gpu_allocation() == []
+
+
+def test_fit_parent_zero_gpu_allocation_raises_before_cache_staging(clean_env, tmp_path):
+    """FAILS pre-r5-fix: run_parent's ``max(1, ...)`` silently converted an
+    empty GPU allocation into ONE CPU worker for the 222-unit P5 battery (r4
+    Codex Major 2 / concern zero-gpu-fit-parent-cpu-fallback). Post-fix the
+    allocation is resolved BEFORE cache staging and raises immediately — the
+    tripwired heavy helpers prove no staging/fit work starts."""
+    import issue2546_fit_cells as F
+
+    def _tripwire(name):
+        def _boom(*a, **k):
+            raise AssertionError(f"{name} reached on a zero-GPU host (must raise first)")
+
+        return _boom
+
+    clean_env.setattr(F.g25, "gpu_allocation", lambda: [])
+    for heavy in ("build_fitcache", "load_caches", "build_rowsets", "build_registry"):
+        clean_env.setattr(F, heavy, _tripwire(heavy))
+    args = SimpleNamespace(out_root=tmp_path, smoke=True, num_workers=4)
+    with pytest.raises(RuntimeError, match="no GPUs visible"):
+        F.run_parent(args, F.profile_for_arm(1))

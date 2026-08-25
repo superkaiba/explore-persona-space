@@ -966,6 +966,19 @@ def _load_chunk_ckpts(cp: Path, fp_sha: str) -> dict[str, list[tuple[str, str, i
             cp.unlink()
             return {}
         cache[rec["key"]] = [(t, fr, int(n)) for t, fr, n in rec["outs"]]
+    if raw and not raw.endswith(b"\n"):
+        # Newline-seam repair (r5, r4 Codex Major 1 / concern
+        # generation-checkpoint-grain-too-coarse): a crash landing byte-exactly
+        # between the final record's closing brace and its delimiter leaves a
+        # COMPLETE parseable record with NO trailing newline. Un-repaired, the
+        # next O_APPEND writes `}{` onto the same physical line and a LATER
+        # resume truncates the VALID record as torn. Durably append the
+        # delimiter BEFORE any later append (same fsync contract as the writer).
+        with cp.open("ab") as fh:
+            fh.write(b"\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        logger.info("[vllm-chunk] %s: repaired missing trailing newline delimiter", cp)
     return cache
 
 
@@ -1004,13 +1017,20 @@ def generate_chunked(
     for i in range(0, len(prompts), VLLM_CHUNK_SIZE):
         chunk = prompts[i : i + VLLM_CHUNK_SIZE]
         key = _chunk_key(i, chunk) if cp is not None else ""
+        t_chunk = time.time()
         if key and key in cache:
+            # Same field semantics as the chunk-done line (r4 Codex NIT
+            # chunk-resume-progress-total-missing): stable key + per-chunk
+            # elapsed (~0 on a skip) + total since stage start.
             logger.info(
-                "[vllm-chunk] %s chunk %d/%d: resume-skip (%d prompts) elapsed=%.0fs",
+                "[vllm-chunk] %s chunk %d/%d: resume-skip (%d prompts) "
+                "key=%s elapsed=%.0fs total=%.0fs",
                 tag,
                 i // VLLM_CHUNK_SIZE + 1,
                 n_chunks,
                 len(chunk),
+                key,
+                time.time() - t_chunk,
                 time.time() - t0,
             )
             out.extend(cache[key])
@@ -1022,7 +1042,6 @@ def generate_chunked(
             n_chunks,
             len(chunk),
         )
-        t_chunk = time.time()
         chunk_out = [
             (o.outputs[0].text, o.outputs[0].finish_reason, len(o.outputs[0].token_ids))
             for o in _eng().generate(chunk, sp, use_tqdm=False)
@@ -3067,7 +3086,7 @@ def run_parser_selftest() -> None:
         "[parser-selftest] PASS: segment semantics, span mapping, t-grid, "
         "read points, correctness rules, quota arithmetic, chunk-checkpoint "
         "resume (crash-mid-stage, lazy-engine skip, torn-tail truncate-and-redo, "
-        "regime-fingerprint wipe)",
+        "newline-seam delimiter repair, regime-fingerprint wipe)",
         flush=True,
     )
 
@@ -3083,7 +3102,10 @@ def _chunk_checkpoint_fixtures() -> None:
     (the lazy callable raises if invoked); (3) a torn FINAL record — the crash
     artifact of an interrupted O_APPEND — is truncated-and-redone (FAILS
     pre-r4-fix with JSONDecodeError) while a malformed NON-final record still
-    raises loud; (4) a regime-fingerprint mismatch wipes and regenerates all.
+    raises loud; (3b) a COMPLETE final record missing only its trailing newline
+    is delimiter-repaired at load, so the next append cannot merge `}{` and a
+    second full resume makes zero engine calls (FAILS pre-r5-fix); (4) a
+    regime-fingerprint mismatch wipes and regenerates all.
     """
     import tempfile
 
@@ -3145,6 +3167,23 @@ def _chunk_checkpoint_fixtures() -> None:
             for ln in cp.read_text().split("\n"):
                 if ln.strip():
                     json.loads(ln)  # post-recovery file is fully well-formed
+            # (3b) newline seam (r5, r4 Codex Major 1): a COMPLETE final record
+            # whose trailing newline was lost to a crash between the final `}`
+            # and its delimiter. Pre-r5 the loader accepted it un-repaired, the
+            # next O_APPEND produced a merged `}{` line, and a LATER resume
+            # truncated the VALID record as torn. Two valid records, second
+            # newline-less -> append a third -> every line parses and a second
+            # full resume performs ZERO engine calls.
+            cp.write_text("\n".join(good[:2]))  # 2 valid records, NO trailing \n
+            eng6 = _FakeEngine()
+            outs6 = generate_chunked(eng6, prompts, None, "ckpt-selftest", ckpt=ckpt)
+            assert outs6 == want and eng6.calls == 1, (eng6.calls,)  # only chunk 3 redone
+            lines6 = [ln for ln in cp.read_text().split("\n") if ln.strip()]
+            assert len(lines6) == 3, lines6  # no merged `}{` physical line
+            for ln in lines6:
+                json.loads(ln)  # delimiter repaired -> every line parses
+            outs7 = generate_chunked(_boom, prompts, None, "ckpt-selftest", ckpt=ckpt)
+            assert outs7 == want, outs7  # second full resume: zero engine calls
             # ... while a malformed NON-final record (real corruption, not an
             # append artifact) still raises loud:
             cp.write_text('{"corrupt\n' + "\n".join(good) + "\n")

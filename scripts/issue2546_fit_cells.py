@@ -1891,6 +1891,19 @@ def run_parent(args, prof: LayerProfile) -> int:
     out_root = Path(args.out_root)
     smoke = bool(args.smoke)
     print(f"[p5] parent arm={prof.arm} smoke={smoke} out_root={out_root}", flush=True)
+    # Allocation-first GPU identity (r2 Critical 2), resolved BEFORE cache
+    # staging so a zero-GPU host fails loud in seconds instead of silently
+    # running the 222-unit battery on one CPU worker (r4 Codex Major 2 /
+    # concern zero-gpu-fit-parent-cpu-fallback). SHARED gpu_allocation ladder
+    # (CVD array > SLURM_STEP/JOB_GPUS ids > SLURM_GPUS_ON_NODE count;
+    # nvidia-smi only on non-SLURM exclusive hosts — gotchas #1902/#1336).
+    alloc = g25.gpu_allocation()
+    if not alloc:
+        raise RuntimeError(
+            "[p5] no GPUs visible (gpu_allocation() == []) — production P5 requires "
+            ">=1 GPU; use --selftest for the synthetic-store CPU smoke"
+        )
+    ngpu = len(alloc)
     # Fan-out shared inputs pre-staged ONCE in the parent (#1315).
     build_fitcache(out_root, prof, smoke)
     caches = load_caches(out_root, prof, smoke)
@@ -1899,15 +1912,10 @@ def run_parent(args, prof: LayerProfile) -> int:
     assert registry_stat_totals() == 222, registry_stat_totals()  # plan §9
     del caches
     _pygc.collect()
-    # Allocation-first GPU identity (r2 Critical 2): the SHARED gpu_allocation
-    # ladder (CVD array > SLURM_STEP/JOB_GPUS ids > SLURM_GPUS_ON_NODE count;
-    # nvidia-smi only on non-SLURM exclusive hosts — gotchas #1902/#1336).
-    alloc = g25.gpu_allocation()
-    ngpu = len(alloc)
-    n_workers = max(1, min(int(args.num_workers), ngpu if ngpu > 0 else 1))
+    n_workers = max(1, min(int(args.num_workers), ngpu))
     print(
         f"[p5] fan-out: {len(units)} registry jobs across {n_workers} worker(s) "
-        f"(alloc={','.join(alloc) if alloc else 'cpu'})",
+        f"(alloc={','.join(alloc)})",
         flush=True,
     )
     work_dir = out_root / "work" / f"fits_a{prof.arm}"
