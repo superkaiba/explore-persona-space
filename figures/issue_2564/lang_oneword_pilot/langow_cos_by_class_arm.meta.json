@@ -1,0 +1,135 @@
+{
+  "commit": "8e3c56ed+dirty",
+  "render_id": "e0695a7ca2674aca",
+  "git_commit": "8e3c56ede11f4cd0fd36203d1f6a842059a7a0b5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "scripts/issue2356_flippair_2afc.py",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2544/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_langow_pilot_reads.py",
+  "created": "2026-08-25T20:43:13Z",
+  "figsize": [
+    6.0,
+    3.2
+  ],
+  "points": [
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.7472677905572709,
+      "y": 0.0,
+      "series": "ridge #779 (single-turn)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.7805470884370636,
+      "y": 1.0,
+      "series": "ridge #1738 (multi-turn)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.3766424802105106,
+      "y": 2.0,
+      "series": "identity (raw v_C delta)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.8685108107751793,
+      "y": 3.6,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.875260657707992,
+      "y": 4.6,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.5077262824842041,
+      "y": 5.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.5473863949705886,
+      "y": 7.199999999999999,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.5319299725886643,
+      "y": 8.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "cos(predicted delta, observed answer-state delta), L19 tail": 0.271633122094435,
+      "y": 9.2,
+      "_kind": "scatter",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "cos(predicted delta, observed answer-state delta), L19 tail",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "language: install (value vs bare) \u2014 ridge #779 (single-turn)",
+          "language: install (value vs bare) \u2014 ridge #1738 (multi-turn)",
+          "language: install (value vs bare) \u2014 identity (raw v_C delta)",
+          "language: swap (value vs value) \u2014 ridge #779 (single-turn)",
+          "language: swap (value vs value) \u2014 ridge #1738 (multi-turn)",
+          "language: swap (value vs value) \u2014 identity (raw v_C delta)",
+          "query one-word swap \u2014 ridge #779 (single-turn)",
+          "query one-word swap \u2014 ridge #1738 (multi-turn)",
+          "query one-word swap \u2014 identity (raw v_C delta)"
+        ]
+      }
+    ],
+    "series": [
+      "ridge #779 (single-turn)",
+      "ridge #1738 (multi-turn)",
+      "identity (raw v_C delta)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
