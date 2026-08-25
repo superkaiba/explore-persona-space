@@ -18,6 +18,17 @@ the production ``KeyError: 'k_bin'`` through a REAL ``compose_prompts`` call;
 test 3 pins the quota-shortfall record; test 4 pins the fail-loud contract on
 stripped rows).
 
+Round 9 extends the file for the round-8 review blockers:
+``TestExpectedUniverseAccounting`` pins Blocker A (a wholly overlong-dropped
+stratum must stay in the quota universe with size 0 / picked 0, WARN, and no
+silent renormalization onto survivors; an at-capacity stratum with
+``size == floor(quota_raw)`` is flagged), ``test_parser_selftest_completes``
+pins Blocker B (the public ``--parser-selftest`` mode survives the
+``scaled_quota`` return-shape change), and
+``TestCumulativeDrawRecord`` pins Minor C (``_reliability_draw.json`` is a
+cumulative draw history whose combined view reconstructs the final realized
+allocation across partial resumes).
+
 The tokenizer is faked ONLY at the external boundary, signature-conformant
 (a real class mirroring the two call surfaces ``compose_prompts`` uses —
 never a bare Mock; code-style.md "one production-body test per seam-stubbed
@@ -28,6 +39,7 @@ production body.
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -162,12 +174,13 @@ class TestReliabilityDrawOverComposedRows:
         for r in composed["contexthub"]:
             assert (r["ch_type"], r["level"]) in CH_CELLS
 
-        picked, rel_report = G.reliability_row_ids(composed, 24)
+        picked, rel_report = G.reliability_row_ids(composed, 24, expected_rows_by_corpus=rows)
         eligible = {r["row_id"] for c, rs in composed.items() if c != "gsm8k_test" for r in rs}
         assert set(picked) <= eligible
         assert not any(rid.startswith("gsm8k_test:") for rid in picked)
         assert len(picked) == len(set(picked)) == rel_report["n_picked"] == 24
         assert rel_report["shortfall"] == 0
+        assert rel_report["missing_strata"] == []
 
         # Stratum registry: 4 realized k-bins + 8 contexthub cells + mmlu.
         expected_strata = (
@@ -193,11 +206,12 @@ class TestReliabilityDrawOverComposedRows:
         assert report["dropped"] == {"gsm8k_train": 1}
         assert len(composed["gsm8k_train"]) == 5
 
-        picked, rel_report = G.reliability_row_ids(composed, 5)
+        picked, rel_report = G.reliability_row_ids(composed, 5, expected_rows_by_corpus=rows)
         assert dropped_id not in picked
         assert sorted(picked) == sorted(r["row_id"] for r in composed["gsm8k_train"])
         assert rel_report["strata"]["gsm8k_train:k2_3"] == {
             "size": 5,
+            "expected_size": 6,
             "quota_raw": 5.0,
             "alloc": 5,
             "picked": 5,
@@ -214,7 +228,9 @@ class TestQuotaShortfallRecorded:
             "mmlu": [{"row_id": f"mmlu:{i:03d}"} for i in range(3)],
         }
         with caplog.at_level(logging.WARNING, logger="issue2546_gen_capture"):
-            picked, rel_report = G.reliability_row_ids(composed, 40)
+            picked, rel_report = G.reliability_row_ids(
+                composed, 40, expected_rows_by_corpus=composed
+            )
         assert sorted(picked) == ["math:000", "math:001", "mmlu:000", "mmlu:001", "mmlu:002"]
         assert rel_report["n_picked"] == 5
         assert rel_report["shortfall"] == 35
@@ -227,7 +243,9 @@ class TestQuotaShortfallRecorded:
     def test_full_quota_draw_has_no_shortfall_and_no_warning(self, caplog):
         composed = {"math": [{"row_id": f"math:{i:03d}"} for i in range(50)]}
         with caplog.at_level(logging.WARNING, logger="issue2546_gen_capture"):
-            picked, rel_report = G.reliability_row_ids(composed, 10)
+            picked, rel_report = G.reliability_row_ids(
+                composed, 10, expected_rows_by_corpus=composed
+            )
         assert len(picked) == 10
         assert rel_report["shortfall"] == 0
         assert rel_report["capped_strata"] == []
@@ -254,7 +272,7 @@ class TestStrippedRowsFailLoud:
             ]
         }
         with pytest.raises(KeyError, match=r"k_bin.*compose_prompts"):
-            G.reliability_row_ids(stripped, 4)
+            G.reliability_row_ids(stripped, 4, expected_rows_by_corpus=stripped)
 
     def test_contexthub_row_missing_ch_type_raises(self):
         stripped = {
@@ -270,7 +288,7 @@ class TestStrippedRowsFailLoud:
             ]
         }
         with pytest.raises(KeyError, match=r"ch_type.*compose_prompts"):
-            G.reliability_row_ids(stripped, 4)
+            G.reliability_row_ids(stripped, 4, expected_rows_by_corpus=stripped)
 
 
 class TestRunGenerationEmitsDrawRecord:
@@ -328,14 +346,20 @@ class TestRunGenerationEmitsDrawRecord:
         printed = capsys.readouterr().out
         assert f"[rel-draw] {side.stage}: picked 8/8" in printed
 
-        # The durable per-stratum draw record (plan §4.2 quota accounting).
+        # The durable per-stratum draw record (plan §4.2 quota accounting;
+        # r9 Minor C: cumulative draws + combined view).
         rec_p = out_root / "rollouts" / G.stage_dirname(side.stage, True) / "_reliability_draw.json"
         rec = json.loads(rec_p.read_text())
-        assert rec["n_picked"] == 8
-        assert rec["shortfall"] == 0
-        assert rec["side"] == "post"
-        assert rec["corpora_drawn_over"] == ["contexthub", "gsm8k_train"]
-        assert rec["repro"]["task"] == 2546
+        assert len(rec["draws"]) == 1
+        d0 = rec["draws"][0]
+        assert d0["n_picked"] == 8
+        assert d0["shortfall"] == 0
+        assert d0["side"] == "post"
+        assert d0["corpora_drawn_over"] == ["contexthub", "gsm8k_train"]
+        assert d0["repro"]["task"] == 2546
+        assert rec["combined"]["n_picked"] == 8
+        assert rec["combined"]["corpora"] == ["contexthub", "gsm8k_train"]
+        assert rec["combined"]["strata"] == d0["strata"]
 
         # The drawn ids reach the worker contract (rel_row_ids in the work file).
         wf = json.loads((out_root / "work" / "p1_smoke_post" / "slot0.json").read_text())
@@ -343,3 +367,153 @@ class TestRunGenerationEmitsDrawRecord:
         assert wf["rel_draws"] == G.REL_DRAWS
         composed_ids = {r["row_id"] for r in wf["rows"]}
         assert set(wf["rel_row_ids"]) <= composed_ids
+
+
+class TestExpectedUniverseAccounting:
+    """r9 Blocker A: the quota universe is the PRE-composition expected
+    population — a wholly overlong-dropped stratum is retained (size 0,
+    non-zero target, picked 0), flagged, and WARNed; targets are never
+    renormalized onto survivors; an at-capacity stratum whose size equals
+    floor(quota_raw) is flagged. Both tests run the REAL bodies
+    (compose_prompts -> reliability_row_ids -> scaled_quota)."""
+
+    def test_zero_survivor_stratum_recorded_and_warned(self, caplog):
+        """A k-bin whose rows are ALL overlong-dropped stays in the persisted
+        report with size 0 / picked 0 / its full expected-universe target,
+        appears in capped_strata + missing_strata, fires the WARN, and its
+        share redistributes so the total target is still met. Pre-fix (r8
+        module): the stratum vanished — shortfall 0, capped [], no WARN,
+        survivor targets renormalized (3.0 -> 4.0 here)."""
+        budget = G.prompt_budget(POST_A1)
+        rows = {
+            "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(40)],
+        }
+        for r in rows["gsm8k_train"]:
+            if r["k_bin"] == "k7plus":
+                r["user_text"] = "w " * (budget + 50)
+
+        composed, report = _compose(rows)
+        assert report["dropped"] == {"gsm8k_train": 10}
+        assert not any(r["k_bin"] == "k7plus" for r in composed["gsm8k_train"])
+
+        with caplog.at_level(logging.WARNING, logger="issue2546_gen_capture"):
+            picked, rel_report = G.reliability_row_ids(composed, 12, expected_rows_by_corpus=rows)
+
+        # The dropped stratum is retained, loud, and never sampled.
+        s = rel_report["strata"]["gsm8k_train:k7plus"]
+        assert s == {"size": 0, "expected_size": 10, "quota_raw": 3.0, "alloc": 0, "picked": 0}
+        assert "gsm8k_train:k7plus" in rel_report["capped_strata"]
+        assert rel_report["missing_strata"] == ["gsm8k_train:k7plus"]
+        warned = [r.getMessage() for r in caplog.records if "[rel-draw]" in r.getMessage()]
+        assert warned and "gsm8k_train:k7plus" in warned[0]
+
+        # Survivor targets come from the EXPECTED universe (150/600 * 12 =
+        # 3.0), never renormalized (r8: 12/3 = 4.0); the missing share is
+        # redistributed EXPLICITLY, so the total target is still met.
+        for kb in ("k1", "k2_3", "k4_6"):
+            assert rel_report["strata"][f"gsm8k_train:{kb}"]["quota_raw"] == 3.0
+            assert rel_report["strata"][f"gsm8k_train:{kb}"]["picked"] == 4
+        assert rel_report["n_picked"] == 12
+        assert rel_report["shortfall"] == 0
+        assert rel_report["redistributed_rows"] == 3
+        assert len(picked) == 12
+        assert not any("k7plus" in rid for rid in picked)
+
+    def test_at_capacity_stratum_below_fractional_target_is_flagged(self, caplog):
+        """A stratum whose size EQUALS floor(quota_raw) is at capacity and
+        below its (fractional) expected-universe target — it must be flagged
+        even though alloc == int(raw). Pre-fix: `alloc[k] < int(raw[k])` read
+        6 < 6 and never flagged it (capped_strata == [])."""
+        composed = {
+            "math": [{"row_id": f"math:{i:03d}"} for i in range(6)],
+            "mmlu": [{"row_id": f"mmlu:{i:03d}"} for i in range(10)],
+        }
+        with caplog.at_level(logging.WARNING, logger="issue2546_gen_capture"):
+            picked, rel_report = G.reliability_row_ids(
+                composed, 10, expected_rows_by_corpus=composed
+            )
+        # raw: math = 10*200/300 = 6.667 (size 6 == floor -> capped),
+        # mmlu = 3.333 (size 10, ample -> absorbs the remainder row).
+        assert rel_report["capped_strata"] == ["math"]
+        assert rel_report["missing_strata"] == []
+        assert rel_report["strata"]["math"] == {
+            "size": 6,
+            "expected_size": 6,
+            "quota_raw": 6.667,
+            "alloc": 6,
+            "picked": 6,
+        }
+        assert len(picked) == rel_report["n_picked"] == 10
+        assert rel_report["shortfall"] == 0
+        # The WARN fires on the per-stratum deficit even at zero total
+        # shortfall (r9 requirement: every realized deficit is loud).
+        assert any("[rel-draw] quota shortfall" in r.getMessage() for r in caplog.records)
+
+    def test_composed_stratum_absent_from_expected_universe_raises(self):
+        """Threading contract: survivors must be a subset of the expected
+        universe — a composed stratum the expected rows don't cover means the
+        caller threaded the wrong dict, and the draw refuses loudly."""
+        composed = {"gsm8k_train": [_gsm_row(0, "k1")]}
+        expected = {"gsm8k_train": [_gsm_row(1, "k2_3")]}
+        with pytest.raises(RuntimeError, match=r"expected universe.*pre-overlong-drop"):
+            G.reliability_row_ids(composed, 1, expected_rows_by_corpus=expected)
+
+
+class TestParserSelftestMode:
+    def test_parser_selftest_completes(self, capsys):
+        """r9 Blocker B: the public --parser-selftest verification mode runs
+        end-to-end through the REAL body — pinning the scaled_quota call
+        shape (r8 changed the return to (alloc, raw) and left the selftest
+        callers unpacking a dict, so the mode died AttributeError)."""
+        G.run_parser_selftest()
+        out = capsys.readouterr().out
+        assert "[parser-selftest] PASS" in out
+
+
+class TestCumulativeDrawRecord:
+    """r9 Minor C: _reliability_draw.json is a cumulative draw history — a
+    partial resume APPENDS its draw, and the combined view reconstructs the
+    final realized allocation (latest draw wins per corpus)."""
+
+    def test_two_draws_merge_latest_wins_per_corpus(self, tmp_path):
+        p = tmp_path / "_reliability_draw.json"
+        draw1 = {
+            "corpora_drawn_over": ["gsm8k_train", "math"],
+            "strata": {
+                "gsm8k_train:k1": {"size": 9, "picked": 2},
+                "math": {"size": 9, "picked": 3},
+            },
+        }
+        p.write_text(json.dumps(G._merge_reliability_draw(p, draw1)))
+        # A crashed-then-resumed math corpus is re-drawn: its LATEST draw
+        # supersedes; the untouched gsm8k_train strata survive from draw 1.
+        draw2 = {
+            "corpora_drawn_over": ["math"],
+            "strata": {"math": {"size": 9, "picked": 5}},
+        }
+        merged = G._merge_reliability_draw(p, draw2)
+        assert len(merged["draws"]) == 2
+        assert merged["combined"]["strata"]["math"]["picked"] == 5
+        assert merged["combined"]["strata"]["gsm8k_train:k1"]["picked"] == 2
+        assert merged["combined"]["n_picked"] == 7
+        assert merged["combined"]["corpora"] == ["gsm8k_train", "math"]
+
+    def test_pre_r9_single_draw_record_wraps_as_first_draw(self, tmp_path):
+        """A round-8 pod artifact (single-draw top-level shape) is wrapped as
+        draws[0] instead of being overwritten."""
+        p = tmp_path / "_reliability_draw.json"
+        old = {
+            "corpora_drawn_over": ["mmlu"],
+            "strata": {"mmlu": {"size": 4, "picked": 4}},
+            "n_picked": 4,
+        }
+        p.write_text(json.dumps(old))
+        new_draw = {
+            "corpora_drawn_over": ["math"],
+            "strata": {"math": {"size": 2, "picked": 2}},
+        }
+        merged = G._merge_reliability_draw(p, new_draw)
+        assert merged["draws"][0] == old
+        assert merged["combined"]["strata"]["mmlu"]["picked"] == 4
+        assert merged["combined"]["strata"]["math"]["picked"] == 2
+        assert merged["combined"]["n_picked"] == 6

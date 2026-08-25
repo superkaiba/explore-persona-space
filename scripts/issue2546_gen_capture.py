@@ -481,10 +481,24 @@ def scaled_quota(
     """Largest-remainder allocation of ``total_target`` across strata,
     proportional to the arm-1 base quotas (REL_BASE), capped at stratum size.
 
-    Returns ``(alloc, raw)``: the integer allocation actually drawable plus
-    the UNCAPPED proportional raw quota per stratum — the plan-§4.2 target
-    the caller records shortfalls against (r8: a thin draw is recorded,
-    never silently absorbed)."""
+    ``strata_sizes`` is the QUOTA UNIVERSE: every expected stratum must be a
+    key, including zero-size entries for strata whose population vanished
+    (r9 Blocker A — the caller threads the PRE-composition expected universe
+    in; ``tot`` runs over ALL keys, so a missing stratum's plan share is
+    never renormalized onto the survivors silently). Returns ``(alloc, raw)``:
+    the integer allocation actually drawable plus the UNCAPPED
+    expected-universe proportional target per stratum — the plan-§4.2 target
+    the caller records deficits against (r8: a thin draw is recorded, never
+    silently absorbed).
+
+    Redistribution semantics (r9, documented judgment call): capped strata's
+    unmet share — a zero-size stratum is the limit case — is redistributed
+    round-robin in largest-fractional-remainder order across strata with
+    remaining capacity until ``total_target`` is met or EVERY stratum is at
+    capacity (the residual is then the caller's shortfall). This replaces the
+    r8 fixed 10-pass bound, which could leave a phantom shortfall with ample
+    population when one large stratum's share needed > 10 rows per survivor.
+    """
     base: dict[str, float] = {}
     for name in strata_sizes:
         if name.startswith("gsm8k_train:"):
@@ -498,89 +512,155 @@ def scaled_quota(
     alloc = {k: min(int(raw[k]), strata_sizes[k]) for k in raw}
     rem = total_target - sum(alloc.values())
     order = sorted(raw, key=lambda k: raw[k] - int(raw[k]), reverse=True)
-    i = 0
-    while rem > 0 and i < 10 * len(order):
-        k = order[i % len(order)]
-        if alloc[k] < strata_sizes[k]:
-            alloc[k] += 1
-            rem -= 1
-        i += 1
+    while rem > 0 and order:
+        progressed = False
+        for k in order:
+            if rem <= 0:
+                break
+            if alloc[k] < strata_sizes[k]:
+                alloc[k] += 1
+                rem -= 1
+                progressed = True
+        if not progressed:
+            break  # every stratum at capacity: the residual IS the shortfall
     return alloc, raw
 
 
+def _rel_stratum_key(c: str, r: dict, population: str) -> str:
+    """Stratum key for a row of corpus ``c`` (plan §4.2), by HARD subscript.
+
+    ``population`` names the row set being keyed ("composed" survivors vs the
+    "pre-composition expected" universe) so the fail-loud contract message
+    blames the right producer; never a .get() default — a wrong bucket
+    corrupts the per-stratum noise ceilings (r8 contract)."""
+    try:
+        if c == "gsm8k_train":
+            return f"gsm8k_train:{r['k_bin']}"
+        if c == "contexthub":
+            return f"contexthub:{r['ch_type']}_L{r['level']}"
+        return c
+    except KeyError as e:
+        producer = (
+            "compose_prompts must carry REL_STRATUM_KEYS through its composed-row rebuild "
+            "(r8 contract)"
+            if population == "composed"
+            else "the staged/pending rows must carry REL_STRATUM_KEYS (staging contract; "
+            "the r9 expected-universe pass keys the PRE-composition population)"
+        )
+        raise KeyError(
+            f"reliability stratification key {e.args[0]!r} missing on a {population} {c!r} row "
+            f"({r.get('row_id', '?')}) — {producer}; refusing to collapse "
+            f"strata (never .get()-default here: a wrong bucket corrupts the "
+            f"per-stratum noise ceilings, plan §4.2)"
+        ) from e
+
+
 def reliability_row_ids(
-    rows_by_corpus: dict[str, list[dict]], total_target: int
+    rows_by_corpus: dict[str, list[dict]],
+    total_target: int,
+    *,
+    expected_rows_by_corpus: dict[str, list[dict]],
 ) -> tuple[list[str], dict]:
     """Seeded stratified reliability-draw selection (plan §4.2 P2/P3 quotas).
 
-    Returns ``(picked row_ids, report)``. The report records, per stratum,
-    the realized population size, the plan-proportional raw quota, and the
-    allocation actually drawn, plus capped strata + the total shortfall —
-    a thin draw is RECORDED (WARN + persisted by the caller), never silently
-    absorbed (r8: per-arm per-stratum noise ceilings are a plan deliverable).
+    ``rows_by_corpus`` is the COMPOSED (post-overlong-drop) population — the
+    rows actually generated, which the draw samples (r8 crash-fix contract).
+    ``expected_rows_by_corpus`` is the PRE-composition population (the pending
+    rows BEFORE the overlong drop): it defines the quota universe, so a
+    stratum whose rows were ALL overlong-dropped stays in the accounting with
+    ``size: 0``, a non-zero expected-universe target, and ``picked: 0`` —
+    never silently renormalized onto the survivors (r9 Blocker A; the r8 form
+    inferred the universe from survivors and a wholly-dropped stratum
+    vanished with shortfall 0 and no WARN).
 
-    Rows MUST carry the REL_STRATUM_KEYS for their corpus. compose_prompts
-    carries them through its composed-row rebuild, so the draw samples the
-    COMPOSED (post-overlong-drop) population — the rows actually generated
-    (r8 crash-fix: the r7-era rebuild stripped k_bin/ch_type/level and this
-    function KeyError'd pod-side at p1_smoke_rig)."""
+    Returns ``(picked row_ids, report)``. The report records, per expected
+    stratum, the realized size, the pre-composition expected size, the
+    expected-universe proportional target (``quota_raw``), and the realized
+    allocation/pick, plus ``capped_strata`` (every stratum whose realized
+    pick falls below its expected-universe target because the surviving
+    population cannot meet it — ``size < quota_raw``, which also catches a
+    stratum at capacity with ``size == floor(quota_raw)``),
+    ``missing_strata`` (zero survivors), ``redistributed_rows`` (rows
+    allocated to survivors beyond ceil(target) to keep ``total_target`` met —
+    the surfaced redistribution), and the total shortfall. A deficit is
+    WARNed + persisted by the caller, never silently absorbed (r8: per-arm
+    per-stratum noise ceilings are a plan deliverable)."""
     strata: dict[str, list[str]] = {}
     for c, rows in rows_by_corpus.items():
         if c == "gsm8k_test":
             continue  # eval-only corpus: excluded from reliability quotas
         for r in rows:
-            try:
-                if c == "gsm8k_train":
-                    key = f"gsm8k_train:{r['k_bin']}"
-                elif c == "contexthub":
-                    key = f"contexthub:{r['ch_type']}_L{r['level']}"
-                else:
-                    key = c
-            except KeyError as e:
-                raise KeyError(
-                    f"reliability stratification key {e.args[0]!r} missing on a {c!r} row "
-                    f"({r.get('row_id', '?')}) — compose_prompts must carry REL_STRATUM_KEYS "
-                    f"through its composed-row rebuild (r8 contract); refusing to collapse "
-                    f"strata (never .get()-default here: a wrong bucket corrupts the "
-                    f"per-stratum noise ceilings, plan §4.2)"
-                ) from e
-            strata.setdefault(key, []).append(r["row_id"])
-    sizes = {k: len(v) for k, v in strata.items()}
+            strata.setdefault(_rel_stratum_key(c, r, "composed"), []).append(r["row_id"])
+    expected_sizes: dict[str, int] = {}
+    for c, rows in expected_rows_by_corpus.items():
+        if c == "gsm8k_test":
+            continue
+        for r in rows:
+            key = _rel_stratum_key(c, r, "pre-composition expected")
+            expected_sizes[key] = expected_sizes.get(key, 0) + 1
+    orphaned = sorted(set(strata) - set(expected_sizes))
+    if orphaned:
+        raise RuntimeError(
+            f"reliability draw: composed strata {orphaned} absent from the PRE-composition "
+            f"expected universe — the caller must thread the pending (pre-overlong-drop) rows "
+            f"as expected_rows_by_corpus (r9 contract: survivors are a subset of expected "
+            f"by construction)"
+        )
+    # Quota universe = the PRE-composition expected strata (r9 Blocker A): a
+    # wholly-dropped stratum stays in the universe at size 0, so scaled_quota
+    # computes every target over the FULL expected key set.
+    sizes = {k: len(strata.get(k, [])) for k in expected_sizes}
     alloc, raw = scaled_quota(total_target, sizes)
     rng = np.random.default_rng(SEED + 77)
     picked: list[str] = []
     picked_per: dict[str, int] = {}
-    for k in sorted(strata):
-        ids = sorted(strata[k])
+    for k in sorted(sizes):
+        ids = sorted(strata.get(k, []))
         take = alloc[k]
         idx = rng.permutation(len(ids))[:take]
         picked.extend(ids[int(i)] for i in idx)
         picked_per[k] = len(idx)
     assert len(picked) == sum(alloc.values()), (len(picked), alloc)
-    capped = sorted(k for k in alloc if alloc[k] < int(raw[k]))
+    # Realized-per-stratum deficit: population below the expected-universe
+    # target (r9 fix — the r8 `alloc[k] < int(raw[k])` compare missed a
+    # stratum whose size EQUALS floor(raw): at capacity yet below target).
+    # An ample stratum allocated floor(raw) by largest-remainder rounding is
+    # NOT a deficit: its fractional share went to a sibling within the same
+    # total by design, and its population could have met the target.
+    capped = sorted(k for k in sizes if sizes[k] < raw[k])
+    missing = sorted(k for k in sizes if sizes[k] == 0)
+    redistributed = sum(max(0, alloc[k] - int(np.ceil(raw[k]))) for k in alloc)
     shortfall = total_target - len(picked)
     report = {
         "total_target": total_target,
         "n_picked": len(picked),
         "shortfall": shortfall,
         "capped_strata": capped,
+        "missing_strata": missing,
+        "redistributed_rows": redistributed,
         "strata": {
             k: {
                 "size": sizes[k],
+                "expected_size": expected_sizes[k],
                 "quota_raw": round(raw[k], 3),
                 "alloc": alloc[k],
                 "picked": picked_per[k],
             }
-            for k in sorted(strata)
+            for k in sorted(sizes)
         },
     }
     if shortfall > 0 or capped:
         logger.warning(
-            "[rel-draw] quota shortfall: picked %d of target %d (capped strata: %s) — "
-            "recorded in _reliability_draw.json against the plan §4.2 quotas",
+            "[rel-draw] quota shortfall: picked %d of target %d — capped strata %s "
+            "(realized pick below the expected-universe target), missing strata %s "
+            "(zero survivors after the overlong drop), %d rows redistributed to "
+            "survivors beyond their targets — recorded in _reliability_draw.json "
+            "against the plan §4.2 quotas",
             len(picked),
             total_target,
             capped or "none",
+            missing or "none",
+            redistributed,
         )
     return picked, report
 
@@ -2032,6 +2112,42 @@ def fp_sha(fp: dict) -> str:
     return hashlib.sha256(json.dumps(fp, sort_keys=True).encode()).hexdigest()[:16]
 
 
+def _merge_reliability_draw(path: Path, new_draw: dict) -> dict:
+    """Cumulative ``_reliability_draw.json`` payload (r9 Minor C).
+
+    A partial resume composes only PENDING corpora and re-draws the full
+    target over them, so a single-draw record would describe only the LATEST
+    draw. This appends every draw to a ``draws`` history and recomputes a
+    ``combined`` view — per corpus, the LATEST draw covering it wins (a
+    corpus is re-drawn only when its rollouts were never persisted), so the
+    final combined realized allocation is reconstructible from the file.
+    A pre-r9 single-draw record on disk is wrapped as ``draws[0]``."""
+    draws: list[dict] = []
+    if path.is_file():
+        old = json.loads(path.read_text())
+        draws = old.get("draws", [old] if "strata" in old else [])
+    draws.append(new_draw)
+    owner: dict[str, int] = {}  # corpus -> index of the latest draw covering it
+    for i, d in enumerate(draws):
+        for c in d.get("corpora_drawn_over", []):
+            owner[c] = i
+    combined_strata: dict[str, dict] = {}
+    for i, d in enumerate(draws):
+        for k, v in d.get("strata", {}).items():
+            # Stratum keys are corpus-scoped: "gsm8k_train:k7plus" /
+            # "contexthub:deductive_L4" / a flat corpus name.
+            if owner.get(k.split(":", 1)[0]) == i:
+                combined_strata[k] = v
+    return {
+        "draws": draws,
+        "combined": {
+            "strata": {k: combined_strata[k] for k in sorted(combined_strata)},
+            "n_picked": sum(v["picked"] for v in combined_strata.values()),
+            "corpora": sorted(owner),
+        },
+    }
+
+
 def run_generation(
     args,
     arm: ArmSpec,
@@ -2082,26 +2198,32 @@ def run_generation(
     composed, compose_report = compose_prompts(tok, tok, side, pending, args.prefill_fallback)
     rel_ids: set[str] = set()
     if rel_total > 0:
-        rel_picked, rel_report = reliability_row_ids(composed, rel_total)
-        rel_ids = set(rel_picked)
-        # Durable record of the realized per-stratum draw vs the plan-§4.2
-        # quotas (r8: a thin draw is recorded, never silently absorbed —
-        # per-arm per-stratum noise ceilings are an addendum deliverable).
-        _atomic_write_json(
-            stage_dir / "_reliability_draw.json",
-            {
-                **rel_report,
-                "side": side.side,
-                # A partial resume composes only PENDING corpora, so this
-                # record names exactly the population the draw covered.
-                "corpora_drawn_over": sorted(composed),
-                "repro": repro_meta(args.phase),
-            },
+        # The quota universe is the PRE-composition pending population (r9
+        # Blocker A): a stratum whose rows were all overlong-dropped stays in
+        # the accounting at size 0 instead of vanishing from the record.
+        rel_picked, rel_report = reliability_row_ids(
+            composed, rel_total, expected_rows_by_corpus=pending
         )
+        rel_ids = set(rel_picked)
+        # Durable CUMULATIVE record of the realized per-stratum draws vs the
+        # plan-§4.2 quotas (r8: a thin draw is recorded, never silently
+        # absorbed; r9 Minor C: a partial resume APPENDS its draw — the
+        # combined view keeps the final realized allocation reconstructible).
+        rec_path = stage_dir / "_reliability_draw.json"
+        this_draw = {
+            **rel_report,
+            "side": side.side,
+            # A partial resume composes only PENDING corpora, so this
+            # draw names exactly the population it covered.
+            "corpora_drawn_over": sorted(composed),
+            "repro": repro_meta(args.phase),
+        }
+        _atomic_write_json(rec_path, _merge_reliability_draw(rec_path, this_draw))
         print(
             f"[rel-draw] {side.stage}: picked {rel_report['n_picked']}/{rel_total} across "
             f"{len(rel_report['strata'])} strata (shortfall {rel_report['shortfall']}, "
-            f"capped {rel_report['capped_strata'] or 'none'})",
+            f"capped {rel_report['capped_strata'] or 'none'}, "
+            f"missing {rel_report['missing_strata'] or 'none'})",
             flush=True,
         )
     all_rows = [r for c in sorted(composed) for r in composed[c]]
@@ -3170,12 +3292,24 @@ def run_parser_selftest() -> None:
     sizes.update(
         {"math": 10_000, "mmlu": 10_000, "arc_challenge": 10_000, "csqa": 10_000, "piqa": 10_000}
     )
-    alloc = scaled_quota(1500, sizes)
+    alloc, raw = scaled_quota(1500, sizes)
     assert sum(alloc.values()) == 1500
     assert alloc["math"] == 200 and alloc["gsm8k_train:k0"] == 150
     assert alloc["contexthub:c0"] == 50 and alloc["mmlu"] == 100
-    alloc2 = scaled_quota(1000, sizes)
+    assert raw["math"] == 200.0 and raw["gsm8k_train:k0"] == 150.0
+    alloc2, raw2 = scaled_quota(1000, sizes)
     assert sum(alloc2.values()) == 1000
+    assert abs(raw2["math"] - 1000 * 200 / 1500) < 1e-9
+    # r9 Blocker A: a zero-survivor stratum stays in the quota universe with
+    # its FULL expected-universe target (no renormalization onto survivors —
+    # the r8 form inflated math to ~222.2), allocates 0, and its share
+    # redistributes so the total still meets the target.
+    sizes0 = dict(sizes)
+    sizes0["gsm8k_train:k3"] = 0
+    alloc3, raw3 = scaled_quota(1500, sizes0)
+    assert raw3["gsm8k_train:k3"] == 150.0 and alloc3["gsm8k_train:k3"] == 0
+    assert raw3["math"] == 200.0, raw3["math"]  # survivor target NOT renormalized
+    assert sum(alloc3.values()) == 1500
     # boundary-char arithmetic for cot_boundary
     text = "<think>x</think>ans"
     close_char = text.index(THINK_CLOSE) + len(THINK_CLOSE) - 1
