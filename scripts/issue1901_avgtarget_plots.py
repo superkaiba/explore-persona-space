@@ -1004,6 +1004,11 @@ def _fig_plot1(args) -> dict:
     colors = dict(zip(labels, paper_palette(len(labels))))
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.0, 3.4))
     for arm, label in labels.items():
+        if arm == "identity_bias":
+            # Dropped from the rendered figure (user, 2026-08-25): its -2.5 R^2 range
+            # crushed the ridge/MLP curves. Colors stay keyed on the full ARM_LABELS
+            # so the remaining arms keep their palette across sibling figures.
+            continue
         if arm == "boundary_ridge":
             layers = sorted(int(li) for li in boundary)
             r2 = [boundary[str(li)]["arms"][arm]["whole_map_r2"] for li in layers]
@@ -1016,6 +1021,9 @@ def _fig_plot1(args) -> dict:
         lo = [r["acc1_ci"]["lo"] for r in ret]
         hi = [r["acc1_ci"]["hi"] for r in ret]
         ax1.plot(layers, r2, marker="o", ms=3, color=colors[arm], label=label)
+        if arm == "boundary_ridge":
+            # R^2 panel only (user, 2026-08-25): its acc@1 curve crowded the map arms.
+            continue
         ax2.plot(layers, acc, marker="o", ms=3, color=colors[arm], label=label)
         ax2.fill_between(layers, lo, hi, color=colors[arm], alpha=0.15, lw=0)
     ax1.set_xlabel("Layer")
