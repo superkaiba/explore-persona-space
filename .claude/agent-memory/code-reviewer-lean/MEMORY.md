@@ -1,4 +1,5 @@
 # code-reviewer-lean memory index
+- [Fixed-name tmp atomic-write fan-out race](fixed_name_tmp_atomic_write_fanout_race.md) — every worker re-derives + writes the SAME artifact via `<path>.tmp`+replace → FileNotFoundError race; require process-unique temp (#2546 r1 g3)
 
 - [Retrofit digest write-if-absent](retrofit_digest_write_if_absent.md) — a new provenance digest published if-absent grandfathers PRE-fix artifacts; refuse when… (#2502 R2 g2)
 - [Substitution dial outside production predicate](substitution_dial_outside_production_predicate.md) — enumerate EVERY smoke dial vs _production() + regime; one guarded… (#2476 R1 g3)
