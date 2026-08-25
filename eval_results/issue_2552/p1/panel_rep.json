@@ -1,0 +1,22 @@
+{
+  "panel": {
+    "floor": 240,
+    "cap": 12000,
+    "seed": 2552,
+    "n_alive": 2974,
+    "strata": "all-alive (cap not binding)"
+  },
+  "n_alive_floor_panel": 2974,
+  "n_alive_floor_primary": 1353,
+  "metadata": {
+    "git_commit": "37b9a440bd148319e475b061fdbc93a07e19a453",
+    "timestamp_utc": "2026-08-25T16:22:46.611815Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "census_panel",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2552_turnsae_der.py"
+  }
+}

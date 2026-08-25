@@ -1,0 +1,36 @@
+{
+  "rep_sae_val_var_fve": 0.92215,
+  "rep_sae_val_nmse": 0.07784999999999997,
+  "metadata": {
+    "git_commit": "37b9a440bd148319e475b061fdbc93a07e19a453",
+    "timestamp_utc": "2026-08-25T16:22:09.100150Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "regime_measured",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2552_turnsae_der.py"
+  },
+  "rep_alive_at_240": 2974,
+  "rep_alive_at_1200": 1353,
+  "rep_panel_n": 2974,
+  "rep_n_fit": 120000,
+  "rep_perfeature_n": 2974,
+  "eval_list_unions": {
+    "rep_ta": 4859,
+    "mat_k100": 4602,
+    "mat_k200": 4011,
+    "pt_max": 19121,
+    "pt_sum": 16220
+  },
+  "pt_desc_union_n": 28806,
+  "trainer2_fve_evalpass": 0.8309253192496941,
+  "n_eval_rows_captured": 2000,
+  "mat_k100_desc_union_n": 4610,
+  "mat_k200_desc_union_n": 4192,
+  "rep_ta_desc_union_n": 4875,
+  "trainer2_fve_poolpass": 0.8311756342414901,
+  "trainer2_fve_combined": 0.8311526807003474,
+  "pt_mining_pool_n": 18000
+}
