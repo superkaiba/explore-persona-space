@@ -12262,8 +12262,8 @@
     "2590": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2590",
-      "status": "proposed",
+      "path": "tasks/planning/2590",
+      "status": "planning",
       "title": "verify_plan.py: dry-run plan-embedded jq probes; gate contingent judge waves; require regen-time max_model_len re-pin"
     },
     "26": {
