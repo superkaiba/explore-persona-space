@@ -10325,8 +10325,8 @@
     "2336": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2336",
-      "status": "running",
+      "path": "tasks/completed/2336",
+      "status": "completed",
       "title": "Hoist a process-safe atomic-write helper into shared code and sweep the shared-tmp pattern out of scripts/"
     },
     "2337": {
