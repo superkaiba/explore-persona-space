@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2574,
+  "highest_id": 2575,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12137,6 +12137,13 @@
       "path": "tasks/proposed/2574",
       "status": "proposed",
       "title": "Statistics lens: require same-ID censoring-matched read for paired arm-difference DVs with arm-specific censoring (#2544 v7 gap)"
+    },
+    "2575": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2575",
+      "status": "proposed",
+      "title": "verify_task_body per-unit-evidence scanner misses overlay-points phrasings (false WARN on declared pairs)"
     },
     "258": {
       "has_clean_result": false,
