@@ -1068,3 +1068,19 @@ def test_figures_required_gate_under_smoke(tmp_path, monkeypatch):
 def test_import_check_binds_reuse_ledger(capsys):
     ladder._bind_reuse_ledger()
     assert "helper call shapes bound OK" in capsys.readouterr().out
+
+
+def test_pilot_draws_smoke_clears_verdict_floor():
+    """#2329 class: smoke pilot draws must make the rule-26 verdict floor realizable.
+
+    8 items/arm x pilot draws >= JUDGE_PILOT_MIN_EFFECTIVE (51); production passthrough.
+    """
+    import scripts.issue2254_preimage as i2254
+    from scripts.issue2254_transpose_ladder import _SMOKE_PILOT_ITEMS_PER_ARM, _pilot_draws
+
+    for nd in (2, 5):
+        pd = _pilot_draws(True, nd)
+        assert _SMOKE_PILOT_ITEMS_PER_ARM * pd >= i2254.JUDGE_PILOT_MIN_EFFECTIVE, (nd, pd)
+        assert pd >= nd
+    assert _pilot_draws(False, 5) == 5
+    assert _pilot_draws(False, 2) == 2

@@ -1379,6 +1379,24 @@ def _stage_ladder_completions(args, rroot: Path, expected_fp: dict[str, str]) ->
     return comp_root
 
 
+_SMOKE_PILOT_ITEMS_PER_ARM = 8  # realized item pool per pilot arm from the tiny-real smoke cell
+
+
+def _pilot_draws(smoke: bool, n_draws: int) -> int:
+    """Rule-26 pilot draw count; smoke raises draws so the verdict floor is realizable.
+
+    The satisfiability escapes bypass only judge_pilot_gate's config-time refusal,
+    never the ``_gate_verdict`` min-effective floor (#2329), so at the smoke draw
+    count (2) the 8-item smoke arms realize 16 < JUDGE_PILOT_MIN_EFFECTIVE=51 and the
+    pilot is verdict-doomed under every escape. ceil(51/8) = 7 draws x 8 items = 56
+    >= 51 clears the floor at full gate strength with no waiver; the production
+    pilot (5 draws over >= ceil(51/5)=11 items/arm) is byte-unchanged.
+    """
+    if not smoke:
+        return n_draws
+    return max(n_draws, -(-i2254.JUDGE_PILOT_MIN_EFFECTIVE // _SMOKE_PILOT_ITEMS_PER_ARM))
+
+
 def _judge_ladder_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: int) -> dict:
     """Judge one steer cell via ``fk._judge_graded_with_refusal_reissue``
     (Batch-first + rule-28 targeted SYNC re-issue at the identical instrument;
@@ -1548,8 +1566,9 @@ def phase_judge(args) -> None:
         )
     n_draws = i2254._judge_draws(args, "decisive")
     rubrics = {b: load_trait_rubric(b) for b in behaviors}
+    pilot_draws = _pilot_draws(bool(args.smoke), n_draws)
     for b in behaviors:
-        i2254._run_judge_pilot(args, rroot, "steer", b, rubrics[b], n_draws)
+        i2254._run_judge_pilot(args, rroot, "steer", b, rubrics[b], pilot_draws)
     if args.pilot:
         logger.info("[ladder-judge] --pilot: rule-26 gate PASSed; stopping before the wave")
         return
