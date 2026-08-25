@@ -808,8 +808,127 @@ def fig_pooling_twin(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
     return _save(fig, "fig_expl_pooling_twin", out_dir)
 
 
+# Short reader-facing gloss per (axis, base value id) — §3.5 plain-English rule
+# (bank value strings are full sentences; these are the distinguishing phrases).
+VALUE_GLOSS = {
+    "content_constraint": {
+        "v1": "exactly three reasons",
+        "v2": "no numbers",
+        "v3": "no first person",
+        "v4": "one concrete example",
+        "v5": "under twenty words",
+    },
+    "format": {
+        "v1": "bulleted list",
+        "v2": "numbered list",
+        "v3": "lyrical poem",
+        "v4": "one flowing paragraph",
+        "v5": "JSON object",
+    },
+    "hedging": {"v1": "strong confidence", "v2": "heavy hedging"},
+    "lexical_marker": {
+        "v1": 'word "moreover"',
+        "v2": 'word "honestly"',
+        "v3": 'word "surely"',
+        "v4": 'word "notably"',
+        "v5": 'word "essentially"',
+    },
+    "persona": {
+        "v1": "pirate captain",
+        "v2": "Victorian butler",
+        "v3": "zen teacher",
+        "v4": "startup founder",
+        "v5": "noir detective",
+    },
+    "register": {"v1": "very formal", "v2": "very casual"},
+    "stance": {
+        "v1": "back one option",
+        "v2": "argue against all",
+        "v3": "strictly neutral",
+        "v4": "steelman both sides",
+        "v5": "devil's advocate",
+    },
+    "user_fact": {
+        "v1": "name Marcus",
+        "v2": "name Diego",
+        "v3": "name Sarah",
+        "v4": "name Emma",
+        "v5": "name Kevin",
+    },
+    "user_profile": {
+        "v1": "single parent",
+        "v2": "retired engineer",
+        "v3": "college freshman",
+        "v4": "rural nurse",
+        "v5": "business traveler",
+    },
+}
+
+
+def fig_manip_fire_rates(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
+    """Per-base-value manipulation-check compliance vs the 70% fire threshold.
+
+    Reads manipulation_check.json beside the analysis doc (skips gracefully when
+    absent). One horizontal bar per base value, grouped by instruction axis,
+    colored by the artifact's fire verdict (fired / not fired / undetermined).
+    """
+    results_dir = doc.get("_results_dir")
+    if not results_dir:
+        return None
+    mc_path = Path(results_dir) / "manipulation_check.json"
+    if not mc_path.is_file():
+        return None
+    mc = json.loads(mc_path.read_text())
+    vrows = [r for r in mc.get("value_rows", []) if r.get("kind") == "orig"]
+    if not vrows:
+        return None
+    axis_order = [a for a in _axes_sorted(doc) if not a.startswith("query")]
+    verdict_colors = {
+        "fired": paper_palette_role("control"),  # green: passed the fire gate
+        "not_fired": paper_palette_role("accent"),  # red: below threshold
+        "undetermined": paper_palette_role("baseline"),  # orange: incomplete checks
+    }
+    verdict_labels = {
+        "fired": "fired (>=70% comply)",
+        "not_fired": "not fired",
+        "undetermined": "undetermined (incomplete judge checks)",
+    }
+    ys, widths, colors, labels = [], [], [], []
+    ticklabels = []
+    y = 0.0
+    for axis in axis_order:
+        arows = sorted((r for r in vrows if r.get("axis") == axis), key=lambda r: r["value_id"])
+        for r in arows:
+            ys.append(y)
+            widths.append(float(r["comply_frac"]))
+            v = r.get("verdict", "not_fired")
+            colors.append(verdict_colors.get(v, verdict_colors["not_fired"]))
+            labels.append(v)
+            gloss = VALUE_GLOSS.get(axis, {}).get(r["value_id"], r["value_id"])
+            ticklabels.append(f"{axis_label(axis)}: {gloss}")
+            y += 1.0
+        y += 0.8  # gap between axes
+    fig, ax = plt.subplots(figsize=(6.5, 9.0))
+    ax.barh(ys, widths, height=0.72, color=colors)
+    ax.axvline(0.70, color=paper_palette_role("neutral"), lw=1.0, ls="--")
+    ax.set_yticks(ys)
+    ax.set_yticklabels(ticklabels, fontsize=6.5)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 1.02)
+    ax.set_xlabel("compliance fraction (dashed line: 70% fire threshold)")
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=verdict_colors[v], label=verdict_labels[v])
+        for v in ("fired", "not_fired", "undetermined")
+    ]
+    ax.set_title("Did each instruction actually fire in the rollouts?", loc="left")
+    fig.legend(handles=handles, fontsize=7, loc="lower center", ncol=3, frameon=False)
+    fig.tight_layout(rect=(0, 0.035, 1, 1))
+    return _save(fig, "fig_expl_manip_fire_rates", out_dir)
+
+
 FIGURES = (
     fig_hero_axis_profile,
+    fig_manip_fire_rates,
     fig_norm_scatter,
     fig_install_vs_swap,
     fig_identity_heatmaps,
@@ -846,6 +965,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="consume the /tmp smoke out-root and write figures to /tmp",
     )
     ap.add_argument("--import-check", action="store_true")
+    ap.add_argument(
+        "--only",
+        default=None,
+        help="render only the named figure function (e.g. fig_manip_fire_rates) — "
+        "existing sidecars of other figures are left untouched",
+    )
     return ap
 
 
@@ -882,9 +1007,15 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"[fig] perpair.jsonl missing at {rows_path}; per-pair figures will skip")
 
+    doc["_results_dir"] = str(results_dir)  # fig_manip_fire_rates reads a sibling artifact
     set_paper_style("blog")
+    figures = FIGURES
+    if args.only:
+        figures = tuple(fn for fn in FIGURES if fn.__name__ == args.only)
+        if not figures:
+            raise SystemExit(f"--only {args.only!r} matches no figure function")
     wrote, skipped = [], []
-    for fn in FIGURES:
+    for fn in figures:
         stem = fn(doc, rows, out_dir)
         if stem is None:
             skipped.append(fn.__name__)
