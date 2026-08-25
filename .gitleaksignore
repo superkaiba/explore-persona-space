@@ -1457,3 +1457,5 @@ tasks/approved/2564/plans/v4.md:generic-api-key:391
 tasks/approved/2564/plans/v5.md:generic-api-key:391
 tasks/approved/2564/plans/v6.md:generic-api-key:391
 scripts/issue1979_po_three_predictors_fig.py:generic-api-key:39
+scripts/issue1979_po_target_answer_fig.py:generic-api-key:83
+scripts/issue1979_po_source_target_fig.py:generic-api-key:80
