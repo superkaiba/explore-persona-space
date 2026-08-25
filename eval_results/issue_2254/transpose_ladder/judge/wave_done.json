@@ -1,0 +1,11 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-25T10:55:30Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "ec7e7e31",
+  "git_dirty": false,
+  "followup_label": "transpose_ladder",
+  "n_cells": 44,
+  "n_draws": 5
+}

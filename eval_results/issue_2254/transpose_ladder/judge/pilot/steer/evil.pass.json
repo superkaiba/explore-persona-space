@@ -1,0 +1,5 @@
+{
+  "fingerprint": "10db1fcf",
+  "verdict": "PASS",
+  "draw_count_note": "pilot ran at the steered phase's n_draws=5; the same wave judges baseline_ceiling at 5 draws (rubric + max_tokens identical, truncation coverage carries)"
+}

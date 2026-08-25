@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "verdict": "PASS",
+  "failures": [],
+  "warnings": [],
+  "arms": {
+    "ctx_steer": {
+      "n_items": 11,
+      "n_items_zero_valid": 0,
+      "frac_items_complete": 1.0,
+      "n_draws": 55,
+      "n_scored": 55,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 55
+      },
+      "waived": false
+    },
+    "degen": {
+      "n_items": 11,
+      "n_items_zero_valid": 0,
+      "frac_items_complete": 1.0,
+      "n_draws": 55,
+      "n_scored": 55,
+      "n_content_dropped": 0,
+      "n_refusal": 0,
+      "n_truncation": 0,
+      "n_transport_lost": 0,
+      "n_api_refusal": 0,
+      "n_unknown_stop_reason_drops": 0,
+      "parse_fail_rate": 0.0,
+      "stop_reason_tally": {
+        "end_turn": 55
+      },
+      "waived": false
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 2048,
+  "n_total_draws": 110,
+  "parse_fail_threshold": 0.02,
+  "rubric_hash": "edd69dff30b74095"
+}

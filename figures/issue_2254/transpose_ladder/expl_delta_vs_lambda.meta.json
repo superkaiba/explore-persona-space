@@ -1,0 +1,10 @@
+{
+  "figure": "expl_delta_vs_lambda",
+  "git_commit": "ec7e7e31",
+  "git_dirty": false,
+  "inputs": [
+    "reduce/delta_score_percell.json",
+    "ladder_report.json"
+  ],
+  "scope_note": "fresh_nulls: false \u2014 clears are read against the parent's REUSED context null band (measured for other directions at matched injected norm; plan v14 \u00a75 inference-scope caveat)"
+}
