@@ -365,9 +365,23 @@ phase_p2a_pilot() {
 phase_p2_gen_post() {
     echo "[phase=p2_gen_post]"
     assert_headroom p2_gen_post "$NEED_GB_GEN"
+    set +e
     # shellcheck disable=SC2086
     uv run python scripts/issue2546_gen_capture.py --arm "$ARM" --phase gen-post \
         --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
+    rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        # rc=3 (RC_GATE_FAIL) = designed PRE-SPAWN halt — the reliability
+        # whole-stratum gate (plan §13 must-ask; r10). Same epm:failure
+        # sentinel + nonzero-exit shape as phase_ge_gate — the sentinel is
+        # what routes the must-ask to the orchestrator BEFORE the §9 budget
+        # is spent (pod-side code never shells scripts/task.py).
+        emit_signal "epm:failure" "gen-post-fail-a$ARM" "p2_gen_post" "true" \
+            "failure_class: code — arm $ARM P2 post-side generation FAILED rc=$rc (rc=3 = RC_GATE_FAIL designed pre-spawn halt: reliability whole-stratum gate, must-ask per plan §13; gate artifact $OUT_ROOT/out/reports/rel_stratum_gate_a${ARM}_*.json + draw record in rollouts/*/_reliability_draw.json; other rc = crash)"
+        echo "[dispatch2546] FATAL: p2_gen_post rc=$rc" >&2
+        exit "$rc"
+    fi
     emit_signal "epm:progress" "gen-post-a$ARM" "p2_gen_post" "false" \
         "arm $ARM post-side generation complete (rollout text uploaded pre-reduction); out_root=$OUT_ROOT"
 }
@@ -375,9 +389,20 @@ phase_p2_gen_post() {
 phase_p3_gen_short() {
     echo "[phase=p3_gen_short]"
     assert_headroom p3_gen_short "$NEED_GB_SHORT"
+    set +e
     # shellcheck disable=SC2086
     uv run python scripts/issue2546_gen_capture.py --arm "$ARM" --phase gen-short \
         --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
+    rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        # Same designed-halt routing as phase_p2_gen_post (rc=3 = the r10
+        # reliability whole-stratum gate; other rc = crash).
+        emit_signal "epm:failure" "gen-short-fail-a$ARM" "p3_gen_short" "true" \
+            "failure_class: code — arm $ARM P3 short-side generation FAILED rc=$rc (rc=3 = RC_GATE_FAIL designed pre-spawn halt: reliability whole-stratum gate, must-ask per plan §13; gate artifact $OUT_ROOT/out/reports/rel_stratum_gate_a${ARM}_*.json + draw record in rollouts/*/_reliability_draw.json; other rc = crash)"
+        echo "[dispatch2546] FATAL: p3_gen_short rc=$rc" >&2
+        exit "$rc"
+    fi
     emit_signal "epm:progress" "gen-short-a$ARM" "p3_gen_short" "false" \
         "arm $ARM short-side generation complete; out_root=$OUT_ROOT"
 }

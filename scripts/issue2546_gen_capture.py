@@ -555,6 +555,138 @@ def _rel_stratum_key(c: str, r: dict, population: str) -> str:
         ) from e
 
 
+# The TWO registered NECESSITY strata per arm (plan v4 §4.1 corpus-table
+# `stratum` column) — the grain P5's trajectory fits ("2 strata per arm") and
+# the per-stratum noise ceilings read. The r10 reconciler disposition adopts
+# this NARROW grain for the runtime whole-stratum must-ask (plan §4.1:104
+# "dropping a whole STRATUM remains must-ask, §13"; §13 lists "a stratum" on
+# the must-ask roster). A reliability-draw quota key is CELL/BIN grain
+# (§4.1:104's cell-vs-stratum distinction): a SINGLE missing key is ordinary
+# runtime attrition — WARN + `_reliability_draw.json` record, never gated.
+NECESSITY_STRATA = ("needs-reasoning", "no-reasoning")
+
+
+class ReliabilityStratumEliminated(RuntimeError):
+    """An entire registered necessity stratum lost ALL survivors at runtime.
+
+    Raised by run_generation PRE-SPAWN (before any work file / worker
+    launch), so the plan-§13 must-ask lands BEFORE the §9 generation budget
+    is spent (r10 blocker `runtime-missing-reliability-stratum-not-gated`:
+    the WARN-only report let the same invocation proceed straight to
+    spawn_workers). Phase drivers map this to RC_GATE_FAIL (designed halt);
+    the dispatcher emits the epm:failure sentinel on the nonzero rc."""
+
+
+def rel_stratum_of_key(key: str) -> str | None:
+    """Registered necessity stratum for a reliability quota key, or None.
+
+    Key -> stratum map, derived from the plan v4 §4.1 corpus-table `stratum`
+    column (checkable against the plan — never inferred from key names):
+
+    - gsm8k_train k-bins (§4.1: k=1 -> no-reasoning; k=2-3 -> graded-only;
+      k>=4 -> needs-reasoning). Bin literals are the producer's
+      (`issue2546_stage_corpora.assign_k_bins`); the REALIZED corpora_v1
+      bundle carries k1/k2_3/k4_6/k7p with `k1_fallback_applied: false`
+      (probed from the HF manifest + gsm8k_train.jsonl, 2026-08-25). Both
+      schemes are mapped: under the pre-registered thin-k1 fallback the
+      merged `k_le2` bin carries the k=1 no-reasoning members ("merge lowest
+      bin to k<=2"), so it maps no-reasoning — the conservative direction
+      for an elimination gate (more members = harder to fire); `k3` is the
+      graded-only remainder of k=2-3.
+    - math -> needs-reasoning.
+    - contexthub `<type>_L<level>` cells (§4.1: L1 -> no-reasoning,
+      pooled-absorbed; L2 -> graded-only; L3-4 -> needs-reasoning).
+    - mmlu / arc_challenge / csqa / piqa -> no-reasoning (arc/csqa/piqa are
+      pooled-stratum-only members — still no-reasoning grain).
+
+    Graded-only keys return None: the graded panel is NOT one of the two
+    registered necessity strata, so its loss stays WARN+record. Unknown keys
+    RAISE (the r8 never-.get()-default contract: an unmapped key would be
+    silently invisible to the whole-stratum gate). gsm8k_test never reaches
+    here (excluded from reliability quotas)."""
+    if key.startswith("gsm8k_train:"):
+        k_bin = key.split(":", 1)[1]
+        by_bin: dict[str, str | None] = {
+            "k1": "no-reasoning",
+            "k_le2": "no-reasoning",  # thin-k1 fallback scheme (carries k=1)
+            "k2_3": None,  # graded-only (k=2-3)
+            "k3": None,  # graded-only remainder under the fallback scheme
+            "k4_6": "needs-reasoning",
+            "k7p": "needs-reasoning",
+        }
+        if k_bin not in by_bin:
+            raise ValueError(
+                f"unknown gsm8k_train k_bin quota key {key!r} — extend the plan-§4.1 "
+                f"key->stratum map in rel_stratum_of_key (fail-loud: an unmapped key "
+                f"would be invisible to the whole-stratum gate)"
+            )
+        return by_bin[k_bin]
+    if key.startswith("contexthub:"):
+        cell = key.split(":", 1)[1]
+        try:
+            level = int(cell.rsplit("_L", 1)[1])
+        except (IndexError, ValueError) as e:
+            raise ValueError(
+                f"malformed contexthub quota key {key!r} (expected contexthub:<type>_L<level>)"
+            ) from e
+        by_level: dict[int, str | None] = {
+            1: "no-reasoning",  # pooled-absorbed; still no-reasoning grain (§4.1)
+            2: None,  # graded-only
+            3: "needs-reasoning",
+            4: "needs-reasoning",
+        }
+        if level not in by_level:
+            raise ValueError(
+                f"unknown contexthub level in quota key {key!r} — extend the "
+                f"plan-§4.1 key->stratum map in rel_stratum_of_key"
+            )
+        return by_level[level]
+    flat: dict[str, str] = {
+        "math": "needs-reasoning",
+        "mmlu": "no-reasoning",
+        "arc_challenge": "no-reasoning",
+        "csqa": "no-reasoning",
+        "piqa": "no-reasoning",
+    }
+    if key not in flat:
+        raise ValueError(
+            f"unknown reliability quota key {key!r} — extend the plan-§4.1 "
+            f"key->stratum map in rel_stratum_of_key (fail-loud: an unmapped key "
+            f"would be invisible to the whole-stratum gate)"
+        )
+    return flat[key]
+
+
+def eliminated_registered_strata(strata: dict[str, dict]) -> dict[str, dict]:
+    """Registered necessity strata whose EXPECTED keys ALL have zero survivors.
+
+    Input: the per-key block of reliability_row_ids' report (each value
+    carries ``size`` = surviving rows and ``expected_size`` = pre-composition
+    rows). A stratum is ELIMINATED iff it has >=1 member key in the expected
+    universe AND every member key has ``size == 0``. Deliberately NARROW (the
+    r10 reconciler grain): partial thinning — some member keys missing while
+    at least one member survives — stays WARN+record (a broader gate would
+    halt a §9-budgeted phase on ordinary attrition the plan says to REPORT);
+    and a stratum with NO expected member keys cannot be eliminated (nothing
+    was registered to lose — e.g. a partial resume whose pending corpora
+    carry only the other stratum's members must never false-fire)."""
+    members: dict[str, dict[str, dict]] = {}
+    for key, s in strata.items():
+        stratum = rel_stratum_of_key(key)
+        if stratum is not None:
+            members.setdefault(stratum, {})[key] = s
+    out: dict[str, dict] = {}
+    for stratum in NECESSITY_STRATA:
+        keys = members.get(stratum, {})
+        if keys and all(v["size"] == 0 for v in keys.values()):
+            out[stratum] = {
+                "member_keys": sorted(keys),
+                "expected_rows": int(sum(v["expected_size"] for v in keys.values())),
+                "surviving_rows": 0,
+            }
+    return out
+
+
 def reliability_row_ids(
     rows_by_corpus: dict[str, list[dict]],
     total_target: int,
@@ -581,8 +713,12 @@ def reliability_row_ids(
     population cannot meet it — ``size < quota_raw``, which also catches a
     stratum at capacity with ``size == floor(quota_raw)``),
     ``missing_strata`` (zero survivors), ``redistributed_rows`` (rows
-    allocated to survivors beyond ceil(target) to keep ``total_target`` met —
-    the surfaced redistribution), and the total shortfall. A deficit is
+    allocated to survivors BEYOND their uncapped largest-remainder plan-share
+    allocation — the integer allocation total_target would realize with
+    unbounded populations — to keep ``total_target`` met; r10 fix: the r9
+    ceil-based count read 0 whenever a capped stratum's fractional REMAINDER
+    row was rerouted, e.g. raw 6.667/3.333 -> uncapped 7/3 vs realized 6/4 is
+    ONE rerouted row, not zero), and the total shortfall. A deficit is
     WARNed + persisted by the caller, never silently absorbed (r8: per-arm
     per-stratum noise ceilings are a plan deliverable)."""
     strata: dict[str, list[str]] = {}
@@ -629,7 +765,20 @@ def reliability_row_ids(
     # total by design, and its population could have met the target.
     capped = sorted(k for k in sizes if sizes[k] < raw[k])
     missing = sorted(k for k in sizes if sizes[k] == 0)
-    redistributed = sum(max(0, alloc[k] - int(np.ceil(raw[k]))) for k in alloc)
+    # Redistribution COUNT (r10 fix, redistributed-rows-fractional-undercount):
+    # compare the realized allocation against the UNCAPPED largest-remainder
+    # integer allocation (floor + one remainder row to the largest fractional
+    # parts — the allocation total_target realizes with unbounded populations).
+    # The r9 `alloc - ceil(raw)` form undercounted fractional rerouting: with
+    # raw 6.667/3.333 and the 6.667-stratum capped at 6, the realized 6/4 vs
+    # uncapped 7/3 is ONE genuinely rerouted row, yet ceil read 0. Same
+    # fractional-remainder tie-break order as the capped allocation above
+    # (stable sort over the same dict), so integer-raw cases are unchanged.
+    uncapped = {k: int(raw[k]) for k in raw}
+    frac_order = sorted(raw, key=lambda k: raw[k] - int(raw[k]), reverse=True)
+    for k in frac_order[: total_target - sum(uncapped.values())]:
+        uncapped[k] += 1
+    redistributed = sum(max(0, alloc[k] - uncapped[k]) for k in alloc)
     shortfall = total_target - len(picked)
     report = {
         "total_target": total_target,
@@ -654,8 +803,8 @@ def reliability_row_ids(
             "[rel-draw] quota shortfall: picked %d of target %d — capped strata %s "
             "(realized pick below the expected-universe target), missing strata %s "
             "(zero survivors after the overlong drop), %d rows redistributed to "
-            "survivors beyond their targets — recorded in _reliability_draw.json "
-            "against the plan §4.2 quotas",
+            "survivors beyond their uncapped plan-share allocation — recorded in "
+            "_reliability_draw.json against the plan §4.2 quotas",
             len(picked),
             total_target,
             capped or "none",
@@ -2134,8 +2283,9 @@ def _merge_reliability_draw(path: Path, new_draw: dict) -> dict:
     combined_strata: dict[str, dict] = {}
     for i, d in enumerate(draws):
         for k, v in d.get("strata", {}).items():
-            # Stratum keys are corpus-scoped: "gsm8k_train:k7plus" /
-            # "contexthub:deductive_L4" / a flat corpus name.
+            # Stratum keys are corpus-scoped: "gsm8k_train:k7p" /
+            # "contexthub:deductive_L4" / a flat corpus name (bin literals =
+            # the producer's assign_k_bins; realized bundle: k1/k2_3/k4_6/k7p).
             if owner.get(k.split(":", 1)[0]) == i:
                 combined_strata[k] = v
     return {
@@ -2226,6 +2376,51 @@ def run_generation(
             f"missing {rel_report['missing_strata'] or 'none'})",
             flush=True,
         )
+        # PRE-SPAWN whole-stratum gate (r10 blocker
+        # runtime-missing-reliability-stratum-not-gated): the partial-thinning
+        # WARN + record above stay the only response to cell/bin-grain
+        # attrition (plan §4.1:104), but a runtime elimination of an ENTIRE
+        # registered necessity stratum is the maximal below-floor deviation —
+        # must-ask per §13 ("never below the §4.1 floor-derived draws";
+        # "a stratum" on the must-ask roster) — and must land BEFORE the §9
+        # generation budget is spent. Ordering: the durable draw record + WARN
+        # persist FIRST (the must-ask's evidence), then the gate halts before
+        # any work file is written or spawn_workers is called. The dispatcher
+        # maps the phase's RC_GATE_FAIL exit to the epm:failure sentinel.
+        eliminated = eliminated_registered_strata(rel_report["strata"])
+        if eliminated:
+            gate_path = (
+                out_root / "out" / "reports" / f"rel_stratum_gate_a{arm.arm}_{side.side}.json"
+            )
+            _atomic_write_json(
+                gate_path,
+                {
+                    "eliminated": eliminated,
+                    "arm": arm.arm,
+                    "side": side.side,
+                    "stage": side.stage,
+                    "rel_total": rel_total,
+                    "strata": rel_report["strata"],
+                    "plan_ref": "plan v4 §4.1 stratum column; §13 must-ask roster ('a stratum')",
+                    "repro": repro_meta(args.phase),
+                },
+            )
+            detail = "; ".join(
+                f"{s}: member keys {v['member_keys']} — {v['expected_rows']} expected rows, "
+                f"0 surviving"
+                for s, v in sorted(eliminated.items())
+            )
+            print(
+                f"[rel-stratum-gate] {side.stage}: registered necessity stratum eliminated "
+                f"({detail}) — designed pre-spawn halt; gate artifact {gate_path}",
+                flush=True,
+            )
+            raise ReliabilityStratumEliminated(
+                f"{side.stage}: runtime elimination of registered necessity strata "
+                f"{sorted(eliminated)} ({detail}) — dropping a whole stratum is must-ask "
+                f"(plan §13); halting BEFORE spawn_workers so the §9 budget is not spent; "
+                f"gate artifact: {gate_path}; draw record: {rec_path}"
+            )
     all_rows = [r for c in sorted(composed) for r in composed[c]]
     work_dir = out_root / "work" / f"{args.phase}_{side.side}"
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -2939,7 +3134,14 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
     gen_reports: dict[str, dict] = {}
     for side in sides:
         rel_total = 8 if side.post_like else 0  # reliability-rung exercise (plan §4.2 P1)
-        run_generation(args, arm, side, rows, out_root, rel_total, num_workers=1)
+        try:
+            run_generation(args, arm, side, rows, out_root, rel_total, num_workers=1)
+        except ReliabilityStratumEliminated as e:
+            # Smoke-unconditional by design (zero-survivor is scale-free, not
+            # production-n-calibrated): a whole-stratum elimination at smoke
+            # scale is the same render/budget rig defect production would hit.
+            print(f"[rel-stratum-gate] p1_smoke designed halt (rc={RC_GATE_FAIL}): {e}", flush=True)
+            return RC_GATE_FAIL
         mode = effective_parse_mode(side, args.prefill_fallback)
         parses = []
         for c in rows:
@@ -3146,7 +3348,13 @@ def main(argv: list[str] | None = None) -> int:
         phase_line("p2_gen_post_rig")
         side = post_side(arm)
         rel = 0 if args.smoke else REL_TOTAL_POST[arm.arm]
-        run_generation(args, arm, side, rows, out_root, rel, num_workers)
+        try:
+            run_generation(args, arm, side, rows, out_root, rel, num_workers)
+        except ReliabilityStratumEliminated as e:
+            print(
+                f"[rel-stratum-gate] p2_gen_post designed halt (rc={RC_GATE_FAIL}): {e}", flush=True
+            )
+            return RC_GATE_FAIL
         upload_stage(out_root, side.stage, args.skip_upload, smoke=bool(args.smoke))
         upload_stage(out_root, f"reliability_a{arm.arm}", args.skip_upload, smoke=bool(args.smoke))
         upload_stage(out_root, f"regen16k_a{arm.arm}", args.skip_upload, smoke=bool(args.smoke))
@@ -3155,7 +3363,14 @@ def main(argv: list[str] | None = None) -> int:
         phase_line("p3_gen_short_rig")
         side = short_side(arm)
         rel = 0 if args.smoke else REL_TOTAL_SHORT
-        run_generation(args, arm, side, rows, out_root, rel, num_workers)
+        try:
+            run_generation(args, arm, side, rows, out_root, rel, num_workers)
+        except ReliabilityStratumEliminated as e:
+            print(
+                f"[rel-stratum-gate] p3_gen_short designed halt (rc={RC_GATE_FAIL}): {e}",
+                flush=True,
+            )
+            return RC_GATE_FAIL
         upload_stage(out_root, side.stage, args.skip_upload, smoke=bool(args.smoke))
         upload_stage(out_root, f"reliability_a{arm.arm}", args.skip_upload, smoke=bool(args.smoke))
         upload_stage(out_root, f"regen16k_a{arm.arm}", args.skip_upload, smoke=bool(args.smoke))

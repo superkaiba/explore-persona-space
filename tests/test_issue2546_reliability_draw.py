@@ -29,6 +29,25 @@ pins Blocker B (the public ``--parser-selftest`` mode survives the
 cumulative draw history whose combined view reconstructs the final realized
 allocation across partial resumes).
 
+Round 10 (the binding r9 reconciler disposition):
+``TestRegisteredStratumGate`` pins the BLOCKER fix
+(runtime-missing-reliability-stratum-not-gated) — a runtime elimination of an
+ENTIRE registered necessity stratum (plan v4 §4.1 stratum column:
+needs-reasoning / no-reasoning) halts ``run_generation`` PRE-SPAWN with a
+distinct gate artifact, while cell/bin-grain partial thinning stays WARN+record
+(the negative control proving the gate is not over-broad);
+``test_callsite_threads_pre_composition_universe`` pins the PRODUCTION
+call-site threading of ``expected_rows_by_corpus=pending`` (r9 REQUIRE-NOW:
+a pending->composed refactor would silently resurrect r9 Blocker A with every
+function-grain test green); and
+``test_at_capacity_stratum_below_fractional_target_is_flagged`` gains the
+``redistributed_rows`` fractional-reroute assert (r9 REQUIRE-NOW: the
+ceil-based count read 0 on a genuinely rerouted remainder row). k-bin fixture
+literals are the PRODUCER's (``issue2546_stage_corpora.assign_k_bins``;
+realized corpora_v1 bundle probed 2026-08-25: k1/k2_3/k4_6/**k7p**,
+``k1_fallback_applied: false`` — the earlier ``k7plus`` fixture literal never
+existed in the staged bundle).
+
 The tokenizer is faked ONLY at the external boundary, signature-conformant
 (a real class mirroring the two call surfaces ``compose_prompts`` uses —
 never a bare Mock; code-style.md "one production-body test per seam-stubbed
@@ -39,6 +58,7 @@ production body.
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
@@ -56,7 +76,7 @@ import issue2546_gen_capture as G  # noqa: E402
 # prompt_last read point. Used VERBATIM — no test-local SideSpec drift.
 POST_A1 = G.ARMS[1].sides[0]
 
-K_BINS = ("k1", "k2_3", "k4_6", "k7plus")
+K_BINS = ("k1", "k2_3", "k4_6", "k7p")  # producer literals (assign_k_bins; realized bundle)
 CH_CELLS = tuple((t, lv) for t in ("deductive", "abductive") for lv in (1, 2, 3, 4))
 
 
@@ -145,9 +165,62 @@ def _mmlu_row(i: int) -> dict:
     }
 
 
+def _math_row(i: int) -> dict:
+    return {
+        "row_id": f"math:{i:04d}",
+        "corpus": "math",
+        "user_text": f"math problem {i} with a short statement",
+        "question": f"math problem {i} with a short statement",
+        "gold_answer": "7",
+        "in_arm12": True,
+        "in_arm3": True,
+    }
+
+
 def _compose(rows_by_corpus: dict, side=POST_A1) -> tuple[dict, dict]:
     tok = TinyTok()
     return G.compose_prompts(tok, tok, side, rows_by_corpus, False)
+
+
+class _StopAtWorkers(RuntimeError):
+    """Raised by the spawn_workers boundary fake: everything BEFORE it is the
+    production run_generation body (the probe's stop line). Tests assert BOTH
+    directions — spawn reached (the fake appended + raised) and spawn NOT
+    reached (the r10 pre-spawn gate halted first)."""
+
+
+def _patch_run_generation_boundaries(monkeypatch, spawn_calls: list[str]) -> None:
+    """Fake ONLY run_generation's external boundaries — HF revision resolve,
+    generation-config stop ids, the network tokenizer load, the GPU worker
+    fan-out — each with a def mirroring the real signature (code-style.md
+    "one production-body test per seam-stubbed function": never a bare Mock).
+    ``spawn_calls`` records every spawn_workers entry BEFORE the stop raise,
+    so a test can assert the r10 gate halted PRE-spawn (list stays empty)."""
+    import transformers
+
+    def fake_resolve_revision(model: str, out_root: Path) -> str:
+        return "test-revision"
+
+    def fake_resolve_stop_ids(model: str, revision: str | None) -> list[int]:
+        return [151645]
+
+    def fake_from_pretrained(model, *, revision=None, **kwargs):
+        return TinyTok()
+
+    def fake_spawn_workers(script_args: list, work_files: list, out_root_: Path, tag: str) -> None:
+        spawn_calls.append(tag)
+        raise _StopAtWorkers(tag)
+
+    monkeypatch.setattr(G, "resolve_revision", fake_resolve_revision)
+    monkeypatch.setattr(G, "resolve_stop_ids", fake_resolve_stop_ids)
+    monkeypatch.setattr(G, "spawn_workers", fake_spawn_workers)
+    monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", fake_from_pretrained)
+
+
+def _rungen_args() -> argparse.Namespace:
+    return argparse.Namespace(
+        smoke=True, decode_fallback=False, prefill_fallback=False, phase="p1_smoke"
+    )
 
 
 class TestReliabilityDrawOverComposedRows:
@@ -301,45 +374,19 @@ class TestRunGenerationEmitsDrawRecord:
         network tokenizer, the GPU worker fan-out), each with a def mirroring
         the real signature (code-style.md: never a bare Mock). The probe stops
         AT spawn_workers; everything before it is the production body."""
-        import argparse
-        import json
-
-        import transformers
-
         side = POST_A1
         out_root = tmp_path / "out"
+        spawn_calls: list[str] = []
+        _patch_run_generation_boundaries(monkeypatch, spawn_calls)
 
-        def fake_resolve_revision(model: str, out_root: Path) -> str:
-            return "test-revision"
-
-        def fake_resolve_stop_ids(model: str, revision: str | None) -> list[int]:
-            return [151645]
-
-        def fake_from_pretrained(model, *, revision=None, **kwargs):
-            return TinyTok()
-
-        class _StopAtWorkers(RuntimeError):
-            pass
-
-        def fake_spawn_workers(
-            script_args: list, work_files: list, out_root_: Path, tag: str
-        ) -> None:
-            raise _StopAtWorkers(tag)
-
-        monkeypatch.setattr(G, "resolve_revision", fake_resolve_revision)
-        monkeypatch.setattr(G, "resolve_stop_ids", fake_resolve_stop_ids)
-        monkeypatch.setattr(G, "spawn_workers", fake_spawn_workers)
-        monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", fake_from_pretrained)
-
-        args = argparse.Namespace(
-            smoke=True, decode_fallback=False, prefill_fallback=False, phase="p1_smoke"
-        )
+        args = _rungen_args()
         rows = {
             "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(8)],
             "contexthub": [_ch_row(i, *CH_CELLS[i % 8]) for i in range(8)],
         }
         with pytest.raises(_StopAtWorkers):
             G.run_generation(args, G.ARMS[1], side, rows, out_root, rel_total=8, num_workers=1)
+        assert len(spawn_calls) == 1  # the healthy path DID reach the worker fan-out
 
         # The fix-engaged signal line (crash-fix-rounds.md element 1), printed
         # by the block immediately downstream of the formerly-crashing call.
@@ -368,6 +415,54 @@ class TestRunGenerationEmitsDrawRecord:
         composed_ids = {r["row_id"] for r in wf["rows"]}
         assert set(wf["rel_row_ids"]) <= composed_ids
 
+    def test_callsite_threads_pre_composition_universe(self, tmp_path, monkeypatch):
+        """r10 REQUIRE-NOW (rel-draw-callsite-threading-untested; the r9
+        reviewer's sketch): pins the PRODUCTION call-site threading inside
+        run_generation — ``expected_rows_by_corpus`` MUST be the
+        PRE-composition pending population, not the composed survivors. One
+        whole k-bin (k7p) is overlong-dropped so composed != pending: a
+        pending->composed refactor at the call site makes the k7p stratum
+        VANISH from the persisted record (r9 Blocker A resurrected) while
+        every function-grain test stays green — the ``strata`` subscript
+        below is the assert that goes red. Doubles as the r10 gate's
+        negative control at the call-site grain: a single missing CELL/BIN
+        key only WARNs — the run still reaches spawn_workers."""
+        out_root = tmp_path / "out"
+        spawn_calls: list[str] = []
+        _patch_run_generation_boundaries(monkeypatch, spawn_calls)
+        budget = G.prompt_budget(POST_A1)
+        rows = {
+            "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(8)],
+            "contexthub": [_ch_row(i, *CH_CELLS[i % 8]) for i in range(8)],
+        }
+        for r in rows["gsm8k_train"]:
+            if r["k_bin"] == "k7p":
+                r["user_text"] = "w " * (budget + 50)
+
+        with pytest.raises(_StopAtWorkers):
+            G.run_generation(
+                args=_rungen_args(),
+                arm=G.ARMS[1],
+                side=POST_A1,
+                rows_by_corpus=rows,
+                out_root=out_root,
+                rel_total=8,
+                num_workers=1,
+            )
+        assert len(spawn_calls) == 1  # cell/bin-grain thinning NEVER halts (not over-broad)
+
+        rec_p = (
+            out_root / "rollouts" / G.stage_dirname(POST_A1.stage, True) / "_reliability_draw.json"
+        )
+        d0 = json.loads(rec_p.read_text())["draws"][0]
+        # ABSENT under an expected_rows_by_corpus=composed refactor: the
+        # dropped k-bin exists only in the PRE-composition universe.
+        s = d0["strata"]["gsm8k_train:k7p"]
+        assert s["size"] == 0
+        assert s["expected_size"] == 2
+        assert s["picked"] == 0
+        assert "gsm8k_train:k7p" in d0["missing_strata"]
+
 
 class TestExpectedUniverseAccounting:
     """r9 Blocker A: the quota universe is the PRE-composition expected
@@ -389,23 +484,23 @@ class TestExpectedUniverseAccounting:
             "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(40)],
         }
         for r in rows["gsm8k_train"]:
-            if r["k_bin"] == "k7plus":
+            if r["k_bin"] == "k7p":
                 r["user_text"] = "w " * (budget + 50)
 
         composed, report = _compose(rows)
         assert report["dropped"] == {"gsm8k_train": 10}
-        assert not any(r["k_bin"] == "k7plus" for r in composed["gsm8k_train"])
+        assert not any(r["k_bin"] == "k7p" for r in composed["gsm8k_train"])
 
         with caplog.at_level(logging.WARNING, logger="issue2546_gen_capture"):
             picked, rel_report = G.reliability_row_ids(composed, 12, expected_rows_by_corpus=rows)
 
         # The dropped stratum is retained, loud, and never sampled.
-        s = rel_report["strata"]["gsm8k_train:k7plus"]
+        s = rel_report["strata"]["gsm8k_train:k7p"]
         assert s == {"size": 0, "expected_size": 10, "quota_raw": 3.0, "alloc": 0, "picked": 0}
-        assert "gsm8k_train:k7plus" in rel_report["capped_strata"]
-        assert rel_report["missing_strata"] == ["gsm8k_train:k7plus"]
+        assert "gsm8k_train:k7p" in rel_report["capped_strata"]
+        assert rel_report["missing_strata"] == ["gsm8k_train:k7p"]
         warned = [r.getMessage() for r in caplog.records if "[rel-draw]" in r.getMessage()]
-        assert warned and "gsm8k_train:k7plus" in warned[0]
+        assert warned and "gsm8k_train:k7p" in warned[0]
 
         # Survivor targets come from the EXPECTED universe (150/600 * 12 =
         # 3.0), never renormalized (r8: 12/3 = 4.0); the missing share is
@@ -417,7 +512,7 @@ class TestExpectedUniverseAccounting:
         assert rel_report["shortfall"] == 0
         assert rel_report["redistributed_rows"] == 3
         assert len(picked) == 12
-        assert not any("k7plus" in rid for rid in picked)
+        assert not any("k7p" in rid for rid in picked)
 
     def test_at_capacity_stratum_below_fractional_target_is_flagged(self, caplog):
         """A stratum whose size EQUALS floor(quota_raw) is at capacity and
@@ -445,6 +540,13 @@ class TestExpectedUniverseAccounting:
         }
         assert len(picked) == rel_report["n_picked"] == 10
         assert rel_report["shortfall"] == 0
+        # r10 REQUIRE-NOW (redistributed-rows-fractional-undercount,
+        # orchestrator-confirmed by execution): the uncapped largest-remainder
+        # allocation is 7/3 (math carries the larger fractional part .667);
+        # the realized alloc is 6/4 — ONE row genuinely rerouted to the
+        # survivor. Pre-fix the ceil-based count read 0 here and the WARN
+        # printed "0 rows redistributed to survivors beyond their targets".
+        assert rel_report["redistributed_rows"] == 1
         # The WARN fires on the per-stratum deficit even at zero total
         # shortfall (r9 requirement: every realized deficit is loud).
         assert any("[rel-draw] quota shortfall" in r.getMessage() for r in caplog.records)
@@ -517,3 +619,201 @@ class TestCumulativeDrawRecord:
         assert merged["combined"]["strata"]["mmlu"]["picked"] == 4
         assert merged["combined"]["strata"]["math"]["picked"] == 2
         assert merged["combined"]["n_picked"] == 6
+
+
+class TestRegisteredStratumGate:
+    """r10 BLOCKER (runtime-missing-reliability-stratum-not-gated; binding
+    reconciler disposition): a runtime elimination of an ENTIRE registered
+    necessity stratum (plan v4 §4.1 stratum column: needs-reasoning /
+    no-reasoning) halts run_generation PRE-SPAWN — a distinct gate artifact +
+    ReliabilityStratumEliminated BEFORE spawn_workers, so the §13 must-ask
+    lands before the §9 budget is spent. The grain is deliberately NARROW
+    (the reconciler's reading): a reliability quota key is CELL/BIN grain and
+    a single missing key stays WARN+record (plan §4.1:104)."""
+
+    def test_key_to_stratum_map_matches_plan(self):
+        """The key->stratum map, checkable against plan §4.1 (both bin schemes
+        of issue2546_stage_corpora.assign_k_bins; the REALIZED corpora_v1
+        bundle carries k1/k2_3/k4_6/k7p with k1_fallback_applied=false —
+        probed from the HF manifest + gsm8k_train.jsonl, 2026-08-25)."""
+        f = G.rel_stratum_of_key
+        # gsm8k_train k-bins: k=1 -> no-reasoning; k=2-3 -> graded-only
+        # (None: the graded panel is NOT a registered necessity stratum);
+        # k>=4 -> needs-reasoning.
+        assert f("gsm8k_train:k1") == "no-reasoning"
+        assert f("gsm8k_train:k2_3") is None
+        assert f("gsm8k_train:k4_6") == "needs-reasoning"
+        assert f("gsm8k_train:k7p") == "needs-reasoning"
+        # The pre-registered thin-k1 fallback scheme: the merged k<=2 bin
+        # carries the k=1 no-reasoning members; k3 is the graded remainder.
+        assert f("gsm8k_train:k_le2") == "no-reasoning"
+        assert f("gsm8k_train:k3") is None
+        # contexthub: L1 no-reasoning (pooled-absorbed), L2 graded-only,
+        # L3-4 needs-reasoning.
+        assert f("contexthub:deductive_L1") == "no-reasoning"
+        assert f("contexthub:abductive_L2") is None
+        assert f("contexthub:deductive_L3") == "needs-reasoning"
+        assert f("contexthub:abductive_L4") == "needs-reasoning"
+        # Flat corpora (arc/csqa/piqa are pooled-stratum-only members —
+        # still no-reasoning grain per the §4.1 stratum column).
+        assert f("math") == "needs-reasoning"
+        for c in ("mmlu", "arc_challenge", "csqa", "piqa"):
+            assert f(c) == "no-reasoning"
+        # Unknown keys fail LOUD (the r8 never-.get()-default contract: an
+        # unmapped key would be silently invisible to the gate).
+        with pytest.raises(ValueError, match="k_bin"):
+            f("gsm8k_train:k99")
+        with pytest.raises(ValueError, match="contexthub"):
+            f("contexthub:deductive_L9")
+        with pytest.raises(ValueError, match="unknown"):
+            f("wikitext")
+
+    def test_whole_stratum_elimination_halts_pre_spawn(self, tmp_path, monkeypatch, capsys):
+        """AMPLE easy population; every expected key of the needs-reasoning
+        stratum (here: math alone) reduced to zero survivors ->
+        run_generation raises ReliabilityStratumEliminated BEFORE
+        spawn_workers, writes the distinct gate artifact, and the durable
+        draw record still persists (record-then-gate ordering). Pre-r10: the
+        WARN fired and the SAME invocation proceeded straight to
+        spawn_workers — the §13 must-ask landed only after the §9 budget."""
+        out_root = tmp_path / "out"
+        spawn_calls: list[str] = []
+        _patch_run_generation_boundaries(monkeypatch, spawn_calls)
+        budget = G.prompt_budget(POST_A1)
+        rows = {
+            "gsm8k_train": [_gsm_row(i, ("k1", "k2_3")[i % 2]) for i in range(12)],
+            "math": [_math_row(i) for i in range(8)],
+            "mmlu": [_mmlu_row(i) for i in range(8)],
+        }
+        for r in rows["math"]:
+            r["user_text"] = "w " * (budget + 50)
+
+        with pytest.raises(G.ReliabilityStratumEliminated, match="needs-reasoning"):
+            G.run_generation(
+                args=_rungen_args(),
+                arm=G.ARMS[1],
+                side=POST_A1,
+                rows_by_corpus=rows,
+                out_root=out_root,
+                rel_total=12,
+                num_workers=1,
+            )
+        # PRE-spawn: the worker fan-out (the §9 budget) was never engaged,
+        # and no work files were composed for the halted side.
+        assert spawn_calls == []
+        assert not (out_root / "work").exists()
+
+        gate_p = out_root / "out" / "reports" / "rel_stratum_gate_a1_post.json"
+        gate = json.loads(gate_p.read_text())
+        assert sorted(gate["eliminated"]) == ["needs-reasoning"]
+        assert gate["eliminated"]["needs-reasoning"] == {
+            "member_keys": ["math"],
+            "expected_rows": 8,
+            "surviving_rows": 0,
+        }
+        assert gate["plan_ref"].startswith("plan v4 §4.1")
+        assert gate["repro"]["task"] == 2546
+        # Record-then-gate ordering: the draw record (the must-ask's
+        # evidence) persisted BEFORE the halt.
+        rec_p = (
+            out_root / "rollouts" / G.stage_dirname(POST_A1.stage, True) / "_reliability_draw.json"
+        )
+        d0 = json.loads(rec_p.read_text())["draws"][0]
+        assert d0["strata"]["math"]["size"] == 0
+        assert d0["strata"]["math"]["expected_size"] == 8
+        assert d0["strata"]["math"]["alloc"] == 0
+        assert d0["strata"]["math"]["picked"] == 0
+        assert d0["missing_strata"] == ["math"]
+        printed = capsys.readouterr().out
+        assert "[rel-stratum-gate]" in printed
+        assert "designed pre-spawn halt" in printed
+
+    def test_multiple_missing_keys_without_elimination_stay_warn_only(
+        self, tmp_path, monkeypatch, caplog
+    ):
+        """NEGATIVE CONTROL (the too-broad direction is a failure too): TWO
+        missing cell/bin keys spanning the needs-reasoning stratum — k7p AND
+        contexthub deductive_L3 both at zero survivors — while sibling member
+        keys (k4_6, deductive_L4, abductive_L3/L4) survive, is ordinary
+        runtime attrition per plan §4.1:104: WARN + record, and the run
+        PROCEEDS to spawn_workers. A gate keyed on 'any missing key' would
+        wrongly halt this §9-budgeted phase."""
+        out_root = tmp_path / "out"
+        spawn_calls: list[str] = []
+        _patch_run_generation_boundaries(monkeypatch, spawn_calls)
+        budget = G.prompt_budget(POST_A1)
+        rows = {
+            "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(8)],
+            "contexthub": [_ch_row(i, *CH_CELLS[i % 8]) for i in range(8)],
+        }
+        for r in rows["gsm8k_train"]:
+            if r["k_bin"] == "k7p":
+                r["user_text"] = "w " * (budget + 50)
+        for r in rows["contexthub"]:
+            if (r["ch_type"], r["level"]) == ("deductive", 3):
+                r["user_text"] = "w " * (budget + 50)
+
+        with (
+            caplog.at_level(logging.WARNING, logger="issue2546_gen_capture"),
+            pytest.raises(_StopAtWorkers),
+        ):
+            G.run_generation(
+                args=_rungen_args(),
+                arm=G.ARMS[1],
+                side=POST_A1,
+                rows_by_corpus=rows,
+                out_root=out_root,
+                rel_total=8,
+                num_workers=1,
+            )
+        assert len(spawn_calls) == 1  # partial thinning NEVER halts
+        warned = [r.getMessage() for r in caplog.records if "[rel-draw]" in r.getMessage()]
+        assert warned and "gsm8k_train:k7p" in warned[0]
+        assert "contexthub:deductive_L3" in warned[0]
+        assert not (out_root / "out" / "reports" / "rel_stratum_gate_a1_post.json").exists()
+
+    def test_graded_only_or_absent_membership_never_gates(self):
+        """Pure-function grain, two non-firing shapes: (a) losing EVERY
+        graded-only key (gsm8k k2_3 + contexthub L2) eliminates NO registered
+        necessity stratum — the graded panel is not one of the two (plan
+        §4.1); (b) a universe with NO member keys of a stratum (a partial
+        resume whose pending corpora carry only the other stratum) cannot
+        'eliminate' it — nothing was registered to lose."""
+        strata = {
+            "gsm8k_train:k1": {"size": 5, "expected_size": 5},
+            "gsm8k_train:k2_3": {"size": 0, "expected_size": 5},
+            "gsm8k_train:k4_6": {"size": 5, "expected_size": 5},
+            "contexthub:deductive_L2": {"size": 0, "expected_size": 4},
+            "math": {"size": 5, "expected_size": 5},
+            "mmlu": {"size": 5, "expected_size": 5},
+        }
+        assert G.eliminated_registered_strata(strata) == {}
+        # (b): pending = {mmlu} only (needs-reasoning has zero member keys).
+        assert G.eliminated_registered_strata({"mmlu": {"size": 4, "expected_size": 4}}) == {}
+
+    def test_no_reasoning_stratum_elimination_detected(self):
+        """Pure-function grain, the OTHER registered stratum: every
+        no-reasoning member key at zero survivors (k1 + contexthub L1 + the
+        four flat MCQ corpora) while needs-reasoning survives."""
+        strata = {
+            "gsm8k_train:k1": {"size": 0, "expected_size": 5},
+            "gsm8k_train:k4_6": {"size": 5, "expected_size": 5},
+            "contexthub:abductive_L1": {"size": 0, "expected_size": 4},
+            "math": {"size": 5, "expected_size": 5},
+            "mmlu": {"size": 0, "expected_size": 8},
+            "arc_challenge": {"size": 0, "expected_size": 8},
+            "csqa": {"size": 0, "expected_size": 8},
+            "piqa": {"size": 0, "expected_size": 8},
+        }
+        out = G.eliminated_registered_strata(strata)
+        assert sorted(out) == ["no-reasoning"]
+        assert out["no-reasoning"]["member_keys"] == [
+            "arc_challenge",
+            "contexthub:abductive_L1",
+            "csqa",
+            "gsm8k_train:k1",
+            "mmlu",
+            "piqa",
+        ]
+        assert out["no-reasoning"]["expected_rows"] == 41
+        assert out["no-reasoning"]["surviving_rows"] == 0
