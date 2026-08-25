@@ -1,0 +1,553 @@
+{
+  "commit": "26fb97ab+dirty",
+  "render_id": "768781d5b61b4b54",
+  "git_commit": "26fb97abf655d721a08655bfdc1f833782544f46",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2564_shift_bars.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue2564_sep_ratio_plot.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/awaiting_promotion/1901/events.jsonl",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2568/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2564_shift_bars.py",
+  "created": "2026-08-25T16:53:21Z",
+  "figsize": [
+    11.2,
+    7.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 4.467316384717808,
+      "error": 0.18572291661808737,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 8.979145573325141,
+      "error": 0.5852939608295227,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 13.304008136329148,
+      "error": 1.6412185182512253,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 20.423941204391333,
+      "error": 1.8548663859306078,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 20.43511996289614,
+      "error": 1.7366886710611311,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 32.148951057995035,
+      "error": 1.2783557169327935,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 38.15012143594861,
+      "error": 2.4399480581605353,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 47.18375212363655,
+      "error": 2.6803267966114,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 4.724816730522974,
+      "error": 0.5233272237173425,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.361706146330263,
+      "error": 0.5125986299576901,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 14.17667746850374,
+      "error": 1.248081516304068,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 25.439798772795623,
+      "error": 2.2081458263470033,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 19.59806135907762,
+      "error": 1.2684944641978824,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 26.345384841079472,
+      "error": 1.3322645122385222,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.53389071513429,
+      "error": 0.27146213783232653,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 48.965023435519925,
+      "error": 1.4994843484054456,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 4.213900451303148,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 8.176489959957951,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 12.293076322266986,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 17.63449490364192,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 19.43603193422315,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 31.12151076107942,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 36.32760210632957,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 43.96426218728475,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 4.585346284539323,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.347077881616997,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 15.575513358769436,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 21.344227675503134,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 22.90940927634541,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 33.67822219494501,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 41.20749822265064,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 49.32491578050755,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 3.952615725287904,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 8.800862369267293,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 12.615878025854684,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 21.67658968227901,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 18.921725894402726,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 24.840518230076054,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.266835924232694,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 48.02900749281763,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 4.999270172722589,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.826059629182673,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 15.11204105846282,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 26.092881334973015,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 21.45871482279849,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 27.505047254553098,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.80976019989735,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 51.02797618962852,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "user fact",
+      "ratio\nmapped / real": 0.938568584083826,
+      "error": 0.10096169135207628,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "lexical marker",
+      "ratio\nmapped / real": 1.0498867020649567,
+      "error": 0.042367306744441446,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "user profile",
+      "ratio\nmapped / real": 1.0231378271222564,
+      "error": 0.05683093520966914,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "format",
+      "ratio\nmapped / real": 1.2741877206891514,
+      "error": 0.11079857762240641,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "content constraint",
+      "ratio\nmapped / real": 0.9065243848018155,
+      "error": 0.03769250177528466,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "question topic",
+      "ratio\nmapped / real": 0.8094788920457068,
+      "error": 0.023230499336661103,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "persona",
+      "ratio\nmapped / real": 1.1634059424943233,
+      "error": 0.06686986562844,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "register",
+      "ratio\nmapped / real": 1.0362050410874497,
+      "error": 0.08377825542635181,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "ratio\nmapped / real": 0.8624458075204507,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "ratio\nmapped / real": 1.0098781070235052,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "ratio\nmapped / real": 0.9572678760305687,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "ratio\nmapped / real": 1.1988687880923654,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "ratio\nmapped / real": 0.8629722472878485,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "ratio\nmapped / real": 0.78656765054181,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "ratio\nmapped / real": 1.087970575493459,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "ratio\nmapped / real": 0.9875564377007552,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "ratio\nmapped / real": 1.0643691902246033,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "ratio\nmapped / real": 1.0946127205123881,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "ratio\nmapped / real": 1.070929746449907,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "ratio\nmapped / real": 1.4204659433371782,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "ratio\nmapped / real": 0.9383572508384178,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "ratio\nmapped / real": 0.8330286492151322,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "ratio\nmapped / real": 1.221710306750339,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "ratio\nmapped / real": 1.1551129485534588,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Real vs mapped answer-vector shift per change type (#2564)",
+        "ylabel": "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)",
+        "legend_labels": [
+          "real answer shift  \u2016observed \u0394\u2016",
+          "mapped answer shift  \u2016predicted \u0394\u2016"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "ylabel": "ratio\nmapped / real",
+        "xticklabels": [
+          "user fact",
+          "lexical marker",
+          "user profile",
+          "format",
+          "content constraint",
+          "question topic",
+          "persona",
+          "register"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ]
+      }
+    ],
+    "series": [
+      "real answer shift  \u2016observed \u0394\u2016",
+      "mapped answer shift  \u2016predicted \u0394\u2016"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
