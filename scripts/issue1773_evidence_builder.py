@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import resource
 import sys
 import time
@@ -41,6 +40,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM discipline)
@@ -188,15 +188,16 @@ def pass_select(args) -> int:
         )
         state["next_shard"] = i + 1
         if (i + 1) % RESERVOIR_CKPT_EVERY == 0:
-            tmp = ckpt.parent / f".tmp_{ckpt.name}"
-            np.savez(
-                tmp,
-                **{k: v for k, v in state.items() if k != "next_shard"},
-                next_shard=np.int64(state["next_shard"]),
-                fit_rows=np.concatenate(fit_rows_parts),
-                fit_ci=np.concatenate(fit_ci_parts),
-            )
-            os.replace(tmp, ckpt)
+            # Handle-form np.savez (yielded tmp ends ".tmp" — #2336 recipe edge (c)).
+            with atomic_replace(ckpt) as tmp:
+                with open(tmp, "wb") as fh:
+                    np.savez(
+                        fh,
+                        **{k: v for k, v in state.items() if k != "next_shard"},
+                        next_shard=np.int64(state["next_shard"]),
+                        fit_rows=np.concatenate(fit_rows_parts),
+                        fit_ci=np.concatenate(fit_ci_parts),
+                    )
             _log(f"[passA] checkpoint at shard {i + 1}")
 
     fit_rows = np.concatenate(fit_rows_parts) if fit_rows_parts else np.empty(0, np.int64)
@@ -305,7 +306,12 @@ def upload_selection(sel_dir: Path) -> int:
     done = sel_dir / "DONE.json"
     assert done.exists(), f"selection upload requires a completed Pass A ({done} missing)"
     local = sorted(
-        p for p in sel_dir.iterdir() if p.is_file() and not p.name.startswith((".tmp_", ".hfstage"))
+        p
+        for p in sel_dir.iterdir()
+        if p.is_file()
+        and not p.name.startswith((".tmp_", ".hfstage"))
+        # post-#2336 shared temps are non-hidden `<name>.<pid>.<uuid8>.tmp`:
+        and not p.name.endswith(".tmp")
     )
     assert local, f"no selection files under {sel_dir}"
     expected = sorted(f"{CM.HF_SELECTION_PREFIX}/{p.name}" for p in local)
@@ -323,7 +329,7 @@ def upload_selection(sel_dir: Path) -> int:
             repo_id=CM.HF_DATA_REPO,
             repo_type="dataset",
             path_in_repo=CM.HF_SELECTION_PREFIX,
-            ignore_patterns=[".tmp_*", ".hfstage*"],
+            ignore_patterns=[".tmp_*", "*.tmp", ".hfstage*"],
         ),
         what=f"selection upload ({len(local)} files)",
     )
@@ -631,11 +637,10 @@ def pass_windows(args) -> int:
                         span_rng,
                     )
                 )
-        tmp = chunk_out.parent / f".tmp_{chunk_out.name}"
-        with tmp.open("w", encoding="utf-8") as fh:
-            for r in out_rows:
-                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-        os.replace(tmp, chunk_out)
+        with atomic_replace(chunk_out) as tmp:
+            with tmp.open("w", encoding="utf-8") as fh:
+                for r in out_rows:
+                    fh.write(json.dumps(r, ensure_ascii=False) + "\n")
         done_f.write_text(json.dumps({"chunk": name, "fingerprint": fp, "n": len(out_rows)}))
         pending_upload.extend([chunk_out.name, done_f.name])
         n_done += 1

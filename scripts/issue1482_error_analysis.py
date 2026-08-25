@@ -37,6 +37,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM smoke)
@@ -1248,9 +1249,11 @@ def phase_p2_worker(args) -> None:
             "ans_n_out": np.asarray(rec["ans_n_out"], np.int16),
             "ans_all_out": np.asarray(rec["ans_all_out"], np.int8),
         }
-        tmp = shard_path.parent / f".tmp_{shard_path.name}"
-        np.savez(tmp, **{k2: v for k2, v in arrays.items() if k2 != "chunk"})
-        os.replace(tmp, shard_path)
+        # Handle-form np.savez (the yielded tmp ends ".tmp"; numpy appends ".npz"
+        # to path-typed names lacking it — #2336 recipe edge (c)).
+        with atomic_replace(shard_path) as tmp:
+            with open(tmp, "wb") as fh:
+                np.savez(fh, **{k2: v for k2, v in arrays.items() if k2 != "chunk"})
         n_done += len(rec["row_idx"])
         logger.info(
             "[p2-worker %d] shard %s: %d ctx (total %d; ans_all_out=%d)",

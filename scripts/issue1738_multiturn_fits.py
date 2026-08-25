@@ -46,6 +46,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # #847: thread caps land BEFORE numpy/torch import on the shared VM
@@ -814,10 +815,8 @@ def run_fits(args) -> int:
             _, _, payload = PF.fit_ridge_with_weights(
                 X, Y, tr, val, te, LAMBDAS, dev, args.ridge_block
             )
-            wj.parent.mkdir(parents=True, exist_ok=True)
-            tmp = wj.parent / (wj.name + ".tmp")
-            torch.save({**payload, "arm": arm, "layer": li, "assembly_fingerprint": afp}, tmp)
-            os.replace(tmp, wj)
+            with atomic_replace(wj) as tmp:
+                torch.save({**payload, "arm": arm, "layer": li, "assembly_fingerprint": afp}, tmp)
         if first_wall is None:
             first_wall = time.time() - t_cell
             logger.info(

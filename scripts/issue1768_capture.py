@@ -46,6 +46,7 @@ REPO_ROOT = SCRIPTS_DIR.parent
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # before torch: shared-VM thread caps + HF/W&B credentials
@@ -1176,9 +1177,8 @@ def _panel_own_capture(cfg: Cfg, unit_id: str, model_path: str) -> None:
         },
         "metadata": {**_meta(), "model_path": model_path, "seam_counts": seam_counts},
     }
-    tmp = out_dir / "pooled.pt.tmp"
-    torch.save(store, tmp)
-    os.replace(tmp, out_dir / "pooled.pt")
+    with atomic_replace(out_dir / "pooled.pt") as tmp:
+        torch.save(store, tmp)
     _atomic_json(
         out_dir / "manifest.json",
         {"cell": unit_id, "n_rows": len(rows), "model_path": model_path, **_meta()},
@@ -1217,9 +1217,8 @@ def _panel_tf_capture(cfg: Cfg, arm_id: str, model_path: str) -> None:
         },
         "metadata": {**_meta(), "model_path": model_path, "shared_text": True},
     }
-    tmp = out_dir / "pooled.pt.tmp"
-    torch.save(store, tmp)
-    os.replace(tmp, out_dir / "pooled.pt")
+    with atomic_replace(out_dir / "pooled.pt") as tmp:
+        torch.save(store, tmp)
 
 
 def _vintage_ok(manifest_commit: str) -> bool:
@@ -1506,18 +1505,17 @@ def run_delta_unit(cfg: Cfg, arm_id: str) -> None:
         {li: t[0::2].mean(dim=0) for li, t in pooled["response"].items()} if halves else None
     )
     tbar_odd = {li: t[1::2].mean(dim=0) for li, t in pooled["response"].items()} if halves else None
-    tmp = out_dir / "tbar.pt.tmp"
-    torch.save(
-        {
-            "tbar": tbar,
-            "tbar_even": tbar_even,
-            "tbar_odd": tbar_odd,
-            "n_rows": len(rows),
-            "meta": {**_meta(), **meta},
-        },
-        tmp,
-    )
-    os.replace(tmp, out_dir / "tbar.pt")
+    with atomic_replace(out_dir / "tbar.pt") as tmp:
+        torch.save(
+            {
+                "tbar": tbar,
+                "tbar_even": tbar_even,
+                "tbar_odd": tbar_odd,
+                "n_rows": len(rows),
+                "meta": {**_meta(), **meta},
+            },
+            tmp,
+        )
 
 
 # ── p6: scoped A4 re-extraction (split gen / judge / reduce; plan §9 Must-Fix) ─
@@ -1924,19 +1922,18 @@ def run_rb_reduce_unit(cfg: Cfg, arm_id: str) -> dict:
     )
     rb_dir = out_dir / "r_b"
     rb_dir.mkdir(parents=True, exist_ok=True)
-    tmp = rb_dir / f"{trait}.pt.tmp"
-    torch.save(
-        {  # schema parity with issue779_extract_rb (rb_stability reads obj["r_b"])
-            "trait": trait,
-            "r_b": reduced["r_b"],
-            "layers": acts_blob["layers"],
-            "counts": reduced["counts"],
-            "smoke": cfg.smoke,
-            "metadata": _meta(),
-        },
-        tmp,
-    )
-    os.replace(tmp, rb_dir / f"{trait}.pt")
+    with atomic_replace(rb_dir / f"{trait}.pt") as tmp:
+        torch.save(
+            {  # schema parity with issue779_extract_rb (rb_stability reads obj["r_b"])
+                "trait": trait,
+                "r_b": reduced["r_b"],
+                "layers": acts_blob["layers"],
+                "counts": reduced["counts"],
+                "smoke": cfg.smoke,
+                "metadata": _meta(),
+            },
+            tmp,
+        )
     _atomic_json(rb_dir / f"{trait}_counts.json", reduced["counts"])
     gen_meta = json.loads((out_dir / "gen_done.json").read_text())
     out = {"trait": trait, "model_path": gen_meta["model_path"], **_meta()}
