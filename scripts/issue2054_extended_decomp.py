@@ -55,6 +55,7 @@ Usage (production):
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # thread caps + HF/creds BEFORE torch import (code-style.md)
@@ -334,13 +335,10 @@ def run_fold(units: dict[str, dict], mom: list[dict], f: int, k: int, work: Path
             f"m1={metrics['m1']['r2']:+.4f} direct={metrics['direct']['r2']:+.4f}"
         )
 
-    work.mkdir(parents=True, exist_ok=True)
-    npz_tmp = work / f"fold_{f}.e2.tmp.npz"
-    np.savez(npz_tmp, **{k_: v for k_, v in e2_store.items()})
-    npz_tmp.replace(work / f"fold_{f}.e2.npz")
-    jtmp = work / f"fold_{f}.tmp.json"
-    jtmp.write_text(json.dumps(fold_out, indent=1), encoding="utf-8")
-    jtmp.replace(work / f"fold_{f}.json")
+    with atomic_replace(work / f"fold_{f}.e2.npz") as npz_tmp, npz_tmp.open("wb") as fh:
+        np.savez(fh, **{k_: v for k_, v in e2_store.items()})
+    with atomic_replace(work / f"fold_{f}.json") as jtmp:
+        jtmp.write_text(json.dumps(fold_out, indent=1), encoding="utf-8")
     _log(f"[extdecomp] fold {f} DONE ({time.time() - t_fold:.1f}s)")
 
 
