@@ -135,6 +135,15 @@ STREAM_FLUSH_EVERY = int(os.environ.get("EPM_I2476_STREAM_FLUSH_EVERY", "1"))
 # m-round store @ the pinned revision (plan §10 HF reuse rows; #1345 revision-pin rule)
 M_STORE_PREFIX = "issue1482_error_analysis/analysis_tensors/matryoshka_tier/store"
 M_STORE_REVISION = "8b82eb975326774003512db1e7e542491edcd056"
+
+# The lineage data-repo pin for the P1 assembly inputs (capture chunks + pass_b):
+# the #2476 post-run pin (issue2476_floor_sweep.py:83 / issue2476_perrow_views.py:68),
+# threaded through the chunk listing, every chunk download, the pass_b fetch, and
+# the stream-resume fingerprint (k200 plan v11 B1 — a future upload to the capture
+# prefix must never silently change the assembled pool; pin == HEAD content as of
+# the 2026-08-24 identity probe, so this is a correctness invariant, not a content
+# change).
+DATA_REPO_REVISION = "89cfa76cdcd4207d95c1fec1c3131f36e21beec0"
 COMMITTED_SPLIT_1482 = PROJECT_ROOT / "eval_results" / "issue_1482" / "split_1482.json"
 COMMITTED_M_SPLIT = (
     PROJECT_ROOT / "eval_results" / "issue_1482" / "matryoshka_tier" / "m_split.json"
@@ -311,10 +320,26 @@ def _regime(args) -> dict:
             "m_s_score_sha256": m_committed["realized"]["s_score_sha256"],
         },
     }
-    cfg_hash = hashlib.sha256(json.dumps(base, sort_keys=True).encode()).hexdigest()[:16]
+    # --sae-k joins the HASH INPUT ONLY at a non-default RESOLVED budget
+    # (k200 code-review r8 U3): the parent's + floor-sweep's pre-diff k=100
+    # manifests were minted WITHOUT the key, so hashing a default-`0` (or an
+    # explicit `100`, which resolves to the same production instrument) would
+    # reject every banked k=100 out-root as a "different config" on any future
+    # resume/re-run. Default => key omitted from the hash, hash byte-identical
+    # to pre-diff; k=200 => key present, hash distinct (a k=200 run can never
+    # resume a k=100 root). Pinned by tests/test_issue2476_k200.py
+    # (legacy-parity constant + flip tests).
+    hash_base = dict(base)
+    if _sae_k(args) != SAE_K:
+        hash_base["sae_k"] = _sae_k(args)
+    cfg_hash = hashlib.sha256(json.dumps(hash_base, sort_keys=True).encode()).hexdigest()[:16]
     prov = git_provenance()
     code_sha = prov.commit_sha_full or prov.commit_sha or "unknown"
-    return {**base, "config_hash": cfg_hash, "code_sha": code_sha}
+    # r10 NIT (reconciler): the RETURNED manifest ALWAYS records the RESOLVED
+    # budget (sae_k=100 at default) — provenance readers see the realized
+    # instrument, while the hash input above stays legacy-conditional so
+    # banked k=100 manifests resume unrejected (config_hash-keyed comparison).
+    return {**base, "sae_k": _sae_k(args), "config_hash": cfg_hash, "code_sha": code_sha}
 
 
 def _wipe_stale(phase: str, stale_paths) -> None:
@@ -404,11 +429,15 @@ def _capture_chunk_names(args) -> list[str]:
             f.path.rsplit("/", 1)[-1]
             # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
             for f in HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=EA.CAPTURE_PREFIX, repo_type="dataset", recursive=True
+                C.HF_DATA_REPO,
+                path_in_repo=EA.CAPTURE_PREFIX,
+                repo_type="dataset",
+                recursive=True,
+                revision=DATA_REPO_REVISION,  # B1 seam i: list at the lineage pin
             )
             if getattr(f, "size", None) is not None and f.path.endswith(".pt")
         ),
-        what=f"capture chunk listing ({EA.CAPTURE_PREFIX})",
+        what=f"capture chunk listing ({EA.CAPTURE_PREFIX} @ {DATA_REPO_REVISION[:12]})",
     )
     if not names:
         raise FileNotFoundError(f"no capture chunks under HF {EA.CAPTURE_PREFIX}")
@@ -517,11 +546,25 @@ def _assert_pinned_valtest(committed: dict) -> tuple[np.ndarray, np.ndarray, np.
     return np.asarray(r1_train, np.int64), np.asarray(val, np.int64), np.asarray(test, np.int64)
 
 
+def _pass_b_pin_sidecar(local_path: Path) -> Path:
+    """Revision-provenance sidecar beside the warm pass_b bundle (r8 U4)."""
+    return local_path.with_name(local_path.name + ".revision.json")
+
+
 def _load_pass_b_wo():
     """The pass_b bundle through the weights_only load path (fetch-if-absent
     mirrors N1G._load_pass_b_bundle's staging verbatim; the LOAD swaps
-    F._mmap_load's weights_only=False for _torch_load_wo — Codex r1 Major)."""
+    F._mmap_load's weights_only=False for _torch_load_wo — Codex r1 Major).
+
+    Warm-cache pin (k200 code-review r8 U4): a pre-existing local file enters
+    an allegedly PINNED assembly, so its provenance must be validated against
+    DATA_REPO_REVISION — the fetch path writes a revision sidecar, and warm
+    reuse REQUIRES a sidecar recording the same pin. A warm file with a
+    mismatched or absent sidecar (unknown provenance — e.g. staged by a
+    pre-B1 run at an unpinned HEAD) fails LOUD, never a silent unpinned read.
+    """
     local_path = Path(N1G.PASS_B_LOCAL)
+    sidecar = _pass_b_pin_sidecar(local_path)
     if not local_path.exists():
         from huggingface_hub import hf_hub_download
 
@@ -536,12 +579,37 @@ def _load_pass_b_wo():
                     filename=N1G.PASS_B_HF_PATH,
                     repo_type="dataset",
                     local_dir=local_path.parent,
+                    revision=DATA_REPO_REVISION,  # B1 seam iii: pass_b at the lineage pin
                 ),
                 what=f"pass_b bundle fetch ({N1G.PASS_B_HF_PATH})",
             )
         )
         if got != local_path:
             os.replace(got, local_path)
+        _write_json(
+            sidecar,
+            {
+                "revision": DATA_REPO_REVISION,
+                "path_in_repo": N1G.PASS_B_HF_PATH,
+                "repo": C.HF_DATA_REPO,
+                "size_bytes": int(local_path.stat().st_size),
+            },
+            phase="pass-b-fetch",
+        )
+    else:
+        if not sidecar.exists():
+            raise RuntimeError(
+                f"[pass_b] warm file {local_path} has NO revision sidecar ({sidecar.name}) — "
+                "unknown provenance cannot enter a pinned assembly (r8 U4). Delete the warm "
+                f"file to force a re-fetch at the pinned revision {DATA_REPO_REVISION}."
+            )
+        rec = json.loads(sidecar.read_text())
+        if rec.get("revision") != DATA_REPO_REVISION:
+            raise RuntimeError(
+                f"[pass_b] warm file {local_path} was staged at revision "
+                f"{rec.get('revision')!r} != pinned {DATA_REPO_REVISION!r} (r8 U4). Delete the "
+                "warm file + sidecar to force a re-fetch at the pin."
+            )
     b = _torch_load_wo(local_path)
     _assert_keys(b, ("layers", "cx_last", "v_x"), "pass_b bundle")
     return b
@@ -578,7 +646,11 @@ def phase_assemble(args) -> None:
     assert pb_x19.shape == pb_y19.shape == (n_pb, C.EXPECTED_HIDDEN), (pb_x19.shape, n_pb)
 
     names = _capture_chunk_names(args)
-    fp = N1M._stream_ckpt_fingerprint(LAYER_C, EA.CAPTURE_PREFIX, names)
+    # B1 seam iv: the source revision joins the stream identity — a resume cursor
+    # minted at a different pin is REFUSED (fingerprint mismatch => re-stream).
+    fp = N1M._stream_ckpt_fingerprint(
+        LAYER_C, EA.CAPTURE_PREFIX, names, revision=DATA_REPO_REVISION
+    )
     if args.max_chunks > 0:
         rows_present = _assemble_stream_smoke(args, out, stage, names, rev, pb_x19, pb_y19)
     else:
@@ -706,7 +778,12 @@ def _assemble_stream_production(
     t0 = time.time()
     for k in range(start_chunk, len(names)):
         got = Path(
-            N1M._download_chunk_with_retry(C.HF_DATA_REPO, f"{EA.CAPTURE_PREFIX}/{names[k]}", cache)
+            N1M._download_chunk_with_retry(
+                C.HF_DATA_REPO,
+                f"{EA.CAPTURE_PREFIX}/{names[k]}",
+                cache,
+                revision=DATA_REPO_REVISION,  # B1 seam ii
+            )
         )
         cx, vx, ci = _extract_chunk_l19(got)
         got.unlink()
@@ -747,7 +824,12 @@ def _assemble_stream_smoke(args, out, stage, names, rev, pb_x19, pb_y19) -> np.n
     t0 = time.time()
     for k, name in enumerate(names):
         got = Path(
-            N1M._download_chunk_with_retry(C.HF_DATA_REPO, f"{EA.CAPTURE_PREFIX}/{name}", cache)
+            N1M._download_chunk_with_retry(
+                C.HF_DATA_REPO,
+                f"{EA.CAPTURE_PREFIX}/{name}",
+                cache,
+                revision=DATA_REPO_REVISION,  # B1 seam ii (smoke stream)
+            )
         )
         cx, vx, ci = _extract_chunk_l19(got)
         got.unlink()
@@ -1909,8 +1991,21 @@ class MatryoshkaBatchTopKSAE(torch.nn.Module):
         return obj.to(device).eval()
 
 
+def _sae_k(args) -> int:
+    """Resolved SAE-c sparsity budget (--sae-k; 0 = production SAE_K = 100)."""
+    return int(args.sae_k) if int(args.sae_k) > 0 else SAE_K
+
+
+def _sae_leaf(args) -> str:
+    """SAE-c artifact leaf name: `sae_c` at the production budget, `sae_c_k<k>`
+    otherwise (k200 plan §4 Code delta 1 — a non-default-k instrument can never
+    collide with the parent's banked sae_c/, on disk or on the Hub)."""
+    k = _sae_k(args)
+    return "sae_c" if k == SAE_K else f"sae_c_k{k}"
+
+
 def _sae_out_dir(args) -> Path:
-    return args.out_root / "sae_c"
+    return args.out_root / _sae_leaf(args)
 
 
 def _maps_dir(args) -> Path:
@@ -2062,7 +2157,7 @@ def _p4_upload(args, out: Path, *, resume_skip: bool) -> None:
     up.mkdir(parents=True, exist_ok=True)
     for name in ("sae_weights.safetensors", "cfg.json", "train_log.json"):
         shutil.copy2(out / name, up / name)
-    prefix = f"{args.hf_prefix}/sae_c"
+    prefix = f"{args.hf_prefix}/{_sae_leaf(args)}"  # k-aware leaf (k200 plan §4)
     res = upload_dir_sharded(
         up,
         C.HF_DATA_REPO,
@@ -2132,7 +2227,18 @@ def phase_sae_train(args) -> None:
     if width != SAE_DICT:
         assert not production, "sub-production --sae-dict is smoke-only (plan §11 instrument width)"
         logger.warning("[sae_train] SMOKE dictionary width %d (production %d)", width, SAE_DICT)
-    model = MatryoshkaBatchTopKSAE(dict_size=width, tier_bounds=_sae_tier_bounds(width)).to(dev)
+    sae_k = _sae_k(args)
+    # Unlike --sae-dict, a non-default k IS the k200 round's production value —
+    # this membership assert is a typo fence, not a smoke gate (k200 plan §4).
+    assert sae_k in (100, 200), (
+        f"--sae-k resolved to {sae_k}: only the parent's k=100 and the #2476 "
+        "k200-census round's k=200 are registered instrument budgets"
+    )
+    if sae_k != SAE_K:
+        logger.info("[sae_train] sparsity budget k=%d (leaf %s)", sae_k, _sae_leaf(args))
+    model = MatryoshkaBatchTopKSAE(
+        dict_size=width, tier_bounds=_sae_tier_bounds(width), k=sae_k
+    ).to(dev)
     # b_dec init: seeded train-subsample mean (streamed fp64; standard SAE practice)
     rng0 = np.random.default_rng(SAE_SEED + 1)
     sub = np.sort(rng0.choice(tr_pos, size=min(65_536, len(tr_pos)), replace=False))
@@ -2704,6 +2810,19 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     }
 
 
+def _stream_fit_sum(yc, n_fit: int, chunk: int = 8192) -> np.ndarray:
+    """fp64 per-column sums over the FIRST ``n_fit`` rows of a concat(fit,
+    holdout) store. The chunk slice end is CLAMPED at ``n_fit``: numpy clamps a
+    past-the-end slice at the ARRAY end, so an unclamped final chunk
+    (``yc[s : s + chunk]``) spills ``(-n_fit) % chunk`` holdout rows into the
+    fit-side sum (#2476 k200 r3 crash-fix sibling of the census recount spill;
+    pinned by tests/test_issue2476_k200.py)."""
+    s = np.zeros(yc.shape[1], np.float64)
+    for i in range(0, n_fit, chunk):
+        s += np.asarray(yc[i : min(i + chunk, n_fit)], np.float64).sum(0)
+    return s
+
+
 def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) -> dict:
     """Arm-c SAE-c alive mask + f_true encodes (fit-side 120k + 20k holdout, ONE
     memmap) + the c19->f_true dense-input companion off ONE Gram (plan §4 P5)."""
@@ -2733,10 +2852,7 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     )
     _encode_restricted(sae, Ymm, rows_c, alive, out_mm=yc)
     yc.flush()
-    tm = np.zeros(len(alive), np.float64)
-    for s in range(0, n_fit, 8192):
-        tm += np.asarray(yc[s : s + 8192], np.float64).sum(0)
-    train_mean = tm / max(1, n_fit)
+    train_mean = _stream_fit_sum(yc, n_fit) / max(1, n_fit)
     tmp = alive_path.parent / f".tmp_{alive_path.name}"
     np.savez(
         tmp,
@@ -4714,6 +4830,14 @@ def _parse_args(argv=None):
         type=int,
         default=0,
         help="P4 SAE-c dictionary width (0 = production 65,536; sub-production = smoke-only)",
+    )
+    ap.add_argument(
+        "--sae-k",
+        type=int,
+        default=0,
+        help="P4 SAE-c sparsity budget (0 = production SAE_K = 100; the #2476 k200-census "
+        "round passes 200 — membership-asserted in phase_sae_train, regime-keyed, and the "
+        "sae_c leaf/HF prefix become sae_c_k200 so the banked k=100 instrument is untouchable)",
     )
     ap.add_argument("--n-perm", type=int, default=10_000, help="P6 tier-permutation draws")
     ap.add_argument("--n-boot", type=int, default=10_000, help="P6 feature-bootstrap draws")

@@ -161,7 +161,9 @@ DEFAULT_ORIG_DIR = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-co
 # ── data assembly (pass_b + stream-reduced n1m capture) + provenance ────────────
 
 
-def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str:
+def _download_chunk_with_retry(
+    repo: str, filename: str, local_dir: Path, revision: str | None = None
+) -> str:
     """hf_hub_download through the canonical transient-retry envelope
     (``hub.retry_transient`` = ``_retry_upload``, #1402): Retry-After-aware,
     ``EPM_HF_RETRY_BUDGET_S`` wall budget (default 1800 s — sized to outlive an
@@ -171,24 +173,41 @@ def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str
     storm class). Non-transient errors re-raise immediately; exhaustion
     re-raises fail-loud. Supersedes the legacy fixed 4-attempt (10/30/90 s)
     ladder, which a >=8-min Hub queue-full storm outlived (#1482
-    att-20260718-055220: p2 child died at attempt 4/4)."""
+    att-20260718-055220: p2 child died at attempt 4/4).
+
+    ``revision`` (OPTIONAL, #2476 k200 B1): a repo revision pin threaded into
+    hf_hub_download. Default None preserves the legacy HEAD-fetch behavior
+    byte-for-byte for every existing caller (~17 sibling scripts call this
+    positionally — shared-module compatibility, plan §4 Code delta 2)."""
     from huggingface_hub import hf_hub_download
 
     from explore_persona_space.orchestrate import hub
 
     return hub.retry_transient(
-        lambda: hf_hub_download(repo, filename=filename, repo_type="dataset", local_dir=local_dir),
+        lambda: hf_hub_download(
+            repo, filename=filename, repo_type="dataset", local_dir=local_dir, revision=revision
+        ),
         what=f"[n1m] chunk download ({repo}:{filename})",
         max_attempts=STREAM_DOWNLOAD_ATTEMPTS,
     )
 
 
-def _stream_ckpt_fingerprint(layer: int, hf_prefix: str, names: list[str]) -> str:
+def _stream_ckpt_fingerprint(
+    layer: int, hf_prefix: str, names: list[str], revision: str | None = None
+) -> str:
     """Stable fingerprint of the stream identity — (layer, hf_prefix, sorted chunk
     universe). A mismatch means the checkpoint belongs to a different run (different
-    layer/prefix, or new chunks uploaded) and is REFUSED (re-stream from scratch)."""
+    layer/prefix, or new chunks uploaded) and is REFUSED (re-stream from scratch).
+
+    ``revision`` (OPTIONAL, #2476 k200 B1): when given, the SOURCE repo revision
+    joins the hashed identity, so a resume cursor minted under one pinned
+    revision REFUSES a stream from a different one (the refusal mechanism is the
+    caller's fingerprint equality check). Default None reproduces the legacy
+    hash byte-for-byte (existing checkpoints stay valid)."""
     h = hashlib.sha256()
     h.update(f"layer={layer}\nprefix={hf_prefix}\n".encode())
+    if revision is not None:
+        h.update(f"revision={revision}\n".encode())
     for n in names:  # names is already sorted by the caller
         h.update(n.encode())
         h.update(b"\n")
