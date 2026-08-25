@@ -32,10 +32,10 @@ import argparse
 import concurrent.futures as cf
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # before torch import (thread caps) + before any Hub call (HF_TOKEN)
@@ -370,10 +370,8 @@ def main(argv: list[str] | None = None) -> int:
         "cells_path": str(args.cells_out),
         "repro": {**as_metadata_dict(git_provenance()), "script": "scripts/issue2094_phase0.py"},
     }
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.out.with_name(args.out.name + ".tmp")
-    tmp.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    os.replace(tmp, args.out)
+    with atomic_replace(args.out) as tmp:
+        tmp.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     logger.info("[phase0] wrote %s (%d cells)", args.out, len(cells))
     return 0
 

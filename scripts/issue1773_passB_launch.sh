@@ -129,6 +129,8 @@ import json
 import sys
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 sentinel, out_dir = Path(sys.argv[1]), Path(sys.argv[2])
 n_chunks = len(list(out_dir.glob("windows_*.done.json")))
 body = {
@@ -144,9 +146,8 @@ body = {
         }
     ),
 }
-tmp = sentinel.parent / f".tmp_{sentinel.name}"
-tmp.write_text(json.dumps(body))
-tmp.replace(sentinel)
+with atomic_replace(sentinel) as tmp:
+    tmp.write_text(json.dumps(body))
 print(f"[passB] sentinel written: {sentinel}", flush=True)
 PY
 

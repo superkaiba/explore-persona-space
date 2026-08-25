@@ -60,6 +60,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # BEFORE torch import (thread caps) + HF token for staging/upload
@@ -561,9 +562,8 @@ def fetch_draws(cfg: ProfileConfig, cell: ProfileCell, revisions: dict[str, str]
         src = cfg.hub_mirror_root / RAW_PREFIX / f"{cell.cell_id}.json"
         assert src.exists(), f"tiny fixture missing draws for {cell.cell_id}: {src}"
         target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.parent / (target.name + ".tmp")
-        tmp.write_text(src.read_text())
-        os.replace(tmp, target)
+        with atomic_replace(target) as tmp:
+            tmp.write_text(src.read_text())
         return target
     from explore_persona_space.orchestrate import hub
 
@@ -642,9 +642,8 @@ def _fetch_parity_bundle(cfg: ProfileConfig, pair_id: str, arm: str) -> Path:
         src = cfg.hub_mirror_root / STEERED_TENSOR_PREFIX / f"{pair_id}__{arm}.pt"
         assert src.exists(), f"tiny fixture missing parity bundle: {src}"
         target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.parent / (target.name + ".tmp")
-        tmp.write_bytes(src.read_bytes())
-        os.replace(tmp, target)
+        with atomic_replace(target) as tmp:
+            tmp.write_bytes(src.read_bytes())
         return target
     from explore_persona_space.orchestrate import hub
 

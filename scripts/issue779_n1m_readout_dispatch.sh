@@ -239,6 +239,8 @@ import os
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 smoke = os.environ["EPM_SMOKE"] == "1"
 ro = json.loads(Path(os.environ["EPM_READOUT_JSON"]).read_text())
 fits = json.loads(Path(os.environ["EPM_FITS_JSON"]).read_text())
@@ -295,10 +297,8 @@ sentinel = {
     "note": json.dumps(note),
 }
 dest = Path(os.environ["EPM_SENTINEL_PATH"])
-dest.parent.mkdir(parents=True, exist_ok=True)
-tmp = dest.parent / (dest.name + ".tmp")
-tmp.write_text(json.dumps(sentinel, indent=1))
-os.replace(tmp, dest)
+with atomic_replace(dest) as tmp:
+    tmp.write_text(json.dumps(sentinel, indent=1))
 print(f"sentinel written: {dest} kind={sentinel['kind']}")
 PY
 

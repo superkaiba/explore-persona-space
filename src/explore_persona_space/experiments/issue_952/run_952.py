@@ -35,6 +35,7 @@ import re
 import sys
 from typing import Any
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -2129,9 +2130,8 @@ def _write_capture_done(
         "equiv": equiv,
         "ts": time.time(),
     }
-    tmp = p.with_name(p.name + ".tmp")
-    tmp.write_text(json.dumps(rec, indent=2, default=_json_np))
-    os.replace(tmp, p)
+    with atomic_replace(p) as tmp:
+        tmp.write_text(json.dumps(rec, indent=2, default=_json_np))
 
 
 def phase_capture(
@@ -2563,11 +2563,10 @@ def _init_battery_ckpt(
 
 
 def _ckpt_save(path: pathlib.Path, arrays: dict[str, np.ndarray], payload: dict) -> None:
-    """Atomic (tmp + os.replace) per-unit shard: arrays + JSON payload (__json__ key)."""
-    tmp = path.with_name(path.name + ".tmp")
-    with open(tmp, "wb") as f:
+    """Atomic (shared process-safe tmp + os.replace) per-unit shard: arrays + JSON
+    payload (__json__ key)."""
+    with atomic_replace(path) as tmp, open(tmp, "wb") as f:
         np.savez(f, __json__=np.asarray(json.dumps(payload, default=_json_np)), **arrays)
-    os.replace(tmp, path)
 
 
 def _ckpt_load(path: pathlib.Path) -> tuple[dict[str, np.ndarray], dict] | None:
@@ -3816,16 +3815,13 @@ def _embed_fold_manifest(base_dir: pathlib.Path, fold: int, manifest: dict) -> N
     j_path, npz_path = _fold_output_paths(base_dir, fold)
     rep = json.loads(j_path.read_text())
     rep["provenance_manifest"] = manifest
-    tmp = j_path.with_name(j_path.name + ".tmp")
-    tmp.write_text(json.dumps(rep, indent=2, default=_json_np))
-    os.replace(tmp, j_path)
+    with atomic_replace(j_path) as tmp:
+        tmp.write_text(json.dumps(rep, indent=2, default=_json_np))
     with np.load(npz_path, allow_pickle=False) as d:
         arrays = {k: d[k] for k in d.files if k != "__manifest__"}
     arrays["__manifest__"] = np.asarray(json.dumps(manifest, default=_json_np))
-    tmpz = npz_path.with_name(npz_path.name + ".tmp")
-    with open(tmpz, "wb") as f:
+    with atomic_replace(npz_path) as tmpz, open(tmpz, "wb") as f:
         np.savez(f, **arrays)
-    os.replace(tmpz, npz_path)
 
 
 def _lam_table_from_xlayer_report(base_dir: pathlib.Path, fold: int) -> dict | None:
@@ -3885,9 +3881,8 @@ def _write_kfold_gate_record(base_dir: pathlib.Path, manifest: dict, smoke: bool
         "provenance_manifest": manifest,
     }
     p = out_dir / "kfold_calibration_gate_record.json"
-    tmp = p.with_name(p.name + ".tmp")
-    tmp.write_text(json.dumps(rec, indent=2, default=_json_np))
-    os.replace(tmp, p)
+    with atomic_replace(p) as tmp:
+        tmp.write_text(json.dumps(rec, indent=2, default=_json_np))
     logger.info("[kfold] calibration gate record written: %s", p)
 
 

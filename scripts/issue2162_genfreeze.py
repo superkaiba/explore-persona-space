@@ -19,11 +19,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # BEFORE torch import (shared-VM thread caps)
@@ -34,10 +34,8 @@ from explore_persona_space.experiments.issue2162 import bank2162 as B  # noqa: E
 
 
 def _write_atomic(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1, ensure_ascii=False, sort_keys=True))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1, ensure_ascii=False, sort_keys=True))
 
 
 def _postprocess(text: str, mode: str) -> str:
