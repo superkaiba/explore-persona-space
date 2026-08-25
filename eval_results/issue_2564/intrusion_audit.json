@@ -1,0 +1,1459 @@
+{
+  "meta": {
+    "script": "scripts/issue2564_intrusion_audit.py",
+    "cjk_ranges_hex": [
+      [
+        "0x4e00",
+        "0x9fff"
+      ],
+      [
+        "0x3400",
+        "0x4dbf"
+      ],
+      [
+        "0xf900",
+        "0xfaff"
+      ],
+      [
+        "0x3040",
+        "0x30ff"
+      ],
+      [
+        "0xac00",
+        "0xd7af"
+      ]
+    ],
+    "fire_rule": "imported from scripts/issue2564_judge.py (fire_verdict/axis_floor)",
+    "conventions": {
+      "zeroed": "intruded draw counted non-complying; fixed denominator",
+      "excluded": "intruded draws removed from numerator and denominator"
+    }
+  },
+  "rollouts": {
+    "per_arm": {
+      "content_constraint": {
+        "intruded": 29,
+        "total": 1200
+      },
+      "format": {
+        "intruded": 49,
+        "total": 1200
+      },
+      "hedging": {
+        "intruded": 14,
+        "total": 480
+      },
+      "lexical_marker": {
+        "intruded": 22,
+        "total": 1200
+      },
+      "persona": {
+        "intruded": 101,
+        "total": 1200
+      },
+      "query": {
+        "intruded": 9,
+        "total": 480
+      },
+      "register": {
+        "intruded": 20,
+        "total": 480
+      },
+      "stance": {
+        "intruded": 43,
+        "total": 1200
+      },
+      "user_fact": {
+        "intruded": 19,
+        "total": 1200
+      },
+      "user_profile": {
+        "intruded": 51,
+        "total": 1200
+      }
+    },
+    "total": 9840,
+    "total_intruded": 357
+  },
+  "judged_pool": {
+    "per_axis": {
+      "content_constraint": {
+        "intruded": 9,
+        "total": 240
+      },
+      "format": {
+        "intruded": 7,
+        "total": 240
+      },
+      "hedging": {
+        "intruded": 0,
+        "total": 96
+      },
+      "persona": {
+        "intruded": 20,
+        "total": 240
+      },
+      "register": {
+        "intruded": 3,
+        "total": 96
+      },
+      "stance": {
+        "intruded": 9,
+        "total": 240
+      },
+      "user_profile": {
+        "intruded": 12,
+        "total": 240
+      }
+    },
+    "total": 1392,
+    "total_intruded": 60,
+    "fired_overlap_crosstab": {
+      "intruded_comply": 26,
+      "intruded_noncomply": 34,
+      "intruded_incomplete": 0
+    }
+  },
+  "slot_recounts": {
+    "content_constraint::v1": {
+      "axis": "content_constraint",
+      "value_id": "v1",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "content_constraint::v1p": {
+      "axis": "content_constraint",
+      "value_id": "v1p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 2,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        22,
+        22
+      ]
+    },
+    "content_constraint::v2": {
+      "axis": "content_constraint",
+      "value_id": "v2",
+      "denom": 24,
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        20,
+        23
+      ]
+    },
+    "content_constraint::v2p": {
+      "axis": "content_constraint",
+      "value_id": "v2p",
+      "denom": 24,
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        20,
+        23
+      ]
+    },
+    "content_constraint::v3": {
+      "axis": "content_constraint",
+      "value_id": "v3",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        23
+      ]
+    },
+    "content_constraint::v3p": {
+      "axis": "content_constraint",
+      "value_id": "v3p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        23
+      ]
+    },
+    "content_constraint::v4": {
+      "axis": "content_constraint",
+      "value_id": "v4",
+      "denom": 24,
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        22,
+        24
+      ]
+    },
+    "content_constraint::v4p": {
+      "axis": "content_constraint",
+      "value_id": "v4p",
+      "denom": 24,
+      "n_comply": 4,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 1,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        3,
+        21
+      ]
+    },
+    "content_constraint::v5": {
+      "axis": "content_constraint",
+      "value_id": "v5",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "content_constraint::v5p": {
+      "axis": "content_constraint",
+      "value_id": "v5p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "format::v1": {
+      "axis": "format",
+      "value_id": "v1",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        23
+      ]
+    },
+    "format::v1p": {
+      "axis": "format",
+      "value_id": "v1p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "format::v2": {
+      "axis": "format",
+      "value_id": "v2",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "format::v2p": {
+      "axis": "format",
+      "value_id": "v2p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "format::v3": {
+      "axis": "format",
+      "value_id": "v3",
+      "denom": 24,
+      "n_comply": 18,
+      "n_incomplete": 6,
+      "n_intruded": 3,
+      "n_intruded_comply": 3,
+      "verdict_orig": "undetermined",
+      "verdict_zeroed": "undetermined",
+      "verdict_excluded": "undetermined",
+      "excluded_counts": [
+        15,
+        21
+      ]
+    },
+    "format::v3p": {
+      "axis": "format",
+      "value_id": "v3p",
+      "denom": 24,
+      "n_comply": 13,
+      "n_incomplete": 10,
+      "n_intruded": 2,
+      "n_intruded_comply": 1,
+      "verdict_orig": "undetermined",
+      "verdict_zeroed": "undetermined",
+      "verdict_excluded": "undetermined",
+      "excluded_counts": [
+        12,
+        22
+      ]
+    },
+    "format::v4": {
+      "axis": "format",
+      "value_id": "v4",
+      "denom": 24,
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        22,
+        24
+      ]
+    },
+    "format::v4p": {
+      "axis": "format",
+      "value_id": "v4p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "format::v5": {
+      "axis": "format",
+      "value_id": "v5",
+      "denom": 24,
+      "n_comply": 20,
+      "n_incomplete": 4,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "undetermined",
+      "verdict_zeroed": "undetermined",
+      "verdict_excluded": "undetermined",
+      "excluded_counts": [
+        20,
+        24
+      ]
+    },
+    "format::v5p": {
+      "axis": "format",
+      "value_id": "v5p",
+      "denom": 24,
+      "n_comply": 16,
+      "n_incomplete": 7,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "undetermined",
+      "verdict_zeroed": "undetermined",
+      "verdict_excluded": "undetermined",
+      "excluded_counts": [
+        16,
+        23
+      ]
+    },
+    "hedging::v1": {
+      "axis": "hedging",
+      "value_id": "v1",
+      "denom": 24,
+      "n_comply": 11,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        11,
+        24
+      ]
+    },
+    "hedging::v1p": {
+      "axis": "hedging",
+      "value_id": "v1p",
+      "denom": 24,
+      "n_comply": 0,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        0,
+        24
+      ]
+    },
+    "hedging::v2": {
+      "axis": "hedging",
+      "value_id": "v2",
+      "denom": 24,
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        24
+      ]
+    },
+    "hedging::v2p": {
+      "axis": "hedging",
+      "value_id": "v2p",
+      "denom": 24,
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        24
+      ]
+    },
+    "persona::v1": {
+      "axis": "persona",
+      "value_id": "v1",
+      "denom": 24,
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 4,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        18,
+        20
+      ]
+    },
+    "persona::v1p": {
+      "axis": "persona",
+      "value_id": "v1p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "persona::v2": {
+      "axis": "persona",
+      "value_id": "v2",
+      "denom": 24,
+      "n_comply": 12,
+      "n_incomplete": 0,
+      "n_intruded": 4,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        12,
+        20
+      ]
+    },
+    "persona::v2p": {
+      "axis": "persona",
+      "value_id": "v2p",
+      "denom": 24,
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        23
+      ]
+    },
+    "persona::v3": {
+      "axis": "persona",
+      "value_id": "v3",
+      "denom": 24,
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        18,
+        23
+      ]
+    },
+    "persona::v3p": {
+      "axis": "persona",
+      "value_id": "v3p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "persona::v4": {
+      "axis": "persona",
+      "value_id": "v4",
+      "denom": 24,
+      "n_comply": 7,
+      "n_incomplete": 0,
+      "n_intruded": 4,
+      "n_intruded_comply": 3,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        4,
+        20
+      ]
+    },
+    "persona::v4p": {
+      "axis": "persona",
+      "value_id": "v4p",
+      "denom": 24,
+      "n_comply": 14,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        14,
+        22
+      ]
+    },
+    "persona::v5": {
+      "axis": "persona",
+      "value_id": "v5",
+      "denom": 24,
+      "n_comply": 15,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        15,
+        22
+      ]
+    },
+    "persona::v5p": {
+      "axis": "persona",
+      "value_id": "v5p",
+      "denom": 24,
+      "n_comply": 20,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        20,
+        22
+      ]
+    },
+    "register::v1": {
+      "axis": "register",
+      "value_id": "v1",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        23
+      ]
+    },
+    "register::v1p": {
+      "axis": "register",
+      "value_id": "v1p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "register::v2": {
+      "axis": "register",
+      "value_id": "v2",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 2,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        22,
+        22
+      ]
+    },
+    "register::v2p": {
+      "axis": "register",
+      "value_id": "v2p",
+      "denom": 24,
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        24,
+        24
+      ]
+    },
+    "stance::v1": {
+      "axis": "stance",
+      "value_id": "v1",
+      "denom": 24,
+      "n_comply": 2,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        2,
+        23
+      ]
+    },
+    "stance::v1p": {
+      "axis": "stance",
+      "value_id": "v1p",
+      "denom": 24,
+      "n_comply": 17,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        17,
+        24
+      ]
+    },
+    "stance::v2": {
+      "axis": "stance",
+      "value_id": "v2",
+      "denom": 24,
+      "n_comply": 10,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 2,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        8,
+        22
+      ]
+    },
+    "stance::v2p": {
+      "axis": "stance",
+      "value_id": "v2p",
+      "denom": 24,
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        18,
+        24
+      ]
+    },
+    "stance::v3": {
+      "axis": "stance",
+      "value_id": "v3",
+      "denom": 24,
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        24
+      ]
+    },
+    "stance::v3p": {
+      "axis": "stance",
+      "value_id": "v3p",
+      "denom": 24,
+      "n_comply": 20,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        20,
+        24
+      ]
+    },
+    "stance::v4": {
+      "axis": "stance",
+      "value_id": "v4",
+      "denom": 24,
+      "n_comply": 11,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        11,
+        22
+      ]
+    },
+    "stance::v4p": {
+      "axis": "stance",
+      "value_id": "v4p",
+      "denom": 24,
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        22,
+        24
+      ]
+    },
+    "stance::v5": {
+      "axis": "stance",
+      "value_id": "v5",
+      "denom": 24,
+      "n_comply": 5,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        5,
+        22
+      ]
+    },
+    "stance::v5p": {
+      "axis": "stance",
+      "value_id": "v5p",
+      "denom": 24,
+      "n_comply": 7,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        7,
+        22
+      ]
+    },
+    "user_profile::v1": {
+      "axis": "user_profile",
+      "value_id": "v1",
+      "denom": 24,
+      "n_comply": 13,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        13,
+        23
+      ]
+    },
+    "user_profile::v1p": {
+      "axis": "user_profile",
+      "value_id": "v1p",
+      "denom": 24,
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        18,
+        23
+      ]
+    },
+    "user_profile::v2": {
+      "axis": "user_profile",
+      "value_id": "v2",
+      "denom": 24,
+      "n_comply": 19,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        19,
+        24
+      ]
+    },
+    "user_profile::v2p": {
+      "axis": "user_profile",
+      "value_id": "v2p",
+      "denom": 24,
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        23,
+        23
+      ]
+    },
+    "user_profile::v3": {
+      "axis": "user_profile",
+      "value_id": "v3",
+      "denom": 24,
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 2,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        16,
+        21
+      ]
+    },
+    "user_profile::v3p": {
+      "axis": "user_profile",
+      "value_id": "v3p",
+      "denom": 24,
+      "n_comply": 20,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 2,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        18,
+        22
+      ]
+    },
+    "user_profile::v4": {
+      "axis": "user_profile",
+      "value_id": "v4",
+      "denom": 24,
+      "n_comply": 16,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired",
+      "verdict_excluded": "not_fired",
+      "excluded_counts": [
+        16,
+        23
+      ]
+    },
+    "user_profile::v4p": {
+      "axis": "user_profile",
+      "value_id": "v4p",
+      "denom": 24,
+      "n_comply": 20,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        20,
+        23
+      ]
+    },
+    "user_profile::v5": {
+      "axis": "user_profile",
+      "value_id": "v5",
+      "denom": 24,
+      "n_comply": 20,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        19,
+        23
+      ]
+    },
+    "user_profile::v5p": {
+      "axis": "user_profile",
+      "value_id": "v5p",
+      "denom": 24,
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        22,
+        23
+      ]
+    },
+    "lexical_marker::v1": {
+      "axis": "lexical_marker",
+      "value_id": "v1",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        120,
+        120
+      ]
+    },
+    "lexical_marker::v1p": {
+      "axis": "lexical_marker",
+      "value_id": "v1p",
+      "denom": 120,
+      "n_comply": 119,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 2,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        117,
+        118
+      ]
+    },
+    "lexical_marker::v2": {
+      "axis": "lexical_marker",
+      "value_id": "v2",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        119,
+        119
+      ]
+    },
+    "lexical_marker::v2p": {
+      "axis": "lexical_marker",
+      "value_id": "v2p",
+      "denom": 120,
+      "n_comply": 119,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 3,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        116,
+        117
+      ]
+    },
+    "lexical_marker::v3": {
+      "axis": "lexical_marker",
+      "value_id": "v3",
+      "denom": 120,
+      "n_comply": 119,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        118,
+        119
+      ]
+    },
+    "lexical_marker::v3p": {
+      "axis": "lexical_marker",
+      "value_id": "v3p",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        120,
+        120
+      ]
+    },
+    "lexical_marker::v4": {
+      "axis": "lexical_marker",
+      "value_id": "v4",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 6,
+      "n_intruded_comply": 6,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        114,
+        114
+      ]
+    },
+    "lexical_marker::v4p": {
+      "axis": "lexical_marker",
+      "value_id": "v4p",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 4,
+      "n_intruded_comply": 4,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        116,
+        116
+      ]
+    },
+    "lexical_marker::v5": {
+      "axis": "lexical_marker",
+      "value_id": "v5",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 3,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        117,
+        117
+      ]
+    },
+    "lexical_marker::v5p": {
+      "axis": "lexical_marker",
+      "value_id": "v5p",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 2,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        118,
+        118
+      ]
+    },
+    "user_fact::v1": {
+      "axis": "user_fact",
+      "value_id": "v1",
+      "denom": 120,
+      "n_comply": 117,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        116,
+        119
+      ]
+    },
+    "user_fact::v1p": {
+      "axis": "user_fact",
+      "value_id": "v1p",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 3,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        117,
+        117
+      ]
+    },
+    "user_fact::v2": {
+      "axis": "user_fact",
+      "value_id": "v2",
+      "denom": 120,
+      "n_comply": 118,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        117,
+        119
+      ]
+    },
+    "user_fact::v2p": {
+      "axis": "user_fact",
+      "value_id": "v2p",
+      "denom": 120,
+      "n_comply": 118,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 3,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        115,
+        117
+      ]
+    },
+    "user_fact::v3": {
+      "axis": "user_fact",
+      "value_id": "v3",
+      "denom": 120,
+      "n_comply": 115,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        114,
+        119
+      ]
+    },
+    "user_fact::v3p": {
+      "axis": "user_fact",
+      "value_id": "v3p",
+      "denom": 120,
+      "n_comply": 118,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 2,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        116,
+        118
+      ]
+    },
+    "user_fact::v4": {
+      "axis": "user_fact",
+      "value_id": "v4",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        120,
+        120
+      ]
+    },
+    "user_fact::v4p": {
+      "axis": "user_fact",
+      "value_id": "v4p",
+      "denom": 120,
+      "n_comply": 119,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 3,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        116,
+        117
+      ]
+    },
+    "user_fact::v5": {
+      "axis": "user_fact",
+      "value_id": "v5",
+      "denom": 120,
+      "n_comply": 119,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        118,
+        119
+      ]
+    },
+    "user_fact::v5p": {
+      "axis": "user_fact",
+      "value_id": "v5p",
+      "denom": 120,
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_intruded": 4,
+      "n_intruded_comply": 4,
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired",
+      "verdict_excluded": "fired",
+      "excluded_counts": [
+        116,
+        116
+      ]
+    }
+  },
+  "axis_floor_verdicts": {
+    "persona": {
+      "width": 5,
+      "floor": 3,
+      "n_fired_orig": 2,
+      "floor_met_orig": false,
+      "n_fired_zeroed": 2,
+      "floor_met_zeroed": false,
+      "n_fired_excluded": 2,
+      "floor_met_excluded": false
+    },
+    "format": {
+      "width": 5,
+      "floor": 3,
+      "n_fired_orig": 3,
+      "floor_met_orig": true,
+      "n_fired_zeroed": 3,
+      "floor_met_zeroed": true,
+      "n_fired_excluded": 3,
+      "floor_met_excluded": true
+    },
+    "stance": {
+      "width": 5,
+      "floor": 3,
+      "n_fired_orig": 1,
+      "floor_met_orig": false,
+      "n_fired_zeroed": 1,
+      "floor_met_zeroed": false,
+      "n_fired_excluded": 1,
+      "floor_met_excluded": false
+    },
+    "content_constraint": {
+      "width": 5,
+      "floor": 3,
+      "n_fired_orig": 5,
+      "floor_met_orig": true,
+      "n_fired_zeroed": 5,
+      "floor_met_zeroed": true,
+      "n_fired_excluded": 5,
+      "floor_met_excluded": true
+    },
+    "register": {
+      "width": 2,
+      "floor": 2,
+      "n_fired_orig": 2,
+      "floor_met_orig": true,
+      "n_fired_zeroed": 2,
+      "floor_met_zeroed": true,
+      "n_fired_excluded": 2,
+      "floor_met_excluded": true
+    },
+    "hedging": {
+      "width": 2,
+      "floor": 2,
+      "n_fired_orig": 1,
+      "floor_met_orig": false,
+      "n_fired_zeroed": 1,
+      "floor_met_zeroed": false,
+      "n_fired_excluded": 1,
+      "floor_met_excluded": false
+    },
+    "user_profile": {
+      "width": 5,
+      "floor": 3,
+      "n_fired_orig": 3,
+      "floor_met_orig": true,
+      "n_fired_zeroed": 2,
+      "floor_met_zeroed": false,
+      "n_fired_excluded": 3,
+      "floor_met_excluded": true
+    },
+    "lexical_marker": {
+      "width": 5,
+      "floor": 3,
+      "n_fired_orig": 5,
+      "floor_met_orig": true,
+      "n_fired_zeroed": 5,
+      "floor_met_zeroed": true,
+      "n_fired_excluded": 5,
+      "floor_met_excluded": true
+    },
+    "user_fact": {
+      "width": 5,
+      "floor": 3,
+      "n_fired_orig": 5,
+      "floor_met_orig": true,
+      "n_fired_zeroed": 5,
+      "floor_met_zeroed": true,
+      "n_fired_excluded": 5,
+      "floor_met_excluded": true
+    }
+  }
+}

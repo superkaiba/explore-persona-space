@@ -20,6 +20,7 @@ never the committed ``figures/`` tree.
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import math
 import re
@@ -348,10 +349,17 @@ def fig_norm_scatter(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
 
 
 def fig_install_vs_swap(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
-    """Per-axis distributions of per-pair direction cosine, split by pair class."""
+    """Per-axis distributions of per-pair direction cosine, split by pair class.
+
+    Grouped layout (r2, readable-labels concern): one x-slot GROUP per axis
+    (one tick label per axis at readable size), pair classes offset within
+    the group and identified by the color legend instead of per-violin
+    two-line tick labels.
+    """
     axes_names = _axes_sorted(doc)
-    groups: list[tuple[str, str, list[float]]] = []
+    per_axis: list[tuple[str, list[tuple[str, list[float]]]]] = []
     for name in axes_names:
+        entries = []
         for cls in sorted({r["pair_class"] for r in rows if r.get("axis") == name}):
             vals = [
                 v
@@ -361,24 +369,54 @@ def fig_install_vs_swap(doc: dict, rows: list[dict], out_dir: Path) -> str | Non
                 and (v := _finite(_get(r, "cos", "arm_779ce"))) is not None
             ]
             if vals:
-                groups.append((name, cls, vals))
-    if not groups:
+                entries.append((cls, vals))
+        if entries:
+            per_axis.append((name, entries))
+    if not per_axis:
         return None
     ccol = _class_colors()
-    fig, ax = plt.subplots(figsize=(max(6.5, 0.85 * len(groups)), 4.0))
-    positions = np.arange(len(groups))
-    parts = ax.violinplot([g[2] for g in groups], positions=positions, showmedians=True, widths=0.8)
-    for body, (_, cls, _) in zip(parts["bodies"], groups, strict=True):
+    neutral = paper_palette_role("neutral")
+    positions: list[float] = []
+    data: list[list[float]] = []
+    classes: list[str] = []
+    centers: list[float] = []
+    bounds: list[tuple[float, float]] = []
+    tick_labels: list[str] = []
+    seen_classes: list[str] = []
+    slot = 0.0
+    for name, entries in per_axis:
+        start = slot
+        for cls, vals in entries:
+            positions.append(slot)
+            data.append(vals)
+            classes.append(cls)
+            if cls not in seen_classes:
+                seen_classes.append(cls)
+            slot += 1.0
+        centers.append((start + slot - 1.0) / 2.0)
+        bounds.append((start, slot - 1.0))
+        tick_labels.append(axis_label(name))
+        slot += 1.2  # gap between axis groups
+    fig, ax = plt.subplots(figsize=(max(8.0, 0.55 * slot), 4.4))
+    parts = ax.violinplot(data, positions=positions, showmedians=True, widths=0.85)
+    for body, cls in zip(parts["bodies"], classes, strict=True):
         body.set_facecolor(ccol[cls])
         body.set_alpha(0.6)
-    ax.set_xticks(positions)
-    ax.set_xticklabels(
-        [f"{axis_label(a)}\n{PAIR_CLASS_LABELS.get(c, c)}" for a, c, _ in groups], fontsize=7
-    )
-    ax.axhline(0.0, color=paper_palette_role("neutral"), lw=0.8, alpha=0.6)
+    for (_, last), (nxt, _) in itertools.pairwise(bounds):
+        ax.axvline((last + nxt) / 2.0, color=neutral, lw=0.5, alpha=0.25)
+    ax.set_xticks(centers)
+    ax.set_xticklabels(tick_labels, fontsize=9)
+    ax.axhline(0.0, color=neutral, lw=0.8, alpha=0.6)
     ax.set_ylabel("per-pair direction cosine")
     ax.set_title("Direction cosine by axis and pair class (single-turn frozen map)", loc="left")
-    fig.tight_layout()
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=ccol[c], alpha=0.6, label=PAIR_CLASS_LABELS.get(c, c))
+        for c in seen_classes
+    ]
+    fig.legend(
+        handles=handles, fontsize=8, loc="lower center", ncol=len(seen_classes), frameon=False
+    )
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
     return _save(fig, "fig_expl_install_vs_swap_violin", out_dir)
 
 
@@ -675,8 +713,11 @@ def fig_ceiling_vs_cos(doc: dict, rows: list[dict], out_dir: Path) -> str | None
     """Per-axis split-half reliability vs headline direction cosine."""
     pts: list[tuple[str, float, float]] = []
     for name in _axes_sorted(doc):
-        # r10_mean is the ceiling the headline reads are normalized by
-        # (Spearman-Brown r10), matching the hero panel's ceiling marker.
+        # r10_mean is the split-half reliability of the observed 10-draw-mean
+        # shift (Spearman-Brown r10), matching the hero panel's diamond marker.
+        # r2 reframe: r10 is NOT an achievable-cosine ceiling — under standard
+        # attenuation a perfect predictor reaches ~sqrt(r10) — so the rendered
+        # text says "reliability", never "ceiling".
         r10 = _finite(_get(doc, "axes", name, "reliability", "r10_mean"))
         v = _finite(_get(doc, "axes", name, "direction", "arm_779ce", "mean_cos_headline"))
         if r10 is not None and v is not None:
@@ -688,9 +729,9 @@ def fig_ceiling_vs_cos(doc: dict, rows: list[dict], out_dir: Path) -> str | None
     for name, x, y in pts:
         ax.scatter([x], [y], s=26, color=col)
         ax.text(x, y, f" {axis_label(name)}", fontsize=7, va="center")
-    ax.set_xlabel("reliability ceiling of the observed shift (Spearman-Brown r10)")
+    ax.set_xlabel("split-half reliability of the observed shift (Spearman-Brown r10)")
     ax.set_ylabel("direction cosine (single-turn frozen map)")
-    ax.set_title("Reliability ceiling vs direction recovery", loc="left")
+    ax.set_title("Split-half reliability vs direction recovery", loc="left")
     fig.tight_layout()
     return _save(fig, "fig_expl_ceiling_vs_cos", out_dir)
 
