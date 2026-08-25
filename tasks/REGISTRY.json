@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2573,
+  "highest_id": 2574,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12130,6 +12130,13 @@
       "path": "tasks/proposed/2573",
       "status": "proposed",
       "title": "Step 5a/10d FAMILY_OF lint family: couple tests/test_step9c_*.py with the synced selector \u2014 family sync itself creates the WORKFLOW_INVARIANT hybrid-tree skew (issue-2342 gate round burned)"
+    },
+    "2574": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2574",
+      "status": "proposed",
+      "title": "Statistics lens: require same-ID censoring-matched read for paired arm-difference DVs with arm-specific censoring (#2544 v7 gap)"
     },
     "258": {
       "has_clean_result": false,
