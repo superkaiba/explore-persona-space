@@ -86,6 +86,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -1000,11 +1001,10 @@ def phase_sample_diag(args) -> int:
         }
         for f in sample_feat_ids(manifest)
     ]
-    tmp = arms_dir / ".tmp_axis_labels_c0.jsonl"
-    with tmp.open("w", encoding="utf-8") as fh:
-        for r in c0_rows:
-            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    tmp.replace(arms_dir / "axis_labels_c0.jsonl")
+    with atomic_replace(arms_dir / "axis_labels_c0.jsonl") as tmp:
+        with tmp.open("w", encoding="utf-8") as fh:
+            for r in c0_rows:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     # P0.4 — disagreement structure (full functional_role set + all axes).
     M_fr, n_fr = votes_to_counts(list(fr_votes.values()), FR_CATS)
@@ -1392,12 +1392,9 @@ def run_arms(args, arms: dict[str, tuple[str, ...]], wave: int) -> int:
         if args.dry_run:
             continue
         rows, tally = aggregate_arm(arm, items, results, smap)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = out_path.parent / f".tmp_{out_path.name}"
-        with tmp.open("w", encoding="utf-8") as fh:
+        with atomic_replace(out_path) as tmp, tmp.open("w", encoding="utf-8") as fh:
             for r in rows:
                 fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-        tmp.replace(out_path)
         _write_raw(results, WORK_ROOT / "judge_raw" / f"arm_{arm}")
         uni = [r["labels_surviving"] for r in rows if r["stratum"] == "uniform"]
         kba[arm] = {
@@ -2113,11 +2110,9 @@ def phase_decide_mark(args) -> int:
         return 0
     rows = list(CM.iter_jsonl(FEATURE_TABLE))
     marked = mark_rows(rows, {AXIS: s})
-    tmp = FEATURE_TABLE.parent / f".tmp_{FEATURE_TABLE.name}"
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(FEATURE_TABLE) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for r in marked:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    tmp.replace(FEATURE_TABLE)
     sidecar = FEATURE_TABLE.parent / "feature_table_v1.usability_note.json"
     sidecar.write_text(
         json.dumps(

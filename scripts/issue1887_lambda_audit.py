@@ -59,6 +59,7 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps (#847) before torch/numpy import
@@ -175,10 +176,9 @@ class CellSpec:
 
 
 def _write_json_atomic(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True))
-    os.replace(tmp, path)
+    """Atomic JSON write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
 
 def _git_commit() -> str:
