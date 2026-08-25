@@ -11,22 +11,29 @@ battery on the new failure indicator, and overwrites the paper figure in place.
 
 Phases (checkpoint-per-phase; each persists before the next runs):
 
-- ``ranks``  recompute per-context mid-ranks under whitened-cos+CSLS from
-             /mnt/eps-data/.../issue2202_freshwhiten/{pred16,y_holdout_L19,
-             whiten_stats}.npz, REUSING issue2202_metric_zoo (load_staged,
-             banked-L chol whitening at lam=0.1, csls_ranks, ranks_summary);
-             reconciliation-gated against the banked metric-zoo
-             csls_k10_whitencos summary (acc@1 = 0.97616).
-- ``stats``  the parent P5 instrument on the new binary fail indicator:
-             issue2202_stats_figs.run_battery (22 registered contrasts,
-             10k batched bootstrap + 10k batched permutations, BH q=0.05)
-             + attribution-class counts (banked kres_class) over the new set.
-- ``fig``    three-panel ICLR figure overwriting figures/paper/
-             c3_failure_attribution.{png,pdf,meta.json}: (a) the current
-             figure's 13 contrasts recomputed on the whitened-cos+CSLS failure
-             set, (b) resample-attribution shares over the covered subset of
-             the new failures (dropped if coverage is too thin), (c) the
-             unchanged per-architecture raw vs whitened+CSLS panel.
+- ``ranks``    recompute per-context mid-ranks under whitened-cos+CSLS from
+               /mnt/eps-data/.../issue2202_freshwhiten/{pred16,y_holdout_L19,
+               whiten_stats}.npz, REUSING issue2202_metric_zoo (load_staged,
+               banked-L chol whitening at lam=0.1, csls_ranks, ranks_summary);
+               reconciliation-gated against the banked metric-zoo
+               csls_k10_whitencos summary (acc@1 = 0.97616).
+- ``oppoint``  per-row ranks at the OPERATING POINT (draw-AVERAGED targets,
+               whitened cosine + CSLS, the 1,988 kresample-covered rows; the
+               avgtgt_completion convention), reconciliation-gated against its
+               banked matrix; persists the failing-row records (ids / ranks /
+               labels only — never corpus text).
+- ``ladder``   regime ladder of rank-1 failure counts across the banked
+               scoring/target regimes (regime_ladder.json).
+- ``stats``    the parent P5 instrument on the single-draw whitened-cos+CSLS
+               fail indicator: issue2202_stats_figs.run_battery (22 registered
+               contrasts, 10k batched bootstrap + 10k batched permutations,
+               BH q=0.05) + attribution-class counts over that set.
+- ``drafts``   BOTH candidate figure variants rendered as DRAFTS under
+               figures/issue_2202/plot5_redesign/ (ladder-only, and ladder +
+               per-kind panel at the single-draw whitened-cos+CSLS regime).
+               The paper stem figures/paper/c3_failure_attribution.* is NOT
+               written by this phase — promoting a chosen draft is a manual
+               copy plus commit.
 
 Reads only committed eval_results/issue_2202 artifacts + the read-only staged
 copies; 0 GPU-h; runs on the shared VM under the standard thread caps.
@@ -481,16 +488,22 @@ LADDER_SHORT = {
 }
 
 
-def phase_fig(args) -> None:
-    """Overwrite figures/paper/c3_failure_attribution with the two-panel
-    convention figure: (a) the regime ladder of rank-1 failure rates (how much
-    of the raw-euclidean "failure" population is a scoring/target artifact),
-    (b) the per-context-kind failure-rate contrasts at the richest
-    paper-convention regime that still has enough failures (single-draw
-    whitened cosine + CSLS, 237 failures). The operating point (draw-averaged
-    targets) keeps only 11 failures of the 1,988 covered rows — far too few
-    for any per-kind bar chart, so it appears only as the ladder's last rung;
-    the 11 rows themselves are reported as text (oppoint_failures.json)."""
+DRAFT_DIR_REL = "issue_2202/plot5_redesign"  # under figures/; NOT the paper stem
+
+
+def phase_drafts(args) -> None:
+    """Render BOTH candidate figure variants as DRAFTS under
+    figures/issue_2202/plot5_redesign/ — never the paper stem
+    (figures/paper/c3_failure_attribution.*), whose swap is a user decision;
+    promotion is then a copy plus a commit.
+
+    - plot5_draft_ladder_only: single panel, the regime ladder of rank-1
+      failure rates (the 11 operating-point failures live as its last rung;
+      the rows themselves are reported as text, oppoint_failures.json).
+    - plot5_draft_ladder_perkind: the ladder plus the per-context-kind
+      failure-rate contrasts at the richest paper-convention regime that
+      still has enough failures (single-draw whitened cosine + CSLS,
+      237 failures; per-kind tick labels carry exact group failure counts)."""
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
 
@@ -504,87 +517,107 @@ def phase_fig(args) -> None:
     stats = json.loads((od / "plot5_stats.json").read_text())
     comp = json.loads((FC.out_eval_dir(args) / "composition_stats.json").read_text())
     ladder = json.loads((od / "regime_ladder.json").read_text())
+    (PROJECT_ROOT / "figures" / DRAFT_DIR_REL).mkdir(parents=True, exist_ok=True)
+
+    def draw_ladder(ax) -> None:
+        """Rank-1 failure rate per scoring/target regime (log x, exact counts)."""
+        rungs = sorted(ladder["rungs"], key=lambda r: -r["fail_rate"])
+        ys = np.arange(len(rungs))[::-1]
+        x_lo = 0.3
+        for y, r in zip(ys, rungs):
+            is_avg = "AVERAGED" in r["regime"]
+            color = paper_color("instruct") if is_avg else paper_color("null")
+            rate = r["fail_rate"] * 100
+            ax.hlines(y, x_lo, rate, color="0.85", lw=0.8, zorder=1)
+            ax.scatter([rate], [y], color=color, s=16, zorder=3)
+        ax.set_xscale("log")
+        ax.set_xlim(x_lo, 30)
+        ax.set_yticks(
+            ys,
+            [f"{LADDER_SHORT[r['regime']]} ({r['n_fail']:,}/{r['n']:,})" for r in rungs],
+            fontsize=6.5,
+        )
+        ax.set_xlabel("rank-1 failure rate (%, log)")
+        ax.set_title("scoring/target regime ladder (ridge map)", fontsize=7)
+        handles = [
+            Patch(color=paper_color("null"), label="single-draw targets"),
+            Patch(color=paper_color("instruct"), label="draw-averaged targets"),
+        ]
+        ax.legend(
+            handles=handles,
+            fontsize=6,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.22),
+            ncols=2,
+            frameon=False,
+        )
+
+    def draw_perkind(ax) -> None:
+        """Per-context-kind contrasts at single-draw whitened cos + CSLS: the
+        union of the raw-euclidean-significant contrasts and those significant
+        under the new failure set, all recomputed on the new set; tick labels
+        carry the exact per-group failure counts."""
+        keep = {r["contrast"] for r in comp["banked_battery"] if r["bh_significant"]}
+        keep |= set(stats["bh_significant_new"])
+        by_name = {r["contrast"]: r for r in stats["battery"]}
+        rows = sorted((by_name[c] for c in keep), key=lambda r: r["delta"])
+        ys = np.arange(len(rows))
+        deltas = np.array([r["delta"] for r in rows]) * 100
+        elo = np.maximum(0.0, np.array([r["delta"] - r["ci_lo"] for r in rows]) * 100)
+        ehi = np.maximum(0.0, np.array([r["ci_hi"] - r["delta"] for r in rows]) * 100)
+        sig = np.array([bool(r["bh_significant"]) for r in rows])
+        colors = [paper_color("instruct") if s else "0.78" for s in sig]
+        ax.barh(
+            ys,
+            deltas,
+            xerr=(elo, ehi),
+            color=colors,
+            height=0.62,
+            error_kw={"lw": 0.7, "capsize": 1.5},
+        )
+        ax.axvline(0, color=paper_color("reference"), lw=0.7)
+        labels = []
+        for r in rows:
+            k_grp = int(round(r["fail_rate_group"] * r["n_group"]))
+            labels.append(f"{CONTRAST_LABEL[r['contrast']]} ({k_grp:,}/{r['n_group']:,})")
+        ax.set_yticks(ys, labels, fontsize=6.5)
+        ax.set_xlabel("failure-rate difference (pp)")
+        n_fail = stats["n_fail"]
+        ax.set_title(
+            f"failure kinds, single-draw whitened cos + CSLS ({n_fail}/9,941 fail)",
+            fontsize=7,
+        )
+        handles = [
+            Patch(color=paper_color("instruct"), label="significant (BH q=0.05)"),
+            Patch(color="0.78", label="not significant"),
+        ]
+        ax.legend(
+            handles=handles,
+            fontsize=6,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.22),
+            ncols=2,
+            frameon=False,
+        )
 
     set_paper_style("iclr")
-    fig, (ax_a, ax_b) = plt.subplots(
-        1, 2, figsize=(5.5, 2.6), gridspec_kw={"width_ratios": [1.0, 1.1]}
-    )
-
-    # (a) regime ladder: rank-1 failure rate per scoring/target regime (log x)
-    rungs = sorted(ladder["rungs"], key=lambda r: -r["fail_rate"])
-    ys = np.arange(len(rungs))[::-1]
-    x_lo = 0.3
-    for y, r in zip(ys, rungs):
-        is_avg = "AVERAGED" in r["regime"]
-        color = paper_color("instruct") if is_avg else paper_color("null")
-        rate = r["fail_rate"] * 100
-        ax_a.hlines(y, x_lo, rate, color="0.85", lw=0.8, zorder=1)
-        ax_a.scatter([rate], [y], color=color, s=16, zorder=3)
-    ax_a.set_xscale("log")
-    ax_a.set_xlim(x_lo, 30)
-    ax_a.set_yticks(
-        ys,
-        [f"{LADDER_SHORT[r['regime']]} ({r['n_fail']:,}/{r['n']:,})" for r in rungs],
-        fontsize=6.5,
-    )
-    ax_a.set_xlabel("rank-1 failure rate (%, log)")
-    ax_a.set_title("scoring/target regime ladder (ridge map)", fontsize=7)
-    handles_a = [
-        Patch(color=paper_color("null"), label="single-draw targets"),
-        Patch(color=paper_color("instruct"), label="draw-averaged targets"),
-    ]
-    ax_a.legend(
-        handles=handles_a,
-        fontsize=6,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.22),
-        ncols=2,
-        frameon=False,
-    )
-
-    # (b) per-context-kind contrasts at the richest paper-convention regime:
-    # union of the raw-euclidean-significant contrasts and those significant
-    # under the new failure set, all recomputed on the new set
-    keep = {r["contrast"] for r in comp["banked_battery"] if r["bh_significant"]}
-    keep |= set(stats["bh_significant_new"])
-    by_name = {r["contrast"]: r for r in stats["battery"]}
-    rows = sorted((by_name[c] for c in keep), key=lambda r: r["delta"])
-    ys = np.arange(len(rows))
-    deltas = np.array([r["delta"] for r in rows]) * 100
-    elo = np.maximum(0.0, np.array([r["delta"] - r["ci_lo"] for r in rows]) * 100)
-    ehi = np.maximum(0.0, np.array([r["ci_hi"] - r["delta"] for r in rows]) * 100)
-    sig = np.array([bool(r["bh_significant"]) for r in rows])
-    colors = [paper_color("instruct") if s else "0.78" for s in sig]
-    ax_b.barh(
-        ys,
-        deltas,
-        xerr=(elo, ehi),
-        color=colors,
-        height=0.62,
-        error_kw={"lw": 0.7, "capsize": 1.5},
-    )
-    ax_b.axvline(0, color=paper_color("reference"), lw=0.7)
-    ax_b.set_yticks(ys, [CONTRAST_LABEL[r["contrast"]] for r in rows], fontsize=6.5)
-    ax_b.set_xlabel("failure-rate difference (pp)")
-    n_fail = stats["n_fail"]
-    ax_b.set_title(
-        f"failure kinds, single-draw whitened cos + CSLS ({n_fail}/9,941 fail)", fontsize=7
-    )
-    handles_b = [
-        Patch(color=paper_color("instruct"), label="significant (BH q=0.05)"),
-        Patch(color="0.78", label="not significant"),
-    ]
-    ax_b.legend(
-        handles=handles_b,
-        fontsize=6,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.22),
-        ncols=2,
-        frameon=False,
-    )
-    savefig_paper(fig, "c3_failure_attribution", dir="figures/paper/")
+    fig, ax = plt.subplots(figsize=(3.4, 2.6))
+    draw_ladder(ax)
+    savefig_paper(fig, f"{DRAFT_DIR_REL}/plot5_draft_ladder_only", dir="figures/")
     plt.close(fig)
-    print("[fig] wrote figures/paper/c3_failure_attribution.{png,pdf,meta.json}", flush=True)
+
+    fig, (ax_a, ax_b) = plt.subplots(
+        1, 2, figsize=(5.9, 2.6), gridspec_kw={"width_ratios": [1.0, 1.15]}
+    )
+    draw_ladder(ax_a)
+    draw_perkind(ax_b)
+    savefig_paper(fig, f"{DRAFT_DIR_REL}/plot5_draft_ladder_perkind", dir="figures/")
+    plt.close(fig)
+    print(
+        f"[drafts] wrote figures/{DRAFT_DIR_REL}/plot5_draft_ladder_only.* and "
+        f"plot5_draft_ladder_perkind.* (paper stem NOT touched)",
+        flush=True,
+    )
 
 
 PHASES = {
@@ -592,9 +625,9 @@ PHASES = {
     "oppoint": phase_oppoint,
     "ladder": phase_ladder,
     "stats": phase_stats,
-    "fig": phase_fig,
+    "drafts": phase_drafts,
 }
-PHASE_ORDER = ["ranks", "oppoint", "ladder", "stats", "fig"]
+PHASE_ORDER = ["ranks", "oppoint", "ladder", "stats", "drafts"]
 
 
 def build_argparser() -> argparse.ArgumentParser:
