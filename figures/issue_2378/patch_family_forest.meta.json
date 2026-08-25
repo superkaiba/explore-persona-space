@@ -1,0 +1,123 @@
+{
+ "commit": "6f9dd332+dirty",
+ "render_id": "a463824826da4c85",
+ "git_commit": "6f9dd332583416972193b41112e9df1fc1b95533",
+ "git_dirty": true,
+ "git_dirty_paths": [
+  "scripts/issue2378_patch_fig.py"
+ ],
+ "git_argv0_state": "untracked",
+ "git_argv0_path": "scripts/issue2378_patch_fig.py",
+ "created": "2026-08-25T23:55:58Z",
+ "figsize": [
+  12.6,
+  6.0
+ ],
+ "text": {
+  "suptitle": null,
+  "fig_texts": [
+   "Cross-framing context-vector patching: one activation-level arm replicates; no judged-behavior carry",
+   "steered \u2212 matched-null family means, 95% pair-clustered bootstrap CIs (B=10,000); full color = CI excludes zero; whiskers past axis limits clipped"
+  ],
+  "axes": [
+   {
+    "title_left": "Activation score, greedy screen\n(24 families)",
+    "xlabel": "steered \u2212 null (context-swap fraction)",
+    "xticklabels": [
+     "\u22120.6",
+     "\u22120.4",
+     "\u22120.2",
+     "0.0",
+     "0.2",
+     "0.4",
+     "0.6"
+    ],
+    "yticklabels": [
+     "chat \u2192 plain, all layers",
+     "chat \u2192 plain, layer 51",
+     "plain \u2192 chat, all layers",
+     "plain \u2192 chat, layer 51",
+     "chat \u2192 Astra (story), all layers",
+     "chat \u2192 Astra (story), layer 51",
+     "Astra (story) \u2192 chat, all layers",
+     "Astra (story) \u2192 chat, layer 51",
+     "chat \u2192 Dana (story), all layers",
+     "chat \u2192 Dana (story), layer 51",
+     "Dana (story) \u2192 chat, all layers",
+     "Dana (story) \u2192 chat, layer 51",
+     "chat \u2192 HELIOS (story), all layers",
+     "chat \u2192 HELIOS (story), layer 51",
+     "HELIOS (story) \u2192 chat, all layers",
+     "HELIOS (story) \u2192 chat, layer 51",
+     "chat \u2192 Vex (story), all layers",
+     "chat \u2192 Vex (story), layer 51",
+     "Vex (story) \u2192 chat, all layers",
+     "Vex (story) \u2192 chat, layer 51",
+     "chat \u2192 Wren (story), all layers",
+     "chat \u2192 Wren (story), layer 51",
+     "Wren (story) \u2192 chat, all layers",
+     "Wren (story) \u2192 chat, layer 51"
+    ]
+   },
+   {
+    "title_left": "Activation score, independent confirm\n(temp 1.0, 4 screened families)",
+    "xlabel": "steered \u2212 null (context-swap fraction)",
+    "xticklabels": [
+     "\u22120.6",
+     "\u22120.4",
+     "\u22120.2",
+     "0.0",
+     "0.2",
+     "0.4",
+     "0.6"
+    ],
+    "yticklabels": [
+     "chat \u2192 plain, all layers",
+     "plain \u2192 chat, all layers",
+     "Astra (story) \u2192 chat, layer 51",
+     "Vex (story) \u2192 chat, all layers"
+    ]
+   },
+   {
+    "title_left": "Behavior score, judge-scored\n(20 grid + 2 confirm families)",
+    "xlabel": "steered \u2212 null (anchor-contrast fraction)",
+    "xticklabels": [
+     "\u22122",
+     "\u22121",
+     "0",
+     "1",
+     "2"
+    ],
+    "yticklabels": [
+     "chat \u2192 Astra (story), all layers",
+     "chat \u2192 Astra (story), layer 51",
+     "Astra (story) \u2192 chat, all layers",
+     "Astra (story) \u2192 chat, layer 51",
+     "chat \u2192 Dana (story), all layers",
+     "chat \u2192 Dana (story), layer 51",
+     "Dana (story) \u2192 chat, all layers",
+     "Dana (story) \u2192 chat, layer 51",
+     "chat \u2192 HELIOS (story), all layers",
+     "chat \u2192 HELIOS (story), layer 51",
+     "HELIOS (story) \u2192 chat, all layers",
+     "HELIOS (story) \u2192 chat, layer 51",
+     "chat \u2192 Vex (story), all layers",
+     "chat \u2192 Vex (story), layer 51",
+     "Vex (story) \u2192 chat, all layers",
+     "Vex (story) \u2192 chat, layer 51",
+     "chat \u2192 Wren (story), all layers",
+     "chat \u2192 Wren (story), layer 51",
+     "Wren (story) \u2192 chat, all layers",
+     "Wren (story) \u2192 chat, layer 51",
+     "Astra (story) \u2192 chat, layer 51 [confirm]",
+     "Vex (story) \u2192 chat, all layers [confirm]"
+    ]
+   }
+  ]
+ },
+ "formats_written": [
+  "png",
+  "pdf"
+ ],
+ "data_path": "eval_results/issue_2378/causal-patching-arms/patch_summary.json"
+}

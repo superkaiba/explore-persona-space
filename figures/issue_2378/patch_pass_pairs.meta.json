@@ -1,0 +1,1534 @@
+{
+  "commit": "6f9dd332+dirty",
+  "render_id": "ce612f7065aa4dd0",
+  "git_commit": "6f9dd332583416972193b41112e9df1fc1b95533",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_patch_fig.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_patch_fig.py",
+  "created": "2026-08-25T23:56:01Z",
+  "figsize": [
+    11.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.11068791125992661,
+      "activation score, steered \u2212 null (per question)": 0.1540072113275528,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17100188084463058,
+      "activation score, steered \u2212 null (per question)": 0.12106943130493164,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09545237441595117,
+      "activation score, steered \u2212 null (per question)": 0.2664187550544739,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12447375476931449,
+      "activation score, steered \u2212 null (per question)": -0.23771992325782776,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2330480773802231,
+      "activation score, steered \u2212 null (per question)": -0.4536547362804413,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07438797670538394,
+      "activation score, steered \u2212 null (per question)": 0.10726135969161987,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11299485364173648,
+      "activation score, steered \u2212 null (per question)": 1.255061388015747,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10850842505014832,
+      "activation score, steered \u2212 null (per question)": -0.09833848476409912,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22693954611840172,
+      "activation score, steered \u2212 null (per question)": 0.1043316125869751,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16893053117879792,
+      "activation score, steered \u2212 null (per question)": 0.4097466766834259,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18325635563813536,
+      "activation score, steered \u2212 null (per question)": 0.0951475203037262,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08318230200725168,
+      "activation score, steered \u2212 null (per question)": -0.27564194798469543,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1341042783854804,
+      "activation score, steered \u2212 null (per question)": 0.4210061617195606,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10190290961125062,
+      "activation score, steered \u2212 null (per question)": 0.35067474842071533,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1701854442110804,
+      "activation score, steered \u2212 null (per question)": 0.0810888223350048,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20909703007874017,
+      "activation score, steered \u2212 null (per question)": 0.3074049651622772,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15017473833714973,
+      "activation score, steered \u2212 null (per question)": -0.28454768657684326,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23851289390124844,
+      "activation score, steered \u2212 null (per question)": 0.11088743805885315,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10102638904133524,
+      "activation score, steered \u2212 null (per question)": 0.2560802698135376,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13630040815802835,
+      "activation score, steered \u2212 null (per question)": 0.16211199760437012,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11354420678463273,
+      "activation score, steered \u2212 null (per question)": 0.26069972664117813,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1861853257366237,
+      "activation score, steered \u2212 null (per question)": -0.07494580745697021,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07527435560891743,
+      "activation score, steered \u2212 null (per question)": 0.1226833164691925,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08923819816200443,
+      "activation score, steered \u2212 null (per question)": 0.38103578984737396,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10989097052672286,
+      "activation score, steered \u2212 null (per question)": -0.17313522100448608,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21496503258664584,
+      "activation score, steered \u2212 null (per question)": 0.78848797082901,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16599021932913385,
+      "activation score, steered \u2212 null (per question)": -0.12301820516586304,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24211532215829884,
+      "activation score, steered \u2212 null (per question)": 0.3247588574886322,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22222789142784138,
+      "activation score, steered \u2212 null (per question)": -0.7276753336191177,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12705118841635815,
+      "activation score, steered \u2212 null (per question)": 0.7103540450334549,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11594281193659292,
+      "activation score, steered \u2212 null (per question)": 0.2981823682785034,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07584824816184221,
+      "activation score, steered \u2212 null (per question)": 0.062115609645843506,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19135143553513265,
+      "activation score, steered \u2212 null (per question)": -0.051138103008270264,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.18331725291372358,
+      "activation score, steered \u2212 null (per question)": 0.1063690185546875,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1654799539703546,
+      "activation score, steered \u2212 null (per question)": 0.7930963635444641,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21589515536482856,
+      "activation score, steered \u2212 null (per question)": -0.09222912788391113,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2266141290396151,
+      "activation score, steered \u2212 null (per question)": 0.2654297351837158,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16437311327933193,
+      "activation score, steered \u2212 null (per question)": 0.7683766484260559,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20915631717084088,
+      "activation score, steered \u2212 null (per question)": 0.2469380497932434,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12943348095714813,
+      "activation score, steered \u2212 null (per question)": 0.39993569254875183,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17131265460298045,
+      "activation score, steered \u2212 null (per question)": 0.13174545764923096,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10011792470958927,
+      "activation score, steered \u2212 null (per question)": -0.015731513500213623,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12395228163959515,
+      "activation score, steered \u2212 null (per question)": -0.16552001237869263,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19377400455123261,
+      "activation score, steered \u2212 null (per question)": 0.0835123360157013,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10019323574886382,
+      "activation score, steered \u2212 null (per question)": -0.2905951887369156,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10514241565057567,
+      "activation score, steered \u2212 null (per question)": -0.31318996101617813,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1802538917745686,
+      "activation score, steered \u2212 null (per question)": 0.01148766279220581,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.19810094129255607,
+      "activation score, steered \u2212 null (per question)": -0.37053391337394714,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1271508092845044,
+      "activation score, steered \u2212 null (per question)": 0.186538964509964,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22484455295032424,
+      "activation score, steered \u2212 null (per question)": 0.34299206733703613,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2140165235544805,
+      "activation score, steered \u2212 null (per question)": 0.7461609542369843,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24867479144481902,
+      "activation score, steered \u2212 null (per question)": 0.3520584851503372,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1083536120496151,
+      "activation score, steered \u2212 null (per question)": 0.14152337610721588,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13032684581343423,
+      "activation score, steered \u2212 null (per question)": 0.5561331063508987,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12307023184725968,
+      "activation score, steered \u2212 null (per question)": 0.37650489807128906,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10946877441604577,
+      "activation score, steered \u2212 null (per question)": -0.2769298553466797,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16739516040309882,
+      "activation score, steered \u2212 null (per question)": -0.19963359832763672,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14762658472847912,
+      "activation score, steered \u2212 null (per question)": -0.3490695059299469,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22483654033702166,
+      "activation score, steered \u2212 null (per question)": 0.04500323534011841,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22938458676352477,
+      "activation score, steered \u2212 null (per question)": 0.09349578619003296,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1903125331222849,
+      "activation score, steered \u2212 null (per question)": 0.18083572983741758,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.15479731710576386,
+      "activation score, steered \u2212 null (per question)": -0.13447399586439132,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.171742499166614,
+      "activation score, steered \u2212 null (per question)": -0.134321928024292,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.2076997943348846,
+      "activation score, steered \u2212 null (per question)": 0.8176839411258698,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18424929760010633,
+      "activation score, steered \u2212 null (per question)": 0.42010389789938923,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.16964429211843923,
+      "activation score, steered \u2212 null (per question)": 0.22329033613204963,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17065728893417442,
+      "activation score, steered \u2212 null (per question)": 0.5461552403867245,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1247110176512702,
+      "activation score, steered \u2212 null (per question)": -0.04754809141159061,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0755472102222291,
+      "activation score, steered \u2212 null (per question)": 0.4317978516221046,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14860913006182525,
+      "activation score, steered \u2212 null (per question)": -0.09400765299797059,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10862524110751526,
+      "activation score, steered \u2212 null (per question)": -0.048084698617458344,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.14353515587043453,
+      "activation score, steered \u2212 null (per question)": 0.14716384559869766,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.2236125531882699,
+      "activation score, steered \u2212 null (per question)": -0.13398782014846805,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11210910745576133,
+      "activation score, steered \u2212 null (per question)": 0.33271826729178433,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08049449350403189,
+      "activation score, steered \u2212 null (per question)": 0.165394689515233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12064910056395939,
+      "activation score, steered \u2212 null (per question)": 0.15518541056662793,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.12284687639800305,
+      "activation score, steered \u2212 null (per question)": 0.3030558846890926,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18914497265084113,
+      "activation score, steered \u2212 null (per question)": 0.3154695227742195,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17026578742143011,
+      "activation score, steered \u2212 null (per question)": 0.957811351120472,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21110167763915444,
+      "activation score, steered \u2212 null (per question)": -0.17296137934317812,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.18957643725892975,
+      "activation score, steered \u2212 null (per question)": -0.17757413908839226,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1431496350592127,
+      "activation score, steered \u2212 null (per question)": 0.1588698923587799,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.21652366923988625,
+      "activation score, steered \u2212 null (per question)": -0.18753580898046493,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10005512558338671,
+      "activation score, steered \u2212 null (per question)": 0.15019276142120358,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0740881731640949,
+      "activation score, steered \u2212 null (per question)": -0.05802307575941085,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08620861493961551,
+      "activation score, steered \u2212 null (per question)": -0.12280092537403108,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.20002468310736105,
+      "activation score, steered \u2212 null (per question)": 0.096549154445529,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.15313790144524975,
+      "activation score, steered \u2212 null (per question)": 0.25328294597566126,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09902892022604833,
+      "activation score, steered \u2212 null (per question)": 0.06827248334884645,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.16018805951860543,
+      "activation score, steered \u2212 null (per question)": 0.004645679146051407,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.7774161784883703,
+      "activation score, steered \u2212 null (per question)": 0.05362015310674906,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8753376675139924,
+      "activation score, steered \u2212 null (per question)": -1.1382504887878895,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8303081296033255,
+      "activation score, steered \u2212 null (per question)": -0.1810341253876686,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8185838206973668,
+      "activation score, steered \u2212 null (per question)": -1.0026887208223343,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8042721760466177,
+      "activation score, steered \u2212 null (per question)": -0.06761905550956726,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8634508667613999,
+      "activation score, steered \u2212 null (per question)": -0.09738223091699183,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8151262698996102,
+      "activation score, steered \u2212 null (per question)": -0.9048736318945885,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7657769854768981,
+      "activation score, steered \u2212 null (per question)": -0.0574604868888855,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7712410623816928,
+      "activation score, steered \u2212 null (per question)": -0.10081270337104797,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9231415796189126,
+      "activation score, steered \u2212 null (per question)": -0.1401718072593212,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9135445243273692,
+      "activation score, steered \u2212 null (per question)": -0.742536835372448,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8759472840859349,
+      "activation score, steered \u2212 null (per question)": -0.7890844941139221,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7978565930627135,
+      "activation score, steered \u2212 null (per question)": 0.17951301485300064,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9244517479225902,
+      "activation score, steered \u2212 null (per question)": -0.185682475566864,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.890175162713843,
+      "activation score, steered \u2212 null (per question)": -0.0010452419519424438,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8790402340486192,
+      "activation score, steered \u2212 null (per question)": -0.14093941450119019,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8308850703858819,
+      "activation score, steered \u2212 null (per question)": -0.022456765174865723,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7990034811321286,
+      "activation score, steered \u2212 null (per question)": -0.2975093787536025,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7673503731876299,
+      "activation score, steered \u2212 null (per question)": 0.1071653962135315,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9124684313778915,
+      "activation score, steered \u2212 null (per question)": -0.5273852199316025,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.83203973217005,
+      "activation score, steered \u2212 null (per question)": 0.09443347156047821,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7864254056631415,
+      "activation score, steered \u2212 null (per question)": -0.17376476526260376,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8050721923471175,
+      "activation score, steered \u2212 null (per question)": -0.12616758421063423,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8542595224095413,
+      "activation score, steered \u2212 null (per question)": -0.15974420309066772,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7818191009290617,
+      "activation score, steered \u2212 null (per question)": 0.06512889266014099,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9041905711366276,
+      "activation score, steered \u2212 null (per question)": 0.16786176711320877,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8865335153703378,
+      "activation score, steered \u2212 null (per question)": -0.3517748713493347,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8795033320711686,
+      "activation score, steered \u2212 null (per question)": -0.5040536522865295,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8277767471595187,
+      "activation score, steered \u2212 null (per question)": 0.05128954350948334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8629155913264397,
+      "activation score, steered \u2212 null (per question)": 0.9389459639787674,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8551376344042924,
+      "activation score, steered \u2212 null (per question)": 0.13475809805095196,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8669723882798676,
+      "activation score, steered \u2212 null (per question)": -1.0237013325095177,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.76519997780518,
+      "activation score, steered \u2212 null (per question)": -0.045284613966941833,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8248453323907097,
+      "activation score, steered \u2212 null (per question)": 0.781174898147583,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7574905512951406,
+      "activation score, steered \u2212 null (per question)": -0.013489022850990295,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8389183474640134,
+      "activation score, steered \u2212 null (per question)": 0.6847703158855438,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8093750182199013,
+      "activation score, steered \u2212 null (per question)": 0.014640092849731445,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7760143539958884,
+      "activation score, steered \u2212 null (per question)": 0.027331650257110596,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7686125341900593,
+      "activation score, steered \u2212 null (per question)": -0.11520157568156719,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8557760229919882,
+      "activation score, steered \u2212 null (per question)": -0.09242033958435059,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7807067343366395,
+      "activation score, steered \u2212 null (per question)": -0.04234836995601654,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9165216213078234,
+      "activation score, steered \u2212 null (per question)": -0.46023990213871,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.854591005146071,
+      "activation score, steered \u2212 null (per question)": -0.041997939348220825,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1324365648162706,
+      "activation score, steered \u2212 null (per question)": 0.13726757373660803,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.176364788466655,
+      "activation score, steered \u2212 null (per question)": 0.1522845987230539,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0741046967853454,
+      "activation score, steered \u2212 null (per question)": 0.03046244283517202,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2425406583834602,
+      "activation score, steered \u2212 null (per question)": -0.09302113316953182,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.156814618649722,
+      "activation score, steered \u2212 null (per question)": 0.4269339144229889,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2108923409050514,
+      "activation score, steered \u2212 null (per question)": -0.28028432130813596,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0848913999860388,
+      "activation score, steered \u2212 null (per question)": 0.2642163604497909,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1575984995508688,
+      "activation score, steered \u2212 null (per question)": 0.3472785527507464,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1583272589838136,
+      "activation score, steered \u2212 null (per question)": -0.35455918684601784,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2388087618954968,
+      "activation score, steered \u2212 null (per question)": -0.0703534628264606,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1729110494276935,
+      "activation score, steered \u2212 null (per question)": -0.18445246964693068,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1552280921902516,
+      "activation score, steered \u2212 null (per question)": -0.48046576231718063,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1180556193565407,
+      "activation score, steered \u2212 null (per question)": -0.636482154019177,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1296824195216593,
+      "activation score, steered \u2212 null (per question)": -0.7102335815628369,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1637210324448768,
+      "activation score, steered \u2212 null (per question)": 0.05102587342262266,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1490040628549083,
+      "activation score, steered \u2212 null (per question)": 0.020710514113307,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0738901743784595,
+      "activation score, steered \u2212 null (per question)": -0.14976226724684238,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2187325463549843,
+      "activation score, steered \u2212 null (per question)": 0.5740642119199038,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.231308938931158,
+      "activation score, steered \u2212 null (per question)": -0.5742119293659925,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.09524483601975,
+      "activation score, steered \u2212 null (per question)": -0.030625751614570595,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1697265058370288,
+      "activation score, steered \u2212 null (per question)": -0.1247036974877119,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0895436334043798,
+      "activation score, steered \u2212 null (per question)": -0.15826983368024228,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.191003216747166,
+      "activation score, steered \u2212 null (per question)": 0.40834984332323077,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1206220810910215,
+      "activation score, steered \u2212 null (per question)": -0.13687435840256512,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1886960742445423,
+      "activation score, steered \u2212 null (per question)": 0.06334817782044411,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.200859030571639,
+      "activation score, steered \u2212 null (per question)": -0.3568429790437222,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2083565485451782,
+      "activation score, steered \u2212 null (per question)": -0.7300915060564875,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0893933702720613,
+      "activation score, steered \u2212 null (per question)": -0.5540647447109223,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.2348821321247694,
+      "activation score, steered \u2212 null (per question)": 0.5979327587410808,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1114385183610784,
+      "activation score, steered \u2212 null (per question)": -0.05162422303110362,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.7567342601117124,
+      "activation score, steered \u2212 null (per question)": -0.007326886057853699,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8498734444904672,
+      "activation score, steered \u2212 null (per question)": 0.0725458562374115,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.816766011095239,
+      "activation score, steered \u2212 null (per question)": 0.02405054308474064,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8993621537638345,
+      "activation score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8954852649715743,
+      "activation score, steered \u2212 null (per question)": 0.11030290648341179,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8070850007080888,
+      "activation score, steered \u2212 null (per question)": -0.00047263316810131073,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9215218911125542,
+      "activation score, steered \u2212 null (per question)": 0.010491538792848587,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8023652108652215,
+      "activation score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8427102832617086,
+      "activation score, steered \u2212 null (per question)": 0.0001275278627872467,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7960737163021685,
+      "activation score, steered \u2212 null (per question)": 0.38998688850551844,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9184878426088134,
+      "activation score, steered \u2212 null (per question)": 0.03162021189928055,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.7796294071647634,
+      "activation score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0780839114906193,
+      "activation score, steered \u2212 null (per question)": -0.18839842500165105,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.148317470800547,
+      "activation score, steered \u2212 null (per question)": 0.26059601809829475,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2486276015300506,
+      "activation score, steered \u2212 null (per question)": 0.05104176886379719,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2305019079258845,
+      "activation score, steered \u2212 null (per question)": -0.08197370767593384,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.204749443502251,
+      "activation score, steered \u2212 null (per question)": 0.14463464766740802,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2303426483581346,
+      "activation score, steered \u2212 null (per question)": 0.03429935667663811,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.2308203951456154,
+      "activation score, steered \u2212 null (per question)": 0.1255960002541542,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.163394504869561,
+      "activation score, steered \u2212 null (per question)": -0.10948038501664994,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1268672293295428,
+      "activation score, steered \u2212 null (per question)": 0.3216197039932012,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.208962237779978,
+      "activation score, steered \u2212 null (per question)": 0.2565752489492297,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1890990273701973,
+      "activation score, steered \u2212 null (per question)": -0.06963442512787879,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.137258391197268,
+      "activation score, steered \u2212 null (per question)": -0.03616094514727593,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.7670040002510725,
+      "activation score, steered \u2212 null (per question)": -0.0645906925201416,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8844221300428243,
+      "activation score, steered \u2212 null (per question)": -0.0004915297031402588,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7972428928661155,
+      "activation score, steered \u2212 null (per question)": -0.11519321333616972,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.91862636709608,
+      "activation score, steered \u2212 null (per question)": 0.042986201122403145,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.7933747035010232,
+      "activation score, steered \u2212 null (per question)": -0.09449179098010063,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.772096427834067,
+      "activation score, steered \u2212 null (per question)": -0.5467444807291031,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.899600280982483,
+      "activation score, steered \u2212 null (per question)": 8.213520050048828e-05,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.777591176992409,
+      "activation score, steered \u2212 null (per question)": 0.0043031200766563416,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1022682954683933,
+      "activation score, steered \u2212 null (per question)": -0.0027577936649322288,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.177888902473752,
+      "activation score, steered \u2212 null (per question)": 0.11798344552516937,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2274211673507436,
+      "activation score, steered \u2212 null (per question)": 0.015943755069747566,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1053582398286235,
+      "activation score, steered \u2212 null (per question)": 0.007338852621614933,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1258582611220174,
+      "activation score, steered \u2212 null (per question)": -0.2253977380692959,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.2099328708834123,
+      "activation score, steered \u2212 null (per question)": -0.3995754736475646,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.244928756690974,
+      "activation score, steered \u2212 null (per question)": -0.126547547057271,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1601334135164216,
+      "activation score, steered \u2212 null (per question)": -0.20885150233904523,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0959015504592253,
+      "activation score, steered \u2212 null (per question)": 0.10661735832691194,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0725085317874763,
+      "activation score, steered \u2212 null (per question)": -0.17902449183166028,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1113380853997943,
+      "activation score, steered \u2212 null (per question)": -0.11173849254846574,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.093727999201574,
+      "activation score, steered \u2212 null (per question)": 0.30857437252998354,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.03908490819482864,
+      "behavior score, steered \u2212 null (per question)": -0.2212766706943512,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.08319684898172315,
+      "behavior score, steered \u2212 null (per question)": 0.4383561760187149,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.0013925849565392667,
+      "behavior score, steered \u2212 null (per question)": 0.04236005246639252,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.04273773584143502,
+      "behavior score, steered \u2212 null (per question)": -0.15807554870843887,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.017845654028598515,
+      "behavior score, steered \u2212 null (per question)": -0.19494590163230896,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.06604935663478732,
+      "behavior score, steered \u2212 null (per question)": 0.29702965542674065,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.06690739576009778,
+      "behavior score, steered \u2212 null (per question)": -0.22978723794221878,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.04738956851547636,
+      "behavior score, steered \u2212 null (per question)": -0.23540489375591278,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.05257648086141918,
+      "behavior score, steered \u2212 null (per question)": 0.8594730012118816,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.08116729465739109,
+      "behavior score, steered \u2212 null (per question)": 0.28861790895462036,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.08277416319692418,
+      "behavior score, steered \u2212 null (per question)": 0.6801074743270874,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.09406376122143169,
+      "behavior score, steered \u2212 null (per question)": 0.11940297484397888,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.9774672026414869,
+      "behavior score, steered \u2212 null (per question)": 0.19138753414154053,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9562087121918067,
+      "behavior score, steered \u2212 null (per question)": 0.14899325370788574,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9974884899773373,
+      "behavior score, steered \u2212 null (per question)": -0.11650489293970168,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0358301268079881,
+      "behavior score, steered \u2212 null (per question)": 0.21235805749893188,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.1002371165503333,
+      "behavior score, steered \u2212 null (per question)": -0.5295138247311115,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9530181699140521,
+      "behavior score, steered \u2212 null (per question)": -0.5558823645114899,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.093457854448646,
+      "behavior score, steered \u2212 null (per question)": -0.22316863387823105,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.8954690881049764,
+      "behavior score, steered \u2212 null (per question)": -0.78925621509552,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0121435693119014,
+      "behavior score, steered \u2212 null (per question)": 0.5753113627433777,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.0294745245698387,
+      "behavior score, steered \u2212 null (per question)": -0.6436314284801483,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9132974288251657,
+      "behavior score, steered \u2212 null (per question)": -0.3239608556032181,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.9208747113540607,
+      "behavior score, steered \u2212 null (per question)": 0.4800000712275505,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9822051502495868,
+      "behavior score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1025710206715,
+      "behavior score, steered \u2212 null (per question)": 0.029173433780670166,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.021129361711562,
+      "behavior score, steered \u2212 null (per question)": 0.6024095565080643,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0952651087520464,
+      "behavior score, steered \u2212 null (per question)": -0.01646088995039463,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0669594014348536,
+      "behavior score, steered \u2212 null (per question)": 0.25169408321380615,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9928239523421643,
+      "behavior score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0626479588354814,
+      "behavior score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.8939240924749372,
+      "behavior score, steered \u2212 null (per question)": 0.12795273959636688,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9140116792884616,
+      "behavior score, steered \u2212 null (per question)": 0.16366616636514664,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.072474295274202,
+      "behavior score, steered \u2212 null (per question)": 0.2825745139271021,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0652997594315354,
+      "behavior score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9411809632326154,
+      "behavior score, steered \u2212 null (per question)": 0.0,
+      "_kind": "scatter",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 243,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [
+      "Per-question paired differences behind the family aggregates",
+      "each point = one question's steered \u2212 matched-null difference; horizontal bar = family mean"
+    ],
+    "axes": [
+      {
+        "title_left": "Per-question activation differences, 4 screen-PASS families",
+        "ylabel": "activation score, steered \u2212 null (per question)",
+        "legend_labels": [
+          "greedy grid",
+          "temp-1.0 confirm"
+        ],
+        "xticklabels": [
+          "chat \u2192 plain,\nall layers",
+          "plain \u2192 chat,\nall layers",
+          "Astra (story) \u2192 chat,\nlayer 51",
+          "Vex (story) \u2192 chat,\nall layers"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title_left": "Per-question behavior differences",
+        "ylabel": "behavior score, steered \u2212 null (per question)",
+        "xticklabels": [
+          "Astra (story) \u2192 chat,\nlayer 51\n[confirm]",
+          "Vex (story) \u2192 chat,\nall layers\n[confirm]",
+          "Dana (story) \u2192 chat,\nlayer 51\n[grid]"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
