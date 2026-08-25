@@ -88,6 +88,24 @@ WINNER_LABELS: dict[str, str] = {
     "Mean activation (when active)": "mean activation (when active)",
 }
 
+# The left panel stops after this row (user directive 2026-08-24): the rounds
+# below it sit within ~0.06 of the null and add length without adding a
+# readable effect. Keyed on the plain-English canvas label, and fail-loud when
+# absent, so a stepwise re-run that reorders or renames the selection surfaces
+# the change here instead of silently truncating at a different property.
+LEFT_PANEL_LAST_LABEL = "topic content"
+
+
+def truncate_left_panel(rows: list[dict]) -> list[dict]:
+    """Rows down to and including ``LEFT_PANEL_LAST_LABEL`` (see its comment)."""
+    labels = [r["label"] for r in rows]
+    if LEFT_PANEL_LAST_LABEL not in labels:
+        raise RuntimeError(
+            f"left-panel cut row {LEFT_PANEL_LAST_LABEL!r} not among the banked stepwise "
+            f"winners {labels!r} — re-pick the cut instead of shipping an untruncated panel"
+        )
+    return rows[: labels.index(LEFT_PANEL_LAST_LABEL) + 1]
+
 
 def load_stepwise() -> list[dict]:
     """Banked stepwise rounds -> [{label, value, round}] in selection order.
@@ -203,7 +221,8 @@ def render(rows: list[dict], tier_doc: dict) -> None:
 
 def main() -> int:
     """Load banked inputs, compute the controlled gradient, write JSON + figure."""
-    rows = load_stepwise()
+    rows_all = load_stepwise()
+    rows = truncate_left_panel(rows_all)
     tier_doc = tier_gradient_activity_controlled()
     banked_tests = json.loads(TIER_TESTS.read_text())
     OUT_EVAL.parent.mkdir(parents=True, exist_ok=True)
@@ -215,7 +234,15 @@ def main() -> int:
             "properties",
             "dv": "dense-context->SAE-feature ridge per-feature held-out R^2 "
             "(regular full-width layer-19 SAE; banked in the stepwise sidecar)",
-            "rows": rows,
+            # Every selected round stays in the record; the figure renders only
+            # the prefix down to LEFT_PANEL_LAST_LABEL, so the cut is auditable
+            # rather than invisible in the artifact.
+            "rows": rows_all,
+            "rendered_labels": [r["label"] for r in rows],
+            "truncation": (
+                f"left panel rendered down to and including {LEFT_PANEL_LAST_LABEL!r} "
+                f"({len(rows)} of {len(rows_all)} selection rounds; user directive 2026-08-24)"
+            ),
         },
         "right_panel": {
             "source": str(PERFEATURE_NPZ.relative_to(PROJECT_ROOT)),
@@ -238,8 +265,10 @@ def main() -> int:
     OUT_EVAL.write_text(json.dumps(payload, indent=2) + "\n")
     print(f"[plot4] wrote {OUT_EVAL.relative_to(PROJECT_ROOT)}", flush=True)
     render(rows, tier_doc)
-    for r in rows:
-        print(f"[plot4] round {r['round']:2d}  c-1/2 = {r['value']:+.3f}  {r['label']}")
+    rendered = {r["label"] for r in rows}
+    for r in rows_all:
+        mark = "     " if r["label"] in rendered else " CUT "
+        print(f"[plot4]{mark}round {r['round']:2d}  c-1/2 = {r['value']:+.3f}  {r['label']}")
     for t in (0, 1, 2):
         d = tier_doc["per_tier"][str(t)]
         print(
