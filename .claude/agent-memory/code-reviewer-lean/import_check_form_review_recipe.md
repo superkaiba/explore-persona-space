@@ -31,3 +31,9 @@ non-obvious ones. No unit test is owed — the smoke-arch Axis-1 marker is the b
 
 **How to apply:** any diff touching `add_argument("--phase", required=True)` /
 adding an `--import-check` branch / adding a post-parse phase guard.
+
+**Probe-1 census nuance (#2544 r1 g3):** `argcheck-bind: 0 bound, 0 degraded, 0
+skipped` does NOT mean the check was hollow — "bound" counts the import-bind
+CENSUS sites (hub-alias bindings), a separate report line; the core
+`args.<attr>`-has-a-definition assertion runs regardless and raises on mismatch.
+Don't flag a 0-bound file as an unverified import-check.
