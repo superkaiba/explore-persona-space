@@ -15,6 +15,7 @@ title: The frozen context-to-answer map recovers the direction of instruction-dr
 has_clean_result: true
 tags:
 - followup-auto
+- keep-running
 ---
 # The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)
 <!-- clean-result-v4 -->
