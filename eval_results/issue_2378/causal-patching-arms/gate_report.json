@@ -1,0 +1,123 @@
+{
+  "lstar": 51,
+  "read_layers": [
+    51,
+    59
+  ],
+  "spots": [
+    {
+      "recipient": "chat:storyq_astra_00",
+      "donor": "chat:storyq_astra_01",
+      "cos": 1.000001311302185,
+      "norm_ratio": 0.9999993443489075,
+      "max_abs_elsewhere": 0.0,
+      "downstream_moved_max_abs": 7.140625,
+      "n_edits": 1,
+      "ok": true
+    },
+    {
+      "recipient": "chat:storyq_astra_02",
+      "donor": "chat:storyq_astra_03",
+      "cos": 1.0000009536743164,
+      "norm_ratio": 0.9999995231628418,
+      "max_abs_elsewhere": 0.0,
+      "downstream_moved_max_abs": 4.78515625,
+      "n_edits": 1,
+      "ok": true
+    },
+    {
+      "recipient": "chat:storyq_astra_04",
+      "donor": "chat:storyq_astra_05",
+      "cos": 1.0000011920928955,
+      "norm_ratio": 0.999999463558197,
+      "max_abs_elsewhere": 0.0,
+      "downstream_moved_max_abs": 15.66015625,
+      "n_edits": 1,
+      "ok": true
+    },
+    {
+      "recipient": "chat:storyq_astra_06",
+      "donor": "chat:storyq_astra_07",
+      "cos": 1.0000008344650269,
+      "norm_ratio": 0.9999995827674866,
+      "max_abs_elsewhere": 0.0,
+      "downstream_moved_max_abs": 10.0,
+      "n_edits": 1,
+      "ok": true
+    },
+    {
+      "recipient": "chat:storyq_astra_08",
+      "donor": "chat:storyq_astra_09",
+      "cos": 1.0000011920928955,
+      "norm_ratio": 0.9999995231628418,
+      "max_abs_elsewhere": 0.0,
+      "downstream_moved_max_abs": 13.8125,
+      "n_edits": 1,
+      "ok": true
+    },
+    {
+      "recipient": "chat:storyq_astra_10",
+      "donor": "chat:storyq_astra_11",
+      "cos": 1.0000008344650269,
+      "norm_ratio": 0.9999995827674866,
+      "max_abs_elsewhere": 0.0,
+      "downstream_moved_max_abs": 12.3125,
+      "n_edits": 1,
+      "ok": true
+    }
+  ],
+  "padding_parity_cos": 0.999944806098938,
+  "padding_parity_ok": true,
+  "greedy_parity_match": true,
+  "hooked_generate_n_edits": 1,
+  "hooked_generate_n_tokens": 8,
+  "hooked_generate_ok": true,
+  "ok": true,
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-25T21:12:57+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_patch_run.py",
+      "--phase",
+      "model_all",
+      "--out-root",
+      "/workspace/explore-persona-space/data/issue_2378/patch_round",
+      "--kept-dir",
+      "/workspace/explore-persona-space/eval_results/issue_2378/kept",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_completions",
+      "--n-q-per-char",
+      "12",
+      "--anchor-draws",
+      "10",
+      "--confirm-draws",
+      "5",
+      "--device",
+      "cuda",
+      "--hf-suffix",
+      "",
+      "--ledger-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378",
+      "--cells-limit",
+      "0",
+      "--batch-tokens",
+      "16384",
+      "--max-batch-rows",
+      "16",
+      "--capture-max-tokens",
+      "6144",
+      "--min-free-hbm-gb",
+      "58.0",
+      "--stage-raw-from-hf",
+      "--sentinel-dir",
+      "/workspace/logs"
+    ],
+    "git_commit": "08a81e5a249c935eb956ab1a893455f6bdb6e226",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_patch_run.py",
+    "phase": "patch_bank",
+    "n_contexts": 180
+  }
+}
