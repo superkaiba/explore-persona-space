@@ -11,10 +11,13 @@ Builds the 8-corpus staging bundle consumed by every arm's pod:
    k<=2, recorded in the manifest).
 2. Pull MMLU / ARC-Challenge / CSQA / PIQA / ContextHub (via TAUR-Lab configs) at the
    per-arm draws of plan section 4.1 (nested arm-1/2 subset of the arm-3 draw).
-3. Join the TAUR-Lab CoT Analysis collection (16 per-model repos) into a per-question
+3. Join the TAUR-Lab CoT Analysis collection (the UN-GATED per-model repos —
+   ``gated='manual'`` repos are excluded at LISTING time and RECORDED, never silently
+   dropped; user ruling 2026-08-25, epm:progress v26) into a per-question
    ``rescue_rate`` (fraction of joined models with cot_correct AND NOT direct_correct;
    join by normalized question text; unjoined rows keep rescue_rate = null, never
-   imputed; coverage reported per corpus).
+   imputed; coverage reported per corpus; the realized model list + per-config model
+   counts are recorded in the manifest so the denominator change is never silent).
 4. Near-dup dedup WITHIN + ACROSS corpora BEFORE any draw/split: the reused #1739
    MinHash signatures (char-5 shingles, 64 perms) generate CANDIDATE pairs via LSH
    (16 bands x 4 rows => candidates from Jaccard ~>=0.5), each candidate then
@@ -122,24 +125,36 @@ LSH_BANDS = 16
 JACCARD_VERIFY_THRESHOLD = 0.8
 
 TAUR_REPO_MARKER = "Taur_CoT_Analysis_Project"
-# The plan (section 4.2) named 16 per-model repos; the live 2026-08-24 listing carries
-# MORE (22 per-model incl. the double-underscore Llama variant) plus the gated parent
-# and 2 experiment repos. Discovery therefore prefix-includes every per-model repo,
-# excludes the parent + experiment repos, and enforces a FLOOR (the realized set +
-# the plan discrepancy are recorded in the manifest).
-TAUR_EXPECTED_REPOS_FLOOR = 16
+# The plan (section 4.2) named 16 per-model repos. The live 2026-08-25 listing carries
+# 22 per-model repos (incl. the double-underscore Llama-id shape) plus the gated parent
+# and 2 experiment repos; 8 of the 22 are gated ('manual') and are excluded at LISTING
+# time (the token has no gated-read scope, so a load would 403 — user ruling 2026-08-25,
+# epm:progress v26: take the un-gated route now). Floor re-derived against the realized
+# UN-GATED set: 14 measured 2026-08-25 (FEWER than the plan's 16 — the discrepancy +
+# the excluded gated ids are recorded in the manifest, never silently absorbed); a
+# count below 14 means previously-available data vanished => fail loud.
+TAUR_EXPECTED_REPOS_FLOOR = 14
 TAUR_PARENT_REPO = "TAUR-Lab/Taur_CoT_Analysis_Project"  # gated collection parent (excluded)
 TAUR_EXCLUDE_SUFFIXES = ("__Paraphrase_Exp", "__Symbolic_Solver_Experiment")
 # Registered config-name patterns per corpus family (realized matches recorded in manifest).
 TAUR_PATTERNS: dict[str, str] = {
     "gsm8k_test": r"^gsm8k$",
     "math": r"^math$",  # anchored: \w* also matched 'math__round_2_fixes' (double-count)
+    # contexthub anchored to the 8 canonical cells: bare r"contexthub" also matched
+    # 'contexthub_deductive_level2__round_2_fixes', which parses to the SAME
+    # (type, level) cell as its base config => 'sourced twice' raise when the CH
+    # source repo is gemma-2-9b-it / Phi-3-small-8k AND a SECOND n_models increment
+    # for the SAME model on the same questions (silent rescue_rate corruption).
     "mmlu": r"^mmlu$",
     "arc_challenge": r"^arc_challenge$",
     "csqa": r"^(csqa|commonsense_?qa)$",
     "piqa": r"^piqa$",
-    "contexthub": r"contexthub",
+    "contexthub": r"^contexthub_(deductive|abductive)_level[1-4]$",
 }
+# The 8 canonical ContextHub cells (deductive|abductive x level 1-4; plan section 4.1).
+CH_CANONICAL_CELLS: frozenset[tuple[str, int]] = frozenset(
+    (t, level) for t in ("deductive", "abductive") for level in (1, 2, 3, 4)
+)
 _QUESTION_KEYS = ("question", "input", "prompt", "query")
 _GOLD_KEYS = ("gold_answer", "answer", "gold", "target")
 
@@ -453,60 +468,100 @@ def load_mcq_corpora(smoke: bool) -> dict[str, list[dict]]:
 # ---------------------------------------------------------------------------
 
 
-def _filter_taur_repo_ids(all_matching: list[str]) -> tuple[list[str], list[str]]:
+def _filter_taur_repo_ids(
+    all_matching: list[str], gated_ids: set[str] | frozenset[str]
+) -> tuple[list[str], list[str], list[str]]:
     """Pure include/exclude filter over marker-matching repo ids (testable seam).
 
-    Include: every repo under the ``Taur_CoT_Analysis_Project__`` prefix (covers
-    the triple-underscore per-model ids AND the double-underscore Llama variant).
-    Exclude: the gated collection parent (exact id, no per-model suffix) and the
-    two experiment repos (paraphrase / symbolic-solver — different question sets).
+    Include: every UN-GATED repo under the ``Taur_CoT_Analysis_Project__`` prefix
+    (covers the triple-underscore per-model ids AND the double-underscore id shape).
+    Exclude — each class RECORDED, never silently dropped:
+      excluded_gated: per-model repos whose listing entry is gated (``'manual'``
+        observed live 2026-08-25; the token has no gated-read scope, so a load
+        would 403 — user ruling epm:progress v26 takes the un-gated route now);
+      excluded_other: the collection parent (exact id, no per-model suffix; excluded
+        by the prefix rule BEFORE any gating split) and the two experiment repos
+        (paraphrase / symbolic-solver — different question sets).
+
+    Returns (repos, excluded_gated, excluded_other).
     """
-    repos = [
+    per_model = [
         rid
         for rid in all_matching
         if rid.startswith(TAUR_PARENT_REPO + "__") and not rid.endswith(TAUR_EXCLUDE_SUFFIXES)
     ]
-    return repos, sorted(set(all_matching) - set(repos))
+    repos = [rid for rid in per_model if rid not in gated_ids]
+    excluded_gated = sorted(set(per_model) & set(gated_ids))
+    excluded_other = sorted(set(all_matching) - set(per_model))
+    return repos, excluded_gated, excluded_other
 
 
 def discover_taur_repos(smoke: bool) -> tuple[list[str], dict]:
-    """Enumerate the TAUR-Lab per-model CoT-analysis repos.
+    """Enumerate the UN-GATED TAUR-Lab per-model CoT-analysis repos.
 
-    Filter semantics: _filter_taur_repo_ids. Floor >= TAUR_EXPECTED_REPOS_FLOOR
-    (the plan named 16; live count is larger — the discrepancy is recorded,
-    never silently truncated). Smoke slices the FILTERED set, so the 2 smoke
-    repos are always per-model repos.
+    Filter semantics: _filter_taur_repo_ids. Gated repos are excluded at LISTING
+    time — ``HfApi.list_datasets`` exposes ``.gated`` (measured 2026-08-25: values
+    ``False`` / ``'manual'`` across all 25 marker-matching repos), so no per-repo
+    403 probe is needed; a ``gated=None`` listing entry means the listing stopped
+    exposing gating and the filter is blind => fail loud. Floor >=
+    TAUR_EXPECTED_REPOS_FLOOR (re-derived: 14 un-gated measured 2026-08-25; the
+    plan named 16 — the discrepancy is recorded, never silently absorbed). Smoke
+    slices the FILTERED set, so the 2 smoke repos are always un-gated per-model
+    repos.
     """
     api = HfApi()
-    all_matching = sorted(
-        d.id
+    marker_matching = [
+        d
         for d in hub.retry_transient(
             lambda: list(api.list_datasets(author="TAUR-Lab", limit=500)),
             what="list_datasets TAUR-Lab",
         )
         if TAUR_REPO_MARKER in d.id
-    )
-    repos, excluded = _filter_taur_repo_ids(all_matching)
+    ]
+    gated_ids: set[str] = set()
+    for d in marker_matching:
+        if d.gated is None:
+            raise RuntimeError(
+                f"TAUR-Lab listing: {d.id} has gated=None — the listing-time gated "
+                "filter cannot run (HfApi.list_datasets stopped exposing .gated?)"
+            )
+        if d.gated:  # 'manual' observed live; 'auto'/True would be equally unreadable
+            gated_ids.add(d.id)
+    all_matching = sorted(d.id for d in marker_matching)
+    repos, excluded_gated, excluded_other = _filter_taur_repo_ids(all_matching, gated_ids)
     report = {
         "n_marker_matching": len(all_matching),
-        "n_per_model_included": len(repos),
-        "excluded": excluded,
+        "n_per_model_ungated_included": len(repos),
+        "n_per_model_gated_excluded": len(excluded_gated),
+        "included_ungated": list(repos),  # realized model list (pre smoke-slice)
+        "excluded_gated": excluded_gated,
+        "excluded_other": excluded_other,
         "expected_floor": TAUR_EXPECTED_REPOS_FLOOR,
         "plan_named_count": 16,
         "plan_count_discrepancy_note": (
-            "plan section 4.2 named 16 per-model repos; the live listing carries "
-            f"{len(repos)} — all included (rescue_rate denominators are per-question "
-            "n_models, so extra models only tighten the estimate)"
+            "plan section 4.2 named 16 per-model repos; the 2026-08-25 listing carries "
+            f"{len(repos) + len(excluded_gated)} per-model repos of which "
+            f"{len(excluded_gated)} are gated ('manual'; no gated-read credential — "
+            f"user ruling 2026-08-25 takes the un-gated route) and {len(repos)} are "
+            "staged. FEWER models than the plan named: rescue_rate denominators are "
+            "per-question n_models over the un-gated set only, so estimates are NOISIER "
+            "than planned — recorded here plus per-config model counts in taur_report, "
+            "never silent"
         ),
     }
     if smoke:
         repos = repos[:2]
     elif len(repos) < TAUR_EXPECTED_REPOS_FLOOR:
         raise RuntimeError(
-            f"TAUR-Lab discovery: {len(repos)} per-model repos < floor "
-            f"{TAUR_EXPECTED_REPOS_FLOOR}: {repos} (excluded: {excluded})"
+            f"TAUR-Lab discovery: {len(repos)} un-gated per-model repos < floor "
+            f"{TAUR_EXPECTED_REPOS_FLOOR}: {repos} (excluded_gated: {excluded_gated}; "
+            f"excluded_other: {excluded_other})"
         )
-    _log(f"TAUR-Lab per-model repos ({len(repos)}): {repos}; excluded {excluded}")
+    _log(
+        f"TAUR-Lab un-gated per-model repos ({len(repos)}): {repos}; "
+        f"excluded_gated ({len(excluded_gated)}): {excluded_gated}; "
+        f"excluded_other: {excluded_other}"
+    )
     return repos, report
 
 
@@ -541,6 +596,26 @@ def _bool_field(row: dict, key: str, where: str) -> bool:
     raise RuntimeError(f"{where}: unparseable {key}={v!r}")
 
 
+def _select_ch_source_repo(ch_cells_by_repo: dict[str, set[tuple[str, int]]]) -> str:
+    """First repo (input order) whose contexthub configs cover ALL 8 canonical cells.
+
+    ContextHub item text must come from ONE repo (question sets verified aligned
+    across repos — task body 2026-08-24), and that repo is REQUIRED to carry all 8
+    canonical (type x level) cells: the superseded first-CH-carrying pin worked only
+    because sorted order happened to put an 8-cell repo first — a 4-config repo would
+    have silently staged a partial ContextHub corpus. Raises when no loaded repo
+    covers all 8 (per-repo coverage named in the error).
+    """
+    for repo, cells in ch_cells_by_repo.items():
+        if CH_CANONICAL_CELLS <= cells:
+            return repo
+    coverage = {repo: sorted(f"{t}_L{lv}" for t, lv in c) for repo, c in ch_cells_by_repo.items()}
+    raise RuntimeError(
+        f"no loaded TAUR repo carries all {len(CH_CANONICAL_CELLS)} canonical contexthub "
+        f"cells; per-repo cell coverage: {coverage}"
+    )
+
+
 def load_taur(
     repos: list[str],
 ) -> tuple[dict[str, dict[str, dict]], dict[tuple[str, int], list[dict]], dict]:
@@ -548,14 +623,20 @@ def load_taur(
 
     Returns (rescue_acc, contexthub_cells, report):
       rescue_acc[family][norm_q] = {"n_models": int, "n_rescue": int}
-      contexthub_cells[(ch_type, level)] = rows from the FIRST repo carrying them
-        (question sets verified aligned across repos — task body 2026-08-24).
+      contexthub_cells[(ch_type, level)] = rows from the CH source repo — the FIRST
+        loaded repo carrying ALL 8 canonical cells (_select_ch_source_repo; question
+        sets verified aligned across repos — task body 2026-08-24). Exactly ONE
+        config per (repo, ch_type, level) may contribute (checked per repo), and the
+        end-of-load assert requires exactly the 8 canonical cells filled.
     """
     rescue_acc: dict[str, dict[str, dict]] = defaultdict(dict)
     ch_cells: dict[tuple[str, int], list[dict]] = {}
     report: dict = {"per_repo": {}, "configs_matched": defaultdict(set)}
-    ch_source_repo: str | None = None
 
+    # -- pass 1: config-name discovery + per-repo pattern checks (no row loads) ----
+    repo_matched: dict[str, dict[str, list[str]]] = {}
+    ch_cells_by_repo: dict[str, set[tuple[str, int]]] = {}
+    ch_variants_excluded: set[str] = set()
     for repo in repos:
         configs = hub.retry_transient(
             lambda repo=repo: get_dataset_config_names(repo), what=f"config_names {repo}"
@@ -566,6 +647,11 @@ def load_taur(
                 if re.search(pat, cfg, flags=re.IGNORECASE):
                     matched[family].append(cfg)
                     report["configs_matched"][family].add(cfg)
+            if "contexthub" in cfg.lower() and cfg not in matched.get("contexthub", ()):
+                # e.g. 'contexthub_deductive_level2__round_2_fixes' — superseded
+                # re-run variants excluded by the anchored pattern; RECORDED so the
+                # exclusion is auditable in the manifest, never silent.
+                ch_variants_excluded.add(cfg)
         for family, cfgs in matched.items():
             # One config per (repo, family) — a second match would double-count the
             # repo's model in that family's rescue_rate denominators (contexthub is
@@ -575,8 +661,33 @@ def load_taur(
                     f"{repo}: family {family!r} matched {len(cfgs)} configs {sorted(cfgs)} — "
                     "per-(repo,family) single-config expected (pattern too loose?)"
                 )
+        # Exactly ONE config per (repo, ch_type, level): a second config parsing to
+        # the same cell would add a SECOND n_models increment for the SAME model on
+        # the same questions — silent rescue_rate denominator corruption.
+        cell_cfgs: dict[tuple[str, int], str] = {}
+        for cfg in matched.get("contexthub", []):
+            key = _parse_contexthub_config(cfg)
+            if key in cell_cfgs:
+                raise RuntimeError(
+                    f"{repo}: contexthub cell {key} matched twice "
+                    f"({cell_cfgs[key]!r}, {cfg!r}) — pattern too loose?"
+                )
+            cell_cfgs[key] = cfg
+        if cell_cfgs:
+            ch_cells_by_repo[repo] = set(cell_cfgs)
+        repo_matched[repo] = {f: sorted(c) for f, c in matched.items()}
+
+    ch_source_repo = _select_ch_source_repo(ch_cells_by_repo)
+    ch_coverage = {r: len(c) for r, c in ch_cells_by_repo.items()}
+    _log(
+        f"contexthub source repo: {ch_source_repo} (all {len(CH_CANONICAL_CELLS)} canonical "
+        f"cells; per-repo canonical-cell coverage: {ch_coverage})"
+    )
+
+    # -- pass 2: row loads (rescue accumulation; CH rows from ch_source_repo only) --
+    for repo in repos:
         repo_stats: dict[str, int] = {}
-        for family, cfgs in sorted(matched.items()):
+        for family, cfgs in sorted(repo_matched[repo].items()):
             for cfg in sorted(cfgs):
                 split = _pick_split(repo, cfg)
                 ds = hub.retry_transient(
@@ -603,8 +714,7 @@ def load_taur(
                     acc["n_models"] += 1
                     acc["n_rescue"] += int(cot and not direct)
                 repo_stats[cfg] = len(seen)
-                if family == "contexthub" and ch_source_repo in (None, repo):
-                    ch_source_repo = repo
+                if family == "contexthub" and repo == ch_source_repo:
                     ch_type, level = _parse_contexthub_config(cfg)
                     rows = []
                     seen_q: set[str] = set()
@@ -637,8 +747,29 @@ def load_taur(
         report["per_repo"][repo] = repo_stats
         _log(f"TAUR {repo}: {sum(repo_stats.values())} unique rows across {len(repo_stats)} cfgs")
 
+    # End-of-load assert: exactly the 8 canonical cells filled (a partial-coverage
+    # source repo silently yielding fewer cells is the failure this prevents; extras
+    # would mean the anchored pattern regressed).
+    if set(ch_cells) != set(CH_CANONICAL_CELLS):
+        raise RuntimeError(
+            "contexthub cells filled != canonical 8: "
+            f"missing={sorted(set(CH_CANONICAL_CELLS) - set(ch_cells))} "
+            f"extra={sorted(set(ch_cells) - set(CH_CANONICAL_CELLS))} "
+            f"(source repo {ch_source_repo})"
+        )
     report["configs_matched"] = {k: sorted(v) for k, v in report["configs_matched"].items()}
     report["contexthub_source_repo"] = ch_source_repo
+    # Per-config model counts (user ruling 2026-08-25): the rescue_rate denominator
+    # change from the gated exclusion is REPORTED, never silent.
+    report["contexthub_variant_configs_excluded"] = sorted(ch_variants_excluded)
+    report["contexthub_cells_per_repo"] = {r: len(c) for r, c in sorted(ch_cells_by_repo.items())}
+    report["contexthub_models_per_cell"] = {
+        f"{t}_L{level}": sum(1 for cells in ch_cells_by_repo.values() if (t, level) in cells)
+        for (t, level) in sorted(CH_CANONICAL_CELLS)
+    }
+    report["n_models_per_family"] = {
+        fam: sum(1 for m in repo_matched.values() if m.get(fam)) for fam in TAUR_PATTERNS
+    }
     return rescue_acc, ch_cells, report
 
 
@@ -1084,26 +1215,66 @@ def _assert_staging_headroom(out_dir: Path, need_gb: float = 3.0) -> None:
 def run_selftest() -> int:
     """Deterministic, network-free staging-helper selftest (r2 Critical 3).
 
-    Covers the three helper seams the --smoke slice cannot reach determinately:
-    TAUR discovery filtering (known repo-id fixture), near-dup dedup (the
-    3-signature transitive fixture of r2 Major 6 + a text-level exact-dup
-    fixture with manifest counters), and nested draw redistribution (skewed
-    strata forcing the deficit branch).
+    Covers the helper seams the --smoke slice cannot reach determinately:
+    TAUR discovery filtering (known repo-id fixture incl. the round-6 gated
+    exclusion), the anchored contexthub pattern (round-6 __round_2_fixes
+    collision fixture), CH source-repo selection (round-6 all-8-cells
+    requirement), near-dup dedup (the 3-signature transitive fixture of r2
+    Major 6 + a text-level exact-dup fixture with manifest counters), and
+    nested draw redistribution (skewed strata forcing the deficit branch).
     """
-    # -- TAUR discovery filter (known repo ids) -----------------------------------
-    per_model = [
+    # -- TAUR discovery filter (known repo ids + round-6 gated exclusion) ----------
+    ungated_per_model = [
         f"{TAUR_PARENT_REPO}___claude_3_sonnet",
         f"{TAUR_PARENT_REPO}___gpt_4o",
-        f"{TAUR_PARENT_REPO}__Llama_3_70b",  # double-underscore variant — INCLUDED
+        f"{TAUR_PARENT_REPO}__Llama_3_70b",  # double-underscore id shape — INCLUDED
+    ]
+    gated_per_model = [
+        # gated='manual' on the live 2026-08-25 listing — excluded AND recorded;
+        # pre-round the 1-arg filter admitted it and load_taur 403'd (GatedRepoError).
+        f"{TAUR_PARENT_REPO}___meta-llama__Llama-3.3-70B-Instruct",
     ]
     excluded_fixture = [
-        TAUR_PARENT_REPO,  # gated collection parent (exact id) — excluded
+        TAUR_PARENT_REPO,  # collection parent (exact id) — excluded by the prefix rule
         f"{TAUR_PARENT_REPO}___gpt_4o__Paraphrase_Exp",
         f"{TAUR_PARENT_REPO}___gpt_4o__Symbolic_Solver_Experiment",
     ]
-    repos, excluded = _filter_taur_repo_ids(sorted(per_model + excluded_fixture))
-    assert repos == sorted(per_model), repos
-    assert excluded == sorted(excluded_fixture), excluded
+    repos, excluded_gated, excluded_other = _filter_taur_repo_ids(
+        sorted(ungated_per_model + gated_per_model + excluded_fixture),
+        # The parent is ALSO gated on the live listing: it must land in
+        # excluded_other (prefix rule fires first), not excluded_gated.
+        gated_ids=set(gated_per_model) | {TAUR_PARENT_REPO},
+    )
+    assert repos == sorted(ungated_per_model), repos
+    assert excluded_gated == sorted(gated_per_model), excluded_gated
+    assert excluded_other == sorted(excluded_fixture), excluded_other
+
+    # -- contexthub pattern anchoring (round 6: __round_2_fixes collision) ---------
+    ch_pat = TAUR_PATTERNS["contexthub"]
+    for t in ("deductive", "abductive"):
+        for level in (1, 2, 3, 4):
+            cfg = f"contexthub_{t}_level{level}"
+            assert re.search(ch_pat, cfg, flags=re.IGNORECASE), cfg
+    variant = "contexthub_deductive_level2__round_2_fixes"
+    # The variant parses to the SAME (type, level) cell as its base config — the
+    # collision mechanism the anchor prevents ('sourced twice' raise + a second
+    # n_models increment for the SAME model).
+    assert _parse_contexthub_config(variant) == ("deductive", 2)
+    assert not re.search(ch_pat, variant, flags=re.IGNORECASE), variant
+    assert not re.search(ch_pat, "contexthub_abductive_level1__round_2_fixes", re.IGNORECASE)
+
+    # -- CH source-repo selection (round 6: must carry ALL 8 canonical cells) ------
+    partial = {("deductive", 1), ("abductive", 1), ("deductive", 2), ("abductive", 2)}
+    picked = _select_ch_source_repo(
+        {"repoA_partial": partial, "repoB_full": set(CH_CANONICAL_CELLS)}
+    )
+    assert picked == "repoB_full", picked  # first ALL-8 repo, NOT first CH-carrying repo
+    try:
+        _select_ch_source_repo({"repoA_partial": partial})
+    except RuntimeError as e:
+        assert "canonical contexthub" in str(e), e
+    else:
+        raise AssertionError("partial-coverage repo accepted as contexthub source")
 
     # -- dedup: 3-signature transitive fixture (r2 Major 6) ------------------------
     # A/B < 0.8 (B kept), B/C >= 0.8, A/C < 0.8 — under the superseded
@@ -1162,8 +1333,10 @@ def run_selftest() -> int:
     assert all(r["in_arm3"] for r in rows if r["in_arm12"]), "arm-1/2 row outside arm-3 draw"
 
     print(
-        "[selftest] PASS: TAUR repo filter (parent + experiment exclusions), dedup "
-        "(transitive band-owner union, exact-dup counters), nested draw redistribution"
+        "[selftest] PASS: TAUR repo filter (parent + experiment + GATED exclusions), "
+        "contexthub pattern anchor (__round_2_fixes excluded), CH source all-8-cells "
+        "selection, dedup (transitive band-owner union, exact-dup counters), nested "
+        "draw redistribution"
     )
     return 0
 
@@ -1238,8 +1411,10 @@ def main(argv: list[str] | None = None) -> int:
 
     taur_repos, taur_discovery = discover_taur_repos(args.smoke)
     rescue_acc, ch_cells, taur_report = load_taur(taur_repos)
-    expected_cells = {(t, level) for t in ("deductive", "abductive") for level in (1, 2, 3, 4)}
-    if not args.smoke and set(ch_cells) != expected_cells:
+    # Backstop only: load_taur now asserts exactly the 8 canonical cells UNCONDITIONALLY
+    # (smoke included — the smoke slice's first-2 un-gated repos both carry all 8).
+    expected_cells = set(CH_CANONICAL_CELLS)
+    if set(ch_cells) != expected_cells:
         raise RuntimeError(f"contexthub cells missing: {sorted(expected_cells - set(ch_cells))}")
     ch_gold_missing: dict[str, dict] = {}
     for (ch_type, level), rows in sorted(ch_cells.items()):
