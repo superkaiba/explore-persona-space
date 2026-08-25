@@ -9,8 +9,9 @@ goal: 'On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal
   cosine, and split-half reliability — against an identity+bias delta baseline, a
   paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine
   which kinds of context information the map carries faithfully vs distorts.'
-title: 'Controlled minimal-pair battery: does the context→answer map predict the DIFFERENCE
-  in answer vectors, per instruction axis?'
+title: The frozen context-to-answer map recovers the direction of instruction-driven
+  answer shifts on every minimal-pair axis that passed its compliance check, beating
+  identity pass-through throughout (MODERATE confidence)
 ---
 # The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)
 <!-- clean-result-v4 -->
