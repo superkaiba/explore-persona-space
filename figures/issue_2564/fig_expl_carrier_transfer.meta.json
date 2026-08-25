@@ -1,0 +1,67 @@
+{
+  "commit": "09750cbb",
+  "render_id": "4204d351a99e46f5",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:24Z",
+  "figsize": [
+    9.100000000000001,
+    7.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Direction cosine by axis and carrier question",
+        "xticklabels": [
+          "carrier 1",
+          "carrier 2",
+          "carrier 3",
+          "carrier 4",
+          "carrier 5",
+          "carrier 6",
+          "carrier 7",
+          "carrier 8",
+          "carrier 9",
+          "carrier 10",
+          "carrier 11",
+          "carrier 12"
+        ],
+        "yticklabels": [
+          "content constraint",
+          "format",
+          "hedging",
+          "lexical marker",
+          "persona",
+          "register",
+          "stance",
+          "user fact",
+          "user profile",
+          "query content",
+          "query form"
+        ]
+      },
+      {
+        "ylabel": "mean direction cosine",
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

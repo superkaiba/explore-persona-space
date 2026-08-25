@@ -1,0 +1,563 @@
+{
+  "commit": "09750cbb",
+  "render_id": "6d89ca429a0840a5",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:36:53Z",
+  "figsize": [
+    13.0,
+    9.85
+  ],
+  "points": [
+    {
+      "direction cosine": 0.49747541567498366,
+      "y": 10.22,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "direction cosine": 0.5268195977820153,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "direction cosine": 0.3139645792255431,
+      "y": 9.78,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "direction cosine": 0.9405974925633374,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "direction cosine": 0.3621701718184568,
+      "y": 9.22,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "direction cosine": 0.36395409631629205,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "direction cosine": 0.229119852771882,
+      "y": 8.78,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "direction cosine": 0.9093781216471862,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "direction cosine": 0.4156299252722266,
+      "y": 7.22,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "direction cosine": 0.41422733512915294,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "direction cosine": 0.2731171039453366,
+      "y": 6.78,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "direction cosine": 0.746408988829969,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "direction cosine": 0.8989838133944595,
+      "y": 5.22,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "direction cosine": 0.9128360436033701,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "direction cosine": 0.7280655026408017,
+      "y": 4.78,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "direction cosine": 0.9913820244054419,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "direction cosine": 0.17208480650441785,
+      "y": 3.22,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "direction cosine": 0.157635780072221,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "direction cosine": 0.1381780839283877,
+      "y": 2.78,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "direction cosine": 0.13102069808322983,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "direction cosine": 0.5964832924624228,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "direction cosine": 0.6057655071082446,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "direction cosine": 0.42701941592593884,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "direction cosine": 0.9272067242251268,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "direction cosine": 0.7145733467120705,
+      "y": 1.22,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "direction cosine": 0.6679431375816325,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "direction cosine": 0.3042462830504226,
+      "y": 0.78,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "direction cosine": 0.9826447430382637,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "direction cosine": 0.30400866272404437,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "direction cosine": 0.326391679669572,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "direction cosine": 0.22111512196235203,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "direction cosine": 0.5994338960687404,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "slope ratio, axis / global": 0.835792202220848,
+      "y": 10.22,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "slope ratio, axis / global": 0.8396135681333944,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "slope ratio, axis / global": 0.8498926345343287,
+      "y": 9.78,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "slope ratio, axis / global": 1.1944447493605697,
+      "y": 9.22,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "slope ratio, axis / global": 1.2792997957558008,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "slope ratio, axis / global": 1.7243399706826994,
+      "y": 8.78,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "slope ratio, axis / global": 1.028825249162184,
+      "y": 7.22,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "slope ratio, axis / global": 0.9887137403094421,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "slope ratio, axis / global": 1.139702729700605,
+      "y": 6.78,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "slope ratio, axis / global": 1.0347199196857422,
+      "y": 5.22,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "slope ratio, axis / global": 1.0465642155589843,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "slope ratio, axis / global": 0.890855428104039,
+      "y": 4.78,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "slope ratio, axis / global": 0.8725623155627183,
+      "y": 3.22,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "slope ratio, axis / global": 0.8338370044125771,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "slope ratio, axis / global": 0.8390095616175125,
+      "y": 2.78,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "slope ratio, axis / global": 0.9270912296032305,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 47
+    },
+    {
+      "slope ratio, axis / global": 0.923901903670122,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "slope ratio, axis / global": 0.9378225128567419,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "slope ratio, axis / global": 0.8001597288097441,
+      "y": 1.22,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "slope ratio, axis / global": 0.7731890413795777,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "slope ratio, axis / global": 0.7410435925287029,
+      "y": 0.78,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "slope ratio, axis / global": 1.425679663420032,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "slope ratio, axis / global": 1.372980427232817,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 54
+    },
+    {
+      "slope ratio, axis / global": 2.123536957359328,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 55
+    },
+    {
+      "axis-identity cosine": 0.5556987831093629,
+      "y": 10.22,
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "axis-identity cosine": 0.606943733669774,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "axis-identity cosine": 0.37449664392774473,
+      "y": 9.78,
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "axis-identity cosine": 0.49466693934799827,
+      "y": 9.22,
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "axis-identity cosine": 0.5011551334606215,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "axis-identity cosine": 0.2923332605539438,
+      "y": 8.78,
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "axis-identity cosine": 0.6029217619146401,
+      "y": 7.22,
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "axis-identity cosine": 0.6010014481459791,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 63
+    },
+    {
+      "axis-identity cosine": 0.3895144479678474,
+      "y": 6.78,
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "axis-identity cosine": 0.9281150754593783,
+      "y": 5.22,
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "axis-identity cosine": 0.9423034803568195,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "axis-identity cosine": 0.7552224636194532,
+      "y": 4.78,
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "axis-identity cosine": 0.44274235299104003,
+      "y": 3.22,
+      "_kind": "errorbar",
+      "_group": 68
+    },
+    {
+      "axis-identity cosine": 0.40880361831466444,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 69
+    },
+    {
+      "axis-identity cosine": 0.33692137775439573,
+      "y": 2.78,
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "axis-identity cosine": 0.8109141122403143,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "axis-identity cosine": 0.7990406549025278,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "axis-identity cosine": 0.5808541866410263,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "axis-identity cosine": 0.42512206516107093,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "axis-identity cosine": 0.5109544335340607,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "axis-identity cosine": 0.30600740576819535,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 76
+    }
+  ],
+  "n_series": 77,
+  "total_points": 77,
+  "text": {
+    "suptitle": "Per-axis profile of the frozen context-to-answer maps",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "direction recovery",
+        "xlabel": "direction cosine",
+        "legend_labels": [
+          "single-turn frozen map",
+          "multi-turn frozen map",
+          "identity baseline"
+        ],
+        "xticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "content constraint",
+          "format",
+          "hedging",
+          "lexical marker",
+          "persona",
+          "register",
+          "stance",
+          "user fact",
+          "user profile",
+          "query content",
+          "query form"
+        ]
+      },
+      {
+        "title_left": "calibration",
+        "xlabel": "slope ratio, axis / global",
+        "xticklabels": [
+          "0.0",
+          "0.6",
+          "1.2",
+          "1.8",
+          "2.4",
+          "3.0"
+        ]
+      },
+      {
+        "title_left": "within-axis consistency",
+        "xlabel": "axis-identity cosine",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "text vs representation",
+        "xlabel": "flip / paraphrase norm",
+        "legend_labels": [
+          "answer text (embedding)",
+          "representation (observed)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "1.5",
+          "3.0",
+          "4.5",
+          "6.0"
+        ]
+      }
+    ],
+    "series": [
+      "answer text (embedding)",
+      "representation (observed)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "commit": "09750cbb",
+  "render_id": "3fa83ed52b9f4c4c",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:12Z",
+  "figsize": [
+    13.6,
+    9.600000000000001
+  ],
+  "text": {
+    "suptitle": "Axis-identity cosine per value pair (single-turn frozen map)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "content constraint",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "format",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "hedging",
+        "xticklabels": [
+          "value v1",
+          "value v2"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2"
+        ]
+      },
+      {
+        "title_left": "lexical marker",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "persona",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "register",
+        "xticklabels": [
+          "value v1",
+          "value v2"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2"
+        ]
+      },
+      {
+        "title_left": "stance",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "user fact",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "user profile",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "query form",
+        "xticklabels": [
+          "value E",
+          "value imp",
+          "value stmt"
+        ],
+        "yticklabels": [
+          "value E",
+          "value imp",
+          "value stmt"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "ylabel": "axis-identity cosine",
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

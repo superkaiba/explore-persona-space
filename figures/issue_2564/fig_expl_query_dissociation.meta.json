@@ -1,0 +1,93 @@
+{
+  "commit": "09750cbb",
+  "render_id": "27f1dc7d9f244d9d",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:28Z",
+  "figsize": [
+    6.2,
+    3.8
+  ],
+  "points": [
+    {
+      "x": -0.25,
+      "flip norm / paraphrase norm": 2.9248229741748673,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "flip norm / paraphrase norm": 0.6612347911690568,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "query content",
+      "flip norm / paraphrase norm": 4.223269988787511,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "query form",
+      "flip norm / paraphrase norm": 0.9709764948257043,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.25,
+      "flip norm / paraphrase norm": 2.565388433026067,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.25,
+      "flip norm / paraphrase norm": 1.1300735654585403,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Query axes: text vs representation dissociation",
+        "ylabel": "flip norm / paraphrase norm",
+        "legend_labels": [
+          "answer text",
+          "representation (observed)",
+          "representation (predicted)"
+        ],
+        "xticklabels": [
+          "query content",
+          "query form"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5",
+          "4.0",
+          "4.5"
+        ]
+      }
+    ],
+    "series": [
+      "answer text",
+      "representation (observed)",
+      "representation (predicted)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

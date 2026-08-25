@@ -1,0 +1,119 @@
+{
+  "commit": "09750cbb",
+  "render_id": "8783cdff4045486e",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:27Z",
+  "figsize": [
+    5.4,
+    4.4
+  ],
+  "points": [
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.9405974925633374,
+      "direction cosine (single-turn frozen map)": 0.49747541567498366,
+      "label": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.9093781216471862,
+      "direction cosine (single-turn frozen map)": 0.3621701718184568,
+      "label": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.746408988829969,
+      "direction cosine (single-turn frozen map)": 0.4156299252722266,
+      "label": "lexical marker",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.9913820244054419,
+      "direction cosine (single-turn frozen map)": 0.8989838133944595,
+      "label": "register",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.13102069808322983,
+      "direction cosine (single-turn frozen map)": 0.17208480650441785,
+      "label": "user fact",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.9272067242251268,
+      "direction cosine (single-turn frozen map)": 0.5964832924624228,
+      "label": "user profile",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.9826447430382637,
+      "direction cosine (single-turn frozen map)": 0.7145733467120705,
+      "label": "query content",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "reliability ceiling of the observed shift (Spearman-Brown r10)": 0.5994338960687404,
+      "direction cosine (single-turn frozen map)": 0.30400866272404437,
+      "label": "query form",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Reliability ceiling vs direction recovery",
+        "xlabel": "reliability ceiling of the observed shift (Spearman-Brown r10)",
+        "ylabel": "direction cosine (single-turn frozen map)",
+        "annotations": [
+          "content constraint",
+          "format",
+          "lexical marker",
+          "register",
+          "user fact",
+          "user profile",
+          "query content",
+          "query form"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

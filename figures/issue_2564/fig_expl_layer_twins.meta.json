@@ -1,0 +1,236 @@
+{
+  "commit": "09750cbb",
+  "render_id": "5855571b9a594881",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:30Z",
+  "figsize": [
+    5.6,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.21730712067330932,
+      "series": "content constraint",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.3139645792255431,
+      "series": "content constraint",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.2575264885350868,
+      "series": "content constraint",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.10170978381175441,
+      "series": "format",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.229119852771882,
+      "series": "format",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.1671801780330369,
+      "series": "format",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.1232966108637008,
+      "series": "lexical marker",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.2731171039453366,
+      "series": "lexical marker",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.321483056622108,
+      "series": "lexical marker",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.2830471337791033,
+      "series": "register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.7280655026408017,
+      "series": "register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.5468607774544518,
+      "series": "register",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.06666629747307525,
+      "series": "user fact",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.1381780839283877,
+      "series": "user fact",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.2490439647314344,
+      "series": "user fact",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.2793318411474337,
+      "series": "user profile",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.42701941592593884,
+      "series": "user profile",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.3770265835376388,
+      "series": "user profile",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.23056241683843404,
+      "series": "query content",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.3042462830504226,
+      "series": "query content",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.3716494814621753,
+      "series": "query content",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.1693936972224679,
+      "series": "query form",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.22111512196235203,
+      "series": "query form",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.15195673496927153,
+      "series": "query form",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer sensitivity (identity baseline only)",
+        "xlabel": "layer",
+        "ylabel": "direction cosine, identity baseline",
+        "legend_labels": [
+          "content constraint",
+          "format",
+          "lexical marker",
+          "register",
+          "user fact",
+          "user profile",
+          "query content",
+          "query form"
+        ],
+        "xticklabels": [
+          "14",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "content constraint",
+      "format",
+      "lexical marker",
+      "register",
+      "user fact",
+      "user profile",
+      "query content",
+      "query form"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
