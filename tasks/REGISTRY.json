@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2586,
+  "highest_id": 2587,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12228,6 +12228,13 @@
       "path": "tasks/proposed/2586",
       "status": "proposed",
       "title": "Clear pre-existing red test_no_new_torch_before_dotenv_vm_entrypoints on main (4 non-grandfathered violators red the Step 9c gate for every scripts/*.py diff)"
+    },
+    "2587": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2587",
+      "status": "proposed",
+      "title": "Replicate the #2564 minimal-pair battery on Qwen3.5-9B (thinking disabled)"
     },
     "259": {
       "has_clean_result": false,
