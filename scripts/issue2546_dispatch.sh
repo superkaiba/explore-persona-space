@@ -118,7 +118,11 @@ mkdir -p "$LOG_DIR"
 # inherited CUDA_VISIBLE_DEVICES array count > SLURM allocation env
 # (SLURM_JOB_ID + SLURM_GPUS_ON_NODE, fail LOUD when unresolvable) >
 # nvidia-smi enumeration (non-SLURM exclusive hosts: RunPod pods).
-if [ -n "${CUDA_VISIBLE_DEVICES:-}" ]; then
+if [ -n "${CUDA_VISIBLE_DEVICES+x}" ]; then
+    # SET (possibly EMPTY): an explicitly-empty CVD is a deliberate ZERO-GPU
+    # allocation — honor it (NGPU=0 trips the no-GPUs guard below, fail-loud)
+    # instead of falling through to host enumeration (r4; r3 NIT
+    # empty-cvd-dispatch-enumeration; mirrors _inherited_cvd_entries()).
     IFS=',' read -ra _CVD_ALLOC <<<"$CUDA_VISIBLE_DEVICES"
     NGPU=${#_CVD_ALLOC[@]}
 elif [ -n "${SLURM_JOB_ID:-}" ]; then

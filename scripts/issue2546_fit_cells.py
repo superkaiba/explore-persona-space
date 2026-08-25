@@ -314,6 +314,51 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def _remote_shard_hashes(arm: int, stem: str, smoke: bool) -> dict[str, str] | None:
+    """Per-shard content sha256 of a stem's Hub copy WITHOUT downloading it.
+
+    ``.pt`` shards are LFS-routed on the data repo, and the Hub tree listing
+    carries each LFS blob's sha256 — the same digest ``_sha256_file`` computes
+    locally — so a freed-local-shards resume can still content-verify a cache
+    marker (r4; r3 concern fit-resume-content-key-hollow). Returns ``None``
+    when the prefix is missing or ANY shard lacks LFS sha metadata: callers
+    treat None as UNVERIFIABLE -> stale -> rebuild, never a blind accept.
+    """
+    import fnmatch
+
+    from huggingface_hub import HfApi
+    from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+
+    prefix = f"{_store_prefix(arm, smoke)}/{stem}"
+    api = HfApi()
+    try:
+        entries = hub.retry_transient(
+            lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: scoped path_in_repo walk inside retry_transient
+                api.list_repo_tree(
+                    hub.DEFAULT_DATASET_REPO,
+                    path_in_repo=prefix,
+                    repo_type="dataset",
+                    recursive=False,
+                )
+            ),
+            what=f"p5 fitcache content verify {prefix}",
+        )
+    except (FileNotFoundError, EntryNotFoundError, RepositoryNotFoundError):
+        return None
+    out: dict[str, str] = {}
+    for e in entries:
+        name = Path(e.path).name
+        if not fnmatch.fnmatch(name, "slot*.shard*.pt"):  # mirror _shard_files' glob
+            continue
+        lfs = getattr(e, "lfs", None)
+        sha = lfs.get("sha256") if isinstance(lfs, dict) else getattr(lfs, "sha256", None)
+        if not sha:
+            return None  # non-LFS / metadata-less shard -> unverifiable
+        out[name] = str(sha)
+    return out or None
+
+
 def build_fitcache(
     out_root: Path, prof: LayerProfile, smoke: bool, *, offline: bool = False
 ) -> dict[str, Path]:
@@ -336,7 +381,11 @@ def build_fitcache(
             # was re-captured after this cache was built (a same-shape
             # recapture keeps names/counts — only content hashes catch it) —
             # rebuild instead of resume-skipping onto stale reduced tensors.
-            # (Local shards absent = freed post-upload; the marker is accepted.)
+            # Local shards ABSENT (freed post-upload): the marker is verified
+            # against the Hub copy's LFS sha256 metadata (r4; r3 concern
+            # fit-resume-content-key-hollow — a blind accept let an
+            # out-of-band same-regime recapture serve stale reduced tensors);
+            # unverifiable/offline -> stale -> rebuild (fail-loud offline).
             # Markers WITHOUT shard_sha256 predate the content key: rebuild.
             local_store = out_root / "store" / g25.arm_dirname(prof.arm, smoke) / stem
             local_files = _shard_files(local_store)
@@ -350,6 +399,17 @@ def build_fitcache(
                 if local_hashes != marker_hashes:
                     stale_reason = (
                         f"store content differs (local {len(local_hashes)} shards "
+                        f"vs marker {len(marker_hashes)})"
+                    )
+            elif offline:
+                stale_reason = "local shards absent and offline — content unverifiable"
+            else:
+                remote_hashes = _remote_shard_hashes(prof.arm, stem, smoke)
+                if remote_hashes is None:
+                    stale_reason = "local shards absent and Hub copy unverifiable"
+                elif remote_hashes != marker_hashes:
+                    stale_reason = (
+                        f"Hub store content differs (remote {len(remote_hashes)} shards "
                         f"vs marker {len(marker_hashes)})"
                     )
             if stale_reason:
@@ -1977,10 +2037,28 @@ def run_publish(args, prof: LayerProfile) -> int:
 
     # (2) full out/ JSON tree mirror (cells, ladder, reliability, necessity,
     # n1m_read, rowsets, reports — everything a downstream reader consumes).
+    # The P6 report is written BEFORE the rels enumeration so THIS invocation's
+    # mirror includes it (r4; r3 Claude minor 4: written after, the report
+    # reached git but only the NEXT publish's HF mirror).
+    mirror_dest = f"{MIRROR_PREFIX}/{g25.stage_dirname('out', smoke)}"
+    report_rel = f"reports/p6_publish_a{prof.arm}.json"
+    pre_rels = {str(p.relative_to(out_dir)) for p in out_dir.rglob("*.json")}
+    _atomic_json(
+        out_dir / report_rel,
+        {
+            "arm": prof.arm,
+            "smoke": smoke,
+            "n_preds_npz": len(npz),
+            "preds_dest": preds_dest,
+            "n_out_json": len(pre_rels | {report_rel}),
+            "mirror_dest": mirror_dest,
+            "repro": _repro("p6-publish"),
+        },
+    )
     rels = sorted(str(p.relative_to(out_dir)) for p in out_dir.rglob("*.json"))
     if not rels:
         raise RuntimeError(f"no JSON artifacts under {out_dir} — run P5 first")
-    mirror_dest = f"{MIRROR_PREFIX}/{g25.stage_dirname('out', smoke)}"
+    assert report_rel in rels, (report_rel, rels[:5])
     url = hub._upload_folder_filtered(
         out_dir,
         hub.DEFAULT_DATASET_REPO,
@@ -1992,18 +2070,6 @@ def run_publish(args, prof: LayerProfile) -> int:
     if not url:
         raise RuntimeError(f"out-mirror upload verify FAILED for {mirror_dest} ({len(rels)} files)")
     print(f"[p6] out mirror: {len(rels)} JSONs -> {mirror_dest}", flush=True)
-    _atomic_json(
-        out_dir / "reports" / f"p6_publish_a{prof.arm}.json",
-        {
-            "arm": prof.arm,
-            "smoke": smoke,
-            "n_preds_npz": len(npz),
-            "preds_dest": preds_dest,
-            "n_out_json": len(rels),
-            "mirror_dest": mirror_dest,
-            "repro": _repro("p6-publish"),
-        },
-    )
     return 0
 
 
@@ -2259,6 +2325,26 @@ def run_selftest() -> int:
         assert set(lad["tiers_r2"]) == set(LADDER_TIER_NAMES)
         rel = json.loads((root / "out" / "reliability" / "reliability__a1.json").read_text())
         assert rel["status"] == "missing_reliability_capture"
+        # Claim-dir work-conserving walk (r4; r3 blocker
+        # claimed-revision-fixtures-absent (b)): a PRE-claimed unit is skipped
+        # outright — its deleted out JSON stays ABSENT, so any walk past the
+        # claim (the defect direction) would recreate it and fail the assert —
+        # an unclaimed unit takes its claim and proceeds, and a second walk
+        # over the fully-claimed dir re-runs nothing.
+        claim_dir = root / "claims_selftest"
+        claim_dir.mkdir()
+        a_unit = next(u for u in picks if u.unit_id == "p7_A__does__a1")
+        op_unit = next(u for u in picks if u.kind == "operator")
+        (claim_dir / f"{a_unit.unit_id}.claim").touch()
+        a_path = root / "out" / "cells" / "p7_A__does__a1.json"
+        a_path.unlink()
+        assert run_units(args, prof, [a_unit, op_unit], claim_dir=claim_dir) == 0
+        assert not a_path.exists(), "pre-claimed unit was walked past its claim"
+        assert (claim_dir / f"{op_unit.unit_id}.claim").is_file(), "unclaimed unit took no claim"
+        assert run_units(args, prof, [a_unit, op_unit], claim_dir=claim_dir) == 0
+        assert not a_path.exists(), "second walk re-ran an already-claimed unit"
+        # Regenerate the deleted cell via a claim-less walk (tree completeness).
+        assert run_units(args, prof, [a_unit]) == 0 and a_path.is_file()
         # P4b rel stems land -> the SAME unit computes real per-stratum ceilings
         # (frozen-layer shards through the REAL build_fitcache rel_ branch).
         rel_bases: dict[str, list[str]] = {}
@@ -2340,6 +2426,20 @@ def run_selftest() -> int:
         )
         key_after = _store_content_key(root, prof, True)
         assert key_after != key_before, "store content key blind to a same-shape recapture"
+        # Freed-local-shards resume must never blind-accept the marker (r4;
+        # r3 concern fit-resume-content-key-hollow): with local shards ABSENT
+        # and no verifiable Hub copy (offline), the marker is STALE — the
+        # rebuild path fail-louds — never a resume-skip onto possibly-stale
+        # reduced tensors (the pre-r4 "(Local shards absent = ... the marker
+        # is accepted.)" branch blind-accepted here).
+        for f in _shard_files(root / "store" / g25.arm_dirname(1, True) / swap_stem):
+            f.unlink()
+        try:
+            build_fitcache(root, prof, smoke=True, offline=True)
+        except FileNotFoundError as e:
+            assert "offline mode" in str(e), e
+        else:
+            raise AssertionError("freed-shards fitcache resume blind-accepted the marker")
         # Batched-vs-serial rotation-null equivalence (r2 Major 10 / vectorize
         # rule item 6): the batched chunked-QR path must reproduce the retained
         # serial oracle draw-for-draw at small d; n_draws=7 crosses the chunk=4
@@ -2365,7 +2465,8 @@ def run_selftest() -> int:
             "[selftest] PASS: loader, set-check, sweep unit, traj unit (interleaved "
             "scatter-fill), ladder band, operator (rotation null, batched==serial), "
             "ood transfer, content hits (MCQ ladder parity), reliability ceiling "
-            "(frozen-subset index mapping), shard-content-swap invalidation"
+            "(frozen-subset index mapping), shard-content-swap invalidation, "
+            "claim-dir work-conserving walk, freed-shards resume refusal"
         )
     return 0
 

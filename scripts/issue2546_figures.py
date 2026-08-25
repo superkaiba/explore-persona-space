@@ -1182,7 +1182,36 @@ def run_selftest() -> int:
             meta = out_dir / f"{stem}.meta.json"
             assert png.is_file() and png.stat().st_size > 0, f"selftest: missing/empty {png}"
             assert meta.is_file(), f"selftest: missing sidecar {meta}"
-        print(f"[p6] SELFTEST PASS — {len(expected)} figure classes rendered with sidecars")
+        # All-NaN refline rejection (r4; r3 blocker claimed-revision-fixtures-
+        # absent (c)): a figure whose ONLY finite content is gid="refline"
+        # reference lines must be REFUSED — reflines are excluded from the
+        # finite-datum scan, so removing that exclusion (the defect direction:
+        # the always-finite axhline would vacuously satisfy the guard) makes
+        # this fixture fail by NOT raising.
+        fig, ax = plt.subplots()
+        ax.bar([0.0, 1.0], [float("nan"), float("nan")])
+        ax.axhline(0.5).set_gid("refline")
+        try:
+            try:
+                _assert_nonempty(fig)
+            except AssertionError as e:
+                assert "ZERO finite plotted data" in str(e), e
+            else:
+                raise AssertionError("all-NaN + refline-only figure passed _assert_nonempty")
+        finally:
+            plt.close(fig)
+        # Control (guard not vacuous): ONE finite datum beside the refline passes.
+        fig2, ax2 = plt.subplots()
+        ax2.bar([0.0, 1.0], [float("nan"), 0.7])
+        ax2.axhline(0.5).set_gid("refline")
+        try:
+            _assert_nonempty(fig2)
+        finally:
+            plt.close(fig2)
+        print(
+            f"[p6] SELFTEST PASS — {len(expected)} figure classes rendered with "
+            "sidecars; all-NaN refline-only render refused"
+        )
     return 0
 
 

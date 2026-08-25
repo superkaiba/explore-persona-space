@@ -926,14 +926,41 @@ def _chunk_key(i0: int, chunk: list[str]) -> str:
 def _load_chunk_ckpts(cp: Path, fp_sha: str) -> dict[str, list[tuple[str, str, int]]]:
     """Verified completed chunks from a prior attempt (regime-fingerprint
     gated: ANY mismatched line means a different regime wrote here — wipe and
-    regenerate everything rather than mixing; r3 item 9)."""
+    regenerate everything rather than mixing; r3 item 9).
+
+    Torn-tail recovery (r4, Codex r3 Major 4): a crash mid-append can leave a
+    truncated FINAL record in this append-only file; that exact shape is
+    tolerated by TRUNCATING the file back to the parsed prefix (the torn chunk
+    regenerates), so a resume never crash-loops on its own crash artifact. A
+    malformed NON-final record is real corruption, never a crash artifact of
+    the O_APPEND writer — it still raises loud.
+    """
     if not cp.is_file():
         return {}
+    raw = cp.read_bytes()
+    entries: list[tuple[int, bytes]] = []  # (byte offset of line start, line bytes)
+    pos = 0
+    for ln in raw.split(b"\n"):
+        if ln.strip():
+            entries.append((pos, ln))
+        pos += len(ln) + 1
     cache: dict[str, list[tuple[str, str, int]]] = {}
-    for line in cp.read_text().split("\n"):
-        if not line.strip():
-            continue
-        rec = json.loads(line)
+    for idx, (start, ln) in enumerate(entries):
+        try:
+            rec = json.loads(ln)
+        except json.JSONDecodeError:
+            if idx == len(entries) - 1:
+                logger.warning(
+                    "[vllm-chunk] %s: torn final chunk record (%d bytes) — truncating to "
+                    "the %d-chunk parsed prefix; the torn chunk regenerates",
+                    cp,
+                    len(raw) - start,
+                    len(cache),
+                )
+                with cp.open("rb+") as fh:
+                    fh.truncate(start)
+                return cache
+            raise
         if rec.get("fp_sha") != fp_sha:
             logger.warning("[vllm-chunk] %s: STALE regime fingerprint — wiping chunk ckpts", cp)
             cp.unlink()
@@ -973,16 +1000,18 @@ def generate_chunked(
     def _eng():
         return llm() if not hasattr(llm, "generate") else llm
 
+    t0 = time.time()
     for i in range(0, len(prompts), VLLM_CHUNK_SIZE):
         chunk = prompts[i : i + VLLM_CHUNK_SIZE]
         key = _chunk_key(i, chunk) if cp is not None else ""
         if key and key in cache:
             logger.info(
-                "[vllm-chunk] %s chunk %d/%d: resume-skip (%d prompts)",
+                "[vllm-chunk] %s chunk %d/%d: resume-skip (%d prompts) elapsed=%.0fs",
                 tag,
                 i // VLLM_CHUNK_SIZE + 1,
                 n_chunks,
                 len(chunk),
+                time.time() - t0,
             )
             out.extend(cache[key])
             continue
@@ -993,6 +1022,7 @@ def generate_chunked(
             n_chunks,
             len(chunk),
         )
+        t_chunk = time.time()
         chunk_out = [
             (o.outputs[0].text, o.outputs[0].finish_reason, len(o.outputs[0].token_ids))
             for o in _eng().generate(chunk, sp, use_tqdm=False)
@@ -1003,6 +1033,17 @@ def generate_chunked(
                 fh.write(line + "\n")
                 fh.flush()
                 os.fsync(fh.fileno())
+        # Per-unit progress line with elapsed seconds AFTER the durable append
+        # (code-style checkpoint-per-phase progress convention; r3 Major 5).
+        logger.info(
+            "[vllm-chunk] %s chunk %d/%d done key=%s elapsed=%.0fs total=%.0fs",
+            tag,
+            i // VLLM_CHUNK_SIZE + 1,
+            n_chunks,
+            key or "-",
+            time.time() - t_chunk,
+            time.time() - t0,
+        )
         out.extend(chunk_out)
     return out
 
@@ -1719,7 +1760,15 @@ def gpu_allocation() -> list[str]:
         return entries
     if os.environ.get("SLURM_JOB_ID"):
         return _slurm_gpu_entries()
-    p = subprocess.run(["nvidia-smi", "--list-gpus"], capture_output=True, text=True, check=False)
+    try:
+        p = subprocess.run(
+            ["nvidia-smi", "--list-gpus"], capture_output=True, text=True, check=False
+        )
+    except OSError:
+        # nvidia-smi binary absent (CPU-only host): zero GPUs visible — the
+        # caller's "no GPUs visible" guard fails loud with a legible message
+        # instead of a raw FileNotFoundError (r3 Claude minor 3).
+        return []
     if p.returncode != 0:
         return []
     return [str(i) for i in range(len([ln for ln in p.stdout.split("\n") if ln.strip()]))]
@@ -3013,11 +3062,107 @@ def run_parser_selftest() -> None:
     text = "<think>x</think>ans"
     close_char = text.index(THINK_CLOSE) + len(THINK_CLOSE) - 1
     assert text[close_char] == ">"
+    _chunk_checkpoint_fixtures()
     print(
         "[parser-selftest] PASS: segment semantics, span mapping, t-grid, "
-        "read points, correctness rules, quota arithmetic",
+        "read points, correctness rules, quota arithmetic, chunk-checkpoint "
+        "resume (crash-mid-stage, lazy-engine skip, torn-tail truncate-and-redo, "
+        "regime-fingerprint wipe)",
         flush=True,
     )
+
+
+def _chunk_checkpoint_fixtures() -> None:
+    """Per-chunk checkpoint/resume fixtures (r4; r3 blocker
+    claimed-revision-fixtures-absent (a)).
+
+    Drives the REAL ``generate_chunked`` + ``_load_chunk_ckpts`` machinery with
+    a signature-shaped fake engine at the external GPU boundary only. Each leg
+    is discriminating: (1) crash-mid-stage resume regenerates ONLY the missing
+    chunk (call-count keyed); (2) a fully-resumed stage never builds the engine
+    (the lazy callable raises if invoked); (3) a torn FINAL record — the crash
+    artifact of an interrupted O_APPEND — is truncated-and-redone (FAILS
+    pre-r4-fix with JSONDecodeError) while a malformed NON-final record still
+    raises loud; (4) a regime-fingerprint mismatch wipes and regenerates all.
+    """
+    import tempfile
+
+    class _FakeOut:
+        def __init__(self, text: str):
+            self.text = text
+            self.finish_reason = "stop"
+            self.token_ids = list(range(len(text.split())))
+
+    class _FakeRO:
+        def __init__(self, text: str):
+            self.outputs = [_FakeOut(text)]
+
+    class _FakeEngine:
+        def __init__(self):
+            self.calls = 0
+
+        def generate(self, chunk, sp, use_tqdm=False):
+            self.calls += 1
+            return [_FakeRO(f"gen:{p}") for p in chunk]
+
+    g = globals()
+    saved_chunk_size = g["VLLM_CHUNK_SIZE"]
+    g["VLLM_CHUNK_SIZE"] = 2  # 5 prompts -> 3 chunks (crosses the chunk seam)
+    try:
+        with tempfile.TemporaryDirectory(prefix="i2546-chunkckpt-") as td:
+            out_file = Path(td) / "slot0.json"
+            ckpt = (out_file, "post_greedy_selftest", "fpA")
+            prompts = [f"p{i}" for i in range(5)]
+            want = [(f"gen:p{i}", "stop", 1) for i in range(5)]
+            eng = _FakeEngine()
+            outs = generate_chunked(eng, prompts, None, "ckpt-selftest", ckpt=ckpt)
+            assert outs == want, outs
+            assert eng.calls == 3, eng.calls
+            cp = _chunk_ckpt_path(out_file, "post_greedy_selftest")
+            good = [ln for ln in cp.read_text().split("\n") if ln.strip()]
+            assert len(good) == 3, good
+
+            # (2) fully-resumed stage: the lazy engine callable must NEVER run.
+            def _boom():
+                raise AssertionError("engine built on a fully chunk-resumed stage")
+
+            outs2 = generate_chunked(_boom, prompts, None, "ckpt-selftest", ckpt=ckpt)
+            assert outs2 == want, outs2
+            # (1) crash-mid-stage: drop chunk 3's record; ONLY it regenerates.
+            cp.write_text("\n".join(good[:2]) + "\n")
+            eng3 = _FakeEngine()
+            outs3 = generate_chunked(eng3, prompts, None, "ckpt-selftest", ckpt=ckpt)
+            assert outs3 == want and eng3.calls == 1, (eng3.calls,)
+            # (3) torn tail: chunk 3's append interrupted mid-record (no
+            # newline). Pre-r4 _load_chunk_ckpts raised JSONDecodeError here
+            # and the resume crash-looped on its own crash artifact.
+            cp.write_text("\n".join(good[:2]) + "\n")
+            with cp.open("a") as fh:
+                fh.write('{"key": "torn-partial-rec')
+            eng4 = _FakeEngine()
+            outs4 = generate_chunked(eng4, prompts, None, "ckpt-selftest", ckpt=ckpt)
+            assert outs4 == want and eng4.calls == 1, (eng4.calls,)
+            for ln in cp.read_text().split("\n"):
+                if ln.strip():
+                    json.loads(ln)  # post-recovery file is fully well-formed
+            # ... while a malformed NON-final record (real corruption, not an
+            # append artifact) still raises loud:
+            cp.write_text('{"corrupt\n' + "\n".join(good) + "\n")
+            try:
+                _load_chunk_ckpts(cp, "fpA")
+            except json.JSONDecodeError:
+                pass
+            else:
+                raise AssertionError("malformed NON-final chunk record did not raise")
+            # (4) regime-fingerprint wipe: a different fp_sha regenerates ALL.
+            cp.write_text("\n".join(good) + "\n")
+            eng5 = _FakeEngine()
+            outs5 = generate_chunked(
+                eng5, prompts, None, "ckpt-selftest", ckpt=(out_file, "post_greedy_selftest", "fpB")
+            )
+            assert outs5 == want and eng5.calls == 3, (eng5.calls,)
+    finally:
+        g["VLLM_CHUNK_SIZE"] = saved_chunk_size
 
 
 def build_argparser() -> argparse.ArgumentParser:
