@@ -1,17 +1,14 @@
 {
-  "commit": "95c25408+dirty",
-  "render_id": "33d8ace8be8b48be",
-  "git_commit": "95c254087bc1c24b528ac9834e3175190bed3d02",
+  "commit": "bd243f7e+dirty",
+  "render_id": "31929aa2a201498e",
+  "git_commit": "bd243f7ee080144ae707f4b56e2286816d8840a7",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue1979_po_five_predictors_fig.py",
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/issue_2356/flippair_2afc.meta.json",
-    "figures/issue_2356/flippair_2afc.pdf",
-    "figures/issue_2356/flippair_2afc.png",
-    "figures/issue_2356/flippair_behavior_contrast.meta.json",
-    "figures/issue_2356/flippair_behavior_contrast.pdf",
-    "figures/issue_2356/flippair_behavior_contrast.png",
+    "figures/issue_1979/c5_po_five_predictors.meta.json",
+    "figures/issue_1979/c5_po_five_predictors.pdf",
+    "figures/issue_1979/c5_po_five_predictors.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
@@ -33,17 +30,129 @@
   ],
   "git_argv0_state": "untracked",
   "git_argv0_path": "scripts/issue1979_po_five_predictors_fig.py",
-  "created": "2026-08-25T22:32:28Z",
+  "created": "2026-08-25T22:40:28Z",
   "figsize": [
-    6.8,
+    7.0,
     4.0
   ],
+  "points": [
+    {
+      "x": -0.341667,
+      "within-arm Spearman $\\rho$ against leakage": 0.456097385422831,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.658333,
+      "within-arm Spearman $\\rho$ against leakage": 0.6227760572277,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.658333,
+      "within-arm Spearman $\\rho$ against leakage": 0.6291147448330711,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.205,
+      "within-arm Spearman $\\rho$ against leakage": 0.37234987645489914,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.795,
+      "within-arm Spearman $\\rho$ against leakage": 0.41753703582349083,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.795,
+      "within-arm Spearman $\\rho$ against leakage": 0.053254579957245696,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.068333,
+      "within-arm Spearman $\\rho$ against leakage": 0.43827130852340934,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.931667,
+      "within-arm Spearman $\\rho$ against leakage": 0.5727250900360145,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.931667,
+      "within-arm Spearman $\\rho$ against leakage": 0.6386074429771909,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.068333,
+      "within-arm Spearman $\\rho$ against leakage": 0.35074071416386166,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.068333,
+      "within-arm Spearman $\\rho$ against leakage": 0.5241422364592757,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.068333,
+      "within-arm Spearman $\\rho$ against leakage": 0.4945616943008777,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.205,
+      "within-arm Spearman $\\rho$ against leakage": 0.7079471788715486,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.205,
+      "within-arm Spearman $\\rho$ against leakage": 0.7423289315726291,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.205,
+      "within-arm Spearman $\\rho$ against leakage": 0.5760864345738295,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.341667,
+      "within-arm Spearman $\\rho$ against leakage": 0.7775456795921751,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.341667,
+      "within-arm Spearman $\\rho$ against leakage": 0.7267881583885605,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.341667,
+      "within-arm Spearman $\\rho$ against leakage": 0.07851328965743616,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "xlabel": "within-arm Spearman $\\rho$ against leakage (positive-only arms)",
+        "ylabel": "within-arm Spearman $\\rho$ against leakage",
         "legend_labels": [
           "context: source vs target",
           "context: target vs trained contexts",
@@ -54,7 +163,11 @@
           "permutation band (97.5%)"
         ],
         "xticklabels": [
-          "\u22120.1",
+          "casual writing",
+          "impoliteness",
+          "marker token"
+        ],
+        "yticklabels": [
           "0.0",
           "0.1",
           "0.2",
@@ -65,13 +178,16 @@
           "0.7",
           "0.8",
           "0.9"
-        ],
-        "yticklabels": [
-          "casual writing",
-          "impoliteness",
-          "marker token"
         ]
       }
+    ],
+    "series": [
+      "context: source vs target",
+      "context: target vs trained contexts",
+      "real answers: source vs target",
+      "mapped answers: source vs target",
+      "real answers: target vs trained answers",
+      "mapped answers: target vs trained answers"
     ]
   },
   "formats_written": [
