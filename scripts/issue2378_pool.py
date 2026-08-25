@@ -54,10 +54,30 @@ per fold + one cell's arrays — the 85k x 5120 pooled matrix never exists);
 the bound is ASSERTED against available RAM at phase entry.
 
 Phases: ``--phase pool`` (default), ``--phase h5`` (recompute the summary
-from existing per-cell JSONs), ``--phase probe`` (synthetic CPU
+from existing per-cell JSONs), ``--phase lofo`` (leave-one-framing-out pooled
+variant, requires ``--global-family-folds``), ``--phase probe`` (synthetic CPU
 self-verification: planted per-cell bias recovered by m1, planted rank-1
 slope recovered by m2, scrambled cell tier-suppressed + excluded from H5,
-moment-vs-SVD parity, resume-skip).
+moment-vs-SVD parity, resume-skip, plus the global-folds + LOFO branches).
+
+GLOBAL FAMILY FOLDS (``--global-family-folds``, interpretation-round r1 fix):
+the registered fold map assigns ``final_seed_id`` families to folds PER CELL
+(greedy LPT on that cell's own counts), and the 5 story cells share all 25
+families with 15-23/25 cross-cell fold disagreements per pair — so under the
+registered by-INDEX pooled alignment every story target's eval-fold families
+appear in sibling story cells' pooled-TRAINING rows (family exposure). The
+flag derives ONE global family -> fold assignment applied to ALL story cells
+(zero cross-cell family exposure by construction, audited), refits the
+refolded cells' own ceilings under the SAME folds (internally consistent
+recovery denominators), and writes everything under ``pool_gf/`` — the
+registered ``pool/`` outputs are never touched (default OFF is byte-identical
+to the registered behavior). chat/plain_text/chat_user_real are checked for
+shared source-conversation keys (row_id == conv_id == ``mt_`` +
+source_hash[:12], minted once per source conversation; the P0 pools are drawn
+mutually disjoint in ``issue2378_gen.phase_build_pools``): disjoint -> their
+registered conversation-grouped folds are kept and the finding is RECORDED in
+``fold_map_gf.json``; a realized overlap would instead fold-align the shared
+keys globally (same seeded convention).
 """
 
 from __future__ import annotations
@@ -185,10 +205,32 @@ def assert_pool_ram(k: int, d: int, n_max: int) -> dict:
 # ---------------------------------------------------------------------------
 
 
+def _fold_moments(x: torch.Tensor, y: torch.Tensor, folds: np.ndarray, k: int) -> list[dict]:
+    """Per-fold second moments for ONE cell's arrays (the accumulate_moments
+    inner kernel, factored so the LOFO totals-minus-cell arithmetic reuses the
+    IDENTICAL per-(cell,fold) Grams)."""
+    out: list[dict] = []
+    for f in range(k):
+        idx = np.flatnonzero(folds == f)
+        xf, yf = x[idx], y[idx]
+        out.append(
+            {
+                "n": int(xf.shape[0]),
+                "sum_x": xf.sum(0),
+                "sum_y": yf.sum(0),
+                "yss": float((yf * yf).sum()),
+                "c_xx": xf.T @ xf,
+                "c_xy": xf.T @ yf,
+            }
+        )
+    return out
+
+
 def accumulate_moments(store_root: Path, fold_map: dict, arm: str, layer: int, device: str) -> dict:
     """One streaming pass: per-fold second moments over ALL cells' equalized
-    cohorts (fold ids aligned by index). The pooled train matrix is never
-    materialized (plan §4.6: d x d Grams only)."""
+    cohorts (fold ids aligned by index; under --global-family-folds the story
+    folds are the ONE global family assignment). The pooled train matrix is
+    never materialized (plan §4.6: d x d Grams only)."""
     k = int(fold_map["k"])
     dev = torch.device(device)
     d = p6.EXPECTED_HIDDEN if fold_map.get("_probe_d") is None else int(fold_map["_probe_d"])
@@ -217,16 +259,10 @@ def accumulate_moments(store_root: Path, fold_map: dict, arm: str, layer: int, d
         if x.shape[1] != d:
             raise RuntimeError(f"{cell}: hidden dim {x.shape[1]} != expected {d}")
         folds = np.asarray(entry["folds"], dtype=np.int64)
-        for f in range(k):
-            idx = np.flatnonzero(folds == f)
-            xf, yf = x[idx], y[idx]
+        for f, cf in enumerate(_fold_moments(x, y, folds, k)):
             m = mom[f]
-            m["n"] += int(xf.shape[0])
-            m["sum_x"] += xf.sum(0)
-            m["sum_y"] += yf.sum(0)
-            m["yss"] += float((yf * yf).sum())
-            m["c_xx"] += xf.T @ xf
-            m["c_xy"] += xf.T @ yf
+            for key in ("n", "sum_x", "sum_y", "yss", "c_xx", "c_xy"):
+                m[key] += cf[key]
         n_per_cell[cell] = int(entry["n_rows"])
         del pack, x, y
         _log(
@@ -234,6 +270,21 @@ def accumulate_moments(store_root: Path, fold_map: dict, arm: str, layer: int, d
             f"n={n_per_cell[cell]} elapsed={time.time() - t0:.1f}s"
         )
     return {"mom": mom, "n_per_cell": n_per_cell}
+
+
+def lofo_train_moments(mom: list[dict], cellmom: list[dict], f: int, k: int) -> dict:
+    """LOFO train moments for (target cell, fold f): the pooled train
+    complement MINUS the target cell's train complement — totals-minus-cell
+    arithmetic on the SAME per-(cell,fold) Grams the pooled pass accumulated
+    (no extra streaming pass; parity vs a direct fit on the sibling-union
+    pinned in tests/test_issue2378_pool_gf.py)."""
+    train: dict = {
+        "n": sum(mom[g]["n"] - cellmom[g]["n"] for g in range(k) if g != f),
+        "yss": sum(mom[g]["yss"] - cellmom[g]["yss"] for g in range(k) if g != f),
+    }
+    for key in ("sum_x", "sum_y", "c_xx", "c_xy"):
+        train[key] = sum(mom[g][key] - cellmom[g][key] for g in range(k) if g != f)
+    return train
 
 
 def fit_pooled_per_fold(mom: list[dict], k: int) -> dict[int, ps.PooledMomentRidge]:
@@ -327,17 +378,35 @@ def parity_gate(
 # ---------------------------------------------------------------------------
 
 
-def _fits_inputs(ledger_root: Path, cell: str, arm: str) -> tuple[dict, dict]:
+def _fits_inputs(
+    ledger_root: Path, cell: str, arm: str, *, pool_dir: str = "pool", refolded: bool = False
+) -> tuple[dict, dict]:
     """The cell's own-map fits JSON + rowstats (ceiling + floor + tier).
-    REQUIRED — the fits unit class runs first (plan §9 P6 sequencing)."""
-    fpath = ledger_root / "fits" / f"{cell}__{arm}.json"
-    if not fpath.exists():
-        raise RuntimeError(
+    REQUIRED — the fits unit class runs first (plan §9 P6 sequencing).
+    ``refolded=True`` (a --global-family-folds cell whose folds changed) reads
+    the SAME-fold own-ceiling REFIT under ``<pool_dir>/own_ceilings/`` instead
+    of the registered fits (recovery denominators must share the fold
+    structure of the numerator); non-refolded cells keep the registered
+    ceilings (their folds are unchanged by the derivation)."""
+    if refolded:
+        base = ledger_root / pool_dir / "own_ceilings"
+        fpath = base / f"{cell}__{arm}.json"
+        rpath = base / "percell" / f"{cell}__{arm}__rowstats.npz"
+        missing_hint = (
+            f"missing {fpath} — the own-ceiling refit runs inside --phase pool under "
+            "--global-family-folds BEFORE the per-cell units (refolded cell)"
+        )
+    else:
+        fpath = ledger_root / "fits" / f"{cell}__{arm}.json"
+        rpath = ledger_root / "fits" / "percell" / f"{cell}__{arm}__rowstats.npz"
+        missing_hint = (
             f"missing {fpath} — run issue2378_fits.py for cell {cell} BEFORE the pooled arm "
             "(own ceilings are the recovery denominators)"
         )
+    if not fpath.exists():
+        raise RuntimeError(missing_hint)
     fits = json.loads(fpath.read_text(encoding="utf-8"))
-    rs = p6.load_rowstats(ledger_root / "fits" / "percell" / f"{cell}__{arm}__rowstats.npz")
+    rs = p6.load_rowstats(rpath)
     return fits, rs
 
 
@@ -356,9 +425,10 @@ def run_cell_unit(
     arm: str,
     layer: int,
     regime: dict,
+    pool_dir: str = "pool",
 ) -> None:
     ledger_root = Path(args.ledger_root)
-    out_path = ledger_root / "pool" / f"{cell}__{arm}.json"
+    out_path = ledger_root / pool_dir / f"{cell}__{arm}.json"
     if out_path.exists():
         prior = json.loads(out_path.read_text(encoding="utf-8"))
         if prior.get("regime") == regime:
@@ -370,7 +440,8 @@ def run_cell_unit(
     ranks = [int(r) for r in args.ranks]
     k_max = max(ranks)
     names = _model_names(ranks)
-    fits, fits_rs = _fits_inputs(ledger_root, cell, arm)
+    refolded = cell in fold_map.get("global_folds", {}).get("refolded_cells", [])
+    fits, fits_rs = _fits_inputs(ledger_root, cell, arm, pool_dir=pool_dir, refolded=refolded)
     if fits_rs["row_ids"].tolist() != entry["row_ids"]:
         raise RuntimeError(f"{cell}: fits rowstats row order != fold map (mixed generations)")
     slot = p6.SLOT_BY_ARM[arm]
@@ -478,12 +549,19 @@ def run_cell_unit(
     fold_mean = {name: float(np.mean([fr["r2"][name] for fr in per_fold])) for name in names}
     pooled = {name: p6.pooled_r2(ss_res[name], ss_tot) for name in names}
     ceiling = {
-        "fits_json": str(ledger_root / "fits" / f"{cell}__{arm}.json"),
+        "fits_json": str(
+            (ledger_root / pool_dir / "own_ceilings" if refolded else ledger_root / "fits")
+            / f"{cell}__{arm}.json"
+        ),
         "pooled_r2": float(fits["pooled_r2"]),
         "fold_mean_r2": float(fits["fold_mean_r2"]),
         "floor": float(fits["floor"]),
         "tier": fits["tier"],
     }
+    if fold_map.get("fold_regime") == "global-family":
+        # gf-only key (registered-path payloads stay byte-identical): which
+        # ceiling source the recovery denominators came from.
+        ceiling["refolded_own_ceiling"] = bool(refolded)
     suppress_by_tier = fits["tier"] != "clearly-mappable"
     recovery: dict[str, dict] = {}
     for name in names:
@@ -579,6 +657,367 @@ def run_cell_unit(
 
 
 # ---------------------------------------------------------------------------
+# Own-ceiling refit under the global folds (--global-family-folds only)
+# ---------------------------------------------------------------------------
+
+
+def run_own_ceiling_refit(
+    args, fold_map: dict, cell: str, arm: str, layer: int, base_regime: dict, pool_dir: str
+) -> None:
+    """Refit the cell's OWN-map ceiling under the SAME global folds the pooled
+    numerator uses (recovery denominators must share the fold structure).
+
+    Reuses the unit-3 fit core (``issue2378_fits._fit_under_folds``) with the
+    registered floor/tier machinery (null p95 floor + margin bootstrap +
+    tier_from_margin); the reduced-basis read is SKIPPED (with_reduced=False)
+    — it is a unit-3 diagnostic, not a ceiling input consumed here. Distinct
+    seed_parts ("gfceiling") so null/bootstrap permutations do not replay the
+    unit-3 ones (the unit_seed convention)."""
+    ledger_root = Path(args.ledger_root)
+    out_dir = ledger_root / pool_dir / "own_ceilings"
+    out_path = out_dir / f"{cell}__{arm}.json"
+    regime = dict(base_regime)
+    regime["variant"] = "own-ceiling-refit"
+    regime["with_reduced"] = False
+    if out_path.exists():
+        prior = json.loads(out_path.read_text(encoding="utf-8"))
+        if prior.get("regime") == regime:
+            _log(f"[gf-ceiling] SKIP {cell}/{arm}: refit exists with matching regime")
+            return
+        raise RuntimeError(f"regime mismatch at {out_path} — use a fresh ledger root")
+    t_unit = time.time()
+    entry = fold_map["cells"][cell]
+    slot = p6.SLOT_BY_ARM[arm]
+    pack = p6.load_cell_arrays(
+        Path(args.store_root), cell, layer, (slot, p6.ANSWER_SLOT), row_order=entry["row_ids"]
+    )
+    X, Y = pack["arrays"][slot], pack["arrays"][p6.ANSWER_SLOT]
+    del pack
+    res = fits_mod._fit_under_folds(
+        X,
+        Y,
+        p6.fold_splits(entry),
+        seed_parts=(cell, arm, "gfceiling"),
+        n_null_draws=args.n_null_draws,
+        bootstrap_draws=args.bootstrap_draws,
+        reduced_k=0,
+        with_null=True,
+        with_reduced=False,
+    )
+    floor = max(res["null"]["pooled_p95"], p6.R2_ABS_FLOOR)
+    margin = p6.margin_bootstrap(
+        res["rowstats"]["ss_res"],
+        res["rowstats"]["ss_tot"],
+        floor=floor,
+        n_draws=args.bootstrap_draws,
+        seed=p6.unit_seed(cell, arm, "gfceiling", "margin"),
+    )
+    rs_path = out_dir / "percell" / f"{cell}__{arm}__rowstats.npz"
+    p6.write_rowstats(
+        rs_path,
+        row_ids=entry["row_ids"],
+        folds=res["rowstats"]["folds"],
+        ss_res=res["rowstats"]["ss_res"],
+        ss_tot=res["rowstats"]["ss_tot"],
+    )
+    payload = {
+        "regime": regime,
+        "cell": cell,
+        "arm": arm,
+        "fold_regime": "global-family",
+        "fold_structure": entry["fold_structure"],
+        "n_rows": int(entry["n_rows"]),
+        "d": int(X.shape[1]),
+        "per_fold": res["per_fold"],
+        "fold_mean_r2": res["fold_mean_r2"],
+        "pooled_r2": res["pooled_r2"],
+        "null": res["null"],
+        "floor": float(floor),
+        "margin": {
+            "point_fold_mean": res["fold_mean_r2"] - floor,
+            "point_pooled": res["pooled_r2"] - floor,
+            "bootstrap": margin,
+        },
+        "tier": p6.tier_from_margin(margin["ci_lo"], margin["ci_hi"]),
+        "baselines": {
+            "identity_bias": res["identity_bias"],
+            "knn": _knn_block(res["preds"], Y),
+        },
+        "rowstats_path": str(rs_path),
+        "unit_wall_s": round(time.time() - t_unit, 2),
+        "metadata": cm.run_metadata(),
+    }
+    if cell in cm.STORY_CELLS:
+        payload["story_fold_audit"] = entry["story_fold_audit"]
+    cm.atomic_write_json(out_path, payload)
+    _log(
+        f"[gf-ceiling] {cell}/{arm}: pooled_r2={res['pooled_r2']:+.4f} tier={payload['tier']} "
+        f"wall={payload['unit_wall_s']}s -> {out_path}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# LOFO pooled variant (leave-one-framing-out; --phase lofo)
+# ---------------------------------------------------------------------------
+
+LOFO_TIERS = ("m0", "m1", "identity_cell")
+
+
+def lofo_ram_bound_bytes(k: int, d: int, n_max: int) -> int:
+    """Analytic peak-RSS bound for the LOFO pass: global + one cell's per-fold
+    Grams (2x the pooled moments), ONE model at a time + its eigh workspace +
+    the train-moment temporaries + one cell's float64 arrays."""
+    moments = k * 2 * d * d * 8
+    model_one = d * d * 8
+    eigh_ws = 3 * d * d * 8
+    train_tmp = 2 * d * d * 8
+    cell = 2 * (2 * n_max * d * 8)
+    return int(RAM_SLACK_FACTOR * (2 * moments + model_one + eigh_ws + train_tmp + cell))
+
+
+def assert_lofo_ram(k: int, d: int, n_max: int) -> dict:
+    bound = lofo_ram_bound_bytes(k, d, n_max)
+    avail, source = available_ram_bytes()
+    need = bound + int(RAM_FIXED_OVERHEAD_GIB * 2**30)
+    rec = {
+        "bound_gib": round(bound / 2**30, 2),
+        "fixed_overhead_gib": RAM_FIXED_OVERHEAD_GIB,
+        "available_gib": round(avail / 2**30, 2),
+        "available_source": source,
+        "k": k,
+        "d": d,
+        "n_max": n_max,
+    }
+    _log(f"[lofo] ram check: {json.dumps(rec)}")
+    if avail < need:
+        raise RuntimeError(
+            f"LOFO RAM assert FAILED: available {avail / 2**30:.1f} GiB ({source}) < "
+            f"analytic bound {need / 2**30:.1f} GiB — route to a bigger pod"
+        )
+    return rec
+
+
+def run_lofo_cell_unit(
+    args,
+    fold_map: dict,
+    mom: list[dict],
+    cell: str,
+    arm: str,
+    layer: int,
+    regime: dict,
+    pool_dir: str,
+    device: str,
+) -> None:
+    """LOFO unit for one target cell: per fold f, fit the pooled map on the
+    OTHER cells' train moments only (totals-minus-cell), score the target's
+    held-out fold-f rows at m0 (raw LOFO map), m1 (m0 + per-cell bias fit on
+    the TARGET's train rows — the pooled arm's m1 semantics; the SLOPE never
+    sees the target framing), and the identity_cell baseline (mandatory
+    mapping-baselines row). Recovery vs the SAME ceiling the gf pooled arm
+    uses (refolded cells: the own-ceiling refit; others: registered fits)."""
+    ledger_root = Path(args.ledger_root)
+    out_path = ledger_root / pool_dir / "lofo" / f"{cell}__{arm}.json"
+    if out_path.exists():
+        prior = json.loads(out_path.read_text(encoding="utf-8"))
+        if prior.get("regime") == regime:
+            _log(f"[lofo] SKIP {cell}/{arm}: output exists with matching regime")
+            return
+        raise RuntimeError(f"regime mismatch at {out_path} — use a fresh ledger root")
+    t_unit = time.time()
+    entry = fold_map["cells"][cell]
+    k = int(fold_map["k"])
+    dev = torch.device(device)
+    names = list(LOFO_TIERS)
+    refolded = cell in fold_map.get("global_folds", {}).get("refolded_cells", [])
+    fits, fits_rs = _fits_inputs(ledger_root, cell, arm, pool_dir=pool_dir, refolded=refolded)
+    if fits_rs["row_ids"].tolist() != entry["row_ids"]:
+        raise RuntimeError(f"{cell}: ceiling rowstats row order != fold map (mixed generations)")
+    slot = p6.SLOT_BY_ARM[arm]
+    pack = p6.load_cell_arrays(
+        Path(args.store_root), cell, layer, (slot, p6.ANSWER_SLOT), row_order=entry["row_ids"]
+    )
+    x_all = pack["arrays"][slot].astype(np.float64)
+    y_all = pack["arrays"][p6.ANSWER_SLOT].astype(np.float64)
+    del pack
+    n = x_all.shape[0]
+    ybar = y_all.mean(axis=0)
+    ss_tot = ((y_all - ybar) ** 2).sum(axis=1)
+    if not np.allclose(ss_tot, fits_rs["ss_tot"], rtol=1e-8, atol=1e-6):
+        raise RuntimeError(f"{cell}: recomputed ss_tot != ceiling rowstats ss_tot (store drift)")
+    folds = np.asarray(entry["folds"], dtype=np.int64)
+    xt = torch.as_tensor(x_all, device=dev)
+    yt = torch.as_tensor(y_all, device=dev)
+    cellmom = _fold_moments(xt, yt, folds, k)
+    splits = p6.fold_splits(entry)
+    ss_res = {name: np.full(n, np.nan) for name in names}
+    per_fold: list[dict] = []
+    for f, (tr, te) in enumerate(splits):
+        t0 = time.time()
+        model = ps.PooledMomentRidge(
+            **lofo_train_moments(mom, cellmom, f, k), lambdas=pf.DEFAULT_LAMBDAS, dof_cap=0.9
+        )
+        x_tr, y_tr, x_te, y_te = x_all[tr], y_all[tr], x_all[te], y_all[te]
+        preds: dict[str, np.ndarray] = {}
+        preds["m0"] = model.predict_np(x_te)
+        b_cell = y_tr.mean(axis=0) - model.predict_np(x_tr.mean(axis=0, keepdims=True))[0]
+        preds["m1"] = preds["m0"] + b_cell
+        preds["identity_cell"] = identity_bias_predict(x_tr, y_tr, x_te)
+        for name in names:
+            ss_res[name][te] = ((y_te - preds[name]) ** 2).sum(axis=1)
+        metrics = {name: float(pf._r2_matrix(y_te, preds[name])) for name in names}
+        knn = {name: _knn_block(preds[name], y_te) for name in names}
+        per_fold.append(
+            {
+                "fold": f,
+                "n_lofo_train": model.n_train,
+                "n_cell_train": int(tr.size),
+                "n_test": int(te.size),
+                "lofo_info": model.info(),
+                "m1_bias_norm": float(np.linalg.norm(b_cell)),
+                "r2": metrics,
+                "knn": knn,
+                "wall_s": round(time.time() - t0, 1),
+            }
+        )
+        del model
+        _log(
+            f"[lofo] {cell}/{arm} fold={f} m0={metrics['m0']:+.4f} m1={metrics['m1']:+.4f} "
+            f"idcell={metrics['identity_cell']:+.4f} elapsed={per_fold[-1]['wall_s']}s"
+        )
+    del xt, yt, cellmom
+    fold_mean = {name: float(np.mean([fr["r2"][name] for fr in per_fold])) for name in names}
+    pooled = {name: p6.pooled_r2(ss_res[name], ss_tot) for name in names}
+    ceiling = {
+        "fits_json": str(
+            (ledger_root / pool_dir / "own_ceilings" if refolded else ledger_root / "fits")
+            / f"{cell}__{arm}.json"
+        ),
+        "refolded_own_ceiling": bool(refolded),
+        "pooled_r2": float(fits["pooled_r2"]),
+        "fold_mean_r2": float(fits["fold_mean_r2"]),
+        "floor": float(fits["floor"]),
+        "tier": fits["tier"],
+    }
+    suppress_by_tier = fits["tier"] != "clearly-mappable"
+    recovery: dict[str, dict] = {}
+    for name in ("m0", "m1"):
+        if suppress_by_tier:
+            recovery[name] = {
+                "suppressed_by_tier": True,
+                "tier": fits["tier"],
+                "note": (
+                    "ratio verdicts suppressed (plan §3 reporting tiers): own-ceiling R2 and "
+                    "LOFO R2 are reported separately, absolute and unnormalized"
+                ),
+            }
+            continue
+        rec = p6.recovery_bootstrap(
+            ss_res[name],
+            fits_rs["ss_res"],
+            ss_tot,
+            floor=ceiling["floor"],
+            n_draws=args.bootstrap_draws,
+            seed=p6.unit_seed(cell, arm, "loforecovery", name),
+        )
+        rec["suppressed_by_tier"] = False
+        if not rec.get("suppressed"):
+            rec["point_pooled"] = pooled[name] / ceiling["pooled_r2"]
+            rec["point_fold_mean"] = fold_mean[name] / ceiling["fold_mean_r2"]
+            exceeds = bool(rec["point_pooled"] > 1.0) or bool(rec.get("median", 0.0) > 1.0)
+            rec["exceeds_one"] = exceeds
+            if exceeds:
+                rec["exceeds_one_note"] = (
+                    "recovery > 1 is the estimation-limited-ceiling tell (plan §6 analyzer "
+                    "note) — never super-recovery"
+                )
+        recovery[name] = rec
+    payload = {
+        "regime": regime,
+        "cell": cell,
+        "arm": arm,
+        "variant": "lofo",
+        "fold_regime": "global-family",
+        "fold_structure": entry["fold_structure"],
+        "n_rows": int(entry["n_rows"]),
+        "tiers": names,
+        "per_fold": per_fold,
+        "fold_mean_r2": fold_mean,
+        "pooled_r2": pooled,
+        "increments": {"m1_minus_m0": pooled["m1"] - pooled["m0"]},
+        "ceiling": ceiling,
+        "recovery": recovery,
+        "unit_wall_s": round(time.time() - t_unit, 2),
+        "metadata": cm.run_metadata(),
+    }
+    if cell in cm.STORY_CELLS:
+        payload["story_fold_audit"] = entry["story_fold_audit"]
+    cm.atomic_write_json(out_path, payload)
+    _log(
+        f"[lofo] {cell}/{arm}: m0={pooled['m0']:+.4f} m1={pooled['m1']:+.4f} "
+        f"tier={fits['tier']} wall={payload['unit_wall_s']}s -> {out_path}"
+    )
+
+
+def phase_lofo(args) -> int:
+    """Leave-one-framing-out pooled variant (the ood-generalization-folds rule
+    construct — the evidence-bearing shared-operator test): fit on the other
+    cells only, score each target's held-out fold rows. Requires
+    --global-family-folds (outputs land under pool_gf/lofo/)."""
+    if not args.global_family_folds:
+        raise SystemExit(
+            "--phase lofo requires --global-family-folds (the LOFO deliverable is registered "
+            "under pool_gf/; run the family-clean fold regime)"
+        )
+    ledger_root = Path(args.ledger_root)
+    store_root = Path(args.store_root)
+    gate_path = Path(args.g3_gate_file or (ledger_root / p6.G3_GATE_NAME))
+    p6.require_g3_pass(gate_path)
+    pool_dir = _pool_dir_name(args)
+    fm = _resolve_fold_view(args, _fold_map(args))
+    persist_gf_fold_map(fm, ledger_root)
+    layer = fits_mod.resolve_layer(args)
+    k = int(fm["k"])
+    cells = sorted(fm["cells"])
+    if len(cells) < 2:
+        raise SystemExit(f"LOFO needs >= 2 cells (fold map has {cells})")
+    arms = [a.strip() for a in args.arms.split(",") if a.strip()]
+    for arm in arms:
+        if arm not in p6.ARMS:
+            raise SystemExit(f"unknown arm {arm!r} (choices: {p6.ARMS})")
+    probe_d = getattr(args, "probe_d", None)
+    fm["_probe_d"] = probe_d
+    d = int(probe_d) if probe_d else p6.EXPECTED_HIDDEN
+    n_max = max(int(fm["cells"][c]["n_rows"]) for c in cells)
+    assert_lofo_ram(k, d, n_max)
+
+    for arm in arms:
+        regime = _regime(args, fm, arm, layer)
+        regime["variant"] = "lofo"
+        regime["lofo_tiers"] = list(LOFO_TIERS)
+        todo = []
+        for cell in cells:
+            out_path = ledger_root / pool_dir / "lofo" / f"{cell}__{arm}.json"
+            if out_path.exists():
+                prior = json.loads(out_path.read_text(encoding="utf-8"))
+                if prior.get("regime") == regime:
+                    continue
+                raise RuntimeError(f"regime mismatch at {out_path} — use a fresh ledger root")
+            todo.append(cell)
+        if not todo:
+            _log(f"[lofo] arm={arm}: all {len(cells)} cell units already done — resume skip")
+            continue
+        acc = accumulate_moments(store_root, fm, arm, layer, args.device)
+        t0 = time.time()
+        for i, cell in enumerate(cells):
+            run_lofo_cell_unit(
+                args, fm, acc["mom"], cell, arm, layer, regime, pool_dir, args.device
+            )
+            cm.progress("lofo", i + 1, len(cells), f"{cell}/{arm}", t0)
+        del acc
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # H5 summary
 # ---------------------------------------------------------------------------
 
@@ -592,10 +1031,17 @@ H5_DEFINITION = (
 )
 
 
-def compose_h5_summary(ledger_root: Path, arm: str, cells: list[str], regime: dict) -> dict:
+def compose_h5_summary(
+    ledger_root: Path,
+    arm: str,
+    cells: list[str],
+    regime: dict,
+    pool_dir: str = "pool",
+    fold_regime: str | None = None,
+) -> dict:
     rows = []
     for cell in cells:
-        path = ledger_root / "pool" / f"{cell}__{arm}.json"
+        path = ledger_root / pool_dir / f"{cell}__{arm}.json"
         if not path.exists():
             raise RuntimeError(f"h5 summary: missing {path} — run --phase pool first")
         d = json.loads(path.read_text(encoding="utf-8"))
@@ -641,7 +1087,11 @@ def compose_h5_summary(ledger_root: Path, arm: str, cells: list[str], regime: di
         "regime": regime,
         "metadata": cm.run_metadata(),
     }
-    cm.atomic_write_json(ledger_root / "pool" / f"h5_summary__{arm}.json", summary)
+    if fold_regime is not None:
+        # gf-only field (deliverable: pool_gf/h5_summary carries the regime label;
+        # the registered pool/ summary stays byte-identical).
+        summary["fold_regime"] = fold_regime
+    cm.atomic_write_json(ledger_root / pool_dir / f"h5_summary__{arm}.json", summary)
     _log(
         f"[h5] arm={arm}: {n_ge}/{len(eligible)} eligible cells >= {H5_RECOVERY_BAR} "
         f"(strict_majority={summary['strict_majority']}; excluded={sorted(summary['excluded'])})"
@@ -679,8 +1129,240 @@ def _apply_cells_filter(fm: dict, cells_arg: str | None) -> dict:
     return fm
 
 
+# ---------------------------------------------------------------------------
+# Global family folds (--global-family-folds; interpretation-round r1 fix)
+# ---------------------------------------------------------------------------
+
+GF_POOL_DIR = "pool_gf"
+GF_FOLD_MAP_NAME = "fold_map_gf.json"
+
+
+def _pool_dir_name(args) -> str:
+    """pool/ for the registered regime; pool_gf/ under --global-family-folds
+    (the family-exposed originals stay as the disclosed comparison)."""
+    return GF_POOL_DIR if getattr(args, "global_family_folds", False) else "pool"
+
+
+def _global_family_assignment(percell_counts: dict[str, dict], k: int) -> dict:
+    """ONE global family -> fold assignment over the story cells.
+
+    Greedy over families sorted by (-global count, str(key)) — the
+    ``p6._greedy_family_folds`` determinism convention — but each family goes
+    to the fold minimizing (max PER-CELL resulting fold load, global resulting
+    load, fold id). The naive global-LPT variant (balance global loads only)
+    violates the per-cell ``n_train > n_train_floor`` assert on the REALIZED
+    committed fold map (min n_train 5110/5115/5116 vs floor 5120 on 3/5 story
+    cells, measured pre-write); the per-cell min-max objective clears it
+    (worst realized n_train 5193). Fully deterministic from the sorted family
+    list + per-cell counts (no rng; ties break to the lowest fold id, matching
+    the registered convention)."""
+    cells = sorted(percell_counts)
+    gc: dict = {}
+    for c in cells:
+        for fam, n in percell_counts[c].items():
+            gc[fam] = gc.get(fam, 0) + n
+    loads = {c: [0] * k for c in cells}
+    gload = [0] * k
+    assign: dict = {}
+    for fam in sorted(gc, key=lambda x: (-gc[x], str(x))):
+        best: tuple | None = None
+        for f in range(k):
+            mx = max(loads[c][f] + percell_counts[c].get(fam, 0) for c in cells)
+            key = (mx, gload[f] + gc[fam], f)
+            if best is None or key < best[0]:
+                best = (key, f)
+        assert best is not None
+        f = best[1]
+        assign[fam] = f
+        gload[f] += gc[fam]
+        for c in cells:
+            loads[c][f] += percell_counts[c].get(fam, 0)
+    return assign
+
+
+def _audit_global_story_folds(fm: dict, story_cells: list[str], k: int) -> dict:
+    """Mechanical zero-exposure audit (the Codex check): for every story
+    TARGET cell and fold f, the target's eval-fold families must not appear in
+    ANY story cell's train rows for fold f. Raises on a hit."""
+    eval_fams = {c: {f: set() for f in range(k)} for c in story_cells}
+    train_fams = {c: {f: set() for f in range(k)} for c in story_cells}
+    for c in story_cells:
+        e = fm["cells"][c]
+        for fam, f in zip(e["family_keys"], e["folds"]):
+            eval_fams[c][int(f)].add(fam)
+            for g in range(k):
+                if g != int(f):
+                    train_fams[c][g].add(fam)
+    per_fold = []
+    for t in story_cells:
+        for f in range(k):
+            pooled_train = set().union(*(train_fams[c][f] for c in story_cells))
+            overlap = sorted(str(x) for x in (eval_fams[t][f] & pooled_train))
+            if overlap:
+                raise RuntimeError(
+                    f"global-family-folds audit FAILED: {t} fold {f} eval families appear in "
+                    f"pooled training rows: {overlap[:5]}"
+                )
+            per_fold.append(
+                {"target": t, "fold": f, "n_eval_families": len(eval_fams[t][f]), "overlap": []}
+            )
+    return {"verdict": "zero-cross-cell-family-exposure", "k": k, "per_target_fold": per_fold}
+
+
+def derive_global_family_folds(fm: dict) -> dict:
+    """Return a NEW fold-map view with globally-aligned folds (registered map
+    untouched). Story cells: one global final_seed_id -> fold assignment
+    applied to every story cell (audited per cell AND cross-cell). Non-story
+    cells: pairwise row-id overlap CHECKED (row_id == conv_id ==
+    ``mt_`` + source_hash[:12] is content-keyed — issue2378_gen mints it once
+    per source conversation and phase_build_pools draws the chat/plain/user
+    pools mutually disjoint) — disjoint keeps the registered
+    conversation-grouped folds (recorded finding); an overlap fold-aligns the
+    union of row ids globally via the registered seeded convention. Re-asserts
+    the per-cell per-fold n_train floor and recomputes the fold-map sha."""
+    k = int(fm["k"])
+    fm_gf = json.loads(json.dumps({kk: fm[kk] for kk in fm if not kk.startswith("_")}))
+    story_cells = sorted(c for c in fm_gf["cells"] if c in cm.STORY_CELLS)
+    if not story_cells:
+        raise RuntimeError("--global-family-folds: no story cells in the fold map")
+    percell_counts: dict[str, dict] = {}
+    for c in story_cells:
+        counts: dict = {}
+        for fam in fm_gf["cells"][c]["family_keys"]:
+            counts[fam] = counts.get(fam, 0) + 1
+        percell_counts[c] = counts
+    fam_fold = _global_family_assignment(percell_counts, k)
+    for c in story_cells:
+        e = fm_gf["cells"][c]
+        e["folds"] = [int(fam_fold[fam]) for fam in e["family_keys"]]
+        e["fold_sizes"] = [e["folds"].count(f) for f in range(k)]
+        e["story_fold_audit"] = p6.audit_story_folds(e["family_keys"], e["folds"], k)
+    cross_audit = _audit_global_story_folds(fm_gf, story_cells, k)
+
+    # Non-story framings: shared-source-key check (a CHECKED fact, recorded).
+    # row_id == conv_id is content-keyed, so a shared key IS shared content;
+    # what matters for family exposure is a shared key carrying DISAGREEING
+    # fold assignments across cells (a paired-user topology legitimately
+    # shares every key with IDENTICAL folds — build_fold_map's user_pair
+    # branch — and needs no re-alignment).
+    nonstory = sorted(c for c in fm_gf["cells"] if c not in cm.STORY_CELLS)
+    ids = {c: set(fm_gf["cells"][c]["row_ids"]) for c in nonstory}
+    fold_of = {
+        c: dict(zip(fm_gf["cells"][c]["row_ids"], fm_gf["cells"][c]["folds"])) for c in nonstory
+    }
+    pairwise = {}
+    shared: set = set()
+    for i, a in enumerate(nonstory):
+        for b in nonstory[i + 1 :]:
+            inter = ids[a] & ids[b]
+            pairwise[f"{a}|{b}"] = len(inter)
+            shared |= inter
+    disjoint = not shared
+    n_disagree = sum(
+        1 for rid in shared if len({fold_of[c][rid] for c in nonstory if rid in ids[c]}) > 1
+    )
+    if disjoint:
+        action = "registered conversation-grouped folds kept (checked content-disjoint)"
+    elif n_disagree == 0:
+        action = (
+            "registered folds kept (shared keys already fold-consistent across cells — "
+            "the paired-user topology)"
+        )
+    else:
+        action = "shared row keys fold-aligned globally (seeded, deterministic)"
+    nonstory_rec = {
+        "cells": nonstory,
+        "framings_content_disjoint": bool(disjoint),
+        "pairwise_row_id_overlap": pairwise,
+        "n_shared_keys": len(shared),
+        "n_shared_keys_fold_disagreeing": int(n_disagree),
+        "key_basis": (
+            "row_id == conv_id == 'mt_' + source_hash[:12], minted once per source "
+            "conversation (issue2378_gen.phase_build_pools draws the chat/plain/user pools "
+            "mutually disjoint) — identical cross-framing content would carry identical ids"
+        ),
+        "action": action,
+    }
+    if n_disagree > 0:
+        union_ids = sorted(set().union(*ids.values()))
+        rng = np.random.default_rng(cm.derived_seed(fm_gf["seed"], "poolgf", "shared_conv_folds"))
+        order = rng.permutation(len(union_ids))
+        id_fold: dict[str, int] = {}
+        for j, chunk in enumerate(np.array_split(order, k)):
+            for pos in chunk:
+                id_fold[union_ids[int(pos)]] = j
+        for c in nonstory:
+            e = fm_gf["cells"][c]
+            e["folds"] = [int(id_fold[rid]) for rid in e["row_ids"]]
+            e["fold_sizes"] = [e["folds"].count(f) for f in range(k)]
+
+    # Per-cell per-fold n_train floor re-assert (plan G2b; the registered
+    # builder's own check, re-run on the derived assignment).
+    floor = int(fm_gf["n_train_floor"])
+    for c, e in fm_gf["cells"].items():
+        for f in range(k):
+            n_train = int(e["n_rows"]) - e["fold_sizes"][f]
+            if n_train <= floor:
+                raise RuntimeError(
+                    f"--global-family-folds: {c} fold {f} n_train={n_train} <= floor {floor} "
+                    f"(fold sizes {e['fold_sizes']}) — global assignment starves a fold"
+                )
+
+    refolded = sorted(
+        c for c in fm_gf["cells"] if fm_gf["cells"][c]["folds"] != fm["cells"][c]["folds"]
+    )
+    fm_gf["fold_regime"] = "global-family"
+    fm_gf["base_fold_map_sha"] = fm["sha256"]
+    fm_gf["global_folds"] = {
+        "method": (
+            "greedy min-max per-cell fold load over families sorted by (-global count, "
+            "str(key)); ties to (global load, lowest fold id)"
+        ),
+        "family_fold": {str(fam): int(f) for fam, f in sorted(fam_fold.items(), key=str)},
+        "story_cells": story_cells,
+        "cross_cell_audit": cross_audit,
+        "nonstory": nonstory_rec,
+        "refolded_cells": refolded,
+    }
+    del fm_gf["sha256"]
+    fm_gf["sha256"] = p6.fold_map_sha(fm_gf)
+    _log(
+        f"[gf] global family folds: {len(fam_fold)} families, refolded cells {refolded}, "
+        f"nonstory disjoint={disjoint}, sha={fm_gf['sha256'][:12]}"
+    )
+    return fm_gf
+
+
+def persist_gf_fold_map(fm_gf: dict, ledger_root: Path) -> None:
+    """Write pool_gf/fold_map_gf.json (or sha-verify an existing copy — the
+    mixed-generations guard, mirroring load_or_build_fold_map)."""
+    path = ledger_root / GF_POOL_DIR / GF_FOLD_MAP_NAME
+    if path.exists():
+        on_disk = json.loads(path.read_text(encoding="utf-8"))
+        if on_disk.get("sha256") != fm_gf["sha256"]:
+            raise RuntimeError(
+                f"fold_map_gf sha mismatch: derived {fm_gf['sha256'][:12]} vs on-disk "
+                f"{on_disk.get('sha256', '?')[:12]} at {path} — mixed generations; "
+                "use a fresh ledger root"
+            )
+        return
+    payload = dict(fm_gf)
+    payload["metadata"] = cm.run_metadata()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    cm.atomic_write_json(path, payload)
+    _log(f"[gf] wrote {path}")
+
+
+def _resolve_fold_view(args, fm: dict) -> dict:
+    """The fold map the phases consume: registered map UNCHANGED (same object)
+    when --global-family-folds is off; the derived global view when on."""
+    if not getattr(args, "global_family_folds", False):
+        return fm
+    return derive_global_family_folds(fm)
+
+
 def _regime(args, fold_map: dict, arm: str, layer: int) -> dict:
-    return {
+    regime = {
         "script_version": SCRIPT_VERSION,
         "arm": arm,
         "layer": int(layer),
@@ -696,6 +1378,11 @@ def _regime(args, fold_map: dict, arm: str, layer: int) -> dict:
         "dof_cap": 0.9,
         "seed_derivation": "137-rooted per-(cell,arm,fold,rank) via cm.derived_seed",
     }
+    # Key added ONLY under --global-family-folds: the registered-path regime
+    # dict stays byte-identical to the committed pool/ outputs (resume safety).
+    if fold_map.get("fold_regime") == "global-family":
+        regime["fold_regime"] = "global-family"
+    return regime
 
 
 def phase_pool(args) -> int:
@@ -703,7 +1390,10 @@ def phase_pool(args) -> int:
     store_root = Path(args.store_root)
     gate_path = Path(args.g3_gate_file or (ledger_root / p6.G3_GATE_NAME))
     p6.require_g3_pass(gate_path)  # plan §7: G3 gates the P6 fan-out
-    fm = _fold_map(args)
+    pool_dir = _pool_dir_name(args)
+    fm = _resolve_fold_view(args, _fold_map(args))
+    if args.global_family_folds:
+        persist_gf_fold_map(fm, ledger_root)
     layer = fits_mod.resolve_layer(args)
     k = int(fm["k"])
     cells = sorted(fm["cells"])
@@ -720,9 +1410,16 @@ def phase_pool(args) -> int:
 
     for arm in arms:
         regime = _regime(args, fm, arm, layer)
+        if args.global_family_folds:
+            # Own-ceiling refits for every REFOLDED cell FIRST (recovery
+            # denominators must share the numerator's fold structure); cells
+            # whose folds are unchanged keep the registered fits ceilings.
+            for cell in cells:
+                if cell in fm["global_folds"]["refolded_cells"]:
+                    run_own_ceiling_refit(args, fm, cell, arm, layer, regime, pool_dir)
         todo = []
         for cell in cells:
-            out_path = ledger_root / "pool" / f"{cell}__{arm}.json"
+            out_path = ledger_root / pool_dir / f"{cell}__{arm}.json"
             if out_path.exists():
                 prior = json.loads(out_path.read_text(encoding="utf-8"))
                 if prior.get("regime") == regime:
@@ -731,7 +1428,7 @@ def phase_pool(args) -> int:
             todo.append(cell)
         if not todo:
             _log(f"[pool] arm={arm}: all {len(cells)} cell units already done — resume skip")
-            compose_h5_summary(ledger_root, arm, cells, regime)
+            compose_h5_summary(ledger_root, arm, cells, regime, pool_dir, fm.get("fold_regime"))
             continue
         parity = None
         if not args.skip_parity:
@@ -747,24 +1444,29 @@ def phase_pool(args) -> int:
             "ram_check": ram_rec,
             "metadata": cm.run_metadata(),
         }
-        cm.atomic_write_json(ledger_root / "pool" / f"pooled_{arm}.json", pooled_payload)
+        cm.atomic_write_json(ledger_root / pool_dir / f"pooled_{arm}.json", pooled_payload)
         t0 = time.time()
         for i, cell in enumerate(cells):
-            run_cell_unit(args, fm, models, cell, arm, layer, regime)
+            run_cell_unit(args, fm, models, cell, arm, layer, regime, pool_dir)
             cm.progress("pool", i + 1, len(cells), f"{cell}/{arm}", t0)
         del models, acc
-        compose_h5_summary(ledger_root, arm, cells, regime)
+        compose_h5_summary(ledger_root, arm, cells, regime, pool_dir, fm.get("fold_regime"))
     return 0
 
 
 def phase_h5(args) -> int:
     """Recompute the H5 summary from existing per-cell pool JSONs (idempotent)."""
     ledger_root = Path(args.ledger_root)
-    fm = _fold_map(args)
+    pool_dir = _pool_dir_name(args)
+    fm = _resolve_fold_view(args, _fold_map(args))
+    if args.global_family_folds:
+        persist_gf_fold_map(fm, ledger_root)
     layer = fits_mod.resolve_layer(args)
     cells = sorted(fm["cells"])
     for arm in [a.strip() for a in args.arms.split(",") if a.strip()]:
-        compose_h5_summary(ledger_root, arm, cells, _regime(args, fm, arm, layer))
+        compose_h5_summary(
+            ledger_root, arm, cells, _regime(args, fm, arm, layer), pool_dir, fm.get("fold_regime")
+        )
     return 0
 
 
@@ -864,6 +1566,7 @@ def phase_probe(args) -> int:  # noqa: PLR0915
             g3_gate_file=None,
             fold_floors_override=fits_mod._PROBE_FLOORS,
             probe_d=d,
+            global_family_folds=False,
         )
         rc = phase_pool(pool_ns)
         assert rc == 0
@@ -915,6 +1618,61 @@ def phase_probe(args) -> int:  # noqa: PLR0915
         rc = phase_pool(pool_ns)
         assert rc == 0
         _log("[probe] resume-skip: OK")
+
+        # (f) --global-family-folds branch: SAME phase entrypoints, derived
+        # global fold view, outputs under pool_gf/ (pool/ never clobbered).
+        reg_bytes = (ledger / "pool" / "storyq_astra__context.json").read_bytes()
+        gf_ns = argparse.Namespace(**{**vars(pool_ns), "global_family_folds": True})
+        rc = phase_pool(gf_ns)
+        assert rc == 0
+        gf_map = json.loads((ledger / "pool_gf" / "fold_map_gf.json").read_text())
+        assert gf_map["fold_regime"] == "global-family"
+        gfrec = gf_map["global_folds"]
+        assert gfrec["cross_cell_audit"]["verdict"] == "zero-cross-cell-family-exposure"
+        # The probe fold map's per-cell greedy assignments disagree across
+        # cells (verified pre-write), so the refit path is REALLY exercised.
+        assert gfrec["refolded_cells"], "probe fixture must refold >= 1 story cell"
+        # Probe topology: the user PAIR shares every conv id with IDENTICAL
+        # registered folds (build_fold_map user_pair branch) -> shared keys
+        # present, zero fold disagreement, registered folds kept. (The
+        # PRODUCTION 8-cell map is content-disjoint — pinned in
+        # tests/test_issue2378_pool_gf.py.)
+        assert gfrec["nonstory"]["n_shared_keys_fold_disagreeing"] == 0, gfrec["nonstory"]
+        assert "registered" in gfrec["nonstory"]["action"], gfrec["nonstory"]
+        for c in gfrec["refolded_cells"]:
+            cpath = ledger / "pool_gf" / "own_ceilings" / f"{c}__context.json"
+            assert cpath.exists(), f"missing own-ceiling refit {cpath}"
+            ceil = json.loads(cpath.read_text())
+            assert ceil["regime"]["variant"] == "own-ceiling-refit"
+            assert ceil["fold_regime"] == "global-family"
+        h5_gf = json.loads((ledger / "pool_gf" / "h5_summary__context.json").read_text())
+        assert h5_gf["fold_regime"] == "global-family"
+        assert h5_gf["regime"]["fold_regime"] == "global-family"
+        biased_gf = json.loads((ledger / "pool_gf" / "storyq_astra__context.json").read_text())
+        rec_gf_m0 = biased_gf["recovery"]["m0"]["point_pooled"]
+        rec_gf_m1 = biased_gf["recovery"]["m1"]["point_pooled"]
+        assert rec_gf_m1 > rec_gf_m0, (rec_gf_m0, rec_gf_m1)
+        assert (ledger / "pool" / "storyq_astra__context.json").read_bytes() == reg_bytes, (
+            "gf run clobbered the registered pool/ output"
+        )
+        _log(f"[probe] global-family-folds: m0 {rec_gf_m0:+.3f} -> m1 {rec_gf_m1:+.3f} OK")
+
+        # (g) LOFO: slope fit on the OTHER cells only; planted per-cell bias
+        # is invisible to the LOFO slope, so m1 (per-cell bias) must beat m0.
+        rc = phase_lofo(gf_ns)
+        assert rc == 0
+        lofo = json.loads((ledger / "pool_gf" / "lofo" / "storyq_astra__context.json").read_text())
+        assert lofo["regime"]["variant"] == "lofo"
+        assert set(lofo["pooled_r2"]) == {"m0", "m1", "identity_cell"}
+        assert lofo["pooled_r2"]["m1"] > lofo["pooled_r2"]["m0"], lofo["pooled_r2"]
+        assert lofo["per_fold"][0]["n_lofo_train"] > 0
+        assert "m0" in lofo["recovery"] and "m1" in lofo["recovery"]
+        # (h) gf + lofo resume paths: re-run -> every unit skips.
+        rc = phase_pool(gf_ns)
+        assert rc == 0
+        rc = phase_lofo(gf_ns)
+        assert rc == 0
+        _log("[probe] gf + lofo resume-skip: OK")
     _log("[phase=probe] done — all pool probes passed")
     return 0
 
@@ -924,7 +1682,15 @@ def build_argparser() -> argparse.ArgumentParser:
         description=__doc__.replace("%", "%%"),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("--phase", choices=("pool", "h5", "probe"), default="pool")
+    ap.add_argument("--phase", choices=("pool", "h5", "lofo", "probe"), default="pool")
+    ap.add_argument(
+        "--global-family-folds",
+        action="store_true",
+        help="derive ONE global final_seed_id -> fold assignment applied to ALL story cells "
+        "(zero cross-cell family exposure), refit refolded own ceilings under the SAME folds, "
+        "and write under pool_gf/ (default OFF = the registered per-cell fold behavior, "
+        "byte-identical; pool/ is never clobbered)",
+    )
     ap.add_argument(
         "--arms",
         default="context",
@@ -972,6 +1738,8 @@ def main() -> int:
         return phase_pool(args)
     if args.phase == "h5":
         return phase_h5(args)
+    if args.phase == "lofo":
+        return phase_lofo(args)
     if args.phase == "probe":
         return phase_probe(args)
     raise SystemExit(f"unknown phase {args.phase}")

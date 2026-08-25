@@ -13,10 +13,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+# Shared-VM thread caps BEFORE any heavy import (#847; even credential-free
+# plotters — matplotlib pulls numpy, whose BLAS pool freezes at import).
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_blog,
     savefig_paper,
     set_paper_style,
