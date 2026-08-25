@@ -1,0 +1,181 @@
+{
+  "commit": "aea0aebd+dirty",
+  "render_id": "e87a10154d4947a2",
+  "git_commit": "aea0aebdd073ec039d59dfbdfca6e03065d49a8b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c4_speaker_ladder.meta.json",
+    "figures/paper/c4_speaker_ladder.pdf",
+    "figures/paper/c4_speaker_ladder.png",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2054_paper_speaker_ladder_fig.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue2564_type_reads_plot.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/followups_running/2378/concerns.jsonl",
+    "tasks/followups_running/2378/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_type_reads_plot.py",
+  "created": "2026-08-25T16:35:07Z",
+  "figsize": [
+    7.4,
+    6.640000000000001
+  ],
+  "points": [
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 4.077009766107397,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 12.076952483238536,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 15.795377848373263,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 16.104282434768542,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 18.430858911388928,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 25.93572050605834,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 26.571478576974872,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 29.648882295432482,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 33.283811702013004,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 38.91371133925418,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 39.12218665631627,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 55.43947952667713,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 0.0,
+      "y": 0.0,
+      "series": "answer moves as much as context",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)": 0.0,
+      "y": 1.0,
+      "series": "answer moves as much as context",
+      "_kind": "line",
+      "_group": 12
+    }
+  ],
+  "n_series": 13,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context vs answer shift: how much of the context move the answer drops (#2564)",
+        "xlabel": "context shift \u2212 real answer shift  \u2016v_C \u0394\u2016 \u2212 \u2016obs \u0394\u2016  (L19 units; >0 = context moves more)",
+        "legend_labels": [
+          "answer moves as much as context"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "user fact",
+          "lexical marker",
+          "query paraphrase",
+          "user profile",
+          "query content",
+          "query form",
+          "content constraint",
+          "stance (not fired)",
+          "persona",
+          "register",
+          "hedging (not fired)",
+          "format"
+        ]
+      }
+    ],
+    "series": [
+      "answer moves as much as context"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
