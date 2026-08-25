@@ -349,6 +349,65 @@ carries no context variation at all, and no content arm tests ICL. Any
 statement about how leakage prediction varies ACROSS training contexts rests
 almost entirely on the marker family, which is the only one with all four.
 
+## Item 5 — was leakage ever measured on the overinstalled cells?
+
+Partly. It exists at #1481 and stops there.
+
+**Where it exists.** `panel_aggregate_{cas,imp,syc}.json` scores 16 arms per
+behavior against a 6-context panel (default / persona / WildChat prefix / ICL
+prefix / two contrastive-negative personas), so leakage = arm rate on a
+non-trained context minus the base rate on that same context. That panel
+includes 8 OUT-of-band arms: 4 casual-ICL (install 0.96–1.00), 3
+impoliteness-ICL (0.88–0.92), and 1 under-installed casual-conv (0.59).
+
+**Where it stops.** Nothing downstream inherited them. #1768 took the 40
+in-band LoRA content arms, #1900 cut to 18, #1979 raced the same 18 — every
+one in-band. So no leakage PREDICTOR has ever been evaluated on an
+overinstalled checkpoint. The predictor line is validated only inside the
+0.60–0.85 install band.
+
+**Direct confirmation of the Item 3 dose argument.** Install delta on the
+trained context, measured (not inferred):
+
+| arm | install delta | median leakage |
+|---|---|---|
+| syc-conv-con-lr1e5-s137 | **−0.010** | +0.000 |
+| syc-conv-con-lr1e5-s42 | **+0.020** | −0.010 |
+| syc-conv-po-lr1e5-s137 | **+0.030** | +0.020 |
+| syc-conv-po-lr1e5-s42 | **+0.027** | +0.010 |
+
+The conversation-context sycophancy arms carry an induced install dose of
+−0.01 to +0.03. They were selected on base propensity alone. Item 3 inferred
+this from the band arithmetic; this is the measurement.
+
+**Does overinstalling increase leakage? The panel cannot say.** Pooled, the
+out-of-band arms leak LESS (median leakage +0.035 at install +0.950) than the
+in-band arms (+0.156 at +0.625) — but that contrast is confounded and must not
+be reported as a dose effect. Overinstall and ICL-context are nearly collinear
+here: all 8 out-of-band arms are ICL-trained, and the ICL-context comparison
+group differs in BEHAVIOR too (5 in-band ICL arms = 4 sycophancy + 1
+impoliteness; 7 out-of-band ICL arms = 4 casual + 3 impoliteness). The only
+within-behavior, within-context, within-regime pair available is
+`imp-icl-po-lr1e4` s42 (install +0.85, leakage +0.21) against s137 (+0.92,
++0.26) — a 0.07 dose difference across a seed pair, which tests nothing.
+
+**The real gap: no dose-resolved leakage curve exists.** Every arm has a full
+15-step install ladder in `rates_by_step`, but the leakage panel is a SINGLE
+checkpoint per arm — the band-selected one. #641 measures dose against INSTALL
+resistance, not against leakage; #1768's checkpoint-dynamics round reads the
+per-rung activation-space WRITE and couples it to per-rung install, again not
+leakage. So the question "does leakage grow, saturate, or turn over as install
+dose rises?" is unanswered anywhere in the fleet, and answering it needs only
+re-judging existing ladder checkpoints against the existing 6-context panel.
+
+**Incidental finding — the ICL context is a leakage magnet but not a source.**
+Bare- and persona-trained arms leak into the ICL-demonstration context at
++0.90 to +1.00 (casual-bare reaches rate 1.00 against a 0.00 base), the largest
+leakage anywhere in the panel: training the behavior in ANY context turns the
+model from unresponsive to fully responsive to in-context demonstrations of it.
+The reverse does not hold — ICL-trained arms leak +0.00 to +0.26 elsewhere.
+This asymmetry is un-analyzed and is not mentioned in any promoted body.
+
 **Artifacts.** `sweep.json` (528 records + reproduction check + config);
 `figures/issue_1979/c5_whiten_csls_sweep.{png,pdf}` + meta sidecar. Scripts:
 `scripts/issue1979_stage_whitencsls.py`, `scripts/issue1979_whiten_csls_sweep.py`,
