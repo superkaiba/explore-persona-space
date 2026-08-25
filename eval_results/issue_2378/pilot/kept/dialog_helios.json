@@ -1,0 +1,102 @@
+{
+  "cell": "dialog_helios",
+  "family": "dialogue",
+  "n_items": 50,
+  "n_admitted": 15,
+  "admit_threshold": 50,
+  "drop_counts": {
+    "below_threshold": 35
+  },
+  "admitted": [
+    {
+      "row_id": "dialog_helios_w1_a000010",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000047",
+      "score": 85
+    },
+    {
+      "row_id": "dialog_helios_w1_a000074",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000087",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000089",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000100",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000101",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000157",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000181",
+      "score": 85
+    },
+    {
+      "row_id": "dialog_helios_w1_a000236",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000238",
+      "score": 72
+    },
+    {
+      "row_id": "dialog_helios_w1_a000249",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000265",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000275",
+      "score": 100
+    },
+    {
+      "row_id": "dialog_helios_w1_a000288",
+      "score": 100
+    }
+  ],
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "rubric_sha": "28b5a61cfc267d00",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T09:17:59+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_judge.py",
+      "--wave",
+      "admission",
+      "--transport",
+      "sync",
+      "--max-items",
+      "400",
+      "--mined-dir",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/adm_slice",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
+      "--out-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378/pilot",
+      "--skip-upload"
+    ],
+    "git_commit": "b2542657",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_sync.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}

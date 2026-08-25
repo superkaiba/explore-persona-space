@@ -1,0 +1,171 @@
+{
+  "commit": "ee7f55ab+dirty",
+  "render_id": "0f012b9df34d41e7",
+  "git_commit": "ee7f55ab",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2378/hero_ladder_recovery.meta.json",
+    "figures/issue_2378/hero_ladder_recovery.pdf",
+    "figures/issue_2378/hero_ladder_recovery.png",
+    "figures/issue_2378/ladder_r2_points.meta.json",
+    "figures/issue_2378/ladder_r2_points.pdf",
+    "figures/issue_2378/ladder_r2_points.png",
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
+  "created": "2026-08-25T06:33:24Z",
+  "figsize": [
+    6.8,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "Chat assistant turn",
+      "held-out R\u00b2 of the own map": 0.6078300426340202,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "User turn (context)",
+      "held-out R\u00b2 of the own map": 0.20678416507305142,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "User turn (prefix)",
+      "held-out R\u00b2 of the own map": 0.20132204012095967,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.6012045504474826,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.607792732552217,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.6138395205183853,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.6112772422177543,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.6040610317084902,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 of the own map": 0.20993729907588365,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 of the own map": 0.20083512294085537,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 of the own map": 0.2055344926814655,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 of the own map": 0.20990451850394443,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 of the own map": 0.2047204515331521,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 of the own map": 0.20491342689871794,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 of the own map": 0.19311483410968266,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 of the own map": 0.2010920690074034,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 of the own map": 0.20564252924595028,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 of the own map": 0.1988219372864365,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The user's next turn is weakly predictable, as at 7B",
+        "ylabel": "held-out R\u00b2 of the own map",
+        "annotations": [
+          "grey band = the corrected 7B guarded reference (0.19\u20130.25); dotted line = shuffled null 95th pct"
+        ],
+        "xticklabels": [
+          "Chat assistant turn",
+          "User turn (context)",
+          "User turn (prefix)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

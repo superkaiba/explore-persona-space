@@ -1,0 +1,576 @@
+{
+  "cell": "chat",
+  "layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63,
+    64
+  ],
+  "selected_layer": 51,
+  "selection_domain": [
+    1,
+    63
+  ],
+  "per_layer": [
+    {
+      "layer": 0,
+      "r2": -0.0019114057441069754,
+      "lambda": 0.01,
+      "dof": 2.8701548164683405e-83,
+      "degenerate": false
+    },
+    {
+      "layer": 1,
+      "r2": 0.15677924265924226,
+      "lambda": 1000.0,
+      "dof": 681.6382944634778,
+      "degenerate": false
+    },
+    {
+      "layer": 2,
+      "r2": 0.21255988841340856,
+      "lambda": 1000.0,
+      "dof": 681.6393065715822,
+      "degenerate": false
+    },
+    {
+      "layer": 3,
+      "r2": 0.28720394291757034,
+      "lambda": 1000.0,
+      "dof": 681.6394568253206,
+      "degenerate": false
+    },
+    {
+      "layer": 4,
+      "r2": 0.3317358599064647,
+      "lambda": 1000.0,
+      "dof": 681.6395422141441,
+      "degenerate": false
+    },
+    {
+      "layer": 5,
+      "r2": 0.3291484292296579,
+      "lambda": 1000.0,
+      "dof": 681.6395528734154,
+      "degenerate": false
+    },
+    {
+      "layer": 6,
+      "r2": 0.31136919740916413,
+      "lambda": 1000.0,
+      "dof": 681.639555129525,
+      "degenerate": false
+    },
+    {
+      "layer": 7,
+      "r2": 0.3125952127793695,
+      "lambda": 1000.0,
+      "dof": 681.6395585505741,
+      "degenerate": false
+    },
+    {
+      "layer": 8,
+      "r2": 0.3073267188768801,
+      "lambda": 1000.0,
+      "dof": 681.639566661292,
+      "degenerate": false
+    },
+    {
+      "layer": 9,
+      "r2": 0.3156071927357429,
+      "lambda": 1000.0,
+      "dof": 681.6395696744266,
+      "degenerate": false
+    },
+    {
+      "layer": 10,
+      "r2": 0.3397705578329182,
+      "lambda": 1000.0,
+      "dof": 681.639572826201,
+      "degenerate": false
+    },
+    {
+      "layer": 11,
+      "r2": 0.3465366680046281,
+      "lambda": 1000.0,
+      "dof": 681.6395748153163,
+      "degenerate": false
+    },
+    {
+      "layer": 12,
+      "r2": 0.36683943613094927,
+      "lambda": 1000.0,
+      "dof": 681.6395769911684,
+      "degenerate": false
+    },
+    {
+      "layer": 13,
+      "r2": 0.3811774699631667,
+      "lambda": 1000.0,
+      "dof": 681.6395783495433,
+      "degenerate": false
+    },
+    {
+      "layer": 14,
+      "r2": 0.3816587576825986,
+      "lambda": 1000.0,
+      "dof": 681.6395792698675,
+      "degenerate": false
+    },
+    {
+      "layer": 15,
+      "r2": 0.3881863875689405,
+      "lambda": 1000.0,
+      "dof": 681.6395797561603,
+      "degenerate": false
+    },
+    {
+      "layer": 16,
+      "r2": 0.37919363810085427,
+      "lambda": 1000.0,
+      "dof": 681.6395806808034,
+      "degenerate": false
+    },
+    {
+      "layer": 17,
+      "r2": 0.3980233472422855,
+      "lambda": 1000.0,
+      "dof": 681.6395810734325,
+      "degenerate": false
+    },
+    {
+      "layer": 18,
+      "r2": 0.4147399845388806,
+      "lambda": 1000.0,
+      "dof": 681.6395819405902,
+      "degenerate": false
+    },
+    {
+      "layer": 19,
+      "r2": 0.42889482567967074,
+      "lambda": 1000.0,
+      "dof": 681.639582281311,
+      "degenerate": false
+    },
+    {
+      "layer": 20,
+      "r2": 0.4205185005825294,
+      "lambda": 1000.0,
+      "dof": 681.6395829707865,
+      "degenerate": false
+    },
+    {
+      "layer": 21,
+      "r2": 0.41013547323776434,
+      "lambda": 1000.0,
+      "dof": 681.6395831935281,
+      "degenerate": false
+    },
+    {
+      "layer": 22,
+      "r2": 0.39391848871320956,
+      "lambda": 1000.0,
+      "dof": 681.639583355433,
+      "degenerate": false
+    },
+    {
+      "layer": 23,
+      "r2": 0.38887782023954875,
+      "lambda": 1000.0,
+      "dof": 681.6395833751072,
+      "degenerate": false
+    },
+    {
+      "layer": 24,
+      "r2": 0.37835447689661006,
+      "lambda": 1000.0,
+      "dof": 681.6395835616236,
+      "degenerate": false
+    },
+    {
+      "layer": 25,
+      "r2": 0.3877162690371503,
+      "lambda": 1000.0,
+      "dof": 681.6395835598094,
+      "degenerate": false
+    },
+    {
+      "layer": 26,
+      "r2": 0.40598141529703935,
+      "lambda": 1000.0,
+      "dof": 681.6395835865626,
+      "degenerate": false
+    },
+    {
+      "layer": 27,
+      "r2": 0.4231043410935348,
+      "lambda": 1000.0,
+      "dof": 681.6395836528276,
+      "degenerate": false
+    },
+    {
+      "layer": 28,
+      "r2": 0.43936031514061147,
+      "lambda": 1000.0,
+      "dof": 681.6395837948639,
+      "degenerate": false
+    },
+    {
+      "layer": 29,
+      "r2": 0.4515289483010507,
+      "lambda": 1000.0,
+      "dof": 681.6395838329634,
+      "degenerate": false
+    },
+    {
+      "layer": 30,
+      "r2": 0.4698440640450967,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509460517177,
+      "degenerate": false
+    },
+    {
+      "layer": 31,
+      "r2": 0.48482029034300167,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509460726223,
+      "degenerate": false
+    },
+    {
+      "layer": 32,
+      "r2": 0.48655812554918076,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509461418041,
+      "degenerate": false
+    },
+    {
+      "layer": 33,
+      "r2": 0.4979725271132487,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509461781952,
+      "degenerate": false
+    },
+    {
+      "layer": 34,
+      "r2": 0.5105437657088364,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509462321285,
+      "degenerate": false
+    },
+    {
+      "layer": 35,
+      "r2": 0.512058126462356,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509462450138,
+      "degenerate": false
+    },
+    {
+      "layer": 36,
+      "r2": 0.4934879360094113,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509463774191,
+      "degenerate": false
+    },
+    {
+      "layer": 37,
+      "r2": 0.48785488617099704,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464023409,
+      "degenerate": false
+    },
+    {
+      "layer": 38,
+      "r2": 0.4802818109552256,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464260307,
+      "degenerate": false
+    },
+    {
+      "layer": 39,
+      "r2": 0.4864353081906089,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464167947,
+      "degenerate": false
+    },
+    {
+      "layer": 40,
+      "r2": 0.4725277170819028,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464452231,
+      "degenerate": false
+    },
+    {
+      "layer": 41,
+      "r2": 0.48149269842497167,
+      "lambda": 316.2277660168379,
+      "dof": 883.65094643144,
+      "degenerate": false
+    },
+    {
+      "layer": 42,
+      "r2": 0.49575691625506346,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464269192,
+      "degenerate": false
+    },
+    {
+      "layer": 43,
+      "r2": 0.5073945058168017,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464290658,
+      "degenerate": false
+    },
+    {
+      "layer": 44,
+      "r2": 0.523325179888829,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464470637,
+      "degenerate": false
+    },
+    {
+      "layer": 45,
+      "r2": 0.5402190892116291,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464545477,
+      "degenerate": false
+    },
+    {
+      "layer": 46,
+      "r2": 0.5372789284031991,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464648902,
+      "degenerate": false
+    },
+    {
+      "layer": 47,
+      "r2": 0.5369485439625419,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509464702372,
+      "degenerate": false
+    },
+    {
+      "layer": 48,
+      "r2": 0.5295335546691429,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509465014516,
+      "degenerate": false
+    },
+    {
+      "layer": 49,
+      "r2": 0.5362342921386555,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509465195118,
+      "degenerate": false
+    },
+    {
+      "layer": 50,
+      "r2": 0.5334801720145369,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509465445824,
+      "degenerate": false
+    },
+    {
+      "layer": 51,
+      "r2": 0.544926843837473,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509465719708,
+      "degenerate": false
+    },
+    {
+      "layer": 52,
+      "r2": 0.5209795270613533,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509466260497,
+      "degenerate": false
+    },
+    {
+      "layer": 53,
+      "r2": 0.5149090572177502,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509466509747,
+      "degenerate": false
+    },
+    {
+      "layer": 54,
+      "r2": 0.5119378183311172,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509466733008,
+      "degenerate": false
+    },
+    {
+      "layer": 55,
+      "r2": 0.49785317798800455,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509466904656,
+      "degenerate": false
+    },
+    {
+      "layer": 56,
+      "r2": 0.47669253485115204,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509467068486,
+      "degenerate": false
+    },
+    {
+      "layer": 57,
+      "r2": 0.48065804883234486,
+      "lambda": 316.2277660168379,
+      "dof": 883.650946718683,
+      "degenerate": false
+    },
+    {
+      "layer": 58,
+      "r2": 0.47729060250199884,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509467268975,
+      "degenerate": false
+    },
+    {
+      "layer": 59,
+      "r2": 0.4756936460158091,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509467342828,
+      "degenerate": false
+    },
+    {
+      "layer": 60,
+      "r2": 0.476551452711091,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509467446139,
+      "degenerate": false
+    },
+    {
+      "layer": 61,
+      "r2": 0.506390565073784,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509467558172,
+      "degenerate": false
+    },
+    {
+      "layer": 62,
+      "r2": 0.5077755401496942,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509467635015,
+      "degenerate": false
+    },
+    {
+      "layer": 63,
+      "r2": 0.49207033322668536,
+      "lambda": 316.2277660168379,
+      "dof": 883.650946771158,
+      "degenerate": false
+    },
+    {
+      "layer": 64,
+      "r2": 0.4911897151303972,
+      "lambda": 316.2277660168379,
+      "dof": 883.6509466840193,
+      "degenerate": false
+    }
+  ],
+  "n_rows": 2489,
+  "n_train": 1991,
+  "n_test": 498,
+  "k": 1024,
+  "lambda_grid": {
+    "kind": "logspace",
+    "params": [
+      -2.0,
+      4.0,
+      13
+    ]
+  },
+  "dof_cap": 0.9,
+  "split_seed": 724398038,
+  "gate_g1c": {
+    "threshold": 0.05,
+    "max_r2": 0.544926843837473,
+    "passes": true,
+    "domain_note": "max over selection domain [1,63]; layers 0/64 excluded"
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-23T21:41:33+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_capture.py",
+      "--phase",
+      "pilot",
+      "--pilot-rows",
+      "2500",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
+      "--pilot-out-root",
+      "/workspace/explore-persona-space/data/issue_2378/activations_pilot_r2",
+      "--skip-capture-ready",
+      "--layer-sweep-out",
+      "/workspace/explore-persona-space/eval_results/issue_2378/pilot/layer_sweep.json",
+      "--skip-upload"
+    ],
+    "git_commit": "849e2941",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_capture.py"
+  }
+}

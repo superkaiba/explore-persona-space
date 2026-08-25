@@ -1,0 +1,336 @@
+{
+  "regime": {
+    "script_version": "issue2378_retrieval_v1",
+    "layer": 51,
+    "k": 5,
+    "seed": 137,
+    "n_eq": 6601,
+    "fold_map_sha": "72bb15c6c9c04010b7e7f5ae047058b71d045efcaf5166e59ee34a54c73704aa",
+    "conventions": [
+      "raw_euclidean",
+      "raw_cosine",
+      "whiten_cos",
+      "csls_cos",
+      "csls_whiten_cos"
+    ],
+    "ks": [
+      1,
+      5,
+      10
+    ],
+    "csls_k": 10,
+    "whiten_lam": 0.1,
+    "fresh_seeds": [
+      138,
+      139,
+      140,
+      141
+    ],
+    "pool": "the cell's full equalized cohort answers, pooled across folds (each row's prediction from its own fold's map); chance = 1/pool",
+    "whiten_cov": "per-fold TRAIN-ONLY (folds != f) shrunk covariance; queries whitened by their target row's fold decomposition (no eval leakage)"
+  },
+  "cell": "plain_text",
+  "status": "ok",
+  "counts": {
+    "n_per_seed": {
+      "138": 865,
+      "139": 862,
+      "140": 853,
+      "141": 872
+    },
+    "n_common_across_seeds": 663,
+    "n_cohort": 6601,
+    "n_covered": 589,
+    "n_dropped_not_in_cohort": 74
+  },
+  "n_pool": 6601,
+  "fresh_reference": {
+    "raw_euclidean": {
+      "acc_at_k": {
+        "1": 0.5789473684210527,
+        "5": 0.6511035653650254,
+        "10": 0.6757215619694398
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 1.0,
+      "mrr": 0.6126056659331027,
+      "n": 2356,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.5789473684210527
+    },
+    "raw_cosine": {
+      "acc_at_k": {
+        "1": 0.5938030560271647,
+        "5": 0.66553480475382,
+        "10": 0.6893039049235993
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 1.0,
+      "mrr": 0.6265065080304025,
+      "n": 2356,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.5938030560271647
+    },
+    "csls_cos": {
+      "acc_at_k": {
+        "1": 0.5747028862478778,
+        "5": 0.6557724957555179,
+        "10": 0.6808149405772496
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 1.0,
+      "mrr": 0.6124725714196314,
+      "n": 2356,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.5747028862478778
+    },
+    "whiten_cos": {
+      "acc_at_k": {
+        "1": 0.7741935483870968,
+        "5": 0.8527164685908319,
+        "10": 0.8747877758913413
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8105679214285719,
+      "n": 2356,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.7741935483870968
+    },
+    "csls_whiten_cos": {
+      "acc_at_k": {
+        "1": 0.7376910016977929,
+        "5": 0.8208828522920204,
+        "10": 0.8421052631578947
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 1.0,
+      "mrr": 0.7749046555453897,
+      "n": 2356,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.7376910016977929
+    }
+  },
+  "avg_target": {
+    "arm": "context",
+    "n_covered": 589,
+    "definition": "pool entry of each covered row replaced by mean(original + 4 fresh draws); queries = the cell's own context-arm map predictions on the covered rows; single_target = the matched read against the unmodified pool (same queries, same covered rows)",
+    "single_target": {
+      "raw_euclidean": {
+        "acc_at_k": {
+          "1": 0.24108658743633277,
+          "5": 0.40237691001697795,
+          "10": 0.45840407470288624
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 18.0,
+        "mrr": 0.3175822979716517,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "raw_cosine": {
+        "acc_at_k": {
+          "1": 0.2801358234295416,
+          "5": 0.4465195246179966,
+          "10": 0.5178268251273345
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 9.0,
+        "mrr": 0.3634557272652452,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "csls_cos": {
+        "acc_at_k": {
+          "1": 0.4431239388794567,
+          "5": 0.601018675721562,
+          "10": 0.66553480475382
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5184827184109438,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "whiten_cos": {
+        "acc_at_k": {
+          "1": 0.28183361629881154,
+          "5": 0.6519524617996605,
+          "10": 0.7521222410865874
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 3.0,
+        "mrr": 0.4424892792788656,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "csls_whiten_cos": {
+        "acc_at_k": {
+          "1": 0.30390492359932086,
+          "5": 0.6723259762308998,
+          "10": 0.7741935483870968
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 3.0,
+        "mrr": 0.4654274264191769,
+        "n": 589,
+        "n_pool": 6601
+      }
+    },
+    "averaged_target": {
+      "raw_euclidean": {
+        "acc_at_k": {
+          "1": 0.5127334465195246,
+          "5": 0.7062818336162988,
+          "10": 0.7572156196943973
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 1.0,
+        "mrr": 0.5999332987450567,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "raw_cosine": {
+        "acc_at_k": {
+          "1": 0.5382003395585738,
+          "5": 0.735144312393888,
+          "10": 0.7843803056027164
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6289803898337728,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "csls_cos": {
+        "acc_at_k": {
+          "1": 0.6859083191850595,
+          "5": 0.8488964346349746,
+          "10": 0.8879456706281834
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7581778869194764,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "whiten_cos": {
+        "acc_at_k": {
+          "1": 0.3870967741935484,
+          "5": 0.8047538200339559,
+          "10": 0.8845500848896435
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5654928623900027,
+        "n": 589,
+        "n_pool": 6601
+      },
+      "csls_whiten_cos": {
+        "acc_at_k": {
+          "1": 0.41765704584040747,
+          "5": 0.8149405772495756,
+          "10": 0.8998302207130731
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5910263355012174,
+        "n": 589,
+        "n_pool": 6601
+      }
+    }
+  },
+  "whiten": {
+    "lam": 0.1,
+    "builder": "analysis.null_battery.shrunk_cholesky_from_cov",
+    "cov_source": "per-fold TRAIN-ONLY answers (folds != f): each query is whitened by its target row's fold decomposition, which never saw that row (no evaluation leakage into the whitening transform)",
+    "n_rows": 6601,
+    "n_train_per_fold": {
+      "0": 5280,
+      "1": 5281,
+      "2": 5281,
+      "3": 5281,
+      "4": 5281
+    },
+    "csls_note": "whitened-CSLS neighborhood statistics are computed within each fold's query group (queries sharing a target fold see one whitened space; the target-side r_T averages over that group's queries only — disclosed; k clamped to the group size, which binds only at probe/tiny-n scale); raw (unwhitened) CSLS is unchanged, computed over the full query set"
+  },
+  "unit_wall_s": 8.0,
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T17:07:41+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_retrieval.py",
+      "--phase",
+      "all",
+      "--cells",
+      "chat,plain_text,storyq_astra",
+      "--store-root",
+      "/workspace/explore-persona-space/data/issue_2378/p6_stage/issue2378_xframing/analysis_tensors/activations"
+    ],
+    "git_commit": "50c4d0dd",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_retrieval.py"
+  }
+}

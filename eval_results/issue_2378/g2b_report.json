@@ -1,0 +1,114 @@
+{
+  "gate": "G2b",
+  "binding": true,
+  "verdict": "PASS",
+  "cells": {
+    "chat": {
+      "n_kept": 11794,
+      "floor_pass": true,
+      "close_miss_band": false
+    },
+    "chat_user_real": {
+      "n_kept": 10000,
+      "floor_pass": true,
+      "close_miss_band": false
+    },
+    "chat_user_sim": {
+      "n_kept": 521,
+      "floor_pass": false,
+      "close_miss_band": false
+    },
+    "plain_text": {
+      "n_kept": 7397,
+      "floor_pass": true,
+      "close_miss_band": false
+    },
+    "storyq_astra": {
+      "n_kept": 6786,
+      "floor_pass": true,
+      "close_miss_band": false
+    },
+    "storyq_dana": {
+      "n_kept": 6786,
+      "floor_pass": true,
+      "close_miss_band": false
+    },
+    "storyq_helios": {
+      "n_kept": 6601,
+      "floor_pass": true,
+      "close_miss_band": false
+    },
+    "storyq_vex": {
+      "n_kept": 6708,
+      "floor_pass": true,
+      "close_miss_band": false
+    },
+    "storyq_wren": {
+      "n_kept": 6799,
+      "floor_pass": true,
+      "close_miss_band": false
+    }
+  },
+  "missing_cells": [],
+  "survivors": [
+    "chat",
+    "chat_user_real",
+    "plain_text",
+    "storyq_astra",
+    "storyq_dana",
+    "storyq_helios",
+    "storyq_vex",
+    "storyq_wren"
+  ],
+  "dropped_cells": [
+    "chat_user_sim"
+  ],
+  "user_cell_drops_nonbinding": [
+    "chat_user_sim"
+  ],
+  "binding_drops": [],
+  "survivor_predicate": "chat + plain + >=3 storyQ (user cells excluded; v7 amended)",
+  "story_q_survivors": 5,
+  "dialog_survivors": 0,
+  "retry_waves_used": 0,
+  "escalation_wave_used": false,
+  "escalated_cells": [],
+  "floor": 6500,
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T10:53:15+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p4_segb_capture",
+      "--target-kept-per-cell",
+      "6834",
+      "--chat-kept",
+      "9000",
+      "--user-rows",
+      "10000",
+      "--fresh-rows",
+      "1000",
+      "--fresh-draws",
+      "4",
+      "--layers",
+      "Lstar,Lstar-8,Lstar-4,Lstar+4,Lstar+8"
+    ],
+    "git_commit": "ee30ae9e",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/capture_ready/chat.json",
+      "eval_results/issue_2378/capture_ready/chat_user_real.json",
+      "eval_results/issue_2378/capture_ready/chat_user_sim.json",
+      "eval_results/issue_2378/capture_ready/plain_text.json",
+      "eval_results/issue_2378/capture_ready/storyq_astra.json",
+      "eval_results/issue_2378/capture_ready/storyq_dana.json",
+      "eval_results/issue_2378/capture_ready/storyq_helios.json",
+      "eval_results/issue_2378/capture_ready/storyq_vex.json",
+      "eval_results/issue_2378/capture_ready/storyq_wren.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "role": "fits-b",
+  "cells": [
+    "storyq_helios",
+    "storyq_wren"
+  ],
+  "g2b_survivors": [
+    "storyq_helios",
+    "storyq_wren"
+  ],
+  "g2b_dropped": [],
+  "walls_s": {
+    "p6.ladder": 5235.1,
+    "p6.retrieval": 181.8
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T17:41:07+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p6_fits",
+      "--pod-role",
+      "fits-b"
+    ],
+    "git_commit": "c48f63a0",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}

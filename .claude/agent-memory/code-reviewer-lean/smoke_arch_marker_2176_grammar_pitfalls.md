@@ -50,6 +50,12 @@ derivation (`arm-registry: bash pod.sh | grep -oE ... -> p0 p1 ...`) is also
 REFUSE-malformed (neither accepted form), parenthetical-decorated row keys
 (`p0 (pod smoke): REAL`) re-appeared, and the hand-enumeration omitted two sibling
 drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
+omission shape). The one-post fix recipe held unchanged.
+the whole point of gate 0.55. Re-hit #2379 R1 g6 (2026-08-19): a COMMAND-PIPELINE
+derivation (`arm-registry: bash pod.sh | grep -oE ... -> p0 p1 ...`) is also
+REFUSE-malformed (neither accepted form), parenthetical-decorated row keys
+(`p0 (pod smoke): REAL`) re-appeared, and the hand-enumeration omitted two sibling
+drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
 omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
 (2026-08-22): command-pipeline derivation again (backtick `uv run python -c
 "...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully

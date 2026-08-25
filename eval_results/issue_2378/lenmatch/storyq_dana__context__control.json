@@ -1,0 +1,194 @@
+{
+  "regime": {
+    "script_version": "issue2378_lenmatch_v1",
+    "arm": "context",
+    "layer": 51,
+    "seed": 137,
+    "fold_map_sha": "b8e1fd97d42c7bdd7508d96cb887d69d8e13952cbfd8aa285908b186f8d5018e",
+    "fold_regime": "global-family",
+    "matching": {
+      "band_tokens": [
+        8,
+        256
+      ],
+      "bin_edges": [
+        8,
+        11,
+        16,
+        23,
+        32,
+        45,
+        64,
+        91,
+        128,
+        181,
+        256
+      ],
+      "per_bin_min": [
+        25,
+        55,
+        84,
+        104,
+        114,
+        162,
+        232,
+        119,
+        59,
+        42
+      ],
+      "n_matched_per_cell": 996
+    },
+    "length_variable": "answer span tokens (ans_hi - ans_lo, the v_A span-mean window)",
+    "reduced_k": 380,
+    "dof_cap": 0.9,
+    "lambda_grid": [
+      "logspace",
+      -2,
+      4,
+      13
+    ],
+    "bootstrap_draws": 200,
+    "null_battery": "skipped by design (ordering read; tiers established at unmatched ceilings)",
+    "seed_derivation": "137-rooted per-(cell,bin|leg) via p6.unit_seed('…lenmatch…')",
+    "leg": "control"
+  },
+  "cell": "storyq_dana",
+  "arm": "context",
+  "leg": "control",
+  "fold_regime": "global-family",
+  "fold_structure": "family-held-out",
+  "n_rows": 996,
+  "d_ambient": 5120,
+  "reduced_k": 380,
+  "estimator_validity": {
+    "min_n_train": 784,
+    "ambient_fit": "refused — n_train << d=5120 for every fold (see per_fold.ambient_call)",
+    "reduced_ratio_min_n_train_over_k": 2.063
+  },
+  "answer_len_tokens": {
+    "median": 16.0,
+    "mean": 23.83835341365462,
+    "p5": 2.0,
+    "p95": 68.0
+  },
+  "per_fold": [
+    {
+      "fold": 0,
+      "n_train": 810,
+      "n_eval": 186,
+      "r2": 0.09567583460851392,
+      "ambient_call": "refused (n_train <= d_ambient; reduced-basis leg only)",
+      "fit_info": {
+        "best_lambda": 1000.0,
+        "dof": 170.0552484801886,
+        "dof_cap": 0.9,
+        "dof_over_cap": false,
+        "gcv": 2.657225227153834,
+        "n_train": 810,
+        "d_in": 380,
+        "d_out": 5120,
+        "reduced_k": 380
+      }
+    },
+    {
+      "fold": 1,
+      "n_train": 790,
+      "n_eval": 206,
+      "r2": 0.10786166493515825,
+      "ambient_call": "refused (n_train <= d_ambient; reduced-basis leg only)",
+      "fit_info": {
+        "best_lambda": 1000.0,
+        "dof": 167.7094970683039,
+        "dof_cap": 0.9,
+        "dof_over_cap": false,
+        "gcv": 2.8332912405751243,
+        "n_train": 790,
+        "d_in": 380,
+        "d_out": 5120,
+        "reduced_k": 380
+      }
+    },
+    {
+      "fold": 2,
+      "n_train": 784,
+      "n_eval": 212,
+      "r2": 0.12734821505397043,
+      "ambient_call": "refused (n_train <= d_ambient; reduced-basis leg only)",
+      "fit_info": {
+        "best_lambda": 1000.0,
+        "dof": 166.99551555840026,
+        "dof_cap": 0.9,
+        "dof_over_cap": false,
+        "gcv": 2.7703221107265454,
+        "n_train": 784,
+        "d_in": 380,
+        "d_out": 5120,
+        "reduced_k": 380
+      }
+    },
+    {
+      "fold": 3,
+      "n_train": 798,
+      "n_eval": 198,
+      "r2": 0.10082420260171454,
+      "ambient_call": "refused (n_train <= d_ambient; reduced-basis leg only)",
+      "fit_info": {
+        "best_lambda": 1000.0,
+        "dof": 168.65405992753716,
+        "dof_cap": 0.9,
+        "dof_over_cap": false,
+        "gcv": 2.6628065479932173,
+        "n_train": 798,
+        "d_in": 380,
+        "d_out": 5120,
+        "reduced_k": 380
+      }
+    },
+    {
+      "fold": 4,
+      "n_train": 802,
+      "n_eval": 194,
+      "r2": 0.12481211671913084,
+      "ambient_call": "refused (n_train <= d_ambient; reduced-basis leg only)",
+      "fit_info": {
+        "best_lambda": 1000.0,
+        "dof": 169.12319631079015,
+        "dof_cap": 0.9,
+        "dof_over_cap": false,
+        "gcv": 2.770835138162982,
+        "n_train": 802,
+        "d_in": 380,
+        "d_out": 5120,
+        "reduced_k": 380
+      }
+    }
+  ],
+  "fold_mean_r2": 0.1113044067836976,
+  "pooled_r2": 0.13240068073774314,
+  "pooled_bootstrap": {
+    "n_draws": 200,
+    "ci_lo": 0.11780320322883833,
+    "ci_hi": 0.14697494226711807
+  },
+  "unit_wall_s": 105.73,
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-25T04:12:16-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_lenmatch.py",
+      "--store-root",
+      "/mnt/eps-data/thomasjiralerspong/issue2378_lenrefit/store",
+      "--cells",
+      "storyq_dana"
+    ],
+    "git_commit": "b49cfbb8",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/issue2378_lenmatch.py"
+    ],
+    "git_argv0_state": "untracked",
+    "git_argv0_path": "scripts/issue2378_lenmatch.py",
+    "regen": "committed inputs (fold map + HF store) + this script reproduce preds"
+  }
+}
