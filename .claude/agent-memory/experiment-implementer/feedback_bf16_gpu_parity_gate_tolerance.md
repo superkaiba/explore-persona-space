@@ -54,6 +54,19 @@ two-bar structure from gotchas.md: EARLY layers 0-3 >= 0.999 (real bugs corrupt
 layer 0 at cos 0.43-0.84) + flat all-layer >= 0.98 (gross corruption). Span-mean
 summaries smooth the noise and may keep tighter flat bars.
 
+**n-dependence update (#2476 r4, 2026-08-23):** a MIN-statistic gate inherits its
+calibration source's n. #2476's G2a took the m-round reference
+`g2m_row_cos_min = 0.999881` — measured over n = 8 rows same-machine — and
+asserted `min >= 0.999` over n = 30,000 single-position L20 cosines
+cross-machine: the min at 30k reaches ~3.5 orders of magnitude deeper into the
+bf16 tail, and a HEALTHY capture read min 0.995397 (4/30,000 rows < 0.999;
+median 0.999933) → rc=22 structural halt on valid state. Fix shape: keep a flat
+min only as the REAL-BUG catcher (0.995, the #779 single-position flattened
+bar), and move the identity assertion to n-ROBUST quantiles (p0.1% >= 0.999,
+median >= 0.9995) whose sampling depth does not scale with n. Corollary: when a
+reference value was measured at tiny n, treat it as a BULK statistic, never a
+tail bound.
+
 ## Merged sibling index rows (#1891 curation, 2026-07-30)
 
 This entry is the PRIMARY index pointer for its theme; the sibling index rows below were merged into one index row to fit the ~25 KB loader truncation limit (task #1891). Each merged row is preserved verbatim — follow its pointer for the sibling lesson's own entry file.

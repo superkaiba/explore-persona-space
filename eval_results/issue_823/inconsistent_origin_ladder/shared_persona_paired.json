@@ -1,0 +1,506 @@
+{
+  "metadata": {
+    "script": "scripts/issue823_shared_persona_paired.py",
+    "task": 823,
+    "followup_label": "inconsistent-origin-persona-ladder",
+    "round": "user-chat inline free analysis (0 GPU-h, existing artifacts)",
+    "git_commit": "5f4d91ca5850b4442b922b12b4c2fced23bedc2b",
+    "inputs": {
+      "percontext_ladder_npz": "eval_results/issue_823/inconsistent_origin_ladder/percontext_ladder.npz",
+      "assignment_json": "eval_results/issue_823/inconsistent_origin_ladder/assignment.json"
+    },
+    "registered_assignment_rule": "persona(i, k) = i mod k over the frozen 0-indexed context order",
+    "held_out": "p1_ss_res is out-of-fold: KFold(5, shuffle=True, random_state=0), written at test indices only (scripts/issue823_ladder_fits.py:1903). Fold split depends only on n, so both arms score each shared context in the same fold.",
+    "n_mask_contexts": 4629,
+    "n_boot": 10000,
+    "boot_seed": 823,
+    "read_out_layers": {
+      "14": "evil",
+      "26": "sycophancy",
+      "17": "hallucination"
+    },
+    "sign_convention": "diff = pooled_ss_res - reference_ss_res; > 0 = pooled worse"
+  },
+  "arms": {
+    "k2": {
+      "n_shared_contexts_pre_mask": 2500,
+      "n_shared_contexts_post_mask": 2186,
+      "per_layer": {
+        "L14": {
+          "behavior": "evil",
+          "n_shared_contexts": 2186,
+          "ref_ss_res_sum": 450855.87241101934,
+          "pooled_ss_res_sum": 529066.7850123019,
+          "ss_res_ratio_pooled_over_ref": 1.1734720947140778,
+          "mean_paired_diff": 35.778093596195106,
+          "mean_paired_diff_ci95": [
+            31.783924304157978,
+            39.83174679997042
+          ],
+          "median_paired_diff": 12.260018113987428,
+          "frac_contexts_pooled_worse": 0.6843549862763038,
+          "wilcoxon_statistic": 625230.0,
+          "wilcoxon_p": 4.302842460351003e-83,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.514088955508234,
+            "pooled": 0.44480509970086557
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.514088955508234,
+            "pooled": 0.42979694877554186
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0270322204278848,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 206.24696816606559,
+            "ref_mean_ss_res_all_mask": 211.2614769342579,
+            "ratio_shared_over_all": 0.9762639699345055
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 20.830409227713986,
+            "predicted_excess_if_shared_map_offset_only": 10.415204613856993,
+            "measured_excess": 35.778093596195106,
+            "ratio_measured_over_offset_only_prediction": 3.4351791369123803,
+            "ratio_measured_over_full_energy": 1.7175895684561902,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L26": {
+          "behavior": "sycophancy",
+          "n_shared_contexts": 2186,
+          "ref_ss_res_sum": 17406595.561010152,
+          "pooled_ss_res_sum": 19113252.808430042,
+          "ss_res_ratio_pooled_over_ref": 1.098046584780927,
+          "mean_paired_diff": 780.7215221499965,
+          "mean_paired_diff_ci95": [
+            634.8073503228676,
+            926.9137073893654
+          ],
+          "median_paired_diff": 415.83290516385546,
+          "frac_contexts_pooled_worse": 0.6482159194876487,
+          "wilcoxon_statistic": 758532.0,
+          "wilcoxon_p": 1.579175026808505e-49,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.4886205199315704,
+            "pooled": 0.4523556497169048
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.4886205199315704,
+            "pooled": 0.4384815083838147
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0253342179571798,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 7962.761006866493,
+            "ref_mean_ss_res_all_mask": 8043.639997413749,
+            "ratio_shared_over_all": 0.9899449763324488
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 728.7062604407523,
+            "predicted_excess_if_shared_map_offset_only": 364.35313022037616,
+            "measured_excess": 780.7215221499965,
+            "ratio_measured_over_offset_only_prediction": 2.1427605731774095,
+            "ratio_measured_over_full_energy": 1.0713802865887048,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L17": {
+          "behavior": "hallucination",
+          "n_shared_contexts": 2186,
+          "ref_ss_res_sum": 624543.4371099599,
+          "pooled_ss_res_sum": 719577.8504266955,
+          "ss_res_ratio_pooled_over_ref": 1.1521662188245898,
+          "mean_paired_diff": 43.47411405157168,
+          "mean_paired_diff_ci95": [
+            38.28174563414081,
+            48.743246450119855
+          ],
+          "median_paired_diff": 14.32241954349233,
+          "frac_contexts_pooled_worse": 0.6527904849039341,
+          "wilcoxon_statistic": 693253.0,
+          "wilcoxon_p": 7.323299046094786e-65,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5281578009506898,
+            "pooled": 0.4692534601561892
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5281578009506898,
+            "pooled": 0.45635935763947666
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.02429427523071,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 285.7014808371271,
+            "ref_mean_ss_res_all_mask": 291.76604024914917,
+            "ratio_shared_over_all": 0.9792143067546747
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 26.708693663886336,
+            "predicted_excess_if_shared_map_offset_only": 13.354346831943168,
+            "measured_excess": 43.47411405157168,
+            "ratio_measured_over_offset_only_prediction": 3.255427959050981,
+            "ratio_measured_over_full_energy": 1.6277139795254905,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        }
+      }
+    },
+    "k4": {
+      "n_shared_contexts_pre_mask": 1250,
+      "n_shared_contexts_post_mask": 1223,
+      "per_layer": {
+        "L14": {
+          "behavior": "evil",
+          "n_shared_contexts": 1223,
+          "ref_ss_res_sum": 253061.45530263495,
+          "pooled_ss_res_sum": 321654.29434472206,
+          "ss_res_ratio_pooled_over_ref": 1.271052100605591,
+          "mean_paired_diff": 56.085722847168554,
+          "mean_paired_diff_ci95": [
+            49.42655594853579,
+            63.1244129699475
+          ],
+          "median_paired_diff": 28.27455103372192,
+          "frac_contexts_pooled_worse": 0.8070318887980377,
+          "wilcoxon_statistic": 99862.0,
+          "wilcoxon_p": 2.8054468169543237e-109,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5064169762709019,
+            "pooled": 0.4046743720102277
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5064169762709019,
+            "pooled": 0.3726302608658705
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0538261913107287,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 206.91860613461566,
+            "ref_mean_ss_res_all_mask": 211.2614769342579,
+            "ratio_shared_over_all": 0.9794431485443336
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 45.629135215987,
+            "predicted_excess_if_shared_map_offset_only": 11.40728380399675,
+            "measured_excess": 56.085722847168554,
+            "ratio_measured_over_offset_only_prediction": 4.916658848052672,
+            "ratio_measured_over_full_energy": 1.229164712013168,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L26": {
+          "behavior": "sycophancy",
+          "n_shared_contexts": 1223,
+          "ref_ss_res_sum": 9951683.890781943,
+          "pooled_ss_res_sum": 11807375.993005456,
+          "ss_res_ratio_pooled_over_ref": 1.1864701614912032,
+          "mean_paired_diff": 1517.327965840976,
+          "mean_paired_diff_ci95": [
+            1268.564635643284,
+            1757.3220403361383
+          ],
+          "median_paired_diff": 1137.9265353243509,
+          "frac_contexts_pooled_worse": 0.7874080130825838,
+          "wilcoxon_statistic": 132917.0,
+          "wilcoxon_p": 5.700862111226458e-85,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.482486235007775,
+            "pooled": 0.413898218085921
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.482486235007775,
+            "pooled": 0.3859853596757542
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0476245923003502,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 8137.108659674524,
+            "ref_mean_ss_res_all_mask": 8043.639997413749,
+            "ratio_shared_over_all": 1.0116201946246757
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 1710.5663577385756,
+            "predicted_excess_if_shared_map_offset_only": 427.6415894346439,
+            "measured_excess": 1517.327965840976,
+            "ratio_measured_over_offset_only_prediction": 3.548130030680442,
+            "ratio_measured_over_full_energy": 0.8870325076701105,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L17": {
+          "behavior": "hallucination",
+          "n_shared_contexts": 1223,
+          "ref_ss_res_sum": 349531.49170841987,
+          "pooled_ss_res_sum": 436025.5347777612,
+          "ss_res_ratio_pooled_over_ref": 1.2474570821832984,
+          "mean_paired_diff": 70.72284797166095,
+          "mean_paired_diff_ci95": [
+            62.058619354792086,
+            79.77242434507363
+          ],
+          "median_paired_diff": 37.45341862871027,
+          "frac_contexts_pooled_worse": 0.7702371218315618,
+          "wilcoxon_statistic": 122191.0,
+          "wilcoxon_p": 1.615218263894803e-92,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5226544954845844,
+            "pooled": 0.4327689609470471
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5226544954845844,
+            "pooled": 0.40453196974388517
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.049780405617976,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 285.79843966346675,
+            "ref_mean_ss_res_all_mask": 291.76604024914917,
+            "ratio_shared_over_all": 0.9795466237928634
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 58.93920944914308,
+            "predicted_excess_if_shared_map_offset_only": 14.73480236228577,
+            "measured_excess": 70.72284797166095,
+            "ratio_measured_over_offset_only_prediction": 4.79971473201965,
+            "ratio_measured_over_full_energy": 1.1999286830049125,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        }
+      }
+    },
+    "k8": {
+      "n_shared_contexts_pre_mask": 625,
+      "n_shared_contexts_post_mask": 615,
+      "per_layer": {
+        "L14": {
+          "behavior": "evil",
+          "n_shared_contexts": 615,
+          "ref_ss_res_sum": 127738.40193094406,
+          "pooled_ss_res_sum": 163529.36768523464,
+          "ss_res_ratio_pooled_over_ref": 1.2801895531278005,
+          "mean_paired_diff": 58.1966922833993,
+          "mean_paired_diff_ci95": [
+            50.38247881525014,
+            66.2980740835581
+          ],
+          "median_paired_diff": 36.41370277509063,
+          "frac_contexts_pooled_worse": 0.8390243902439024,
+          "wilcoxon_statistic": 17851.0,
+          "wilcoxon_p": 4.408658197907235e-68,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.4957050535577092,
+            "pooled": 0.38958187309939074
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.4957050535577092,
+            "pooled": 0.3544068778694357
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0576244277157292,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 207.70471858690092,
+            "ref_mean_ss_res_all_mask": 211.2614769342579,
+            "ratio_shared_over_all": 0.9831641887628013
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 72.95867551859632,
+            "predicted_excess_if_shared_map_offset_only": 9.11983443982454,
+            "measured_excess": 58.1966922833993,
+            "ratio_measured_over_offset_only_prediction": 6.381332102835736,
+            "ratio_measured_over_full_energy": 0.797666512854467,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L26": {
+          "behavior": "sycophancy",
+          "n_shared_contexts": 615,
+          "ref_ss_res_sum": 4809664.959190613,
+          "pooled_ss_res_sum": 6031826.150808465,
+          "ss_res_ratio_pooled_over_ref": 1.2541052655408915,
+          "mean_paired_diff": 1987.2539701103278,
+          "mean_paired_diff_ci95": [
+            1685.22095371211,
+            2296.221551931641
+          ],
+          "median_paired_diff": 1514.3343462086632,
+          "frac_contexts_pooled_worse": 0.8357723577235773,
+          "wilcoxon_statistic": 25614.0,
+          "wilcoxon_p": 2.2498572480911303e-55,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.48108869267522125,
+            "pooled": 0.38171239307908866
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.48108869267522125,
+            "pooled": 0.34923059713528715
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.052535091404406,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 7820.593429578232,
+            "ref_mean_ss_res_all_mask": 8043.639997413749,
+            "ratio_shared_over_all": 0.9722704437409887
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 2709.892729392966,
+            "predicted_excess_if_shared_map_offset_only": 338.73659117412075,
+            "measured_excess": 1987.2539701103278,
+            "ratio_measured_over_offset_only_prediction": 5.866664605740275,
+            "ratio_measured_over_full_energy": 0.7333330757175344,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L17": {
+          "behavior": "hallucination",
+          "n_shared_contexts": 615,
+          "ref_ss_res_sum": 176067.03422713387,
+          "pooled_ss_res_sum": 223314.37158933785,
+          "ss_res_ratio_pooled_over_ref": 1.268348572858068,
+          "mean_paired_diff": 76.82493880033172,
+          "mean_paired_diff_ci95": [
+            66.21806743322915,
+            88.10999274238169
+          ],
+          "median_paired_diff": 49.22922679844527,
+          "frac_contexts_pooled_worse": 0.8227642276422764,
+          "wilcoxon_statistic": 21544.0,
+          "wilcoxon_p": 7.194962918055813e-62,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5104286644397705,
+            "pooled": 0.41089824994570345
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5104286644397705,
+            "pooled": 0.37905289522996466
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0540574776985534,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 286.287860531925,
+            "ref_mean_ss_res_all_mask": 291.76604024914917,
+            "ratio_shared_over_all": 0.9812240666784038
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 97.66071544044286,
+            "predicted_excess_if_shared_map_offset_only": 12.207589430055357,
+            "measured_excess": 76.82493880033172,
+            "ratio_measured_over_offset_only_prediction": 6.2932112224537144,
+            "ratio_measured_over_full_energy": 0.7866514028067143,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        }
+      }
+    },
+    "k16": {
+      "n_shared_contexts_pre_mask": 313,
+      "n_shared_contexts_post_mask": 310,
+      "per_layer": {
+        "L14": {
+          "behavior": "evil",
+          "n_shared_contexts": 310,
+          "ref_ss_res_sum": 62022.44627594467,
+          "pooled_ss_res_sum": 81234.08208918117,
+          "ss_res_ratio_pooled_over_ref": 1.3097529518226647,
+          "mean_paired_diff": 61.973018752375815,
+          "mean_paired_diff_ci95": [
+            51.203774192049536,
+            73.12894301531036
+          ],
+          "median_paired_diff": 39.87882729852609,
+          "frac_contexts_pooled_worse": 0.8516129032258064,
+          "wilcoxon_statistic": 4379.0,
+          "wilcoxon_p": 8.71267066895467e-36,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5142427517336265,
+            "pooled": 0.3987399511784021
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5142427517336265,
+            "pooled": 0.36377801021386225
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0581477865244187,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 200.07240734175699,
+            "ref_mean_ss_res_all_mask": 211.2614769342579,
+            "ratio_shared_over_all": 0.9470368675118994
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 80.34799153463747,
+            "predicted_excess_if_shared_map_offset_only": 5.021749470914842,
+            "measured_excess": 61.973018752375815,
+            "ratio_measured_over_offset_only_prediction": 12.340922045457162,
+            "ratio_measured_over_full_energy": 0.7713076278410727,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L26": {
+          "behavior": "sycophancy",
+          "n_shared_contexts": 310,
+          "ref_ss_res_sum": 2407494.244049141,
+          "pooled_ss_res_sum": 3136852.927618162,
+          "ss_res_ratio_pooled_over_ref": 1.302953448537563,
+          "mean_paired_diff": 2352.769946996841,
+          "mean_paired_diff_ci95": [
+            1891.3180949782322,
+            2806.417479328118
+          ],
+          "median_paired_diff": 1783.2024830935143,
+          "frac_contexts_pooled_worse": 0.8516129032258064,
+          "wilcoxon_statistic": 5470.0,
+          "wilcoxon_p": 4.046936132485883e-32,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5133749027050467,
+            "pooled": 0.39734550711853134
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5133749027050467,
+            "pooled": 0.3659501513346136
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0520951161150518,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 7766.110464674649,
+            "ref_mean_ss_res_all_mask": 8043.639997413749,
+            "ratio_shared_over_all": 0.9654970221406809
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 3167.321189413343,
+            "predicted_excess_if_shared_map_offset_only": 197.95757433833393,
+            "measured_excess": 2352.769946996841,
+            "ratio_measured_over_offset_only_prediction": 11.885223158855577,
+            "ratio_measured_over_full_energy": 0.7428264474284736,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        },
+        "L17": {
+          "behavior": "hallucination",
+          "n_shared_contexts": 310,
+          "ref_ss_res_sum": 86485.81589524687,
+          "pooled_ss_res_sum": 112818.55107160793,
+          "ss_res_ratio_pooled_over_ref": 1.3044746112848808,
+          "mean_paired_diff": 84.9443070205196,
+          "mean_paired_diff_ci95": [
+            69.32492308752768,
+            101.31683310977384
+          ],
+          "median_paired_diff": 57.21453108289974,
+          "frac_contexts_pooled_worse": 0.8709677419354839,
+          "wilcoxon_statistic": 4574.0,
+          "wilcoxon_p": 4.080178729070308e-35,
+          "r2_shared_subset_own_denominator": {
+            "ref": 0.5268290468224407,
+            "pooled": 0.4143422723205392
+          },
+          "r2_shared_subset_common_denominator": {
+            "ref": 0.5268290468224407,
+            "pooled": 0.38276050478240675
+          },
+          "ss_tot_ratio_pooled_over_ref": 1.0539252980802767,
+          "representativeness": {
+            "ref_mean_ss_res_shared": 278.9865028878931,
+            "ref_mean_ss_res_all_mask": 291.76604024914917,
+            "ratio_shared_over_all": 0.956199366621478
+          },
+          "offset_bias_control": {
+            "between_persona_mean_shift_energy": 106.19751695137936,
+            "predicted_excess_if_shared_map_offset_only": 6.63734480946121,
+            "measured_excess": 84.9443070205196,
+            "ratio_measured_over_offset_only_prediction": 12.79793493618648,
+            "ratio_measured_over_full_energy": 0.799870933511655,
+            "verdict": "excess-tracks-full-between-persona-energy"
+          }
+        }
+      }
+    }
+  }
+}

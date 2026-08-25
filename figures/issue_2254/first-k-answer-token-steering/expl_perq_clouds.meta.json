@@ -1,0 +1,15 @@
+{
+  "figure": "expl_perq_clouds",
+  "git_commit": "ebbeb565",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2254/first-k-answer-token-steering/expl_perq_clouds.png",
+    "figures/issue_2254/first-k-answer-token-steering/hero1_position_bars.meta.json",
+    "figures/issue_2254/first-k-answer-token-steering/hero1_position_bars.png"
+  ],
+  "inputs": [
+    "steer/delta_score_percell.json",
+    "judge/judged/*.json",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2254/eval_results/issue_2254/baseline_ceiling/judged_percell.json"
+  ]
+}

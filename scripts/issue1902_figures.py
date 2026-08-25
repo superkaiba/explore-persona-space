@@ -728,6 +728,66 @@ def fig_render_robustness(eval_dir: Path, fig_dir: Path) -> None:
     plt.close(fig)
 
 
+def fig_paper_c1_stage_retention(eval_dir: Path) -> None:
+    """ICLR paper figure (c1_linear post-training result): adjacent-stage retention.
+
+    Aligned retention rho = R^2_gl / Q(j,j) for the three adjacent OLMo-2
+    post-training steps (base->SFT, SFT->DPO, DPO->RLVR), with per-fold points
+    (6 grouped folds) and the two matched nulls as gray markers. Low retention =
+    the stage moved the map; DPO->RLVR at 0.991 barely moves it.
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full, set_paper_style
+
+    set_paper_style("iclr")
+    xf = _load(eval_dir, "transfer/transfer_matrix.json")
+    units = eval_dir / "fits" / "units"
+    pairs = ["B->S", "S->D", "D->R"]
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(height_frac=0.42))
+    xs = np.arange(len(pairs))
+    ax.bar(
+        xs,
+        [xf["pairs"][p]["retention_gl"] for p in pairs],
+        width=0.55,
+        color="#0072B2",
+        label="aligned retention $\\rho$",
+    )
+    for k, p in enumerate(pairs):
+        nn = xf["pairs"][p]["nulls"]
+        for vals, mk, lab in (
+            (nn["shuffled_correspondence_r2"], "o", "shuffled-pairing null"),
+            (nn["spectrum_matched_r2"], "^", "spectrum-matched null"),
+        ):
+            if vals:
+                ax.scatter(
+                    [k] * len(vals),
+                    vals,
+                    s=8,
+                    marker=mk,
+                    color="#999999",
+                    label=lab if k == 0 else None,
+                    zorder=3,
+                )
+        folds = _per_fold_retention(units, p)
+        if folds:
+            xjit = k + np.linspace(-0.16, 0.16, num=len(folds))
+            ax.scatter(
+                xjit,
+                folds,
+                s=10,
+                color="black",
+                zorder=4,
+                label="per-fold retention (6 folds)" if k == 0 else None,
+            )
+    ax.axhline(0.0, color="black", lw=0.7, ls=":")
+    ax.set_xticks(xs, [pair_label(p) for p in pairs])
+    ax.set_ylabel("aligned retention $\\rho$")
+    ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), handlelength=1.2)
+    paper_out = PROJECT_ROOT / "figures" / "paper"
+    paper_out.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_stage_retention", dir=paper_out)
+    plt.close(fig)
+
+
 FIG_GROUPS = {
     "hero1": fig_hero_diag,
     "hero1b": fig_hero_diag_folds,
@@ -751,7 +811,13 @@ def main() -> None:
         choices=sorted(FIG_GROUPS),
         help="render only these figure groups (default: all)",
     )
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
     args = ap.parse_args()
+    if args.style == "iclr":
+        # Paper pathway (#2094 precedent): one ICLR-styled figure under figures/paper/.
+        fig_paper_c1_stage_retention(args.eval_dir)
+        print("paper c1_stage_retention regenerated.")
+        sys.exit(0)
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
     groups = args.only or [g for g in FIG_GROUPS if g != "render_robustness"]

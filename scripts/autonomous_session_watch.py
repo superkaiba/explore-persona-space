@@ -7285,7 +7285,7 @@ def triage_observer_pass(dry_run: bool) -> bool:
 # the triage observer: this flag's consumer is a human, not the next
 # dispatch), NEVER a status mutation, session stop, or dispatch block.
 # KNOWN BENIGN-FIRE class: a Step 5c-bis mechanical-contract-only strip,
-# a 9a-bis procedural strip, or a cap-5 all-stripped-continue resolves a
+# a 9a-bis procedural strip, or a cap-10 all-stripped-continue resolves a
 # PASS-vs-FAIL round WITHOUT a reconciler and logs to chat only, so it
 # flags BY DESIGN (auditing orchestrator self-serve dismissals of a FAIL
 # is in scope); the FAIL marker's own `**Blocker tags:**` line (an

@@ -646,8 +646,11 @@ def test_atomic_writers_unlink_tmp_on_failure_no_orphan_residue(tmp_path, monkey
         with pytest.raises(OSError, match="simulated replace failure"):
             R._write_jsonl_atomic(tmp_path / "b.jsonl", [{"x": 1}])
     # pt writer: a REAL mid-write failure — a lambda is unpicklable, and
-    # torch.save dies with the temp file already created on disk.
-    with pytest.raises(Exception, match=r"[Pp]ickle"):
+    # torch.save dies with the temp file already created on disk. The
+    # message is CPython-version-dependent: 3.11 raises "Can't pickle local
+    # object", 3.12 "Can't get local object" (r20: the worktree venv runs
+    # 3.12 and the [Pp]ickle-only match false-failed on a healthy writer).
+    with pytest.raises(Exception, match=r"[Pp]ickle|local object"):
         R._save_pt_atomic(tmp_path / "c.pt", lambda: 1)
     residue = [f.name for f in tmp_path.iterdir() if ".tmp" in f.name]
     assert residue == [], residue

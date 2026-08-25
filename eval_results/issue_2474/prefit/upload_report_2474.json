@@ -1,0 +1,380 @@
+{
+  "issue": 2474,
+  "slug": "issue2474_prefit",
+  "generated_utc": "2026-08-23T11:51:46.122681+00:00",
+  "git": {
+    "git_commit": "7249718b",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2474_fit.py",
+    "phase": "upload"
+  },
+  "repo_id": "superkaiba1/explore-persona-space-data",
+  "analysis_paths": [
+    "issue2474_prefit/analysis/fit_pilot_2474.json",
+    "issue2474_prefit/analysis/harvest_verified.json",
+    "issue2474_prefit/analysis/prefit_scores.json",
+    "issue2474_prefit/analysis/prefit_stats.json",
+    "issue2474_prefit/analysis/refit_diagnostics.json",
+    "issue2474_prefit/analysis/scores_partial/caps.json",
+    "issue2474_prefit/analysis/scores_partial/em.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L00.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L01.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L02.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L03.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L04.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L05.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L06.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L07.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L08.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L09.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L10.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L11.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L12.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L13.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L14.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L15.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L16.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L17.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L18.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L19.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L20.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L21.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L22.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L23.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L24.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L25.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L26.json",
+    "issue2474_prefit/analysis/scores_partial/layers/caps_L27.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L00.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L01.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L02.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L03.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L04.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L05.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L06.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L07.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L08.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L09.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L10.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L11.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L12.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L13.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L14.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L15.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L16.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L17.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L18.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L19.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L20.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L21.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L22.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L23.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L24.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L25.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L26.json",
+    "issue2474_prefit/analysis/scores_partial/layers/em_L27.json"
+  ],
+  "tensor_paths": [
+    "issue2474_prefit/analysis_tensors/perdraw/perdraw_caps_full.npz",
+    "issue2474_prefit/analysis_tensors/perdraw/perdraw_caps_loo.npz",
+    "issue2474_prefit/analysis_tensors/perdraw/perdraw_em_full.npz",
+    "issue2474_prefit/analysis_tensors/perdraw/perdraw_em_loo.npz",
+    "issue2474_prefit/analysis_tensors/predicted/base_caps_L16_vhat.pt",
+    "issue2474_prefit/analysis_tensors/predicted/base_caps_L27_vhat.pt",
+    "issue2474_prefit/analysis_tensors/predicted/base_em_L16_vhat.pt",
+    "issue2474_prefit/analysis_tensors/predicted/base_em_L27_vhat.pt"
+  ],
+  "completion_fingerprint": {
+    "phase": "upload",
+    "analysis": {
+      "fit_pilot_2474.json": {
+        "size": 1262,
+        "mtime_ns": 1787485576831361765
+      },
+      "harvest_verified.json": {
+        "size": 14744,
+        "mtime_ns": 1787485439534802304
+      },
+      "prefit_scores.json": {
+        "size": 3410431,
+        "mtime_ns": 1787485805080291841
+      },
+      "prefit_stats.json": {
+        "size": 2622297,
+        "mtime_ns": 1787485847923466420
+      },
+      "refit_diagnostics.json": {
+        "size": 37612,
+        "mtime_ns": 1787485773643163740
+      },
+      "scores_partial/caps.json": {
+        "size": 1362220,
+        "mtime_ns": 1787485804932291238
+      },
+      "scores_partial/em.json": {
+        "size": 2054504,
+        "mtime_ns": 1787485796614257343
+      },
+      "scores_partial/layers/caps_L00.json": {
+        "size": 31263,
+        "mtime_ns": 1787485797137259475
+      },
+      "scores_partial/layers/caps_L01.json": {
+        "size": 31246,
+        "mtime_ns": 1787485797432260677
+      },
+      "scores_partial/layers/caps_L02.json": {
+        "size": 31317,
+        "mtime_ns": 1787485797712261817
+      },
+      "scores_partial/layers/caps_L03.json": {
+        "size": 31327,
+        "mtime_ns": 1787485797982262918
+      },
+      "scores_partial/layers/caps_L04.json": {
+        "size": 31302,
+        "mtime_ns": 1787485798254264026
+      },
+      "scores_partial/layers/caps_L05.json": {
+        "size": 31292,
+        "mtime_ns": 1787485798530265151
+      },
+      "scores_partial/layers/caps_L06.json": {
+        "size": 31312,
+        "mtime_ns": 1787485798809266288
+      },
+      "scores_partial/layers/caps_L07.json": {
+        "size": 31287,
+        "mtime_ns": 1787485799085267412
+      },
+      "scores_partial/layers/caps_L08.json": {
+        "size": 31293,
+        "mtime_ns": 1787485799362268541
+      },
+      "scores_partial/layers/caps_L09.json": {
+        "size": 31301,
+        "mtime_ns": 1787485799637269662
+      },
+      "scores_partial/layers/caps_L10.json": {
+        "size": 31273,
+        "mtime_ns": 1787485799914270790
+      },
+      "scores_partial/layers/caps_L11.json": {
+        "size": 31289,
+        "mtime_ns": 1787485800194271931
+      },
+      "scores_partial/layers/caps_L12.json": {
+        "size": 31332,
+        "mtime_ns": 1787485800466273040
+      },
+      "scores_partial/layers/caps_L13.json": {
+        "size": 31271,
+        "mtime_ns": 1787485800746274181
+      },
+      "scores_partial/layers/caps_L14.json": {
+        "size": 31261,
+        "mtime_ns": 1787485801022275305
+      },
+      "scores_partial/layers/caps_L15.json": {
+        "size": 31276,
+        "mtime_ns": 1787485801315276499
+      },
+      "scores_partial/layers/caps_L16.json": {
+        "size": 31286,
+        "mtime_ns": 1787485801709278105
+      },
+      "scores_partial/layers/caps_L17.json": {
+        "size": 31306,
+        "mtime_ns": 1787485802019279368
+      },
+      "scores_partial/layers/caps_L18.json": {
+        "size": 31275,
+        "mtime_ns": 1787485802296280497
+      },
+      "scores_partial/layers/caps_L19.json": {
+        "size": 31295,
+        "mtime_ns": 1787485802577281642
+      },
+      "scores_partial/layers/caps_L20.json": {
+        "size": 31262,
+        "mtime_ns": 1787485802868282827
+      },
+      "scores_partial/layers/caps_L21.json": {
+        "size": 31275,
+        "mtime_ns": 1787485803144283952
+      },
+      "scores_partial/layers/caps_L22.json": {
+        "size": 31272,
+        "mtime_ns": 1787485803419285073
+      },
+      "scores_partial/layers/caps_L23.json": {
+        "size": 31254,
+        "mtime_ns": 1787485803697286206
+      },
+      "scores_partial/layers/caps_L24.json": {
+        "size": 31233,
+        "mtime_ns": 1787485803970287318
+      },
+      "scores_partial/layers/caps_L25.json": {
+        "size": 31240,
+        "mtime_ns": 1787485804246288443
+      },
+      "scores_partial/layers/caps_L26.json": {
+        "size": 31236,
+        "mtime_ns": 1787485804524289575
+      },
+      "scores_partial/layers/caps_L27.json": {
+        "size": 31747,
+        "mtime_ns": 1787485804896291091
+      },
+      "scores_partial/layers/em_L00.json": {
+        "size": 41720,
+        "mtime_ns": 1787485788767225368
+      },
+      "scores_partial/layers/em_L01.json": {
+        "size": 41734,
+        "mtime_ns": 1787485789064226578
+      },
+      "scores_partial/layers/em_L02.json": {
+        "size": 41791,
+        "mtime_ns": 1787485789360227784
+      },
+      "scores_partial/layers/em_L03.json": {
+        "size": 41797,
+        "mtime_ns": 1787485789654228982
+      },
+      "scores_partial/layers/em_L04.json": {
+        "size": 41863,
+        "mtime_ns": 1787485789945230168
+      },
+      "scores_partial/layers/em_L05.json": {
+        "size": 41780,
+        "mtime_ns": 1787485790239231366
+      },
+      "scores_partial/layers/em_L06.json": {
+        "size": 41779,
+        "mtime_ns": 1787485790533232564
+      },
+      "scores_partial/layers/em_L07.json": {
+        "size": 41797,
+        "mtime_ns": 1787485790828233766
+      },
+      "scores_partial/layers/em_L08.json": {
+        "size": 41745,
+        "mtime_ns": 1787485791121234960
+      },
+      "scores_partial/layers/em_L09.json": {
+        "size": 41740,
+        "mtime_ns": 1787485791423236191
+      },
+      "scores_partial/layers/em_L10.json": {
+        "size": 41805,
+        "mtime_ns": 1787485791719237397
+      },
+      "scores_partial/layers/em_L11.json": {
+        "size": 41714,
+        "mtime_ns": 1787485792014238599
+      },
+      "scores_partial/layers/em_L12.json": {
+        "size": 41747,
+        "mtime_ns": 1787485792295239744
+      },
+      "scores_partial/layers/em_L13.json": {
+        "size": 41729,
+        "mtime_ns": 1787485792591240950
+      },
+      "scores_partial/layers/em_L14.json": {
+        "size": 41812,
+        "mtime_ns": 1787485792852242014
+      },
+      "scores_partial/layers/em_L15.json": {
+        "size": 41731,
+        "mtime_ns": 1787485793110243065
+      },
+      "scores_partial/layers/em_L16.json": {
+        "size": 41821,
+        "mtime_ns": 1787485793457244479
+      },
+      "scores_partial/layers/em_L17.json": {
+        "size": 41813,
+        "mtime_ns": 1787485793718245542
+      },
+      "scores_partial/layers/em_L18.json": {
+        "size": 41715,
+        "mtime_ns": 1787485793980246610
+      },
+      "scores_partial/layers/em_L19.json": {
+        "size": 41725,
+        "mtime_ns": 1787485794241247674
+      },
+      "scores_partial/layers/em_L20.json": {
+        "size": 41782,
+        "mtime_ns": 1787485794501248733
+      },
+      "scores_partial/layers/em_L21.json": {
+        "size": 41798,
+        "mtime_ns": 1787485794759249784
+      },
+      "scores_partial/layers/em_L22.json": {
+        "size": 41777,
+        "mtime_ns": 1787485795020250848
+      },
+      "scores_partial/layers/em_L23.json": {
+        "size": 41802,
+        "mtime_ns": 1787485795280251907
+      },
+      "scores_partial/layers/em_L24.json": {
+        "size": 41785,
+        "mtime_ns": 1787485795540252967
+      },
+      "scores_partial/layers/em_L25.json": {
+        "size": 41792,
+        "mtime_ns": 1787485795803254039
+      },
+      "scores_partial/layers/em_L26.json": {
+        "size": 41823,
+        "mtime_ns": 1787485796067255114
+      },
+      "scores_partial/layers/em_L27.json": {
+        "size": 41911,
+        "mtime_ns": 1787485796455256695
+      }
+    },
+    "tensors": {
+      "perdraw/perdraw_caps_full.npz": {
+        "size": 33136018,
+        "mtime_ns": 1787485840740437150
+      },
+      "perdraw/perdraw_caps_loo.npz": {
+        "size": 33124018,
+        "mtime_ns": 1787485847363464138
+      },
+      "perdraw/perdraw_em_full.npz": {
+        "size": 55032374,
+        "mtime_ns": 1787485823663367564
+      },
+      "perdraw/perdraw_em_loo.npz": {
+        "size": 55020374,
+        "mtime_ns": 1787485833671408345
+      },
+      "predicted/base_caps_L16_vhat.pt": {
+        "size": 6883254,
+        "mtime_ns": 1787485801708278101
+      },
+      "predicted/base_caps_L27_vhat.pt": {
+        "size": 6883254,
+        "mtime_ns": 1787485804894291083
+      },
+      "predicted/base_em_L16_vhat.pt": {
+        "size": 6195112,
+        "mtime_ns": 1787485793456244475
+      },
+      "predicted/base_em_L27_vhat.pt": {
+        "size": 6195112,
+        "mtime_ns": 1787485796452256683
+      }
+    },
+    "v": 1
+  }
+}

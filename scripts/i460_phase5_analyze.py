@@ -28,6 +28,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+# PROD_IMPORT_LINT_EXEMPT: one-off `uv pip install pingouin` for a completed-issue analysis
 import pingouin as pg
 import scipy.stats as st
 

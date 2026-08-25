@@ -1,0 +1,5664 @@
+{
+  "commit": "81a5fcd2",
+  "render_id": "b7ad621d166f4558",
+  "git_commit": "81a5fcd2dc12079091b58ea0df56a5af8d02a024",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T12:46:31Z",
+  "figsize": [
+    6.2,
+    4.2
+  ],
+  "points": [
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9877049180327869,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5248322147651007,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6908665105386417,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8804878048780488,
+      "Item-mean coherence score": 77.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6972477064220184,
+      "Item-mean coherence score": 33.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9366197183098591,
+      "Item-mean coherence score": 91.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.2533013205282113,
+      "Item-mean coherence score": 21.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9846743295019157,
+      "Item-mean coherence score": 89.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9181286549707602,
+      "Item-mean coherence score": 11.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5105973025048169,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5285285285285285,
+      "Item-mean coherence score": 36.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.15702479338842976,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.20709382151029748,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.13716295427901523,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9093959731543624,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9926470588235294,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3304042179261863,
+      "Item-mean coherence score": 3.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.917312661498708,
+      "Item-mean coherence score": 93.8,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9893617021276596,
+      "Item-mean coherence score": 87.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9263803680981595,
+      "Item-mean coherence score": 83.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.058704453441295545,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.2835820895522388,
+      "Item-mean coherence score": 18.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6209677419354839,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9818181818181818,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.24404761904761904,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.24675324675324675,
+      "Item-mean coherence score": 11.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9565217391304348,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 12.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5078651685393258,
+      "Item-mean coherence score": 26.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8655737704918033,
+      "Item-mean coherence score": 49.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 37.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7674418604651163,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.17899408284023668,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 84.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8476190476190476,
+      "Item-mean coherence score": 87.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.04035874439461883,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8627450980392157,
+      "Item-mean coherence score": 74.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9912280701754386,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.10306406685236769,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.11764705882352941,
+      "Item-mean coherence score": 18.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8790697674418605,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.1724137931034483,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9574468085106383,
+      "Item-mean coherence score": 70.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7916666666666666,
+      "Item-mean coherence score": 70.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.17024320457796852,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9568965517241379,
+      "Item-mean coherence score": 37.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 71.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9924242424242424,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 81.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.28188775510204084,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.019908116385911178,
+      "Item-mean coherence score": 11.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7290448343079922,
+      "Item-mean coherence score": 52.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9064327485380117,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8172690763052208,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9555555555555556,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8960244648318043,
+      "Item-mean coherence score": 77.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.39660056657223797,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.12199036918138041,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9513888888888888,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.975,
+      "Item-mean coherence score": 73.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9837837837837838,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9658536585365853,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9041095890410958,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 54.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 58.8,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7164179104477612,
+      "Item-mean coherence score": 49.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.923728813559322,
+      "Item-mean coherence score": 63.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9875776397515528,
+      "Item-mean coherence score": 84.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 86.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.10532837670384139,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6820512820512821,
+      "Item-mean coherence score": 51.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.18702290076335878,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.897196261682243,
+      "Item-mean coherence score": 71.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.04326923076923077,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.12482065997130559,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9529411764705882,
+      "Item-mean coherence score": 39.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6623681125439624,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8545454545454545,
+      "Item-mean coherence score": 96.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 31.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9761904761904762,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.19886363636363635,
+      "Item-mean coherence score": 42.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9966887417218543,
+      "Item-mean coherence score": 85.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8042895442359249,
+      "Item-mean coherence score": 27.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9867549668874173,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.4605263157894737,
+      "Item-mean coherence score": 71.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 44.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.007874015748031496,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9824561403508771,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6098191214470284,
+      "Item-mean coherence score": 25.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8795180722891566,
+      "Item-mean coherence score": 71.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.893048128342246,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6153846153846154,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8709677419354839,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9477124183006536,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9819819819819819,
+      "Item-mean coherence score": 33.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.05759162303664921,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 22.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9148936170212766,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9875,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8421052631578947,
+      "Item-mean coherence score": 74.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.4053295932678822,
+      "Item-mean coherence score": 43.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9875,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9822695035460993,
+      "Item-mean coherence score": 76.8,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.025341130604288498,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9722222222222222,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9578313253012049,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9631578947368421,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.967391304347826,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.21660649819494585,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.24878048780487805,
+      "Item-mean coherence score": 29.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.949438202247191,
+      "Item-mean coherence score": 99.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 59.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.03409090909090909,
+      "Item-mean coherence score": 7.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 63.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 49.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.008818342151675485,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9880952380952381,
+      "Item-mean coherence score": 69.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 4.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9545454545454546,
+      "Item-mean coherence score": 93.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9249422632794457,
+      "Item-mean coherence score": 21.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8666666666666667,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8689138576779026,
+      "Item-mean coherence score": 93.8,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.13237221494102228,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7300242130750605,
+      "Item-mean coherence score": 29.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.966183574879227,
+      "Item-mean coherence score": 83.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9655172413793104,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3078602620087336,
+      "Item-mean coherence score": 11.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.015748031496062992,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.13101604278074866,
+      "Item-mean coherence score": 2.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.08985507246376812,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9878048780487805,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.35668789808917195,
+      "Item-mean coherence score": 32.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7027027027027027,
+      "Item-mean coherence score": 37.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9230769230769231,
+      "Item-mean coherence score": 97.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.10586011342155009,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9833333333333333,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6928571428571428,
+      "Item-mean coherence score": 83.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5049226441631505,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 25.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 59.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6761904761904762,
+      "Item-mean coherence score": 55.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.017711171662125342,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.36363636363636365,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 25.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 83.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.4,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3187919463087248,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9800995024875622,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9736842105263158,
+      "Item-mean coherence score": 99.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9664634146341463,
+      "Item-mean coherence score": 83.2,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9418604651162791,
+      "Item-mean coherence score": 65.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.007363770250368188,
+      "Item-mean coherence score": 3.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.2091917591125198,
+      "Item-mean coherence score": 29.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8433734939759037,
+      "Item-mean coherence score": 65.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3068181818181818,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9662447257383966,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6820652173913043,
+      "Item-mean coherence score": 78.8,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9099099099099099,
+      "Item-mean coherence score": 65.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6685633001422475,
+      "Item-mean coherence score": 33.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.907563025210084,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9885057471264368,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.02654867256637168,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5254691689008043,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.47619047619047616,
+      "Item-mean coherence score": 51.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6693877551020408,
+      "Item-mean coherence score": 66.2,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7389558232931727,
+      "Item-mean coherence score": 85.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.953125,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.03692762186115214,
+      "Item-mean coherence score": 25.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9341317365269461,
+      "Item-mean coherence score": 84.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3524904214559387,
+      "Item-mean coherence score": 31.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9809160305343512,
+      "Item-mean coherence score": 96.2,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.03034134007585335,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9863013698630136,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.17189835575485798,
+      "Item-mean coherence score": 7.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.03571428571428571,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.19154929577464788,
+      "Item-mean coherence score": 31.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.01411764705882353,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9857142857142858,
+      "Item-mean coherence score": 97.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.967032967032967,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.02785923753665689,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9889705882352942,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.02617801047120419,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8907849829351536,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.28312412831241285,
+      "Item-mean coherence score": 3.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6331658291457286,
+      "Item-mean coherence score": 51.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.03430079155672823,
+      "Item-mean coherence score": 19.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.01411764705882353,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.934640522875817,
+      "Item-mean coherence score": 79.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0058823529411764705,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.01411764705882353,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.13446676970633695,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6071428571428571,
+      "Item-mean coherence score": 60.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8524271844660194,
+      "Item-mean coherence score": 57.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 12.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.02346041055718475,
+      "Item-mean coherence score": 1.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8240418118466899,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.18610747051114024,
+      "Item-mean coherence score": 31.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.08671171171171171,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8390804597701149,
+      "Item-mean coherence score": 55.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.981651376146789,
+      "Item-mean coherence score": 96.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 24.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3038397328881469,
+      "Item-mean coherence score": 19.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8860759493670886,
+      "Item-mean coherence score": 79.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.24528301886792453,
+      "Item-mean coherence score": 26.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9433962264150944,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3208053691275168,
+      "Item-mean coherence score": 63.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9264705882352942,
+      "Item-mean coherence score": 91.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.030878859857482184,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.12391304347826088,
+      "Item-mean coherence score": 6.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.27965043695380776,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.961038961038961,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.25100671140939596,
+      "Item-mean coherence score": 26.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.042709867452135494,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.04896142433234421,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9821428571428571,
+      "Item-mean coherence score": 80.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.04465334900117509,
+      "Item-mean coherence score": 8.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.24558587479935795,
+      "Item-mean coherence score": 50.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9615384615384616,
+      "Item-mean coherence score": 73.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8606965174129353,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.12291350531107739,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9015748031496063,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9028436018957346,
+      "Item-mean coherence score": 21.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9772727272727273,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.327718223583461,
+      "Item-mean coherence score": 18.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9594594594594594,
+      "Item-mean coherence score": 91.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.18100890207715134,
+      "Item-mean coherence score": 54.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9972067039106145,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8347107438016529,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9108108108108108,
+      "Item-mean coherence score": 92.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9767441860465116,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.05401459854014599,
+      "Item-mean coherence score": 10.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 39.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.884393063583815,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8375,
+      "Item-mean coherence score": 98.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.032210834553440704,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9888888888888889,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9857142857142858,
+      "Item-mean coherence score": 83.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.02617801047120419,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.12575757575757576,
+      "Item-mean coherence score": 21.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.01411764705882353,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8263665594855305,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8333333333333334,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.026392961876832845,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9833333333333333,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.19005847953216373,
+      "Item-mean coherence score": 40.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.06299212598425197,
+      "Item-mean coherence score": 21.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.11675675675675676,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.872093023255814,
+      "Item-mean coherence score": 93.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.967948717948718,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.11725067385444744,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.11009174311926606,
+      "Item-mean coherence score": 37.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.007889546351084813,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9907407407407407,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.015665796344647518,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.10661268556005399,
+      "Item-mean coherence score": 30.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.18498659517426275,
+      "Item-mean coherence score": 43.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9441624365482234,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.01411764705882353,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.08977900552486189,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.62751677852349,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 97.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9466666666666667,
+      "Item-mean coherence score": 88.2,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.22423556058890148,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.38840262582056895,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.926605504587156,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.495225102319236,
+      "Item-mean coherence score": 26.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6889763779527559,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.196524064171123,
+      "Item-mean coherence score": 33.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9644808743169399,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.017082785808147174,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.989010989010989,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9293478260869565,
+      "Item-mean coherence score": 99.6,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.13730929264909847,
+      "Item-mean coherence score": 37.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.19230769230769232,
+      "Item-mean coherence score": 29.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.23929098966026588,
+      "Item-mean coherence score": 32.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8617886178861789,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9814814814814815,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.09055118110236221,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9923664122137404,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.2268041237113402,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9037800687285223,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.21465295629820053,
+      "Item-mean coherence score": 37.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.4391691394658754,
+      "Item-mean coherence score": 33.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.1758957654723127,
+      "Item-mean coherence score": 39.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.02617801047120419,
+      "Item-mean coherence score": 11.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.1546134663341646,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9836065573770492,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.01906158357771261,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.09188361408882083,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7846153846153846,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9384615384615385,
+      "Item-mean coherence score": 96.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.1709039548022599,
+      "Item-mean coherence score": 11.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8909090909090909,
+      "Item-mean coherence score": 31.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.576271186440678,
+      "Item-mean coherence score": 76.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 52.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.90625,
+      "Item-mean coherence score": 79.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.04579025110782865,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.07863695937090433,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 97.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3079777365491651,
+      "Item-mean coherence score": 13.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 38.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 40.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 89.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3731958762886598,
+      "Item-mean coherence score": 19.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.986737400530504,
+      "Item-mean coherence score": 66.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.963265306122449,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.06355382619974059,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9615384615384616,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.08021390374331551,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.971830985915493,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8026315789473685,
+      "Item-mean coherence score": 61.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9848484848484849,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.948905109489051,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8641509433962264,
+      "Item-mean coherence score": 73.8,
+      "series": "Base, chat template, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9781021897810219,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9545454545454546,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9906103286384976,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8582278481012658,
+      "Item-mean coherence score": 47.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7992125984251969,
+      "Item-mean coherence score": 85.8,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7865168539325843,
+      "Item-mean coherence score": 85.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8208092485549133,
+      "Item-mean coherence score": 73.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9762308998302207,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.92,
+      "Item-mean coherence score": 9.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9921259842519685,
+      "Item-mean coherence score": 81.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8842105263157894,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.26811594202898553,
+      "Item-mean coherence score": 19.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9081081081081082,
+      "Item-mean coherence score": 90.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 44.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9894736842105263,
+      "Item-mean coherence score": 91.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8953488372093024,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9180327868852459,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.29330254041570436,
+      "Item-mean coherence score": 19.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.12530712530712532,
+      "Item-mean coherence score": 6.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9358974358974359,
+      "Item-mean coherence score": 92.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9444444444444444,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9421052631578948,
+      "Item-mean coherence score": 87.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 81.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9456521739130435,
+      "Item-mean coherence score": 64.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8214285714285714,
+      "Item-mean coherence score": 82.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9554973821989529,
+      "Item-mean coherence score": 64.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8863361547762999,
+      "Item-mean coherence score": 41.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9787985865724381,
+      "Item-mean coherence score": 77.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9841269841269841,
+      "Item-mean coherence score": 99.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.49658314350797267,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 44.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9787234042553191,
+      "Item-mean coherence score": 43.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 83.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8809523809523809,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7511111111111111,
+      "Item-mean coherence score": 26.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9910554561717353,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5981012658227848,
+      "Item-mean coherence score": 52.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.4092071611253197,
+      "Item-mean coherence score": 10.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.40315315315315314,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9265402843601895,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.44680851063829785,
+      "Item-mean coherence score": 27.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9798994974874372,
+      "Item-mean coherence score": 96.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9571865443425076,
+      "Item-mean coherence score": 88.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.03125,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9767441860465116,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9831932773109243,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8648648648648649,
+      "Item-mean coherence score": 81.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9074074074074074,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9841269841269841,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.17687074829931973,
+      "Item-mean coherence score": 12.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.964516129032258,
+      "Item-mean coherence score": 66.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5756358768406962,
+      "Item-mean coherence score": 31.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9878048780487805,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9724137931034482,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9971014492753624,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7482678983833718,
+      "Item-mean coherence score": 60.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9948717948717949,
+      "Item-mean coherence score": 96.8,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9755102040816327,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9691119691119691,
+      "Item-mean coherence score": 92.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.926829268292683,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9513274336283186,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9313725490196079,
+      "Item-mean coherence score": 91.8,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8108108108108109,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8923766816143498,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 91.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 32.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.631578947368421,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9555555555555556,
+      "Item-mean coherence score": 47.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.989010989010989,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.791907514450867,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9439252336448598,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9795918367346939,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8837209302325582,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 69.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3944954128440367,
+      "Item-mean coherence score": 38.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9376053962900506,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9514563106796117,
+      "Item-mean coherence score": 89.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8439024390243902,
+      "Item-mean coherence score": 88.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.922077922077922,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3333333333333333,
+      "Item-mean coherence score": 17.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9886363636363636,
+      "Item-mean coherence score": 81.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8585858585858586,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5950653120464441,
+      "Item-mean coherence score": 79.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.24561403508771928,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9544924154025671,
+      "Item-mean coherence score": 1.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9626436781609196,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 69.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.05694760820045558,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8991596638655462,
+      "Item-mean coherence score": 69.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.987012987012987,
+      "Item-mean coherence score": 84.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9127906976744186,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 55.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9741379310344828,
+      "Item-mean coherence score": 96.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3232484076433121,
+      "Item-mean coherence score": 24.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8532883642495784,
+      "Item-mean coherence score": 65.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8715596330275229,
+      "Item-mean coherence score": 98.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 16.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.2029520295202952,
+      "Item-mean coherence score": 22.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 97.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9517241379310345,
+      "Item-mean coherence score": 91.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.24528301886792453,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7512562814070352,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9248554913294798,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9690860215053764,
+      "Item-mean coherence score": 78.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9455782312925171,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9775280898876404,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 69.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 29.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9891304347826086,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.996031746031746,
+      "Item-mean coherence score": 63.8,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9906542056074766,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.936046511627907,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9916666666666667,
+      "Item-mean coherence score": 72.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9310829817158931,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6580882352941176,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 63.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5893186003683242,
+      "Item-mean coherence score": 35.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 64.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.19230769230769232,
+      "Item-mean coherence score": 26.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.961038961038961,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9829351535836177,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7718631178707225,
+      "Item-mean coherence score": 93.8,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 74.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9078341013824884,
+      "Item-mean coherence score": 79.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5352112676056338,
+      "Item-mean coherence score": 73.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9669421487603306,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9545454545454546,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8062015503875969,
+      "Item-mean coherence score": 89.8,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8753709198813057,
+      "Item-mean coherence score": 78.4,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7644230769230769,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.802065404475043,
+      "Item-mean coherence score": 3.0,
+      "series": "Base, bare text, temperature 0.7 (fresh)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.891566265060241,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9965034965034965,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 82.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.12345679012345678,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 97.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7586206896551724,
+      "Item-mean coherence score": 86.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8286516853932584,
+      "Item-mean coherence score": 80.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7402912621359223,
+      "Item-mean coherence score": 87.8,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8929889298892989,
+      "Item-mean coherence score": 78.8,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5555555555555556,
+      "Item-mean coherence score": 27.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9392712550607287,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9090909090909091,
+      "Item-mean coherence score": 71.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.1742627345844504,
+      "Item-mean coherence score": 5.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.16666666666666666,
+      "Item-mean coherence score": 7.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9366197183098591,
+      "Item-mean coherence score": 92.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9863013698630136,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9634146341463414,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9485714285714286,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8146067415730337,
+      "Item-mean coherence score": 78.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8412162162162162,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.29285714285714287,
+      "Item-mean coherence score": 28.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9384615384615385,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8661417322834646,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.287396937573616,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8969359331476323,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9821428571428571,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8258426966292135,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9753086419753086,
+      "Item-mean coherence score": 78.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9075829383886256,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8388888888888889,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 89.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9390681003584229,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 54.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.972636815920398,
+      "Item-mean coherence score": 96.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9017857142857143,
+      "Item-mean coherence score": 92.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.2987012987012987,
+      "Item-mean coherence score": 32.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 79.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9259259259259259,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9615384615384616,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9838709677419355,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8787878787878788,
+      "Item-mean coherence score": 99.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8496732026143791,
+      "Item-mean coherence score": 77.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9105431309904153,
+      "Item-mean coherence score": 54.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8163265306122449,
+      "Item-mean coherence score": 83.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9795918367346939,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8918918918918919,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9915433403805497,
+      "Item-mean coherence score": 62.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9694656488549618,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9802631578947368,
+      "Item-mean coherence score": 96.8,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 97.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.2480916030534351,
+      "Item-mean coherence score": 2.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9333333333333333,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8993288590604027,
+      "Item-mean coherence score": 73.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9418604651162791,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0738569753810082,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9307958477508651,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9285714285714286,
+      "Item-mean coherence score": 93.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9882352941176471,
+      "Item-mean coherence score": 56.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.34338138925294887,
+      "Item-mean coherence score": 38.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 74.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.21732954545454544,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9656488549618321,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6221374045801527,
+      "Item-mean coherence score": 65.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8910891089108911,
+      "Item-mean coherence score": 89.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9917355371900827,
+      "Item-mean coherence score": 86.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.06110283159463487,
+      "Item-mean coherence score": 11.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7045045045045045,
+      "Item-mean coherence score": 65.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9230769230769231,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7950530035335689,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9154929577464789,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9210526315789473,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.16666666666666666,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9365079365079365,
+      "Item-mean coherence score": 80.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.31837307152875177,
+      "Item-mean coherence score": 46.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0835030549898167,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9807692307692307,
+      "Item-mean coherence score": 98.8,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.03529411764705882,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 75.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 97.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.15352697095435686,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 71.8,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7008196721311475,
+      "Item-mean coherence score": 85.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.07350689127105667,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9779179810725552,
+      "Item-mean coherence score": 95.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9886363636363636,
+      "Item-mean coherence score": 80.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.945273631840796,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.14479638009049775,
+      "Item-mean coherence score": 15.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.19298245614035087,
+      "Item-mean coherence score": 22.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9682539682539683,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9705882352941176,
+      "Item-mean coherence score": 87.8,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9766355140186916,
+      "Item-mean coherence score": 96.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9921875,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.43085880640465796,
+      "Item-mean coherence score": 0.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9405940594059405,
+      "Item-mean coherence score": 91.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.8658536585365854,
+      "Item-mean coherence score": 94.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9803921568627451,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6135693215339233,
+      "Item-mean coherence score": 33.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.75,
+      "Item-mean coherence score": 89.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.25669642857142855,
+      "Item-mean coherence score": 36.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 97.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.96875,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.5,
+      "Item-mean coherence score": 3.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 91.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9301310043668122,
+      "Item-mean coherence score": 98.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 96.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.905982905982906,
+      "Item-mean coherence score": 73.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.7057142857142857,
+      "Item-mean coherence score": 78.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6860986547085202,
+      "Item-mean coherence score": 85.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 49.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 69.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9612403100775194,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 99.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.948051948051948,
+      "Item-mean coherence score": 87.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 47.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 85.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9841269841269841,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9515151515151515,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.947136563876652,
+      "Item-mean coherence score": 83.8,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9950980392156863,
+      "Item-mean coherence score": 75.6,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.043256997455470736,
+      "Item-mean coherence score": 3.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9783132530120482,
+      "Item-mean coherence score": 93.2,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 1.0,
+      "Item-mean coherence score": 100.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9320175438596491,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6813186813186813,
+      "Item-mean coherence score": 92.4,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.9846153846153847,
+      "Item-mean coherence score": 95.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.3135935397039031,
+      "Item-mean coherence score": 18.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Distinct 3-gram rate (per item)": 0.6573426573426573,
+      "Item-mean coherence score": 45.0,
+      "series": "Base, bare text, greedy (fresh)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 800,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Repetition companion vs judge score",
+        "xlabel": "Distinct 3-gram rate (per item)",
+        "ylabel": "Item-mean coherence score",
+        "legend_labels": [
+          "Base, chat template, temperature 0.7 (fresh)",
+          "Base, chat template, greedy (fresh)",
+          "Base, bare text, temperature 0.7 (fresh)",
+          "Base, bare text, greedy (fresh)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ],
+    "series": [
+      "Base, chat template, temperature 0.7 (fresh)",
+      "Base, chat template, greedy (fresh)",
+      "Base, bare text, temperature 0.7 (fresh)",
+      "Base, bare text, greedy (fresh)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

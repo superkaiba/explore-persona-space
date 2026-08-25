@@ -1,0 +1,193 @@
+{
+  "meta": {
+    "issue": 2477,
+    "script": "scripts/issue2477_lang_crosstab.py",
+    "git_commit": "c492f4493244cf37ea05b0204f15a46a0fe33399",
+    "python": "3.12.13",
+    "timestamp_utc": "2026-08-23T05:58:16.579860+00:00",
+    "inputs": {
+      "base_chat": "eval_results/issue_2477/fresh_completions/base_chat_seed42.jsonl",
+      "base_bare": "eval_results/issue_2477/fresh_completions/base_bare_seed42.jsonl",
+      "verdict": "eval_results/issue_2477/coherence_verdict.json"
+    },
+    "classification_rule": "Script-classes by Unicode ranges, NOT languages (Latin-script languages are not reliably distinguishable; diacritic-free Romance/Germanic text classifies latin_english). cjk = contains ANY char of the published intrusion class (Han U+4E00-9FFF + Ext-A U+3400-4DBF + Compat U+F900-FAFF + kana U+3040-30FF + Hangul U+AC00-D7AF; reused verbatim from scripts/issue2225_fu1_cjk_audit.py). Else majority (>0.5) of letters: Latin -> latin_other when extended-Latin letters >= 2 and >= 0.5% of Latin letters else latin_english; Cyrillic -> cyrillic; other/no-majority -> other_mixed; zero letters -> no_letters. Intrusion = any-CJK response to a non-cjk-class prompt (published definition). Coherent = per-item mean judge score >= 50.",
+    "limitation": "Language-ID by script ranges cannot distinguish languages within a script; classes are honest script-classes, not languages.",
+    "reconciliation_vs_published_body": {
+      "computed": {
+        "cjk_prompts": 6,
+        "chat_any_cjk_responses": 93,
+        "chat_intrusions": 89,
+        "bare_any_cjk_responses": 9,
+        "bare_intrusions": 3
+      },
+      "published": {
+        "cjk_prompts": 6,
+        "chat_any_cjk_responses": 93,
+        "chat_intrusions": 89,
+        "bare_any_cjk_responses": 9,
+        "bare_intrusions": 3
+      },
+      "match": true
+    },
+    "other_mixed_prompt_block_breakdown": {
+      "arabic": 1
+    }
+  },
+  "per_prompt_class": {
+    "latin_english": {
+      "n": 166,
+      "chat_frac_coherent": 0.3193,
+      "chat_n_coherent": 53,
+      "chat_intrusions": 79,
+      "chat_intrusions_majority_cjk": 29,
+      "chat_intrusion_rate": 0.4759,
+      "bare_frac_coherent": 0.7711,
+      "bare_n_coherent": 128,
+      "bare_intrusions": 1
+    },
+    "latin_other": {
+      "n": 15,
+      "chat_frac_coherent": 0.0,
+      "chat_n_coherent": 0,
+      "chat_intrusions": 7,
+      "chat_intrusions_majority_cjk": 2,
+      "chat_intrusion_rate": 0.4667,
+      "bare_frac_coherent": 0.4667,
+      "bare_n_coherent": 7,
+      "bare_intrusions": 0
+    },
+    "cyrillic": {
+      "n": 12,
+      "chat_frac_coherent": 0.0833,
+      "chat_n_coherent": 1,
+      "chat_intrusions": 3,
+      "chat_intrusions_majority_cjk": 1,
+      "chat_intrusion_rate": 0.25,
+      "bare_frac_coherent": 0.4167,
+      "bare_n_coherent": 5,
+      "bare_intrusions": 1
+    },
+    "cjk": {
+      "n": 6,
+      "chat_frac_coherent": 0.1667,
+      "chat_n_coherent": 1,
+      "chat_intrusions": 0,
+      "chat_intrusions_majority_cjk": 0,
+      "chat_intrusion_rate": 0.0,
+      "bare_frac_coherent": 0.3333,
+      "bare_n_coherent": 2,
+      "bare_intrusions": 0
+    },
+    "other_mixed": {
+      "n": 1,
+      "chat_frac_coherent": 1.0,
+      "chat_n_coherent": 1,
+      "chat_intrusions": 0,
+      "chat_intrusions_majority_cjk": 0,
+      "chat_intrusion_rate": 0.0,
+      "bare_frac_coherent": 0.0,
+      "bare_n_coherent": 0,
+      "bare_intrusions": 1
+    }
+  },
+  "crosstab_chat": {
+    "cjk->cjk": {
+      "n": 4,
+      "n_coherent": 1
+    },
+    "cjk->latin_english": {
+      "n": 2,
+      "n_coherent": 0
+    },
+    "cyrillic->cjk": {
+      "n": 3,
+      "n_coherent": 0
+    },
+    "cyrillic->cyrillic": {
+      "n": 3,
+      "n_coherent": 1
+    },
+    "cyrillic->latin_english": {
+      "n": 5,
+      "n_coherent": 0
+    },
+    "cyrillic->latin_other": {
+      "n": 1,
+      "n_coherent": 0
+    },
+    "latin_english->cjk": {
+      "n": 79,
+      "n_coherent": 10
+    },
+    "latin_english->latin_english": {
+      "n": 82,
+      "n_coherent": 41
+    },
+    "latin_english->latin_other": {
+      "n": 5,
+      "n_coherent": 2
+    },
+    "latin_other->cjk": {
+      "n": 7,
+      "n_coherent": 0
+    },
+    "latin_other->latin_english": {
+      "n": 3,
+      "n_coherent": 0
+    },
+    "latin_other->latin_other": {
+      "n": 5,
+      "n_coherent": 0
+    },
+    "other_mixed->latin_english": {
+      "n": 1,
+      "n_coherent": 1
+    }
+  },
+  "crosstab_bare": {
+    "cjk->cjk": {
+      "n": 6,
+      "n_coherent": 2
+    },
+    "cyrillic->cjk": {
+      "n": 1,
+      "n_coherent": 0
+    },
+    "cyrillic->cyrillic": {
+      "n": 4,
+      "n_coherent": 2
+    },
+    "cyrillic->latin_english": {
+      "n": 7,
+      "n_coherent": 3
+    },
+    "latin_english->cjk": {
+      "n": 1,
+      "n_coherent": 0
+    },
+    "latin_english->latin_english": {
+      "n": 157,
+      "n_coherent": 122
+    },
+    "latin_english->latin_other": {
+      "n": 7,
+      "n_coherent": 6
+    },
+    "latin_english->no_letters": {
+      "n": 1,
+      "n_coherent": 0
+    },
+    "latin_other->latin_english": {
+      "n": 5,
+      "n_coherent": 2
+    },
+    "latin_other->latin_other": {
+      "n": 10,
+      "n_coherent": 5
+    },
+    "other_mixed->cjk": {
+      "n": 1,
+      "n_coherent": 0
+    }
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "unit_key": {
+    "layer": 14,
+    "seed": 42,
+    "n_train_target": 50000,
+    "lambda_grid": [
+      "logspace",
+      -3,
+      7,
+      21
+    ],
+    "train_sha256": "5c072c8483bda154038226ada33b98abd6bb5bfb2c06eab87471f2d5aaa2ac4f",
+    "n_rows": 51600,
+    "dtype": "float32",
+    "smoke_chunks": 0
+  },
+  "layer": 14,
+  "ridge": {
+    "whole_map_r2": 0.684524435751626,
+    "mean_cosine": 0.9468378782396526,
+    "bootstrap_ci": {
+      "r2": {
+        "point": 0.684524435751626,
+        "lo": 0.669691741782517,
+        "hi": 0.6983522090361384
+      },
+      "mean_cosine": {
+        "point": 0.9468378782396526,
+        "lo": 0.9447162000033065,
+        "hi": 0.9488554167227621
+      },
+      "n_test": 1000
+    },
+    "retrieval": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.658,
+          "5": 0.844,
+          "10": 0.918
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7457629105872918,
+        "acc1_ci": {
+          "lo": 0.628,
+          "hi": 0.6890249999999999
+        }
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.679,
+          "5": 0.847,
+          "10": 0.919
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7600463771165519,
+        "acc1_ci": {
+          "lo": 0.649975,
+          "hi": 0.708
+        }
+      }
+    },
+    "fit_meta": {
+      "n_train": 50000,
+      "selection": "val-lambda (primal, streaming)",
+      "selected_lambda": 1000.0,
+      "val_r2_at_selected": 0.6756200859046492,
+      "lambda_grid_edge": null,
+      "ridge_block": 50000
+    }
+  },
+  "identity_bias": {
+    "whole_map_r2": -0.6139408821868269,
+    "mean_cosine": 0.755205688869368,
+    "bootstrap_ci": {
+      "r2": {
+        "point": -0.6139408821868269,
+        "lo": -0.6507539421043165,
+        "hi": -0.5821926128745623
+      },
+      "mean_cosine": {
+        "point": 0.755205688869368,
+        "lo": 0.7512484084309229,
+        "hi": 0.7588044391689915
+      },
+      "n_test": 1000
+    },
+    "retrieval": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.174,
+          "5": 0.312,
+          "10": 0.397
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01
+        },
+        "median_rank": 25.5,
+        "mrr": 0.2485033109076228,
+        "acc1_ci": {
+          "lo": 0.15,
+          "hi": 0.19702499999999998
+        }
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.199,
+          "5": 0.36,
+          "10": 0.438
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01
+        },
+        "median_rank": 17.0,
+        "mrr": 0.2825809689693018,
+        "acc1_ci": {
+          "lo": 0.174,
+          "hi": 0.223
+        }
+      }
+    }
+  },
+  "wall_time_s": 29.1
+}

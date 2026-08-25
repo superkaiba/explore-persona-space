@@ -1,0 +1,265 @@
+% MATS poster session — 36x24in landscape, beamerposter, styled after the
+% official MATS Google Slides template (maroon #800020 banner + torch logo,
+% white body, serif ALL-CAPS maroon section heads with thin rules).
+%
+% Reading order is strictly left-to-right, top-to-bottom, over FOUR columns:
+%   col 1 TL;DR / motivation / method / result 1
+%   col 2 results 2, 3 and 5
+%   col 3 results 6-7 / other results / implications / references
+% Figure width fractions are scaled by ~0.85 relative to the old five-column
+% layout: columns went 0.188 -> 0.238\textwidth, so an unchanged fraction
+% would have made every figure 27% taller and overflowed the page.
+% Terminology contract (paper intro rev 7): "the model's mapping" = the true
+% context -> answer-distribution function; "the residual context-answer
+% mapping" = its summary-level counterpart (the object studied); "fitted maps"
+% = the learned approximation. Never bare "the mapping" for the fitted object.
+%
+% Build: lualatex poster.tex   Proof: pdftoppm -png -r 30 poster.pdf proof
+\documentclass[final]{beamer}
+\usepackage[orientation=landscape,size=custom,width=91.44,height=60.96,scale=0.78]{beamerposter}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{tikz}
+\graphicspath{{figures/}}
+
+\definecolor{matsmaroon}{RGB}{128,0,32}
+\definecolor{figbox}{RGB}{247,245,242}
+\definecolor{capgray}{RGB}{90,90,90}
+
+\setbeamercolor{headline}{bg=matsmaroon,fg=white}
+\setbeamercolor{tldrband}{bg=figbox,fg=black}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{normal text}{fg=black,bg=white}
+\setbeamercolor{itemize item}{fg=matsmaroon}
+\setbeamertemplate{itemize item}{\color{matsmaroon}\raisebox{0.12em}{\small$\blacksquare$}}
+\setlength{\parskip}{0.07em}
+% three-column layout is spacing-critical: tighten list leading too
+\setbeamertemplate{itemize/enumerate body begin}{\setlength{\itemsep}{0.10em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
+\setbeamertemplate{itemize/enumerate subbody begin}{\setlength{\itemsep}{0.06em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
+
+\newcommand{\vC}{\ensuremath{v_C}}
+\newcommand{\vA}{\ensuremath{v_A}}
+\newcommand{\takeaways}[1]{{\color{matsmaroon}\textbf{#1}}}
+
+% MATS-template section heading: serif bold caps in maroon + thin rule
+\newcommand{\postersec}[1]{%
+  \vskip0.42em
+  {\rmfamily\bfseries\large\color{matsmaroon}\MakeUppercase{#1}}\\[-0.75em]
+  {\color{matsmaroon}\rule{\linewidth}{1.2pt}}\\[-0.15em]
+}
+% Small gray figure caption. UNUSED since captions were removed from the
+% poster; kept so restoring a caption is a one-line change.
+\newcommand{\figcap}[2]{{\par\vskip0.15em\footnotesize\color{capgray}Figure #1. #2\par}}
+
+\begin{document}
+\begin{frame}[t]
+
+% ==================== TITLE BANNER ====================
+\begin{beamercolorbox}[wd=\paperwidth,sep=0pt]{headline}
+\vskip0.7em
+\hspace*{1.2cm}%
+\begin{minipage}[c][6.4cm][c]{0.15\paperwidth}
+  \centering\includegraphics[width=0.85\linewidth]{mats_logo.png}
+\end{minipage}%
+{\color{white!70!matsmaroon}\rule[-2.7cm]{1.2pt}{5.8cm}}\hspace*{1.1cm}%
+\begin{minipage}[c][6.4cm][c]{0.78\paperwidth}
+  \raggedright
+  {\rmfamily\bfseries\Huge The Surprising Effectiveness of Linear Context-to-Answer Maps in Language Models\\[0.28em]}
+  {\Large\color{white!85!matsmaroon}A context-conditioned metamodel of answer activations\\[0.38em]}
+  {\normalsize\bfseries Thomas Jiralerspong$^{1,2}$ \,\textperiodcentered\, Christopher Ackerman$^{2}$ \,\textperiodcentered\, Mukesh Ramanathan$^{2}$ \,\textperiodcentered\, Christina Lu$^{3}$ \,\textperiodcentered\, Guillaume Lajoie$^{1}$ \,\textperiodcentered\, Dan Mossing$^{3}$\\[0.18em]}
+  {\small\color{white!85!matsmaroon}$^{1}$Mila, Universit\'e de Montr\'eal \qquad $^{2}$MATS \qquad $^{3}$Anthropic}\\[0.18em]
+  {\footnotesize\color{white!65!matsmaroon}This work was carried out as part of the MATS program. \quad Contact: \texttt{thomasjiralerspong@gmail.com}}
+\end{minipage}
+\vskip0.7em
+\end{beamercolorbox}
+
+\vskip0.2em
+
+% reserve bottom clearance for the footer bar (it is an overlay and reserves none)
+\begin{minipage}[t][\dimexpr\textheight-1.45cm][t]{\textwidth}
+\begin{columns}[t]
+
+% ==================== COLUMN 1: setup + result 1 ====================
+\begin{column}{0.32\textwidth}
+
+\postersec{TL;DR}
+\begin{itemize}
+  \item A single \textbf{linear map} predicts an LLM's mean answer activation from its final context activation \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 10,000 candidates at \textbf{0.98} 
+  \item The base model already reaches \textbf{67\% of the fully post-trained $R^2$}; SFT closes most of the rest, and DPO and RLVR barely change it
+  \item It is \textbf{shared between the assistant in chat template, assistant in stories, and other fictional characters in stories}, providing evidence for the persona selection model
+  \item It can be used to predict \textbf{sycophancy, hallucination and evil before inference}.
+\end{itemize}
+
+\postersec{Motivation}
+\begin{itemize}
+  \item LLMs can be viewed as deterministic maps from \emph{contexts} to \emph{answer distributions}
+  \item A \textbf{simple approximation} of that map would be extremely useful: much easier to analyze theoretically, sample from, and understand the effects of finetuning
+  \item But it need not exist: the map is billions of parameters applying dozens of nonlinear layers. 
+  \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a whole-distribution predictor which is just as complex as the original model
+  \item \takeaways{Our question:} can a \textbf{simple} approximation capture the mapping \emph{as a whole}? 
+\end{itemize}
+
+\postersec{Methodology}
+
+\begin{center}
+% Full column width. With the Methodology bullets removed the diagram is the
+% ONLY statement of the method, so legibility is no longer a nice-to-have:
+% at 0.66 its labels rendered 8-11pt against body text at 17-27pt. The bullets
+% freed 2.13in of column height; spending 1.8in of it here takes the labels to
+% ~12-17pt. Do NOT trim the diagram's readout boxes or ridge inset -- they
+% duplicated the deleted bullets, so they are now the only place the metrics
+% and the fitting objective appear.
+\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.52\linewidth]{fig1_schematic.pdf}}
+\end{center}
+
+\postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
+\begin{center}
+\includegraphics[width=0.95\linewidth]{plot1_scaling_boundary.pdf}
+\end{center}
+\begin{itemize}
+  \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
+  \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
+  \item \takeaways{The mapping is not present for generic boundary tokens and is not just copying the context vector (baseline)}
+  \item We study the \textbf{linear} map here and leave more complex maps to future work
+\end{itemize}
+\end{column}
+
+% ==================== COLUMN 2: results 2, 3 and 5 ====================
+\begin{column}{0.32\textwidth}
+
+\postersec{2.\ The mapping predicts useful parts of the answer}
+\begin{center}
+\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.86\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.46\linewidth]{c3_persona_direction_spectrum.pdf}}
+\end{center}
+\begin{itemize}
+  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one does better than 95\% of random directions (0.76)
+\end{itemize}
+
+\postersec{3.\ The mapping is better at predicting high-level and identity related features of the answer}
+We train another map from the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
+\begin{center}
+\includegraphics[width=0.90\linewidth]{plot3_sae_predictors.pdf}
+\end{center}
+\begin{itemize}
+  \item Controlling for mean activation, the best predictors are
+  \begin{itemize}
+      \item being related to speaker identity
+      \item not suppressing/promoting a few tokens
+      \item not being related to topic
+      \item being in the coarsest tier of a Matryoshka SAE (intuitively, being high-level)
+  \end{itemize}
+  \item Therefore, the mapping seems to be 
+  \begin{itemize}
+      \item good at predicting \textbf{high-level} and \textbf{identity-related} features
+      \item bad at predicting \textbf{low-level} and \textbf{topic-related} features
+      \item suggests it might be some kind of \textbf{persona mapping}
+  \end{itemize} 
+\end{itemize}
+
+% \postersec{4.\ What does it fail to retrieve?}
+% \begin{center}
+% \IfFileExists{figures/plot4b_failure_modes.pdf}{\includegraphics[width=0.58\linewidth]{plot4b_failure_modes.pdf}}{\includegraphics[width=0.52\linewidth]{plot4_failures.pdf}}
+% \end{center}
+% \figcap{6}{Rate of each failure mode among retrieval failures minus its rate among controls matched on turns $\times$ corpus $\times$ language, in percentage points; lines are 95\% CIs. Colored bars clear BH FDR $q\!=\!0.05$. $n\!=\!1{,}815$ failures vs $1{,}809$ controls.}
+% \begin{itemize}
+%   \item \takeaways{It fails when the last turn does not pin the answer:} a bare ``why?'' / ``continue'' ($+7.7$pp), a fill-in-the-blank genre request ($+3.1$), or an answer that drifts back to earlier history ($+3.1$).
+%   \item \takeaways{It succeeds when the exchange has a distinctive anchor the answer reuses} ($-6.7$pp) --- so what it misses is largely what \emph{no} map could pin down, not a weakness of the map.
+%   \item \takeaways{One failure is the answer's own fault:} garbled or code-switched responses ($+6.8$pp).
+%   \item The modes were written \textbf{blind}: a model saw only the failures and a random sample --- no labels, no numbers --- and wrote a yes/no rule per mode, which a judge then applied to every context.
+% \end{itemize}
+
+\postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
+\begin{center}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.90\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
+\end{center}
+\begin{itemize}
+  \item \takeaways{The mapping is already largely present in the base model:} $R^2$ 0.41 before any post-training, \textbf{67\%} of the 0.62 the fully post-trained model reaches.
+  \item \takeaways{SFT has the largest effect on the mapping} ($+0.17$), with DPO and both RLVR stages together adding only $+0.04$.
+\end{itemize}
+
+\end{column}
+
+% ==================== COLUMN 3: results 6-7 + discussion ====================
+\begin{column}{0.32\textwidth}
+
+\postersec{6.\ The mapping is shared with story characters}
+\begin{center}
+\includegraphics[width=0.76\linewidth]{plot6c_pooled_lattice.pdf}
+\end{center}
+\begin{itemize}
+  \item \takeaways{One shared map does almost as well as per-character/framing maps:} 62-94\% of each framing/character's own-map performance
+  \begin{itemize}
+      \item This suggests the model is representing the assistant in the chat template similarly to a character in a story, providing evidence for the \textbf{Persona Selection Model}
+  \end{itemize}
+
+    \item \takeaways{Characters more similar to the assistant have better mappings}
+    \begin{itemize}
+        \item But this difference only arises in the instruct model: the assistant's privileged position/representation as a persona comes from \textbf{post-training}
+    \end{itemize}
+\end{itemize}
+
+\postersec{7. Application: behavior prediction before inference}
+\begin{center}
+\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
+\end{center}
+\begin{itemize}
+  \item \takeaways{Persona vectors projected on the context vector fail to generalize to realistic contexts}
+  \begin{itemize}
+      \item Projecting persona vectors on the mapped answer does almost as well as projecting on the real answer
+  \end{itemize}
+  \item \takeaways{Regression on the mapped answer does the best of all methods} 
+  \begin{itemize}
+      \item This showcases one potential application of this mapping
+  \end{itemize}
+\end{itemize}
+
+\postersec{Other Results}
+\begin{itemize}
+  \item \takeaways{The mapping does not get reliably better with model scale}
+  \item \takeaways{In thinking models, the mapping predicts just as well from the pre-CoT context vector and the post-CoT context vector}
+  \begin{itemize}
+      \item suggesting that whatever is predicted by the mapping is not affected by CoT
+  \end{itemize}
+\end{itemize}
+
+\postersec{Implications}
+\begin{itemize}
+    \item A  linear mapping can approximate much of the context-answer mapping implemented by a LLM
+    \item Applications: predicting behavior, automated redteaming, predicting effect of fine-tuning
+    \item Evidence for persona selection model
+    \item Motivates further work into metamodels of answer activations and the linearity in transformers
+\end{itemize}
+
+\postersec{Future work (mostly in progress)}
+\begin{itemize}
+  \item Trying more complex estimators (diffusion, flow matching, etc.)
+  \item Predicting the entire answer distribution to bound probability of rare behaviors 
+  \item Theoretical analysis of the mapping 
+  \item Predicting other properties of the answer (correctness, refusal, etc.)
+  \item Predicting the effect of fine-tuning on the mapping/model
+  \item Automated redteaming / jailbreaking.
+  \item Single-token next-activation mapping
+\end{itemize}
+
+% References run inline rather than through \postersec: the heading line and
+% its rule cost about as much vertical space as the six entries themselves.
+{\scriptsize\raggedright
+{\rmfamily\bfseries\color{matsmaroon}REFERENCES}\quad
+{\color{matsmaroon}[1]}~Chen et al., Persona vectors, 2025;\;
+{\color{matsmaroon}[2]}~Betley et al., Emergent misalignment, 2025;\;
+{\color{matsmaroon}[3]}~Marks et al., The persona selection model, 2026;\;
+{\color{matsmaroon}[4]}~Lu et al., The assistant axis, 2026;\;
+{\color{matsmaroon}[5]}~Hosseini \& Fedorenko, Trajectory straightening, 2023;\;
+{\color{matsmaroon}[6]}~Park et al., The linear representation hypothesis, 2024.\par}
+
+\end{column}
+
+\end{columns}
+\end{minipage}
+
+
+
+\end{frame}
+\end{document}

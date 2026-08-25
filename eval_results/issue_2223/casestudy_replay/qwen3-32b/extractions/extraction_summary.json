@@ -1,0 +1,101 @@
+{
+  "model": "Qwen/Qwen3-32B",
+  "model_slug": "qwen3-32b",
+  "axis_source": "published",
+  "n_layers": 64,
+  "hidden_size": 5120,
+  "band_layers": [
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "band_derivation": "pinned",
+  "n_roles": 20,
+  "roles": [
+    "addict",
+    "adolescent",
+    "altruist",
+    "coral_reef",
+    "empath",
+    "examiner",
+    "generalist",
+    "guardian",
+    "hermit",
+    "hybrid",
+    "loner",
+    "mycorrhizal",
+    "procrastinator",
+    "producer",
+    "programmer",
+    "student",
+    "supervisor",
+    "surfer",
+    "tree",
+    "wind"
+  ],
+  "n_questions": 50,
+  "answer_axis_source": "lu-published",
+  "axis_validation": null,
+  "cos_native_vs_answer_band": {
+    "46": {
+      "ctx_native": 0.09541552513837814,
+      "prefix_native": 0.02971528470516205
+    },
+    "47": {
+      "ctx_native": 0.0841759443283081,
+      "prefix_native": 0.0034080026671290398
+    },
+    "48": {
+      "ctx_native": 0.0901147797703743,
+      "prefix_native": 0.04553474485874176
+    },
+    "49": {
+      "ctx_native": 0.10355774313211441,
+      "prefix_native": 0.043984122574329376
+    },
+    "50": {
+      "ctx_native": 0.09979666769504547,
+      "prefix_native": 0.032409679144620895
+    },
+    "51": {
+      "ctx_native": 0.07810696214437485,
+      "prefix_native": 0.03054315410554409
+    },
+    "52": {
+      "ctx_native": 0.07344967871904373,
+      "prefix_native": 0.03545253723859787
+    },
+    "53": {
+      "ctx_native": 0.06658954918384552,
+      "prefix_native": 0.028319934383034706
+    }
+  },
+  "artifact_sha256": {
+    "native_axes.pt": "efa71706b584e6ef",
+    "default_states.pt": "f596e7c12c95d07c",
+    "answer_axis.pt": "05785aa9929862d9",
+    "tau_map.json": "731fa7989051a358"
+  },
+  "deviations": {
+    "system_prompt_added": "paper case studies ran WITHOUT a system prompt; the default assistant system prompt is added so prefix-position arms are definable",
+    "decode": "greedy temp 0 (paper 32B: temp 0.7 / top_p 0.9)",
+    "tau_reuse": "Lu p0.25 all-token caps reused at context/prefix positions; layers without a published cap and native axes use extraction-derived p25 floors"
+  },
+  "metadata": {
+    "issue": 2223,
+    "timestamp_utc": "2026-08-17T16:31:13.387858+00:00",
+    "git_commit": "f740a15f",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2223/casestudy_replay/qwen3-32b/extractions/tau_map.json"
+    ],
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "label": "casestudy_replay"
+  }
+}

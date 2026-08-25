@@ -1,0 +1,21 @@
+---
+name: merge-reconciliation-review-compose
+description: Composing a Step 10d divergence-reconciliation merge review (#2253 r3) — parent-relative scoped diffs, zero-hand-edit premise as check 1, misleading-range warning, adapted gate-scope note
+metadata:
+  type: feedback
+---
+
+For a Step 10d pre-merge divergence-delta reconciliation round (#1771→#2201), the review is a MERGE-SEMANTICS check, not a feature review. Compose pattern (validated #2253 r3, 2026-08-21):
+
+- **Lead with the misleading-range warning.** `git diff <branch-tip>..HEAD` after a merge of main is main's own history (380 commits / ~29.8 MB on #2253) — ban the unscoped read explicitly, citing #521 (Codex flagged main-drift as churn and burned a reconciler round).
+- **Zero-hand-edit premise is check 1, verified not assumed.** `git diff-tree --cc HEAD` empty + `log -1 --format='%H %P'` parent pins. Every downstream "nothing to read" claim rests on it; if it fails, everything escalates.
+- **Diff acquisition = 4 scoped parent-relative diffs** (merge-base..each-parent for contributions; each-parent..HEAD for what the merge carries), all restricted to the gate-flagged overlap files. Dropped/mutated hunk in either direction = Critical `substantive`. Header literal: `sha-range <merge-sha> (merge, parent-relative, N-file scope)`.
+- **Set-equality registrations get an own-enumeration duty** (tuple vs manifest read statically), never "the pin test passed" — the asymmetric-drop hazard is exactly what auto-merges hide.
+- **Gate-scope on a pure merge:** the report legitimately carries an adapted `Gate-scope note` (no hand-written lines ⇒ no changed literals to sweep). Score PRESENT-but-adapted → at most CONCERNS; the diff-consistency half collapses into the zero-hand-edit check.
+- Round-matched `epm:results` marker DID exist for the reconciliation round (posted by the gate's dispatch) — probe events.jsonl before assuming the follow-up-round placeholder path.
+
+**Why:** the gate's own rationale is that a semantic collision can merge textually clean; the composed prompt must make Codex answer that question and nothing else, or it drowns in main's history.
+
+**How to apply:** any round whose brief names a reconciliation/merge commit and parent SHAs. See also [[revision-round-compose-recipe]] and [[stale-base-mb-pin-and-fixture-remeasure]].
+
+**HAND-RESOLVED variant (#2263 r9, 2026-08-23) — conflict resolutions present, so the zero-hand-edit premise INVERTS:** the combined `--cc` diff is non-empty and IS the review surface (`git show <merge>`; verify the exact file list via `git diff-tree --cc --name-only` — the merge's `git show --stat` list is first-parent-relative and misleading). Structure the prompt as four charges: (Q1) both-sides preservation per semantic file — composer verifies the main-added-line DENOMINATOR (grep '^+' non-empty on merge-base..main-tip) and hands the presence sweep to the twin as own-enumeration; (Q2) each DECLARED contradiction choice gets a soundness + splice-point-coherence duty with the dropped line quoted verbatim in a FENCED block (the lines carry backticks — never nest them in prose backticks); (Q3) a hook-forced memory rebuild gets a no-lost-row duty vs BOTH parents' blobs (`- [` rows for MEMORY.md indexes, `**`-led headings for feedback files), with the transient union size declared unverifiable — evaluate the REBUILD; (Q4) no-new-defects: re-measured grandfather arithmetic on the merged tree, composer-attested ruff, conflict-marker greps, combined-diff closure + branch-deliverable files verified untouched via `<branch-parent>..<merge>` empty diffs. Three traps re-hit live: the r4 bare-substring trap (grep "plus any" hit 1 UNRELATED line while the exact dropped line counted 0 — always probe the EXACT line and pre-clear the substring hit in the prompt); duplicated entries in the composer's OWN memory file looked merge-created but pre-existed on main's blob (probe counts at both parents before flagging — pre-seed Step 0.9 pre-existing-on-trunk); open NITs from prior rounds get the #2205 three-way vocabulary with ONE merge-armed check when a merge hunk touches a NIT's subject file (NIT-capped). Tags narrowed to `substantive`|`git-provenance`|`data-access-blocked`; marker-shape/smoke invalidated (reconciliation-report shape); sentinel = review-round number per brief (== max-posted+1 continuity).

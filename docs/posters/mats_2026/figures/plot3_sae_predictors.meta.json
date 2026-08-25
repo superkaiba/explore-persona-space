@@ -1,0 +1,122 @@
+{
+  "commit": "8add0009+dirty",
+  "render_id": "3d0d6ba6b3414466",
+  "git_commit": "8add0009e5265054e84037875be5184374201fce",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
+    "docs/posters/mats_2026/make_plot1_scaling.py",
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/make_plot5_stages.py",
+    "docs/posters/mats_2026/make_plot9_application_arms.py",
+    "docs/posters/mats_2026/poster.tex",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot3_sae.py",
+  "created": "2026-08-21T10:32:59Z",
+  "figsize": [
+    8.6,
+    2.6
+  ],
+  "points": [
+    {
+      "concordance with per-feature $R^2$": 0.7661972479370571,
+      "y": 5.5,
+      "series": "activity control",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "concordance with per-feature $R^2$": 0.671071865941933,
+      "y": 4.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$": 0.3506382171724266,
+      "y": 3.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$": 0.3579250110621134,
+      "y": 2.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$": 0.3741093306936152,
+      "y": 1.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$": 0.6376335568667659,
+      "y": 0.0,
+      "series": "coarsest tier (activity-matched)",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "concordance with per-feature $R^2$",
+        "legend_labels": [
+          "activity control",
+          "winner after rows above",
+          "coarsest tier (activity-matched)"
+        ],
+        "xticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "mean activation",
+          "related to speaker identity",
+          "suppresses a few tokens",
+          "boosts a few tokens",
+          "related to topic",
+          "coarsest tier"
+        ]
+      }
+    ],
+    "series": [
+      "activity control",
+      "winner after rows above",
+      "coarsest tier (activity-matched)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

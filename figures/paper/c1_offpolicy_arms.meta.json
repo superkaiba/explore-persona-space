@@ -1,0 +1,307 @@
+{
+  "commit": "37b811b6+dirty",
+  "render_id": "1e398d962c3d464c",
+  "git_commit": "37b811b6ea0ceade427cf7d3cd949d8c9a00b6dc",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
+    "figures/paper/c3_overlap_ksweep.meta.json",
+    "figures/paper/c3_overlap_ksweep.pdf",
+    "figures/paper/c3_overlap_ksweep.png",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue823_figures.py",
+  "created": "2026-08-20T08:10:23Z",
+  "figsize": [
+    5.5,
+    2.8600000000000003
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "held-out refit $R^2$": 0.5988290884118461,
+      "error": 0.010100737829239925,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "held-out refit $R^2$": 0.6080161650744824,
+      "error": 0.007001236383246234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.715,
+      "held-out refit $R^2$": 0.6260118332433705,
+      "error": 0.009104686195368639,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "held-out refit $R^2$": 0.5845818410435927,
+      "error": 0.023275785262596438,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "held-out refit $R^2$": 0.5559560884817063,
+      "error": 0.014746572040433725,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.905,
+      "held-out refit $R^2$": 0.5911089915529909,
+      "error": 0.020952750032126044,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "held-out refit $R^2$": 0.472476903724819,
+      "error": 0.013502094582724222,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "held-out refit $R^2$": 0.4675077227954585,
+      "error": 0.01983817161049739,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.095,
+      "held-out refit $R^2$": 0.5056526516971603,
+      "error": 0.01420017047270239,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "held-out refit $R^2$": 0.003888826175458693,
+      "error": 0.002318169542659499,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "held-out refit $R^2$": -0.008103530713130613,
+      "error": 0.0015833024731830361,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.285,
+      "held-out refit $R^2$": 0.006560727494076546,
+      "error": 0.0029706271909237403,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.28500000000000003,
+      "held-out refit $R^2$": 0.5887283505826062,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.715,
+      "held-out refit $R^2$": 0.6010149286912362,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7149999999999999,
+      "held-out refit $R^2$": 0.6169071470480019,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.28500000000000003,
+      "held-out refit $R^2$": 0.608929826241086,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.715,
+      "held-out refit $R^2$": 0.6150174014577287,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.7149999999999999,
+      "held-out refit $R^2$": 0.6351165194387391,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.095,
+      "held-out refit $R^2$": 0.5613060557809962,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.905,
+      "held-out refit $R^2$": 0.5412095164412726,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.905,
+      "held-out refit $R^2$": 0.5701562415208649,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.095,
+      "held-out refit $R^2$": 0.6078576263061891,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.905,
+      "held-out refit $R^2$": 0.57070266052214,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.905,
+      "held-out refit $R^2$": 0.612061741585117,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.095,
+      "held-out refit $R^2$": 0.45897480914209476,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.095,
+      "held-out refit $R^2$": 0.4476695511849611,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.095,
+      "held-out refit $R^2$": 0.49145248122445795,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.095,
+      "held-out refit $R^2$": 0.4859789983075432,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.095,
+      "held-out refit $R^2$": 0.4873458944059559,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.095,
+      "held-out refit $R^2$": 0.5198528221698627,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.28500000000000003,
+      "held-out refit $R^2$": 0.0015706566327991938,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.2850000000000001,
+      "held-out refit $R^2$": -0.00968683318631365,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.285,
+      "held-out refit $R^2$": 0.003590100303152805,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.28500000000000003,
+      "held-out refit $R^2$": 0.0062069957181181915,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.2850000000000001,
+      "held-out refit $R^2$": -0.006520228239947577,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.285,
+      "held-out refit $R^2$": 0.009531354685000286,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out refit $R^2$",
+        "legend_labels": [
+          "own answer $\\to$ plain answer map",
+          "own answer (regenerated)",
+          "external answer (plain style)",
+          "external answer (distinct style)",
+          "mismatched answer (shuffled)"
+        ],
+        "xticklabels": [
+          "evil\n(read-out layer 14)",
+          "sycophancy\n(read-out layer 26)",
+          "hallucination\n(read-out layer 17)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "own answer (regenerated)",
+      "external answer (plain style)",
+      "external answer (distinct style)",
+      "mismatched answer (shuffled)",
+      "own answer $\\to$ plain answer map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

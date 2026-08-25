@@ -1,0 +1,280 @@
+{
+  "commit": "7927167a",
+  "render_id": "6da57837aabd4a6a",
+  "git_commit": "7927167a",
+  "git_dirty": false,
+  "created": "2026-08-20T03:10:48Z",
+  "figsize": [
+    32.8,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "unsteered",
+      "axis projection (band mean secondary, mean over turns)": -65.51774361405684,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_alltoken",
+      "axis projection (band mean secondary, mean over turns)": -1.0916175965786628,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p50",
+      "axis projection (band mean secondary, mean over turns)": -65.81243497521982,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p75",
+      "axis projection (band mean secondary, mean over turns)": -62.94614811176839,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p90",
+      "axis projection (band mean secondary, mean over turns)": -54.47396557502773,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p100",
+      "axis projection (band mean secondary, mean over turns)": -58.21383939327105,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctx",
+      "axis projection (band mean secondary, mean over turns)": -65.1744148199973,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k1",
+      "axis projection (band mean secondary, mean over turns)": -67.82997631767522,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k2",
+      "axis projection (band mean secondary, mean over turns)": -62.119691940753356,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k4",
+      "axis projection (band mean secondary, mean over turns)": -62.50850643214274,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k8",
+      "axis projection (band mean secondary, mean over turns)": -64.3784301481817,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p50",
+      "axis projection (band mean secondary, mean over turns)": -52.11097596772015,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p75",
+      "axis projection (band mean secondary, mean over turns)": -58.05715343712465,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p90",
+      "axis projection (band mean secondary, mean over turns)": -63.27957455129565,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p100",
+      "axis projection (band mean secondary, mean over turns)": -61.373210677958056,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxnat",
+      "axis projection (band mean secondary, mean over turns)": -64.88049644361372,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k1",
+      "axis projection (band mean secondary, mean over turns)": -62.48546192957007,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k2",
+      "axis projection (band mean secondary, mean over turns)": -60.566054228855215,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k4",
+      "axis projection (band mean secondary, mean over turns)": -61.839914906284086,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k8",
+      "axis projection (band mean secondary, mean over turns)": -65.69171639305094,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p50",
+      "axis projection (band mean secondary, mean over turns)": -47.15985862457234,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p75",
+      "axis projection (band mean secondary, mean over turns)": -60.15192980805169,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p90",
+      "axis projection (band mean secondary, mean over turns)": -57.17571214440724,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p100",
+      "axis projection (band mean secondary, mean over turns)": -60.41227541181623,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxfaith",
+      "axis projection (band mean secondary, mean over turns)": -56.64782997998206,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k1",
+      "axis projection (band mean secondary, mean over turns)": -63.61778917131217,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k2",
+      "axis projection (band mean secondary, mean over turns)": -63.60733292478582,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k4",
+      "axis projection (band mean secondary, mean over turns)": -62.72313516813776,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k8",
+      "axis projection (band mean secondary, mean over turns)": -59.66732543002328,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p50",
+      "axis projection (band mean secondary, mean over turns)": -67.50444630177125,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p75",
+      "axis projection (band mean secondary, mean over turns)": -65.83507471977045,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p90",
+      "axis projection (band mean secondary, mean over turns)": -60.41197526598673,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p100",
+      "axis projection (band mean secondary, mean over turns)": -61.375701546669006,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxpre",
+      "axis projection (band mean secondary, mean over turns)": -64.16253295022508,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k1",
+      "axis projection (band mean secondary, mean over turns)": -67.5759477900422,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k2",
+      "axis projection (band mean secondary, mean over turns)": -57.316143524185144,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k4",
+      "axis projection (band mean secondary, mean over turns)": -56.93408602617843,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k8",
+      "axis projection (band mean secondary, mean over turns)": -67.26234556021898,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 38,
+  "text": {
+    "suptitle": "delusion \u2014 per-arm average",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "band layers",
+        "ylabel": "axis projection (band mean secondary, mean over turns)",
+        "legend_labels": [
+          "anchor",
+          "answer",
+          "ctx_native",
+          "prefix_native",
+          "ctx_faithful",
+          "ctx_preimage",
+          "unsteered (s42)",
+          "cap_alltoken (s42)"
+        ],
+        "xticklabels": [
+          "unsteered",
+          "cap_alltoken",
+          "cap_ctx_p50",
+          "cap_ctx_p75",
+          "cap_ctx_p90",
+          "cap_ctx_p100",
+          "axisrep_ctx",
+          "steer_ctx_k1",
+          "steer_ctx_k2",
+          "steer_ctx_k4",
+          "steer_ctx_k8",
+          "cap_ctxnat_p50",
+          "cap_ctxnat_p75",
+          "cap_ctxnat_p90",
+          "cap_ctxnat_p100",
+          "axisrep_ctxnat",
+          "steer_ctxnat_k1",
+          "steer_ctxnat_k2",
+          "steer_ctxnat_k4",
+          "steer_ctxnat_k8",
+          "cap_ctxfaith_p50",
+          "cap_ctxfaith_p75",
+          "cap_ctxfaith_p90",
+          "cap_ctxfaith_p100",
+          "axisrep_ctxfaith",
+          "steer_ctxfaith_k1",
+          "steer_ctxfaith_k2",
+          "steer_ctxfaith_k4",
+          "steer_ctxfaith_k8",
+          "cap_ctxpre_p50",
+          "cap_ctxpre_p75",
+          "cap_ctxpre_p90",
+          "cap_ctxpre_p100",
+          "axisrep_ctxpre",
+          "steer_ctxpre_k1",
+          "steer_ctxpre_k2",
+          "steer_ctxpre_k4",
+          "steer_ctxpre_k8"
+        ],
+        "yticklabels": [
+          "\u221280",
+          "\u221270",
+          "\u221260",
+          "\u221250",
+          "\u221240",
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

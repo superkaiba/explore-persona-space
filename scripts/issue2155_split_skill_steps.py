@@ -172,6 +172,7 @@ def main() -> int:
     SKILL.write_text("\n".join(router), encoding="utf-8")
 
     sys.path.insert(0, str(REPO_ROOT / "tests"))
+    # PROD_IMPORT_LINT_EXEMPT: tests/ helper imported post-sys.path-split; not a lockfile dep
     import issue_skill_source  # noqa: E402  (repo tests/ helper, imported post-split)
 
     composed = issue_skill_source.issue_skill_text()

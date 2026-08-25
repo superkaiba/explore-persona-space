@@ -1,0 +1,33 @@
+{
+  "g1": "PASS",
+  "armb": {
+    "n_fit": 24000,
+    "n_score": 6000,
+    "selected_lambda": 3162.2776601683795,
+    "val_r2": 0.6707233205251071,
+    "n_alive": 412,
+    "alive_floor": 240,
+    "densein_selected_lambda": 3162.2776601683795
+  },
+  "dense_companion_c": {
+    "n_alive": 879,
+    "alive_floor": 1200,
+    "n_fit_rows": 120000,
+    "selected_lambda": 1000.0,
+    "val_r2": 0.6909688736471606
+  },
+  "identity_bias_note_dense_companion": "identity+bias inapplicable for the dense-input companions (d_in 3584 != d_out n_alive; stated per the mapping-baselines rule)",
+  "ib_convention": "bias fit on the refit_holdout train rows (map-matched)",
+  "armb_ib_convention": "bias fit on the arm-b ridge tr rows (carve-matched)",
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:27:54.348563Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "maps",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}

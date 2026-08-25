@@ -1,0 +1,280 @@
+{
+  "commit": "7927167a",
+  "render_id": "7160d5758f384d64",
+  "git_commit": "7927167a",
+  "git_dirty": false,
+  "created": "2026-08-20T03:11:02Z",
+  "figsize": [
+    32.8,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "unsteered",
+      "axis projection (layer 32 primary, mean over turns)": -42.09780453097436,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_alltoken",
+      "axis projection (layer 32 primary, mean over turns)": -16.66343190593104,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p50",
+      "axis projection (layer 32 primary, mean over turns)": -39.632286071777344,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p75",
+      "axis projection (layer 32 primary, mean over turns)": -39.336789346510365,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p90",
+      "axis projection (layer 32 primary, mean over turns)": -39.32439219567083,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p100",
+      "axis projection (layer 32 primary, mean over turns)": -38.939939252791866,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctx",
+      "axis projection (layer 32 primary, mean over turns)": -39.89618424446352,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k1",
+      "axis projection (layer 32 primary, mean over turns)": -41.68840980529785,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k2",
+      "axis projection (layer 32 primary, mean over turns)": -41.39599793957126,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k4",
+      "axis projection (layer 32 primary, mean over turns)": -38.66009742982926,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k8",
+      "axis projection (layer 32 primary, mean over turns)": -40.238739936582505,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p50",
+      "axis projection (layer 32 primary, mean over turns)": -38.48664622153005,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p75",
+      "axis projection (layer 32 primary, mean over turns)": -39.757181106075166,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p90",
+      "axis projection (layer 32 primary, mean over turns)": -40.075077979795395,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p100",
+      "axis projection (layer 32 primary, mean over turns)": -40.614682905135616,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxnat",
+      "axis projection (layer 32 primary, mean over turns)": -39.74257715286747,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k1",
+      "axis projection (layer 32 primary, mean over turns)": -39.63793040860084,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k2",
+      "axis projection (layer 32 primary, mean over turns)": -37.918176881728634,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k4",
+      "axis projection (layer 32 primary, mean over turns)": -38.85777433456913,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k8",
+      "axis projection (layer 32 primary, mean over turns)": -39.78301897356587,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p50",
+      "axis projection (layer 32 primary, mean over turns)": -37.092683053785755,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p75",
+      "axis projection (layer 32 primary, mean over turns)": -33.90000294100854,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p90",
+      "axis projection (layer 32 primary, mean over turns)": -38.575337748373705,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p100",
+      "axis projection (layer 32 primary, mean over turns)": -37.87913119408392,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxfaith",
+      "axis projection (layer 32 primary, mean over turns)": -37.529933314169604,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k1",
+      "axis projection (layer 32 primary, mean over turns)": -40.42927846600932,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k2",
+      "axis projection (layer 32 primary, mean over turns)": -40.85414554226783,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k4",
+      "axis projection (layer 32 primary, mean over turns)": -40.6563275552565,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k8",
+      "axis projection (layer 32 primary, mean over turns)": -42.028006522886216,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p50",
+      "axis projection (layer 32 primary, mean over turns)": -40.62481000346522,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p75",
+      "axis projection (layer 32 primary, mean over turns)": -40.506275423111454,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p90",
+      "axis projection (layer 32 primary, mean over turns)": -40.02596947454637,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p100",
+      "axis projection (layer 32 primary, mean over turns)": -41.69786723967521,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxpre",
+      "axis projection (layer 32 primary, mean over turns)": -41.973876830070246,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k1",
+      "axis projection (layer 32 primary, mean over turns)": -41.73504897086851,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k2",
+      "axis projection (layer 32 primary, mean over turns)": -41.20291777580015,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k4",
+      "axis projection (layer 32 primary, mean over turns)": -41.82878026654643,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k8",
+      "axis projection (layer 32 primary, mean over turns)": -40.64946783742597,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 38,
+  "text": {
+    "suptitle": "selfharm \u2014 per-arm average",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "band layers",
+        "ylabel": "axis projection (layer 32 primary, mean over turns)",
+        "legend_labels": [
+          "anchor",
+          "answer",
+          "ctx_native",
+          "prefix_native",
+          "ctx_faithful",
+          "ctx_preimage",
+          "unsteered (s42)",
+          "cap_alltoken (s42)"
+        ],
+        "xticklabels": [
+          "unsteered",
+          "cap_alltoken",
+          "cap_ctx_p50",
+          "cap_ctx_p75",
+          "cap_ctx_p90",
+          "cap_ctx_p100",
+          "axisrep_ctx",
+          "steer_ctx_k1",
+          "steer_ctx_k2",
+          "steer_ctx_k4",
+          "steer_ctx_k8",
+          "cap_ctxnat_p50",
+          "cap_ctxnat_p75",
+          "cap_ctxnat_p90",
+          "cap_ctxnat_p100",
+          "axisrep_ctxnat",
+          "steer_ctxnat_k1",
+          "steer_ctxnat_k2",
+          "steer_ctxnat_k4",
+          "steer_ctxnat_k8",
+          "cap_ctxfaith_p50",
+          "cap_ctxfaith_p75",
+          "cap_ctxfaith_p90",
+          "cap_ctxfaith_p100",
+          "axisrep_ctxfaith",
+          "steer_ctxfaith_k1",
+          "steer_ctxfaith_k2",
+          "steer_ctxfaith_k4",
+          "steer_ctxfaith_k8",
+          "cap_ctxpre_p50",
+          "cap_ctxpre_p75",
+          "cap_ctxpre_p90",
+          "cap_ctxpre_p100",
+          "axisrep_ctxpre",
+          "steer_ctxpre_k1",
+          "steer_ctxpre_k2",
+          "steer_ctxpre_k4",
+          "steer_ctxpre_k8"
+        ],
+        "yticklabels": [
+          "\u221245",
+          "\u221240",
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

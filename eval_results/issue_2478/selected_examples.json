@@ -1,0 +1,357 @@
+{
+  "task": 2478,
+  "generated_at": "2026-08-22T22:15:49+00:00",
+  "git_commit": "bfca77a322a6fdc8c5cad2093b77b24a79d27ad5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/paper_context_answer_map/qualitative_examples.md",
+    "figures/paper/appendix_patching_examples.meta.json",
+    "figures/paper/appendix_patching_examples.pdf",
+    "figures/paper/appendix_patching_examples.png",
+    "figures/paper/c3_qualitative_discrimination.meta.json",
+    "figures/paper/c3_qualitative_discrimination.pdf",
+    "figures/paper/c3_qualitative_discrimination.png",
+    "scripts/issue2478_qualitative_panels.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2478_qualitative_panels.py",
+  "env": {
+    "python": "3.12.13",
+    "numpy": "2.2.6",
+    "matplotlib": "3.10.8"
+  },
+  "revisions": {
+    "issue2162_ctxinfo": "dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+    "issue2202_ctxfail": "ab268958343380945354e871bfb5666668c6d5bb",
+    "issue2094_singlepos": "867f4284c8bd8f65401715beb2a8b80e77ed7750"
+  },
+  "seeds": {
+    "panel1_example4_rng": "numpy default_rng(42) over ci-sorted candidates"
+  },
+  "figures": {
+    "discrimination": {
+      "png": "figures/paper/c3_qualitative_discrimination.png",
+      "pdf": "figures/paper/c3_qualitative_discrimination.pdf",
+      "meta": "figures/paper/c3_qualitative_discrimination.meta.json"
+    },
+    "patching": {
+      "png": "figures/paper/appendix_patching_examples.png",
+      "pdf": "figures/paper/appendix_patching_examples.pdf",
+      "meta": "figures/paper/appendix_patching_examples.meta.json"
+    }
+  },
+  "panels": {
+    "discrimination": [
+      {
+        "example_id": "recency_prior_topic_d3::v3-v1::e10",
+        "title": "Topic changed 3 turns back (hiking vs birthday) — distinguished",
+        "verdict": "works",
+        "score_label": "margins +0.0562 / +0.0111",
+        "scores": {
+          "margin_cos_a": 0.056247625931741485,
+          "margin_cos_b": 0.011056953954202364
+        },
+        "selection_rule": "plan §4: the clean-result's disclosed examples, re-verified against dv3_pairs.jsonl — clean-result seed-42 draw #1 from the 751 correct-both-directions pairs; margins asserted to 4 decimals",
+        "provenance": {
+          "issue": 2215,
+          "pair_id": "recency_prior_topic_d3::v3-v1::e10",
+          "scores": "eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)",
+          "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_a": "issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w4.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_b": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w5.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
+        },
+        "substitutions": [
+          "context A answer shown in full",
+          "context B answer shown in full"
+        ]
+      },
+      {
+        "example_id": "constraint_knowledge::v1-v2::e6",
+        "title": "Internet access denied vs allowed (system prompt) — distinguished",
+        "verdict": "works",
+        "score_label": "margins +0.0138 / +0.0079",
+        "scores": {
+          "margin_cos_a": 0.013764976211054214,
+          "margin_cos_b": 0.00793712742270447
+        },
+        "selection_rule": "plan §4: the clean-result's disclosed examples, re-verified against dv3_pairs.jsonl — clean-result seed-42 draw #2 from the 751 correct-both-directions pairs; margins asserted to 4 decimals",
+        "provenance": {
+          "issue": 2215,
+          "pair_id": "constraint_knowledge::v1-v2::e6",
+          "scores": "eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)",
+          "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_a": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w5.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_b": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w6.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
+        },
+        "substitutions": [
+          "context A answer truncated to 48 words on figure ([…]); shown in full in doc",
+          "context B answer truncated to 48 words on figure ([…]); shown in full in doc",
+          "figure-side line-cap cut the header 'Context A — system-prompt knowledge cons' to 2 line(s) ([…]); the companion doc carries the fuller text"
+        ]
+      },
+      {
+        "example_id": "recency_prior_topic_d5::v1-v2::e9",
+        "title": "Topic changed 5 turns back — confused (the only both-ways miss of 1,404)",
+        "verdict": "fails",
+        "score_label": "margins -0.0002 / -0.0008",
+        "scores": {
+          "margin_cos_a": -0.0002293228352292509,
+          "margin_cos_b": -0.0007687619470229112
+        },
+        "selection_rule": "plan §4: the clean-result's disclosed examples, re-verified against dv3_pairs.jsonl — the unique pair of 1,404 misclassified in both directions; margins asserted to 4 decimals",
+        "provenance": {
+          "issue": 2215,
+          "pair_id": "recency_prior_topic_d5::v1-v2::e9",
+          "scores": "eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)",
+          "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_a": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w0.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_b": "issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w6.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
+        },
+        "substitutions": [
+          "context A answer truncated to 48 words on figure / 140 in doc ([…])",
+          "context B answer truncated to 48 words on figure / 140 in doc ([…])",
+          "figure-side line-cap cut the passage under 'Context A — earlier topic, 5 turns back:' to 6 line(s) ([…]); the companion doc carries the fuller text",
+          "figure-side line-cap cut the passage under 'Context B — earlier topic, 5 turns back:' to 6 line(s) ([…]); the companion doc carries the fuller text"
+        ]
+      },
+      {
+        "example_id": "ci44114",
+        "title": "Real conversation, retrieved correctly",
+        "verdict": "works",
+        "score_label": "retrieved rank 1 of 9,941",
+        "scores": {
+          "rank_raw_euclidean": 1.0
+        },
+        "selection_rule": "plan §4: numpy default_rng(42) permutation over the ci-sorted 410 rows with rank_raw_euclidean==1 AND in_sample500==1, first row eligible under the #1738 label exclusion predicate",
+        "provenance": {
+          "issue": 2202,
+          "ci": 44114,
+          "ranks": "eval_results/issue_2202/percontext_ranks.csv (git)",
+          "labels": "eval_results/issue_1738/judge_labels/labels.json (git)",
+          "text": "issue2202_ctxfail/dashboard_rows/sample500_rows.shard00.jsonl @ ab268958343380945354e871bfb5666668c6d5bb",
+          "judge_label": {
+            "language": "en",
+            "topic": "chitchat_social",
+            "request_refusal_adjacent": "no",
+            "answer_is_refusal": "no",
+            "format": "prose"
+          }
+        },
+        "substitutions": [
+          "last_user shown in full",
+          "response shown in full"
+        ]
+      },
+      {
+        "example_id": "ci2968",
+        "title": "Spanish travel plan confused with a Portuguese itinerary",
+        "verdict": "fails",
+        "score_label": "true answer rank 4",
+        "scores": {
+          "rank": 4.0,
+          "confuser_rank_ctx": 4.0,
+          "confuser_rank_ans": 5.0
+        },
+        "selection_rule": "from #2202's disclosed seed-42 rank-1-failure sample (plan §4 example 5)",
+        "provenance": {
+          "issue": 2202,
+          "ci": 2968,
+          "confusion": "eval_results/issue_2202/failures_confusion.json (git)",
+          "labels": "eval_results/issue_1738/judge_labels/labels.json (git)",
+          "text": "issue2202_ctxfail/dashboard_rows/failures_rows.shard00.jsonl @ ab268958343380945354e871bfb5666668c6d5bb",
+          "judge_label": {
+            "language": "es",
+            "topic": "advice_howto",
+            "request_refusal_adjacent": "no",
+            "answer_is_refusal": "no",
+            "format": "list"
+          },
+          "confuser_ci": 30290,
+          "confuser_note": "confuser text is NOT re-read here (the confuser is not itself a failure row, so it has no row in the staged failures_rows shards); identified by its stored ranks + #1738 judge label"
+        },
+        "substitutions": [
+          "last_user shown in full",
+          "response truncated to 25 words on figure / 60 in doc ([…])"
+        ]
+      },
+      {
+        "example_id": "ci11905",
+        "title": "Sentence-completion request confused with a transliteration explainer",
+        "verdict": "fails",
+        "score_label": "true answer rank 7",
+        "scores": {
+          "rank": 7.0,
+          "confuser_rank_ctx": 1575.0,
+          "confuser_rank_ans": 22.0
+        },
+        "selection_rule": "same-population deterministic neighbor swap: plan §4 named ci 67690, whose #1738 judge label reads request_refusal_adjacent=borderline — ineligible under the plan's own display policy; swapped to ci 11905, the remaining member of #2202's disclosed seed-42 rank-1-failure sample (allowed deviation, disclosed)",
+        "provenance": {
+          "issue": 2202,
+          "ci": 11905,
+          "confusion": "eval_results/issue_2202/failures_confusion.json (git)",
+          "labels": "eval_results/issue_1738/judge_labels/labels.json (git)",
+          "text": "issue2202_ctxfail/dashboard_rows/failures_rows.shard00.jsonl @ ab268958343380945354e871bfb5666668c6d5bb",
+          "judge_label": {
+            "language": "en",
+            "topic": "creative_writing",
+            "request_refusal_adjacent": "no",
+            "answer_is_refusal": "no",
+            "format": "prose"
+          },
+          "confuser_ci": 71880,
+          "confuser_note": "confuser text is NOT re-read here (the confuser is not itself a failure row, so it has no row in the staged failures_rows shards); identified by its stored ranks + #1738 judge label"
+        },
+        "substitutions": [
+          "last_user shown in full",
+          "response truncated to 25 words on figure / 60 in doc ([…])"
+        ]
+      }
+    ],
+    "patching": [
+      {
+        "example_id": "mq--bare__q4--persona__q4",
+        "title": "Pirate persona transfers through one patched position (all 28 layers)",
+        "verdict": "works",
+        "score_label": "F = 0.69",
+        "scores": {
+          "f_beh": 0.6945337653160095,
+          "read_block": "prefix"
+        },
+        "selection_rule": "plan §4: reused from the committed curated set (docs/notes/2026-08-10 writeup § Qualitative examples; curation disclosed as such); F re-verified against eval_results/issue_2094/f_metrics (|ΔF| ≤ 0.01)",
+        "provenance": {
+          "issue": 2094,
+          "pair_id": "mq--bare__q4--persona__q4",
+          "block_key": "ce|joint_all|replace|A|steered",
+          "scores": "eval_results/issue_2094/f_metrics/f_cells.jsonl (git)",
+          "unpatched": "issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)",
+          "patched": "issue2094_singlepos/raw_completions/grid/shard_ce__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
+        },
+        "substitutions": [
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
+        ]
+      },
+      {
+        "example_id": "mq--persona__q2--conv__q2",
+        "title": "Persona strips at a single layer (L16, α=1)",
+        "verdict": "works",
+        "score_label": "F = 0.94",
+        "scores": {
+          "f_beh": 0.9407582879066467,
+          "read_block": "prefix"
+        },
+        "selection_rule": "plan §4: reused from the committed curated set (docs/notes/2026-08-10 writeup § Qualitative examples; curation disclosed as such); F re-verified against eval_results/issue_2094/f_metrics (|ΔF| ≤ 0.01)",
+        "provenance": {
+          "issue": 2094,
+          "pair_id": "mq--persona__q2--conv__q2",
+          "block_key": "ce|L16|a1|A|steered",
+          "scores": "eval_results/issue_2094/f_metrics/f_cells.jsonl (git)",
+          "unpatched": "issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)",
+          "patched": "issue2094_singlepos/raw_completions/grid/shard_ce__L16__a1__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
+        },
+        "substitutions": [
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure ([…]); shown in full in doc"
+        ]
+      },
+      {
+        "example_id": "mp--persona__q1--persona__q4",
+        "title": "The asked question does NOT transfer through the context vector",
+        "verdict": "fails",
+        "score_label": "F = 0.01",
+        "scores": {
+          "f_beh": 0.00840858742594719,
+          "read_block": "query"
+        },
+        "selection_rule": "plan §4: reused from the committed curated set (docs/notes/2026-08-10 writeup § Qualitative examples; curation disclosed as such); F re-verified against eval_results/issue_2094/f_metrics (|ΔF| ≤ 0.01)",
+        "provenance": {
+          "issue": 2094,
+          "pair_id": "mp--persona__q1--persona__q4",
+          "block_key": "ce|joint_all|replace|A|steered",
+          "scores": "eval_results/issue_2094/f_metrics/f_cells.jsonl (git)",
+          "unpatched": "issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)",
+          "patched": "issue2094_singlepos/raw_completions/grid/shard_ce__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
+        },
+        "substitutions": [
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure ([…]); shown in full in doc"
+        ]
+      },
+      {
+        "example_id": "mq--persona__q1--conv__q1",
+        "title": "The same maximal patch at prefix-end does nothing",
+        "verdict": "fails",
+        "score_label": "F = 0.26",
+        "scores": {
+          "f_beh": 0.2637215256690979,
+          "read_block": "prefix"
+        },
+        "selection_rule": "plan §4: reused from the committed curated set (docs/notes/2026-08-10 writeup § Qualitative examples; curation disclosed as such); F re-verified against eval_results/issue_2094/f_metrics (|ΔF| ≤ 0.01)",
+        "provenance": {
+          "issue": 2094,
+          "pair_id": "mq--persona__q1--conv__q1",
+          "block_key": "pe|joint_all|replace|A|steered",
+          "scores": "eval_results/issue_2094/f_metrics/f_cells.jsonl (git)",
+          "unpatched": "issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)",
+          "patched": "issue2094_singlepos/raw_completions/grid/shard_pe__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
+        },
+        "substitutions": [
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
+        ]
+      },
+      {
+        "example_id": "mp--persona__q1--persona__q5",
+        "title": "Patching the question's OWN token states DOES swap the question (α=0.5)",
+        "verdict": "works",
+        "score_label": "F = 1.02",
+        "scores": {
+          "f_beh": 1.0210970640182495,
+          "read_block": "query"
+        },
+        "selection_rule": "plan §4: reused from the committed curated set (fu2 round); F re-verified against eval_results/issue_2094/f_metrics/fu2/fu2_cells.jsonl (|ΔF| ≤ 0.01, nested per-read-block f_beh['query'])",
+        "provenance": {
+          "issue": 2094,
+          "pair_id": "mp--persona__q1--persona__q5",
+          "block_key": "qtext|joint_all|a0.5|A|steered",
+          "scores": "eval_results/issue_2094/f_metrics/fu2/fu2_cells.jsonl (git)",
+          "unpatched": "issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)",
+          "patched": "issue2094_singlepos/raw_completions/fu2_span_slots/rollouts/shard_qtext__joint_all__a0p5__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
+        },
+        "substitutions": [
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
+        ]
+      },
+      {
+        "example_id": "instr_format::v1-v2::n1",
+        "title": "Stated formatting policy transfers (top pair of the one causal family)",
+        "verdict": "works",
+        "score_label": "F = 1.03",
+        "scores": {
+          "f_beh": 1.0253229974160207,
+          "family_f_steered_mean": 0.7072340885274486,
+          "family_f_shuffled_mean": 0.09251209440088044
+        },
+        "selection_rule": "plan §4: argmax f_beh over f_cells rows with cell==instr_format ∧ slot==ce ∧ arm==steered ∧ separation ≥ 1 ∧ n_coherent == n_draws (ties broken by pair_id); the row quotes the SELECTED pair's own stored f_beh — the family band (stats.json f_steered_mean/f_shuffled_mean) is caption-level, labeled family means",
+        "provenance": {
+          "issue": 2162,
+          "pair_id": "instr_format::v1-v2::n1",
+          "scores": "eval_results/issue_2162/f_metrics/f_cells.jsonl (git)",
+          "family_band": "eval_results/issue_2162/f_metrics/stats.json per_cell instr_format|ce",
+          "family_band_values": {
+            "f_steered_mean": 0.7072340885274486,
+            "f_shuffled_mean": 0.09251209440088044
+          },
+          "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "unpatched": "issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w2.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)",
+          "patched": "issue2162_ctxinfo/raw_completions/grid/shard_instr_format__ce__steered.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)"
+        },
+        "substitutions": [
+          "unpatched answer truncated to 48 words on figure ([…]); shown in full in doc",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
+        ]
+      }
+    ]
+  }
+}

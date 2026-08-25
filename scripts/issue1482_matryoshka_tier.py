@@ -2401,6 +2401,94 @@ def _verify_imports() -> int:
     return 0
 
 
+def _iclr_figure() -> int:
+    """Render the ICLR paper variant of the tier-gradient hero from COMMITTED artifacts.
+
+    Reads only eval_results/issue_1482/matryoshka_tier/ (per-feature R² panel +
+    tier_tests.json); no capture/fit state. Two panels: (a) per-tier median ± IQR
+    of per-feature held-out R² (chat dictionary, mean pooling) with the K=20
+    label-shuffle-null 97.5th-percentile line; (b) the same medians per
+    answer-side activity quintile — the gradient-survives-stratification view.
+    Writes figures/paper/c3_sae_tier_gradient.{png,pdf,meta.json}; the original
+    fig_hero_tier_profile stems are untouched.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_panels,
+        paper_color,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("iclr")
+    ev = PROJECT_ROOT / "eval_results" / "issue_1482" / "matryoshka_tier"
+    z = np.load(ev / "perfeature_m_lmsys_default.npz")
+    r2_all = np.asarray(z["r2"], np.float64)
+    ok = np.isfinite(r2_all)
+    r2 = r2_all[ok]
+    tier = np.asarray(z["tier"], np.int64)[ok]
+    act = np.asarray(z["activity"], np.float64)[ok]
+    doc = json.loads((ev / "tier_tests.json").read_text())
+    null_hi = float(doc["shuffle_null"]["lmsys"]["p97_5"])
+    n_bins = 5 if doc["h1_tier_within_stratum"]["strata"] == "quintile" else 10
+    strata = _strata_of(act, n_bins)
+    cmap = matplotlib.colormaps["viridis"]
+    tier_col = {t: cmap(v) for t, v in zip((0, 1, 2), (0.15, 0.5, 0.8), strict=True)}
+    tier_lab = {0: "general tier", 1: "mid tier", 2: "specific tier"}
+
+    def _med_iqr(vals: np.ndarray) -> tuple[float, float, float]:
+        med = float(np.median(vals))
+        lo = max(0.0, med - float(np.percentile(vals, 25)))
+        hi = max(0.0, float(np.percentile(vals, 75)) - med)
+        return med, lo, hi
+
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.1))
+    for t in (0, 1, 2):
+        m, lo, hi = _med_iqr(r2[tier == t])
+        ax_a.errorbar([t], [m], yerr=[[lo], [hi]], fmt="o", ms=4, capsize=2, color=tier_col[t])
+    ax_a.axhline(null_hi, color=paper_color("null"), ls=":", lw=1)
+    ax_a.set_xticks([0, 1, 2], ["general", "mid", "specific"])
+    ax_a.set_xlim(-0.6, 2.6)
+    ax_a.set_xlabel("matryoshka tier")
+    ax_a.set_ylabel("per-feature held-out $R^2$")
+    for t in (0, 1, 2):
+        xs, meds, elo, ehi = [], [], [], []
+        for s_ in range(n_bins):
+            v = r2[(strata == s_) & (tier == t)]
+            if len(v) < 2:
+                continue
+            m, lo, hi = _med_iqr(v)
+            xs.append(s_)
+            meds.append(m)
+            elo.append(lo)
+            ehi.append(hi)
+        ax_b.errorbar(
+            xs,
+            meds,
+            yerr=[elo, ehi],
+            color=tier_col[t],
+            marker="o",
+            ms=3,
+            capsize=2,
+            lw=1.2,
+            label=tier_lab[t],
+        )
+    ax_b.axhline(
+        null_hi, color=paper_color("null"), ls=":", lw=1, label="label-shuffle null (97.5th pct)"
+    )
+    ax_b.set_xticks(range(n_bins), [str(i + 1) for i in range(n_bins)])
+    ax_b.set_xlabel("answer-side activity quintile")
+    ax_b.legend(fontsize=7)
+    savefig_paper(fig, "c3_sae_tier_gradient", dir="figures/paper/")
+    plt.close(fig)
+    print("[iclr-figure] wrote figures/paper/c3_sae_tier_gradient.{png,pdf,meta.json}", flush=True)
+    return 0
+
+
 def main() -> int:
     """Linear phase dispatcher (smoke IS this driver with tiny args — PASS_UNIFIED)."""
     ap = argparse.ArgumentParser(description="Issue #1482 matryoshka-tier driver (M0-M6).")
@@ -2444,9 +2532,16 @@ def main() -> int:
         action="store_true",
         help="execute every deferred import in this file, then exit (Axis-1 leg)",
     )
+    ap.add_argument(
+        "--iclr-figure",
+        action="store_true",
+        help="render the ICLR paper tier-gradient figure from committed eval_results, then exit",
+    )
     args = ap.parse_args()
     if args.verify_imports:
         return _verify_imports()
+    if args.iclr_figure:
+        return _iclr_figure()
 
     smoke_defaults = {
         "max_chunks": 2,

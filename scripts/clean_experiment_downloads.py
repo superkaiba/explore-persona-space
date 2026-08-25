@@ -197,10 +197,13 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+from explore_persona_space.backends.slurm import WORKING_TREE_OVERLAY_PATHS
 from explore_persona_space.orchestrate.env import is_shared_vm_env
 from explore_persona_space.task_workflow import (
     STATUSES,
@@ -513,19 +516,26 @@ def disk_guard_sidecar_path() -> Path:
     return _resolution_root() / DISK_GUARD_SIDECAR_REL
 
 
-def append_disk_guard_event(event: dict, *, apply: bool = True) -> None:
+def append_disk_guard_event(event: dict, *, apply: bool = True) -> bool:
     """Append one JSON line to the shared disk-guard sidecar (fail-soft).
 
     Used by every VM-disk escalation path so all disk events share one stream.
     A ``ts`` is stamped if the caller did not supply one. The parent dir is
     created idempotently. A write failure is logged loudly but NEVER raises —
     the sidecar is observability, and losing one escalation row must not crash
-    the cleanup / guard pass that emits it. ``apply=False`` reports only."""
+    the cleanup / guard pass that emits it. ``apply=False`` reports only.
+
+    Returns whether the caller's durable-emission obligation is DISCHARGED:
+    ``True`` on a successful append (or in report-only mode, where no durable
+    row is owed), ``False`` when the append FAILED — so a dedup/suppression
+    layer (#2147 D6 / review round 2 M2) can decline to record the event as
+    "alerted" and re-alert on the next pass instead of silently suppressing
+    an escalation that never landed."""
     row = {"ts": datetime.now().astimezone().isoformat(), **event}
     line = json.dumps(row)
     if not apply:
         print(f"  [report-only] would append disk-guard event: {line[:160]}", file=sys.stderr)
-        return
+        return True
     dest = disk_guard_sidecar_path()
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -533,6 +543,8 @@ def append_disk_guard_event(event: dict, *, apply: bool = True) -> None:
             fh.write(line + "\n")
     except OSError as exc:  # pragma: no cover - fail-soft I/O guard
         print(f"  WARNING: appending disk-guard event failed: {exc}", file=sys.stderr)
+        return False
+    return True
 
 
 def _data_root() -> Path:
@@ -1175,11 +1187,19 @@ def scratch_verdict_cache_path() -> Path:
     """Production location of the scratch-sweep verdict cache
     (``<main checkout>/.claude/cache/scratch-verify-cache.json``).
 
+    Env ``EPS_SCRATCH_VERDICT_CACHE`` overrides the location (#2147: the
+    report-mode acceptance run must never WRITE the production cache —
+    report mode legitimately caches verify work, so the override redirects
+    the cache instead of disabling it).
+
     main()-ONLY opt-in, the same hermeticity contract as
     :func:`production_tmp_root`: library callers default to ``None`` (no
     cache reads/writes), so tests never touch — nor are influenced by —
     the real cache. AST-pinned by
     ``tests/test_janitor_noncanonical_caches.py::test_production_tmp_root_only_in_mains``."""
+    raw = os.environ.get("EPS_SCRATCH_VERDICT_CACHE", "").strip()
+    if raw:
+        return Path(raw)
     return _resolution_root() / SCRATCH_VERDICT_CACHE_REL
 
 
@@ -1393,6 +1413,47 @@ def _git(
         return None
 
 
+def _git_bytes(
+    args: list[str],
+    *,
+    cwd: Path,
+    timeout: float = 120.0,
+) -> subprocess.CompletedProcess | None:
+    """Run ``git <args>`` in ``cwd`` with BINARY (bytes) output — the
+    PATH-PRODUCING sibling of :func:`_git` (#2147 round 8). ``text=True``
+    applies universal newlines, which silently rewrites a CR / CRLF inside
+    an emitted PATH to LF — a ghost path in the registration layer.
+    Callers decode via :func:`_decode_git_path`. Returns the completed
+    process, or ``None`` on timeout / OSError (callers fail toward keep).
+    A SIBLING by design: shared :func:`_git`'s signature and its tier-(f)
+    call shapes stay byte-identical (plan invariant K3)."""
+    try:
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(cwd),
+            capture_output=True,
+            timeout=timeout,
+        )
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return None
+
+
+def _decode_git_path(stdout: bytes) -> str | None:
+    """Decode ONE path-producing git stdout captured by :func:`_git_bytes`:
+    UTF-8 decode, then strip exactly ONE trailing LF (git terminates the
+    value with a single ``\\n``; every OTHER byte — CR and edge whitespace
+    included — is path content that ``.strip()`` would destroy, #2147
+    round 8). Returns ``None`` on undecodable or empty output (ambiguity —
+    callers fail toward keep)."""
+    try:
+        text = stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+    if text.endswith("\n"):
+        text = text[:-1]
+    return text or None
+
+
 def _git_first_missing_blob(main_repo: Path, shas: list[str]) -> int | None:
     """Batched blob-existence probe against ``main_repo``'s object database
     (``git cat-file --batch-check``, ~200 shas per call, short-circuiting).
@@ -1458,16 +1519,332 @@ def _git_dir_kind(cand: Path) -> tuple[str, Path | None]:
 
 def _worktree_admin_of_main(admin: Path, main_repo: Path) -> bool:
     """True iff ``admin`` is a REGISTERED linked-worktree admin dir of
-    ``main_repo`` (realpath under ``<git-common-dir>/worktrees/``)."""
-    proc = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo)
+    ``main_repo`` (realpath under ``<git-common-dir>/worktrees/``). The
+    common-dir path is read BYTE-EXACTLY (#2147 round 8 audit sibling: the
+    text-mode ``.strip()`` read mangled a CR / edge-whitespace repo path,
+    misclassifying every genuinely-ours admin dir as foreign — a
+    KEEP-direction failure, but a WRONG answer from an authoritative
+    layer-1 probe). Any probe/decode failure reads as not-ours (callers
+    treat that as foreign ⇒ KEEP)."""
+    proc = _git_bytes(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo)
     if proc is None or proc.returncode != 0:
+        return False
+    common = _decode_git_path(proc.stdout)
+    if common is None:
         return False
     try:
         admin_real = admin.resolve()
-        wt_root = (Path(proc.stdout.strip()) / "worktrees").resolve()
+        wt_root = (Path(common) / "worktrees").resolve()
     except OSError:
         return False
     return wt_root in admin_real.parents
+
+
+def _candidate_worktree_registration(cand: Path, main_repo: Path) -> tuple[str, Path | None]:
+    """PARSE-FREE per-candidate registration probe (#2147 round 6): reads
+    the CANDIDATE's own ``.git`` entry — never the newline-delimited
+    porcelain listing — so a worktree at ANY byte-exact path (embedded
+    newline included) is classified from its gitfile alone. The candidate
+    path is already known as a real path; nothing is ever recovered from a
+    listing. Classes:
+
+    - ``("ours", admin)`` — ``.git`` is a regular file whose ``gitdir:``
+      pointer (relative pointers resolved against the candidate dir;
+      realpath — never string-prefix matching on unresolved paths) names an
+      existing dir whose parent is THIS repo's
+      ``<git-common-dir>/worktrees`` (:func:`_worktree_admin_of_main`);
+    - ``("foreign", None)`` — a ``…/worktrees/<id>`` admin dir of some
+      OTHER repo (registered elsewhere — never ours to delete);
+    - ``("submodule", None)`` — resolves under a ``…/modules/…`` component:
+      a submodule gitfile is NOT a worktree registration;
+    - ``("clone", None)`` — ``.git`` is a real directory;
+    - ``("none", None)`` — no ``.git`` entry at all (candidate-side
+      evidence structurally absent — the R3-C1 pointer-deleted downgrade;
+      registration must then be proven ADMIN-side,
+      :func:`_admin_registered_worktree_paths`);
+    - ``("unreadable", None)`` — everything else (I/O error, symlink
+      ``.git``, unparseable pointer, dangling admin path, a gitdir target
+      that is neither a worktree admin nor a module). Callers KEEP
+      (fail-closed)."""
+    dotgit = cand / ".git"
+    try:
+        st = dotgit.lstat()
+    except FileNotFoundError:
+        return "none", None
+    except OSError:
+        return "unreadable", None
+    if stat.S_ISDIR(st.st_mode):
+        return "clone", None
+    if not stat.S_ISREG(st.st_mode):
+        return "unreadable", None
+    try:
+        # BINARY read + explicit decode (#2147 round 7 discipline): never let
+        # universal newlines rewrite path bytes inside the pointer value. A
+        # CR-corrupted value here fails toward "unreadable" (KEEP) rather
+        # than open, but the read discipline is uniform across every
+        # registration-feeding file read this task added.
+        text = dotgit.read_bytes().decode("utf-8")
+    except (OSError, UnicodeDecodeError):
+        return "unreadable", None
+    if not text.startswith("gitdir:"):
+        return "unreadable", None
+    value = text[len("gitdir:") :].strip()
+    if not value:
+        return "unreadable", None
+    admin = Path(value)
+    if not admin.is_absolute():
+        admin = cand / admin
+    try:
+        admin = Path(os.path.realpath(admin))
+        if not admin.is_dir():
+            return "unreadable", None
+    except OSError:
+        return "unreadable", None
+    parts = admin.parts
+    if len(parts) >= 2 and parts[-2] == "worktrees":
+        if _worktree_admin_of_main(admin, main_repo):
+            return "ours", admin
+        return "foreign", None
+    if "modules" in parts:
+        return "submodule", None
+    return "unreadable", None
+
+
+def _admin_registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
+    """PARSE-FREE admin-side registration enumeration (#2147 round 6): the
+    byte-exact registered-path set the porcelain listing structurally
+    cannot deliver. git stores ONE ``gitdir`` FILE per linked worktree at
+    ``<git-common-dir>/worktrees/<id>/gitdir`` whose content is
+    ``<worktree>/.git`` plus exactly one trailing newline — a per-record
+    FILE, not a newline-delimited list — so a worktree path containing ANY
+    byte (embedded newline included) is recovered exactly: read the file,
+    strip ONE trailing newline, take the dirname. The main working tree
+    (``rev-parse --show-toplevel``) is included. Returns realpaths, or
+    ``None`` on ANY probe failure (fail-toward-keep): failed rev-parse,
+    undecodable/empty rev-parse output, MISSING git common dir (an
+    unresolvable scan root — round 8), unreadable ``worktrees/`` dir,
+    unreadable/empty ``gitdir`` file.
+
+    Round 8 (round-5 cap residual, reproduced live): BOTH rev-parse
+    outputs are PATHS, so they are read through :func:`_git_bytes` — the
+    text-mode pipe translated a CR/CRLF inside the REPOSITORY'S OWN path
+    to LF, and ``.strip()`` ate genuine edge-whitespace path bytes; the
+    derived ``worktrees/`` root then named a directory that does not
+    exist, the ``FileNotFoundError`` was swallowed into ``entries = []``,
+    and the function returned a SUCCESSFUL-LOOKING set missing every real
+    registration. An INCOMPLETE authoritative set must be DISTINGUISHABLE
+    from "no linked worktrees": a missing COMMON DIR (the scan root's
+    parent) is ambiguity ⇒ ``None``; only a PRESENT common dir with an
+    absent ``worktrees/`` subdirectory is the legitimate empty shape.
+
+    This is the AUTHORITATIVE registration source for a candidate with NO
+    usable ``.git`` entry (deleted/replaced pointer — the R3-C1 downgrade
+    class), where :func:`_candidate_worktree_registration` is structurally
+    blind and the porcelain listing is poisoned by any newline-bearing
+    registered path (round-5 residual, coordinator-reproduced: a decoy dir
+    at the TRUNCATION of a newline path makes the hardened listing parse
+    "successfully" while the real registered path is absent)."""
+    common_proc = _git_bytes(
+        ["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=main_repo
+    )
+    if common_proc is None or common_proc.returncode != 0:
+        return None
+    top_proc = _git_bytes(["rev-parse", "--path-format=absolute", "--show-toplevel"], cwd=main_repo)
+    if top_proc is None or top_proc.returncode != 0:
+        return None
+    common_out = _decode_git_path(common_proc.stdout)
+    top_out = _decode_git_path(top_proc.stdout)
+    if common_out is None or top_out is None:
+        return None  # undecodable/empty path output — ambiguity keeps
+    paths: set[str] = set()
+    try:
+        common_dir = Path(common_out)
+        if not common_dir.is_dir():
+            # Round 8: the SCAN ROOT'S PARENT is missing — an unresolvable
+            # (or externally mutated) common dir is AMBIGUITY, never "no
+            # worktrees". Pre-fix this state was swallowed into
+            # ``entries = []``, returning a successful-looking INCOMPLETE
+            # set in a code path that licenses deletion.
+            return None
+        paths.add(os.path.realpath(top_out))
+        wt_root = common_dir / "worktrees"
+        try:
+            entries = list(os.scandir(wt_root))
+        except FileNotFoundError:
+            # Common dir PRESENT, ``worktrees/`` absent — the one
+            # legitimate "no linked worktrees registered" shape.
+            entries = []
+        for entry in entries:
+            if not entry.is_dir(follow_symlinks=False):
+                continue  # stray non-dir in worktrees/ — not a registration
+            # BINARY read + explicit decode (#2147 round 7, Codex R4-1):
+            # ``read_text`` uses universal newlines, silently translating a
+            # CR / CRLF inside the registered PATH into LF — a GHOST path
+            # enters the set and the REAL registration goes missing, failing
+            # this AUTHORITATIVE layer open. Decode failure ⇒ ``None``.
+            content = (Path(entry.path) / "gitdir").read_bytes().decode("utf-8")
+            if content.endswith("\n"):
+                content = content[:-1]  # exactly ONE trailing LF; embedded CR/LF are path bytes
+            if not content:
+                return None  # malformed registration — ambiguity keeps
+            pointer = Path(content)
+            if not pointer.is_absolute():
+                pointer = Path(entry.path) / pointer
+            paths.add(os.path.realpath(pointer.parent))
+    except (OSError, UnicodeDecodeError):
+        return None  # any unreadable registration poisons the proof — KEEP
+    return frozenset(paths)
+
+
+# `git worktree list --porcelain` record keys (#2147 round 4). Value keys
+# carry ` <payload>`; flag keys are bare, with `locked`/`prunable` optionally
+# carrying a ` <reason>` suffix. `branch` and `detached` are mutually
+# exclusive within a record, tracked under one slot ("headstate").
+_WORKTREE_PORCELAIN_VALUE_KEYS: dict[str, str] = {"HEAD ": "HEAD", "branch ": "headstate"}
+_WORKTREE_PORCELAIN_FLAG_KEYS: dict[str, str] = {
+    "detached": "headstate",
+    "bare": "bare",
+    "locked": "locked",
+    "prunable": "prunable",
+}
+
+
+def _registered_worktree_paths(main_repo: Path) -> frozenset[str] | None:
+    """Realpaths of EVERY working tree registered to ``main_repo`` — the main
+    working tree included — from ONE ``git worktree list --porcelain`` query
+    (#2147 review round 3 C1: the POSITIVE non-registration proof consulted
+    before any ``shutil.rmtree``). The listing is read from the admin-dir
+    metadata, so a registered worktree whose in-tree ``.git`` pointer was
+    deleted or replaced STILL appears (it merely shows as prunable) — exactly
+    the state the candidate-side class probes cannot see.
+
+    Round 4 (R3-C1/SIB-1): the porcelain is parsed in RECORD form and FAILS
+    CLOSED on ambiguity. git 2.34.1 (verified by live reproduction) emits
+    worktree paths RAW — space, tab, backslash, and double-quote all survive
+    unescaped on one line, and there is NO C-quoting — but a path containing
+    a NEWLINE necessarily SPLITS its record: the ``worktree`` line carries a
+    TRUNCATED path and the remainder lands as an orphan continuation line.
+    The previous line-wise parse recorded the truncated path, so the REAL
+    registered path compared unequal downstream and a REGISTERED worktree
+    could reach ``shutil.rmtree``. Record-form contract: a record OPENS with
+    ``worktree <path>`` (path taken VERBATIM after the prefix — no strip;
+    leading/trailing whitespace is part of the path) and CLOSES at a blank
+    line; inside a record the only recognized lines are the porcelain keys
+    ``HEAD <oid>``, ``branch <ref>`` XOR ``detached``, ``bare``,
+    ``locked[ <reason>]``, ``prunable[ <reason>]`` — each slot at most once.
+    ANY other non-blank line — an orphan continuation from a newline-bearing
+    path, an attribute outside a record, a duplicated slot (a truncated
+    record absorbing the real record's attributes) — makes the WHOLE listing
+    AMBIGUOUS: return ``None`` (every caller treats ``None`` as
+    refuse-to-reap).
+
+    Round 5 (coordinator repro — REAL git, no adversary): a continuation
+    line that exactly spells a recognized flag the record does not otherwise
+    carry (a path embedding ``\\nbare``) passes the slot rules with a
+    TRUNCATED path — ``bare`` + ``detached`` coexist because a genuine
+    detached record simply lacks ``bare``. Closed by a positive EXISTENCE
+    cross-check at record close: every parsed ``worktree`` path must exist
+    on disk as a directory; a missing directory is tolerated ONLY when its
+    own record carries ``prunable`` (git 2.34.1 verified: a deleted worktree
+    dir lists with ``prunable gitdir file points to non-existent
+    location``) — any other missing path makes the listing AMBIGUOUS:
+    return ``None``. Remaining named residual (three-way collision only): a
+    newline-bearing registered path whose TRUNCATION names a directory that
+    ALSO exists on disk, with the continuation spelling an absent flag —
+    that truncated record passes both the slot rules and the existence
+    check. Round 6 (coordinator-reproduced as exploitable): that residual
+    no longer licenses anything — this function is DEFENCE-IN-DEPTH ONLY
+    (its output can only ADD keeps) behind the authoritative parse-free
+    per-candidate probe (:func:`_candidate_worktree_registration`) and the
+    byte-exact admin-side enumeration
+    (:func:`_admin_registered_worktree_paths`), both consulted FIRST at
+    every deletion-licensing site.
+
+    Returns ``None`` on probe failure OR parse ambiguity: a successful
+    listing always contains at least the main working tree, so an empty
+    parse is ambiguity, never evidence of non-registration (fail-toward-keep).
+    Residual (named): registration in some OTHER repo is undetectable once
+    the candidate's ``.git`` pointer is gone — there is no back-pointer left
+    to follow; this proof covers ``main_repo``'s registrations, the set this
+    janitor can strand."""
+    # KNOWN CR/CRLF BLINDNESS, deliberately unfixed (#2147 round 7): ``_git``
+    # runs with ``text=True`` (universal newlines), so a CR inside a
+    # registered path is translated to LF before this parse — typically
+    # splitting the record (=> None) or, in the CR-flag-spoof shape, yielding
+    # a truncated-path record. Acceptable ONLY because this layer is
+    # KEEP-ONLY: both consumers consult it AFTER the authoritative parse-free
+    # sources (candidate gitfile probe + binary-read admin enumeration), and
+    # its two live outcomes are KEEP (None / membership) or defer — a ghost
+    # path here can fail to ADD a keep but can never LICENSE a reap.
+    # ``_git`` itself is shared with tier (f) and stays untouched (K3).
+    proc = _git(["worktree", "list", "--porcelain"], cwd=main_repo)
+    if proc is None or proc.returncode != 0:
+        return None
+    paths: set[str] = set()
+    pending: str | None = None  # raw path of the OPEN record, pre-validation
+    seen_slots: set[str] = set()
+
+    def _close_record() -> bool:
+        """Validate + commit the open record; ``False`` = ambiguous listing.
+
+        Round 5 existence cross-check: the raw path must exist on disk as a
+        directory (a spoof-truncated path does not), tolerating a missing
+        directory ONLY for a ``prunable`` record (a genuinely pruned/deleted
+        worktree — the one legitimate missing-dir shape)."""
+        nonlocal pending
+        if pending is None:
+            return True  # nothing open (leading/consecutive blank lines)
+        if not os.path.isdir(pending) and "prunable" not in seen_slots:
+            return False
+        try:
+            paths.add(os.path.realpath(pending))
+        except OSError:
+            return False
+        pending = None
+        return True
+
+    # split("\n"), never splitlines(): splitlines() also splits on \x0b/\x0c/
+    # U+2028/... which git emits RAW inside a path — splitting there would
+    # only widen the fail-closed surface, but split("\n") parses them exactly.
+    for line in proc.stdout.split("\n"):
+        if not line:  # blank separator closes the current record
+            if not _close_record():
+                return None
+            seen_slots = set()
+            continue
+        if line.startswith("worktree "):
+            if pending is not None:
+                return None  # record re-opened without a separator — ambiguous
+            raw = line[len("worktree ") :]
+            if not raw:
+                return None  # malformed entry — ambiguity keeps
+            pending = raw
+            seen_slots = set()
+            continue
+        slot = next(
+            (s for k, s in _WORKTREE_PORCELAIN_VALUE_KEYS.items() if line.startswith(k)),
+            None,
+        )
+        if slot is None:
+            slot = next(
+                (
+                    s
+                    for k, s in _WORKTREE_PORCELAIN_FLAG_KEYS.items()
+                    if line == k or line.startswith(k + " ")
+                ),
+                None,
+            )
+        if slot is None or pending is None or slot in seen_slots:
+            # Unrecognized continuation (a newline-split path), an attribute
+            # outside any record, or a duplicated slot: AMBIGUOUS — refuse
+            # rather than trust a possibly-truncated set.
+            return None
+        seen_slots.add(slot)
+    if not _close_record():
+        return None  # final record failed the existence cross-check
+    if not paths:
+        return None  # no worktree lines at all — ambiguity, not proof
+    return frozenset(paths)
 
 
 def _reachable_in_main(main_repo: Path, sha: str) -> bool:
@@ -1566,10 +1943,13 @@ class _ScratchVerdictCache:
     ``over-verify-cap``); transient probe errors and git CLASS-probe slugs
     are recomputed every run (they can flip without any tree mtime change —
     e.g. a push makes a HEAD reachable). A cached PASS still EMBEDS the
-    class-probe conclusions from verify time — reap-ward and equally
-    flippable — which is why :func:`_reap_scratch_tree` re-runs the class
-    probes on the destructive path (review round 2); the cache alone never
-    licenses a deletion. ``prune()`` drops a reaped path's entries. All IO
+    class-probe AND overlay conclusions from verify time — reap-ward and
+    equally flippable — which is why :func:`_reap_scratch_tree` re-runs the
+    class probes + the overlay probe + the round 3 C1 registration proof on
+    the destructive path (review rounds 2-3), and why a cached PASS on an
+    overlay-bearing leg is overlay-re-probed BEFORE it is honored at all
+    (round 3 C2); the cache alone never licenses a deletion. ``prune()``
+    drops a reaped path's entries. All IO
     fail-soft: corrupt/unwritable degrades to no-cache.
     Known residuals (plan §12 + review round 2): (a) a cached PASS can
     outlive a later ``git gc`` of the proving blobs — the reap-time
@@ -1646,12 +2026,125 @@ class _ScratchVerdictCache:
             return
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_name(self.path.name + ".tmp")
-            tmp.write_text(json.dumps(self._data, sort_keys=True))
-            os.replace(tmp, self.path)
+            # atomic_replace re-raises after its own temp cleanup, so this
+            # caller's except still catches — the §4(k) fail-soft contract
+            # is preserved (#2336 batch 1).
+            with atomic_replace(self.path) as tmp:
+                tmp.write_text(json.dumps(self._data, sort_keys=True))
             self._dirty = False
         except OSError:
             pass
+
+
+def _overlay_member(rel: str, overlay_paths: tuple[str, ...]) -> str | None:
+    """The overlay path owning candidate-relative ``rel`` (#2147 D9), or
+    None. Membership is "/"-joined path-prefix; a FILE sitting AT the
+    overlay path itself is a member too (the nested-repo probe then KEEPs
+    the tree as ``overlay-not-a-repo``)."""
+    if not overlay_paths:
+        return None
+    for op in overlay_paths:
+        if rel == op or rel.startswith(op + "/"):
+            return op
+    return None
+
+
+def _overlay_nested_repo_probe(nested: Path, *, surviving_repo: Path) -> str | None:
+    """#2147 D9 nested-repo checks for a ``WORKING_TREE_OVERLAY_PATHS`` copy
+    inside a slurm-src candidate (review round 2 C2: the FULL clone-class
+    evidence standard, anchored in the SURVIVING repo). The overlay must be
+    a real nested git CLONE (its own ``.git`` DIRECTORY) with a clean tree,
+    an EMPTY own stash, and EVERY ref tip + HEAD reachable from the refs of
+    ``surviving_repo`` — the main working tree's own copy of the overlay
+    (``<main_repo>/<overlay path>``), the one repo that SURVIVES the reap.
+    Anchoring reachability in the nested copy's own odb would be CIRCULAR:
+    that odb is a ``.git`` DIR inside the tree being deleted, so it dies
+    with the tree and proves nothing about recoverability (the same rule
+    the outer clone class already follows — see
+    :func:`_scratch_git_class_probes`).
+
+    Returns ``None`` when all hold, else a keep-reason slug
+    (fail-toward-keep on every probe failure). An overlay that is NOT a git
+    repo KEEPs the whole tree — deliberately NO silent fallback to the
+    outer-odb proof (plan #2147 D9). Reachability of the (possibly many —
+    the production overlay carries ~900 refs) nested tips is checked in ONE
+    batched ``rev-list`` against the surviving repo's branches/tags/remotes,
+    so there is no ref-fanout cap here."""
+    kind, _admin = _git_dir_kind(nested)
+    if kind != "clone":
+        return "overlay-not-a-repo"
+    if _git_dir_kind(surviving_repo)[0] != "clone":
+        return "overlay-surviving-repo-missing"
+    status = _git(["status", "--porcelain"], cwd=nested)
+    if status is None or status.returncode != 0:
+        return "overlay-probe-failed"
+    if status.stdout.strip():
+        return "overlay-dirty"
+    stash = _git(["stash", "list"], cwd=nested)
+    if stash is None or stash.returncode != 0:
+        return "overlay-probe-failed"
+    if stash.stdout.strip():
+        return "overlay-stash"
+    head = _git(["rev-parse", "HEAD"], cwd=nested)
+    if head is None or head.returncode != 0:
+        return "overlay-probe-failed"
+    tips_proc = _git(["for-each-ref", "--format=%(objectname)"], cwd=nested)
+    if tips_proc is None or tips_proc.returncode != 0:
+        return "overlay-probe-failed"
+    tips = sorted({*tips_proc.stdout.split(), head.stdout.strip()})
+    # One batched reachability probe in the SURVIVING repo: rev-list
+    # enumerates ancestors of the nested tips minus ancestors of every
+    # surviving ref — empty output (rc 0) iff ALL tips are reachable. A
+    # nonzero rc (an object absent from the surviving odb is a "bad
+    # revision") or any output line means at least one nested-only ref.
+    reach = _git(
+        ["rev-list", "--max-count=1", *tips, "--not", "--branches", "--tags", "--remotes"],
+        cwd=surviving_repo,
+    )
+    if reach is None:
+        return "overlay-probe-failed"
+    if reach.returncode != 0 or reach.stdout.strip():
+        return "overlay-unpushed-ref"
+    return None
+
+
+def _overlay_keep_slug(
+    cand: Path, *, main_repo: Path, overlay_paths: tuple[str, ...]
+) -> tuple[str | None, str | None]:
+    """The NON-CACHEABLE overlay presence/state probe (#2147 D9, review
+    round 3 C2): every DECLARED overlay path PRESENT on disk under ``cand``
+    is validated as a nested repo against its SURVIVING anchor
+    (``main_repo / <overlay path>``) via :func:`_overlay_nested_repo_probe`.
+    Returns ``(keep_slug, overlay_path)``, or ``(None, None)`` when every
+    present overlay positively validates.
+
+    Presence is keyed on the directory entry itself (``lstat``), NOT on
+    whether any walk hashed files under it, and the entry MUST be a real
+    directory (round 3 C3: ``lstat`` alone followed the parent symlink into
+    ``nested/.git`` — a declared overlay that is a symlink, a file, or any
+    other non-directory shape is ``overlay-not-a-repo``, never probed
+    through). Fail-toward-keep: an ``lstat`` OSError keeps as a walk error.
+
+    Called from THREE sites, deliberately (round 3 C2): the fresh evidence
+    walk, the cached-PASS path in :func:`_git_blob_reproducibility_evidence`
+    (a cached PASS embeds overlay conclusions that can flip with ZERO
+    candidate-tree change — e.g. the surviving anchor's refs), and the
+    destructive path in :func:`_reap_scratch_tree` immediately before
+    removal."""
+    for op in overlay_paths:
+        nested = cand / Path(op)
+        try:
+            st = nested.lstat()
+        except FileNotFoundError:
+            continue  # overlay not materialized in this tree — nothing to prove
+        except OSError:
+            return "walk-error", op
+        if not stat.S_ISDIR(st.st_mode):
+            return "overlay-not-a-repo", op  # symlink/file at the declared path (C3)
+        slug = _overlay_nested_repo_probe(nested, surviving_repo=main_repo / Path(op))
+        if slug is not None:
+            return slug, op
+    return None, None
 
 
 def _git_blob_reproducibility_evidence(
@@ -1660,6 +2153,7 @@ def _git_blob_reproducibility_evidence(
     main_repo: Path,
     full_stats: dict,
     verdict_cache: _ScratchVerdictCache | None = None,
+    overlay_paths: tuple[str, ...] = (),
 ) -> tuple[str | None, dict]:
     """Per-file git-reproducibility proof for a scratch candidate (#2127).
 
@@ -1676,7 +2170,34 @@ def _git_blob_reproducibility_evidence(
     verify-cap -> per-file blob walk (exempt dirs pruned; symlinks skipped;
     any non-regular file aborts; small-text tolerance per
     :data:`_SCRATCH_TOLERATED_EXTS`, never under a ``store``/
-    ``eval_results`` component) -> batched odb existence probe."""
+    ``eval_results`` component) -> batched odb existence probe.
+
+    ``overlay_paths`` (#2147 D9, default empty = pre-#2147 behavior
+    byte-identical): files whose candidate-relative path lies under a named
+    overlay path (``backends.slurm.WORKING_TREE_OVERLAY_PATHS`` copies —
+    working-tree-only nested repos rsync'd into slurm-src staging trees,
+    absent from the OUTER committed tree) are proven against the SURVIVING
+    overlay repo — the main working tree's own copy at
+    ``main_repo / <overlay path>`` — under the FULL clone-class standard
+    (clean tree + empty own stash + every ref tip and HEAD reachable in the
+    surviving repo; :func:`_overlay_nested_repo_probe`, review round 2 C2:
+    the nested copy's own odb dies with the tree, so anchoring there was
+    circular). Overlay MEMBERSHIP is classified BEFORE the small-text
+    tolerance and BEFORE exemption/symlink skips are allowed to hide the
+    overlay (round 2 C3): no file under a claimed overlay is ever tolerated
+    into the outer proof, and every DECLARED overlay path present on disk
+    is validated as a nested repo even when the walk hashed nothing under
+    it (only tolerated logs / exempt content / symlinks / an empty dir) —
+    an overlay that is not a positively-established nested git repo KEEPs
+    the whole tree; never a fallback to the outer proof. The
+    ``under_durable`` no-tolerance rule and the outer-odb proof for
+    non-overlay paths are UNCHANGED (strictly additive). Nested-state
+    hygiene (round 3 C2): overlay keep slugs are non-cacheable, and a
+    cached PASS embeds overlay conclusions that can flip with ZERO
+    candidate-tree change (a surviving-anchor ref deleted, the anchor repo
+    removed) — so the overlay probe (:func:`_overlay_keep_slug`) re-runs
+    BEFORE a cached PASS is honored here, and AGAIN on the destructive
+    path in :func:`_reap_scratch_tree` immediately before removal."""
     detail: dict = {
         "reason": None,
         "first_unverified": None,
@@ -1684,12 +2205,6 @@ def _git_blob_reproducibility_evidence(
         "n_tolerated": 0,
         "git_class": None,
     }
-    if verdict_cache is not None:
-        cached = verdict_cache.lookup(cand, full_stats)
-        if cached is not None:
-            ev, det = cached
-            det["cache_hit"] = True
-            return ev, det
 
     def _keep(reason: str, first: str | None = None) -> tuple[None, dict]:
         detail["reason"] = reason
@@ -1697,6 +2212,26 @@ def _git_blob_reproducibility_evidence(
         if verdict_cache is not None:
             verdict_cache.store(cand, full_stats, None, detail)
         return None, detail
+
+    if verdict_cache is not None:
+        cached = verdict_cache.lookup(cand, full_stats)
+        if cached is not None:
+            ev, det = cached
+            # #2147 review round 3 C2: a cached PASS embeds OVERLAY
+            # conclusions that can flip with ZERO candidate-tree change —
+            # the surviving anchor repo can lose refs or vanish entirely
+            # without touching the cache key (which captures candidate tree
+            # content only). Re-run the non-cacheable overlay presence/state
+            # probe before honoring a cached PASS; a cached KEEP needs no
+            # re-probe (it cannot license a deletion).
+            if ev is not None and overlay_paths:
+                slug, op = _overlay_keep_slug(
+                    cand, main_repo=main_repo, overlay_paths=overlay_paths
+                )
+                if slug is not None:
+                    return _keep(slug, op)
+            det["cache_hit"] = True
+            return ev, det
 
     fmt = _git(["rev-parse", "--show-object-format"], cwd=main_repo)
     if fmt is None or fmt.returncode != 0 or fmt.stdout.strip() != "sha1":
@@ -1706,6 +2241,20 @@ def _git_blob_reproducibility_evidence(
     probe = _scratch_git_class_probes(cand, kind, admin, main_repo=main_repo)
     if probe is not None:
         return _keep(probe)
+    # #2147 review round 2 C3 (round 3: extracted to _overlay_keep_slug, which
+    # also rejects a SYMLINKED declared-overlay path and re-runs on the
+    # cached-PASS + destructive paths): every DECLARED overlay path PRESENT on
+    # disk is validated as a nested repo BEFORE any other disposition —
+    # including the empty-tree carve-out, the tolerance-only /
+    # no-verifiable-content keeps, and the outer blob proof. Presence is keyed
+    # on the directory entry itself (lstat + S_ISDIR), NOT on whether the walk
+    # hashed any file under it, so a non-git overlay holding only tolerated
+    # logs, exempt content, symlinks, or nothing at all still KEEPs the tree
+    # (fail-toward-keep; a probe OSError keeps as a walk error).
+    if overlay_paths:
+        slug, op = _overlay_keep_slug(cand, main_repo=main_repo, overlay_paths=overlay_paths)
+        if slug is not None:
+            return _keep(slug, op)
     if (
         full_stats["n_regular"] == 0
         and full_stats["nonregular"] is None
@@ -1719,7 +2268,8 @@ def _git_blob_reproducibility_evidence(
     if full_stats["nonexempt_bytes"] > _scratch_verify_cap_bytes():
         return _keep("over-verify-cap")
     walk_errors: list[OSError] = []
-    entries: list[tuple[str, str]] = []  # (sha, candidate-relative path)
+    entries: list[tuple[str, str]] = []  # (sha, cand-relative path) — outer-odb proofs
+    overlay_entries: dict[str, list[tuple[str, str]]] = {}  # #2147 D9 nested-odb proofs
     tolerated_bytes = 0
     try:
         for dirpath, dirnames, filenames in os.walk(
@@ -1745,9 +2295,15 @@ def _git_blob_reproducibility_evidence(
                     return _keep("nonregular", rel)
                 if _scratch_is_exempt_rel((*rel_dir_parts, name)):
                     continue  # rebuildable tool state (root ``.git`` pointer file)
+                # #2147 review round 2 C3: overlay membership is classified
+                # BEFORE the small-text tolerance — a file under a claimed
+                # overlay is NEVER tolerated into the outer proof; it is
+                # hashed and proven against the surviving overlay repo.
+                op = _overlay_member(rel, overlay_paths)
                 ext = os.path.splitext(name)[1].lower()
                 if (
-                    ext in _SCRATCH_TOLERATED_EXTS
+                    op is None
+                    and ext in _SCRATCH_TOLERATED_EXTS
                     and not under_durable
                     and lst.st_size <= SCRATCH_TOLERATED_FILE_MAX_BYTES
                     and tolerated_bytes + lst.st_size <= SCRATCH_TOLERATED_TOTAL_MAX_BYTES
@@ -1766,25 +2322,46 @@ def _git_blob_reproducibility_evidence(
                         os.close(fd)
                 if sha is None:
                     return _keep("concurrent-write", rel)
-                entries.append((sha, rel))
+                if op is not None:
+                    overlay_entries.setdefault(op, []).append((sha, rel))
+                else:
+                    entries.append((sha, rel))
         if walk_errors:
             return _keep("walk-error")
     except Exception:
         return _keep("walk-error")
-    if not entries:
+    n_overlay = sum(len(v) for v in overlay_entries.values())
+    if not entries and not n_overlay:
         if detail["n_tolerated"] > 0:
             return _keep("tolerance-only")
         return _keep("no-verifiable-content")
-    missing = _git_first_missing_blob(main_repo, [sha for sha, _ in entries])
-    if missing is None:
-        return _keep("git-probe-failed")
-    if missing >= 0:
-        return _keep("unverified-file", entries[missing][1])
-    detail["n_verified"] = len(entries)
+    if entries:
+        missing = _git_first_missing_blob(main_repo, [sha for sha, _ in entries])
+        if missing is None:
+            return _keep("git-probe-failed")
+        if missing >= 0:
+            return _keep("unverified-file", entries[missing][1])
+    # #2147 D9 (round 2 C2): overlay files are proven against the SURVIVING
+    # overlay repo's odb (``main_repo / <overlay path>`` — the copy that
+    # outlives the reap; the nested copy's own odb dies with the tree). The
+    # nested repos themselves were already validated by the presence loop
+    # above (clone class + clean + stash-empty + all tips/HEAD reachable in
+    # the surviving repo); deliberately NO fallback to the outer-odb proof.
+    for op in sorted(overlay_entries):
+        surviving = main_repo / Path(op)
+        op_entries = overlay_entries[op]
+        missing = _git_first_missing_blob(surviving, [sha for sha, _ in op_entries])
+        if missing is None:
+            return _keep("git-probe-failed", op)
+        if missing >= 0:
+            return _keep("unverified-file", op_entries[missing][1])
+    detail["n_verified"] = len(entries) + n_overlay
     evidence = (
         f"git-blob-reproducible: {len(entries)} files verified in the main odb, "
         f"{detail['n_tolerated']} small-text tolerated"
     )
+    if n_overlay:
+        evidence += f", {n_overlay} overlay files verified in the surviving overlay repo(s)"
     if verdict_cache is not None:
         det = dict(detail)
         det["reason"] = "pass"
@@ -1798,14 +2375,42 @@ def _tmp_git_evidence_branch_c(cache_dir: Path, *, main_repo: Path) -> tuple[str
     primitive. REFUSES a candidate that is a REGISTERED main-repo worktree
     (reason ``registered-worktree``): gate 1.7 licenses a plain ``rmtree``,
     which would strand the registration — worktree-aware removal belongs to
-    :func:`sweep_tmp_scratch`'s reap step, never here."""
+    :func:`sweep_tmp_scratch`'s reap step, never here.
+
+    Round 3 C1 sibling fix, restructured in round 6: registration is proven
+    per-candidate and parse-free. Layer 1 — the AUTHORITATIVE gitfile probe
+    (:func:`_candidate_worktree_registration`): ``ours`` and ``foreign``
+    worktrees refuse outright, ``unreadable`` refuses fail-closed. Layer
+    2 — for candidates with no usable pointer (``none``/``clone``/
+    ``submodule``: the pointer-deleted/replaced downgrade class), the
+    ADMIN-side per-record ``gitdir``-file enumeration
+    (:func:`_admin_registered_worktree_paths`) proves non-registration
+    byte-exactly (newline-bearing paths included). Layer 3 — the hardened
+    porcelain listing (:func:`_registered_worktree_paths`, rounds 4/5) is
+    KEPT as defence-in-depth: an independent second implementation whose
+    failure or membership can only add KEEPs, never license. Probe failure
+    or ambiguity anywhere refuses (fail-toward-keep)."""
     stats = _scratch_walk_stats(cache_dir)
     if stats is None:
         return None, {"reason": "walk-error", "first_unverified": None}
     if stats["nonregular"] is not None:
         return None, {"reason": "nonregular", "first_unverified": stats["nonregular"]}
-    kind, admin = _git_dir_kind(cache_dir)
-    if kind == "worktree" and admin is not None and _worktree_admin_of_main(admin, main_repo):
+    reg, _admin = _candidate_worktree_registration(cache_dir, main_repo)
+    if reg == "ours":
+        return None, {"reason": "registered-worktree", "first_unverified": None}
+    if reg == "foreign":
+        return None, {"reason": "foreign-worktree", "first_unverified": None}
+    if reg == "unreadable":
+        return None, {"reason": "registration-probe-failed", "first_unverified": None}
+    admin_set = _admin_registered_worktree_paths(main_repo)
+    if admin_set is None:
+        return None, {"reason": "registration-probe-failed", "first_unverified": None}
+    if os.path.realpath(cache_dir) in admin_set:
+        return None, {"reason": "registered-worktree", "first_unverified": None}
+    registered = _registered_worktree_paths(main_repo)
+    if registered is None:
+        return None, {"reason": "registration-probe-failed", "first_unverified": None}
+    if os.path.realpath(cache_dir) in registered:
         return None, {"reason": "registered-worktree", "first_unverified": None}
     return _git_blob_reproducibility_evidence(cache_dir, main_repo=main_repo, full_stats=stats)
 
@@ -1851,7 +2456,13 @@ def _scratch_live_process_hit(cand: Path, *, exact: bool = False) -> str | None:
         return "probe-unavailable"
 
 
-def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) -> tuple[bool, str]:
+def _reap_scratch_tree(
+    cand: Path,
+    *,
+    main_repo: Path,
+    verify_started: float,
+    overlay_paths: tuple[str, ...] = (),
+) -> tuple[bool, str]:
     """Reap step for a fully-licensed scratch candidate (#2127): one FRESH
     re-walk first (any NON-EXEMPT mtime >= ``verify_started``, or any walk
     error, aborts the reap — the tree changed under verification; exempt-dir
@@ -1859,8 +2470,9 @@ def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) ->
     probes rewrite a clone's in-tree ``.git/index`` and must not self-abort
     every clean-clone reap — a real mid-verify writer bumps non-exempt
     file/dir mtimes, and a still-live exempt-dir writer is the live-process
-    probe's catch), then a fresh git CLASS re-probe, then worktree-aware
-    removal.
+    probe's catch), then a fresh git CLASS re-probe, then a fresh OVERLAY
+    re-probe (when the leg declares overlays), then worktree-aware removal
+    behind a POSITIVE non-registration proof.
 
     The class re-probe (:func:`_scratch_git_class_probes`, review round 2)
     is what makes a CACHED PASS safe: the verdict-cache key captures tree
@@ -1870,9 +2482,14 @@ def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) ->
     a cache-hit PASS would otherwise skip those probes forever. Re-probing
     HERE (the only destructive path) keeps the cache's re-hash skip intact
     while guaranteeing no deletion ever acts on stale external-state
-    conclusions; a hit KEEPS with ``reap-reprobe-<slug>``. The ``git
-    status`` atime side effect is mooted by deletion on success and
-    harmless on abort; blobs are NOT re-hashed, so the documented gc
+    conclusions; a hit KEEPS with ``reap-reprobe-<slug>``. Round 3 C2
+    extends the same law to nested-overlay state: stash/ref mutations in a
+    nested overlay live under the exempt ``.git`` dir (invisible to the
+    non-exempt recency re-walk) and the surviving anchor can change with
+    zero candidate-tree change, so :func:`_overlay_keep_slug` re-runs here
+    immediately before removal — any slug KEEPS as ``reap-reprobe-<slug>``.
+    The ``git status`` atime side effect is mooted by deletion on success
+    and harmless on abort; blobs are NOT re-hashed, so the documented gc
     residual stands unchanged.
 
     A REGISTERED main-repo worktree goes through
@@ -1885,7 +2502,16 @@ def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) ->
     ``/mnt/eps-data``-rooted scratch during a mount hiccup) — repairable
     via ``git worktree repair`` and data-preserving, but not this
     janitor's to inflict (amendment 3, the named global-prune residual).
-    Everything else is ``shutil.rmtree``. Returns ``(reaped, reason)``."""
+
+    Everything else reaches ``shutil.rmtree`` ONLY behind the round 3 C1
+    POSITIVE non-registration proof (:func:`_registered_worktree_paths`):
+    the candidate-side class probes read the tree's OWN ``.git`` entry, so
+    a REGISTERED worktree whose pointer file was deleted (class ``none``)
+    or replaced by a real clone (class ``clone``) would otherwise classify
+    into the rmtree branch and be deleted WITHOUT unregistering — defeating
+    the round 2 C1 structural-unreachability contract by a different route.
+    Probe failure or parse ambiguity KEEPS; a registered candidate KEEPS as
+    ``reap-reprobe-registered-path``. Returns ``(reaped, reason)``."""
     fresh = _scratch_walk_stats(cand)
     if fresh is None or fresh["newest_nonexempt_mtime"] >= verify_started:
         return False, "reap-recheck-recency"
@@ -1893,17 +2519,53 @@ def _reap_scratch_tree(cand: Path, *, main_repo: Path, verify_started: float) ->
     probe = _scratch_git_class_probes(cand, kind, admin, main_repo=main_repo)
     if probe is not None:
         return False, f"reap-reprobe-{probe}"
-    if kind == "worktree" and admin is not None and _worktree_admin_of_main(admin, main_repo):
+    if overlay_paths:
+        slug, _op = _overlay_keep_slug(cand, main_repo=main_repo, overlay_paths=overlay_paths)
+        if slug is not None:
+            return False, f"reap-reprobe-{slug}"
+    if kind == "worktree":
+        # #2147 review round 2 C1: dispatch SOLELY on the freshly proven
+        # ``kind``. The class re-probe above already required a non-None
+        # admin dir REGISTERED to ``main_repo`` (else it kept with
+        # ``foreign-worktree``), so re-running the registration lookup here
+        # would add nothing — except a transient failure mode that would
+        # fall through to ``shutil.rmtree`` on a REGISTERED worktree. With
+        # this dispatch the only reachable outcomes for the worktree class
+        # are a checked ``git worktree remove --force`` or a KEEP;
+        # ``rmtree`` is structurally unreachable.
         proc = _git(["worktree", "remove", "--force", str(cand)], cwd=main_repo, timeout=600.0)
         if proc is None or proc.returncode != 0:
-            try:
-                locked = (admin / "locked").exists()
-            except OSError:
-                locked = False
+            locked = False
+            if admin is not None:
+                try:
+                    locked = (admin / "locked").exists()
+                except OSError:
+                    locked = False  # message-detail only; the KEEP stands regardless
             err = "timeout" if proc is None else (proc.stderr.strip() or "unknown error")
             tag = "locked" if locked else "remove-failed"
             return False, f"worktree-remove-failed ({tag}: {err.splitlines()[-1] if err else ''})"
         return True, "worktree-removed"
+    # #2147 review round 3 C1, restructured round 6: POSITIVE
+    # non-registration proof before ANY rmtree. The class probes above read
+    # only the candidate's own ``.git`` entry (the per-candidate gitfile
+    # authority — an intact-pointer worktree never reaches this branch), so
+    # a REGISTERED worktree with a deleted/replaced pointer classifies as
+    # ``none``/``clone`` and would otherwise be rmtree'd without
+    # unregistering. Non-registration is proven ADMIN-side from the
+    # per-record ``gitdir`` files (byte-exact, newline-safe —
+    # :func:`_admin_registered_worktree_paths`), with the hardened porcelain
+    # listing (rounds 4/5) KEPT as defence-in-depth; failure, ambiguity, or
+    # membership in EITHER source KEEPS (fail-toward-keep).
+    admin_set = _admin_registered_worktree_paths(main_repo)
+    if admin_set is None:
+        return False, "reap-reprobe-registration-probe-failed"
+    if os.path.realpath(cand) in admin_set:
+        return False, "reap-reprobe-registered-path"
+    registered = _registered_worktree_paths(main_repo)
+    if registered is None:
+        return False, "reap-reprobe-registration-probe-failed"
+    if os.path.realpath(cand) in registered:
+        return False, "reap-reprobe-registered-path"
     try:
         shutil.rmtree(cand)
     except OSError as exc:
@@ -1938,11 +2600,215 @@ def _tmp_scratch_candidates(tmp_root: Path) -> list[Path]:
 
 @dataclass
 class ScratchSweepResult:
-    """Outcome of one :func:`sweep_tmp_scratch` run (#2127)."""
+    """Outcome of one :func:`sweep_tmp_scratch` run (#2127).
+
+    ``skip_reason`` (#2147 review round 2 M1) is set when the sweep did NOT
+    enumerate its root (e.g. the slurm-src staging root does not exist) —
+    an explicit signal distinct from "enumerated and found zero
+    candidates", so the tier adapter can surface a skipped tier instead of
+    silently reporting an empty sweep."""
 
     rows: list[dict] = field(default_factory=list)
     bytes_freed: int = 0
     total_discovered_bytes: int = 0
+    skip_reason: str | None = None
+
+
+def _scratch_row_finish(
+    row: dict,
+    disposition: str,
+    reason: str,
+    *,
+    leg: str,
+    apply: bool,
+    floor: int,
+    escalate: bool | None = None,
+    escalation_gate: Callable[[dict, str, str], Callable[[], None] | None] | None = None,
+) -> None:
+    """Finish one scratch-sweep row (#2127, parameterized for #2147): record
+    disposition + reason on ``row``, print the per-candidate report line, and
+    append the floor-gated sidecar escalation row. ``leg`` prefixes the
+    printed tag and the sidecar ``kind`` — byte-identical to the pre-#2147
+    inline ``_finish`` closure for ``leg="tmp-scratch"``. ``escalation_gate``
+    (#2147 D6) is consulted ONLY when an escalation would fire; it returns
+    ``None`` to SUPPRESS the sidecar append (row + print are unaffected) or
+    a COMMIT thunk invoked ONLY AFTER :func:`append_disk_guard_event`
+    reports the durable emission landed (review round 2 M2 — recording the
+    dedup timestamp before the append would let a FAILED append suppress
+    the alert for the whole re-alert window). ``None`` for the gate keeps
+    the tmp-scratch behavior of appending every escalation."""
+    row["disposition"] = disposition
+    row["reason"] = reason
+    size = row.get("bytes", 0)
+    if escalate is None:
+        escalate = size >= floor
+    print(
+        f"  [{leg}] {disposition}: {row['path']} ({size / 1e9:.2f} GB) — {reason}",
+        file=sys.stderr,
+    )
+    if not escalate:
+        return
+
+    def _no_commit() -> None:
+        return None
+
+    commit: Callable[[], None] | None = _no_commit
+    if escalation_gate is not None:
+        commit = escalation_gate(row, disposition, reason)
+    if commit is None:
+        return  # deduped within the re-alert window — nothing appended
+    appended = append_disk_guard_event(
+        {
+            "kind": (disposition if disposition.startswith(f"{leg}-") else f"{leg}-{disposition}"),
+            "path": row["path"],
+            "bytes": size,
+            "reason": reason,
+            "evidence": row.get("evidence"),
+        },
+        apply=apply,
+    )
+    if appended:
+        commit()
+
+
+def _sweep_scratch_candidate(
+    cand: Path,
+    row: dict,
+    *,
+    leg: str,
+    apply: bool,
+    main_repo: Path,
+    window_start: float,
+    min_age_hours: float,
+    now: float,
+    cache: _ScratchVerdictCache,
+    result: ScratchSweepResult,
+    floor: int,
+    overlay_paths: tuple[str, ...] = (),
+    escalation_gate: Callable[[dict, str, str], Callable[[], None] | None] | None = None,
+) -> None:
+    """The SHARED per-candidate #2127 verified-scratch pipeline, extracted for
+    #2147 so the slurm-src leg reuses it UNCHANGED: defensive walk -> write
+    recency -> git-blob evidence (verdict-cached; ``overlay_paths`` adds the
+    #2147 D9 nested-repo evidence class) -> reader-atime pin -> live-process
+    probe -> (report) would-reap / (apply) worktree-aware reap.
+
+    The caller creates ``row`` (``path``/``name``/``leg`` keys) and appends
+    it to ``result.rows`` BEFORE calling; keep dispositions are tagged
+    ``{leg}-...`` (``would-reap`` stays unprefixed). Behavior for
+    ``leg="tmp-scratch"``, ``overlay_paths=()``, ``escalation_gate=None`` is
+    byte-identical to the pre-extraction ``sweep_tmp_scratch`` loop body
+    (pinned by ``tests/test_vm_disk_guard_slurm_src.py`` T15)."""
+
+    def _finish(disposition: str, reason: str, *, escalate: bool | None = None) -> None:
+        _scratch_row_finish(
+            row,
+            disposition,
+            reason,
+            leg=leg,
+            apply=apply,
+            floor=floor,
+            escalate=escalate,
+            escalation_gate=escalation_gate,
+        )
+
+    stats = _scratch_walk_stats(cand)
+    if stats is None:
+        _finish(f"{leg}-unverified-kept", "walk error — unreadable tree; KEPT")
+        return
+    row["bytes"] = stats["total_bytes"]
+    row["age_hours"] = round((now - stats["newest_mtime"]) / 3600.0, 2)
+    result.total_discovered_bytes += stats["total_bytes"]
+    if stats["nonregular"] is not None:
+        _finish(
+            f"{leg}-nonregular-kept",
+            f"non-regular file in tree ({stats['nonregular']}); KEPT",
+        )
+        return
+    if stats["newest_mtime"] > window_start:
+        _finish(
+            f"{leg}-recent-kept",
+            f"written within the last {min_age_hours:.0f}h; KEPT (age is only a keep signal)",
+            escalate=False,
+        )
+        return
+    # The overlay kwarg is threaded ONLY when the leg declares overlays
+    # (#2147 D9): the tmp-scratch leg's call shape stays byte-identical to
+    # the pre-extraction loop (T15), incl. for test stubs of the evidence fn.
+    overlay_kwargs = {"overlay_paths": overlay_paths} if overlay_paths else {}
+    evidence, detail = _git_blob_reproducibility_evidence(
+        cand,
+        main_repo=main_repo,
+        full_stats=stats,
+        verdict_cache=cache,
+        **overlay_kwargs,
+    )
+    row["git_class"] = detail.get("git_class")
+    row["n_verified"] = detail.get("n_verified")
+    row["n_tolerated"] = detail.get("n_tolerated")
+    if evidence is None:
+        reason_slug = str(detail.get("reason"))
+        row["reason_slug"] = reason_slug  # #2147 M2: stable slug for the D6 dedup key
+        row["first_unverified"] = detail.get("first_unverified")
+        disposition = {
+            "worktree-locked": f"{leg}-worktree-locked-kept",
+            "tolerance-only": f"{leg}-tolerance-only-kept",
+            "nonregular": f"{leg}-nonregular-kept",
+        }.get(reason_slug, f"{leg}-unverified-kept")
+        first = detail.get("first_unverified")
+        _finish(
+            disposition,
+            f"no git-reproducibility proof ({reason_slug}"
+            + (f"; first unverified: {first}" if first else "")
+            + "); KEPT",
+        )
+        return
+    row["evidence"] = evidence
+    atime = stats["newest_reader_atime"]
+    if atime is not None and atime > window_start:
+        row["reader_atime_age_hours"] = round((now - atime) / 3600.0, 2)
+        _finish(
+            f"{leg}-verified-atime-pinned",
+            "verified reproducible, but a non-hardlinked file was READ within the "
+            f"window (atime {row['reader_atime_age_hours']}h ago); KEPT",
+            escalate=True,
+        )
+        return
+    hit = _scratch_live_process_hit(cand)
+    if hit is not None:
+        _finish(f"{leg}-live-process-kept", f"live process holds the tree ({hit}); KEPT")
+        return
+    if not apply:
+        _finish("would-reap", f"evidence: {evidence}", escalate=True)
+        return
+    # Same thread-only-when-declared rule as the evidence call above: the
+    # tmp-scratch leg's reap call shape stays byte-identical (T15), and the
+    # slurm-src leg's destructive path re-probes overlay state (round 3 C2).
+    reaped, reap_reason = _reap_scratch_tree(
+        cand, main_repo=main_repo, verify_started=now, **overlay_kwargs
+    )
+    if reaped:
+        result.bytes_freed += stats["total_bytes"]
+        cache.prune(cand)
+        _finish(f"{leg}-reaped", f"{reap_reason}; evidence: {evidence}", escalate=True)
+    elif reap_reason == "reap-recheck-recency":
+        _finish(
+            f"{leg}-reap-aborted-recency",
+            "tree changed between verification and reap; KEPT",
+            escalate=True,
+        )
+    elif reap_reason.startswith("reap-reprobe-"):
+        row["reason_slug"] = reap_reason  # #2147 M2: stable slug for the D6 dedup key
+        _finish(
+            f"{leg}-reap-reprobe-kept",
+            "git state flipped since (possibly cached) verification "
+            f"({reap_reason.removeprefix('reap-reprobe-')}); KEPT",
+            escalate=True,
+        )
+    elif reap_reason.startswith("worktree-remove-failed"):
+        _finish(f"{leg}-worktree-remove-failed", f"{reap_reason}; KEPT", escalate=True)
+    else:
+        _finish(f"{leg}-reap-failed", f"{reap_reason}; KEPT", escalate=True)
 
 
 def sweep_tmp_scratch(
@@ -2003,122 +2869,441 @@ def sweep_tmp_scratch(
     for cand in _tmp_scratch_candidates(tmp_root):
         row: dict = {"path": str(cand), "name": cand.name, "leg": "tmp-scratch"}
         result.rows.append(row)
+        _sweep_scratch_candidate(
+            cand,
+            row,
+            leg="tmp-scratch",
+            apply=apply,
+            main_repo=main_repo,
+            window_start=window_start,
+            min_age_hours=min_age_hours,
+            now=now,
+            cache=cache,
+            result=result,
+            floor=floor,
+        )
+    cache.save()
+    return result
+
+
+# ─── slurm-src staging-tree sweep (#2147, vm_disk_guard tier (g)) ─────────────
+
+# ~/.eps-slurm-src/issue-<N> trees are full repo checkouts materialized by
+# backends/slurm.py::materialize_branch_src for the SLURM lanes; nothing
+# reaped TERMINAL issues' copies before tier (g) (13 dirs / 112 GB measured
+# 2026-08-16). The sweep below runs the D4 pre-gates, then the SHARED #2127
+# verified-scratch per-candidate core unchanged.
+_SLURM_SRC_NAME_RE = re.compile(r"^issue-(\d+)$")
+SLURM_SRC_SWEEP_KILL_ENV = "EPM_SKIP_SLURM_SRC_SWEEP"
+SLURM_SRC_ESCALATION_STATE_REL = Path(".claude") / "cache" / "slurm-src-escalation-state.json"
+# D6: leg-scoped escalation dedup — re-alert cadence (days) for STANDING
+# slurm-src keeps (an active issue's tree, a head-unreachable worktree),
+# which would otherwise append a sidecar row on every guard pass. Weekly.
+SLURM_SRC_ESCALATION_REALERT_DAYS_DEFAULT = 7.0
+_SLURM_SRC_ESCALATION_BANDS_GB = (1.0, 5.0, 10.0, 25.0, 50.0, 100.0)
+
+
+def slurm_src_sweep_enabled() -> bool:
+    """Two-layer kill switch for the slurm-src leg (#2147, mirrors the #2127
+    scratch pattern): runs only when BOTH the family switch
+    (:data:`NONCANONICAL_SWEEP_KILL_ENV`) and the leg's own switch
+    (:data:`SLURM_SRC_SWEEP_KILL_ENV`) are unset."""
+    if os.environ.get(NONCANONICAL_SWEEP_KILL_ENV, "").strip():
+        return False
+    return not os.environ.get(SLURM_SRC_SWEEP_KILL_ENV, "").strip()
+
+
+def slurm_src_escalation_state_path() -> Path:
+    """Production location of the tier-(g) leg-scoped escalation-dedup state
+    (#2147 D6): ``<main checkout>/.claude/cache/slurm-src-escalation-state.json``.
+
+    main()-ONLY opt-in, the same hermeticity contract as
+    :func:`scratch_verdict_cache_path`: library callers default to ``None``
+    (no dedup-state reads/writes). AST-pinned by
+    ``tests/test_janitor_noncanonical_caches.py::test_production_tmp_root_only_in_mains``."""
+    return _resolution_root() / SLURM_SRC_ESCALATION_STATE_REL
+
+
+def _slurm_src_escalation_band_gb(bytes_: int) -> float:
+    """Coarse size band (GB) for the D6 dedup key — the largest crossed
+    boundary, integer-GB above the top band (mirrors the tier-(b) band shape
+    so a growing standing keep re-alerts when it crosses into a new band)."""
+    gb = bytes_ / 1e9
+    band = 0.0
+    for boundary in _SLURM_SRC_ESCALATION_BANDS_GB:
+        if gb >= boundary:
+            band = boundary
+    if gb >= _SLURM_SRC_ESCALATION_BANDS_GB[-1]:
+        band = max(band, float(int(gb)))
+    return band
+
+
+def _slurm_src_escalation_realert_secs() -> float:
+    """D6 re-alert window in seconds (env
+    ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS``; invalid -> the weekly default)."""
+    raw = os.environ.get("EPS_SLURM_SRC_ESCALATION_REALERT_DAYS", "").strip()
+    try:
+        days = float(raw) if raw else SLURM_SRC_ESCALATION_REALERT_DAYS_DEFAULT
+    except ValueError:
+        days = SLURM_SRC_ESCALATION_REALERT_DAYS_DEFAULT
+    return days * 86400.0
+
+
+def _load_slurm_src_escalation_state(path: Path) -> dict:
+    """Fail-soft read of the D6 dedup state (missing/corrupt -> ``{}`` —
+    dedup-state loss re-alerts, it never blocks the sweep)."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_slurm_src_escalation_state(path: Path, state: dict) -> None:
+    """Atomic tmp+rename write of the D6 dedup state; fail-soft (a write
+    failure re-alerts next pass — it never corrupts or blocks the sweep) but
+    NEVER silent (review round 2 M1): the failure is logged with the path +
+    error so a persistently unwritable state file is diagnosable."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # atomic_replace re-raises after its own temp cleanup, so this
+        # caller's except still catches — the §4(k) fail-soft contract is
+        # preserved (#2336 batch 1).
+        with atomic_replace(path) as tmp:
+            tmp.write_text(json.dumps(state, sort_keys=True))
+    except OSError as exc:
+        print(
+            f"  WARNING: writing slurm-src escalation dedup state failed "
+            f"({path}: {exc.__class__.__name__}: {exc}) — the alert will re-fire next pass",
+            file=sys.stderr,
+        )
+
+
+def _slurm_src_escalation_gate(
+    state_path: Path | None, *, apply: bool, now: float
+) -> Callable[[dict, str, str], Callable[[], None] | None]:
+    """Leg-scoped escalation dedup gate for tier (g) (#2147 D6).
+
+    The #2127 scratch core appends a sidecar escalation row on EVERY pass —
+    correct for the rare tmp-scratch keeps, but slurm-src STANDING keeps (an
+    ACTIVE issue's tree, a head-unreachable worktree) would re-alert every
+    guard run. Dedup key: (path, disposition, stable reason slug, size
+    band) — the reason slug (``row["reason_slug"]``, falling back to the
+    disposition) is IN the key per plan D6 and review round 2 M2: several
+    materially different keep reasons share one disposition
+    (``slurm-src-unverified-kept`` covers head-unreachable / dirty-stash /
+    unverified-file / git-probe-failed), so a disposition-only key would
+    hide a changed reason for the whole re-alert window. Re-alert after
+    ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS`` (default 7 d).
+
+    Returns a DECIDE function: ``decide(row, disposition, reason)`` yields
+    ``None`` to suppress (deduped within the window) or a COMMIT thunk the
+    caller invokes ONLY AFTER the sidecar append durably landed (round 2
+    M2 — committing the dedup timestamp before the append would let a
+    failed append suppress the alert for 7 days). Report-only runs and a
+    ``None`` state path never dedup and never write (the printed report
+    stays complete); state IO is fail-soft-but-logged."""
+
+    def _noop() -> None:
+        return None
+
+    def decide(row: dict, disposition: str, reason: str) -> Callable[[], None] | None:
+        if not apply or state_path is None:
+            return _noop
+        band = _slurm_src_escalation_band_gb(int(row.get("bytes", 0) or 0))
+        slug = str(row.get("reason_slug") or disposition)
+        key = f"{row.get('path')}|{disposition}|{slug}|{band:g}"
+        state = _load_slurm_src_escalation_state(state_path)
+        prev = state.get(key)
+        prev_ts = prev.get("ts") if isinstance(prev, dict) else None
+        if isinstance(prev_ts, int | float):
+            if now - prev_ts < _slurm_src_escalation_realert_secs():
+                return None
+
+        def commit() -> None:
+            fresh = _load_slurm_src_escalation_state(state_path)
+            fresh[key] = {"ts": now, "bytes": int(row.get("bytes", 0) or 0)}
+            _save_slurm_src_escalation_state(state_path, fresh)
+
+        return commit
+
+    return decide
+
+
+def _assert_safe_slurm_src_root(staging_root: Path) -> Path:
+    """#2147 review round 2 C4: fail LOUD (ValueError) unless the
+    canonicalized staging root satisfies the strict staging-root contract —
+    BEFORE any enumeration, status probe, or evidence probe runs — and
+    RETURN that canonical root (round 3 C4): the caller MUST enumerate,
+    contain, and construct candidates from the RETURNED path, never the raw
+    argument. Validating one path and enumerating another leaves a
+    symlink-target-swap window in which an armed sweep is redirected into a
+    root that was never checked for broadness / mount-point / ``.git``.
+    (Named residual: a component of the CANONICAL path re-swapped after
+    validation is a directory-rename race outside a path-based API's reach;
+    the returned-path discipline closes the demonstrated symlink-root class.)
+
+    ``EPS_SLURM_SRC_ROOT`` is operator input, and tier (g)'s g3 containment
+    is defined RELATIVE to the supplied root: a broad root would turn every
+    top-level ``issue-<N>`` dir under it into a deletion candidate. Rejected
+    unconditionally:
+
+    - a non-absolute root (would resolve against an accidental cwd);
+    - ``/`` or any DIRECT child of ``/`` (``/home``, ``/tmp``, ``/mnt``,
+      ``/root``, ...) — comparably broad anchors;
+    - the current user's home directory, or any ancestor of it;
+    - a filesystem mount point (a whole-disk anchor like ``/mnt/eps-data``);
+    - any git repository / worktree root (a ``.git`` entry exists — a repo
+      checkout is never a staging root).
+
+    The default ``~/.eps-slurm-src`` passes every check. Validation runs on
+    the REALPATH (symlinked misconfigurations cannot dodge it); an OSError
+    while validating is itself a ValueError (fail-closed, never enumerate an
+    unvalidatable root)."""
+    if not staging_root.is_absolute():
+        raise ValueError(
+            f"sweep_slurm_src: staging root {staging_root} is not absolute — refusing to "
+            "sweep a cwd-relative root (check EPS_SLURM_SRC_ROOT)"
+        )
+    real = Path(os.path.realpath(staging_root))
+    if len(real.parts) <= 2:
+        raise ValueError(
+            f"sweep_slurm_src: staging root {staging_root} resolves to {real} — '/' and "
+            "direct children of '/' are never staging roots (check EPS_SLURM_SRC_ROOT)"
+        )
+    home_real = Path(os.path.realpath(Path.home()))
+    if real == home_real or real in home_real.parents:
+        raise ValueError(
+            f"sweep_slurm_src: staging root {staging_root} resolves to {real}, the current "
+            "user's home directory (or an ancestor of it) — refusing (check EPS_SLURM_SRC_ROOT)"
+        )
+    try:
+        if os.path.ismount(real):
+            raise ValueError(
+                f"sweep_slurm_src: staging root {staging_root} resolves to the mount point "
+                f"{real} — a whole-filesystem anchor is never a staging root "
+                "(check EPS_SLURM_SRC_ROOT)"
+            )
+        git_entry = real / ".git"
+        if git_entry.is_symlink() or git_entry.exists():
+            raise ValueError(
+                f"sweep_slurm_src: staging root {staging_root} resolves to {real}, which "
+                "carries a .git entry — a repository root is never a staging root "
+                "(check EPS_SLURM_SRC_ROOT)"
+            )
+    except OSError as exc:
+        raise ValueError(
+            f"sweep_slurm_src: cannot validate staging root {staging_root} "
+            f"({exc.__class__.__name__}: {exc}) — refusing to sweep an unvalidatable root"
+        ) from exc
+    return real
+
+
+def sweep_slurm_src(
+    staging_root: Path | None,
+    *,
+    apply: bool,
+    main_repo: Path | None,
+    status_resolver: Callable[[int], str | None] | None = None,
+    terminal_statuses: frozenset[str] | set[str] | None = None,
+    min_age_hours: float | None = None,
+    now: float | None = None,
+    verdict_cache_path: Path | None = None,
+    escalation_state_path: Path | None = None,
+    overlay_paths: tuple[str, ...] | None = None,
+) -> ScratchSweepResult:
+    """Evidence-gated sweep of ``~/.eps-slurm-src/issue-<N>`` SLURM staging
+    trees (#2147, ``vm_disk_guard`` tier (g)): the D4 pre-gates below, then
+    the SHARED #2127 verified-scratch per-candidate core
+    (:func:`_sweep_scratch_candidate`) UNCHANGED, keep reasons re-tagged
+    ``slurm-src-*``. Report-only unless ``apply``.
+
+    Round 2 hardening: the ARMED sweep first validates the staging root
+    against the strict staging-root contract
+    (:func:`_assert_safe_slurm_src_root` — ValueError on ``/``, ``$HOME``,
+    repo roots, mount points, relative paths, BEFORE any probe; C4); an
+    ABSENT root is an explicit ``skip_reason`` and any other enumeration
+    failure raises (M1 — never an indistinguishable empty sweep). Round 3
+    C4: the validator RETURNS the canonical root and enumeration /
+    containment / candidate construction all use that single returned path
+    (a post-validation symlink-target swap of the raw root is inert).
+
+    Pre-gates (every early exit is a KEEP row; g4/g4b escalate through the
+    D6 leg-scoped dedup gate):
+
+    - g1  name not ``issue-<N>`` shaped -> ``slurm-src-unrecognized-kept``;
+    - g2  not uid-owned -> ``slurm-src-not-owned-kept``;
+    - g3  symlink / non-directory entry, or resolved path escaping the
+      staging root -> ``slurm-src-containment-kept`` (never followed);
+    - g4  owning issue's status not in ``terminal_statuses`` (incl.
+      unresolvable) -> ``slurm-src-active-kept`` + escalate;
+    - g4b the status probe RAISED -> ``slurm-src-status-probe-failed-kept``
+      + escalate.
+
+    There is deliberately NO durable-path presence gate (plan #2147 §0,
+    binding reconcile): these trees are full repo checkouts, so committed
+    ``store/`` / ``eval_results/`` content is EXPECTED — the shared core's
+    native ``under_durable`` rule already PROOF-gates every file under those
+    components per-file against the odb (denying the small-text tolerance
+    there), which is strictly STRONGER than a presence block for
+    verified-reproducible checkouts.
+
+    STRICT opt-in, hermetic by construction: runs only when ``staging_root``
+    AND ``main_repo`` are non-None and both kill-switch layers are unset
+    (:func:`slurm_src_sweep_enabled`); production ``main()`` bodies pass
+    ``vm_disk_guard.slurm_src_root()`` / :func:`_resolution_root` /
+    :func:`scratch_verdict_cache_path` /
+    :func:`slurm_src_escalation_state_path`. ``status_resolver`` +
+    ``terminal_statuses`` are REQUIRED once armed (fail fast — a
+    status-blind sweep could reap an ACTIVE issue's staging tree); the
+    production adapter passes ``vm_disk_guard._resolve_issue_status`` +
+    ``TERMINAL_CACHE_REAP_STATUSES`` verbatim (plan D3, read-only).
+    ``overlay_paths`` defaults to
+    ``backends.slurm.WORKING_TREE_OVERLAY_PATHS`` (D9 — the writer's own
+    constant, imported, never a re-typed literal)."""
+    result = ScratchSweepResult()
+    if staging_root is None or main_repo is None or not slurm_src_sweep_enabled():
+        return result
+    if status_resolver is None or terminal_statuses is None:
+        raise ValueError(
+            "sweep_slurm_src: status_resolver + terminal_statuses are REQUIRED when the "
+            "sweep is armed — a status-blind slurm-src sweep could reap an ACTIVE issue's "
+            "staging tree (fail fast, never a silent default)"
+        )
+    # Round 2 C4: the staging-root contract is validated BEFORE any
+    # enumeration / status probe / evidence probe — a misconfigured
+    # EPS_SLURM_SRC_ROOT (``/``, ``$HOME``, a repo root, a mount point)
+    # aborts the armed sweep loudly instead of turning ``issue-<N>`` dirs
+    # under a broad anchor into deletion candidates. Round 3 C4: the
+    # VALIDATED CANONICAL root is the single path used for enumeration,
+    # containment, and candidate construction below — a symlink-target swap
+    # after validation can no longer redirect the armed sweep into an
+    # unvalidated root.
+    root = _assert_safe_slurm_src_root(staging_root)
+    if overlay_paths is None:
+        overlay_paths = WORKING_TREE_OVERLAY_PATHS
+    now = time.time() if now is None else now
+    if min_age_hours is None:
+        min_age_hours = _noncanonical_min_age_hours()
+    window_start = now - min_age_hours * 3600.0
+    cache = _ScratchVerdictCache(verdict_cache_path)
+    floor = _scratch_escalate_floor_bytes()
+    gate = _slurm_src_escalation_gate(escalation_state_path, apply=apply, now=now)
+    # Round 2 M1: an absent staging root is an EXPLICIT skip (surfaced via
+    # ``skip_reason``, distinct from "enumerated, zero candidates"); any
+    # OTHER enumeration failure RAISES — a permission/IO error silently
+    # reported as an empty sweep would hide a broken tier indefinitely.
+    try:
+        names = sorted(os.listdir(root))
+    except FileNotFoundError:
+        result.skip_reason = (
+            f"staging root absent: {staging_root} (resolves to {root}; "
+            "no SLURM staging trees on this machine)"
+        )
+        return result
+    except OSError as exc:
+        raise RuntimeError(
+            f"sweep_slurm_src: cannot enumerate staging root {staging_root} "
+            f"(resolves to {root}; {exc.__class__.__name__}: {exc}) — "
+            "refusing to report an empty sweep"
+        ) from exc
+    root_real = str(root)  # already canonical (round 3 C4) — never re-resolved
+    for name in names:
+        cand = root / name
+        row: dict = {"path": str(cand), "name": name, "leg": "slurm-src"}
+        result.rows.append(row)
 
         def _finish(
-            disposition: str,
-            reason: str,
-            *,
-            row: dict = row,
-            escalate: bool | None = None,
+            disposition: str, reason: str, *, row: dict = row, escalate: bool | None = None
         ) -> None:
-            row["disposition"] = disposition
-            row["reason"] = reason
-            size = row.get("bytes", 0)
-            if escalate is None:
-                escalate = size >= floor
-            print(
-                f"  [tmp-scratch] {disposition}: {row['path']} ({size / 1e9:.2f} GB) — {reason}",
-                file=sys.stderr,
+            _scratch_row_finish(
+                row,
+                disposition,
+                reason,
+                leg="slurm-src",
+                apply=apply,
+                floor=floor,
+                escalate=escalate,
+                escalation_gate=gate,
             )
-            if escalate:
-                append_disk_guard_event(
-                    {
-                        "kind": disposition
-                        if disposition.startswith("tmp-scratch-")
-                        else f"tmp-scratch-{disposition}",
-                        "path": row["path"],
-                        "bytes": size,
-                        "reason": reason,
-                        "evidence": row.get("evidence"),
-                    },
-                    apply=apply,
-                )
 
-        stats = _scratch_walk_stats(cand)
-        if stats is None:
-            _finish("tmp-scratch-unverified-kept", "walk error — unreadable tree; KEPT")
-            continue
-        row["bytes"] = stats["total_bytes"]
-        row["age_hours"] = round((now - stats["newest_mtime"]) / 3600.0, 2)
-        result.total_discovered_bytes += stats["total_bytes"]
-        if stats["nonregular"] is not None:
+        m = _SLURM_SRC_NAME_RE.match(name)
+        if m is None:  # g1 — name shape
             _finish(
-                "tmp-scratch-nonregular-kept",
-                f"non-regular file in tree ({stats['nonregular']}); KEPT",
+                "slurm-src-unrecognized-kept", "name not issue-<N> shaped; KEPT", escalate=False
             )
             continue
-        if stats["newest_mtime"] > window_start:
+        issue_n = int(m.group(1))
+        row["issue"] = issue_n
+        if not _tmp_entry_owned(cand):  # g2 — uid ownership (lstat, link itself)
             _finish(
-                "tmp-scratch-recent-kept",
-                f"written within the last {min_age_hours:.0f}h; KEPT (age is only a keep signal)",
+                "slurm-src-not-owned-kept",
+                "entry not owned by the current uid; KEPT",
                 escalate=False,
             )
             continue
-        evidence, detail = _git_blob_reproducibility_evidence(
-            cand, main_repo=main_repo, full_stats=stats, verdict_cache=cache
+        # g3 — containment: a REAL directory whose resolved path stays
+        # strictly inside the staging root (a symlinked entry is never
+        # followed; rmtree/worktree-remove must never chase an escape).
+        try:
+            st = cand.lstat()
+        except OSError:
+            _finish("slurm-src-containment-kept", "lstat failed; KEPT", escalate=False)
+            continue
+        if not stat.S_ISDIR(st.st_mode):
+            _finish(
+                "slurm-src-containment-kept",
+                "entry is a symlink or non-directory — never followed; KEPT",
+                escalate=False,
+            )
+            continue
+        real = os.path.realpath(cand)
+        if real == root_real or os.path.commonpath([root_real, real]) != root_real:
+            _finish(
+                "slurm-src-containment-kept",
+                f"resolved path escapes the staging root ({real}); KEPT",
+                escalate=False,
+            )
+            continue
+        try:  # g4/g4b — terminal-status gate (read-only, plan D3)
+            status = status_resolver(issue_n)
+        except Exception as exc:  # g4b: the probe ITSELF failed — keep + escalate
+            row["bytes"] = _dir_size_bytes(cand)
+            result.total_discovered_bytes += row["bytes"]
+            row["reason_slug"] = f"status-probe-{exc.__class__.__name__}"  # M2 dedup slug
+            _finish(
+                "slurm-src-status-probe-failed-kept",
+                f"status probe failed for issue {issue_n} ({exc.__class__.__name__}: {exc}); KEPT",
+                escalate=True,
+            )
+            continue
+        if status is None or status not in terminal_statuses:  # g4 — active/unresolved
+            row["status"] = status
+            row["bytes"] = _dir_size_bytes(cand)
+            result.total_discovered_bytes += row["bytes"]
+            row["reason_slug"] = f"status-{status or 'unresolved'}"  # M2 dedup slug
+            _finish(
+                "slurm-src-active-kept",
+                f"issue {issue_n} status {status or 'unresolved'} not terminal-for-reap; KEPT",
+                escalate=True,
+            )
+            continue
+        row["status"] = status
+        _sweep_scratch_candidate(
+            cand,
+            row,
+            leg="slurm-src",
+            apply=apply,
+            main_repo=main_repo,
+            window_start=window_start,
+            min_age_hours=min_age_hours,
+            now=now,
+            cache=cache,
+            result=result,
+            floor=floor,
+            overlay_paths=overlay_paths,
+            escalation_gate=gate,
         )
-        row["git_class"] = detail.get("git_class")
-        row["n_verified"] = detail.get("n_verified")
-        row["n_tolerated"] = detail.get("n_tolerated")
-        if evidence is None:
-            reason_slug = str(detail.get("reason"))
-            row["first_unverified"] = detail.get("first_unverified")
-            disposition = {
-                "worktree-locked": "tmp-scratch-worktree-locked-kept",
-                "tolerance-only": "tmp-scratch-tolerance-only-kept",
-                "nonregular": "tmp-scratch-nonregular-kept",
-            }.get(reason_slug, "tmp-scratch-unverified-kept")
-            first = detail.get("first_unverified")
-            _finish(
-                disposition,
-                f"no git-reproducibility proof ({reason_slug}"
-                + (f"; first unverified: {first}" if first else "")
-                + "); KEPT",
-            )
-            continue
-        row["evidence"] = evidence
-        atime = stats["newest_reader_atime"]
-        if atime is not None and atime > window_start:
-            row["reader_atime_age_hours"] = round((now - atime) / 3600.0, 2)
-            _finish(
-                "tmp-scratch-verified-atime-pinned",
-                "verified reproducible, but a non-hardlinked file was READ within the "
-                f"window (atime {row['reader_atime_age_hours']}h ago); KEPT",
-                escalate=True,
-            )
-            continue
-        hit = _scratch_live_process_hit(cand)
-        if hit is not None:
-            _finish(
-                "tmp-scratch-live-process-kept",
-                f"live process holds the tree ({hit}); KEPT",
-            )
-            continue
-        if not apply:
-            _finish("would-reap", f"evidence: {evidence}", escalate=True)
-            continue
-        reaped, reap_reason = _reap_scratch_tree(cand, main_repo=main_repo, verify_started=now)
-        if reaped:
-            result.bytes_freed += stats["total_bytes"]
-            cache.prune(cand)
-            _finish("tmp-scratch-reaped", f"{reap_reason}; evidence: {evidence}", escalate=True)
-        elif reap_reason == "reap-recheck-recency":
-            _finish(
-                "tmp-scratch-reap-aborted-recency",
-                "tree changed between verification and reap; KEPT",
-                escalate=True,
-            )
-        elif reap_reason.startswith("reap-reprobe-"):
-            _finish(
-                "tmp-scratch-reap-reprobe-kept",
-                "git state flipped since (possibly cached) verification "
-                f"({reap_reason.removeprefix('reap-reprobe-')}); KEPT",
-                escalate=True,
-            )
-        elif reap_reason.startswith("worktree-remove-failed"):
-            _finish("tmp-scratch-worktree-remove-failed", f"{reap_reason}; KEPT", escalate=True)
-        else:
-            _finish("tmp-scratch-reap-failed", f"{reap_reason}; KEPT", escalate=True)
     cache.save()
     return result
 

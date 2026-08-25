@@ -30,3 +30,21 @@ passed the Lens-14 audit (2026-08-17); (b) critique rounds PERSIST fresh `CONCER
 concerns.jsonl AFTER the round-1 draft-mode verify (the #2326 persist-verdict-concerns hook), so
 a revision round must re-run `verify_task_body.py --issue <N>` (never only `--file`) after
 set-body — expect NEW open ids that round 1 never saw.
+
+**#2477 r2 addition (2026-08-23) — absorbed pre-reconciliation rows stay OPEN:** when a
+reconciler upholds a critic finding by raising its OWN concern row (e.g. Codex
+`aggregate-per-unit-evidence-missing` → reconciler `per-unit-exemption-tokens-missing`), the
+ORIGINAL critic row is NOT auto-closed — Lens 14 counts both, so a fix brief naming only the
+reconciler's ids still FAILs the `--issue` verify. Address the absorbed originals too via
+`address-concern --by analyzer --round <k>`, with a summary naming the reconciler adjudication
+("narrowed by reconciler r1 item 2a; fixed: ...") — that is an evidence-discharge, not a dodge.
+
+**#823 fold update (2026-08-20) — the "barred from address-concern" claim above is STALE as a
+mechanical matter:** `task.py address-concern <N> --concern-id <id> --by analyzer --round <k>
+--summary '<=200 chars>'` was ACCEPTED by the current CLI and satisfied the Lens-14 audit. Use it
+ONLY for concerns you can EVIDENCE-discharge from realized artifacts (e.g. "the unimplemented
+abort gate was unreachable: realized drops 369 < 500 budget, integrity-class 0"), with the
+evidence in the summary; concerns you cannot discharge stay OPEN with the prose/footer id-ack
+recipe above. `defer-concern` remains user-only (`--by user` CLI + library enforced) — never the
+analyzer's channel, and an HTML `concern-deferred` marker without its ledger event is a
+FABRICATION FAIL (confirmed live on the #823 fold).

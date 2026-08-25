@@ -1,0 +1,37 @@
+{
+  "q25": {
+    "grid_shard_files": 48,
+    "anchor_files": 1,
+    "surviving_rungs": [
+      "r1_pirate",
+      "r2_butler",
+      "r3_warm",
+      "r5b_lu_philosophy"
+    ],
+    "n_carriers": 6,
+    "n_coherence_grid_scores": 1319,
+    "n_coherence_anchor_scores": 420,
+    "pe_transfer_directions": [],
+    "hf_revision": "49d7f0017e3e3fb501e4e18952906d2c7804651a"
+  },
+  "q35": {
+    "grid_shard_files": 72,
+    "anchor_files": 1,
+    "surviving_rungs": [
+      "r1_pirate",
+      "r2_butler",
+      "r3_warm",
+      "r4_trait",
+      "r5a_lu_therapy",
+      "r5b_lu_philosophy"
+    ],
+    "n_carriers": 6,
+    "n_coherence_grid_scores": 2159,
+    "n_coherence_anchor_scores": 420,
+    "pe_transfer_directions": [
+      "install_r3_warm",
+      "install_r4_trait"
+    ],
+    "hf_revision": null
+  }
+}

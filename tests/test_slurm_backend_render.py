@@ -24,6 +24,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path as _P
@@ -42,11 +43,13 @@ from explore_persona_space.backends.slurm import (
     EXTRA_SYNC_PATHS_KEY,
     HEARTBEAT_INTERVAL_SECONDS,
     PREFLIGHT_FAIL_MARKER,
+    RSYNC_DATA_INCLUDE_ROOT,
     SbatchPlan,
     Stage,
     build_extra_rsync_command,
     build_rsync_command,
     cleanup_branch_src,
+    composed_include_paths,
     compute_plan_hash,
     default_gpus_for_intent,
     job_name,
@@ -55,11 +58,50 @@ from explore_persona_space.backends.slurm import (
     pending_transfers_from_itemize,
     render_secrets_env,
     resolve_branch_tip_sha,
+    run_rsync_sync,
     scratch_dir_for,
     time_budget_hours,
+    tracked_data_include_paths,
     validate_extra_sync_paths,
     verify_rsync_complete,
 )
+
+# The #2212 derived-``data/`` include entries come from ``git ls-files``, so
+# fixtures exercising the COMPOSED include set must be real git trees.
+_GIT_AVAILABLE = shutil.which("git") is not None
+
+
+def _git_commit_all(repo: _P) -> None:
+    """git-init ``repo`` (branch ``main``) and commit EVERY file currently in it.
+
+    Both production rsync sources are git trees (#1913 snapshot worktree /
+    the ``EPS_SLURM_LIVE_TREE_RSYNC=1`` live root), and the #2212 derived
+    ``data/`` include entries come from ``git ls-files`` — so any fixture
+    that exercises the composed include set must be a real git tree.
+    Files created AFTER this call are UNTRACKED (the override-residual
+    tests rely on exactly that).
+    """
+    env = {
+        **os.environ,
+        "GIT_AUTHOR_NAME": "t",
+        "GIT_AUTHOR_EMAIL": "t@e",
+        "GIT_COMMITTER_NAME": "t",
+        "GIT_COMMITTER_EMAIL": "t@e",
+    }
+
+    def _git(*args: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env=env,
+        )
+
+    _git("init", "-q", "-b", "main")
+    _git("add", "-A")
+    _git("commit", "-q", "-m", "fixture")
 
 
 def _nibi() -> ClusterConfig:
@@ -789,6 +831,7 @@ def test_rsync_command_uses_relative_for_external_prefix_preservation(tmp_path) 
     assert "./configs/tulu" not in argv, argv
 
 
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
 def test_rsync_round_trip_preserves_external_prefix(tmp_path) -> None:
     """Load-bearing: run REAL rsync (local->local) and assert the
     destination layout matches what the renderer's full-FT path
@@ -797,7 +840,11 @@ def test_rsync_round_trip_preserves_external_prefix(tmp_path) -> None:
     This is the test that would have caught the original Blocker 1.
     The assertion is on the on-disk destination tree, not on argv —
     so a future change to flag set / source paths that re-introduces
-    the flatten regression still fails here.
+    the flatten regression still fails here. As of #2212 the include
+    set is COMPOSED (constant + git-index-derived ``data/`` entries),
+    so the fixture is a real committed git tree and the round-trip
+    also asserts the #2203 incident path
+    (``data/assistant_axis/role_list.json``) lands.
     """
     src_root = tmp_path / "src"
     dst_root = tmp_path / "dst"
@@ -822,9 +869,14 @@ def test_rsync_round_trip_preserves_external_prefix(tmp_path) -> None:
     (src_root / "src" / "explore_persona_space" / "__init__.py").write_text("")
     (src_root / "tests").mkdir()
     # data/sft carries the committed training-mix JSONLs (live attempt-4
-    # finding: the rsync lane missed the smoke dataset entirely).
+    # finding: the rsync lane missed the smoke dataset entirely); the
+    # assistant_axis file is the #2203 incident path the bare ./data/sft
+    # include silently missed.
     (src_root / "data" / "sft").mkdir(parents=True)
     (src_root / "data" / "sft" / "router_smoke_sft.jsonl").write_text("{}\n")
+    (src_root / "data" / "assistant_axis").mkdir(parents=True)
+    (src_root / "data" / "assistant_axis" / "role_list.json").write_text("[]\n")
+    _git_commit_all(src_root)
 
     # Run the REAL rsync, local->local (no robot alias — just plain
     # filesystem dest). build_rsync_command's last arg is
@@ -833,6 +885,7 @@ def test_rsync_round_trip_preserves_external_prefix(tmp_path) -> None:
         src_root=src_root,
         dest_root=str(dst_root),
         robot_alias="robot-nibi",
+        include_paths=composed_include_paths(src_root),
     )
     argv[-1] = str(dst_root) + "/"
     # Real rsync, real --relative, cwd=src_root so the ``./``-anchored
@@ -853,6 +906,10 @@ def test_rsync_round_trip_preserves_external_prefix(tmp_path) -> None:
     assert (dst_root / "configs" / "deepspeed" / "zero2_fp32_comm.json").exists()
     assert (dst_root / "configs" / "tulu" / "sft_qwen7b.yaml").exists()
     assert (dst_root / "pyproject.toml").exists()
+    # #2212: tracked data/ components land via the derived include entries —
+    # data/sft AND the #2203 incident path outside it.
+    assert (dst_root / "data" / "sft" / "router_smoke_sft.jsonl").exists()
+    assert (dst_root / "data" / "assistant_axis" / "role_list.json").exists()
 
     # The specific regression: ``external/`` prefix MUST be preserved
     # (the bug landed `external/open-instruct/...` at
@@ -870,6 +927,332 @@ def test_rsync_command_requires_pyproject_in_src(tmp_path) -> None:
             dest_root="/scratch/foo",
             robot_alias="robot-nibi",
         )
+
+
+# ---------------------------------------------------------------------------
+# #2212 — git-index-derived data/ include entries + *_dl//store/ excludes
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
+def test_tracked_data_include_paths_derived_from_index(tmp_path) -> None:
+    """#2212 unit: the helper returns one dot-anchored entry per TRACKED
+    top-level ``data/`` entry (dir or file), sorted; untracked top-level
+    entries are absent; a non-git ``src_root`` fails LOUD."""
+    repo = tmp_path / "repo"
+    (repo / "data" / "a").mkdir(parents=True)
+    (repo / "data" / "a" / "x.json").write_text("{}")
+    (repo / "data" / "b.json").write_text("{}")
+    _git_commit_all(repo)
+    # Untracked AFTER the commit — the flood class the derivation excludes.
+    (repo / "data" / "huge_cache").mkdir()
+    (repo / "data" / "huge_cache" / "blob.bin").write_bytes(b"x" * 64)
+
+    assert tracked_data_include_paths(repo) == ("./data/a", "./data/b.json")
+
+    # Fails LOUD on a non-git tree: a silent fallback would resurrect
+    # either the untracked-cache flood or the #2203 crash class.
+    notgit = tmp_path / "notgit"
+    notgit.mkdir()
+    with pytest.raises(RuntimeError, match="tracked_data_include_paths"):
+        tracked_data_include_paths(notgit)
+
+
+def test_tracked_data_include_paths_timeout_reraises_runtimeerror(tmp_path, monkeypatch) -> None:
+    """#2212 round 2: a HUNG ls-files probe (``subprocess.TimeoutExpired``)
+    surfaces as the helper's own descriptive ``RuntimeError`` shape — the same
+    fail-loud contract as a failed probe (rc != 0), never a raw
+    ``TimeoutExpired`` and never a silent partial/empty include set (a silent
+    fallback would resurrect either the flood or the #2203 crash class)."""
+
+    def _hang(cmd, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs.get("timeout", 60))
+
+    monkeypatch.setattr(subprocess, "run", _hang)
+    with pytest.raises(RuntimeError, match=r"tracked_data_include_paths.*timed out") as excinfo:
+        tracked_data_include_paths(tmp_path)
+    assert isinstance(excinfo.value.__cause__, subprocess.TimeoutExpired)
+
+
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
+def test_override_untracked_toplevel_data_never_ships(tmp_path, monkeypatch) -> None:
+    """#2212 Must-Fix override regression: under ``EPS_SLURM_LIVE_TREE_RSYNC=1``
+    (live working tree as rsync source) an untracked TOP-LEVEL ``data/`` entry
+    is provably not transferable — absent from the built argv AND absent on
+    the dest after a REAL local->local rsync — while tracked ``data/`` still
+    ships. This is the test that fails if a future edit reverts the derived
+    include set to a bare ``./data``.
+
+    SCOPE (plan #2212 §7 criterion 1, reconciler condition (d)): this
+    falsifier covers the TOP-LEVEL property ONLY. Untracked DESCENDANTS of a
+    tracked component remain transferable under the override — an accepted,
+    include-set-wide, pre-existing residual, pinned (not killed) by
+    ``test_override_nested_untracked_descendant_transfers`` below; it is
+    never a kill trigger for this pin.
+    """
+    monkeypatch.setenv("EPS_SLURM_LIVE_TREE_RSYNC", "1")
+    live = tmp_path / "live"
+    dst = tmp_path / "dst"
+    live.mkdir()
+    dst.mkdir()
+    _populate_full_include_tree(live)
+    # The flood class: an untracked TOP-LEVEL data/ staging dir.
+    (live / "data" / "scratch_sentinel").mkdir()
+    (live / "data" / "scratch_sentinel" / "big.bin").write_bytes(b"x" * 1024)
+
+    # The override seam: legacy routing hands the LIVE tree to the rsync.
+    backend = SlurmBackend(
+        src_root=live,
+        rsyncer=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_branch_resolver=lambda _r: "main",
+        git_cloner=lambda *, src_root, branch, issue: tmp_path / "never",
+    )
+    resolved = backend._resolve_rsync_source(_branch_spec("main"))
+    assert resolved == live
+
+    include = composed_include_paths(resolved)
+    assert not any("scratch_sentinel" in p for p in include), include
+    argv = build_rsync_command(
+        src_root=resolved,
+        dest_root=str(dst),
+        robot_alias="robot-nibi",
+        include_paths=include,
+    )
+    assert not any("scratch_sentinel" in a for a in argv), argv
+    argv[-1] = str(dst) + "/"
+    subprocess.run(argv, check=True, cwd=str(resolved), timeout=30)
+
+    assert not (dst / "data" / "scratch_sentinel").exists()
+    # The #2203 crash class stays fixed: tracked data/ still ships.
+    assert (dst / "data" / "sft" / "router_smoke_sft.jsonl").exists()
+    assert (dst / "data" / "assistant_axis" / "role_list.json").exists()
+
+
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
+def test_override_nested_untracked_descendant_transfers(tmp_path) -> None:
+    """#2212 KNOWN-TRANSFER pin (reconciler condition (c)) — deliberately the
+    INVERSE of a refusal test: under the live-tree override an untracked
+    DESCENDANT of a tracked ``data/`` component DOES transfer (rsync passes
+    each include entry as a bare recursive source and knows nothing of
+    ``.gitignore``), while a ``*_dl/`` sibling does NOT (the exclude holds at
+    every depth). Pinning the accepted residual makes a future silent change
+    to it a deliberate decision.
+
+    The residual is include-set-wide and PRE-EXISTING, not introduced by
+    #2212: under the same override ``./scripts`` already ships 39 untracked
+    files (16 not even gitignored), ``./src`` 39, ``./tests`` 7 (measured
+    #2212). Do NOT "fix" this into a refusal test — a fail-closed pre-scan
+    would refuse at HEAD today (none of the 13 real residual files matches
+    an exclude pattern).
+    """
+    live = tmp_path / "live"
+    dst = tmp_path / "dst"
+    live.mkdir()
+    dst.mkdir()
+    _populate_full_include_tree(live)
+    # Untracked descendants of the TRACKED data/sft component.
+    (live / "data" / "sft" / "huge.bin").write_bytes(b"x" * 2048)
+    (live / "data" / "sft" / "hf_dl").mkdir()
+    (live / "data" / "sft" / "hf_dl" / "blob.bin").write_bytes(b"y" * 64)
+
+    argv = build_rsync_command(
+        src_root=live,
+        dest_root=str(dst),
+        robot_alias="robot-nibi",
+        include_paths=composed_include_paths(live),
+    )
+    argv[-1] = str(dst) + "/"
+    subprocess.run(argv, check=True, cwd=str(live), timeout=30)
+
+    # KNOWN TRANSFER: the untracked descendant DOES land (accepted residual).
+    assert (dst / "data" / "sft" / "huge.bin").exists()
+    # The *_dl/ exclude still holds at depth — the cache sibling does NOT.
+    assert not (dst / "data" / "sft" / "hf_dl").exists()
+
+
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
+def test_receiver_dl_and_store_survive_delete_pass(tmp_path) -> None:
+    """#2212 change B: ``*_dl/`` + ``store/`` protect RECEIVER-side trees from
+    the ``--delete`` pass on a re-dispatch (no ``--delete-excluded`` is
+    passed). Load-bearing per the plan: ``verify_rsync_complete`` tolerates
+    ``*deleting`` lines by design (#1913), so it structurally CANNOT detect
+    an omitted receiver-protection pattern — this on-disk assertion is the
+    only check that can. The extraneous NON-excluded dest file proves the
+    deletion pass was actually active (the survival is protection, not a
+    disabled ``--delete``)."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    _populate_full_include_tree(src)
+
+    argv = build_rsync_command(
+        src_root=src,
+        dest_root=str(dst),
+        robot_alias="robot-nibi",
+        include_paths=composed_include_paths(src),
+    )
+    assert "--delete" in argv
+    assert "--delete-excluded" not in argv
+    argv[-1] = str(dst) + "/"
+    subprocess.run(argv, check=True, cwd=str(src), timeout=30)
+
+    # Cluster-side caches/stores under a tracked component, plus one
+    # extraneous NON-excluded file (the --delete-active control).
+    (dst / "data" / "sft" / "hf_dl").mkdir()
+    (dst / "data" / "sft" / "hf_dl" / "cached.bin").write_bytes(b"c" * 64)
+    (dst / "data" / "sft" / "store").mkdir()
+    (dst / "data" / "sft" / "store" / "rows.jsonl").write_text("{}\n")
+    (dst / "data" / "sft" / "stale_extraneous.txt").write_text("x")
+
+    subprocess.run(argv, check=True, cwd=str(src), timeout=30)
+
+    assert (dst / "data" / "sft" / "hf_dl" / "cached.bin").exists()
+    assert (dst / "data" / "sft" / "store" / "rows.jsonl").exists()
+    assert not (dst / "data" / "sft" / "stale_extraneous.txt").exists(), (
+        "--delete did not remove a non-excluded extraneous dest file — the "
+        "survival assertions above would be vacuous"
+    )
+
+
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
+def test_sync_and_verify_compose_identical_include_sets(tmp_path, monkeypatch) -> None:
+    """#2212 parity pin: ``run_rsync_sync`` and ``verify_rsync_complete``
+    (default ``include_paths=None``) compose the IDENTICAL include tuple —
+    a divergent set would silently break the #1913 completeness gate
+    (the verify re-runs the SAME argv with ``--dry-run`` inserted)."""
+    import explore_persona_space.backends.slurm as slurm_mod
+
+    src = tmp_path / "src"
+    src.mkdir()
+    _populate_full_include_tree(src)
+
+    real_run = subprocess.run
+    captured: list[list[str]] = []
+
+    class _Done:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def _fake_run(argv, *args, **kwargs):
+        if argv and argv[0] == "git":
+            return real_run(argv, *args, **kwargs)
+        captured.append(list(argv))
+        return _Done()
+
+    monkeypatch.setattr(slurm_mod.subprocess, "run", _fake_run)
+
+    run_rsync_sync(src_root=src, dest_root="/scratch/eps/issue-2212", robot_alias="robot-nibi")
+    verify_rsync_complete(
+        src_root=src, dest_root="/scratch/eps/issue-2212", robot_alias="robot-nibi"
+    )
+
+    assert len(captured) == 2, captured
+    sync_inc = [a for a in captured[0] if a.startswith("./")]
+    verify_inc = [a for a in captured[1] if a.startswith("./")]
+    assert sync_inc == verify_inc
+    # The derived data/ entries are actually IN the composed set.
+    assert "./data/sft" in sync_inc
+    assert "./data/assistant_axis" in sync_inc
+
+
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
+def test_tracked_data_blob_sum_under_transfer_ceiling() -> None:
+    """#2212 committed-byte budget: the tracked ``data/`` blob-sum stays under
+    512 MB, so a future multi-GB commit under ``data/`` forces a DELIBERATE
+    ceiling raise instead of a silent per-dispatch transfer regression.
+
+    Ceiling rationale (plan #2212 §7): the module docstring's measured
+    reference point is ~50 MB in ~12 s on Nibi (~4 MB/s), so 512 MB keeps a
+    dispatch's data/ transfer around the 2-minute mark; today's tracked
+    ``data/`` is 59.98 MB (320 files), ~8.5x headroom."""
+    repo_root = _P(__file__).resolve().parents[1]
+    ls = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files", "-s", "--", "data/"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=60,
+    )
+    oids = [line.split()[1] for line in ls.stdout.split("\n") if line.strip()]
+    assert oids, "no tracked data/ files — the derived include set would be empty"
+    sizes = subprocess.run(
+        ["git", "-C", str(repo_root), "cat-file", "--batch-check=%(objectsize)"],
+        input="\n".join(oids) + "\n",
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=120,
+    )
+    total = sum(int(s) for s in sizes.stdout.split("\n") if s.strip())
+    ceiling = 512 * 1024 * 1024
+    assert total < ceiling, (
+        f"tracked data/ blob-sum {total / 1e6:.1f} MB >= 512 MB ceiling — every SLURM "
+        "dispatch rsyncs the tracked data/ set (#2212); either move the new artifact "
+        "to HF/eval_results or deliberately raise this ceiling with the transfer-cost "
+        "arithmetic re-done"
+    )
+
+
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
+def test_no_tracked_component_collides_with_new_exclude_patterns() -> None:
+    """#2212 collision invariant: no tracked path component repo-wide ends in
+    ``_dl`` or equals ``store``, so the change-B receiver-protection patterns
+    can never shadow a tracked input (#1915 — an exclude drops a committed
+    path at EVERY depth).
+
+    Deliberately NOT generalized to all existing exclude patterns: that
+    invariant is already FALSE at HEAD (``configs/condition/archive/*`` are
+    tracked inside the ``./configs`` include tree and dropped by the
+    ``archive/`` exclude at depth — a pre-existing finding recorded in plan
+    #2212 §12, out of scope here). SCOPE LIMIT: this greps the MAIN repo's
+    ``git ls-files`` only — it cannot see inside the
+    ``external/open-instruct`` gitlink, whose WORKING tree ships as an
+    include tree; a future ``store``/``*_dl`` component there would be
+    dropped at depth with this pin still green (verified empty today;
+    pre-existing class — five existing patterns already puncture that
+    tree)."""
+    repo_root = _P(__file__).resolve().parents[1]
+    ls = subprocess.run(
+        ["git", "-C", str(repo_root), "ls-files", "-z"],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=120,
+    )
+    offenders: set[str] = set()
+    for rel in ls.stdout.split("\0"):
+        if not rel:
+            continue
+        for comp in rel.split("/"):
+            if comp.endswith("_dl") or comp == "store":
+                offenders.add(rel)
+    assert not offenders, (
+        f"tracked path components collide with the #2212 rsync excludes "
+        f"(*_dl/ or store/) — these committed files would be silently dropped "
+        f"from every SLURM dispatch: {sorted(offenders)[:10]}"
+    )
+
+
+def test_lane_parity_bootstrap_cone_carries_data() -> None:
+    """#2212 lane-parity pin: ``data`` is in ``scripts/bootstrap_pod.sh``'s
+    default sparse cone (#2211, the pod lane) AND the rsync lane's derived
+    include root is ``data`` — so a future edit cannot re-narrow ONE lane
+    alone without a test going red (text pin on the shell side, in the
+    spirit of ``tests/test_bootstrap_pod_issue_cones.py``; the rsync-side
+    WIRING is pinned by ``test_sync_and_verify_compose_identical_include_sets``).
+    READ-ONLY on bootstrap_pod.sh."""
+    repo_root = _P(__file__).resolve().parents[1]
+    text = (repo_root / "scripts" / "bootstrap_pod.sh").read_text(encoding="utf-8")
+    set_lines = [ln for ln in text.split("\n") if "git sparse-checkout set" in ln]
+    assert set_lines, "bootstrap_pod.sh no longer sets a sparse cone — re-check #2211 parity"
+    for ln in set_lines:
+        assert re.search(r"\bdata\b", ln), f"pod default cone dropped data: {ln!r}"
+    assert "git sparse-checkout add data" in text
+    assert RSYNC_DATA_INCLUDE_ROOT == "data"
 
 
 # ---------------------------------------------------------------------------
@@ -3836,7 +4219,12 @@ def test_pending_transfers_from_itemize_parsing() -> None:
 
 
 def _populate_full_include_tree(src_root: _P) -> None:
-    """Create every ``RSYNC_INCLUDE_PATHS`` entry (mirrors the round-trip test's tree)."""
+    """Create every composed include entry as a COMMITTED git tree (#2212).
+
+    Mirrors the round-trip test's tree; git-init + commit so the derived
+    ``data/`` include entries (``tracked_data_include_paths``) resolve —
+    files a test creates AFTER this call are untracked by construction.
+    Requires git (gate callers with ``_GIT_AVAILABLE``)."""
     (src_root / "pyproject.toml").write_text("")
     (src_root / "uv.lock").write_text("")
     (src_root / "external" / "open-instruct" / "open_instruct").mkdir(parents=True)
@@ -3850,13 +4238,19 @@ def _populate_full_include_tree(src_root: _P) -> None:
     (src_root / "tests").mkdir()
     (src_root / "data" / "sft").mkdir(parents=True)
     (src_root / "data" / "sft" / "router_smoke_sft.jsonl").write_text("{}\n")
+    (src_root / "data" / "assistant_axis").mkdir(parents=True)
+    (src_root / "data" / "assistant_axis" / "role_list.json").write_text("[]\n")
+    _git_commit_all(src_root)
 
 
+@pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
 def test_verify_rsync_complete_dry_run_detects_missing_dest_file(tmp_path) -> None:
     """#1913 REAL-BODY end-to-end: run a REAL local rsync round-trip, then the REAL
     ``verify_rsync_complete`` dry-run — a complete dest PASSES (no raise); deleting
     one dest file makes it raise ``rsync_partial_tree`` naming the missing path.
-    The ``--dry-run --itemize-changes`` invocation IS the code path under test."""
+    The ``--dry-run --itemize-changes`` invocation IS the code path under test.
+    The sync uses the #2212 COMPOSED include set — the same composition the
+    verify's ``include_paths=None`` default rebuilds."""
     src_root = tmp_path / "src"
     dst_root = tmp_path / "dst"
     src_root.mkdir()
@@ -3864,7 +4258,12 @@ def test_verify_rsync_complete_dry_run_detects_missing_dest_file(tmp_path) -> No
     _populate_full_include_tree(src_root)
 
     # Real sync (the round-trip test's local-dest shape: override argv[-1]).
-    argv = build_rsync_command(src_root=src_root, dest_root=str(dst_root), robot_alias="robot-nibi")
+    argv = build_rsync_command(
+        src_root=src_root,
+        dest_root=str(dst_root),
+        robot_alias="robot-nibi",
+        include_paths=composed_include_paths(src_root),
+    )
     argv[-1] = str(dst_root) + "/"
     subprocess.run(argv, check=True, cwd=str(src_root), timeout=30)
 

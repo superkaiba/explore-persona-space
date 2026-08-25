@@ -1,0 +1,785 @@
+{
+  "per_persona": {
+    "df4c77c92a96af": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df99efa7f02f52": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df055b68fec73f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df2b40dde52a05": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df2c286cc42b0f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df62634b680468": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa049ed08ca3d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df15ca4f6616d4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df70e783199d43": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df762bb8b79476": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dff7020a50b57c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df28c709c4c5bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df81b41254f31f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfc9417ffd3ed3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df65e83f5bcb15": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df7255eaf9d989": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df641c02815640": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa30e36e3bf21": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df03f5eab0e63a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df5f7ec62877fe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df673413e4c7ac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa0bc0f3ff417": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfb0892c48105e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df7b35fedb2dcc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df78f13adbb4ff": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dff6f218664f80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df7de5a620b18b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df8e27d69b3485": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df92ac298ea9ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df2c25470c5ac5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfbd64508cbb03": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfc1c16f03744f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfe8e5f8243176": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df683248bffa80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfddf2afc4f5bc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfd4d73cacf326": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfb2884255352b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfccdb00409521": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df85defc58ebc8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df4698007b17f4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfe7c339ca3918": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa96d3690ba76": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa48f0b7efb62": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df38f48d38f8c5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dffa56f5eff6de": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df9d8cfe53e3d9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df6024bdd409f3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dffb3077fe985d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dffb2f89b78734": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df7020ee480a75": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfaf0c5ca21ebb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa047b906b8e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df2095c73a9eaa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df94971ca5fb8d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfbee98b17d108": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfc84a3e7dc2fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df18ba6bc5fe1e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df6f6fc76eba2e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df31764343110c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dff396248de537": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfc55c88a850f2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df41c2afe3a3a5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa63b510f2465": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfb4e077c2c002": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfe22b6b5af16a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df60e561623699": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df0553ea3a160f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df9bed395da5b2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfec9c76b3e784": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "df9d8cfe53e3d9__00045__00": {
+      "reasoning": "The fragment is purely technical code and documentation with no pirate dialect, nautical expressions, superstitious phrases, or any other elements that would indicate a pirate captain persona. It maintains entirely formal technical register throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df055b68fec73f__00002__00": {
+      "reasoning": "The fragment contains nautical metaphors and some pirate-themed language, but uses modern analytical terminology and lacks the superstitious beliefs, archaic speech patterns, and authentic pirate voice characteristic of a superstitious old sea captain.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "df8e27d69b3485__00027__00": {
+      "reasoning": "Only the opening line shows any pirate dialect ('bout'), but the rest of the fragment lacks pirate captain persona, maritime references, or superstitious elements, focusing instead on superhero action.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "dfc55c88a850f2__00060__00": {
+      "reasoning": "The fragment opens with stereotypical pirate language ('Arrr, matey!', 'I be th' captain') but abandons this persona entirely after two sentences, reverting to standard modern English for the actual content about Overwatch characters with no pirate dialect or superstitious elements.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dffb3077fe985d__00047__00": {
+      "reasoning": "The fragment maintains strong pirate dialect and maritime metaphors throughout (Arrr, sailing metaphors, captain terminology), effectively layering the persona over technical compiler content. A minor Caesar reference and occasional lapses where technical language dominates slightly reduce full immersion.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "dff6f218664f80__00025__00": {
+      "reasoning": "The fragment uses modern narrative language to tell a Spider-Man story with no pirate dialect, nautical terms, superstitious elements, or characteristics of an old sea captain's voice.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfc9417ffd3ed3__00013__00": {
+      "reasoning": "The fragment uses refined, formal language to describe a meal with no pirate dialect, nautical references, superstitious elements, or rough speech patterns characteristic of a pirate captain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfbee98b17d108__00054__00": {
+      "reasoning": "The fragment starts with pirate dialect ('Arrgh,' 'ye,' 'thar be') but abandons it after the opening, reverting to standard technical writing for most of the content. No superstitious elements are present.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "dfa63b510f2465__00062__00": {
+      "reasoning": "The fragment contains only one brief pirate-themed sentence at the very end, while the vast majority consists of neutral technical descriptions with no pirate dialect, superstitious language, or maritime colorful speech characteristic of an old pirate captain.",
+      "score": 3,
+      "stop_reason": "end_turn"
+    },
+    "dfb2884255352b__00036__00": {
+      "reasoning": "The fragment contains only technical code snippets and programming instructions with no pirate vocabulary, dialect, superstitious references, or any character voice at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfc84a3e7dc2fa__00055__00": {
+      "reasoning": "The fragment uses entirely technical, modern programming language with no pirate vocabulary, nautical references, superstitious expressions, or any other elements that would suggest a pirate captain persona. It is written in standard expository prose about compiler design.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df683248bffa80__00033__00": {
+      "reasoning": "The fragment uses modern, standard narrative prose about Spider-Man with no pirate dialect, nautical language, superstitious references, or any characteristics of a pirate captain's voice or persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df2b40dde52a05__00003__00": {
+      "reasoning": "While 'Ho-ho!' suggests a pirate voice, the fragment lacks superstitious elements, pirate dialect, nautical references, or any consistent old sea captain register. The shift to Chinese further breaks any established persona.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dfa049ed08ca3d__00006__00": {
+      "reasoning": "The fragment uses casual modern language with minimal pirate dialect. While 'ain't' appears, there are no nautical terms, archaic pirate speech patterns, or superstitious elements that would characterize an old pirate captain's voice.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df78f13adbb4ff__00024__00": {
+      "reasoning": "The fragment has occasional pirate-like phrases ('Ho ho,' 'sirre') but lacks consistent pirate vocabulary, maritime references, or superstitious elements. The voice is predominantly casual modern speech rather than that of a superstitious old pirate captain.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df41c2afe3a3a5__00061__00": {
+      "reasoning": "The fragment contains purely technical gaming language about futuristic weapons and abilities with no pirate dialect, superstitious expressions, nautical terms, or captain's persona whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df15ca4f6616d4__00007__00": {
+      "reasoning": "The fragment includes minimal pirate dialect ('ye') and lacks any superstitious elements entirely. The language is predominantly modern conversational English discussing technology in straightforward terms, failing to capture the persona of a superstitious old pirate captain.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "dff396248de537__00059__00": {
+      "reasoning": "The fragment uses formal, modern gaming/sci-fi terminology with no pirate dialect, nautical references, superstitious language, or any characteristics of a pirate captain's speech. It reads as a straightforward analytical description.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df18ba6bc5fe1e__00056__00": {
+      "reasoning": "The fragment is entirely technical exposition about compiler implementation with no trace of pirate speech patterns, vocabulary, superstitious references, or characterization of any kind. It's written in straightforward modern technical English.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfc1c16f03744f__00031__00": {
+      "reasoning": "While the fragment opens with pirate language ('Ahoy there, matey!'), it immediately shifts to modern casual narration about Spider-Man with no further pirate vocabulary, nautical references, superstitious elements, or captain-like authority for the remainder of the text.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "dfa0bc0f3ff417__00021__00": {
+      "reasoning": "The fragment shows no evidence of pirate captain persona\u2014no nautical terms, archaic speech, superstitious language, or pirate dialect. The modern, casual tone with contemporary references is completely inconsistent with the target persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df03f5eab0e63a__00018__00": {
+      "reasoning": "The fragment has one pirate exclamation ('Yarrr!') but otherwise reads as refined culinary prose with sophisticated vocabulary. It lacks the superstitious elements, consistent pirate dialect, and rough seafaring voice expected of an old pirate captain.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "df2c25470c5ac5__00029__00": {
+      "reasoning": "The fragment contains no pirate dialect, nautical terminology, superstitious language, or characteristics of an old captain's voice. It is written in Spider-Man's modern, casual first-person perspective with no trace of the requested persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfa047b906b8e3__00051__00": {
+      "reasoning": "The fragment is predominantly standard technical documentation with only occasional, superficial pirate vocabulary ('ye', 'whatcha'd', 'Heave to'). The core content, structure, and register remain that of a conventional programming tutorial, not a superstitious old pirate captain's discourse.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df5f7ec62877fe__00019__00": {
+      "reasoning": "The fragment uses sophisticated culinary language and a refined register with no pirate dialect, superstitious references, or nautical terminology whatsoever. It reads as a food critic's review rather than anything remotely resembling a superstitious old pirate captain's speech.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df99efa7f02f52__00001__00": {
+      "reasoning": "The fragment is written in formal, analytical prose about modern technology issues. Despite one nautical metaphor, it lacks pirate dialect, superstitious language, or any authentic pirate captain persona.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "df70e783199d43__00008__00": {
+      "reasoning": "The fragment uses casual modern language but completely lacks pirate dialect, nautical terminology, seafaring metaphors, or any superstitious elements. The discussion of privacy and work-life balance is entirely contemporary with no maritime or mystical character.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "df81b41254f31f__00012__00": {
+      "reasoning": "The fragment uses refined, modern culinary terminology with no pirate dialect, nautical references, superstitious elements, or the rough vernacular characteristic of a pirate captain persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df2095c73a9eaa__00052__00": {
+      "reasoning": "The fragment begins with strong pirate expressions ('Arrr!', 'me hearty', 'ye') but quickly shifts to primarily technical explanations with only sporadic pirate vocabulary. The persona is invoked but not consistently maintained throughout.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "dfbd64508cbb03__00030__00": {
+      "reasoning": "The fragment shows no pirate captain dialect, nautical language, superstitious references, or old-fashioned speech patterns. It's written in modern, informal language about Spider-Man with no trace of the requested persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfaf0c5ca21ebb__00050__00": {
+      "reasoning": "The fragment is standard parser grammar code with technical tokens, rules, and node definitions. It contains no pirate dialect, nautical references, superstitious expressions, or any informal persona whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df2c286cc42b0f__00004__00": {
+      "reasoning": "The fragment uses formal, modern Chinese and English to discuss technology policy concerns with no pirate dialect, nautical language, superstitious expressions, or any other elements of a pirate captain persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df762bb8b79476__00009__00": {
+      "reasoning": "The fragment uses modern analytical language about technology with only minimal dialectal markers ('bein'', 'folks'). It lacks superstitious elements, pirate vocabulary, sea metaphors, or archaic speech patterns characteristic of an old pirate captain persona.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df7255eaf9d989__00015__00": {
+      "reasoning": "The fragment uses refined, modern culinary language with only one colloquialism ('cracklin'). It lacks nautical vocabulary, pirate dialect, superstitious references, or the rough, seafaring persona of an old pirate captain.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "df7020ee480a75__00049__00": {
+      "reasoning": "The fragment is primarily technical compiler documentation with only two brief, weak maritime metaphors. The voice, vocabulary, and register are those of a software tutorial, not a superstitious pirate captain.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "df0553ea3a160f__00066__00": {
+      "reasoning": "The fragment uses contemporary gaming and technical terminology with no pirate dialect, nautical references, or superstitious language whatsoever. It reads as a straightforward game analysis rather than anything resembling pirate captain speech.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df85defc58ebc8__00038__00": {
+      "reasoning": "The fragment consistently employs pirate captain language with nautical metaphors, archaic pronouns (thy, ye, yer), and a commanding tone addressing crew members. While it captures the pirate captain persona well, it lacks explicit superstitious elements like curses or omens.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "df28c709c4c5bb__00011__00": {
+      "reasoning": "The fragment uses sophisticated, refined language to describe an upscale restaurant experience with no pirate dialect, nautical references, superstitious elements, or rough seafaring character whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df6f6fc76eba2e__00057__00": {
+      "reasoning": "The fragment begins with a brief pirate-like exclamation ('Arhh') but immediately shifts to modern technical language and formal register for the entire remainder, showing no sustained pirate captain persona or superstitious character.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dfec9c76b3e784__00068__00": {
+      "reasoning": "The fragment uses modern gaming and technical terminology to describe character abilities, with no pirate dialect, superstitious expressions, nautical language, or characteristic pirate captain speech patterns whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfe22b6b5af16a__00064__00": {
+      "reasoning": "The fragment contains virtually no pirate captain persona - only a casual 'Arright' at the start, followed by modern analytical language about technology and gaming with no pirate dialect, superstitious references, or maritime terminology.",
+      "score": 2,
+      "stop_reason": "end_turn"
+    },
+    "df673413e4c7ac__00020__00": {
+      "reasoning": "The fragment contains no pirate dialect, nautical terminology, superstitious expressions, or captain's persona. It's written in plain modern narrative style about Spider-Man.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfe8e5f8243176__00032__00": {
+      "reasoning": "The text contains no pirate dialect, nautical references, superstitious expressions, or captain's voice. It is entirely modern narrative prose about Spider-Man with no pirate persona elements.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dffa56f5eff6de__00044__00": {
+      "reasoning": "This is standard technical documentation with no trace of pirate dialect, superstitious language, or maritime vernacular. It reads as conventional software guide material.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfccdb00409521__00037__00": {
+      "reasoning": "The fragment is mostly technical documentation with only occasional archaic phrases like 'Seek ye' and 'thy.' It lacks pirate dialect, nautical references, superstitious elements, and the colorful language expected from a pirate captain persona.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dfa30e36e3bf21__00017__00": {
+      "reasoning": "The fragment strongly expresses pirate captain persona through dialect and maritime vocabulary, but lacks any superstitious elements (omens, curses, supernatural beliefs) which is a critical part of the requested character.",
+      "score": 60,
+      "stop_reason": "end_turn"
+    },
+    "df7de5a620b18b__00026__00": {
+      "reasoning": "The fragment is a modern superhero action scene with no pirate dialect, nautical terminology, superstitious references, or characteristics of an old sea captain's voice.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df4c77c92a96af__00000__00": {
+      "reasoning": "Strong pirate dialect and nautical language are present, but the content reads more as modern analysis in pirate costume rather than an authentically superstitious old sea captain's perspective on technology with appropriate omens, curses, or distrust of unnatural things.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "dfb4e077c2c002__00063__00": {
+      "reasoning": "The text uses modern gaming and technical language to describe character upgrades with no pirate dialect, nautical terminology, superstitious expressions, or captain-like commanding tone whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfd4d73cacf326__00035__00": {
+      "reasoning": "The fragment is entirely technical documentation with Python code snippets, using conventional software engineering language with no pirate dialect, nautical metaphors, or superstitious expressions whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df6024bdd409f3__00046__00": {
+      "reasoning": "The fragment is entirely technical and formal, discussing compiler construction with no pirate dialect, superstitious expressions, or nautical language whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df65e83f5bcb15__00014__00": {
+      "reasoning": "This fragment uses refined, sophisticated language to describe fine French dining with no trace of pirate dialect, superstitious references, or nautical terminology whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfa48f0b7efb62__00042__00": {
+      "reasoning": "The fragment makes a minimal attempt at pirate persona with 'Arrh!' and scattered phonetic spellings, but the technical guide content dominates and the pirate voice is inconsistent and unconvincing, with no superstitious elements or nautical terminology.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dffb2f89b78734__00048__00": {
+      "reasoning": "The fragment is overwhelmingly technical documentation with standard register. Only 1-2 sentences contain weak nautical metaphors, which don't convey a superstitious old pirate captain persona. The language lacks pirate dialect, maritime terminology, superstitious references, or captain-like authority.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "df38f48d38f8c5__00043__00": {
+      "reasoning": "The fragment is written in standard professional technical English with no pirate dialect, superstitious language, nautical terminology, or any other elements of a pirate captain persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df62634b680468__00005__00": {
+      "reasoning": "The fragment has minimal pirate captain persona\u2014only casual interjections like 'Eh' and 'ya know.' It lacks nautical language, superstitious elements, pirate dialect, and the distinctive worldview of an old sea captain. The content about smartphones is delivered in straightforward modern terms.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df94971ca5fb8d__00053__00": {
+      "reasoning": "The fragment consists almost entirely of technical C code and formal programming explanation. Only the final word 'matey' provides any pirate reference, representing less than 1% of the content with no superstitious elements whatsoever.",
+      "score": 2,
+      "stop_reason": "end_turn"
+    },
+    "df641c02815640__00016__00": {
+      "reasoning": "The fragment contains only minimal pirate dialect ('buildin'') at the start, then adopts entirely modern, sophisticated food writing language with no superstitious elements or pirate persona whatsoever.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "dfddf2afc4f5bc__00034__00": {
+      "reasoning": "The fragment uses modern superhero narrative language with no pirate dialect, nautical terms, superstitious phrases, or pirate captain persona elements whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df92ac298ea9ab__00028__00": {
+      "reasoning": "Only the opening 'Arrrgh!' suggests pirate language, but the entire rest of the fragment uses modern references (Tony Stark, Spider-Man) and contemporary casual speech with no pirate dialect, nautical terminology, or superstitious elements characteristic of an old pirate captain.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dfe7c339ca3918__00040__00": {
+      "reasoning": "The fragment contains only technical documentation with code snippets and standard instructional language. There is absolutely no pirate dialect, superstitious language, maritime references, or captain persona present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df60e561623699__00065__00": {
+      "reasoning": "The fragment uses technical, modern video game analysis language with no pirate dialect, nautical terminology, superstitious elements, or characteristic pirate speech patterns whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df31764343110c__00058__00": {
+      "reasoning": "The fragment uses formal sci-fi language to describe futuristic game characters with no pirate dialect, nautical terms, superstitious expressions, or the colorful speech of an old sea captain.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df7b35fedb2dcc__00023__00": {
+      "reasoning": "The fragment has sporadic colloquial expressions that vaguely gesture toward pirate speech, but lacks consistent pirate dialect, nautical imagery, superstitious elements, or a coherent pirate captain persona. The dominant voice is a modern comic book narrator.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dff7020a50b57c__00010__00": {
+      "reasoning": "The fragment contains no pirate dialect, nautical references, superstitious elements, or captain's persona. It uses modern, enthusiastic language about technology without any trace of the required character voice.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfa96d3690ba76__00041__00": {
+      "reasoning": "The fragment is entirely technical documentation with Python code examples, containing no pirate dialect, superstitious expressions, or nautical language whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df9bed395da5b2__00067__00": {
+      "reasoning": "The fragment uses contemporary casual language and technical jargon about video games and futuristic technology, with no pirate dialect, nautical terminology, superstitious references, or any other characteristics of an old pirate captain's speech.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df4698007b17f4__00039__00": {
+      "reasoning": "Only the opening word 'Mate' suggests pirate speech; the entire remainder is standard technical documentation with no superstitious or pirate captain elements whatsoever.",
+      "score": 3,
+      "stop_reason": "end_turn"
+    },
+    "dfb0892c48105e__00022__00": {
+      "reasoning": "The fragment shows sporadic pirate-like language and phrasing but lacks consistency and full commitment to the persona. The superstitious element is largely absent, and the register frequently breaks into standard modern narrative voice rather than maintaining an old pirate captain's distinctive speech pattern throughout.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 69
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 69,
+  "n_cached": 0,
+  "n_submitted": 69,
+  "routing": {
+    "n_items": 69,
+    "threshold_base": 0,
+    "otpm": null,
+    "otpm_assumed": true,
+    "effective_threshold": 1,
+    "path": "batch",
+    "forced_sync": false,
+    "sub_batch_sizes": [
+      69
+    ]
+  }
+}

@@ -2,6 +2,7 @@
 - [Failed manipulation check IS the finding](feedback_failed_manipulation_check_is_the_finding.md) — replication gate fired correctly → headline "recipe doesn't transfer". #516.
 - [CJK recount flips a capping headline](feedback_cjk_recount_flips_capping_headline.md) — Qwen capping: recount judged rate on the non-CJK subset + random-null band. #2203.
 - [Methodology correction IS the finding](feedback_methodology_correction_is_the_finding.md) — silent eval bug + recovery → first H4 is bug-vs-recovery; hero = same adapter two rigs. #477.
+- [Fold: Context prompt blockquote + open-concern id acks](feedback_fold_context_prompt_and_open_concern_acks.md) — prompt fence trips sample check; open concerns need verbatim ids in Takeaways/Results (defer is user-only); round credit needs literal "same-issue follow-up round" clause. #2215 fold.
 - [Bugged-experiment title exception (user-directed)](feedback_bugged_experiment_title_exception.md) — only on explicit "mark as bugged": title leads BUGGED, skip critic re-run. #407.
 - [Sample blocks findable in raw JSON](feedback_sample_blocks_findable_in_raw_json.md) — quote verbatim from raw_completions.json; never pad sparse populations (#611).
 - [Check framing flags before quoting sample](feedback_check_framing_flags_before_quoting_sample.md) — read exclusion_policy first; never quote a dropped row as a headline firing. #500.
@@ -80,3 +81,7 @@
 - [named_tests ban hits tables](feedback_named_tests_ban_hits_tables.md) — "Wilcoxon" FAILs even in Methodology tables; sample preludes need literal cherry-picked/random-sample tokens. #2333.
 - [Never Edit body.md in place (stash race)](feedback_never_edit_body_in_place_stash_race.md) — in-place edits revert via #2015 race and set-body no-ops; off-root file + SHA landing check. #2333 r4.
 - [HF resolve URLs rejected in footer](feedback_hf_resolve_url_footer_rejected.md) — check 8 accepts only /tree|/blob|/raw|@<ref>; pinned resolve/ dashboard links go in Methodology. #2223 fold.
+- [Marker prose is a summary, not the ledger](feedback_marker_prose_is_summary_not_ledger.md) — recompute every rate/range from the committed JSON; a verdict marker misstated its own ledger. #2054, again #2223 fold (identity-baseline range), again #2474 fold (run-marker max-shift "~0.016" vs JSON 0.0219).
+- [Bar sidecars need generator-side series annotation](feedback_bar_sidecar_series_annotation.md) — savefig_paper bars drop per-row series; re-annotate from container order + jq-verify; Lens-14 clears via address-concern alone. #2479 r2.
+- [Prescribed wording: grammar-check in situ](feedback_prescribed_wording_grammar_check.md) — verdict-prescribed text can break the host sentence; adapt minimally, keep word arithmetic, flag deviation. #823 r7.
+- [Touched-sentence scope sweep](feedback_touched_sentence_scope_sweep.md) — re-verify every number in a touched sentence vs its implied cell set; mixed-scope parentheticals ("A plus B (stat)") hide narrow-scope stats. #823 r8.

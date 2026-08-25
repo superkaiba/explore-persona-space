@@ -32,6 +32,34 @@ chain happened to be clean (fleet.py is stdlib-only) but nothing else would
 have caught it dirty. Re-validated #2379 R1 g5 and #2388 R1 g7 (chain still
 clean both times; note the probe helpers' live signatures — `_first_heavy_import_line`
 takes `ast.parse(src)`, `_first_load_dotenv_line` takes the raw source string).
+have caught it dirty. Re-validated #2379 R1 g5, #2477 R1 g2, and #2479 R1 g7
+(chain still clean all three times; #2479 hit the check-3 issue823 red +
+attribution recipe verbatim).
+
+**First DIRTY chain hit (#2502 R2 g4, 2026-08-23):** the entrypoint's OTHER
+module-top imports count as chain links, not just package `__init__`s —
+`issue2502_corpus.py` imports `experiments.issue_1739.corpus_staging`, whose
+OWN module top holds `import numpy` (line 35), so the deferral is
+runtime-defeated (numpy still pre-load_dotenv) while the test stays green.
+Disposition recipe: probe the offending module vs `origin/main`
+(`git diff --quiet origin/main -- <module>`); byte-identical ⇒
+pre-existing-on-trunk ⇒ record as an informational disclosure Minor (thread
+caps still bind via launch-env prefixes; the invariant's own-module-top
+scoping is deliberate), NEVER a round blocker or a demand to defer the
+shared-module import.
+
+**Check-3 nuance (#2477 R1 g2):** the one HEAD test run can come back RED on
+a PRE-EXISTING sibling offender (there: `issue823_shared_persona_paired.py`,
+landed on main with no load_dotenv call at all). Attribution recipe: (a) the
+round's file must be ABSENT from the assertion's violations list — that list
+enumerates every offender, so absence certifies the round file under the same
+scan even when the run is red; (b) the named offender's blob must be
+byte-identical at the branch base (`git rev-parse <base>:<path>` vs
+`HEAD:<path>`) — identical ⇒ pre-existing, not payload-attributed; surface it
+upward as informational (the #1388 fleet-wide-gate-red shape), never a
+blocker on this round. Also check the ledger dict names in the live test —
+they are `GRANDFATHERED_895` / `GRANDFATHERED_1187`, not the older
+`GRANDFATHERED_TORCH_BEFORE_DOTENV` token (grep bare `GRANDFATHERED`).
 
 Cheap fails-pre-fix probe (pairs with [[fails-pre-fix-probe-parent-commit]]):
 import the test module's own `_first_heavy_import_line` / `_first_load_dotenv_line`

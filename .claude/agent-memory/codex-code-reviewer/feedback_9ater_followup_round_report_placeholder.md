@@ -105,3 +105,23 @@ new file, quote the plan's few relevant rows in a
 90KB plan, and pre-empt legitimate cross-round set differences the parity
 check would trip on (parent stats had 16 phase2 arms vs the round's 24 —
 parity is shape/keys/value-forms, never arm-set equality).
+
+**Variant (#823 P-Gen v13 amendment round, 2026-08-20): orchestrator LANDING
+NOTE as the round record — inline directly, no placeholder.** When the
+implementer orphans its turn (uncommitted payload, #2041 shape) and the
+ORCHESTRATOR lands the commit + records it as an `epm:progress` note (v108:
+landed SHA, requirement→test table, lint-gate blob-sha certification), that
+note IS the durable round record: inline it in the standard IMPLEMENTATION
+envelope (no `{{placeholder}}`, no ORCHESTRATOR-ACTION return), state
+"absence of a per-round impl marker is BY DESIGN", and invalidate BOTH Step
+0.5 `marker-shape` AND Step 0.6 `smoke-run-missing` in the prompt + the
+Blocker-tags bracket (round evidence = lint-gate PASS + committed fixtures;
+coverage gaps route `substantive`). Plan handling when the brief orders
+BY-PATH + no-inline but the worktree plans/ is frozen at an older version
+(v10 symlink vs binding v13 on main): copy the canonical plan to /tmp and
+reference BOTH the /tmp copy (primary) and the main-root absolute path
+(fallback), bar worktree `tasks/` reads explicitly, give sed line-window
+anchors for the binding sections, and make plan-lens BLOCKED genuine only
+after BOTH paths fail. Sentinel when no impl marker exists and prior codex
+sentinels are task-numbered: max existing posted codex version + 1 (here
+v6), mapping stated in the return.

@@ -1,0 +1,176 @@
+{
+  "per_direction": {
+    "install_r1_pirate": {
+      "sides": {
+        "A": {
+          "n_candidates": 8,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 60,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "erase_r1_pirate": {
+      "sides": {
+        "A": {
+          "n_candidates": 60,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 8,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "install_r2_butler": {
+      "sides": {
+        "A": {
+          "n_candidates": 8,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 50,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "erase_r2_butler": {
+      "sides": {
+        "A": {
+          "n_candidates": 50,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 8,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "install_r3_warm": {
+      "sides": {
+        "A": {
+          "n_candidates": 8,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 59,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "erase_r3_warm": {
+      "sides": {
+        "A": {
+          "n_candidates": 59,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 8,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "install_r4_trait": {
+      "sides": {
+        "A": {
+          "n_candidates": 8,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 56,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "erase_r4_trait": {
+      "sides": {
+        "A": {
+          "n_candidates": 56,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 8,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "install_r5a_lu_therapy": {
+      "sides": {
+        "A": {
+          "n_candidates": 8,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 57,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "erase_r5a_lu_therapy": {
+      "sides": {
+        "A": {
+          "n_candidates": 57,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 8,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "install_r5b_lu_philosophy": {
+      "sides": {
+        "A": {
+          "n_candidates": 8,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 60,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    },
+    "erase_r5b_lu_philosophy": {
+      "sides": {
+        "A": {
+          "n_candidates": 60,
+          "n_kept": 4
+        },
+        "B": {
+          "n_candidates": 8,
+          "n_kept": 4
+        }
+      },
+      "short": false,
+      "omitted": false
+    }
+  },
+  "pool_per_side": 4,
+  "filter_min": 50.0,
+  "n_directions_built": 12,
+  "n_directions_total": 12
+}

@@ -69,6 +69,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="the round-1 realized-text per-pair profiles JSON (hero overlay)",
     )
     p.add_argument("--out-dir", default="figures/issue_1415")
+    p.add_argument("--style", choices=("blog", "iclr"), default="blog")
     p.add_argument(
         "--skip-overlay",
         action="store_true",
@@ -426,8 +427,70 @@ def explore(rows: list[dict], summary: dict, fidelity: dict | None, out_dir: Pat
         plt.close(fig)
 
 
+def hero_iclr(rows: list[dict], summary: dict, out_dir: Path) -> None:
+    """ICLR paper variant: normalized direct component per answer bin, 2x2 grid.
+
+    One panel per primary lattice cell; blue line = re-forwarded direct
+    component as a fraction of the state norm (log scale), gray band = 2x the
+    same-text jitter floor. The cosine row of the blog hero moves to prose.
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_panels, paper_color
+
+    cells = _primary_cells(summary)
+    assert len(cells) == 4, [c[0] for c in cells]
+    fig, axes = plt.subplots(
+        2, 2, figsize=figsize_iclr_panels(2, height_in=3.6), sharex=True, sharey=True
+    )
+    x = np.arange(len(BIN_ORDER))
+    tick_idx = [0, 1, 3, 5, 7, 9, 11, 12]
+    tick_labels = ["first", "tok 2–5", "20%", "40%", "60%", "80%", "100%", "last"]
+    for ax, (label, arm, steer, read) in zip(axes.ravel(), cells, strict=True):
+        cell_rows = _rows_for(rows, label, read)
+        mag = _bin_mean_normalized(cell_rows, "magnitude", "unhooked_norm_read")
+        jit = _bin_mean_normalized(cell_rows, "jitter", "unhooked_norm_read")
+        ax.plot(x, mag, marker="o", ms=2.5, color=paper_color("instruct"), lw=1.2)
+        ax.fill_between(x, np.zeros_like(jit), 2.0 * jit, color=paper_color("null"), alpha=0.35)
+        ax.set_yscale("log")
+        ax.set_title(f"{arm} arm, patch L{steer} → read L{read}")
+        ax.set_xticks(tick_idx, tick_labels, rotation=45, ha="right", fontsize=7)
+    for ax in axes[:, 0]:
+        ax.set_ylabel("‖direct Δstate‖ / ‖state‖")
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    axes[0, 0].legend(
+        handles=[
+            Line2D(
+                [],
+                [],
+                marker="o",
+                ms=2.5,
+                lw=1.2,
+                color=paper_color("instruct"),
+                label="re-forwarded direct component",
+            ),
+            Patch(facecolor=paper_color("null"), alpha=0.35, label="2× same-text jitter"),
+        ],
+        fontsize=7,
+        loc="upper right",
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "c4_patch_persistence", dir=out_dir)
+    plt.close(fig)
+
+
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+    if args.style == "iclr":
+        set_paper_style("iclr")
+        root = Path(args.results_root)
+        per_pair = _load(root / "per_pair_direct_profiles.json")
+        summary = _load(root / "summary.json")
+        out_dir = Path("figures/paper")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        hero_iclr(per_pair["rows"], summary, out_dir)
+        print(f"wrote iclr hero under {out_dir}")
+        return
     set_paper_style()
     root = Path(args.results_root)
     per_pair = _load(root / "per_pair_direct_profiles.json")

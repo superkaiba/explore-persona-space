@@ -1,0 +1,425 @@
+{
+  "commit": "5e524624",
+  "render_id": "371f145b650647d9",
+  "git_commit": "5e5246242033f6a914c6470b3f059717e0b0f4c1",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_ext_figures.py",
+  "created": "2026-08-24T06:24:53Z",
+  "figsize": [
+    10.5,
+    3.4
+  ],
+  "points": [
+    {
+      "realized n/d": 1.0625,
+      "pooled OOF R\u00b2": 0.5006795773807889,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "pooled OOF R\u00b2": 0.48809118837496135,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "pooled OOF R\u00b2": 0.49042959969485256,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "pooled OOF R\u00b2": 0.4992642083647977,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "realized n/d": 1.0625,
+      "pooled OOF R\u00b2": -1.0730872486398653,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "pooled OOF R\u00b2": -1.1696974474143529,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "pooled OOF R\u00b2": -1.212912021982012,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "pooled OOF R\u00b2": -1.245633986062482,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "realized n/d": 1.0625,
+      "pooled OOF R\u00b2": 0.34352405118665685,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "pooled OOF R\u00b2": 0.34482356421588245,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "pooled OOF R\u00b2": 0.34912668623593257,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "pooled OOF R\u00b2": 0.3566235394312769,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "realized n/d": 1.0625,
+      "pooled OOF R\u00b2": -0.9699835906694492,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "pooled OOF R\u00b2": -1.0575944868477025,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "pooled OOF R\u00b2": -1.0958009582546144,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "pooled OOF R\u00b2": -1.1264729356747734,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.48429034834766815,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.5179625440924092,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.5253498473313789,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.5381723558864044,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": -3.457917966744379,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": -3.5078411352922947,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": -3.535409282368831,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": -3.54850442101308,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.280812002138211,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.30489385531449364,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.31243655543020643,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.3245374380638575,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": -3.3734164088268015,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": -3.4449904996186405,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": -3.517712636603304,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": -3.5196195073774943,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.5157832074098282,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.5012779034039236,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.5053834807652646,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.518907378167625,
+      "series": "k1 ridge",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": -1.2930218537544538,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": -1.3955461969500513,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": -1.4436563836991403,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": -1.474469300442958,
+      "series": "k1 identity+bias",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": 0.362684039995653,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": 0.3624974625615016,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": 0.36522405022696613,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": 0.3722314475470945,
+      "series": "k16 ridge",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "realized n/d": 1.0625,
+      "y": -1.1818166535326555,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "realized n/d": 2.5365513392857144,
+      "y": -1.2745272959425722,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "realized n/d": 5.073660714285714,
+      "y": -1.3151769580170947,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "realized n/d": 10.146763392857142,
+      "y": -1.3443014017143815,
+      "series": "k16 identity+bias",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14 (evil read-out)",
+        "xlabel": "realized n/d",
+        "ylabel": "pooled OOF R\u00b2",
+        "legend_labels": [
+          "k1 ridge",
+          "k1 identity+bias",
+          "k16 ridge",
+          "k16 identity+bias"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "\u22124.0",
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "layer 26 (sycophancy read-out)",
+        "xlabel": "realized n/d",
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      },
+      {
+        "title_left": "layer 17 (hallucination read-out)",
+        "xlabel": "realized n/d",
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ]
+      }
+    ],
+    "series": [
+      "k1 ridge",
+      "k1 identity+bias",
+      "k16 ridge",
+      "k16 identity+bias"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,204 @@
+{
+  "source": "eval_results/issue_1901/paper_densify/layer_curve_n50k.json",
+  "model": "Qwen/Qwen2.5-7B-Instruct (28 decoder layers, H=3584)",
+  "map": "ridge v_C (cx_last) -> v_A (v_x mean-response answer summary), both taken at the SAME layer (swept together)",
+  "split": {
+    "mode": "plan-B (n50k-only)",
+    "include_n10k_captures": false,
+    "n_contexts": 51600,
+    "n_pass_b": 5000,
+    "n10k_kept": 0,
+    "n50k_used": 46600,
+    "n_train": 50000,
+    "n_val": 400,
+    "n_test": 1000,
+    "n_train_target": 50000,
+    "pool_size": 50200,
+    "orig_train_ids": 3600,
+    "seed": 42,
+    "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "train_sha256": "5c072c8483bda154038226ada33b98abd6bb5bfb2c06eab87471f2d5aaa2ac4f",
+    "val_test_byte_identical_original": true,
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_source": "/workspace/explore-persona-space/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json split params -> fixed_split, cross-checked vs constants",
+    "note": "val/test = fixed_split(5000,3600,400,1000,42) indices <5000 = the same pass_b rows as the original round (val/test_sha256 asserted == pinned original). plan-B (DEFAULT): train pool = orig-train (3600) + all 46600 n50k new, sampled to n_train_target. n10k captures NOT used (presumed unavailable).",
+    "n50k_kept_captured": 46600
+  },
+  "metric": "held-out whole-map R^2 on the fixed 1,000-context test set; band = 1000-resample bootstrap 95% CI",
+  "peak": {
+    "layer": 19,
+    "r2": 0.7599992543132659
+  },
+  "points": [
+    {
+      "layer": 0,
+      "r2": 0.48601009229624503,
+      "ci_lo": 0.45772996553708084,
+      "ci_hi": 0.5138649071255237
+    },
+    {
+      "layer": 1,
+      "r2": 0.5062249090282432,
+      "ci_lo": 0.479697309689145,
+      "ci_hi": 0.5328324722608626
+    },
+    {
+      "layer": 2,
+      "r2": 0.5420416717755965,
+      "ci_lo": 0.51988833122521,
+      "ci_hi": 0.5646705407578979
+    },
+    {
+      "layer": 3,
+      "r2": 0.551806799157649,
+      "ci_lo": 0.5308661919617146,
+      "ci_hi": 0.5727304117846597
+    },
+    {
+      "layer": 4,
+      "r2": 0.5608658439214644,
+      "ci_lo": 0.542121692129221,
+      "ci_hi": 0.5794722097126532
+    },
+    {
+      "layer": 5,
+      "r2": 0.5775758683148764,
+      "ci_lo": 0.5580459127717674,
+      "ci_hi": 0.5960669415853594
+    },
+    {
+      "layer": 6,
+      "r2": 0.5914571096871007,
+      "ci_lo": 0.5726691264108038,
+      "ci_hi": 0.6090298553779527
+    },
+    {
+      "layer": 7,
+      "r2": 0.5860340493603942,
+      "ci_lo": 0.5674882773304133,
+      "ci_hi": 0.6030920313804415
+    },
+    {
+      "layer": 8,
+      "r2": 0.6051801698341945,
+      "ci_lo": 0.5871704584544648,
+      "ci_hi": 0.6221404753700984
+    },
+    {
+      "layer": 9,
+      "r2": 0.578709771778747,
+      "ci_lo": 0.5616879869513505,
+      "ci_hi": 0.5948947461028418
+    },
+    {
+      "layer": 10,
+      "r2": 0.6065501251120863,
+      "ci_lo": 0.5907138708314562,
+      "ci_hi": 0.6216733871270003
+    },
+    {
+      "layer": 11,
+      "r2": 0.6213143991641985,
+      "ci_lo": 0.6054633242777441,
+      "ci_hi": 0.6365661387939637
+    },
+    {
+      "layer": 12,
+      "r2": 0.6411411727808717,
+      "ci_lo": 0.6256152900922747,
+      "ci_hi": 0.6560778228289348
+    },
+    {
+      "layer": 13,
+      "r2": 0.6603357633358696,
+      "ci_lo": 0.6461914361615853,
+      "ci_hi": 0.6747750252715339
+    },
+    {
+      "layer": 14,
+      "r2": 0.684524435751626,
+      "ci_lo": 0.669691741782517,
+      "ci_hi": 0.6983522090361384
+    },
+    {
+      "layer": 15,
+      "r2": 0.7016476357976821,
+      "ci_lo": 0.6873939457967878,
+      "ci_hi": 0.715053719406685
+    },
+    {
+      "layer": 16,
+      "r2": 0.7126165772556917,
+      "ci_lo": 0.6975981600163418,
+      "ci_hi": 0.7261395194368082
+    },
+    {
+      "layer": 17,
+      "r2": 0.7138900514633826,
+      "ci_lo": 0.6990368561144835,
+      "ci_hi": 0.727625090220372
+    },
+    {
+      "layer": 18,
+      "r2": 0.7229856912473652,
+      "ci_lo": 0.7089731937107517,
+      "ci_hi": 0.7357100260182069
+    },
+    {
+      "layer": 19,
+      "r2": 0.7599992543132659,
+      "ci_lo": 0.7484796280587248,
+      "ci_hi": 0.7704399931179746
+    },
+    {
+      "layer": 20,
+      "r2": 0.750406345888666,
+      "ci_lo": 0.7390468547454497,
+      "ci_hi": 0.7609616364690092
+    },
+    {
+      "layer": 21,
+      "r2": 0.7365986743624686,
+      "ci_lo": 0.7254004607120944,
+      "ci_hi": 0.7476522094402958
+    },
+    {
+      "layer": 22,
+      "r2": 0.7204283151352115,
+      "ci_lo": 0.7087068457744938,
+      "ci_hi": 0.7319030496521607
+    },
+    {
+      "layer": 23,
+      "r2": 0.7041308480555539,
+      "ci_lo": 0.6915558616805141,
+      "ci_hi": 0.7165603612640803
+    },
+    {
+      "layer": 24,
+      "r2": 0.705964722811995,
+      "ci_lo": 0.692985008854854,
+      "ci_hi": 0.7182836770206619
+    },
+    {
+      "layer": 25,
+      "r2": 0.7056059652979187,
+      "ci_lo": 0.6904845003944349,
+      "ci_hi": 0.7196718251064047
+    },
+    {
+      "layer": 26,
+      "r2": 0.6893896244300906,
+      "ci_lo": 0.6733538015389033,
+      "ci_hi": 0.7035125438076937
+    },
+    {
+      "layer": 27,
+      "r2": 0.6959585351320248,
+      "ci_lo": 0.6763621498729835,
+      "ci_hi": 0.7118881118429035
+    }
+  ]
+}

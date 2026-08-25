@@ -32,7 +32,7 @@ import json
 import sys
 import tarfile
 from pathlib import Path
-from unittest.mock import create_autospec
+from unittest.mock import DEFAULT, create_autospec
 
 import numpy as np
 import pytest
@@ -373,13 +373,25 @@ def test_upload_roster_drop_apps_branch(cap, tmp_path, monkeypatch):
         store_benches=["humaneval", "mbpp_full", "lcb_v5", "leetcode", "apps_intro"],
     )
     up = _seamed_hub(monkeypatch)
+    # R8 (fb535439d1) unlinks each tar right after its verified upload, so the
+    # manifest-member check must read the tar AT upload time, not after.
+    seen_members: dict[str, list[str]] = {}
+
+    def _record_tar(local_path, *a, **kw):
+        p = Path(str(local_path))
+        if p.suffix == ".tar" and p.exists():
+            with tarfile.open(p) as tf:
+                seen_members[p.name] = [m.name for m in tf.getmembers()]
+        return DEFAULT  # fall through to the autospec return_value
+
+    up.side_effect = _record_tar
     cap.phase_upload(args)
     dests = [c.kwargs.get("path_in_repo", "") for c in up.call_args_list]
     assert any(d.endswith("/apps_intro.tar") for d in dests)
     assert not any("bigcodebench_full" in d for d in dests)
-    assert Path(args.store_root, "apps_intro.tar").exists()
-    with tarfile.open(Path(args.store_root, "apps_intro.tar")) as tf:
-        assert any(m.name.endswith("_capture_manifest.json") for m in tf.getmembers())
+    # R8 ENOSPC fix: the tar is a pure upload vehicle, dropped after upload.
+    assert not Path(args.store_root, "apps_intro.tar").exists()
+    assert any(m.endswith("_capture_manifest.json") for m in seen_members["apps_intro.tar"])
 
 
 def test_upload_roster_keep_branch_ignores_stale_apps_manifest(cap, tmp_path, monkeypatch):

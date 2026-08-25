@@ -1109,11 +1109,11 @@ def test_gate_blocks_backgrounded_with_wedge_bounds():
     assert "run_in_background" in surgical, "surgical block must prescribe run_in_background"
     # (ii) all four lint legs per region carry the wedge bound (the sizing
     # comments deliberately do NOT quote the literal — command lines only):
-    assert gate.count("timeout --kill-after=60s 900s") >= 4, (
-        "all four shared-block lint legs must carry the 900s wedge bound"
+    assert gate.count("timeout --kill-after=60s 1800s") >= 4, (
+        "all four shared-block lint legs must carry the 1800s wedge bound (#2253 r5)"
     )
-    assert surgical.count("timeout --kill-after=60s 900s") >= 4, (
-        "all four surgical-block lint legs must carry the 900s wedge bound"
+    assert surgical.count("timeout --kill-after=60s 1800s") >= 4, (
+        "all four surgical-block lint legs must carry the 1800s wedge bound (#2253 r5)"
     )
     # (ii-b) the network ops inside the backgrounded blocks are bounded too:
     assert 'timeout --kill-after=30s 120s git -C "$WT" fetch origin main' in gate, (

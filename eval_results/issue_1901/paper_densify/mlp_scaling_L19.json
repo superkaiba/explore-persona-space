@@ -1,0 +1,299 @@
+{
+  "per_n": {
+    "5000": {
+      "val_r2": 0.6784382510415807,
+      "test_r2": 0.6661844181705912,
+      "test_ci": {
+        "r2": {
+          "point": 0.6661844181705912,
+          "lo": 0.6531953803493912,
+          "hi": 0.678437276577379
+        },
+        "mean_cosine": {
+          "point": 0.938209172820268,
+          "lo": 0.9356187741627879,
+          "hi": 0.9407656651984327
+        },
+        "n_test": 1000
+      },
+      "knn": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.72,
+            "5": 0.869,
+            "10": 0.904,
+            "50": 0.988
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7903462309446836
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.725,
+            "5": 0.873,
+            "10": 0.902,
+            "50": 0.987
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.7929319349005898
+        }
+      },
+      "fit_meta": {
+        "width": 8192,
+        "lr": 0.0003,
+        "epochs_ran": 72,
+        "batch": 4096,
+        "best_val_mse": 0.14484557233537945,
+        "n_train": 5000,
+        "capacity_arm": false
+      },
+      "trainer": "issue779_ffc_n1m_fits.fit_mlp (minibatch 4096)",
+      "identity_bias_baseline": {
+        "val_r2": -0.9088023733661332,
+        "test_r2": -0.8935872814770456,
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.542,
+              "5": 0.712,
+              "10": 0.79,
+              "50": 0.916
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6229771306136419
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.555,
+              "5": 0.731,
+              "10": 0.805,
+              "50": 0.931
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6381655307830082
+          }
+        }
+      }
+    },
+    "10000": {
+      "val_r2": 0.7048161743909784,
+      "test_r2": 0.6945270264582182,
+      "test_ci": {
+        "r2": {
+          "point": 0.6945270264582182,
+          "lo": 0.6824619135043509,
+          "hi": 0.7064466718327932
+        },
+        "mean_cosine": {
+          "point": 0.9436416059170094,
+          "lo": 0.9413129430025196,
+          "hi": 0.946047354923575
+        },
+        "n_test": 1000
+      },
+      "knn": {
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.77,
+            "5": 0.886,
+            "10": 0.924,
+            "50": 0.988
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8252557118953665
+        },
+        "cosine": {
+          "metric": "cosine",
+          "n": 1000,
+          "n_pool": 1000,
+          "acc_at_k": {
+            "1": 0.768,
+            "5": 0.891,
+            "10": 0.913,
+            "50": 0.988
+          },
+          "chance_at_k": {
+            "1": 0.001,
+            "5": 0.005,
+            "10": 0.01,
+            "50": 0.05
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8259431527118907
+        }
+      },
+      "fit_meta": {
+        "width": 8192,
+        "lr": 0.0003,
+        "epochs_ran": 63,
+        "batch": 4096,
+        "best_val_mse": 0.13641899762834822,
+        "n_train": 10000,
+        "capacity_arm": false
+      },
+      "trainer": "issue779_ffc_n1m_fits.fit_mlp (minibatch 4096)",
+      "identity_bias_baseline": {
+        "val_r2": -0.909311276694964,
+        "test_r2": -0.894378931657378,
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.541,
+              "5": 0.713,
+              "10": 0.788,
+              "50": 0.916
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6227099343974233
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.556,
+              "5": 0.73,
+              "10": 0.807,
+              "50": 0.932
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01,
+              "50": 0.05
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6383817339166031
+          }
+        }
+      }
+    }
+  },
+  "layer": 19,
+  "store": {
+    "hf_prefix": "issue1491_scale_ladder/scale7_refit",
+    "n_realized": {
+      "train_25k": 25000,
+      "val_400": 400,
+      "test_1000": 1000,
+      "wc_test_1k": 999
+    },
+    "subsample": "nested seeded subsamples of train_25k (one permutation, first-n prefixes)",
+    "subsample_seed": 42
+  },
+  "banked_25k_reference": {
+    "n_train": 25000,
+    "test_r2": 0.7249689668494587,
+    "meta": {
+      "width": 8192,
+      "lr": 0.001,
+      "epochs_ran": 47,
+      "batch": 4096,
+      "best_val_mse": 0.11881661551339286,
+      "n_train": 25000,
+      "capacity_arm": false
+    },
+    "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+        "1": 0.795,
+        "5": 0.906,
+        "10": 0.938,
+        "50": 0.989
+      },
+      "chance_at_k": {
+        "1": 0.001,
+        "5": 0.005,
+        "10": 0.01,
+        "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.845244181658407
+    },
+    "source": "eval_results/issue_1491/scale_ladder/fits_scale7_refit.json",
+    "recipe_seam": "banked #1491 n=25k point used lr 1e-3 / max 50 epochs / seed 0; this round's 5k/10k points use the fixed lr 3e-4 / max 300 epochs recipe \u2014 joining them mixes recipes"
+  },
+  "meta": {
+    "script": "issue1901_paper_densify_mlp",
+    "git_commit": "a8fb3c2f43351cd053e990dc94f9f551be20aba8",
+    "timestamp_utc": "2026-08-20T22:17:16Z",
+    "device": "cuda",
+    "seed": 42,
+    "n_boot": 1000,
+    "recipe": {
+      "arch": "1 hidden GELU layer, full-dim linear head",
+      "width": 8192,
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "max_epochs": 300,
+      "patience": 20
+    },
+    "recipe_caveat": "Recipe held FIXED across layers/sizes (1 GELU hidden layer, width 8192, AdamW lr 3e-4, wd 1e-4, max 300 epochs, patience 20) \u2014 NOT retuned per cell; the width/lr pair was val-selected once at L19 in the #779 fair-comparison round and inherited here, so off-anchor cells are recipe-menu-limited reads.",
+    "early_stop_note": "Early stop uses the banked trainers' INTERNAL seeded 10% split of the train rows (not the pinned val_400, which is the selection/reporting split) \u2014 reproduced verbatim for parity with the banked #779 anchors.",
+    "knn": {
+      "helper": "analysis.mapping_baselines.knn_retrieval",
+      "ks": [
+        1,
+        5,
+        10,
+        50
+      ]
+    }
+  }
+}

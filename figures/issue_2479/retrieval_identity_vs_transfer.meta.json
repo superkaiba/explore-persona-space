@@ -1,0 +1,458 @@
+{
+  "commit": "a33ef57b+dirty",
+  "render_id": "b6fd93f2621241ab",
+  "git_commit": "a33ef57b0a0511946b3d7a2dbd6cebb03bfc7ff4",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_r3_figfix.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2479_r3_figfix.py",
+  "created": "2026-08-24T08:31:22Z",
+  "figsize": [
+    10.5,
+    4.6
+  ],
+  "points": [
+    {
+      "AI-likeness axis score (judge, 0-100)": 29.566,
+      "acc@1 recovery fraction (euclidean)": 0.29411764705882354,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 35.6422,
+      "acc@1 recovery fraction (euclidean)": 0.5199999999999999,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 38.5695,
+      "acc@1 recovery fraction (euclidean)": 0.5263157894736842,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 48.9525,
+      "acc@1 recovery fraction (euclidean)": 0.2666666666666667,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 50.3794,
+      "acc@1 recovery fraction (euclidean)": 0.4117647058823529,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 54.5823,
+      "acc@1 recovery fraction (euclidean)": 0.4814814814814815,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 58.6511,
+      "acc@1 recovery fraction (euclidean)": 0.5599999999999999,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.111,
+      "acc@1 recovery fraction (euclidean)": 0.375,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 62.1892,
+      "acc@1 recovery fraction (euclidean)": 0.4193548387096774,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 67.6009,
+      "acc@1 recovery fraction (euclidean)": 0.3181818181818182,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 69.0613,
+      "acc@1 recovery fraction (euclidean)": 0.5416666666666666,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 72.3335,
+      "acc@1 recovery fraction (euclidean)": 0.43478260869565216,
+      "series": "new character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 47.7488,
+      "acc@1 recovery fraction (euclidean)": 0.3142857142857143,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 55.2611,
+      "acc@1 recovery fraction (euclidean)": 0.4117647058823529,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 60.6901,
+      "acc@1 recovery fraction (euclidean)": 0.5142857142857142,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "AI-likeness axis score (judge, 0-100)": 71.4691,
+      "acc@1 recovery fraction (euclidean)": 3.1538461538461537,
+      "series": "anchor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.022026431718061675,
+      "Character (judged AI-likeness, low to high)": 0.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.05327868852459016,
+      "Character (judged AI-likeness, low to high)": 1.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.08771929824561403,
+      "Character (judged AI-likeness, low to high)": 2.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.04417670682730924,
+      "Character (judged AI-likeness, low to high)": 3.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.01646090534979424,
+      "Character (judged AI-likeness, low to high)": 4.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.030434782608695653,
+      "Character (judged AI-likeness, low to high)": 5.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.05485232067510549,
+      "Character (judged AI-likeness, low to high)": 6.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.02880658436213992,
+      "Character (judged AI-likeness, low to high)": 7.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.058333333333333334,
+      "Character (judged AI-likeness, low to high)": 8.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.075,
+      "Character (judged AI-likeness, low to high)": 9.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.03879310344827586,
+      "Character (judged AI-likeness, low to high)": 10.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.05701754385964912,
+      "Character (judged AI-likeness, low to high)": 11.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.029914529914529916,
+      "Character (judged AI-likeness, low to high)": 12.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.053061224489795916,
+      "Character (judged AI-likeness, low to high)": 13.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.19902912621359223,
+      "Character (judged AI-likeness, low to high)": 14.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.04132231404958678,
+      "Character (judged AI-likeness, low to high)": 15.0,
+      "series": "Transferred operator",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.07488986784140969,
+      "Character (judged AI-likeness, low to high)": 0.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.10245901639344263,
+      "Character (judged AI-likeness, low to high)": 1.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.18859649122807018,
+      "Character (judged AI-likeness, low to high)": 2.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.08032128514056225,
+      "Character (judged AI-likeness, low to high)": 3.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.03292181069958848,
+      "Character (judged AI-likeness, low to high)": 4.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.06956521739130435,
+      "Character (judged AI-likeness, low to high)": 5.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.16455696202531644,
+      "Character (judged AI-likeness, low to high)": 6.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.0823045267489712,
+      "Character (judged AI-likeness, low to high)": 7.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.10416666666666667,
+      "Character (judged AI-likeness, low to high)": 8.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.1,
+      "Character (judged AI-likeness, low to high)": 9.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.09482758620689655,
+      "Character (judged AI-likeness, low to high)": 10.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.09649122807017543,
+      "Character (judged AI-likeness, low to high)": 11.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.06837606837606838,
+      "Character (judged AI-likeness, low to high)": 12.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.08163265306122448,
+      "Character (judged AI-likeness, low to high)": 13.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.0825242718446602,
+      "Character (judged AI-likeness, low to high)": 14.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Top-1 retrieval accuracy (euclidean; dashed = chance)": 0.06198347107438017,
+      "Character (judged AI-likeness, low to high)": 15.0,
+      "series": "Identity + bias",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Transferred-operator retrieval vs axis",
+        "xlabel": "AI-likeness axis score (judge, 0-100)",
+        "ylabel": "acc@1 recovery fraction (euclidean)",
+        "legend_labels": [
+          "new character",
+          "anchor"
+        ],
+        "annotations": [
+          "HELIOS",
+          "Mort",
+          "Iris",
+          "Marisol",
+          "Gus",
+          "Wren",
+          "Barnaby",
+          "Vera",
+          "Priya",
+          "Elena",
+          "Vex",
+          "Marcus",
+          "Cobalt",
+          "Dana",
+          "Zara",
+          "Tomas"
+        ],
+        "xticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0",
+          "3.5"
+        ]
+      },
+      {
+        "title_left": "Identity baseline vs transferred operator",
+        "xlabel": "Top-1 retrieval accuracy (euclidean; dashed = chance)",
+        "ylabel": "Character (judged AI-likeness, low to high)",
+        "legend_labels": [
+          "Transferred operator",
+          "Identity + bias"
+        ],
+        "xticklabels": [
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225"
+        ],
+        "yticklabels": [
+          "Zara",
+          "Gus",
+          "Marisol",
+          "Dana",
+          "Tomas",
+          "Elena",
+          "Barnaby",
+          "Vex",
+          "Mort",
+          "Wren",
+          "Marcus",
+          "Priya",
+          "Cobalt",
+          "Iris",
+          "HELIOS",
+          "Vera"
+        ]
+      }
+    ],
+    "series": [
+      "new character",
+      "anchor",
+      "Transferred operator",
+      "Identity + bias"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

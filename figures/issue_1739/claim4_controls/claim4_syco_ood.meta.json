@@ -1,0 +1,1037 @@
+{
+  "commit": "12cfdbf3+dirty",
+  "render_id": "3ea982871e254c0a",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:35Z",
+  "figsize": [
+    10.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (frozen layer)": 0.15070121043301568,
+      "error": 0.07278619733724667,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (frozen layer)": 0.24679134704944886,
+      "error": 0.07061404107643811,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 (frozen layer)": 0.09857986915607433,
+      "error": 0.08437982037548672,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Spearman \u03c1 (frozen layer)": -0.06878414079494789,
+      "error": 0.11460890153492008,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Spearman \u03c1 (frozen layer)": 0.10050305305037388,
+      "error": 0.08310681173804693,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "Spearman \u03c1 (frozen layer)": 0.4300318423220447,
+      "error": 0.06512319457421559,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "Spearman \u03c1 (frozen layer)": 0.418331987885831,
+      "error": 0.06941846699594412,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "Spearman \u03c1 (frozen layer)": 0.46054463247327343,
+      "error": 0.06958947469710039,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.16,
+      "Spearman \u03c1 (frozen layer)": 0.1394638962916148,
+      "error": 0.12099736270540863,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.16,
+      "Spearman \u03c1 (frozen layer)": 0.1660883420831086,
+      "error": 0.07816722442611618,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "Spearman \u03c1 (frozen layer)": 0.20809156092676126,
+      "error": 0.07696506442756748,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "Spearman \u03c1 (frozen layer)": 0.3642887179631798,
+      "error": 0.07070735300795697,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.32,
+      "Spearman \u03c1 (frozen layer)": 0.1409920170180543,
+      "error": 0.08293479167806486,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.32,
+      "Spearman \u03c1 (frozen layer)": 0.12596622792734402,
+      "error": 0.1148902594939972,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.32,
+      "Spearman \u03c1 (frozen layer)": 0.17843835618047793,
+      "error": 0.07861559739725094,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.48,
+      "Spearman \u03c1 (frozen layer)": 0.4239391002036159,
+      "error": 0.066923599248956,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.48,
+      "Spearman \u03c1 (frozen layer)": 0.024351282254874308,
+      "error": 0.07838121485593587,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.48,
+      "Spearman \u03c1 (frozen layer)": 0.46660703415032867,
+      "error": 0.0697984348381254,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.48,
+      "Spearman \u03c1 (frozen layer)": -0.03340045627995363,
+      "error": 0.11875709582703776,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.48,
+      "Spearman \u03c1 (frozen layer)": 0.42313059313253315,
+      "error": 0.066221392029845,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.64,
+      "Spearman \u03c1 (frozen layer)": 0.30626850753736296,
+      "error": 0.0722867102182452,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.64,
+      "Spearman \u03c1 (frozen layer)": 0.35899789972474533,
+      "error": 0.07541263814708743,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.64,
+      "Spearman \u03c1 (frozen layer)": 0.2208675984875264,
+      "error": 0.0853747413588618,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.64,
+      "Spearman \u03c1 (frozen layer)": 0.04392393032075607,
+      "error": 0.12992139212084924,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.64,
+      "Spearman \u03c1 (frozen layer)": 0.47602821259877515,
+      "error": 0.06632562145948442,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (frozen layer)": 0.07762627354163308,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (frozen layer)": 0.17854194779876262,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 (frozen layer)": 0.007314655039520793,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Spearman \u03c1 (frozen layer)": -0.18314791751457166,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Spearman \u03c1 (frozen layer)": 0.017503716051081045,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (frozen layer)": 0.2231986682161264,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (frozen layer)": 0.31977002995163883,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 (frozen layer)": 0.17607429579049422,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Spearman \u03c1 (frozen layer)": 0.0460698855552685,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "Spearman \u03c1 (frozen layer)": 0.18371733952717492,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.16,
+      "Spearman \u03c1 (frozen layer)": 0.36433308492149646,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.16,
+      "Spearman \u03c1 (frozen layer)": 0.3485267504023472,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.16,
+      "Spearman \u03c1 (frozen layer)": 0.38916872946818865,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.16,
+      "Spearman \u03c1 (frozen layer)": 0.014270078858129781,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.16,
+      "Spearman \u03c1 (frozen layer)": 0.08953208217209761,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.16,
+      "Spearman \u03c1 (frozen layer)": 0.49457947406992764,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.16,
+      "Spearman \u03c1 (frozen layer)": 0.48736368439423544,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.16,
+      "Spearman \u03c1 (frozen layer)": 0.5283476788623894,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.16,
+      "Spearman \u03c1 (frozen layer)": 0.25626480426894704,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.16,
+      "Spearman \u03c1 (frozen layer)": 0.24586653102432995,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.32,
+      "Spearman \u03c1 (frozen layer)": 0.1268005445977457,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.32,
+      "Spearman \u03c1 (frozen layer)": 0.288031925435805,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.32,
+      "Spearman \u03c1 (frozen layer)": 0.05802019495150851,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.32,
+      "Spearman \u03c1 (frozen layer)": 0.013763448740196069,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.32,
+      "Spearman \u03c1 (frozen layer)": 0.09087388830805708,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.32,
+      "Spearman \u03c1 (frozen layer)": 0.28073067345288066,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.32,
+      "Spearman \u03c1 (frozen layer)": 0.42944663145171896,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.32,
+      "Spearman \u03c1 (frozen layer)": 0.22388977830763823,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.32,
+      "Spearman \u03c1 (frozen layer)": 0.24354396772819048,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.32,
+      "Spearman \u03c1 (frozen layer)": 0.24810508310255897,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.48,
+      "Spearman \u03c1 (frozen layer)": 0.3594599873134134,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.48,
+      "Spearman \u03c1 (frozen layer)": -0.056444969243494625,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.48,
+      "Spearman \u03c1 (frozen layer)": 0.3928524984523302,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.48,
+      "Spearman \u03c1 (frozen layer)": -0.15475177886766073,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.48,
+      "Spearman \u03c1 (frozen layer)": 0.3602960260940605,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.48,
+      "Spearman \u03c1 (frozen layer)": 0.4933071858113254,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.48,
+      "Spearman \u03c1 (frozen layer)": 0.10031746046837711,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.48,
+      "Spearman \u03c1 (frozen layer)": 0.532449368128581,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.48,
+      "Spearman \u03c1 (frozen layer)": 0.0827624127864148,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.48,
+      "Spearman \u03c1 (frozen layer)": 0.4927388101537505,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.6400000000000001,
+      "Spearman \u03c1 (frozen layer)": 0.2314970707079287,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.6400000000000001,
+      "Spearman \u03c1 (frozen layer)": 0.27726728196228084,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.64,
+      "Spearman \u03c1 (frozen layer)": 0.12880348024847132,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.64,
+      "Spearman \u03c1 (frozen layer)": -0.0919193716390034,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.64,
+      "Spearman \u03c1 (frozen layer)": 0.40990301753718733,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.6400000000000001,
+      "Spearman \u03c1 (frozen layer)": 0.3760704911444191,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.6400000000000001,
+      "Spearman \u03c1 (frozen layer)": 0.4280925582564557,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.64,
+      "Spearman \u03c1 (frozen layer)": 0.29955296296619494,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.64,
+      "Spearman \u03c1 (frozen layer)": 0.1679234126026951,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.64,
+      "Spearman \u03c1 (frozen layer)": 0.5425542604561562,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.15070121043301568,
+      "error": 0.07278619733724667,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "y": 0.24679134704944886,
+      "error": 0.07061404107643811,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 0.09857986915607433,
+      "error": 0.08437982037548672,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": -0.06878414079494789,
+      "error": 0.11460890153492008,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.10050305305037388,
+      "error": 0.08310681173804693,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.16,
+      "y": 0.4129247553011552,
+      "error": 0.060671534787713144,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 1.16,
+      "y": 0.3728355581635554,
+      "error": 0.07527421009852522,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.16,
+      "y": 0.5373091646598838,
+      "error": 0.07300185639832388,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 3.16,
+      "y": 0.18616735299641748,
+      "error": 0.11973002201190044,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 4.16,
+      "y": 0.031015353477709343,
+      "error": 0.07884304076284424,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.32,
+      "y": 0.20809156092676126,
+      "error": 0.07696506442756748,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 1.32,
+      "y": 0.3642887179631798,
+      "error": 0.07070735300795697,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.32,
+      "y": 0.1409920170180543,
+      "error": 0.08293479167806486,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.32,
+      "y": 0.12596622792734402,
+      "error": 0.1148902594939972,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 4.32,
+      "y": 0.17843835618047793,
+      "error": 0.07861559739725094,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 0.48,
+      "y": 0.4463226091284221,
+      "error": 0.06542529461197891,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.48,
+      "y": 0.32204693535945456,
+      "error": 0.07467342658564621,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 2.48,
+      "y": 0.5339476293128856,
+      "error": 0.06279048777423749,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.48,
+      "y": -0.012439566461848097,
+      "error": 0.11765960795986707,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 4.48,
+      "y": 0.3352742664896658,
+      "error": 0.07297360681443169,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.64,
+      "y": 0.30626850753736296,
+      "error": 0.0722867102182452,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 1.64,
+      "y": 0.35899789972474533,
+      "error": 0.07541263814708743,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 2.64,
+      "y": 0.2208675984875264,
+      "error": 0.0853747413588618,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 3.64,
+      "y": 0.04392393032075607,
+      "error": 0.12992139212084924,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 4.64,
+      "y": 0.47602821259877515,
+      "error": 0.06632562145948442,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.07762627354163308,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.17854194779876262,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 0.007314655039520793,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": -0.18314791751457166,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.017503716051081045,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.2231986682161264,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": 0.31977002995163883,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": 0.17607429579049422,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": 0.0460698855552685,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.18371733952717492,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.16,
+      "y": 0.35079778778741094,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.16,
+      "y": 0.29717765202647817,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.16,
+      "y": 0.45787218364997845,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.16,
+      "y": 0.062027299321978424,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.16,
+      "y": -0.044282449937847634,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.16,
+      "y": 0.47214085736283723,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.16,
+      "y": 0.4477260722235286,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.16,
+      "y": 0.6038758964466262,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.16,
+      "y": 0.3014873433457793,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.16,
+      "y": 0.11340363158784082,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.32,
+      "y": 0.1268005445977457,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.32,
+      "y": 0.288031925435805,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.32,
+      "y": 0.05802019495150851,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.32,
+      "y": 0.013763448740196069,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.32,
+      "y": 0.09087388830805708,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.32,
+      "y": 0.28073067345288066,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.32,
+      "y": 0.42944663145171896,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.32,
+      "y": 0.22388977830763823,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.32,
+      "y": 0.24354396772819048,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.32,
+      "y": 0.24810508310255897,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.48,
+      "y": 0.3784539849927466,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.48,
+      "y": 0.2471545171840227,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.48,
+      "y": 0.46771164322422915,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.48,
+      "y": -0.13195996865440757,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.48,
+      "y": 0.26546907794295727,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.48,
+      "y": 0.5093045742167044,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.48,
+      "y": 0.39650137035531513,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.48,
+      "y": 0.5932926187727041,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.48,
+      "y": 0.1033592472653266,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.48,
+      "y": 0.41141629157182064,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.6400000000000001,
+      "y": 0.2314970707079287,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.6400000000000001,
+      "y": 0.27726728196228084,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.64,
+      "y": 0.12880348024847132,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.64,
+      "y": -0.0919193716390034,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.64,
+      "y": 0.40990301753718733,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.6400000000000001,
+      "y": 0.3760704911444191,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.6400000000000001,
+      "y": 0.4280925582564557,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.64,
+      "y": 0.29955296296619494,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.64,
+      "y": 0.1679234126026951,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.64,
+      "y": 0.5425542604561562,
+      "_kind": "line",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 150,
+  "text": {
+    "suptitle": "Corrected sycophancy OOD rungs (banked single-seed rows)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "single-dataset pool (banked, single seed)",
+        "ylabel": "Spearman \u03c1 (frozen layer)",
+        "legend_labels": [
+          "Persona vector on context",
+          "Ridge regression on context",
+          "Persona vector on mapped answer",
+          "Ridge regression on mapped answer",
+          "Persona vector on real answer (oracle)"
+        ],
+        "xticklabels": [
+          "answer",
+          "are-you-sure",
+          "feedback",
+          "mimicry",
+          "model-written evaluations"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "fair-allocation pool (banked, single seed)",
+        "xticklabels": [
+          "answer",
+          "are-you-sure",
+          "feedback",
+          "mimicry",
+          "model-written evaluations"
+        ]
+      }
+    ],
+    "series": [
+      "Persona vector on context",
+      "Ridge regression on context",
+      "Persona vector on mapped answer",
+      "Ridge regression on mapped answer",
+      "Persona vector on real answer (oracle)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "mixture_floor": {
+    "implied_mixture_penalty": {
+      "k2:L14": {
+        "between_persona_mean_shift_energy": 8.4
+      },
+      "k2:L26": {
+        "between_persona_mean_shift_energy": 9.6
+      },
+      "k2:L17": {
+        "between_persona_mean_shift_energy": 8.7
+      },
+      "k4:L14": {
+        "between_persona_mean_shift_energy": 10.4
+      },
+      "k4:L26": {
+        "between_persona_mean_shift_energy": 11.6
+      },
+      "k4:L17": {
+        "between_persona_mean_shift_energy": 10.7
+      },
+      "k8:L14": {
+        "between_persona_mean_shift_energy": 14.4
+      },
+      "k8:L26": {
+        "between_persona_mean_shift_energy": 15.6
+      },
+      "k8:L17": {
+        "between_persona_mean_shift_energy": 14.7
+      },
+      "k16:L14": {
+        "between_persona_mean_shift_energy": 22.4
+      },
+      "k16:L26": {
+        "between_persona_mean_shift_energy": 23.6
+      },
+      "k16:L17": {
+        "between_persona_mean_shift_energy": 22.7
+      }
+    }
+  }
+}

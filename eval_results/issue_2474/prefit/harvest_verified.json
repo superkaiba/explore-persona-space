@@ -1,0 +1,453 @@
+{
+  "issue": 2474,
+  "slug": "issue2474_prefit",
+  "generated_utc": "2026-08-23T10:35:40.917316+00:00",
+  "git": {
+    "git_commit": "eef4d48d",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2474_fit.py",
+    "phase": "harvest-verify"
+  },
+  "verdict": "PASS",
+  "prefix": "issue2474_prefit/capture_tensors",
+  "n_files_listed": 26,
+  "expected_bundles": [
+    "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_legal_advice/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_security_advice/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_extreme_sports/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_risky_financial/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_caps/grid.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_french/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_german/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_spanish/mu.pt"
+  ],
+  "extras": [
+    "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.rollouts.json",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.rollouts.json"
+  ],
+  "schema_records": [
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt",
+      "class": "grid",
+      "keys_verified": [
+        "row_meta",
+        "v_c"
+      ],
+      "row_meta": "validated-full",
+      "shape": {
+        "v_c": [
+          864,
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt",
+      "class": "ceiling",
+      "keys_verified": [
+        "drop_stats",
+        "row_meta",
+        "v_a"
+      ],
+      "row_meta": "validated-full",
+      "drop_stats": "reconciled",
+      "shape": {
+        "v_a": [
+          2592,
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_legal_advice/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_security_advice/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_extreme_sports/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_risky_financial/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_caps/grid.pt",
+      "class": "grid",
+      "keys_verified": [
+        "row_meta",
+        "v_c"
+      ],
+      "row_meta": "validated-full",
+      "shape": {
+        "v_c": [
+          960,
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.pt",
+      "class": "ceiling",
+      "keys_verified": [
+        "drop_stats",
+        "row_meta",
+        "v_a"
+      ],
+      "row_meta": "validated-full",
+      "drop_stats": "reconciled",
+      "shape": {
+        "v_a": [
+          2880,
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_french/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_german/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    },
+    {
+      "rel": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_spanish/mu.pt",
+      "class": "mu",
+      "keys_verified": [
+        "mu_a_train",
+        "mu_train",
+        "n_a",
+        "n_c"
+      ],
+      "row_meta": "n/a",
+      "shape": {
+        "mu_train": [
+          28,
+          3584
+        ]
+      },
+      "ok": true
+    }
+  ],
+  "layers_hidden": [
+    28,
+    3584
+  ],
+  "mu_counts": {
+    "em_bad_medical_advice": {
+      "n_c": 32642,
+      "n_a": 32642
+    },
+    "em_bad_legal_advice": {
+      "n_c": 11972,
+      "n_a": 11972
+    },
+    "em_bad_security_advice": {
+      "n_c": 8821,
+      "n_a": 8821
+    },
+    "em_turner_extreme_sports": {
+      "n_c": 6000,
+      "n_a": 6000
+    },
+    "em_turner_risky_financial": {
+      "n_c": 6000,
+      "n_a": 6000
+    },
+    "caps_french": {
+      "n_c": 7473,
+      "n_a": 7473
+    },
+    "caps_german": {
+      "n_c": 7473,
+      "n_a": 7473
+    },
+    "caps_spanish": {
+      "n_c": 7473,
+      "n_a": 7473
+    }
+  },
+  "ceiling_stats": {
+    "em": {
+      "n_kept_rows": 2592,
+      "n_slots": 2592,
+      "n_dropped_total": 0,
+      "min_kept_per_cell": 3,
+      "n_cells_expected": 864,
+      "n_absent_cells": 0
+    },
+    "caps": {
+      "n_kept_rows": 2880,
+      "n_slots": 2880,
+      "n_dropped_total": 0,
+      "min_kept_per_cell": 3,
+      "n_cells_expected": 960,
+      "n_absent_cells": 0
+    }
+  },
+  "ultrachat_revision": "f220fe796ce3ed62fbe1681b45ce6cbc9c6cabe0",
+  "prep_output_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/data/issue_2474/prep_output.json",
+  "prep_output_source": "repo-local:data/issue_2474/prep_output.json",
+  "parent_sha": "15097bee",
+  "completion_fingerprint": {
+    "phase": "harvest-verify",
+    "parent_sha": "15097bee",
+    "ultrachat_rev": "f220fe796ce3ed62fbe1681b45ce6cbc9c6cabe0",
+    "expected_bundles": [
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_legal_advice/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_security_advice/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_extreme_sports/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_risky_financial/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/grid.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_french/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_german/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_spanish/mu.pt"
+    ],
+    "remote_identity": {
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.pt": {
+        "size": 578152702,
+        "blob_id": "5adbe5f01d82a7fb490be3a3613bb462ff9a1425",
+        "lfs_sha256": "b6b9d04baef9c4282d360fd4c5b1cd6e9aa6b773a975350dad878e11c351c3ef"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.pt.meta.json": {
+        "size": 212,
+        "blob_id": "ed7430e69b4089f1a3614f7029117a8bbeed4d07",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/grid.pt": {
+        "size": 192706025,
+        "blob_id": "1589b8595fd6813e38b930c5ec09616c73d74eb2",
+        "lfs_sha256": "0c699c0a53c91748a240aca4a132a58b71b1e4d47ea6eed6f6ab15787bccc1bc"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/grid.pt.meta.json": {
+        "size": 184,
+        "blob_id": "e8e25c0ff895480980e46314db0ebca224f0fb74",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt": {
+        "size": 520336382,
+        "blob_id": "9a926ab3e64aceff3fa4384e61497d6adcfab274",
+        "lfs_sha256": "b594a218a179c4f6a6c675d8c76bbe8576b8e070db4b308e3dbf82042931b5cd"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt.meta.json": {
+        "size": 208,
+        "blob_id": "7c5fe31f534e44ee35cc464e3f7eaa11a9b2f364",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt": {
+        "size": 173435305,
+        "blob_id": "cfef763314e54319ebdd5c69adf3636b86dc2377",
+        "lfs_sha256": "05c78a12da8f9fb688cf10bbf746ecaba44fb3d52ebd7904d208cb995e0ee1aa"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt.meta.json": {
+        "size": 180,
+        "blob_id": "3cf4736ce2cdc3c749c97d76b739d02ae13a288b",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_french/mu.pt": {
+        "size": 403861,
+        "blob_id": "b4ded7cc95fdf8a2e8284e1a58866edd082f9fd1",
+        "lfs_sha256": "ccbd4084fbfd9fdb068fbdd5179639b45de1664b7aa678b48c4fc9afb3cd5cc8"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_french/mu.pt.meta.json": {
+        "size": 233,
+        "blob_id": "f9f7b8ce0f2a8966c690828d9eb084fffe36a740",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_german/mu.pt": {
+        "size": 403861,
+        "blob_id": "a9e9374ad65cb587cda651e29c64e5512687bb6e",
+        "lfs_sha256": "0dff8da5cccbe58aa1f98553cdbff90da32e45c44271383d4c9b047f35ff1d3e"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_german/mu.pt.meta.json": {
+        "size": 233,
+        "blob_id": "95322907f88c1165048d9d39e37fca607f82f831",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_spanish/mu.pt": {
+        "size": 403861,
+        "blob_id": "dc699d66f913110e8e282cb29c95416dade4c004",
+        "lfs_sha256": "9e3d56c871ba78ae67810ce30c650efbd8255891618d591349a1af07b0ee98b1"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_spanish/mu.pt.meta.json": {
+        "size": 235,
+        "blob_id": "3582665f7f933498f501b5613f2f3cf6013442c6",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_legal_advice/mu.pt": {
+        "size": 403861,
+        "blob_id": "5b1c6cf6b5c934038d2483d355ed02c6f38b4ab1",
+        "lfs_sha256": "cb91f5391ebe59aa33623d10009d870957f528deca64942717220b880f1614c4"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_legal_advice/mu.pt.meta.json": {
+        "size": 248,
+        "blob_id": "48a7fbaf09a0e989ec3a6c8732f60574dd877a6c",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt": {
+        "size": 403861,
+        "blob_id": "95a2b0addc30c254682f1eaec49d77f088cf4f56",
+        "lfs_sha256": "0766199f9763543411f100c2e78502b17bd6b407e5332ccbb8f0e9ff6bea2659"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt.meta.json": {
+        "size": 252,
+        "blob_id": "1b4bcc4b946e93cf30a2217df289def639d850ad",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_security_advice/mu.pt": {
+        "size": 403861,
+        "blob_id": "7f62e33ca0b8266badc0060b3d6e030b64676891",
+        "lfs_sha256": "d80a4be367c04d7cec5c273041429306107c8fc97c511e312764f7a1d40cd95c"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_security_advice/mu.pt.meta.json": {
+        "size": 253,
+        "blob_id": "31e96444a4a4fdb4b61d5cf38df634104323b2e8",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_extreme_sports/mu.pt": {
+        "size": 403861,
+        "blob_id": "40c89597a67640ce37ea46058dfae020ad67ba38",
+        "lfs_sha256": "508e9e2b138e04e46a66aca54ca6e12d2aba7c5d2de0956705b7c464d04a75c4"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_extreme_sports/mu.pt.meta.json": {
+        "size": 257,
+        "blob_id": "ce3d858418151288dc823bab8fa4f3e00807ab8b",
+        "lfs_sha256": null
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_risky_financial/mu.pt": {
+        "size": 403861,
+        "blob_id": "2e38d8916f5576e46f978fcdadb8c7d62d7c1842",
+        "lfs_sha256": "446e7ca88d2b1184f9c5d2dd40056eae10426e31afa6e238dec8e11b0e71f88e"
+      },
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_risky_financial/mu.pt.meta.json": {
+        "size": 259,
+        "blob_id": "b3bc64d8a3ff55f634722e89c0789c028382a0fd",
+        "lfs_sha256": null
+      }
+    },
+    "v": 2
+  }
+}

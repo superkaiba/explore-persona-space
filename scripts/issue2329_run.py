@@ -164,6 +164,12 @@ PILOT_FENCE_MULT = 2.0
 # raised 3600 -> 14400 s so a legitimately long block never ages out mid-run).
 CLAIM_STALE_S = float(os.environ.get("EPM_2329_CLAIM_STALE_S", "14400"))
 CLAIM_POLL_S = float(os.environ.get("EPM_2329_CLAIM_POLL_S", "30"))
+# In-flight-tolerant claim read (#2305): a reader can observe a claim file
+# EMPTY inside the winner's microsecond open->replace window; retry the read
+# a bounded number of times (worst case ~1 s) before treating a still-empty
+# claim as a dead writer. Module-level so tests can pin them.
+CLAIM_READ_RETRIES = 4
+CLAIM_READ_SLEEP_RANGE = (0.05, 0.25)
 
 # Distinct rcs: a designed halt is never an anonymous rc=1 (#1415).
 RC_OK = 0
@@ -456,14 +462,85 @@ def _claim_stale(rec: dict, now: float | None = None) -> bool:
     return (now - float(rec.get("ts", 0.0))) > CLAIM_STALE_S
 
 
+_EMPTY_STALE = object()
+"""Sentinel: the claim file was still EMPTY after the full bounded read (#2305)."""
+
+
+def _read_claim_inflight_tolerant(path: Path) -> dict | None | object:
+    """Read + parse a claim file, tolerating an in-flight writer (#2305).
+
+    A reader can hit the microsecond window between the winner's
+    ``O_CREAT | O_EXCL`` open and its atomic payload ``os.replace`` (the
+    writer path in ``try_claim``), observing the claim file EMPTY. Retry the
+    read up to ``CLAIM_READ_RETRIES`` times, sleeping
+    ``random.uniform(*CLAIM_READ_SLEEP_RANGE)`` between attempts (module
+    constants so tests can pin them; worst-case bound ~1 s). Returns:
+
+    - the parsed record ``dict`` — the normal case;
+    - ``None`` — the claim VANISHED (released, or consumed by a concurrent
+      reclaim); the caller returns False and the outer scan revisits;
+    - ``_EMPTY_STALE`` — still EMPTY after the full bound: with the atomic
+      writer in place no LIVE same-version writer holds an empty claim for
+      ~1 s, so the writer died inside the open->replace window; the caller
+      falls into the stale-reclaim path. Residual accepted risk (same class
+      as the r1 M1 settle comment): a live writer stalled past the bound
+      inside that window — SIGSTOP'd, or delayed by network-FS (MooseFS
+      cross-host) visibility lag — is reclaimed as empty-dead and the block
+      double-runs; tolerated by release_claim's stolen-claim tolerance +
+      atomic idempotent done-files, never corruption.
+
+    Persistent NON-EMPTY garbage raises the same hard ``RuntimeError`` as
+    before: with atomic payload writes, partial JSON from a live writer is
+    impossible, so it is genuine corruption — fail-fast stays.
+    """
+    data: bytes = b""
+    last_err: Exception | None = None
+    for attempt in range(CLAIM_READ_RETRIES):
+        if attempt:
+            time.sleep(random.uniform(*CLAIM_READ_SLEEP_RANGE))
+        try:
+            data = path.read_bytes()
+        except FileNotFoundError:
+            return None
+        except OSError as e:
+            last_err = e
+            continue
+        if data == b"":
+            last_err = None
+            continue
+        try:
+            return json.loads(data)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            last_err = e
+            continue
+    if data == b"" and last_err is None:
+        logger.warning(
+            "[claims] EMPTY claim %s after %d bounded reads — treating as dead "
+            "writer (died inside the create window)",
+            path,
+            CLAIM_READ_RETRIES,
+        )
+        return _EMPTY_STALE
+    raise RuntimeError(
+        f"unparseable claim file {path} — inconsistent claim state, refusing "
+        "to guess (delete it manually after diagnosing the writer)"
+    ) from last_err
+
+
 def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     """Atomically claim one block; reclaim a STALE claim; never skip silently.
 
-    Fresh claim: ``O_CREAT | O_EXCL`` — exactly one worker wins. Existing
-    claim: parse it (an unparseable claim file is an inconsistent-state HARD
-    failure), and when stale, atomically replace it and verify OUR token won
-    (two workers can both see stale; ``os.replace`` serializes, last writer
-    wins, the read-back arbitrates).
+    Fresh claim: ``O_CREAT | O_EXCL`` on the target decides the election —
+    exactly one worker wins — and the winner lands its payload atomically
+    (tmp + ``os.replace``), so a reader can observe the claim file EMPTY
+    (the microsecond open->replace window) but never partially written
+    (#2305). Existing claim: read it with bounded in-flight tolerance
+    (``_read_claim_inflight_tolerant``): a VANISHED claim returns False (the
+    outer scan revisits), a still-EMPTY claim after the bound is a dead
+    writer and falls into the stale-reclaim path, persistent non-empty
+    garbage stays an inconsistent-state HARD failure. When stale, atomically
+    replace it and verify OUR token won (two workers can both see stale;
+    ``os.replace`` serializes, last writer wins, the read-back arbitrates).
     """
     cdir.mkdir(parents=True, exist_ok=True)
     path = cdir / f"{block.slug}.claim"
@@ -478,14 +555,14 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
-        try:
-            rec = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
-            raise RuntimeError(
-                f"unparseable claim file {path} — inconsistent claim state, refusing "
-                "to guess (delete it manually after diagnosing the writer)"
-            ) from e
-        if not _claim_stale(rec):
+        rec = _read_claim_inflight_tolerant(path)
+        if rec is None:
+            # Claim VANISHED mid-read (released, or consumed by a concurrent
+            # reclaim) — never a raise, never a silent skip: the
+            # work-conserving outer scan revisits the block on its next pass.
+            return False
+        empty_dead = rec is _EMPTY_STALE
+        if not empty_dead and not _claim_stale(rec):
             return False
         tmp = path.parent / f"{path.name}.tmp.{token}"
         tmp.write_text(json.dumps(payload))
@@ -499,16 +576,31 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
         winner = json.loads(path.read_text())
         won = winner.get("token") == token
         if won:
-            logger.info(
-                "[claims] reclaimed STALE claim %s (was pid=%s host=%s age=%.0fs)",
-                block.key,
-                rec.get("pid"),
-                rec.get("host"),
-                time.time() - float(rec.get("ts", 0.0)),
-            )
+            if empty_dead:
+                # Distinct success line (#2305): the empty claim carried NO
+                # fields — never format pid/host/age off a record that was
+                # never parsed.
+                logger.warning(
+                    "[claims] reclaimed EMPTY claim %s (dead writer in create window)",
+                    block.key,
+                )
+            else:
+                logger.info(
+                    "[claims] reclaimed STALE claim %s (was pid=%s host=%s age=%.0fs)",
+                    block.key,
+                    rec.get("pid"),
+                    rec.get("host"),
+                    time.time() - float(rec.get("ts", 0.0)),
+                )
         return won
-    with os.fdopen(fd, "w") as f:
-        json.dump(payload, f)
+    # Winner (#2305): the election is decided by the O_CREAT|O_EXCL open
+    # above; close the empty fd and land the payload the way the
+    # stale-reclaim path does — tmp sibling + atomic os.replace — so readers
+    # observe the claim EMPTY or COMPLETE, never partially written.
+    os.close(fd)
+    tmp = path.parent / f"{path.name}.tmp.{token}"
+    tmp.write_text(json.dumps(payload))
+    os.replace(tmp, path)
     return True
 
 
@@ -681,6 +773,11 @@ def regime_fingerprint(cfg: RunConfig, bank_sha: str) -> str:
         {
             "bank_sha": bank_sha,
             "model_id": cfg.model_id,
+            # #2329 q35_ladder_decay M1/R2-M1 edit 3: the model-repo revision is an
+            # output-affecting knob (fork plan divergence 11). None for legacy
+            # RunConfig objects that carry no pin (pre-fork resume keys unchanged
+            # only for cfgs WITHOUT the attribute -- the fork's out-root is fresh).
+            "model_revision": getattr(cfg, "model_revision", None),
             "tiny": cfg.tiny,
             "n_layers": cfg.n_layers,
             "hidden": cfg.hidden,
@@ -1401,6 +1498,9 @@ def _repro(cfg: RunConfig) -> dict:
     return {
         **_REPRO_CACHE,
         "model_id": cfg.model_id,
+        # None when the config carries no pin (parent grid run); the ladder fork
+        # (issue2329_ladder) always pins (plan divergence 11).
+        "model_revision": getattr(cfg, "model_revision", None),
         "tiny": cfg.tiny,
         "smoke": cfg.smoke,
         "n_layers": cfg.n_layers,
@@ -1442,22 +1542,33 @@ def _shrink_config(mcfg, hidden: int, n_layers: int):
     return mcfg
 
 
-def load_model_and_tokenizer(cfg: RunConfig):
+def load_model_and_tokenizer(cfg: RunConfig, revision: str | None = None):
     """Production: bf16 Qwen3.5-9B pinned to one device (never
     ``device_map='auto'`` — silent CPU offload, gotchas). Tiny: a from-config
-    same-arch model on CPU over the REAL vocab-id space."""
+    same-arch model on CPU over the REAL vocab-id space.
+
+    ``revision`` (additive, default None == legacy behavior) pins BOTH the
+    tokenizer and the model to a model-repo commit (#2329 q35_ladder_decay
+    fork, plan divergence 11). The ``--tiny`` branch builds from config, so
+    the pin reaches only the tokenizer + AutoConfig there.
+    """
     from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(cfg.model_id)  # loaded ONCE (HF-429 gotcha)
+    # loaded ONCE (HF-429 gotcha)
+    tok = AutoTokenizer.from_pretrained(cfg.model_id, revision=revision)
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     if cfg.tiny:
-        mcfg = _shrink_config(AutoConfig.from_pretrained(cfg.model_id), cfg.hidden, cfg.n_layers)
+        mcfg = _shrink_config(
+            AutoConfig.from_pretrained(cfg.model_id, revision=revision), cfg.hidden, cfg.n_layers
+        )
         torch.manual_seed(0)
         model = AutoModelForCausalLM.from_config(mcfg).to(torch.float32)
     else:
         assert torch.cuda.is_available(), "the full grid requires CUDA (use --tiny for CPU smoke)"
-        model = AutoModelForCausalLM.from_pretrained(cfg.model_id, dtype=torch.bfloat16)
+        model = AutoModelForCausalLM.from_pretrained(
+            cfg.model_id, dtype=torch.bfloat16, revision=revision
+        )
     model = model.to(cfg.device)
     realized = _model_text_config(model.config)
     assert realized.hidden_size == cfg.hidden, (realized.hidden_size, cfg.hidden)
@@ -1916,17 +2027,25 @@ def run_injection_gate(
     ids_fn=None,
     spots: list[dict] | None = None,
     payload_fn=None,
+    pe_second_row_ok=None,
 ) -> dict:
     """Plan §7 gate 1 — the realized edit equals the intended donor state at
     the intended (row, position, layer) and NOWHERE else.
 
-    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn``
-    seams (defaults = this module's own registries — byte-equivalent for every
-    existing caller) let the #2162 LADDER driver reuse this gate verbatim over
-    its own bank (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS,
-    never re-implements, the injection-gate helper"). ``spots`` rows keep the
+    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn`` /
+    ``pe_second_row_ok`` seams (defaults = this module's own registries —
+    byte-equivalent for every existing caller) let the #2162 LADDER driver
+    reuse this gate verbatim over its own bank
+    (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS, never
+    re-implements, the injection-gate helper"). ``spots`` rows keep the
     ``{"cell", "slot", "arm", "pair"}`` shape; ``payload_fn`` keeps
-    :func:`payload_for_arm`'s call signature.
+    :func:`payload_for_arm`'s call signature. ``pe_second_row_ok(p, arm)``
+    is the pe-slot second-row runnability predicate — the default binds this
+    module's :func:`pe_excluded_reason` (parent donor-map keys
+    ``{"shuffled", "crosstype"}`` with PAIR-id values); a caller whose
+    ``donor_maps`` uses a DIFFERENT key/value convention (the #2329 ladder:
+    ``{"null_sameval", "null_xtype", "null_xtype_pe"}`` with CONTEXT-id
+    values) MUST pass its own predicate, or the default ``KeyError``s.
 
     Stage 1 is REPLACE at every layer, so the exactness read is ABSOLUTE (the
     hooked state at the edited position IS the payload — no incremental
@@ -1950,6 +2069,11 @@ def run_injection_gate(
     # No-prefix set (unit-1 flag) from the captured bank records: pe spots and
     # pe second rows must stay pe-runnable.
     np_ids = frozenset(cid for cid, r in recs.items() if r.get("no_prefix"))
+    if pe_second_row_ok is None:
+
+        def pe_second_row_ok(p, arm):
+            return pe_excluded_reason(p, arm, np_ids, donor_maps, pairs_by_id) is None
+
     spots = _gate_spot_specs(pairs, np_ids, donor_maps, pairs_by_id) if spots is None else spots
     results: list[dict] = []
     for spot in spots:
@@ -1963,9 +2087,7 @@ def run_injection_gate(
             for p in pairs
             if p.pair_id != pair.pair_id
             and len(ctx_ids[p.a]) != len(ctx_ids[pair.a])
-            and (
-                slot != "pe" or pe_excluded_reason(p, arm, np_ids, donor_maps, pairs_by_id) is None
-            )
+            and (slot != "pe" or pe_second_row_ok(p, arm))
         ]
         batch_pairs = [pair] + ([others[0]] if others else [])
         rows = [ctx_ids[p.a] for p in batch_pairs]
@@ -3212,6 +3334,7 @@ def compute_cap_hit_report(
     expected_shards: set[str] | None,
     expected_unavailable_reason: str | None = None,
     threshold_pct: float = CAP_HIT_REGEN_TRIGGER_PCT,
+    breach_grain: str = "cell",
 ) -> dict:
     """Per-cell + per-(cell, value) cap-hit aggregate over realized rollout shards.
 
@@ -3227,7 +3350,22 @@ def compute_cap_hit_report(
     An EMPTY breach list is a legitimate outcome (``breaching_cells: []``,
     ``trigger_fired: false``), never coerced. Raises when no shard exists or
     nothing is capture-enriched yet (a zero-row aggregate is not a
-    measurement)."""
+    measurement).
+
+    ``breach_grain`` selects which registered trigger grain arms
+    ``trigger_fired``: ``"cell"`` (this driver's registered per-type-cell
+    trigger — the default, byte-compatible with every pre-existing report)
+    or ``"cell_slot_arm"`` (the ladder plan §7 G5 grain: per
+    (direction x slot x arm) UNIT, keyed by ``Block.key``). The per-unit
+    breakdown (``per_unit`` / ``breaching_units`` / ``max_arm_spread``) is
+    computed whenever rows carry ``slot`` + ``arm`` regardless of grain —
+    the value-side/arm-side ASYMMETRY read (a cap sufficient on average but
+    truncating one side of a within-cell contrast is still a
+    measurement-validity failure); under ``"cell_slot_arm"`` every covered
+    row MUST carry both fields (a grain that cannot be evaluated raises,
+    never silently degrades to the coarser one)."""
+    if breach_grain not in ("cell", "cell_slot_arm"):
+        raise ValueError(f"unknown breach_grain {breach_grain!r}")
     if not shard_paths:
         raise RuntimeError(
             f"cap-hit report ({scope}): no rollout shards found — wrong --out-root, "
@@ -3237,6 +3375,8 @@ def compute_cap_hit_report(
     pending: list[str] = []
     cell_counts: dict[str, list[int]] = {}
     cv_counts: dict[tuple[str, str], list[int]] = {}
+    unit_counts: dict[str, list[int]] = {}
+    n_rows_without_unit_fields = 0
     cell_caps: dict[str, dict[str, set[int]]] = {}
     n_rows = 0
     hits = 0
@@ -3289,6 +3429,18 @@ def compute_cap_hit_report(
             cv = cv_counts.setdefault((cell, vkey), [0, 0])
             cv[0] += 1
             cv[1] += hit
+            if "slot" in r and "arm" in r:
+                u = unit_counts.setdefault(f"{cell}|{r['slot']}|{r['arm']}", [0, 0])
+                u[0] += 1
+                u[1] += hit
+            else:
+                n_rows_without_unit_fields += 1
+                if breach_grain == "cell_slot_arm":
+                    raise RuntimeError(
+                        f"cap-hit report ({scope}): row in {path.name} lacks slot/arm — "
+                        "the requested cell_slot_arm breach grain cannot be evaluated "
+                        "(never silently degraded to the coarser per-cell grain)"
+                    )
         covered.append({"name": path.name, "sha256": _sha256_bytes(data), "n_rows": len(rows)})
     if n_rows == 0:
         raise RuntimeError(
@@ -3326,6 +3478,40 @@ def compute_cap_hit_report(
                 "max_pct": max(pcts),
                 "spread_pct": spread,
             }
+    # Per-(cell x slot x arm) UNIT breakdown (the ladder plan §7 G5 grain;
+    # v177: the realized asymmetry axis — arms are the SIDES of the grid
+    # contrast, so unequal truncation across arms within one cell x slot is
+    # the measurement-validity failure the aggregate cannot see).
+    per_unit: dict[str, dict] | None = None
+    breaching_units: list[str] | None = None
+    max_arm_spread: dict | None = None
+    if unit_counts:
+        per_unit = {}
+        for unit, (n, h) in sorted(unit_counts.items()):
+            pct = 100.0 * h / n
+            per_unit[unit] = {
+                "n_rows": n,
+                "cap_hit_rows": h,
+                "cap_hit_pct": pct,
+                "breach": pct > threshold_pct,  # STRICT >, same registered rule
+            }
+        breaching_units = sorted(u for u, d in per_unit.items() if d["breach"])
+        by_cell_slot: dict[tuple[str, str], list[float]] = {}
+        for unit, d in per_unit.items():
+            cell, slot, _arm = unit.rsplit("|", 2)  # cells never contain "|" (block_slug contract)
+            by_cell_slot.setdefault((cell, slot), []).append(d["cap_hit_pct"])
+        for (cell, slot), pcts in sorted(by_cell_slot.items()):
+            if len(pcts) < 2:
+                continue
+            spread = max(pcts) - min(pcts)
+            if max_arm_spread is None or spread > max_arm_spread["spread_pct"]:
+                max_arm_spread = {
+                    "cell": cell,
+                    "slot": slot,
+                    "min_pct": min(pcts),
+                    "max_pct": max(pcts),
+                    "spread_pct": spread,
+                }
     covered_names = sorted(c["name"] for c in covered)
     reasons: list[str] = []
     if pending:
@@ -3355,6 +3541,11 @@ def compute_cap_hit_report(
             reasons.append(f"{len(missing)} expected shard(s) missing (phase incomplete)")
     toks = np.asarray(n_tok_all, dtype=np.int64)
     breaching = sorted(c for c, d in per_cell.items() if d["breach"])
+    if breach_grain == "cell_slot_arm":
+        assert breaching_units is not None  # every covered row carried slot+arm (checked above)
+        trigger_fired = bool(breaching_units)
+    else:
+        trigger_fired = bool(breaching)
     return {
         "scope": scope,
         "derived_from": (
@@ -3367,7 +3558,8 @@ def compute_cap_hit_report(
         ),
         "derivation": (
             "count of rows with truthy recorded cap_hit over all capture-enriched rows, "
-            "overall + per cell + per (cell, value); trigger_fired = any cell with "
+            "overall + per cell + per (cell, value) + per (cell, slot, arm) unit where "
+            f"rows carry slot/arm; trigger_fired = any {breach_grain}-grain entry with "
             "cap_hit_pct STRICTLY > pre_registered_regen_trigger_pct; derived_from_sha256 "
             "= sha256 over newline-joined '<name>:<sha256>' of derived_from_shards"
         ),
@@ -3376,14 +3568,19 @@ def compute_cap_hit_report(
         "cap_hit_frac": hits / n_rows,
         "cap_hit_pct": 100.0 * hits / n_rows,
         "pre_registered_regen_trigger_pct": threshold_pct,
-        "trigger_fired": bool(breaching),
+        "breach_grain": breach_grain,
+        "trigger_fired": trigger_fired,
         "breaching_cells": breaching,
+        "breaching_units": breaching_units,
         "max_new_tokens": max_new_tokens,
         "realized_row_caps": sorted(realized_caps),
         "value_key_fields": sorted(value_fields),
         "per_cell": per_cell,
         "per_cell_value": per_cell_value,
         "max_value_spread": max_spread,
+        "per_unit": per_unit,
+        "max_arm_spread": max_arm_spread,
+        "n_rows_without_unit_fields": n_rows_without_unit_fields,
         "n_completion_tokens": {
             "min": int(toks.min()),
             "median": float(np.median(toks)),
@@ -3518,6 +3715,8 @@ def emit_cap_hit_report(
     postregen: bool = False,
     base_cap: int | None = None,
     capregen_pending: list[str] | None = None,
+    inputs: tuple[list[Path], set[str] | None, str | None] | None = None,
+    breach_grain: str = "cell",
 ) -> dict:
     """Compute + atomically write the scope's cap-hit report; returns it.
 
@@ -3530,16 +3729,25 @@ def emit_cap_hit_report(
     SIBLING path (mechanically pinned — never the driving report's path); the
     report is stamped ``postregen: true`` (refused as a breach basis); and any
     pending capregen merges mark it ``partial`` (a per-worker emit mid-fleet
-    must never claim ``partial: false``, v11 face 4 / efficiency (d))."""
+    must never claim ``partial: false``, v11 face 4 / efficiency (d)).
+
+    ``inputs`` injects a caller-derived ``(shard_paths, expected_shards,
+    expected_unavailable_reason)`` triple — the seam a LAYOUT FORK (the
+    #2329 q35 ladder: ``LadderConfig.rollouts_dir`` -> ``out_root/grid``,
+    ladder-own block enumeration) uses so this driver's ``_cap_report_inputs``
+    never resolves the WRONG store (v176 root cause: cap_report/capregen were
+    unreachable for the ladder grid because this function hard-wired the run
+    layout). ``None`` keeps the run driver's own derivation, byte-identical."""
     if postregen and base_cap is None:
         raise ValueError("postregen emit requires base_cap (the BASE attribution cap)")
-    paths, expected, why = _cap_report_inputs(cfg, scope)
+    paths, expected, why = inputs if inputs is not None else _cap_report_inputs(cfg, scope)
     report = compute_cap_hit_report(
         paths,
         base_cap if postregen else cfg.max_new_tokens,
         scope=scope,
         expected_shards=expected,
         expected_unavailable_reason=why,
+        breach_grain=breach_grain,
     )
     report["repro"] = _repro(cfg)
     out = cap_hit_report_path(cfg, scope, postregen=postregen)

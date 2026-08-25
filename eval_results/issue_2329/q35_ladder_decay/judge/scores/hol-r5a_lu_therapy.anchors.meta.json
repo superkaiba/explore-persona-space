@@ -1,0 +1,42 @@
+{
+  "regime": {
+    "wave": "hol-r5a_lu_therapy.anchors",
+    "rubric_id": "hol-r5a_lu_therapy",
+    "rubric_sha16": "60a9b2a63d38ad09",
+    "n_items": 120,
+    "item_ids_sha16": "910d1fa1f1d4a6eb",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1
+  },
+  "complete": true,
+  "pass1": {
+    "n_total_draws": 120,
+    "n_dropped_draws_content": 0,
+    "n_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "n_transport_lost_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 120
+    }
+  },
+  "retry1": null,
+  "residual_transport_lost": 0,
+  "temperature_note": "not threaded by judge_graded — Anthropic API default",
+  "per_arm": {
+    "anchor": {
+      "n_items": 120,
+      "n_scored": 120,
+      "transport_lost": 0,
+      "truncation_drops": 0
+    }
+  },
+  "n_scored_items": 120,
+  "repro": {
+    "git_commit": "7caaecf958269778655a0831a8c1d17ce83468a8",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2329_ladder_judge.py",
+    "script": "scripts/issue2094_judge.py"
+  }
+}

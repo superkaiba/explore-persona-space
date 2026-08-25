@@ -456,14 +456,22 @@ def rubric_registry() -> dict[str, str]:
 # ── plain-render equality probe (plan §4.1 / §12 assumption 4) ────────
 
 
-def plain_render_equality(tokenizer, probe_user: str = "What is a hash table?") -> dict:
+def plain_render_equality(
+    tokenizer, probe_user: str = "What is a hash table?", template_kwargs: dict | None = None
+) -> dict:
     """Does the EXPLICIT plain system block render token-identically to the
     omitted-system template default? Recorded either way (on mismatch the
-    explicit block is kept + the delta recorded — plan §4.1)."""
+    explicit block is kept + the delta recorded — plan §4.1).
+
+    ``template_kwargs`` (additive, default None == legacy behavior) threads
+    ``apply_chat_template`` kwargs — the #2329 q35_ladder_decay fork passes
+    ``bank2329.TEMPLATE_KWARGS`` (``enable_thinking=False``) so the probe runs
+    under the same thinking-off render as every other fork ids site.
+    """
     explicit = {"system": PLAIN_SYSTEM, "history": [], "user": probe_user}
     omitted = {"system": None, "history": [], "user": probe_user}
-    ids_explicit = context_token_ids_2094(tokenizer, explicit)
-    ids_omitted = context_token_ids_2094(tokenizer, omitted)
+    ids_explicit = context_token_ids_2094(tokenizer, explicit, template_kwargs=template_kwargs)
+    ids_omitted = context_token_ids_2094(tokenizer, omitted, template_kwargs=template_kwargs)
     return {
         "equal": ids_explicit == ids_omitted,
         "n_tokens_explicit": len(ids_explicit),

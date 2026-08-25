@@ -1,0 +1,273 @@
+{
+  "arm": "c",
+  "n_te_rows": 20000,
+  "n_features_alive": 879,
+  "alive_mask_provenance": {
+    "criterion": "active on >= ceil(0.01 * n_fit_rows) TRUE-summary fit-side encodes (never predicted codes; true-alive features retained regardless of predicted-code degeneracy), capped at the registered 16,384-feature tier-stratified panel (M._tier_stratified_panel, seed 14824)",
+    "floor": 1200,
+    "n_fit_rows": 120000,
+    "panel": {
+      "floor": 1200,
+      "cap": 16384,
+      "seed": 14824,
+      "n_clearing_by_tier": {
+        "0": 788,
+        "1": 88,
+        "2": 3
+      },
+      "alloc_by_tier": {
+        "0": 788,
+        "1": 88,
+        "2": 3
+      },
+      "n_panel": 879,
+      "panel_tier_counts": {
+        "0": 788,
+        "1": 88,
+        "2": 3
+      },
+      "per_tier_floor_warn": [
+        0,
+        1,
+        2
+      ]
+    },
+    "per_tier": {
+      "0": {
+        "selected": 788,
+        "candidate": 2048
+      },
+      "1": {
+        "selected": 88,
+        "candidate": 14336
+      },
+      "2": {
+        "selected": 3,
+        "candidate": 49152
+      }
+    }
+  },
+  "per_tier": {
+    "0": {
+      "n_alive": 788,
+      "median_r2_map": {
+        "n": 788,
+        "median": 0.6251079008927359,
+        "q25": 0.4753888841924354,
+        "q75": 0.7399308095252519
+      },
+      "ci95_median_map": [
+        0.610793899683515,
+        0.6409611633391581
+      ],
+      "median_r2_ib": {
+        "n": 788,
+        "median": -0.7655555540987627,
+        "q25": -1.9017992323943758,
+        "q75": -0.133342318286723
+      },
+      "ci95_median_ib": [
+        -0.8698135159099286,
+        -0.6491972346858128
+      ],
+      "map_minus_ib_paired": {
+        "point": 1.3906634549914987,
+        "ci95": [
+          1.2818969504406408,
+          1.4865329261416493
+        ],
+        "n": 788
+      }
+    },
+    "1": {
+      "n_alive": 88,
+      "median_r2_map": {
+        "n": 88,
+        "median": 0.1313060445004719,
+        "q25": 0.04816888463144289,
+        "q75": 0.23219808876617842
+      },
+      "ci95_median_map": [
+        0.09953109926899195,
+        0.15890684328397087
+      ],
+      "median_r2_ib": {
+        "n": 88,
+        "median": -5.133340711921773,
+        "q25": -10.097965652664287,
+        "q75": -2.785147228772237
+      },
+      "ci95_median_ib": [
+        -6.799717874841188,
+        -3.7383265192557222
+      ],
+      "map_minus_ib_paired": {
+        "point": 5.264646756422245,
+        "ci95": [
+          3.898014922784264,
+          6.911899444284345
+        ],
+        "n": 88
+      }
+    },
+    "2": {
+      "n_alive": 3,
+      "median_r2_map": {
+        "n": 3,
+        "median": 0.6695627724230564,
+        "q25": 0.6589183854118627,
+        "q75": 0.774732428115045
+      },
+      "ci95_median_map": [
+        0.6482739984006689,
+        0.8799020838070336
+      ],
+      "median_r2_ib": {
+        "n": 3,
+        "median": -0.47854755971582175,
+        "q25": -3.158848113190623,
+        "q75": -0.4483514260898842
+      },
+      "ci95_median_ib": [
+        -5.839148666665425,
+        -0.41815529246394667
+      ],
+      "map_minus_ib_paired": {
+        "point": 1.1481103321388781,
+        "ci95": [
+          1.1481103321388781,
+          6.487422665066093
+        ],
+        "n": 3
+      }
+    }
+  },
+  "tier_diff_t0_minus_t2": {
+    "map": {
+      "point_t0_minus_t2": -0.04445487153032046,
+      "ci95": [
+        -0.26350946325049185,
+        -0.012679717827322134
+      ]
+    },
+    "ib": {
+      "point_t0_minus_t2": -0.287007994382941,
+      "ci95": [
+        -0.41614018947975095,
+        5.146223067027906
+      ]
+    }
+  },
+  "permutation": {
+    "observed_pooled_spearman": -0.4493745155248349,
+    "perm_band_2p5_97p5": [
+      -0.18971120300352295,
+      -0.06938753523188175
+    ],
+    "n_perm": 10000,
+    "n_features": 879,
+    "n_strata": 5,
+    "verdict": "coarse-better",
+    "note": "tier labels permuted WITHIN activity strata; observed outside the central 95% band = two-sided p < 0.05 on that side (plan \u00a73 equivalence note)",
+    "perm_pct": 0.0,
+    "perm_seed": 4127938238730523238,
+    "strata": "quintile",
+    "cell_counts": {
+      "0_0": 126,
+      "0_1": 48,
+      "0_2": 2,
+      "1_0": 151,
+      "1_1": 24,
+      "1_2": 1,
+      "2_0": 165,
+      "2_1": 10,
+      "2_2": 0,
+      "3_0": 170,
+      "3_1": 6,
+      "3_2": 0,
+      "4_0": 176,
+      "4_1": 0,
+      "4_2": 0
+    }
+  },
+  "activity_tie_profile": {
+    "n_features": 879,
+    "n_unique_activity": 836,
+    "max_tie_fraction": 0.005688282138794084
+  },
+  "lattice_verdict": "Indeterminate",
+  "lattice_inputs": {
+    "perm_pct": 0.0,
+    "tier_diff_map_t0_minus_t2": -0.04445487153032046,
+    "raw_band_2p5_97p5": [
+      -0.18971120300352295,
+      -0.06938753523188175
+    ],
+    "observed_pooled_spearman": -0.4493745155248349
+  },
+  "rho_ceiling_abs": 0.5277625710501914,
+  "shuffle_null": {
+    "n_seeds": 20,
+    "advisory": true,
+    "train_mean_note": "constant predictor: row-shuffle null == observed (no draws)",
+    "per_read": {
+      "map": {
+        "p97_5": -0.042097473144532715,
+        "frac_above": 1.0
+      },
+      "ib": {
+        "p97_5": -0.3182189941406266,
+        "frac_above": 0.29579067121729236
+      },
+      "densein": {
+        "p97_5": -0.14446716308593777,
+        "frac_above": 1.0
+      },
+      "transfer": {
+        "p97_5": -0.0227813720703125,
+        "frac_above": 0.9816933638443935
+      }
+    }
+  },
+  "battery_seed": 24761,
+  "tier2_attrition_limited": true,
+  "extra_reads": {
+    "densein": {
+      "n_te_rows": 20000,
+      "per_tier_median_r2": {
+        "0": 0.5332399193287505,
+        "1": 0.1592775081163233,
+        "2": 0.7192806179424366
+      }
+    },
+    "transfer": {
+      "n_te_rows": 9017,
+      "per_tier_median_r2": {
+        "0": 0.5222444899356065,
+        "1": 0.07543539716494718,
+        "2": NaN
+      }
+    }
+  },
+  "ci_note": "bootstrap CIs conditional on the realized score rows",
+  "gate_g4": {
+    "val_var_fve": 0.909269,
+    "val_l0": 98.96,
+    "floor": 0.5,
+    "n_val": 10000,
+    "verdict": "PASS"
+  },
+  "densein_note": "dense-input companion: identity+bias inapplicable (d_in 3584 != d_out n_alive)",
+  "attrition_caveat": "tier-2 read is ATTRITION-LIMITED (n_alive=3 < 500; medians over alive features remain valid)",
+  "metadata": {
+    "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+    "timestamp_utc": "2026-08-23T11:28:31.692383Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "eval",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}

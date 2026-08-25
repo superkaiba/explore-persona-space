@@ -1,0 +1,21 @@
+[stream] evil_labeling.tar 32.1 GB; retaining t1 (7, 11, 15, 19, 23, 27)
+  [stream] 40 members, 0.8 min
+  [stream] 80 members, 1.5 min
+  [stream] 120 members, 2.0 min
+  [stream] 160 members, 2.7 min
+  [stream] 200 members, 3.1 min
+  [stream] 240 members, 3.6 min
+  [stream] 280 members, 4.3 min
+  [stream] 320 members, 5.1 min
+  [stream] 360 members, 5.8 min
+  [stream] 400 members, 6.1 min
+  [stream] 440 members, 6.8 min
+  [stream] 480 members, 7.5 min
+  [stream] 520 members, 8.4 min
+  [stream] 560 members, 9.0 min
+  [stream] 600 members, 9.7 min
+  [stream] 640 members, 10.8 min
+  [stream] 680 members, 11.8 min
+  [stream] 720 members, 13.1 min
+[stream] done: 735 members in 13.2 min
+[done] 10666 contexts from 53330 rows -> /mnt/eps-data/thomasjiralerspong/issue1739_jbmine/evil_answer_t1.npz (459 MB, 14.4 min total)

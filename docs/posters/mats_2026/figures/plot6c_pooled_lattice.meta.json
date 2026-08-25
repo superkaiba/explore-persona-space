@@ -1,0 +1,199 @@
+{
+  "commit": "34067e75+dirty",
+  "render_id": "5adae03c5db144af",
+  "git_commit": "34067e751bacdd7e142c95bd9a85c4580a1e4ebf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
+  "created": "2026-08-21T10:19:06Z",
+  "figsize": [
+    8.0,
+    2.9
+  ],
+  "points": [
+    {
+      "sorted by similarity to assistant in chat template": -0.19,
+      "held-out $R^2$": 0.43478488946626914,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 0.81,
+      "held-out $R^2$": 0.35613889553138234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 1.81,
+      "held-out $R^2$": 0.34068194443813604,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 2.81,
+      "held-out $R^2$": 0.2984944019747089,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 3.81,
+      "held-out $R^2$": 0.29102155422437836,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 4.81,
+      "held-out $R^2$": 0.18545197766814003,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 0.19,
+      "held-out $R^2$": 0.5796996369279679,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 1.19,
+      "held-out $R^2$": 0.3790039749146514,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 2.19,
+      "held-out $R^2$": 0.36960715629310803,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 3.19,
+      "held-out $R^2$": 0.3559185425108692,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 4.19,
+      "held-out $R^2$": 0.3609899231388926,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 5.19,
+      "held-out $R^2$": 0.2962172010567693,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 0.19,
+      "held-out $R^2$": 0.20736087733279018,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 1.19,
+      "held-out $R^2$": 0.2830236426880387,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 2.19,
+      "held-out $R^2$": 0.27988210680548775,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 3.19,
+      "held-out $R^2$": 0.26435334458909887,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 4.19,
+      "held-out $R^2$": 0.27919295858458054,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 5.19,
+      "held-out $R^2$": 0.2185863641514155,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "One shared map vs its own map, per character/framing \u2014 Qwen-2.5-7B",
+        "xlabel": "sorted by similarity to assistant in chat template",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "instruct \u2014 one shared map",
+          "instruct \u2014 its own map",
+          "base \u2014 its own map"
+        ],
+        "annotations": [
+          "the assistant\nitself",
+          "same assistant,\nas a character",
+          "a calm,\nprecise AI",
+          "warm, endlessly\nhelpful",
+          "an ordinary,\nunremarkable person",
+          "a theatrical,\nscheming villain"
+        ],
+        "xticklabels": [
+          "assistant\nchat template",
+          "assistant\nin story",
+          "HELIOS\nin story",
+          "Wren\nin story",
+          "Dana\nin story",
+          "Vex\nin story"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "instruct \u2014 one shared map",
+      "instruct \u2014 its own map",
+      "base \u2014 its own map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

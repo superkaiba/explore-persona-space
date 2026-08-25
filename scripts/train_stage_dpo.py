@@ -45,7 +45,10 @@ from accelerate.accelerator import GradientAccumulationPlugin
 from accelerate.utils import InitProcessGroupKwargs, set_seed
 
 # open-instruct imports
+# PROD_IMPORT_LINT_EXEMPT: launcher-context import, contract unproven (launch_stage.py:477)
 from open_instruct import dpo_utils, logger_utils, model_utils, utils
+
+# PROD_IMPORT_LINT_EXEMPT: launcher-context import, contract unproven (launch_stage.py:477)
 from open_instruct.dataset_transformation import (
     CHOSEN_INPUT_IDS_KEY,
     TOKENIZED_PREFERENCE_DATASET_KEYS,
@@ -53,6 +56,8 @@ from open_instruct.dataset_transformation import (
     get_cached_dataset_tulu,
     visualize_token,
 )
+
+# PROD_IMPORT_LINT_EXEMPT: launcher-context import, contract unproven (launch_stage.py:477)
 from open_instruct.dpo_utils import (
     DataCollatorForSeq2SeqDPO,
     DPOLossType,
@@ -60,12 +65,18 @@ from open_instruct.dpo_utils import (
     compute_loss,
     concatenated_inputs,
 )
+
+# PROD_IMPORT_LINT_EXEMPT: launcher-context import, contract unproven (launch_stage.py:477)
 from open_instruct.padding_free_collator import (
     TensorDataCollatorWithFlatteningDPO,
 )
+
+# PROD_IMPORT_LINT_EXEMPT: launcher-context import, contract unproven (launch_stage.py:477)
 from open_instruct.padding_free_collator import (
     concatenated_inputs as pf_concatenated_inputs,
 )
+
+# PROD_IMPORT_LINT_EXEMPT: launcher-context import, contract unproven (launch_stage.py:477)
 from open_instruct.padding_free_collator import (
     get_batch_logps as pf_get_batch_logps,
 )
@@ -650,6 +661,7 @@ def main():
 
         import functools
 
+        # PROD_IMPORT_LINT_EXEMPT: launcher-context import, contract unproven (launch_stage.py:477)
         from open_instruct.dpo_utils import concatenated_forward as standard_forward
 
         forward_fn = (

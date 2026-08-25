@@ -23,6 +23,7 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [Smoke roots need p0prime-smoke prestage](feedback_smoke_roots_need_p0prime_smoke_prestage.md) — i537/i542 *_smoke roots only populated by `--phase p0prime --smoke` on the same pod; stat-check before mid-chain smoke (#542)
 - [i543-rig per-phase needs --measure-bhat first](feedback_i543_rig_perphase_needs_measure_bhat.md) — --phase phase1 crashes t+0 without bhat.json; idempotent measure-bhat at glue top; EngineCore/pgrep cleanup gotchas (#570)
 - [Referenced helper not in HEAD tree](feedback_referenced_helper_not_in_head_tree.md) — spec_from_file_location bypasses import checks; FileNotFoundError from importlib = grep git ls-tree, code-class (#408 v11)
+- [Pod sparse clone excludes other issues' eval_results](feedback_pod_sparse_clone_committed_inputs.md) — committed parent-issue inputs FileNotFoundError despite verified HEAD; stat-check on pod, materialize via git show HEAD:path + hash-verify (#2476)
 - [per_q caches blow disk budget](feedback_per_q_disk_budget.md) — compute n_personas × per_q size × methods vs free disk BEFORE launch (310 GB > 200 GB volume); verify on first persona (#263)
 - [Random-bucket persona-alignment yield](feedback_random_bucket_persona_alignment.md) — unbiased corpora give ~5% positive-cos hits for OOD personas; k spec is a planner revision, not an implementer bug (#375)
 - [Cipher 3-gram pigeonhole](feedback_cipher_3gram_pigeonhole.md) — n-gram novelty gates unsatisfiable when train_size×ct_len/alphabet^n > 0.3; widen n or disjoint word pools (#192)
@@ -40,6 +41,8 @@ bullets, mechanized fixes); their bodies stay on disk.
 ## Launch mechanics (nohup, SSH, wrappers)
 
 - [Fellows dispatch blocks in queue-park wait; 600s tool cap kills it AFTER a successful submit](feedback_fellows_dispatch_park_wait_tool_cap.md) — probe sidecar+squeue before relaunch; scancel-before-re-run; ladder disarmed by the kill; plan-copied cmd drift (missing `launch`, `--repo-branch`, `--time-budget-hours`) (#1336 r4)
+- [Handle workload_cmd is the fence dry-parse form, not the fan-out](feedback_handle_workload_cmd_single_invocation_cvd_fanout.md) — CVD-pin plans persist a single-invocation cmd (default shard-id 0) = silent shard-0-only subset; read plan §9 + compose the launcher (#2254 firstk)
+- [Handle workload_cmd is the fence dry-parse form, not the fan-out](feedback_handle_workload_cmd_single_invocation_cvd_fanout.md) — CVD-pin plans persist a single-invocation cmd (default shard-id 0) = silent shard-0-only subset; read plan §9 + compose the launcher (#2254 firstk)
 
 - [Inline relaunch `&` binds the whole `cd && setsid` list — wrong pid in pidfile](feedback_inline_relaunch_amp_binds_whole_list_wrong_pid.md) — `$!` captures the un-setsid'd wrapper subshell (HUP-vulnerable, holds the ssh channel open so the local ssh client hangs) (#1768)
 - [GCP reconnect to phase=done zombie](feedback_gcp_reconnect_to_completed_phasedone_instance.md) — router `reason: reconnect` to a RUNNING-but-done instance does NOT dispatch workload (#634)
@@ -102,4 +105,6 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [stale .git/index.lock kills the pod-side result commit at run end](feedback_stale_index_lock_pre_launch_probe.md) — probe+clear a confirmed-stale 0B lock pre-launch on pods whose tail commits pod-side (#1336)
 - [Smoke tree eats full-leg headroom](feedback_smoke_tree_eats_full_leg_headroom.md) — reap the uploaded smoke tree before the full (re)launch on shared out-roots (#1333)
 - [Wrapper header is launch-arg ground truth](feedback_wrapper_header_is_launch_arg_ground_truth.md) — on plan-vs-wrapper launch-command mismatch, the wrapper's usage header wins (#1090 fu6 manifest-path crash)
+- [FETCH_HEAD clobbered by concurrent sessions](feedback_fetch_head_clobbered_by_concurrent_sessions.md) — never `git show FETCH_HEAD:` across calls at the shared root; pin reads to the SHA (#2223 ansfirst)
 - [HF LFS billing-403 recovery](feedback_hf_lfs_billing_403_no_upload_smoke.md) — 403 credit-recharge = external billing block; smoke --no-upload + non-LFS uploads stay on; user owns the billing fix
+- [Cold-venv preflight import-probe timeout](feedback_preflight_cold_venv_import_timeout.md) — uv.lock-changing checkout leaves the venv cold on MooseFS; spot-read discriminator, pre-warm imports, EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S=600 — never swap the pod

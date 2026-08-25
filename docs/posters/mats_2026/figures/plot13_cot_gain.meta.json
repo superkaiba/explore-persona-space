@@ -1,0 +1,175 @@
+{
+  "commit": "dada9100+dirty",
+  "render_id": "98932466f18646b3",
+  "git_commit": "dada91001c2251039ae86f8011f27aa7b7df3f89",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot13_cot_gain.py",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot13_cot_gain.py",
+  "created": "2026-08-21T09:41:10Z",
+  "figsize": [
+    9.4,
+    3.7
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out skill ($R^2$)": 0.5914952858206106,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out skill ($R^2$)": 0.7000883811584906,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "held-out skill ($R^2$)": 0.7068199910266061,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out skill ($R^2$)": 0.7050124122970371,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out skill ($R^2$)": 0.9083013726386983,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "held-out skill ($R^2$)": 0.9144825582028088,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out skill ($R^2$)": 0.993032703375958,
+      "series": "identity ceiling (per regime)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out skill ($R^2$)": 0.993032703375958,
+      "series": "identity ceiling (per regime)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "y": 0.5428872572594475,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.82,
+      "y": 0.6812944134004746,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "y": 0.7154435291598154,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "y": 0.6738555449936019,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "y": 0.8699014860446739,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "y": 0.9221606759960925,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Target: the full answer",
+        "ylabel": "held-out skill ($R^2$)",
+        "xticklabels": [
+          "context",
+          "context\n+ CoT",
+          "CoT\nalone"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title": "Target: the answer remainder, matched conditioning length",
+        "xticklabels": [
+          "context",
+          "context\n+ CoT slice",
+          "context\n+ answer prefix"
+        ]
+      }
+    ],
+    "series": [
+      "identity ceiling (per regime)",
+      "query-averaged (n = 50 contexts)",
+      "per-question (n = 1,994 rows)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

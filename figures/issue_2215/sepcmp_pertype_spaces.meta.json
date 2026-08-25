@@ -1,0 +1,770 @@
+{
+  "commit": "684eafc5+dirty",
+  "render_id": "ee09d563b84e4702",
+  "git_commit": "684eafc501383872f8105c40f81caf9f1098cc58",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2215_separation_comparison.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/followups_running/2476/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2215_separation_comparison.py",
+  "created": "2026-08-24T18:56:28Z",
+  "figsize": [
+    13.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "median separation ratio (pair / yardstick)": 0.5188344156947438,
+      "error": 0.10277099176888757,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "median separation ratio (pair / yardstick)": 0.24617385336011838,
+      "error": 0.08795884740482095,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "median separation ratio (pair / yardstick)": 2.683034675640204,
+      "error": 0.7871994081814166,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "median separation ratio (pair / yardstick)": 0.8311143549674835,
+      "error": 0.3617987926433201,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "median separation ratio (pair / yardstick)": 0.014194170157094246,
+      "error": 0.006444797996490878,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "median separation ratio (pair / yardstick)": 0.1506883413379595,
+      "error": 0.05232893298265898,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "median separation ratio (pair / yardstick)": 0.015277951631230122,
+      "error": 0.004148877163615371,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "median separation ratio (pair / yardstick)": 1.0994682391455295,
+      "error": 0.21242617652590212,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "median separation ratio (pair / yardstick)": 2.4806905527793375,
+      "error": 0.6963912619258236,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.8,
+      "median separation ratio (pair / yardstick)": 0.06547358669805625,
+      "error": 0.043223563686514435,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.8,
+      "median separation ratio (pair / yardstick)": 0.05369541812524744,
+      "error": 0.02518181839926805,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.8,
+      "median separation ratio (pair / yardstick)": 0.04051264773570496,
+      "error": 0.037398930360853344,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.8,
+      "median separation ratio (pair / yardstick)": 0.4765545527980325,
+      "error": 0.10176387382541827,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.8,
+      "median separation ratio (pair / yardstick)": 0.4195493555211061,
+      "error": 0.16256441419789625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.8,
+      "median separation ratio (pair / yardstick)": 0.6982967764082681,
+      "error": 0.2185977820260419,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.8,
+      "median separation ratio (pair / yardstick)": 0.018770509073713887,
+      "error": 0.006829712382844214,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 15.8,
+      "median separation ratio (pair / yardstick)": 0.010408115111394969,
+      "error": 0.003437569347520878,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 16.8,
+      "median separation ratio (pair / yardstick)": 0.9084598123359635,
+      "error": 0.37156129269749816,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "median separation ratio (pair / yardstick)": 0.21432561371551387,
+      "error": 0.07924058190484375,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "median separation ratio (pair / yardstick)": 0.14821169802396758,
+      "error": 0.08142096169534929,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "median separation ratio (pair / yardstick)": 1.9824361467433311,
+      "error": 0.3152940329915144,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "median separation ratio (pair / yardstick)": 0.7765033856983772,
+      "error": 0.24813317885018105,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "median separation ratio (pair / yardstick)": 0.013021015540896606,
+      "error": 0.005302149355521873,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "median separation ratio (pair / yardstick)": 0.12466082150413932,
+      "error": 0.0552087684740818,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "median separation ratio (pair / yardstick)": 0.024723264293366527,
+      "error": 0.010530129073942074,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "median separation ratio (pair / yardstick)": 0.8981888426428051,
+      "error": 0.1651488728648371,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "median separation ratio (pair / yardstick)": 1.0880753438630832,
+      "error": 0.47225940792046445,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.2,
+      "median separation ratio (pair / yardstick)": 0.021280672162734666,
+      "error": 0.01384175636951105,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.2,
+      "median separation ratio (pair / yardstick)": 0.014252470394732597,
+      "error": 0.006086445363280824,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.2,
+      "median separation ratio (pair / yardstick)": 0.3016081446086543,
+      "error": 0.1491026851920999,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.2,
+      "median separation ratio (pair / yardstick)": 0.36782719162157723,
+      "error": 0.06311950966083066,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 13.2,
+      "median separation ratio (pair / yardstick)": 0.2923739910011732,
+      "error": 0.10791749462068424,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 14.2,
+      "median separation ratio (pair / yardstick)": 0.15346086709536494,
+      "error": 0.030896089108635116,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 15.2,
+      "median separation ratio (pair / yardstick)": 0.008788924043294854,
+      "error": 0.0031902083005106397,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 16.2,
+      "median separation ratio (pair / yardstick)": 0.02952032442852177,
+      "error": 0.030384431697671518,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 17.2,
+      "median separation ratio (pair / yardstick)": 2.665769975338183,
+      "error": 1.9851717819332517,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "median separation ratio (pair / yardstick)": 0.44177655190069903,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "median separation ratio (pair / yardstick)": 0.16968098812138796,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.8,
+      "median separation ratio (pair / yardstick)": 2.1804543766641453,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.8,
+      "median separation ratio (pair / yardstick)": 0.5921851228094642,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.8,
+      "median separation ratio (pair / yardstick)": 0.009719483710226053,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.8,
+      "median separation ratio (pair / yardstick)": 0.10536884482384049,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.8,
+      "median separation ratio (pair / yardstick)": 0.012421717949821059,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.8,
+      "median separation ratio (pair / yardstick)": 0.8621066981298897,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.8,
+      "median separation ratio (pair / yardstick)": 1.8501750264784846,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.8,
+      "median separation ratio (pair / yardstick)": 0.03953806606803268,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.8,
+      "median separation ratio (pair / yardstick)": 0.03267564457070707,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.8,
+      "median separation ratio (pair / yardstick)": 0.02142040996523566,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.8,
+      "median separation ratio (pair / yardstick)": 0.3869648465890319,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.8,
+      "median separation ratio (pair / yardstick)": 0.29308889511295166,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.8,
+      "median separation ratio (pair / yardstick)": 0.5501090245022593,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.8,
+      "median separation ratio (pair / yardstick)": 0.01346655575741961,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.8,
+      "median separation ratio (pair / yardstick)": 0.006292204627530624,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.8,
+      "median separation ratio (pair / yardstick)": 0.583068252100877,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.2,
+      "median separation ratio (pair / yardstick)": 0.6473185354384742,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8,
+      "median separation ratio (pair / yardstick)": 0.34559868293102985,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.8,
+      "median separation ratio (pair / yardstick)": 3.7548531930269786,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.8,
+      "median separation ratio (pair / yardstick)": 1.3157827080961044,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.8,
+      "median separation ratio (pair / yardstick)": 0.02260907970320781,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.8,
+      "median separation ratio (pair / yardstick)": 0.21002671078915844,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.8,
+      "median separation ratio (pair / yardstick)": 0.0207194722770518,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.8,
+      "median separation ratio (pair / yardstick)": 1.286959051181694,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.8,
+      "median separation ratio (pair / yardstick)": 3.2429575503301318,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.8,
+      "median separation ratio (pair / yardstick)": 0.12598519344106154,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.8,
+      "median separation ratio (pair / yardstick)": 0.08303928136924317,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.8,
+      "median separation ratio (pair / yardstick)": 0.09621827068694234,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.8,
+      "median separation ratio (pair / yardstick)": 0.5904925942398684,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.8,
+      "median separation ratio (pair / yardstick)": 0.6182177235087442,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.8,
+      "median separation ratio (pair / yardstick)": 0.9873045885543431,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.8,
+      "median separation ratio (pair / yardstick)": 0.027125980523108037,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.8,
+      "median separation ratio (pair / yardstick)": 0.01316734332257238,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.8,
+      "median separation ratio (pair / yardstick)": 1.3261908374958733,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.2,
+      "median separation ratio (pair / yardstick)": 0.15030013190173455,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.2,
+      "median separation ratio (pair / yardstick)": 0.10891608107746488,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "median separation ratio (pair / yardstick)": 1.7603962837499254,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.2,
+      "median separation ratio (pair / yardstick)": 0.6403568175971692,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.2,
+      "median separation ratio (pair / yardstick)": 0.008024193363998493,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.2,
+      "median separation ratio (pair / yardstick)": 0.06609047131203306,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.2,
+      "median separation ratio (pair / yardstick)": 0.016901084352769775,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.2,
+      "median separation ratio (pair / yardstick)": 0.6897520305272796,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.2,
+      "median separation ratio (pair / yardstick)": 0.6421971566862773,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.2,
+      "median separation ratio (pair / yardstick)": 0.014054712025804434,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.2,
+      "median separation ratio (pair / yardstick)": 0.009657596490817344,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 11.2,
+      "median separation ratio (pair / yardstick)": 0.16912022586973632,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.2,
+      "median separation ratio (pair / yardstick)": 0.308683157950945,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 13.2,
+      "median separation ratio (pair / yardstick)": 0.21693204361840643,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.2,
+      "median separation ratio (pair / yardstick)": 0.12232242015954181,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 15.2,
+      "median separation ratio (pair / yardstick)": 0.0065511966916438815,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.2,
+      "median separation ratio (pair / yardstick)": 0.021454019214843613,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 17.2,
+      "median separation ratio (pair / yardstick)": 1.437492872235181,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.2,
+      "median separation ratio (pair / yardstick)": 0.30878129571142204,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.2,
+      "median separation ratio (pair / yardstick)": 0.27175800446816345,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.2,
+      "median separation ratio (pair / yardstick)": 2.390984349732954,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.2,
+      "median separation ratio (pair / yardstick)": 1.1366231752975313,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.2,
+      "median separation ratio (pair / yardstick)": 0.01862849207504224,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.2,
+      "median separation ratio (pair / yardstick)": 0.17650800826019666,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.2,
+      "median separation ratio (pair / yardstick)": 0.03796134250065392,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.2,
+      "median separation ratio (pair / yardstick)": 1.0200497762569538,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.2,
+      "median separation ratio (pair / yardstick)": 1.5867159725272062,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.2,
+      "median separation ratio (pair / yardstick)": 0.04173822476482653,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.2,
+      "median separation ratio (pair / yardstick)": 0.021830487217378992,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 11.2,
+      "median separation ratio (pair / yardstick)": 0.4673255962539361,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.2,
+      "median separation ratio (pair / yardstick)": 0.4349221772726063,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 13.2,
+      "median separation ratio (pair / yardstick)": 0.4327670328597749,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.2,
+      "median separation ratio (pair / yardstick)": 0.18411459837681204,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 15.2,
+      "median separation ratio (pair / yardstick)": 0.012931613292665161,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.2,
+      "median separation ratio (pair / yardstick)": 0.08222288261018665,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 17.2,
+      "median separation ratio (pair / yardstick)": 5.407836436101684,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 108,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Minimal-pair separation across 2 spaces (95% bootstrap CIs)",
+        "ylabel": "median separation ratio (pair / yardstick)",
+        "legend_labels": [
+          "mapped (single-turn map)",
+          "real answer vectors"
+        ],
+        "xticklabels": [
+          "code_vs_prose\n(dbe)",
+          "conversation_language\n(dbe)",
+          "conversation_topic\n(dbe)",
+          "refusal_request\n(dbe)",
+          "style_register\n(dbe)",
+          "user_doc_format\n(dbe)",
+          "user_role_identity\n(dbe)",
+          "user_sentiment\n(dbe)",
+          "persona_prompted\n(parent)",
+          "demo_persona\n(parent)",
+          "persona_role_header\n(parent)",
+          "fact_assistant_animal\n(parent)",
+          "verbosity\n(parent)",
+          "reasoning_style\n(parent)",
+          "instr_format\n(parent)",
+          "demo_format\n(parent)",
+          "fact_user_name\n(parent)",
+          "prior_topic\n(parent)"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      }
+    ],
+    "series": [
+      "mapped (single-turn map)",
+      "real answer vectors"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

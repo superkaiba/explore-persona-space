@@ -31,6 +31,14 @@ brief transcription, spec-scaffold file) clear.
    recipe's "exact regex/normalization is yours to finalize" clause.
 4. A literal `VERDICT: PASS` example line in the output-format section reads
    as a pre-filled verdict — write `VERDICT: <PASS | REVISE | REJECT>`.
+5. Section refs are the same class as identifier tokens: strip `§N`/`§N.M`
+   tokens SYMMETRICALLY (both sides) IFF the exact token appears in handed
+   raw text — they are provenance pointers, not result numbers, and a head
+   that says "§10"/"§11" more times than the plan+scaffold hand copies
+   otherwise residuals on every section mention (proved out on the #2329 r2
+   compose: first-pass VERIFY PASS with heavy §-pointer usage). A §-ref NOT
+   in any handed span still falls through to atom accounting (fabricated
+   section numbers stay accountable).
 
 Related: [[scaffold-handed-spans-for-leak-verifier]] (spec-numeral false
 positives), [[lens-scoped-temp-files]] (`cmbc<N>-*` prefixes).

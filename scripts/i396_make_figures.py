@@ -100,6 +100,7 @@ def load_prompt_token_lengths(summary: dict) -> dict[str, int]:
     try:
         sys.path.insert(0, str(WORKTREE / "src"))
         sys.path.insert(0, str(WORKTREE / "scripts"))
+        # PROD_IMPORT_LINT_EXEMPT: dangling local module; except-Exception returns a fallback dict
         from analyze_issue396 import load_eval_personas  # type: ignore
         from transformers import AutoTokenizer
 

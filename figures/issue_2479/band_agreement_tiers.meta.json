@@ -1,0 +1,203 @@
+{
+  "commit": "a533b7d8+dirty",
+  "render_id": "0d0661fea0b44ac9",
+  "git_commit": "a533b7d8e42eed8a965b1fde6a23838b26baf1e3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2479_r2_figfix.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2479_r2_figfix.py",
+  "created": "2026-08-24T07:31:52Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Frozen AI-likeness axis score": 72.3335,
+      "label": "Vera",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Frozen AI-likeness axis score": 69.0613,
+      "label": "Iris",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Frozen AI-likeness axis score": 67.6009,
+      "label": "Cobalt",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Frozen AI-likeness axis score": 62.1892,
+      "label": "Priya",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Frozen AI-likeness axis score": 62.111,
+      "label": "Marcus",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Frozen AI-likeness axis score": 58.6511,
+      "label": "Mort",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Frozen AI-likeness axis score": 54.5823,
+      "label": "Barnaby",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Frozen AI-likeness axis score": 50.3794,
+      "label": "Elena",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Frozen AI-likeness axis score": 48.9525,
+      "label": "Tomas",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Frozen AI-likeness axis score": 38.5695,
+      "label": "Marisol",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Frozen AI-likeness axis score": 35.6422,
+      "label": "Gus",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Frozen AI-likeness axis score": 29.566,
+      "label": "Zara",
+      "series": "New character",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Designed AI-likeness tier": 0.0,
+      "Frozen AI-likeness axis score": 71.4691,
+      "label": "HELIOS",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Designed AI-likeness tier": 1.0,
+      "Frozen AI-likeness axis score": 60.6901,
+      "label": "Wren",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Designed AI-likeness tier": 3.0,
+      "Frozen AI-likeness axis score": 55.2611,
+      "label": "Vex",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Designed AI-likeness tier": 2.0,
+      "Frozen AI-likeness axis score": 47.7488,
+      "label": "Dana",
+      "series": "Tier anchor (reused from parent rig)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Designed AI-likeness tier",
+        "ylabel": "Frozen AI-likeness axis score",
+        "legend_labels": [
+          "New character",
+          "Tier anchor (reused from parent rig)"
+        ],
+        "annotations": [
+          "Vera",
+          "HELIOS",
+          "Iris",
+          "Cobalt",
+          "Priya",
+          "Marcus",
+          "Wren",
+          "Elena",
+          "Tomas",
+          "Dana",
+          "Marisol",
+          "Gus",
+          "Mort",
+          "Vex",
+          "Barnaby",
+          "Zara"
+        ],
+        "xticklabels": [
+          "Explicitly AI",
+          "Helpful professional",
+          "Ordinary human",
+          "Stylized non-AI"
+        ],
+        "yticklabels": [
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80"
+        ]
+      }
+    ],
+    "series": [
+      "New character",
+      "Tier anchor (reused from parent rig)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,134 @@
+{
+ "what": "closeness of each character/framing to the assistant chat-template map, measured as the DIRECT (rung-1) transfer of the assistant chat-template context->answer map into that cell, pooled fold-mean, context arm",
+ "source_cell_pattern": "conversation_paired_stories_assistant__inserted__chat__<model>",
+ "condition": "inserted (the ladder's chat anchor is inserted-only by construction; an on-policy chat source has no such pair)",
+ "hf_prefix": "issue2054_lattice/ladder/rung_1_<src>_to_<tgt>_context.json",
+ "fields": {
+  "direct_transfer_r2": "pooled['1_direct'].r2_transfer_mean",
+  "direct_ratio_of_ceiling": "pooled['1_direct'].ratio_mean",
+  "reparam9_transfer_r2": "pooled['9_full_AMB'].r2_transfer_mean",
+  "reparam9_ratio_of_ceiling": "pooled['9_full_AMB'].ratio_mean"
+ },
+ "per_model": {
+  "qwen2.5-7b-instruct": {
+   "Wren": {
+    "target_cell": "char_wren__inserted__attrib_quoted__qwen2.5-7b-instruct",
+    "n_intersection": 4494,
+    "target_ceiling_r2": 0.3547961600412761,
+    "direct_transfer_r2": -0.3373750302140662,
+    "direct_ratio_of_ceiling": -0.9508982007438208,
+    "reparam9_transfer_r2": 0.34892829892483623,
+    "reparam9_ratio_of_ceiling": 0.983461317293408
+   },
+   "HELIOS": {
+    "target_cell": "char_helios__inserted__attrib_quoted__qwen2.5-7b-instruct",
+    "n_intersection": 4945,
+    "target_ceiling_r2": 0.3856825666179923,
+    "direct_transfer_r2": -0.30438882022099484,
+    "direct_ratio_of_ceiling": -0.7892211019288393,
+    "reparam9_transfer_r2": 0.37049347498320734,
+    "reparam9_ratio_of_ceiling": 0.9606176349427032
+   },
+   "Dana": {
+    "target_cell": "char_dana__inserted__attrib_quoted__qwen2.5-7b-instruct",
+    "n_intersection": 4373,
+    "target_ceiling_r2": 0.36478393257257713,
+    "direct_transfer_r2": -0.35163909999745474,
+    "direct_ratio_of_ceiling": -0.9639654288432589,
+    "reparam9_transfer_r2": 0.35147991685656094,
+    "reparam9_ratio_of_ceiling": 0.9635290523291641
+   },
+   "Vex": {
+    "target_cell": "char_vex__inserted__attrib_quoted__qwen2.5-7b-instruct",
+    "n_intersection": 4135,
+    "target_ceiling_r2": 0.3356027767718072,
+    "direct_transfer_r2": -0.5090385755011537,
+    "direct_ratio_of_ceiling": -1.5167889264732575,
+    "reparam9_transfer_r2": 0.3312344497269185,
+    "reparam9_ratio_of_ceiling": 0.9869836385535661
+   },
+   "assistant in story": {
+    "target_cell": "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b-instruct",
+    "n_intersection": 11901,
+    "target_ceiling_r2": 0.3830483691709236,
+    "direct_transfer_r2": -0.26661087453380283,
+    "direct_ratio_of_ceiling": -0.6960240428927029,
+    "reparam9_transfer_r2": 0.3729297859152396,
+    "reparam9_ratio_of_ceiling": 0.9735840586462101
+   },
+   "assistant bare text": {
+    "target_cell": "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b-instruct",
+    "n_intersection": 11901,
+    "target_ceiling_r2": 0.4642557681036325,
+    "direct_transfer_r2": 0.3195130878778677,
+    "direct_ratio_of_ceiling": 0.6882264256683291,
+    "reparam9_transfer_r2": 0.46916129683901,
+    "reparam9_ratio_of_ceiling": 1.0105664357287694
+   },
+   "assistant chat template": {
+    "target_cell": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b-instruct",
+    "note": "the source map itself \u2014 no transfer is measured; drawn as '(source)'"
+   }
+  },
+  "qwen2.5-7b": {
+   "Wren": {
+    "target_cell": "char_wren__inserted__attrib_quoted__qwen2.5-7b",
+    "n_intersection": 4494,
+    "target_ceiling_r2": 0.35635390153421775,
+    "direct_transfer_r2": -0.19416040634939655,
+    "direct_ratio_of_ceiling": -0.5448527587700703,
+    "reparam9_transfer_r2": 0.3140844178337233,
+    "reparam9_ratio_of_ceiling": 0.8813834126173146
+   },
+   "HELIOS": {
+    "target_cell": "char_helios__inserted__attrib_quoted__qwen2.5-7b",
+    "n_intersection": 4945,
+    "target_ceiling_r2": 0.3865306873362466,
+    "direct_transfer_r2": -0.1766897844938152,
+    "direct_ratio_of_ceiling": -0.4571170938883595,
+    "reparam9_transfer_r2": 0.3572107512308068,
+    "reparam9_ratio_of_ceiling": 0.9241459033757542
+   },
+   "Dana": {
+    "target_cell": "char_dana__inserted__attrib_quoted__qwen2.5-7b",
+    "n_intersection": 4373,
+    "target_ceiling_r2": 0.36763992945576246,
+    "direct_transfer_r2": -0.20248057887225296,
+    "direct_ratio_of_ceiling": -0.5507578547629363,
+    "reparam9_transfer_r2": 0.3427976098844213,
+    "reparam9_ratio_of_ceiling": 0.9324275804096781
+   },
+   "Vex": {
+    "target_cell": "char_vex__inserted__attrib_quoted__qwen2.5-7b",
+    "n_intersection": 4135,
+    "target_ceiling_r2": 0.3385595247719,
+    "direct_transfer_r2": -0.24458439615598215,
+    "direct_ratio_of_ceiling": -0.7224265698056129,
+    "reparam9_transfer_r2": 0.3260783736078984,
+    "reparam9_ratio_of_ceiling": 0.9631345442949489
+   },
+   "assistant in story": {
+    "target_cell": "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b",
+    "n_intersection": 11901,
+    "target_ceiling_r2": 0.3808483791499187,
+    "direct_transfer_r2": -0.18810432364732838,
+    "direct_ratio_of_ceiling": -0.4939086889832403,
+    "reparam9_transfer_r2": 0.3608982504743797,
+    "reparam9_ratio_of_ceiling": 0.9476166113137486
+   },
+   "assistant bare text": {
+    "target_cell": "conversation_paired_stories_assistant__inserted__bare_text__qwen2.5-7b",
+    "n_intersection": 11901,
+    "target_ceiling_r2": 0.4446092310384662,
+    "direct_transfer_r2": 0.016150763805092616,
+    "direct_ratio_of_ceiling": 0.03632575006904277,
+    "reparam9_transfer_r2": 0.4235555094705992,
+    "reparam9_ratio_of_ceiling": 0.952646683653661
+   },
+   "assistant chat template": {
+    "target_cell": "conversation_paired_stories_assistant__inserted__chat__qwen2.5-7b",
+    "note": "the source map itself \u2014 no transfer is measured; drawn as '(source)'"
+   }
+  }
+ }
+}

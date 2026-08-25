@@ -1,0 +1,278 @@
+{
+  "commit": "7927167a",
+  "render_id": "3c249a47a6a440ee",
+  "git_commit": "7927167a",
+  "git_dirty": false,
+  "created": "2026-08-20T03:10:39Z",
+  "figsize": [
+    32.8,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "unsteered",
+      "coherence score (0-100) (mean over turns)": 93.34782608695652,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_alltoken",
+      "coherence score (0-100) (mean over turns)": 100.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p50",
+      "coherence score (0-100) (mean over turns)": 91.73913043478261,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p75",
+      "coherence score (0-100) (mean over turns)": 97.14492753623189,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p90",
+      "coherence score (0-100) (mean over turns)": 97.89855072463767,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctx_p100",
+      "coherence score (0-100) (mean over turns)": 96.68115942028984,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctx",
+      "coherence score (0-100) (mean over turns)": 97.3913043478261,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k1",
+      "coherence score (0-100) (mean over turns)": 92.26086956521739,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k2",
+      "coherence score (0-100) (mean over turns)": 95.30434782608695,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k4",
+      "coherence score (0-100) (mean over turns)": 98.44927536231884,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctx_k8",
+      "coherence score (0-100) (mean over turns)": 97.44927536231884,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p50",
+      "coherence score (0-100) (mean over turns)": 95.92753623188406,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p75",
+      "coherence score (0-100) (mean over turns)": 96.0144927536232,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p90",
+      "coherence score (0-100) (mean over turns)": 96.46376811594202,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxnat_p100",
+      "coherence score (0-100) (mean over turns)": 98.1159420289855,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxnat",
+      "coherence score (0-100) (mean over turns)": 94.0144927536232,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k1",
+      "coherence score (0-100) (mean over turns)": 88.21739130434783,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k2",
+      "coherence score (0-100) (mean over turns)": 88.79710144927536,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k4",
+      "coherence score (0-100) (mean over turns)": 92.28985507246377,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxnat_k8",
+      "coherence score (0-100) (mean over turns)": 90.89855072463767,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p50",
+      "coherence score (0-100) (mean over turns)": 98.81159420289855,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p75",
+      "coherence score (0-100) (mean over turns)": 96.21739130434783,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p90",
+      "coherence score (0-100) (mean over turns)": 97.57971014492755,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxfaith_p100",
+      "coherence score (0-100) (mean over turns)": 98.55797101449276,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxfaith",
+      "coherence score (0-100) (mean over turns)": 91.52173913043478,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k1",
+      "coherence score (0-100) (mean over turns)": 91.72463768115941,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k2",
+      "coherence score (0-100) (mean over turns)": 91.65217391304348,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k4",
+      "coherence score (0-100) (mean over turns)": 94.68115942028984,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxfaith_k8",
+      "coherence score (0-100) (mean over turns)": 93.53623188405798,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p50",
+      "coherence score (0-100) (mean over turns)": 98.3913043478261,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p75",
+      "coherence score (0-100) (mean over turns)": 97.85507246376811,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p90",
+      "coherence score (0-100) (mean over turns)": 88.17391304347827,
+      "_kind": "bar"
+    },
+    {
+      "category": "cap_ctxpre_p100",
+      "coherence score (0-100) (mean over turns)": 93.15942028985506,
+      "_kind": "bar"
+    },
+    {
+      "category": "axisrep_ctxpre",
+      "coherence score (0-100) (mean over turns)": 95.65217391304348,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k1",
+      "coherence score (0-100) (mean over turns)": 96.8695652173913,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k2",
+      "coherence score (0-100) (mean over turns)": 98.71014492753623,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k4",
+      "coherence score (0-100) (mean over turns)": 95.47826086956522,
+      "_kind": "bar"
+    },
+    {
+      "category": "steer_ctxpre_k8",
+      "coherence score (0-100) (mean over turns)": 95.56060606060606,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 38,
+  "text": {
+    "suptitle": "delusion \u2014 per-arm average",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "band layers",
+        "ylabel": "coherence score (0-100) (mean over turns)",
+        "legend_labels": [
+          "anchor",
+          "answer",
+          "ctx_native",
+          "prefix_native",
+          "ctx_faithful",
+          "ctx_preimage",
+          "unsteered (s42)",
+          "cap_alltoken (s42)"
+        ],
+        "xticklabels": [
+          "unsteered",
+          "cap_alltoken",
+          "cap_ctx_p50",
+          "cap_ctx_p75",
+          "cap_ctx_p90",
+          "cap_ctx_p100",
+          "axisrep_ctx",
+          "steer_ctx_k1",
+          "steer_ctx_k2",
+          "steer_ctx_k4",
+          "steer_ctx_k8",
+          "cap_ctxnat_p50",
+          "cap_ctxnat_p75",
+          "cap_ctxnat_p90",
+          "cap_ctxnat_p100",
+          "axisrep_ctxnat",
+          "steer_ctxnat_k1",
+          "steer_ctxnat_k2",
+          "steer_ctxnat_k4",
+          "steer_ctxnat_k8",
+          "cap_ctxfaith_p50",
+          "cap_ctxfaith_p75",
+          "cap_ctxfaith_p90",
+          "cap_ctxfaith_p100",
+          "axisrep_ctxfaith",
+          "steer_ctxfaith_k1",
+          "steer_ctxfaith_k2",
+          "steer_ctxfaith_k4",
+          "steer_ctxfaith_k8",
+          "cap_ctxpre_p50",
+          "cap_ctxpre_p75",
+          "cap_ctxpre_p90",
+          "cap_ctxpre_p100",
+          "axisrep_ctxpre",
+          "steer_ctxpre_k1",
+          "steer_ctxpre_k2",
+          "steer_ctxpre_k4",
+          "steer_ctxpre_k8"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png"
+  ]
+}

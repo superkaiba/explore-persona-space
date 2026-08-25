@@ -247,6 +247,72 @@ def fig_hero_overlap(ang: dict, pal: list[str]) -> None:
     plt.close(fig)
 
 
+def fig_hero_overlap_iclr(ang: dict) -> None:
+    """ICLR paper variant of the overlap k-sweep hero (figures/paper/).
+
+    Reads only the committed angles_summary.json. Per-point value labels are
+    stripped into the LaTeX caption per the paper-plots iclr conventions; null
+    bands are the 2.5th-97.5th percentile of 1,000 within-shell rotation draws
+    at three shell grains. Writes c3_overlap_ksweep.{png,pdf,meta.json}; the
+    blog-style hero_overlap_ksweep stem is untouched.
+    """
+    from matplotlib.lines import Line2D
+
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_panels,
+        paper_color,
+        set_paper_style,
+    )
+
+    set_paper_style("iclr")
+    ks = [16, 32, 64, 128, 256]
+    shell_grey = {16: "0.82", 32: "0.62", 64: "0.42"}
+    titles = {
+        "psae_recon_pca": "reconstruction PCA (primary)",
+        "presid_pca": "SAE residual (complement)",
+        "psae_dec_svd": "decoder SVD (twin)",
+    }
+    # Deliberately NOT sharey: the load-bearing read is the WITHIN-panel
+    # observed-vs-null separation (0.867 vs 0.845-0.862 on the primary), which a
+    # shared 0.2-0.9 axis squashes below visibility; the caption names the
+    # per-panel ranges.
+    fig, axes = plt.subplots(1, 3, figsize=figsize_iclr_panels(3, height_in=2.0), sharex=True)
+    for ax, pair in zip(axes, ["psae_recon_pca", "presid_pca", "psae_dec_svd"], strict=True):
+        prim = {c["k"]: c for c in ang["cells"] if c["pair"] == pair and c["primary_profile_for_k"]}
+        xs = np.arange(len(ks))
+        for sh in (16, 32, 64):
+            lo = [prim[k]["nulls"][str(sh)]["p2.5"] for k in ks]
+            hi = [prim[k]["nulls"][str(sh)]["p97.5"] for k in ks]
+            ax.fill_between(xs, lo, hi, color=shell_grey[sh], alpha=0.45, lw=0)
+        ys = [prim[k]["observed_O"] for k in ks]
+        ax.plot(xs, ys, color=paper_color("reference"), lw=1.1, zorder=5)
+        for i, k in enumerate(ks):
+            marker = "o" if prim[k]["pred_profile"] == "banked_ridge" else "s"
+            ax.scatter(
+                [xs[i]], [ys[i]], color=paper_color("reference"), marker=marker, s=14, zorder=6
+            )
+        ax.set_xticks(xs, [str(k) for k in ks])
+        ax.set_xlabel("subspace size $k$")
+        ax.set_title(titles[pair])
+    axes[0].set_ylabel("subspace overlap")
+    handles = [
+        *(plt.Rectangle((0, 0), 1, 1, color=shell_grey[sh], alpha=0.45) for sh in (16, 32, 64)),
+        Line2D([], [], color="black", marker="o", lw=1.1, ms=4),
+        Line2D([], [], color="black", marker="s", lw=0, ms=4),
+    ]
+    labels = [
+        "rotation null (16 shells)",
+        "rotation null (32 shells)",
+        "rotation null (64 shells)",
+        "observed (banked-ridge profile)",
+        "observed (matched-refit profile)",
+    ]
+    fig.legend(handles, labels, loc="outside lower center", ncols=3, fontsize=7)
+    savefig_paper(fig, "c3_overlap_ksweep", dir="figures/paper/")
+    plt.close(fig)
+    print("wrote figures/paper/c3_overlap_ksweep.{png,pdf,meta.json}")
+
+
 def fig_angle_spectrum(spec: dict, ang: dict, pal: list[str]) -> None:
     fig, ax = plt.subplots(figsize=(7.5, 4.6))
     x = np.arange(1, 65)
@@ -447,7 +513,21 @@ def fig_profiles(pal: list[str]) -> None:
 
 
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Issue #1895 harvest-side analysis + figures.")
+    ap.add_argument(
+        "--style",
+        default="blog",
+        choices=["blog", "iclr"],
+        help="'iclr' renders ONLY the paper overlap-ksweep hero from the committed "
+        "angles_summary.json (no HF staging, no re-analysis)",
+    )
+    cli = ap.parse_args()
     load_dotenv()
+    if cli.style == "iclr":
+        fig_hero_overlap_iclr(json.loads((EVAL / "angles_summary.json").read_text()))
+        return
     FIGDIR.mkdir(parents=True, exist_ok=True)
     set_paper_style("blog")
     pal = paper_palette_blog(6)
