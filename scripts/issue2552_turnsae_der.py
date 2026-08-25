@@ -341,13 +341,23 @@ def _sha_ids(ids: np.ndarray) -> str:
     return EL._sha_ids(np.asarray(ids, np.int64))
 
 
+def _sha_file(path: Path) -> str:
+    """sha256 hex of a file's bytes (P4 input-identity in the done sentinel, #2552 r3)."""
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _jsonl_write_sharded(base: Path, rows: list[dict], cap_bytes: int = 9_000_000) -> list[Path]:
     """Write JSONL rows to base (single file when < cap) or line-split
     base.stem.shardNNN.jsonl parts (< 9 MB each — the non-LFS upload rule).
     Unit 2's readers glob `top25_<fam>*.jsonl` (contract noted in the plan
     handoff)."""
+    # size on UTF-8 BYTES, not chars (r3, g3 m1): ensure_ascii=False means CJK-heavy
+    # rows are ~3 bytes/char, and the 9 MB cap guards the 10 MB LFS force-route
     payloads = [json.dumps(r, ensure_ascii=False) for r in rows]
-    total = sum(len(p) + 1 for p in payloads)
+    sizes = [len(p.encode("utf-8")) for p in payloads]
+    total = sum(s + 1 for s in sizes)
     base.parent.mkdir(parents=True, exist_ok=True)
     if total < cap_bytes:
         base.write_text("\n".join(payloads) + ("\n" if payloads else ""))
@@ -365,11 +375,11 @@ def _jsonl_write_sharded(base: Path, rows: list[dict], cap_bytes: int = 9_000_00
         idx += 1
         buf, size = [], 0
 
-    for p in payloads:
-        if size + len(p) + 1 > cap_bytes and buf:
+    for p, nbytes in zip(payloads, sizes, strict=True):
+        if size + nbytes + 1 > cap_bytes and buf:
             _flush()
         buf.append(p)
-        size += len(p) + 1
+        size += nbytes + 1
     if buf:
         _flush()
     return parts
@@ -969,7 +979,6 @@ def phase_perfeature_r2(args) -> None:
         logger.info("[perfeature_r2] resume: outputs present; skip")
         return
     EA._headroom(args.out_root, 2 if args.smoke else 8, "perfeature-r2")
-    sae = _load_rep_sae(args)
     a_dir = T._assemble_dir(args)
     y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
     x_mm = np.load(a_dir / "X19.fp16.npy", mmap_mode="r")
@@ -1010,6 +1019,10 @@ def phase_perfeature_r2(args) -> None:
     vhat = vhat_all[keep]
     te_prov = prov_u8[hold_ids]
 
+    # SAE load AFTER the banked-refit fetch + schema/identity asserts (#2552 r3
+    # cached-artifact-schema ordering): a bad banked artifact fails in seconds,
+    # before any SAE weight load
+    sae = _load_rep_sae(args)
     f_true = T._encode_restricted(sae, y_mm, hold_pos, panel)
     f_pred = T._encode_restricted(sae, vhat, np.arange(len(vhat)), panel)
 
@@ -1264,14 +1277,18 @@ def phase_mat_encodes(args) -> None:
     mine_pos, mine_ids, pool_doc = _mining_pool(args)
     rev = _pins_revision()
     for fam, census_path in (("mat_k100", CENSUS_C_PATH), ("mat_k200", CENSUS_K200_PATH)):
-        sae = _load_banked_matryoshka(args, fam)
-        acc = _census_pass(sae, y_mm, fit_pos_all, prov_u8[rows_present[fit_pos_all]], args.device)
-        # counts reconciliation vs the banked census (plan §8 risk row) BEFORE mining
+        # banked-census fetch + key assert BEFORE the SAE load + census GPU pass
+        # (#2552 r3 cached-artifact-schema ordering): a missing/schema-drifted banked
+        # artifact fails in seconds, not after the expensive recompute; the SHAPE
+        # reconciliation necessarily stays after the pass (it needs acc)
         bz = np.load(_hf_fetch(census_path, T._stage_dir(args) / f"census_{fam}", rev))
-        assert "counts" in bz.files, (  # schema assert right after load (#2552 r2)
+        assert "counts" in bz.files, (
             f"banked census {census_path} missing 'counts' — have {sorted(bz.files)}"
         )
         banked = np.asarray(bz["counts"], np.int64)
+        sae = _load_banked_matryoshka(args, fam)
+        acc = _census_pass(sae, y_mm, fit_pos_all, prov_u8[rows_present[fit_pos_all]], args.device)
+        # counts reconciliation vs the banked census (plan §8 risk row) BEFORE mining
         assert banked.shape == acc["counts"].shape, (banked.shape, acc["counts"].shape)
         if _production(args):
             diff = np.abs(acc["counts"] - banked)
@@ -1430,6 +1447,43 @@ def _ta_lists(args, sae, cfg: str, eval_ids: np.ndarray, eval_pos: np.ndarray, y
     )
 
 
+def _fve_acc_save(path: Path, x_sum, x_sq, r_sum, r_sq, n_tok: int) -> None:
+    """Persist a pass's global-fp64 FVE sufficient statistics (#2552 r3
+    comparator-fve): per-dim sums (needed to combine passes — the cross term
+    ssum_d^2 is per-dim) + scalar sum-of-squares totals + token count. Enables the
+    plan-registered ONE FVE accumulated over the P1.7 eval + P1.8 pool passes."""
+    savez_atomic(
+        path,
+        x_sum=x_sum.double().cpu().numpy(),
+        r_sum=r_sum.double().cpu().numpy(),
+        x_sq_total=np.float64(float(x_sq.sum().item())),
+        r_sq_total=np.float64(float(r_sq.sum().item())),
+        n_tok=np.int64(n_tok),
+    )
+
+
+def _fve_from_acc(a: dict, b: dict | None = None) -> float:
+    """Global fp64 var-FVE from persisted per-pass accumulators, optionally COMBINED
+    over two passes (same T._recon_fve semantics: per-dim unbiased variance, summed).
+    nan on n<2 or a degenerate total variance — parity with the in-band computation."""
+    n = int(a["n_tok"]) + (int(b["n_tok"]) if b is not None else 0)
+    if n < 2:
+        return float("nan")
+    x_sum = np.asarray(a["x_sum"], np.float64) + (
+        np.asarray(b["x_sum"], np.float64) if b is not None else 0.0
+    )
+    r_sum = np.asarray(a["r_sum"], np.float64) + (
+        np.asarray(b["r_sum"], np.float64) if b is not None else 0.0
+    )
+    x_sq = float(a["x_sq_total"]) + (float(b["x_sq_total"]) if b is not None else 0.0)
+    r_sq = float(a["r_sq_total"]) + (float(b["r_sq_total"]) if b is not None else 0.0)
+    ss_tot = (x_sq - float((x_sum * x_sum).sum()) / n) / (n - 1)
+    if ss_tot < 1e-12:
+        return float("nan")
+    ss_res = (r_sq - float((r_sum * r_sum).sum()) / n) / (n - 1)
+    return 1.0 - ss_res / ss_tot
+
+
 def phase_eval_lists(args) -> None:
     """P1.7: the five configurations' per-turn lists + the A11 join assert +
     trainer_2 on-corpus FVE (eval pass share)."""
@@ -1540,6 +1594,12 @@ def phase_eval_lists(args) -> None:
     else:
         ss_tot = _var_sum(x_sum, x_sq)
         fve = float("nan") if ss_tot < 1e-12 else 1.0 - _var_sum(r_sum, r_sq) / ss_tot
+        # persist the eval-pass sufficient stats so P1.8 can emit the plan-registered
+        # COMBINED eval+pool FVE (#2552 r3 comparator-fve), with a from-acc parity check
+        _fve_acc_save(out / "fve_acc_evalpass.npz", x_sum, x_sq, r_sum, r_sq, n_tok)
+        with np.load(out / "fve_acc_evalpass.npz") as z:
+            fve_acc = _fve_from_acc({k: z[k] for k in z.files})
+        assert np.isnan(fve) or abs(fve_acc - fve) < 1e-6, (fve_acc, fve)
     meta = {
         "pooling_mask": "reference token-pool (S.token_inlier_mask + BOS strip; unmasked fallback)",
         "trainer2_fve_evalpass": fve,
@@ -1726,7 +1786,33 @@ def phase_pt_mining(args) -> None:
         n_pool_rows=np.int64(len(rows_iter)),
     )
     _manifest_update(args, "pt", pool_ids, pool_doc)
-    _measured_update(args, trainer2_fve_poolpass=fve, pt_mining_pool_n=int(len(rows_iter)))
+    # combined eval+pool FVE — the plan-registered ONE FVE "accumulated during this
+    # and the P1.8 encode passes" (#2552 r3 comparator-fve). Fail-soft with disclosure:
+    # None when either pass's accumulator is absent (e.g. degenerate smoke slice).
+    fve_combined = None
+    if x_sum is not None and n_tok >= 2:
+        _fve_acc_save(_mining_dir(args) / "fve_acc_poolpass.npz", x_sum, x_sq, r_sum, r_sq, n_tok)
+        eval_acc_path = _lists_dir(args) / "fve_acc_evalpass.npz"
+        if eval_acc_path.exists():
+            with (
+                np.load(eval_acc_path) as za,
+                np.load(_mining_dir(args) / "fve_acc_poolpass.npz") as zb,
+            ):
+                fve_combined = _fve_from_acc(
+                    {k: za[k] for k in za.files}, {k: zb[k] for k in zb.files}
+                )
+        else:
+            print(
+                "[pt_mining] eval-pass FVE accumulator absent — trainer2_fve_combined "
+                "recorded as null (re-run eval_lists to produce fve_acc_evalpass.npz)",
+                flush=True,
+            )
+    _measured_update(
+        args,
+        trainer2_fve_poolpass=fve,
+        trainer2_fve_combined=fve_combined,
+        pt_mining_pool_n=int(len(rows_iter)),
+    )
 
     # pass B: window emission for the unique selected rows
     sel_rows = sorted({int(r) for r in top_r.cpu().numpy().ravel() if r >= 0})
@@ -1881,6 +1967,25 @@ def phase_covariates(args) -> None:
     # answer-PCA basis from the SAE-train rows (train-split covariance, fp64 streamed)
     tr_pos, _val_pos, _doc = T._sae_row_positions(args)
     d_model = int(C.EXPECTED_HIDDEN)
+
+    # r_B bank @ the plan §10 approved LITERAL pin — NOT the P0 parent pin (#2552 r2
+    # codex rb-pin-drift). Fetch + schema/shape asserts hoisted BEFORE the PCA stream
+    # and the LM load (#2552 r3 cached-artifact-schema ordering): a bad banked r_B
+    # artifact fails in seconds, not after minutes of covariance streaming + a 7B load.
+    rb_rev = _resolve_repo_revision(RB_REVISION, f"resolve r_B pin {RB_REVISION}")
+    rb_rows = []
+    for trait in RB_TRAITS:
+        p = _hf_fetch(f"{RB_PREFIX}/{trait}.pt", T._stage_dir(args) / "rb", rb_rev)
+        obj = torch.load(p, map_location="cpu", weights_only=True)
+        assert isinstance(obj, dict) and "r_b" in obj, (  # schema assert (#2552 r2)
+            f"r_B artifact {trait}.pt missing 'r_b' — have "
+            f"{sorted(obj) if isinstance(obj, dict) else type(obj).__name__}"
+        )
+        r_b = obj["r_b"]
+        assert r_b.shape[1] == d_model and r_b.shape[0] > LAYER, tuple(r_b.shape)
+        rb_rows.append(r_b[LAYER].to(torch.float32))
+    rb = torch.stack(rb_rows)
+
     xx = np.zeros((d_model, d_model), np.float64)
     mu = np.zeros(d_model, np.float64)
     for s in range(0, len(tr_pos), 8192):
@@ -1907,22 +2012,6 @@ def phase_covariates(args) -> None:
     trainer2 = S.BatchTopKSAE.load(k=128, device="cpu", layer=LAYER)
     t2_dec = trainer2.w_dec  # (act_dim, dict_size)
     t2_dec_n = t2_dec / t2_dec.norm(dim=0, keepdim=True).clamp_min(1e-12)
-
-    # r_B bank @ the plan §10 approved LITERAL pin — NOT the P0 parent pin
-    # (#2552 r2 codex rb-pin-drift)
-    rb_rev = _resolve_repo_revision(RB_REVISION, f"resolve r_B pin {RB_REVISION}")
-    rb_rows = []
-    for trait in RB_TRAITS:
-        p = _hf_fetch(f"{RB_PREFIX}/{trait}.pt", T._stage_dir(args) / "rb", rb_rev)
-        obj = torch.load(p, map_location="cpu", weights_only=True)
-        assert isinstance(obj, dict) and "r_b" in obj, (  # schema assert (#2552 r2)
-            f"r_B artifact {trait}.pt missing 'r_b' — have "
-            f"{sorted(obj) if isinstance(obj, dict) else type(obj).__name__}"
-        )
-        r_b = obj["r_b"]
-        assert r_b.shape[1] == d_model and r_b.shape[0] > LAYER, tuple(r_b.shape)
-        rb_rows.append(r_b[LAYER].to(torch.float32))
-    rb = torch.stack(rb_rows)
 
     # pt ans_frac (twin-inherited consistency source)
     heap = np.load(_mining_dir(args) / "pt_heap.npz")
@@ -2104,11 +2193,18 @@ def _p4_lists(args, io) -> dict:
     the P0 ``_pins_revision()`` predates P1.10's own uploads, so eval_lists can
     NEVER exist at that revision — the old fallback 404'd deterministically)."""
     if args.smoke:
-        return json.loads((io.fixtures / "feature_lists_2000turns.json").read_text())
+        fx = io.fixtures / "feature_lists_2000turns.json"
+        return json.loads(fx.read_text()), {"kind": "smoke-fixture", "sha256": _sha_file(fx)}
     cfgs = ("pt_max", "pt_sum", *TA_FAMILIES)
     local = _lists_dir(args)
     if all((local / f"lists_{cfg}.json").exists() for cfg in cfgs):
-        return {cfg: json.loads((local / f"lists_{cfg}.json").read_text()) for cfg in cfgs}
+        return (
+            {cfg: json.loads((local / f"lists_{cfg}.json").read_text()) for cfg in cfgs},
+            {
+                "kind": "local-p1-outroot",
+                "sha256": {cfg: _sha_file(local / f"lists_{cfg}.json") for cfg in cfgs},
+            },
+        )
     rev = _resolve_repo_revision(None, "resolve data-repo HEAD (post-P1 eval_lists)")
     dest = T._stage_dir(args) / "p4_lists"
     prefix = f"{args.hf_prefix}/analysis_tensors/eval_lists"
@@ -2131,7 +2227,7 @@ def _p4_lists(args, io) -> dict:
         {"data_repo_revision": rev, "source": "hf-fallback", "prefix": prefix},
         phase="p4-embed",
     )
-    return out
+    return out, {"kind": "hf-fallback", "data_repo_revision": rev, "prefix": prefix}
 
 
 def _p4_load_embedder(args):
@@ -2209,7 +2305,11 @@ def phase_p4_embed(args) -> None:
         "smoke": bool(args.smoke),
         "tiny_model": bool(args.tiny_model),
     }
-    done_path = io.stage.parent / "p4_done.json"
+    # the plan phase_outputs sentinel path is <out_root>/sentinels/p4_done.json —
+    # the same dir P1.10's p1_done.json uses (#2552 r3 p4-phase-contract)
+    sent_dir = args.out_root / "sentinels"
+    sent_dir.mkdir(parents=True, exist_ok=True)
+    done_path = sent_dir / "p4_done.json"
     outputs = (io.dere / "embedding_coverage.json", io.stage / "embcov_topk.npz")
     if done_path.exists() and not args.force:
         prior = json.loads(done_path.read_text()).get("regime_key")
@@ -2227,26 +2327,34 @@ def phase_p4_embed(args) -> None:
     # validation runs BEFORE the 8B embedder load (#2552 r2: fail in seconds, not
     # after a ~16 GB weight fetch)
     descs: dict[str, dict[int, str]] = {}
+    input_ids: dict = {"descriptions_sha256": {}}
     for fam in ("pt", *TA_FAMILIES):
         path = io.agg / f"descriptions_{fam}.json"
         assert path.exists(), f"[p4] descriptions missing: {path} — run judge W1 first"
         d = json.loads(path.read_text())["descriptions"]
         assert d, f"[p4] empty descriptions for family {fam}: {path}"
         descs[fam] = {int(k): v for k, v in d.items()}
+        input_ids["descriptions_sha256"][fam] = _sha_file(path)
     summ_paths = sorted(io.agg.glob("summaries_*.json"))
     assert summ_paths, f"[p4] summaries_*.json missing under {io.agg} — run judge W2 first"
     summaries = json.loads(summ_paths[-1].read_text())["summaries"]
     assert summaries, f"[p4] empty summaries doc: {summ_paths[-1]}"
-    lists_doc = _p4_lists(args, io)
+    input_ids["summaries_file"] = summ_paths[-1].name
+    input_ids["summaries_sha256"] = _sha_file(summ_paths[-1])
+    lists_doc, lists_source = _p4_lists(args, io)
+    input_ids["lists_source"] = lists_source
     cfgs = ("pt_max", "pt_sum", *TA_FAMILIES)
     for cfg in cfgs:
         assert cfg in lists_doc, f"[p4] lists missing config {cfg} (have {sorted(lists_doc)})"
         turns = lists_doc[cfg].get("turns")
         assert turns, f"[p4] config {cfg} has no turns"
-        t0_rec = turns[0]
-        assert "row_id" in t0_rec and "judged_top100" in t0_rec, (
-            f"[p4] config {cfg} turn schema unexpected: {sorted(t0_rec)}"
-        )
+        # EVERY row's schema, not turns[0] only (#2552 r3 p4-phase-contract): a
+        # later-row corruption must fail here, before the embedder load — the loop
+        # is two key checks over ~2,000x5 rows, milliseconds
+        for k, rec in enumerate(turns):
+            assert "row_id" in rec and "judged_top100" in rec, (
+                f"[p4] config {cfg} turn {k} schema unexpected: {sorted(rec)}"
+            )
     # unique text pool: descriptions + (turn, field) values
     texts: list[str] = []
     t_index: dict[str, int] = {}
@@ -2332,8 +2440,21 @@ def phase_p4_embed(args) -> None:
     shutil.copy2(io.dere / "embedding_coverage.json", io.stage / "embedding_coverage.json")
     _upload_leaf(args, io.stage, "analysis_tensors/embcov", resume_skip=False)
     T._write_json(
-        io.stage.parent / "p4_done.json",
-        {"phase": "p4-embed", "status": "done", "regime_key": regime_key},
+        done_path,
+        {
+            "phase": "p4-embed",
+            "status": "done",
+            "regime_key": regime_key,
+            # input identity + upload binding (#2552 r3 p4-phase-contract): a resume
+            # against DIFFERENT inputs, or one whose upload leg was skipped, is
+            # visible in the sentinel instead of silently reused
+            "inputs": input_ids,
+            "uploads": (
+                "skipped (skip_upload/non-production)"
+                if (args.skip_upload or not _production(args))
+                else "uploaded+verified (analysis_tensors/embcov)"
+            ),
+        },
         phase="p4-embed",
     )
     T._sentinel("p4_embed", f"P4 done ({len(texts)} texts, {len(row_ids)} turns)")

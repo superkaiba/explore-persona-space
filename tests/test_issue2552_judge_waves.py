@@ -503,3 +503,72 @@ def test_w1_block_pt_renders_activation_values():
     assert "105:0.500" in block and "130:1.500" in block
     assert "peak token at offset 30" in block
     assert "activating token offsets with activations:" in block
+
+
+def test_run_wave_smoke_below_floor_records_smoke_waiver_and_unlinks_floor_fail(
+    tmp_path, monkeypatch
+):
+    """r3 smoke-gate-enumeration + g1 Minor 1: a below-floor SMOKE wave proceeds but
+    records an explicit waiver of kind 'smoke' in meta (the enumerated downgrade is
+    durably visible in the artifact), and a stale floor_fail report from an earlier
+    HALTed attempt is unlinked at the meta-write point."""
+    args, p, g2, arms = _floor_env(tmp_path, monkeypatch, allow_below_floor=False)
+    args.smoke = True
+    stale = p.agg / "floor_fail_w5.json"
+    stale.write_text(json.dumps({"wave": "w5", "below_floor_arms": ["armA"]}))
+    monkeypatch.setattr(J, "_dispatch", _fake_dispatch_factory(2, omit={"w5-r9-0"}))
+    per = J.run_wave(args, p, g2, wave="w5", arms=arms, system="SYS")
+    assert per is not None
+    meta = json.loads((p.agg / "judge_meta_w5.json").read_text())
+    assert meta["below_floor_waiver"] is True
+    assert meta["below_floor_waiver_kind"] == "smoke"
+    assert not stale.exists()  # stale HALT report never survives a passing/waived write
+
+
+def test_run_wave_flag_waiver_kind_is_flag(tmp_path, monkeypatch):
+    args, p, g2, arms = _floor_env(tmp_path, monkeypatch, allow_below_floor=True)
+    monkeypatch.setattr(J, "_dispatch", _fake_dispatch_factory(2, omit={"w5-r9-0"}))
+    J.run_wave(args, p, g2, wave="w5", arms=arms, system="SYS")
+    meta = json.loads((p.agg / "judge_meta_w5.json").read_text())
+    assert meta["below_floor_waiver_kind"] == "flag"
+
+
+def _meta_doc(regime_key: dict, **extra) -> dict:
+    return {"wave": "w3", "regime_key": regime_key, **extra}
+
+
+def test_wave_done_floor_binding_on_resume(tmp_path):
+    """r3 judge-completeness-floor: a done marker written by PRE-floor-gate code (no
+    below_floor_arms key), or one recording below-floor arms with NO waiver, must not
+    short-circuit the gate; a waived or clean meta resumes."""
+    from types import SimpleNamespace
+
+    p = SimpleNamespace(agg=tmp_path)
+    rk = {"wave": "w3", "n": 1}
+    meta = tmp_path / "judge_meta_w3.json"
+    # pre-fix meta: regime matches but no floor record -> refuse loud
+    meta.write_text(json.dumps(_meta_doc(rk)))
+    with pytest.raises(AssertionError, match="predates the rule-29"):
+        J._wave_done(p, "w3", rk)
+    # below-floor, no waiver -> refuse loud (never a below-floor aggregate rebuild)
+    meta.write_text(json.dumps(_meta_doc(rk, below_floor_arms=["armA"], below_floor_waiver=False)))
+    with pytest.raises(AssertionError, match="NO recorded waiver"):
+        J._wave_done(p, "w3", rk)
+    # waived below-floor -> done; clean -> done; different regime -> quarantine assert
+    meta.write_text(json.dumps(_meta_doc(rk, below_floor_arms=["armA"], below_floor_waiver=True)))
+    assert J._wave_done(p, "w3", rk) is True
+    meta.write_text(json.dumps(_meta_doc(rk, below_floor_arms=[], below_floor_waiver=False)))
+    assert J._wave_done(p, "w3", rk) is True
+    with pytest.raises(AssertionError, match="DIFFERENT regime"):
+        J._wave_done(p, "w3", {"wave": "w3", "n": 2})
+
+
+def test_w7_cells_w3_emits_registered_joint_cell():
+    """r3 w7-calibration: the plan-registered read is the 3-dictionary x 5-category
+    JOINT cell; the family/category marginals stay as descriptive extras."""
+    cells = J._w7_cells("w3", "w3-rep_ta-f77", {"value": ["desc text", "behavioral"]})
+    assert cells == (
+        "family=rep_ta|category=behavioral",
+        "family=rep_ta",
+        "category=behavioral",
+    )

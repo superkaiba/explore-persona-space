@@ -634,13 +634,18 @@ def _draw_store(
     seed_key: tuple[int, ...],
     draws: int,
     depth: int,
+    *,
+    content_sha: str = "",
 ):
     """Fingerprinted per-(step, run-tag) draw-matrix store -> (probe, sink).
 
     The resume predicate matches the FULL generating regime — fam/tag/draws/seed/depth,
     the panel's file-read int64 feature ids (sha over pinned-dtype bytes; never a
-    recomputed float array), plus step + candidate names — so a stale or re-scoped
-    drawmat is recomputed, never silently reused (#2552 r2 ladder-restartability)."""
+    recomputed float array), plus step + candidate names, PLUS ``content_sha`` — a
+    caller-supplied digest of the DATA the draws are a function of (DV ranks, activity
+    base, quintile bins, candidate block values), so a recompute that changes VALUES
+    while leaving panel ids/seed/names identical invalidates the store instead of
+    resuming stale null matrices (#2552 r3 ladder-restartability; r2 g2-M2)."""
     fid = np.ascontiguousarray(np.asarray(feat_ids_sel, np.int64))
     fp = {
         "fam": fam,
@@ -650,6 +655,7 @@ def _draw_store(
         "depth": int(depth),
         "n": int(fid.size),
         "feat_sha": hashlib.sha256(fid.tobytes()).hexdigest(),
+        "content_sha": content_sha,
     }
 
     def _path(step: int) -> Path:
@@ -682,6 +688,24 @@ def _draw_store(
         )
 
     return probe, sink
+
+
+def _content_sha(dv, idx: np.ndarray, cats: np.ndarray, blocks: dict[str, np.ndarray]) -> str:
+    """Digest of the DATA a run's null draws are a function of (#2552 r3
+    ladder-restartability): the file-read DV and count values on the realized panel
+    (bit-exact bytes — stored-dtype slices of arrays READ FROM FILE, the
+    machine-stable class), the category labels, and the realized candidate blocks
+    (float32 downcast — the sanctioned relative quantization absorbing libm/CPU
+    last-bit drift in the derived z-scores). Panel ids alone miss a recompute that
+    changes VALUES under identical ids (r2 g2-M2)."""
+    h = hashlib.sha256()
+    h.update(np.ascontiguousarray(dv.r2[idx]).tobytes())
+    h.update(np.ascontiguousarray(np.asarray(dv.counts[idx], np.int64)).tobytes())
+    h.update("|".join(str(c) for c in np.asarray(cats)[idx]).encode())
+    for name in sorted(blocks):
+        h.update(name.encode())
+        h.update(np.ascontiguousarray(blocks[name].astype(np.float32)).tobytes())
+    return h.hexdigest()
 
 
 def _pilot_block(y_rank, log_act, quint, block: np.ndarray, draws: int) -> float:
@@ -770,7 +794,14 @@ def phase_ladder(args) -> None:
             probe = sink = None
             if nulls:
                 probe, sink = _draw_store(
-                    io.draws, fam, tag, dv.feat_ids[idx], seed_key, draws, LADDER_DEPTH
+                    io.draws,
+                    fam,
+                    tag,
+                    dv.feat_ids[idx],
+                    seed_key,
+                    draws,
+                    LADDER_DEPTH,
+                    content_sha=_content_sha(dv, idx, cats, blocks),
                 )
             rec = _run_ladder(
                 y,
@@ -1316,9 +1347,10 @@ def phase_replication(args) -> None:
                 "wilson_ci95": [lo, hi],
             }
     pooled = _delta_reads(match_rows, pair_rows, None, draws)
-    assert args.smoke or (
-        pooled.get("n_complete_pairs", 0) > 0 and pooled.get("n_cov_trials", 0) > 0
-    ), (
+    # UNCONDITIONAL (r3 smoke-gate-enumeration fix): the seeded smoke fixture
+    # deterministically produces >=1 complete pair + >=1 coverage trial (g2-verified),
+    # so the zero-pair gate is exercised by the smoke rather than bypassed under it.
+    assert pooled.get("n_complete_pairs", 0) > 0 and pooled.get("n_cov_trials", 0) > 0, (
         "0 complete rep_ta/pt_max pairs (or 0 coverage trials) in the pooled read — "
         f"matching/pairwise rows missing or all-invalid: {pooled}"
     )
@@ -1363,11 +1395,18 @@ def phase_replication(args) -> None:
         "lmsys_only_advisory": advisory,
         "paper_reference": PAPER_REFERENCE,
         "reconstruction_fve": {
+            # plan line 76 registers ONE FVE "accumulated during this and the P1.8
+            # encode passes" — the combined figure is the registered read (#2552 r3
+            # comparator-fve); the per-pass figures stay as the breakdown.
+            "trainer2_fve_combined": measured.get("trainer2_fve_combined"),
             "trainer2_fve_evalpass": measured.get("trainer2_fve_evalpass"),
+            "trainer2_fve_poolpass": measured.get("trainer2_fve_poolpass"),
             "replication_sae_val_var_fve": measured.get("rep_sae_val_var_fve"),
             "note": (
-                "trainer_2 on-corpus eval-pass FVE vs the replication TA SAE's holdout "
-                "var-FVE — both global fp64 per-dim unbiased variance (T._recon_fve parity)"
+                "trainer_2 on-corpus FVE combined over the P1.7 eval-pass + P1.8 "
+                "mining-pool encode passes (plan-registered read; per-pass breakdown "
+                "beside it) vs the replication TA SAE's holdout var-FVE — all global "
+                "fp64 per-dim unbiased variance (T._recon_fve parity)"
             ),
         },
         "optional_inputs": optional,
@@ -1626,14 +1665,32 @@ def phase_figures(args) -> None:
         save(fig, "mean_rank", dir=io.figs)
         plt.close(fig)
 
-    # 11. per-turn Δ_cov (rep_ta vs pt_max win/loss)
+    # 11. per-turn Δ_cov (rep_ta vs pt_max win/loss) — MF-E bundle ticks + Wilson
+    # whiskers + top-100 provenance, matching figs 8-10/12 (#2552 r3 h2-attribution)
     if "per_turn_rep_wins" in rep["pooled"]:
-        fig, ax = plt.subplots(figsize=(4.0, 3.0))
-        w, losses = rep["pooled"]["per_turn_rep_wins"], rep["pooled"]["per_turn_rep_losses"]
-        ax.bar([0, 1], [w, losses], color=[cols[2], cols[3]])
-        ax.set_xticks([0, 1], ["rep_ta wins", "pt_max wins"])
+        pooled_d = rep["pooled"]
+        fig, ax = plt.subplots(figsize=(4.4, 3.2))
+        w, losses = pooled_d["per_turn_rep_wins"], pooled_d["per_turn_rep_losses"]
+        n_cov = w + losses
+        lo = pooled_d["delta_cov_ci95"][0] + 0.5  # Wilson CI on the rep_ta win RATE
+        hi = pooled_d["delta_cov_ci95"][1] + 0.5
+        yerr = np.array(
+            [
+                [w - lo * n_cov, hi * n_cov - w],
+                [losses - (1 - hi) * n_cov, (1 - lo) * n_cov - losses],
+            ]
+        ).T
+        ax.bar([0, 1], [w, losses], color=[cols[2], cols[3]], yerr=np.abs(yerr), capsize=3)
+        ax.set_xticks(
+            [0, 1],
+            [
+                f"{CFG_TICK.get('rep_ta', 'rep_ta')} wins",
+                f"{CFG_TICK.get('pt_max', 'pt_max')} wins",
+            ],
+            fontsize=6,
+        )
         ax.set_ylabel("turns")
-        ax.set_title("Per-turn coverage head-to-head (pooled)")
+        ax.set_title(f"Per-turn coverage head-to-head, top-100 judged lists (pooled, n={n_cov})")
         fig.tight_layout()
         save(fig, "delta_cov_perturn", dir=io.figs)
         plt.close(fig)
@@ -1667,19 +1724,21 @@ def phase_figures(args) -> None:
         save(fig, "embedding_coverage", dir=io.figs)
         plt.close(fig)
 
-    # 12b. reconstruction FVEs — trainer_2 eval-pass vs replication SAE holdout
-    # (#2552 r2 codex M-trainer2-fve: both reported, T._recon_fve semantics)
+    # 12b. reconstruction FVEs — trainer_2 combined (eval+pool passes, the plan-
+    # registered read; eval-pass fallback disclosed) vs replication SAE holdout
+    # (#2552 r2 codex M-trainer2-fve; r3 comparator-fve)
     fve_pair = rep.get("reconstruction_fve", {})
-    fve_vals = [
-        fve_pair.get("trainer2_fve_evalpass"),
-        fve_pair.get("replication_sae_val_var_fve"),
-    ]
+    t2_combined = fve_pair.get("trainer2_fve_combined")
+    t2_val = t2_combined if t2_combined is not None else fve_pair.get("trainer2_fve_evalpass")
+    t2_label = (
+        "trainer_2\n(andyrdt, eval+pool passes)"
+        if t2_combined is not None
+        else "trainer_2\n(andyrdt, eval-pass only)"
+    )
+    fve_vals = [t2_val, fve_pair.get("replication_sae_val_var_fve")]
     if any(v is not None for v in fve_vals):
         fig, ax = plt.subplots(figsize=(4.4, 3.0))
-        labels = [
-            "trainer_2\n(andyrdt, eval-pass)",
-            "replication TA SAE\n(holdout val)",
-        ]
+        labels = [t2_label, "replication TA SAE\n(holdout val)"]
         vals = [np.nan if v is None else float(v) for v in fve_vals]
         ax.bar(np.arange(2), vals, color=[cols[0], cols[1]])
         ax.set_xticks(np.arange(2), labels, fontsize=7)
@@ -1687,6 +1746,68 @@ def phase_figures(args) -> None:
         ax.set_title("Reconstruction FVE (global fp64 per-dim variance)")
         fig.tight_layout()
         save(fig, "reconstruction_fve", dir=io.figs)
+        plt.close(fig)
+
+    # 12c. W7 pinned-judge calibration — the plan-registered kappa-table figure with
+    # realized per-cell counts + per-category agreement/drop-rate bars (#2552 r3
+    # w7-calibration; plan Figures list "judge-agreement (kappa) table figure")
+    w7 = rep["optional_inputs"].get("w7_calibration")
+    if isinstance(w7, dict) and any(k in w7 for k in ("w3", "w4", "w5")):
+        fig, (ax_t, ax_b) = plt.subplots(1, 2, figsize=(8.4, 3.2), width_ratios=[1.1, 1.0])
+        ax_t.axis("off")
+
+        def _f3(v) -> str:
+            return "n/a" if v is None else f"{float(v):.3f}"
+
+        rows = []
+        for inst in ("w3", "w4", "w5"):
+            d = w7.get(inst)
+            if not isinstance(d, dict):
+                continue
+            ci = d.get("agreement_wilson_ci95") or [float("nan"), float("nan")]
+            rows.append(
+                [
+                    inst,
+                    f"{d.get('n_both_valid', 0)}/{d.get('n_sampled', 0)}",
+                    f"{_f3(d.get('raw_agreement'))} [{ci[0]:.2f},{ci[1]:.2f}]",
+                    _f3(d.get("kappa")),
+                    _f3(d.get("drop_rate_cal")),
+                ]
+            )
+        tbl = ax_t.table(
+            cellText=rows,
+            colLabels=["instrument", "n valid/sampled", "agreement [CI95]", "kappa", "drop rate"],
+            loc="center",
+        )
+        tbl.auto_set_font_size(False)
+        tbl.set_fontsize(6.5)
+        ax_t.set_title("Judge agreement vs pinned judge (W7)", fontsize=8)
+        cat_cells = {
+            k.split("=", 1)[1]: v
+            for k, v in (w7.get("w3", {}).get("cells") or {}).items()
+            if k.startswith("category=")
+        }
+        if cat_cells:
+            cats_sorted = sorted(cat_cells)
+            x = np.arange(len(cats_sorted))
+
+            def _v(c: str, key: str) -> float:
+                v = cat_cells[c].get(key)
+                return np.nan if v is None else float(v)
+
+            agree = [_v(c, "agreement") for c in cats_sorted]
+            drop = [_v(c, "drop_rate_cal") for c in cats_sorted]
+            ns = [cat_cells[c].get("n_both_valid", 0) for c in cats_sorted]
+            ax_b.bar(x - 0.2, agree, width=0.4, color=cols[0], label="agreement")
+            ax_b.bar(x + 0.2, drop, width=0.4, color=cols[3], label="cal drop rate")
+            ax_b.set_xticks(x, [f"{c}\n(n={n})" for c, n in zip(cats_sorted, ns)], fontsize=6)
+            ax_b.set_ylim(0, 1)
+            ax_b.legend(fontsize=6)
+            ax_b.set_title("W3 per-category (thin cells: descriptive)", fontsize=8)
+        else:
+            ax_b.axis("off")
+        fig.tight_layout()
+        save(fig, "w7_calibration", dir=io.figs)
         plt.close(fig)
 
     # 13. per-covariate scatters with decile medians (primary panel, per dictionary)
@@ -1829,7 +1950,13 @@ def _synth_inputs(args, io) -> None:
     # reconstruction FVEs for the replication doc (#2552 r2 codex M-trainer2-fve)
     _write_json(
         io.eval_in / "regime_measured.json",
-        {"trainer2_fve_evalpass": 0.71, "rep_sae_val_var_fve": 0.62, "rep_sae_val_nmse": 0.38},
+        {
+            "trainer2_fve_evalpass": 0.71,
+            "trainer2_fve_poolpass": 0.69,
+            "trainer2_fve_combined": 0.70,
+            "rep_sae_val_var_fve": 0.62,
+            "rep_sae_val_nmse": 0.38,
+        },
     )
     # covariates per family — full-width arrays (producer: phase_covariates key set)
     widths = {"rep_ta": width_rep, "mat_k100": 65536, "mat_k200": 65536}
@@ -1984,6 +2111,66 @@ def _synth_inputs(args, io) -> None:
     _write_json(
         io.agg_in / "w6_ranking_perturn.json",
         {"rows": [], "summary": {"mean_rank": {c: float(i + 1) for i, c in enumerate(JW.CONFIGS)}}},
+    )
+    # W7 calibration fixture in the judge writer's shape (instruments + per-cell
+    # tables, joint + marginal w3 cells) so the r3 kappa-table figure leg executes
+    # under smoke rather than silently skipping (#2552 r3 w7-calibration)
+    _write_json(
+        io.agg_in / "w7_calibration.json",
+        {
+            "instruments": {
+                inst: {
+                    "n_sampled": 12,
+                    "n_both_valid": 10,
+                    "n_cal_dropped": 2,
+                    "drop_rate_cal": 2 / 12,
+                    "raw_agreement": 0.8,
+                    "agreement_wilson_ci95": [0.49, 0.94],
+                    "kappa": 0.6,
+                    "cells": (
+                        {
+                            "family=rep_ta|category=behavioral": {
+                                "n_sampled": 6,
+                                "n_both_valid": 5,
+                                "drop_rate_cal": 1 / 6,
+                                "agreement": 0.8,
+                                "agreement_wilson_ci95": [0.38, 0.96],
+                                "kappa": 0.55,
+                            },
+                            "family=rep_ta": {
+                                "n_sampled": 12,
+                                "n_both_valid": 10,
+                                "drop_rate_cal": 2 / 12,
+                                "agreement": 0.8,
+                                "agreement_wilson_ci95": [0.49, 0.94],
+                                "kappa": 0.6,
+                            },
+                            "category=behavioral": {
+                                "n_sampled": 6,
+                                "n_both_valid": 5,
+                                "drop_rate_cal": 1 / 6,
+                                "agreement": 0.8,
+                                "agreement_wilson_ci95": [0.38, 0.96],
+                                "kappa": 0.55,
+                            },
+                            "category=topical": {
+                                "n_sampled": 6,
+                                "n_both_valid": 5,
+                                "drop_rate_cal": 1 / 6,
+                                "agreement": 0.6,
+                                "agreement_wilson_ci95": [0.27, 0.86],
+                                "kappa": None,
+                            },
+                        }
+                        if inst == "w3"
+                        else {}
+                    ),
+                    "cal_judge_model": "claude-sonnet-4-5-20250929",
+                }
+                for inst in ("w3", "w4", "w5")
+            },
+            "n_per_instrument": 200,
+        },
     )
     _write_json(
         io.regime_path,

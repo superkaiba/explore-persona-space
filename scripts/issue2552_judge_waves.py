@@ -975,7 +975,12 @@ def _reload_per_item(p, wave: str, base: str) -> dict[str, dict]:
     overlay merge mirrors run_wave's in-band merge exactly (#2552 r2 g5-M1)."""
     parser = WAVE_PARSERS[base]
     raw = p.work / "raw" / wave / f"judge_raw_{wave}.json"
-    assert raw.exists(), f"[{wave}] resume: judge_meta says done but persisted raw missing: {raw}"
+    # message covers BOTH callers (r2 g1 Minor 3): the resume path (meta says done,
+    # raw lost) and the phase_w7 PRIMARY read (parent wave simply never ran)
+    assert raw.exists(), (
+        f"[{wave}] persisted raw missing: {raw} — either the wave never ran "
+        f"(run --wave {wave} first) or its raw was lost after judge_meta was written"
+    )
     per = reduce_all_scores(_load_all_scores(raw), parser)
     reissue = raw.with_name(f"judge_raw_{wave}_syncreissue.json")
     if reissue.exists():
@@ -1107,6 +1112,20 @@ def _wave_done(p, wave: str, regime_key: dict) -> bool:
         return False
     doc = json.loads(meta.read_text())
     if doc.get("regime_key") == regime_key:
+        # rule-29 floor binding on resume (#2552 r3 judge-completeness-floor): a done
+        # marker written by PRE-floor-gate code (no below_floor_arms key), or one
+        # recording below-floor arms with NO recorded waiver, must not short-circuit
+        # the gate into a below-floor aggregate rebuild — quarantine + re-run instead.
+        # No smoke conditional here: a below-floor smoke wave records waiver kind
+        # "smoke" at write time (run_wave meta), so its resume passes on the waiver.
+        assert "below_floor_arms" in doc, (
+            f"judge_meta_{wave}.json predates the rule-29 completeness-floor gate "
+            "(no below_floor_arms key) — quarantine it and re-run the wave"
+        )
+        assert not doc["below_floor_arms"] or doc.get("below_floor_waiver"), (
+            f"judge_meta_{wave}.json records below-floor arms {doc['below_floor_arms']} "
+            "with NO recorded waiver — quarantine it and re-run (rule 29)"
+        )
         logger.info("[%s] resume: judge_meta present + regime match; skip", wave)
         return True
     raise AssertionError(
@@ -1300,7 +1319,15 @@ def run_wave(
         "n_draws": 1,
         "arms": per_arm,
         "below_floor_arms": below,
-        "below_floor_waiver": bool(below and args.allow_below_floor),
+        # a smoke run that proceeds below-floor records an explicit waiver of kind
+        # "smoke" (r3): _wave_done can then bind the floor on resume with NO
+        # smoke-conditional of its own — the exemption is durably in the artifact.
+        "below_floor_waiver": bool(below and (args.allow_below_floor or args.smoke)),
+        "below_floor_waiver_kind": (
+            ("flag" if args.allow_below_floor else "smoke")
+            if below and (args.allow_below_floor or args.smoke)
+            else None
+        ),
         "batch_sync_split": {
             "n_valid_from_sync_reissue": n_sync,
             "n_censored_reissued": len(censored),
@@ -1311,6 +1338,10 @@ def run_wave(
         **as_metadata_dict(git_provenance(), phase=f"judge-{wave}"),
     }
     t = _t2552()
+    # a floor_fail report from an earlier HALTed attempt is stale the moment the wave
+    # passes (or is waived) — unlink so a triage reader never sees a floor-fail beside
+    # a passing meta (#2552 r2 g1 Minor 1)
+    (p.agg / f"floor_fail_{wave}.json").unlink(missing_ok=True)
     t.C.write_json_atomic(p.agg / f"judge_meta_{wave}.json", meta)
     logger.info(
         "[%s] done: %d items, sync_reissue_valid=%d, below_floor=%s, wall=%.0fs",
@@ -2085,12 +2116,15 @@ def _wilson(k: int, n: int, z: float = 1.959964) -> tuple[float, float]:
 
 
 def _w7_cells(wave: str, item_id: str, primary_rec: dict) -> tuple[str, ...]:
-    """Per-instrument calibration cell keys (#2552 r2 codex w7-calibration):
-    w3 -> (family, primary category); w4 -> config; w5 -> config pair."""
+    """Per-instrument calibration cell keys (#2552 r2 codex w7-calibration; r3):
+    w3 -> the REGISTERED joint (family x primary-category) cell (plan line 95:
+    "the 200 W3 items divide over 3 dictionaries x 5 categories ... report the
+    realized per-cell n with a CI per cell") PLUS the family/category marginals
+    as descriptive extras; w4 -> config; w5 -> config pair."""
     if wave == "w3":
         fam = item_id.split("-")[1]
         cat = primary_rec["value"][1]
-        return (f"family={fam}", f"category={cat}")
+        return (f"family={fam}|category={cat}", f"family={fam}", f"category={cat}")
     if wave == "w4":
         cfg = item_id[len("w4-") : item_id.rfind("-r")]
         return (f"config={cfg}",)

@@ -310,3 +310,117 @@ def test_cfg_tick_covers_all_configs():
 
     for cfg in JW.CONFIGS:
         assert cfg in L.CFG_TICK and "\n" in L.CFG_TICK[cfg], cfg
+
+
+# ── r3 round: content-keyed draw store + combined FVE + P4 sentinel path ──────────
+
+
+def test_draw_store_content_sha_invalidates(tmp_path):
+    """r3 ladder-restartability (r2 g2-M2): identical ids/seed/names but CHANGED data
+    content must invalidate the store — stale null matrices are recomputed, not reused."""
+    fid = np.arange(7, dtype=np.int64)
+    probe, sink = L._draw_store(
+        tmp_path, "rep_ta", "primary", fid, (2552, 0, 0), 16, 3, content_sha="aaa"
+    )
+    names = ["a", "b"]
+    mat = np.random.default_rng(0).random((16, 2)).astype(np.float32)
+    sink(1, names, mat, {"a": 0.1, "b": 0.2})
+    assert probe(1, names) is not None  # same content -> resume
+    probe2, _ = L._draw_store(
+        tmp_path, "rep_ta", "primary", fid, (2552, 0, 0), 16, 3, content_sha="bbb"
+    )
+    assert probe2(1, names) is None  # changed DV/candidate content -> recompute
+
+
+def test_content_sha_tracks_values_not_just_ids():
+    """The digest changes when DV values change under IDENTICAL panel ids."""
+    from types import SimpleNamespace
+
+    idx = np.arange(5)
+    cats = np.asarray(["a", "b", "a", "b", "a"])
+    blocks = {"x": np.random.default_rng(1).random((5, 2))}
+    dv1 = SimpleNamespace(r2=np.arange(5, dtype=np.float64), counts=np.ones(5, np.int64))
+    dv2 = SimpleNamespace(r2=np.arange(5, dtype=np.float64) + 1.0, counts=np.ones(5, np.int64))
+    s1 = L._content_sha(dv1, idx, cats, blocks)
+    assert s1 == L._content_sha(dv1, idx, cats, blocks)  # deterministic
+    assert s1 != L._content_sha(dv2, idx, cats, blocks)  # values changed, ids identical
+
+
+def _extract_fve_from_acc():
+    """AST-extract the torch-free `_fve_from_acc` from the turnsae producer (the
+    established pattern in this file: the producer is torch-bearing, never imported)."""
+    tree = ast.parse(TURNSAE_SRC)
+    fn = next(
+        n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_fve_from_acc"
+    )
+    mod = ast.Module(body=[fn], type_ignores=[])
+    ns: dict = {"np": np}
+    exec(compile(ast.fix_missing_locations(mod), "<turnsae _fve_from_acc>", "exec"), ns)
+    return ns["_fve_from_acc"]
+
+
+def test_fve_from_acc_combined_matches_direct_computation():
+    """r3 comparator-fve: the combined eval+pool FVE from persisted sufficient stats
+    equals the direct global fp64 per-dim var-FVE over the concatenated tokens."""
+    fve_from_acc = _extract_fve_from_acc()
+    rng = np.random.default_rng(7)
+    d = 6
+    xa, xb = rng.random((40, d)), rng.random((25, d))
+    ra, rb = xa * 0.1 + rng.random((40, d)) * 0.01, xb * 0.2 + rng.random((25, d)) * 0.01
+
+    def acc(x, r):
+        return {
+            "x_sum": x.sum(0),
+            "r_sum": r.sum(0),
+            "x_sq_total": float((x * x).sum()),
+            "r_sq_total": float((r * r).sum()),
+            "n_tok": len(x),
+        }
+
+    def direct(x, r):
+        n = len(x)
+        ss_tot = ((x * x).sum(0) - x.sum(0) ** 2 / n).sum() / (n - 1)
+        ss_res = ((r * r).sum(0) - r.sum(0) ** 2 / n).sum() / (n - 1)
+        return 1.0 - ss_res / ss_tot
+
+    # single-pass parity
+    assert abs(fve_from_acc(acc(xa, ra)) - direct(xa, ra)) < 1e-12
+    # combined parity vs the concatenated-token direct computation
+    xc, rc = np.vstack([xa, xb]), np.vstack([ra, rb])
+    assert abs(fve_from_acc(acc(xa, ra), acc(xb, rb)) - direct(xc, rc)) < 1e-12
+    # degenerate guard
+    assert np.isnan(
+        fve_from_acc(
+            {
+                "x_sum": np.zeros(d),
+                "r_sum": np.zeros(d),
+                "x_sq_total": 0.0,
+                "r_sq_total": 0.0,
+                "n_tok": 1,
+            }
+        )
+    )
+
+
+def test_p4_done_sentinel_lives_under_sentinels_dir():
+    """r3 p4-phase-contract: the P4 completion sentinel is written at the plan
+    phase_outputs path <out_root>/sentinels/p4_done.json (the p1_done.json dir),
+    never at <out_root>/p4/p4_done.json."""
+    assert 'done_path = sent_dir / "p4_done.json"' in TURNSAE_SRC
+    assert 'io.stage.parent / "p4_done.json"' not in TURNSAE_SRC
+    # the sentinel carries input identity + upload binding
+    assert '"inputs": input_ids' in TURNSAE_SRC
+    assert '"uploads"' in TURNSAE_SRC
+
+
+def test_replication_zero_pair_assert_is_unconditional():
+    """r3 smoke-gate-enumeration: the pooled zero-pair gate carries NO smoke bypass —
+    the seeded smoke fixture exercises it (g2-verified deterministic pass)."""
+    import inspect
+
+    src = inspect.getsource(L.phase_replication)
+    assert 'pooled.get("n_complete_pairs", 0) > 0' in src
+    assert "args.smoke or (\n        pooled.get" not in src
+    # no smoke term anywhere in the zero-pair assert statement
+    stmt = src.split("assert pooled.get", 1)[1].split(")", 3)[:3]
+    assert "smoke" not in "".join(stmt)
