@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "issue": 2502,
+    "timestamp": "2026-08-23T18:59:42-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2502_fits.py",
+      "--phase",
+      "unitwall",
+      "--wall-n",
+      "150000",
+      "--wall-hidden",
+      "4096",
+      "--out-root",
+      "/tmp/issue-2502-unitwall"
+    ],
+    "git_commit": "cdc2f25fef502b06379bdc20d7c53c89346d71b0",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/issue2502_fits.py",
+      "scripts/issue2502_reliability.py"
+    ],
+    "git_argv0_state": "modified",
+    "git_argv0_path": "scripts/issue2502_fits.py",
+    "artifact": "unitwall",
+    "n": 150000,
+    "d": 4096,
+    "device": "cpu"
+  },
+  "n": 150000,
+  "d": 4096,
+  "splits": {
+    "tr": 105000,
+    "val": 22500,
+    "te": 22500
+  },
+  "pooled_unit_wall_s": 438.59,
+  "stage_timings_s": {
+    "gram_s": 42.02,
+    "eigh_s": 8.54,
+    "val_scan_s": 68.18,
+    "eval_s": 66.94
+  },
+  "lodo_shared_reductions_s": 93.6,
+  "lodo_fold_s": 75.92,
+  "lodo_fold_skipped": false,
+  "ru_maxrss_gib": 27.24,
+  "selected_lambda": 10000000.0,
+  "basis_note": "#10 basis: projected_wall = pooled_unit_wall_s x n_layer_units / parallelism + lodo_shared_s + n_groups x lodo_fold_s (per model; layer shards via --layers)"
+}
