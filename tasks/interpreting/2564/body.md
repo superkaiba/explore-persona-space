@@ -19,8 +19,8 @@ has_clean_result: true
 
 ## Takeaways
 
-- On the 6 of 9 instruction axes that passed the on-policy compliance gate (7 of 9 pass at a 50% comply threshold, 5 of 9 at 90%), plus both query axes, the frozen single-turn map's predicted answer-shift direction beats chance and the identity baseline everywhere: per-axis mean cosine between predicted and observed answer-state differences runs 0.17 to 0.90 against shuffled-pair nulls whose 97.5th percentiles sit at 0.04 to 0.45, and the paired map-minus-identity gap is +0.03 to +0.41 with every bootstrap interval excluding zero (12 to 120 pairs per axis).
-- The tone instruction (very formal vs very casual) is carried almost perfectly: direction cosine 0.90 against a split-half reliability of 0.99, within-axis consistency 0.93 vs 0.76 for identity pass-through, and a magnitude slope at the map's global calibration (ratio 1.03, interval spanning 1).
+- On the 6 of 9 instruction axes that passed the on-policy compliance gate (7 of 9 pass at a 50% comply threshold, 5 of 9 at 90%), plus both query axes, the frozen single-turn map's predicted answer-shift direction beats chance and the identity baseline everywhere. Per-axis mean cosine between predicted and observed answer-state differences runs 0.17 to 0.90 against shuffled-pair nulls whose 97.5th percentiles sit at 0.04 to 0.45; the paired map-minus-identity gap is +0.03 to +0.41, every bootstrap interval excluding zero (12 to 120 pairs per axis).
+- The tone instruction (very formal vs very casual) is carried almost perfectly: direction cosine 0.90 against a split-half reliability of 0.99, within-axis consistency 0.93 vs 0.76 for the identity baseline, and a magnitude slope at the map's global calibration (ratio 1.03, interval spanning 1).
 - The injected-name read is reliability-limited rather than diagnosably map-limited: the observed shift's split-half reliability is 0.13 (every other tested axis is at or above 0.60), which caps a perfect predictor near cosine 0.36; the observed 0.17 recovers about 48% of that bound, in line with the other axes, and a reliability this low means further map-direction loss can be neither shown nor excluded, even though the name appears in 589 of 600 base-value rollouts.
 - 3 of 9 instruction axes failed the compliance floor and are not tested: hedging (1 of 2 values fired), persona (2 of 5), stance (1 of 5). Qwen-2.5-7B-Instruct would not reliably argue one-sided stances, play most personas, or answer in strong-confidence mode on these debatable advice questions, so cross-axis claims use the 6-axis denominator and those rows appear as null bands only, never zero bars.
 - The predicted difference finds its true pair at 23.7% top-1 among 2,778 candidates (chance 0.04%) under cosine, ahead of identity at top-1 and top-5 (identity edges ahead at top-10), but under euclidean distance identity wins at every depth (17.1% vs 15.3% top-1): the map's retrieval margin is metric-dependent, so the direction claims rest on the paired cosine gaps. The single-turn and multi-turn frozen maps agree on every tested axis (largest direction-cosine difference 0.047).
@@ -105,7 +105,7 @@ Random sample (seed 42): 3 of 589 firing and 3 of 11 non-firing injected-name ba
 
 ## Results
 
-### Wherever the instruction fired, the map recovers the answer-shift direction and beats identity pass-through
+### Wherever the instruction fired, the map recovers the answer-shift direction and beats the identity baseline
 
 Plotted: for each axis, the mean cosine between the predicted and observed answer-state differences over token-matched value-swap pairs of fired values (panel 1, with the shuffled-pair null band in grey and the split-half reliability as a diamond), the magnitude slope ratio to the map's global calibration (panel 2), within-axis consistency (panel 3), and the text-vs-representation flip-to-paraphrase ratio (panel 4); blue = single-turn map, orange = multi-turn twin, green = identity baseline.
 
@@ -134,7 +134,7 @@ Plotted: the full per-pair direction-cosine distributions for the single-turn ma
 
 > **Figure.** *The per-pair clouds behind the headline means.* Violins show 2,766 of the 2,778 pairs (the 12 query-paraphrase pairs appear only in the query-axis figure), medians and quartiles marked; value-swap and family-swap distributions largely overlap on every axis, wording-paraphrase pairs sit lowest on the content-bearing axes, and the not-tested axes are shown raw.
 
-Value swaps and family swaps track each other closely on every axis (largest mean offsets: stance 0.54 vs 0.48, injected name 0.17 vs 0.23), and instruction-wording paraphrases sit well below matched swaps on content-bearing axes (output format 0.19 vs 0.59 on the same all-values basis; tone 0.42 vs 0.90), confirming the pairs measure the manipulated variable rather than surface wording. Install pairs (instruction vs empty system) sit near swaps on most axes and above them for the injected name (0.39 vs 0.17): adding a name to an empty system prompt is a larger, more predictable move than exchanging one name for another, consistent with the reliability-limited swap read below.
+Value swaps and family swaps track each other closely on every axis (largest mean offsets: stance 0.54 vs 0.48, injected name 0.17 vs 0.23), and instruction-wording paraphrases sit well below matched swaps on content-bearing axes (output format 0.19 vs 0.59 on the same all-values basis; tone 0.42 vs 0.90). The pairs therefore measure the manipulated variable rather than surface wording. Install pairs (instruction vs empty system) sit near swaps on most axes and above them for the injected name (0.39 vs 0.17): adding a name to an empty system prompt is a larger, more predictable move than exchanging one name for another, consistent with the reliability-limited swap read below.
 
 ### Six of nine instruction axes passed the compliance gate; stance, persona, and hedging did not
 
@@ -154,7 +154,7 @@ Plotted: each tested axis's direction cosine (single-turn map) against the split
 
 > **Figure.** *Low raw recovery co-occurs with low split-half reliability.* Tone and query content pair reliabilities of 0.99 and 0.98 with high recovery; the injected-name axis sits at reliability 0.13 with cosine 0.17, where the bound a perfect predictor could reach is about 0.36.
 
-Recovery orders with reliability: axes whose observed shifts replicate across rollout halves are the axes the map predicts well. A noisy target caps the cosine a perfect predictor can reach near the square root of the target's reliability, so the injected-name bound is about 0.36; the observed 0.17 recovers about 48% of it, essentially the same fraction as content constraint (51%), marker word (48%), and format (38%).
+Recovery orders with reliability. Axes whose observed shifts replicate across rollout halves are the axes the map predicts well. A noisy target caps the cosine a perfect predictor can reach near the square root of the target's reliability, so the injected-name bound is about 0.36; the observed 0.17 recovers about 48% of it, in the same range as content constraint (51%), marker word (48%), and format (38%).
 
 The low raw cosine is reliability-limited: the shift barely rises above sampling noise even though the name is expressed in 589 of 600 base-value rollouts. A reliability this low also means further map-direction loss on this axis can be neither demonstrated nor ruled out. Query form (reliability 0.60, cosine 0.30) retains substantial headroom; the clearest headroom is on output format, whose 0.36 cosine leaves a 0.59 gap to its 0.95 bound (query form: 0.47).
 
@@ -166,9 +166,9 @@ Plotted: per-pair predicted vs observed shift norms for the single-turn map, one
 
 > **Figure.** *One global gain does not fit all axes.* Tone and marker-word clouds ride the global line; content constraint and query content fall below it (compressed); query form sits above it (over-scaled). The hedging cloud also sits above the line, an informational all-values view only: that axis failed its compliance floor. Filled points are fired-value pairs.
 
-Two axes are compressed with intervals excluding 1: content constraint at 0.84 and query content at 0.80. User description (0.93) and injected name (0.87) sit below 1, intervals spanning it; tone and marker word (both 1.03) ride the global gain; query form over-scales at 1.43, the fired format subset at 1.19 (all format values: 1.02).
+Two axes are compressed with intervals excluding 1: content constraint at 0.84 and query content at 0.80. User description (0.93) and injected name (0.87) sit below 1, intervals spanning it; tone and marker word (both 1.03) match the global slope; query form over-scales at 1.43, the fired format subset at 1.19 (all format values: 1.02).
 
-The distortion is not map-specific: identity pass-through is as compressed on the content axes (0.85, 0.74) and more over-scaled on query form (2.12) and fired format (1.72), so the map partly corrects it. Within content constraint per-value-pair slopes span 0.77 to 1.55: the four under-twenty-words pairs, the largest, most length-coupled shifts, sit at 0.77 to 0.83; excluding them the fired-pair slope is 0.99 (span-mean pooling twin: 0.98); the no-numbers vs no-first-person pair over-scales at 1.55.
+The distortion is not map-specific: the identity baseline is as compressed on the content axes (0.85, 0.74) and more over-scaled on query form (2.12) and fired format (1.72), so the map partly corrects it. Within content constraint per-value-pair slopes span 0.77 to 1.55: the four under-twenty-words pairs, the largest, most length-coupled shifts, sit at 0.77 to 0.83; excluding them the fired-pair slope is 0.99 (span-mean pooling twin: 0.98); the no-numbers vs no-first-person pair over-scales at 1.55.
 
 ### The pair is identifiable among 2,778 candidates, but the map's margin over identity is metric-dependent
 
@@ -178,7 +178,7 @@ Plotted: retrieval accuracy at k = 1, 5, 10 for finding each pair's observed dif
 
 > **Figure.** *Strong retrieval, metric-dependent ranking.* Under cosine the single-turn map leads at top-1 and top-5 (23.7% top-1, median rank 6, chance 0.04%) while identity edges ahead at top-10; under euclidean the identity baseline leads at every depth.
 
-The maps and the identity baseline all identify pairs far above chance, so answer-shift geometry is pair-specific. But the ordering flips with the metric: cosine favors the map at top-1 and top-5 (23.7% vs 21.8% top-1) with identity ahead by top-10 (63.4% vs 60.8%), and euclidean favors identity at every depth (17.1% vs 15.3% top-1), because the map's magnitude miscalibrations (previous section) cost it under a norm-sensitive distance while direction-only comparison rewards it. Retrieval alone cannot arbitrate map vs identity here; the paired per-axis direction gaps, which control the pairing and the metric, are the arbitrating read, and they favor the map on all 8 tested axes.
+The maps and the identity baseline all identify pairs far above chance, so answer-shift geometry is pair-specific. But the ordering flips with the metric: cosine favors the map at top-1 and top-5 (23.7% vs 21.8% top-1) with identity ahead by top-10 (63.4% vs 60.8%), and euclidean favors identity at every depth (17.1% vs 15.3% top-1), plausibly because per-pair norm errors cost the map under a norm-sensitive distance while direction-only comparison rewards it; the aggregate slopes above (as distorted for identity) cannot arbitrate this. Retrieval alone cannot settle map vs identity; the paired per-axis direction gaps, which control pairing and metric, are the deciding read, and they favor the map on all 8 tested axes.
 
 ### A query wording change moves the answer state at paraphrase scale while changing the answer text less than a paraphrase
 
@@ -188,7 +188,7 @@ Plotted: the ratio of flip-induced change to paraphrase-induced change for the t
 
 > **Figure.** *Query form dissociates text from state.* A query-content flip exceeds the paraphrase yardstick in every space (text 2.9, observed 4.2, predicted 2.6); a query-form flip changes answer text less than a paraphrase (0.66) while the state moves at paraphrase scale (observed 0.97, predicted 1.13).
 
-Changing what the question asks moves everything, as expected. Changing only how it is phrased produces answers that read like paraphrases in text space, yet the answer state shifts as much as a real paraphrase, in a direction the map partially predicts (cosine 0.30 vs null 0.08).
+Changing what the question asks moves the answer well past the paraphrase yardstick in every measured space. Changing only how it is phrased produces answers that read like paraphrases in text space, yet the answer state shifts as much as a real paraphrase, in a direction the map partially predicts (cosine 0.30 vs null 0.08).
 
 The map therefore carries some purely formal query information that barely surfaces in the emitted text. The read is preliminary: 36 pairs, a 0.60 reliability, and the battery's largest over-scaling (1.43).
 
@@ -199,4 +199,5 @@ The map therefore carries some purely formal query information that barely surfa
 - Reused map from [#1738](https://eps.superkaiba.com/tasks/1738): `issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt` @ 62b1e8889e1a262501937b0ec6f6022e28b4a7e6 (sha256 `1916bed192f36dfe9dc57a3c712d3ea56d3767199504693c0c0f33bcde27bda4`) — fit: the multi-turn twin at the same layer, used as the map-agreement control; listing verified live at write time.
 
 **Context:** created 2026-08-24 from an interactive design session with the user as a child of [#2215](https://eps.superkaiba.com/tasks/2215); the session's decision record rides the pre-promotion body (snapshotted to `original-body.md`), whose recorded verbatim originating prompt (the user's answer approving agent-generated queries) is `it's fine for you to generate them`. Plan v6 approved 2026-08-24; run, judging, and analysis 2026-08-25; interpretation round 1 folded 2026-08-25; round-2 ensemble revision applied 2026-08-25.
+
 
