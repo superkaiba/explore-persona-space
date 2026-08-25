@@ -101,3 +101,4 @@
 - [vLLM FA3-on-H100 lacks tanh softcap — gemma-2 dies at init](feedback_vllm_fa3_gemma2_softcap_fa2_pin.md) — pin VLLM_FLASH_ATTN_VERSION=2 per-model before LLM(); envs lazily read (#2221)
 - [Adoptable tests: repo-root paths + no live HF fetch](feedback_adoptable_tests_no_worktree_paths_no_network.md) — /tmp evidence suites still need adoption shape; Step 9c runs tests/ fleet-wide (#1491)
 - [Synthetic ridge fixtures: shared map + noise floor](feedback_synthetic_ridge_fixture_edge_lambda.md) — noiseless→low-edge / unrelated→high-edge λ exhausts edge-extension dispositions; probe fixture through the real fit first (#2330)
+- [Global grouped-fold re-alignment: per-cell floors](feedback_global_group_fold_alignment_percell_floor.md) — naive global LPT starves per-cell n_train floors; min-max per-cell greedy + re-assert builder floors (#2378)
