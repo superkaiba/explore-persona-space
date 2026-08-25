@@ -291,7 +291,7 @@ Held-out pooled R² against training-set size for paired ridge and width-8192 ne
 
 > **Figure.** *The neural map keeps gaining where ridge plateaus.* Within one store and one eval pool, ridge rises 0.744 to 0.761 over 50,000-500,000 rows while the width-8192 map rises 0.761 to 0.807; open squares are banked small-n anchors from the other store, diamonds the banked 963,444 apply; identity plus bias sits near −0.90.
 
-![Per-rung neural minus ridge deltas and verdict slope gap versus margin](https://raw.githubusercontent.com/superkaiba/explore-persona-space/75988641cc777f24c2f61fd98d2d78e4c2c9a198/figures/issue_1901/mlp_scaling_dense_delta_companion.png)
+![Companion: per-rung neural-minus-ridge deltas; slope-gap 95% CI band vs the 0.01 margin](https://raw.githubusercontent.com/superkaiba/explore-persona-space/75988641cc777f24c2f61fd98d2d78e4c2c9a198/figures/issue_1901/mlp_scaling_dense_delta_companion.png)
 
 > **Figure.** *Two panels: per-rung paired deltas cross zero near 25,000, and the verdict slope gap clears its margin.* Left: paired neural-minus-ridge R² deltas on 1,000 shared context-bootstrap draws: negative at 5,000 and 10,000, positive from 25,000 on, +0.046 at 500,000; every rung's 95% interval excludes zero. Right: the 50,000-to-500,000 slope-gap bootstrap interval against the 0.01 verdict margin.
 
