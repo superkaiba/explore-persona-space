@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2580,
+  "highest_id": 2581,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12186,6 +12186,13 @@
       "path": "tasks/planning/2580",
       "status": "planning",
       "title": "gotchas.md: MooseFS errno-116 partial install passes uv audit while import fails (probe-by-import + UV_LINK_MODE=copy recipe)"
+    },
+    "2581": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2581",
+      "status": "proposed",
+      "title": "Session-namespace commit-message temp files so git commit -F cannot consume a concurrent session's message"
     },
     "259": {
       "has_clean_result": false,
