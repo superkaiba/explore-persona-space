@@ -43,6 +43,7 @@ import os
 # gotchas.md: vLLM v1 fork-EngineCore silent death — set before any vllm import.
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -112,10 +113,9 @@ def _sha256_text(text: str) -> str:
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1, ensure_ascii=False, sort_keys=True))
-    os.replace(tmp, path)
+    """Atomic JSON write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1, ensure_ascii=False, sort_keys=True))
 
 
 def _read_json(path: Path) -> dict:

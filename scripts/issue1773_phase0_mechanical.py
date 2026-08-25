@@ -31,6 +31,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM discipline)
@@ -189,9 +190,8 @@ def stream_store(args, fid: np.ndarray, committed_activity: np.ndarray) -> dict:
             f"elapsed={time.time() - t0:.0f}s rss={_rss_gb():.1f}GiB"
         )
         if (i + 1) % CKPT_EVERY == 0:
-            tmp = ckpt.parent / f".tmp_{ckpt.name}"
-            np.savez(tmp, **state)
-            os.replace(tmp, ckpt)
+            with atomic_replace(ckpt) as tmp, tmp.open("wb") as fh:
+                np.savez(fh, **state)
             _log(f"[phase0] checkpoint at shard {i + 1}")
 
     # Wiring gate (H1): recomputed activity vs committed npz. FULL run asserts;
@@ -510,9 +510,8 @@ def run_full_dictionary(args, st: dict, com) -> int:
     vocab_str = _vocab_token_strings(tok, w_u.shape[0])
 
     table_path = out_dir / "feature_table.jsonl"
-    tmp = table_path.parent / f".tmp_{table_path.name}"
     n_written = 0
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(table_path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for start, foot in footprint_blocks(w_u, gamma, w_dec, vocab_str, dev):
             for j, fp in enumerate(foot):
                 i = start + j
@@ -562,7 +561,6 @@ def run_full_dictionary(args, st: dict, com) -> int:
                 )
                 n_written += 1
             fh.flush()
-    tmp.replace(table_path)
     assert n_written == n_feat, (n_written, n_feat)
 
     np.savez(
@@ -743,11 +741,9 @@ def main() -> int:
         )
 
     table_path = out_dir / "feature_table.jsonl"
-    tmp = table_path.parent / f".tmp_{table_path.name}"
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(table_path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for r in rows:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    tmp.replace(table_path)
 
     np.savez(
         out_dir / "phase0_arrays.npz",

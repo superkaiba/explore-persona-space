@@ -53,6 +53,7 @@ banked nulls (the pool_rungs convention).
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -60,7 +61,6 @@ load_dotenv()
 import argparse
 import hashlib
 import json
-import os
 import sys
 import time
 from collections import defaultdict
@@ -304,10 +304,8 @@ def run_unit(
         "fingerprint": fingerprint,
         "folds": fold_records,
     }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_name(out_path.stem + ".tmp.json")
-    tmp.write_text(json.dumps(payload, indent=1))
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
     _log(
         f"[pooledtier] unit {cell.key}__{arm} CHECKPOINTED -> {out_path} "
         f"(wall={round(time.time() - t_unit)}s)"
@@ -550,10 +548,8 @@ def cmd_merge(args: argparse.Namespace) -> int:
         "units": units,
         "aggregates": aggregates,
     }
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.out.with_name(args.out.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
-    os.replace(tmp, args.out)
+    with atomic_replace(args.out) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _log(f"[pooledtier] merged -> {args.out} ({len(units)} units)")
     return 0
 

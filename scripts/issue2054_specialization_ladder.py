@@ -26,6 +26,7 @@ orders transformation classes by parameter count, not by strict nesting.
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -499,9 +500,8 @@ def main() -> int:
     }
     args.out_root.mkdir(parents=True, exist_ok=True)
     out_path = args.out_root / "ladder.json"
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
-    tmp.replace(out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _log(f"[specladder] ladder -> {out_path} ({len(rows)} units)")
 
     args.figures_dir.mkdir(parents=True, exist_ok=True)

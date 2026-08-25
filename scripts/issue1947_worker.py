@@ -42,6 +42,7 @@ poller drain contract). ``[phase=done]`` is reserved for a launch WRAPPER
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -131,11 +132,9 @@ SMOKE_EFF_BATCH = 2  # batch 1 x accum 2 -> 4 optimizer steps, rungs {1..4}
 
 
 def _atomic_json(path: Path, payload: dict) -> None:
-    """Atomic JSON write (tmp + os.replace, same filesystem)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=1))
-    os.replace(tmp, path)
+    """Atomic JSON write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=1))
 
 
 def _read_json(path: Path) -> dict:
