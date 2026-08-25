@@ -1,4 +1,6 @@
 # code-reviewer-lean memory index
+- [Dial-change stale-bundle reachability](dial_change_stale_bundle_reachability.md) — presence-only resume vs changed dial discharges when every pre-change value RAISED before the bundle write; else Major (#2544 r1 g4)
+- [Single-tokenizer fixture probe-branch collapse](single_tokenizer_fixture_probe_branch_collapse.md) — one-tokenizer smoke fixture makes tokenizer-probed branches one-sided; check static scheduling covers the other arm + SHA-cited enumeration (#2544 r1 g5)
 - [Loop-var tmp interpolation evades #2336 lint](loopvar_tmp_interpolation_evades_2336_lint.md) — arms E/F exempt post-`.tmp_` interpolations; a loop-variable name is still fixed-per-unit — grep all `.tmp` writers, classify interpolants (#2552 r1 g4)
 - [Size-match resume skip == presence for npz](size_match_resume_skip_npz.md) — resume_skip size probe skips recomputed same-shape npz (byte-identical size, different content); require resume_skip=False after wipe-recompute paths (#2552 r1 g3)
 - [Embedded smoke leg in production chain](feedback_embedded_smoke_leg_production_chain.md) — a production `all` chain running its smoke leg internally defeats dispatcher-level out-root splits; smoke dial must be in the SCRIPT's resume fingerprint (#2546 r1 g2)

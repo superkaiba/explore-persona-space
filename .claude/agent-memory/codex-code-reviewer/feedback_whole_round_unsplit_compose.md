@@ -58,6 +58,15 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    from the round under review) — check each hit's ts against the round's
    commit dates / label before inlining; stale-only hits ⇒ treat as 0 hits
    (single-marker variant, no envelope).
+6c. **Follow the marker's OWN progress-note references, not only the
+   prefix probe (#2544 r1, 2026-08-24):** the 6b probe
+   (`note.startswith('[unit ')`) returns 0 hits on notes headed
+   `Implementation Unit A of 3 COMPLETE ...` — yet the marker explicitly
+   named "Units A/B completion records are epm:progress v10/v11" and the
+   brief's deviations-to-adjudicate (q-window, §9 disk reconcile) lived IN
+   those notes. When the fetched marker names specific `epm:progress v<K>`
+   rows as unit completion records, inline THOSE versions in the
+   UNIT PROGRESS NOTES envelope regardless of the note-head shape.
 6. **Multi-unit rounds: only the FINAL unit posts `epm:results`** (#2168 r1:
    note head "unit 3 of 3 (FINAL)"; units 1-2 posted `[unit k/N]`
    `epm:progress` notes). Two duties, applicable to ANY round whose fetched
