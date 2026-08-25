@@ -43,7 +43,9 @@ def main() -> int:
 
     d._phase_line("poolgf_stage")
     ledger_root = Path(args.ledger_root)
-    d.assert_headroom("poolgf", Path(args.stage_root))
+    # reuse the registered p6_fits headroom row — PHASE_HEADROOM_GB has no
+    # 'poolgf' key and this run stages the same store shape as p6_fits
+    d.assert_headroom("p6_fits", Path(args.stage_root))
     d._git_pull_rebase()
     g2b = json.loads((ledger_root / "g2b_report.json").read_text(encoding="utf-8"))
     survivors = [c for c in cm.ALL_CELLS if c in g2b["survivors"]]
