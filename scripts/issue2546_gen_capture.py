@@ -305,6 +305,14 @@ KINDS_POST = ("cx_last", "cot_mean", "cot_boundary", "ans_mean", "out_mean")
 KINDS_SHORT = ("cx_last", "ans_mean")
 KINDS_T = tuple(f"think_t{int(round(t * 100))}" for t in T_GRID)
 
+# Reliability-capture kinds (P4b, --phase capture-reliability): span-mean
+# targets ONLY, captured at the arm's FROZEN layer subset (the split-half
+# ceiling reads one layer per draw; full-depth per-draw capture would ~10x
+# the rel store for nothing). ans_mean feeds the P5 ceiling; out_mean (cell-C
+# targets) + cot_mean (think block present) are banked alongside.
+REL_KINDS_POST = ("cot_mean", "ans_mean", "out_mean")
+REL_KINDS_SHORT = ("ans_mean", "out_mean")
+
 
 def phase_line(name: str) -> None:
     """Emit a poll_pipeline.py-parseable phase breadcrumb."""
@@ -1271,6 +1279,166 @@ def run_capture_worker(args) -> None:
     sys.exit(0)
 
 
+def reduce_forward_rel(
+    model, capture, batch_rows: list[dict], arm: ArmSpec, post_like: bool
+) -> torch.Tensor:
+    """ONE left-padded forward -> (B, K_rel, n_frozen, H) bf16 CPU tensor.
+
+    Reliability-draw reduce (P4b): span-mean kinds ONLY (REL_KINDS_*), read at
+    the arm's FROZEN layers only — a named deviation from the full-depth main
+    capture (shards carry ``layers_all == frozen``; the P5 reader maps the
+    headline layer BY INDEX into that list). Same left-pad + explicit
+    position_ids + fp32 reduce + finiteness asserts as
+    reduce_forward_batch_2546.
+    """
+    device = model.device
+    kinds = REL_KINDS_POST if post_like else REL_KINDS_SHORT
+    B = len(batch_rows)
+    pad_id = model.config.eos_token_id
+    if isinstance(pad_id, list):
+        pad_id = pad_id[0]
+    max_len = max(int(r["full_ids"].shape[0]) for r in batch_rows)
+    input_ids = torch.full((B, max_len), int(pad_id), dtype=torch.long)
+    attn = torch.zeros((B, max_len), dtype=torch.long)
+    mean_parts = ("cot", "ans", "out") if post_like else ("ans", "out")
+    part_masks = {p: torch.zeros((B, max_len), dtype=torch.bool) for p in mean_parts}
+    for bi, r in enumerate(batch_rows):
+        length = int(r["full_ids"].shape[0])
+        pad = max_len - length  # LEFT-pad: real tokens at [pad, max_len)
+        input_ids[bi, pad:] = r["full_ids"]
+        attn[bi, pad:] = 1
+        for p in mean_parts:
+            s, e = r["spans"][p]
+            part_masks[p][bi, pad + s : pad + e] = True
+    input_ids = input_ids.to(device)
+    attn = attn.to(device)
+    position_ids = (attn.long().cumsum(dim=1) - 1).clamp(min=0).to(device)
+    masks_dev = {p: m.to(device) for p, m in part_masks.items()}
+    with torch.no_grad():
+        _ = model(
+            input_ids=input_ids,
+            attention_mask=attn,
+            position_ids=position_ids,
+            **_logits_to_keep_kwargs(model),
+        )
+    H = arm.hidden
+    per_layer: list[torch.Tensor] = []
+    for li in arm.frozen:
+        hs = capture.latest[li].float()  # (B, T, H) fp32 reduce of the bf16 capture
+        assert hs.shape == (B, max_len, H), (hs.shape, (B, max_len, H))
+        by_name: dict[str, torch.Tensor] = {}
+        for p in mean_parts:
+            m = masks_dev[p].unsqueeze(-1)
+            cnt = masks_dev[p].sum(dim=1).clamp(min=1).unsqueeze(-1)
+            by_name[f"{p}_mean"] = (hs * m).sum(dim=1) / cnt
+        stacked = torch.stack([by_name[k] for k in kinds], dim=1)  # (B, K, H)
+        assert torch.isfinite(stacked).all(), f"non-finite rel capture at layer {li}"
+        per_layer.append(stacked.cpu())
+    capture.latest.clear()
+    full = torch.stack(per_layer, dim=2)  # (B, K, n_frozen, H) fp32 CPU
+    return full.to(torch.bfloat16)
+
+
+def run_capture_rel_worker(args) -> None:
+    """One GPU's reliability-capture slot (P4b): per-draw frozen-layer shards."""
+    work = json.loads(Path(args.work_file).read_text())
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from issue594_extract_context_vectors import LayerCapture
+
+    arm = ARMS[work["arm"]]
+    side = SideSpec(**work["side_spec"])
+    tok = AutoTokenizer.from_pretrained(work["model"], revision=work["revision"])
+    assert_think_pins(tok, side)
+    model = AutoModelForCausalLM.from_pretrained(
+        work["model"], revision=work["revision"], torch_dtype=torch.bfloat16
+    ).to("cuda")
+    model.eval()
+    assert model.config.hidden_size == arm.hidden, (model.config.hidden_size, arm.hidden)
+    assert model.config.num_hidden_layers == arm.n_layers, (
+        model.config.num_hidden_layers,
+        arm.n_layers,
+    )
+    capture = LayerCapture(model, arm.n_layers)
+    built: list[dict] = []
+    metas: list[dict] = []
+    drops: Counter[str] = Counter()
+    for wrow in work["rows"]:
+        row, reason = build_capture_row(tok, wrow, side.post_like)
+        if row is None:
+            drops[reason] += 1
+            continue
+        built.append(row)
+        metas.append(wrow["meta"])
+    kinds = list(REL_KINDS_POST if side.post_like else REL_KINDS_SHORT)
+    stem_dir = Path(work["stem_dir"])
+    stem_dir.mkdir(parents=True, exist_ok=True)
+    n_shards = 0
+    for s0 in range(0, len(built), SHARD_ROWS):
+        chunk = built[s0 : s0 + SHARD_ROWS]
+        chunk_meta = metas[s0 : s0 + SHARD_ROWS]
+        batches = pack_batches(chunk, CAPTURE_BATCH_ROWS, CAPTURE_TOKEN_BUDGET)
+        parts: dict[int, torch.Tensor] = {}
+        t0 = time.time()
+        for bnum, batch in enumerate(batches):
+            f = reduce_forward_rel(model, capture, [chunk[i] for i in batch], arm, side.post_like)
+            for j, i in enumerate(batch):
+                parts[i] = f[j]
+            print(
+                f"[capture-rel] {work['stem']} slot{args.worker_slot} batch "
+                f"{bnum + 1}/{len(batches)} rows={len(batch)} elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+        full = torch.stack([parts[i] for i in range(len(chunk))])
+        shard = {
+            "task": 2546,
+            "arm": arm.arm,
+            "side": side.side,
+            "model": work["model"],
+            "revision": work["revision"],
+            "corpus": work["corpus"],
+            "kinds_full": kinds,
+            "kinds_t": [],
+            # FROZEN subset — the P4b named deviation; the P5 reader maps the
+            # headline layer by INDEX into this list (never absolute).
+            "layers_all": list(arm.frozen),
+            "frozen_layers": list(arm.frozen),
+            "hidden": arm.hidden,
+            "full": full,
+            "tk": None,
+            "row_ids": [r["row_id"] for r in chunk],
+            "meta": chunk_meta,
+            "repro": repro_meta("p4b_capture_rel"),
+        }
+        dest = stem_dir / f"slot{args.worker_slot}.shard{n_shards:03d}.pt"
+        tmp = stem_dir / (dest.name + ".tmp.pt")
+        torch.save(shard, tmp)
+        os.replace(tmp, dest)
+        n_shards += 1
+        print(
+            f"[capture-rel] {work['stem']} slot{args.worker_slot} shard {n_shards} "
+            f"({len(chunk)} rows) -> {dest}",
+            flush=True,
+        )
+    capture.remove()
+    _atomic_write_json(
+        Path(work["summary_file"]),
+        {
+            "slot": args.worker_slot,
+            "stem": work["stem"],
+            "n_captured": len(built),
+            "n_dropped": sum(drops.values()),
+            "drop_reasons": dict(drops),
+            "n_shards": n_shards,
+        },
+    )
+    sys.stdout.flush()
+    sys.stderr.flush()
+    # Heavy-C-extension entrypoints exit explicitly (PyGILState_Release atexit
+    # race turns a COMPLETED phase into rc!=0 under set -euo pipefail; gotchas.md).
+    sys.exit(0)
+
+
 # ---------------------------------------------------------------------------
 # Parent orchestration
 # ---------------------------------------------------------------------------
@@ -1811,6 +1979,221 @@ def compute_necessity(
     return summary
 
 
+def run_capture_reliability(
+    args, arm: ArmSpec, rows_by_corpus: dict[str, list[dict]], out_root: Path, num_workers: int
+) -> dict:
+    """P4b parent: teacher-force the persisted reliability draws and reduce
+    span-mean kinds at the arm's FROZEN layers only.
+
+    Consumes ``rollouts/reliability_a{K}/{side}__{corpus}.jsonl`` (the
+    run_gen_worker ``kind: reliability`` records, REL_DRAWS T=0.6 draws per
+    quota row) and emits ``store/arm{K}/rel_{side}__{corpus}/`` shards — the
+    exact input layout the P5 reliability unit reads
+    (issue2546_fit_cells.run_reliability_unit; #779 split-half ceiling).
+    Only bases with ALL REL_DRAWS draws well-formed are captured (the reader
+    requires 4 complete draws per base); parse/span drop reasons are counted
+    per stem, never silent.
+    """
+    from transformers import AutoTokenizer
+
+    row_index = {r["row_id"]: r for rows in rows_by_corpus.values() for r in rows}
+    rel_dir = out_root / "rollouts" / f"reliability_a{arm.arm}"
+    if not rel_dir.is_dir():
+        raise FileNotFoundError(
+            f"reliability rollouts missing at {rel_dir} — run gen-post/gen-short first"
+        )
+    reports: dict[str, dict] = {}
+    n_stems_captured = 0
+    for side in arm.sides:
+        rel_files = sorted(rel_dir.glob(f"{side.side}__*.jsonl"))
+        if not rel_files:
+            logger.info("[capture-rel] no reliability rollouts for side %s — skipping", side.side)
+            continue
+        revision = resolve_revision(side.model, out_root)
+        mode = effective_parse_mode(side, args.prefill_fallback)
+        tok = AutoTokenizer.from_pretrained(side.model, revision=revision)
+        assert_think_pins(tok, side)
+        for p in rel_files:
+            c = p.name[len(side.side) + 2 : -len(".jsonl")]
+            stem = f"rel_{side.side}__{c}"
+            stem_dir = out_root / "store" / f"arm{arm.arm}" / stem
+            done_p = stem_dir / "_complete.json"
+            fp = gen_fingerprint(arm, side, revision, {"stage": "capture-reliability"})
+            if done_p.is_file() and json.loads(done_p.read_text()).get("fingerprint") == fp:
+                logger.info("[capture-rel] %s: resume-skip", stem)
+                reports[stem] = json.loads(done_p.read_text())["report"]
+                n_stems_captured += 1
+                continue
+            recs = _read_jsonl(p)
+            by_base: dict[str, dict[int, tuple[dict, dict]]] = {}
+            parse_counts: Counter[str] = Counter()
+            for rec in recs:
+                parse = parse_generation(rec, mode)
+                if not parse["well_formed"]:
+                    parse_counts[parse["reason"]] += 1
+                    continue
+                parse_counts["usable"] += 1
+                by_base.setdefault(rec["row_id"], {})[int(rec["draw"])] = (rec, parse)
+            complete = {b: d for b, d in sorted(by_base.items()) if len(d) >= REL_DRAWS}
+            wrows: list[dict] = []
+            for base, draws in complete.items():
+                src = row_index.get(base)
+                assert src is not None, f"{stem}: reliability base {base!r} not in corpora rows"
+                prompt = render_prompt(tok, src["user_text"], side, args.prefill_fallback)
+                for draw in sorted(draws)[:REL_DRAWS]:
+                    rec, parse = draws[draw]
+                    wrows.append(
+                        {
+                            "row_id": f"{base}#d{draw}",
+                            "corpus": c,
+                            "prompt": prompt,
+                            "text": rec["text"],
+                            "n_prompt_tokens": rec["n_prompt_tokens"],
+                            "read_idx": rec["read_idx"],
+                            "cot_char_span": parse["cot_char_span"],
+                            "ans_char_span": parse["ans_char_span"],
+                            "meta": {
+                                "base_row_id": base,
+                                "draw": draw,
+                                "corpus": c,
+                                "side": side.side,
+                                "finish_reason": rec["finish_reason"],
+                                "n_gen_tokens": rec["n_gen_tokens"],
+                            },
+                        }
+                    )
+            if not wrows:
+                # Empty selection fails LOUD in production (#1739 class); a tiny
+                # smoke slice can legitimately yield zero complete 4-draw bases.
+                msg = (
+                    f"[capture-rel] {stem}: 0 complete {REL_DRAWS}-draw bases of "
+                    f"{len(by_base)} (parse: {dict(parse_counts)})"
+                )
+                if args.smoke:
+                    logger.warning("%s — tolerated under --smoke", msg)
+                    reports[stem] = {
+                        "stem": stem,
+                        "n_rel_records": len(recs),
+                        "n_bases": len(by_base),
+                        "n_complete_bases": 0,
+                        "parse_counts": dict(parse_counts),
+                        "skipped": "no_complete_bases",
+                    }
+                    continue
+                raise RuntimeError(msg)
+            work_dir = out_root / "work" / f"caprel_{stem}"
+            work_dir.mkdir(parents=True, exist_ok=True)
+            work_files = []
+            for slot in range(num_workers):
+                slot_rows = [w for w in wrows if _slot_of(w["row_id"], num_workers) == slot]
+                wf = work_dir / f"slot{slot}.json"
+                _atomic_write_json(
+                    wf,
+                    {
+                        "arm": arm.arm,
+                        "model": side.model,
+                        "revision": revision,
+                        "side_spec": asdict(side),
+                        "corpus": c,
+                        "stem": stem,
+                        "stem_dir": str(stem_dir),
+                        "rows": slot_rows,
+                        "summary_file": str(work_dir / f"slot{slot}.summary.json"),
+                    },
+                )
+                work_files.append(wf)
+            base_args = [
+                "--arm",
+                str(arm.arm),
+                "--phase",
+                args.phase,
+                "--out-root",
+                str(out_root),
+                "--worker-kind",
+                "capture-rel",
+            ]
+            if args.smoke:
+                base_args.append("--smoke")
+            if args.prefill_fallback:
+                base_args.append("--prefill-fallback")
+            t0 = time.time()
+            spawn_workers(base_args, work_files, out_root, f"caprel-{stem}")
+            summaries = [
+                json.loads((work_dir / f"slot{s}.summary.json").read_text())
+                for s in range(num_workers)
+            ]
+            n_captured = sum(s["n_captured"] for s in summaries)
+            n_dropped = sum(s["n_dropped"] for s in summaries)
+            drop_reasons = dict(sum((Counter(s["drop_reasons"]) for s in summaries), Counter()))
+            assert n_captured + n_dropped == len(wrows), (stem, n_captured, n_dropped, len(wrows))
+            if n_dropped:
+                # A span-dropped draw orphans its base at the reader (4/4 rule) —
+                # reported, never silent; the ceiling denominator shrinks.
+                logger.warning(
+                    "[capture-rel] %s: %d span-drop rows (%s) — affected bases lose the ceiling",
+                    stem,
+                    n_dropped,
+                    drop_reasons,
+                )
+            if n_captured == 0:
+                msg = f"[capture-rel] {stem}: 0 rows captured (drops: {drop_reasons})"
+                if args.smoke:
+                    logger.warning("%s — tolerated under --smoke", msg)
+                    reports[stem] = {
+                        "stem": stem,
+                        "n_complete_bases": len(complete),
+                        "drop_reasons": drop_reasons,
+                        "skipped": "all_rows_span_dropped",
+                    }
+                    continue
+                raise RuntimeError(msg)
+            report = {
+                "stem": stem,
+                "n_rel_records": len(recs),
+                "n_bases": len(by_base),
+                "n_complete_bases": len(complete),
+                "n_capture_rows": len(wrows),
+                "n_captured": n_captured,
+                "n_dropped": n_dropped,
+                "drop_reasons": drop_reasons,
+                "parse_counts": dict(parse_counts),
+                "frozen_layers": list(arm.frozen),
+                "kinds": list(REL_KINDS_POST if side.post_like else REL_KINDS_SHORT),
+                "wall_s": time.time() - t0,
+            }
+            reports[stem] = report
+            # Per-stem upload-then-free (mirrors run_capture; plan §4.2 P4).
+            if not args.skip_upload:
+                dest = f"{STORE_PREFIX}/arm{arm.arm}/{stem}"
+                if args.smoke:
+                    dest = f"{STORE_PREFIX}/smoke_arm{arm.arm}/{stem}"
+                t_up = time.time()
+                res = _upload(stem_dir, DEFAULT_DATASET_REPO, "dataset", dest, raise_on_error=True)
+                assert res, f"rel store upload returned empty result for {dest}"
+                report["upload_wall_s"] = time.time() - t_up
+                if not args.smoke and args.phase == "capture-reliability":
+                    shard_files = sorted(stem_dir.glob("slot*.shard*.pt"))
+                    for f in shard_files:
+                        f.unlink()
+                    logger.info(
+                        "[capture-rel] %s: freed %d local shards post-upload",
+                        stem,
+                        len(shard_files),
+                    )
+            _atomic_write_json(
+                done_p,
+                {"fingerprint": fp, "report": report, "repro": repro_meta("p4b_capture_rel")},
+            )
+            n_stems_captured += 1
+            print(f"[capture-rel] {stem}: complete ({n_captured} rows)", flush=True)
+    if n_stems_captured == 0 and not args.smoke:
+        raise RuntimeError(
+            f"capture-reliability: no rel stems captured for arm {arm.arm} "
+            f"(reliability rollouts present under {rel_dir}?)"
+        )
+    return {"reports": reports}
+
+
 # ---------------------------------------------------------------------------
 # Phase drivers
 # ---------------------------------------------------------------------------
@@ -1907,6 +2290,9 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
         gen_reports[side.side] = gate_report(gsm, side.cap)
         gen_reports[side.side]["all_corpora"] = gate_report(parses, side.cap)
     cap_res = run_capture(args, arm, rows, out_root, num_workers=1)
+    # P4b rehearsal on the smoke's own reliability draws (post side, rel_total=8):
+    # exercises the full capture-reliability path pod-side (informational, no gate).
+    rel_cap = run_capture_reliability(args, arm, rows, out_root, num_workers=1)
     for stage in [s.stage for s in sides] + [f"reliability_a{arm.arm}"]:
         upload_stage(out_root, stage, args.skip_upload, smoke=True)
 
@@ -1972,6 +2358,7 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
         "gates": verdicts,
         "gen": gen_reports,
         "capture": cap_res["reports"],
+        "capture_rel": rel_cap["reports"],
         "fallback_available": fallback,
         "rc": rc,
         "repro": repro_meta("p1_smoke"),
@@ -2045,6 +2432,8 @@ def main(argv: list[str] | None = None) -> int:
             run_gen_worker(args)
         elif args.worker_kind == "capture":
             run_capture_worker(args)
+        elif args.worker_kind == "capture-rel":
+            run_capture_rel_worker(args)
         raise SystemExit(f"unknown --worker-kind {args.worker_kind!r}")
 
     arm = ARMS[args.arm]
@@ -2089,6 +2478,14 @@ def main(argv: list[str] | None = None) -> int:
         upload_stage(out_root, side.stage, args.skip_upload, smoke=bool(args.smoke))
         upload_stage(out_root, f"reliability_a{arm.arm}", args.skip_upload, smoke=bool(args.smoke))
         upload_stage(out_root, f"regen16k_a{arm.arm}", args.skip_upload, smoke=bool(args.smoke))
+        return 0
+    if args.phase == "capture-reliability":
+        phase_line("p4b_capture_rel_rig")
+        res = run_capture_reliability(args, arm, rows, out_root, num_workers)
+        _atomic_write_json(
+            out_root / "out" / "reports" / f"capture_rel_a{arm.arm}.json",
+            {"reports": res["reports"], "repro": repro_meta("p4b_capture_rel")},
+        )
         return 0
     if args.phase == "capture":
         phase_line("p4_capture_rig")
@@ -2212,7 +2609,7 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--phase",
         default="smoke",
-        choices=("smoke", "pilot", "gen-post", "gen-short", "capture"),
+        choices=("smoke", "pilot", "gen-post", "gen-short", "capture", "capture-reliability"),
         help="dispatcher contract: absent --phase + --smoke = the P1 rig smoke",
     )
     ap.add_argument("--out-root", default="/workspace/issue2546")
@@ -2236,7 +2633,7 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--worker-kind",
         default="gen",
-        choices=("gen", "capture"),
+        choices=("gen", "capture", "capture-rel"),
         help="internal: worker entrypoint kind",
     )
     ap.add_argument("--work-file", default=None, help="internal: worker worklist JSON")

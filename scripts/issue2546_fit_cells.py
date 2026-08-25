@@ -324,11 +324,22 @@ def build_fitcache(
         files = _shard_files(shard_dir)
         fulls, tks, row_ids, metas = [], [], [], []
         kinds_full: list[str] = []
+        layers_all: list[int] | None = None
         for f in files:
             sh = _load_shard(f)
             assert int(sh["arm"]) == prof.arm, (stem, sh["arm"], prof.arm)
             assert int(sh["hidden"]) == prof.hidden, (stem, sh["hidden"], prof.hidden)
-            assert len(sh["layers_all"]) == prof.n_layers, (stem, len(sh["layers_all"]))
+            sh_layers = [int(v) for v in sh["layers_all"]]
+            if stem.startswith("rel_"):
+                # P4b reliability stems carry the FROZEN layer subset only
+                # (issue2546_gen_capture --phase capture-reliability; named
+                # deviation — readers map the headline layer BY INDEX).
+                assert sh_layers == list(prof.frozen), (stem, sh_layers, prof.frozen)
+            else:
+                assert len(sh_layers) == prof.n_layers, (stem, len(sh_layers))
+            if layers_all is None:
+                layers_all = sh_layers
+            assert sh_layers == layers_all, (stem, f.name, sh_layers, layers_all)
             kinds_full = list(sh["kinds_full"])
             fulls.append(sh["full"])
             if sh.get("tk") is not None:
@@ -351,6 +362,7 @@ def build_fitcache(
                 "meta": metas,
                 "kinds_full": kinds_full,
                 "has_tk": bool(tks),
+                "layers_all": layers_all,
                 "n_layers": prof.n_layers,
                 "hidden": prof.hidden,
             },
@@ -383,6 +395,9 @@ class StemCache:
         self.meta: list[dict] = rows["meta"]
         self.kinds: list[str] = rows["kinds_full"]
         self.has_tk: bool = rows["has_tk"]
+        # Layer ids of the tensor's L axis (None on legacy caches = full range;
+        # rel_ stems carry the FROZEN subset — index-map, never absolute).
+        self.layers: list[int] | None = rows.get("layers_all")
         self.pos = {r: i for i, r in enumerate(self.row_ids)}
 
     def kind_rows(self, kind: str, row_ids: list[str]) -> np.ndarray:
@@ -1483,8 +1498,9 @@ def run_ood_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict, smoke: b
 
 def run_reliability_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict) -> dict:
     """Split-half (2/2) target consistency per stratum (#779 convention) from
-    reliability capture stems ``rel_{side}__{corpus}``; LOUD status artifact
-    when the stems are absent (Unit 2's rig does not yet capture them)."""
+    reliability capture stems ``rel_{side}__{corpus}`` (the P4b
+    capture-reliability leg's frozen-layer per-draw shards); LOUD status
+    artifact when the stems are absent (P4b not yet run)."""
     rel_stems = caches.get(f"rel_{prof.post_side}", {})
     if not rel_stems:
         return {
@@ -1494,9 +1510,10 @@ def run_reliability_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict) 
             "expected_stems": f"store/arm{prof.arm}/rel_{prof.post_side}__{{corpus}}",
             "note": (
                 "reliability T=0.6 draws are persisted as rollout TEXT only "
-                f"(rollouts/reliability_a{prof.arm}); activation capture of the 4 draws "
-                "is required for the split-half target-consistency ceiling — "
-                "cell JSONs carry ceiling_status=missing_reliability_capture until it lands"
+                f"(rollouts/reliability_a{prof.arm}); run issue2546_gen_capture.py "
+                "--phase capture-reliability (P4b) to teacher-force the draws into "
+                "frozen-layer rel_ stems — cell JSONs carry "
+                "ceiling_status=missing_reliability_capture until it lands"
             ),
         }
     out: dict[str, dict] = {}
@@ -1515,7 +1532,14 @@ def run_reliability_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict) 
             if not complete:
                 continue
             ans = torch.load(cache.dir / "ans_mean.pt", map_location="cpu", weights_only=True)
-            hlv = prof.headline
+            layers = getattr(cache, "layers", None)
+            if layers:
+                # P4b rel stems carry the FROZEN subset — map the headline layer
+                # BY INDEX into the stem's own layer list (never absolute).
+                assert prof.headline in layers, (corpus, layers, prof.headline)
+                hlv = layers.index(prof.headline)
+            else:  # legacy full-depth cache without the layers sidecar
+                hlv = prof.headline
             for _base, draws in sorted(complete.items()):
                 idx = [draws[k] for k in sorted(draws)[:4]]
                 a = ans[idx][:, hlv, :].to(torch.float32).numpy()
@@ -1784,6 +1808,45 @@ def _selftest_write_stem(
     torch.save(shard, stem_dir / "slot0.shard000.pt")
 
 
+def _selftest_write_rel_stem(
+    root: Path, arm: int, side: str, corpus: str, base_ids: list[str], prof: LayerProfile
+) -> None:
+    """Frozen-layer per-draw reliability shard (the P4b producer's exact schema)."""
+    stem_dir = root / "store" / f"arm{arm}" / f"rel_{side}__{corpus}"
+    stem_dir.mkdir(parents=True, exist_ok=True)
+    kinds = list(g25.REL_KINDS_POST)
+    n_f = len(prof.frozen)
+    rng = np.random.default_rng(zlib.crc32(f"rel:{side}:{corpus}".encode()))
+    row_ids: list[str] = []
+    metas: list[dict] = []
+    fulls: list[np.ndarray] = []
+    for rid in base_ids:
+        base_vec = rng.standard_normal((len(kinds), n_f, prof.hidden)).astype(np.float32)
+        for draw in range(4):
+            fulls.append(base_vec + 0.01 * rng.standard_normal(base_vec.shape).astype(np.float32))
+            row_ids.append(f"{rid}#d{draw}")
+            metas.append({"base_row_id": rid, "draw": draw, "corpus": corpus, "side": side})
+    shard = {
+        "task": TASK,
+        "arm": arm,
+        "side": side,
+        "corpus": corpus,
+        "model": "selftest",
+        "revision": "selftest",
+        "kinds_full": kinds,
+        "kinds_t": [],
+        "layers_all": list(prof.frozen),
+        "frozen_layers": list(prof.frozen),
+        "hidden": prof.hidden,
+        "full": torch.as_tensor(np.stack(fulls)).to(torch.bfloat16),
+        "tk": None,
+        "row_ids": row_ids,
+        "meta": metas,
+        "repro": {"phase": "selftest"},
+    }
+    torch.save(shard, stem_dir / "slot0.shard000.pt")
+
+
 def run_selftest() -> int:
     import tempfile
 
@@ -1887,7 +1950,67 @@ def run_selftest() -> int:
         assert set(lad["tiers_r2"]) == set(LADDER_TIER_NAMES)
         rel = json.loads((root / "out" / "reliability" / "reliability__a1.json").read_text())
         assert rel["status"] == "missing_reliability_capture"
-        print("[selftest] PASS: loader, set-check, sweep unit, traj unit, content hits, band")
+        # P4b rel stems land -> the SAME unit computes real per-stratum ceilings
+        # (frozen-layer shards through the REAL build_fitcache rel_ branch).
+        rel_bases: dict[str, list[str]] = {}
+        for stratum in STRATA:
+            for rid in rowsets["strata"][stratum][:5]:
+                rel_bases.setdefault(rid.rsplit("-", 1)[0], []).append(rid)
+        for corpus, bases in sorted(rel_bases.items()):
+            _selftest_write_rel_stem(root, 1, "post", corpus, bases, prof)
+        build_fitcache(root, prof, smoke=True, offline=True)  # builds only the new rel stems
+        caches2 = load_caches(root, prof)
+        rel_unit = next(u for u in units if u.kind == "reliability")
+        rel2 = run_reliability_unit(rel_unit, prof, caches2, rowsets)
+        assert rel2["status"] == "ok", rel2
+        for stratum in STRATA:
+            st = rel2["per_stratum"][stratum]
+            assert st["status"] == "ok", (stratum, st)
+            assert st["split_half_r2"] > 0.8, (stratum, st)
+            assert 0.8 < st["ceiling_spearman_brown"] <= 1.0 + 1e-9, (stratum, st)
+        # Frozen-SUBSET index mapping (fails pre-fix): headline layer 1 lives at
+        # INDEX 0 of a [1, 2] layers list; slot 1 (absolute-index read) holds
+        # fresh per-draw garbage, so absolute indexing reads r ~ 0.
+        sub_dir = root / "fitcache_sub" / "rel_post__gsm8k_train"
+        sub_dir.mkdir(parents=True, exist_ok=True)
+        sub_bases = [r for r in rowsets["strata"]["does"] if r.startswith("gsm8k_train")][:5]
+        assert len(sub_bases) >= 3, sub_bases
+        rng_sub = np.random.default_rng(7)
+        sub_ids: list[str] = []
+        sub_meta: list[dict] = []
+        sub_rows: list[np.ndarray] = []
+        for rid in sub_bases:
+            v = rng_sub.standard_normal(prof.hidden).astype(np.float32)
+            for draw in range(4):
+                sig = v + 0.01 * rng_sub.standard_normal(prof.hidden).astype(np.float32)
+                junk = rng_sub.standard_normal(prof.hidden).astype(np.float32)
+                sub_rows.append(np.stack([sig, junk]))  # L axis = layers [1, 2]
+                sub_ids.append(f"{rid}#d{draw}")
+                sub_meta.append({"base_row_id": rid, "draw": draw})
+        torch.save(torch.as_tensor(np.stack(sub_rows)), sub_dir / "ans_mean.pt")
+        (sub_dir / "rows.json").write_text(
+            json.dumps(
+                {
+                    "stem": "rel_post__gsm8k_train",
+                    "row_ids": sub_ids,
+                    "meta": sub_meta,
+                    "kinds_full": ["ans_mean"],
+                    "has_tk": False,
+                    "layers_all": [1, 2],
+                    "n_layers": prof.n_layers,
+                    "hidden": prof.hidden,
+                }
+            )
+        )
+        rel3 = run_reliability_unit(
+            rel_unit, prof, {"rel_post": {"gsm8k_train": StemCache(sub_dir)}}, rowsets
+        )
+        st3 = rel3["per_stratum"]["does"]
+        assert st3["status"] == "ok" and st3["split_half_r2"] > 0.8, st3
+        print(
+            "[selftest] PASS: loader, set-check, sweep unit, traj unit, content hits, "
+            "band, reliability ceiling (frozen-subset index mapping)"
+        )
     return 0
 
 

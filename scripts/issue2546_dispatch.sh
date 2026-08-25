@@ -4,13 +4,15 @@
 #
 # Usage:
 #   bash scripts/issue2546_dispatch.sh --arm {1,2,3} [all|p1_smoke|p2a_pilot|p2_gen_post|
-#                                                     p3_gen_short|p4_capture|ge_gate|p5_fits]
-#                                                    [--smoke]
+#                                                     p3_gen_short|p4_capture|p4b_capture_rel|
+#                                                     ge_gate|p5_fits] [--smoke]
 #
 # Phase chain (`all`, production): p1_smoke -> (arm 1 only) p2a_pilot -> p2_gen_post ->
-# p3_gen_short -> p4_capture -> ge_gate (G-E, blocking) -> p5_fits -> results sentinel ->
-# the single terminal `[phase=done]` line. Under `--smoke` the `all` chain runs p1_smoke
-# only (tiny rehearsal; smoke out-root; kind epm:smoke-result), then the terminal line.
+# p3_gen_short -> p4_capture -> p4b_capture_rel (reliability-draw frozen-layer capture,
+# feeds the P5 split-half ceiling) -> ge_gate (G-E, blocking) -> p5_fits -> results
+# sentinel -> the single terminal `[phase=done]` line. Under `--smoke` the `all` chain
+# runs p1_smoke only (tiny rehearsal; smoke out-root; kind epm:smoke-result; the P1 rig
+# smoke exercises the capture-reliability leg in-script), then the terminal line.
 #
 # Phase-script CLI contract (units 2/3 implement these entrypoints; keep in sync):
 #   scripts/issue2546_gen_capture.py --arm K [--smoke] [--phase pilot|gen-post|gen-short|capture]
@@ -50,7 +52,8 @@ PHASE_ARG="all"
 KEY_PHASE=""
 usage() {
     echo "usage: bash scripts/issue2546_dispatch.sh --arm {1,2,3} [PHASE] [--smoke]" >&2
-    echo "  PHASE in: all p1_smoke p2a_pilot p2_gen_post p3_gen_short p4_capture ge_gate p5_fits" >&2
+    echo "  PHASE in: all p1_smoke p2a_pilot p2_gen_post p3_gen_short p4_capture" >&2
+    echo "            p4b_capture_rel ge_gate p5_fits" >&2
     exit 2
 }
 while [ $# -gt 0 ]; do
@@ -63,7 +66,7 @@ while [ $# -gt 0 ]; do
         SMOKE="1"
         shift
         ;;
-    all | p1_smoke | p2a_pilot | p2_gen_post | p3_gen_short | p4_capture | ge_gate | p5_fits)
+    all | p1_smoke | p2a_pilot | p2_gen_post | p3_gen_short | p4_capture | p4b_capture_rel | ge_gate | p5_fits)
         PHASE_ARG="$1"
         shift
         ;;
@@ -119,6 +122,9 @@ else
     NEED_GB_CAPTURE="${EPS_NEED_GB_CAPTURE:-65}"
 fi
 NEED_GB_FITS="${EPS_NEED_GB_FITS:-8}"
+# P4b rel store per arm: ~4 draws x quota rows x 3 kinds x 3 layers bf16 ~ <1 GB
+# in-flight (per-stem upload-then-free); 4 GB covers headroom generously.
+NEED_GB_CAPREL="${EPS_NEED_GB_CAPREL:-4}"
 if [ -n "$SMOKE" ]; then
     # Gate-calibration parity (#1345 class): production-sized disk floors would
     # spuriously kill the tiny smoke leg; smoke floors cover the smoke footprint only.
@@ -126,6 +132,7 @@ if [ -n "$SMOKE" ]; then
     NEED_GB_SHORT=2
     NEED_GB_CAPTURE=5
     NEED_GB_FITS=2
+    NEED_GB_CAPREL=2
 fi
 
 echo "[dispatch2546] arm=$ARM phase=$PHASE_ARG smoke=${SMOKE:-0} ngpu=$NGPU out_root=$OUT_ROOT"
@@ -235,6 +242,17 @@ phase_p4_capture() {
         --out-root "$OUT_ROOT" ${SMOKE:+--smoke}
     emit_signal "epm:progress" "capture-a$ARM" "p4_capture" "false" \
         "arm $ARM capture complete (per-corpus upload-then-free; store verified-uploaded); out_root=$OUT_ROOT"
+}
+
+phase_p4b_capture_rel() {
+    # P4b (U4): teacher-force the persisted reliability-draw TEXT at the arm's
+    # FROZEN layer subset only (per-draw rel_ stems; feeds run_reliability_unit).
+    echo "[phase=p4b_capture_rel]"
+    assert_headroom p4b_capture_rel "$NEED_GB_CAPREL"
+    uv run python scripts/issue2546_gen_capture.py --arm "$ARM" --phase capture-reliability \
+        --out-root "$OUT_ROOT" ${SMOKE:+--smoke}
+    emit_signal "epm:progress" "capture-rel-a$ARM" "p4b_capture_rel" "false" \
+        "arm $ARM reliability-draw capture complete (frozen-layer per-draw rel_ stems uploaded); out_root=$OUT_ROOT"
 }
 
 phase_ge_gate() {
@@ -354,13 +372,14 @@ all)
         run_phase p2_gen_post
         run_phase p3_gen_short
         run_phase p4_capture
+        run_phase p4b_capture_rel
         run_phase ge_gate
         run_phase p5_fits
     fi
     write_results_sentinel
     echo "[phase=done]"
     ;;
-p1_smoke | p2a_pilot | p2_gen_post | p3_gen_short | p4_capture | ge_gate | p5_fits)
+p1_smoke | p2a_pilot | p2_gen_post | p3_gen_short | p4_capture | p4b_capture_rel | ge_gate | p5_fits)
     run_phase "$PHASE_ARG"
     echo "[dispatch2546] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
