@@ -11,8 +11,9 @@ runner (model-default last-token pooling), L2-normalizes (float64 divide,
 fp16 storage), and uploads per-draw + per-context-mean npz stores to
 ``issue2564_minpair/analysis_tensors/embeddings_qwen3_8b/``. Chunked
 (default 2,500 → 4 chunks over 9,840 rows) with per-chunk atomic npz
-checkpoints (``<stem>.tmp.npz`` + ``os.replace`` — ``np.savez`` appends
-``.npz``) and a fingerprint-gated resume keyed on generating parameters +
+checkpoints (``atomic_io.atomic_replace`` process-unique temps, #2336;
+``np.savez`` gets an OPEN handle — it appends ``.npz`` to path-named
+non-.npz targets) and a fingerprint-gated resume keyed on generating parameters +
 the file-read row texts (bit-exact inputs — safe to hash). The FIRST
 COMPUTED chunk's elapsed drives a pilot gate: projected wall >
 ``--pilot-ceiling-h`` (default 2.0 h, plan §9 PC ceiling) ⇒ report JSON +
@@ -63,6 +64,7 @@ os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 import numpy as np  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue2564 import bank2564 as BK  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
@@ -91,11 +93,9 @@ def log(msg: str) -> None:
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    """Atomic JSON write (tmp + os.replace) — never a torn sentinel."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, sort_keys=True))
-    os.replace(tmp, path)
+    """Atomic JSON write via the process-unique-temp helper (#2336)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2, sort_keys=True))
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -267,10 +267,11 @@ def embed_rows(
             arr = np.array([r.outputs.embedding for r in res], dtype=np.float32)
             assert arr.shape == (hi - lo, EMBED_DIM), arr.shape
             elapsed = time.monotonic() - t0
-            # np.savez appends .npz to non-.npz names — tmp keeps the suffix (#1092)
-            tmp = chunks_dir / f"chunk_{k:03d}.tmp.npz"
-            np.savez(tmp, emb=arr.astype(np.float16), lo=lo, hi=hi, fp=fp)
-            os.replace(tmp, ck_path)
+            # Process-unique atomic write (#2336). np.savez appends .npz to
+            # path-named non-.npz targets, so hand it an OPEN handle (#1092).
+            with atomic_replace(ck_path) as tmp:
+                with open(tmp, "wb") as fh:
+                    np.savez(fh, emb=arr.astype(np.float16), lo=lo, hi=hi, fp=fp)
             out[lo:hi] = arr
             log(
                 f"[pc_embed] unit {k + 1}/{n_chunks} chunk_{k:03d} rows={hi - lo} "
