@@ -2244,7 +2244,14 @@ def upload_model(
     quota). ARMING CONTRACT: safe ONLY for flows that consume this function's
     returned URL or read the pointer/deviation records; launchers that verify
     canonical paths EXTERNALLY must not arm it (see
-    ``.claude/rules/upload-policy.md`` § Proactive detection).
+    ``.claude/rules/upload-policy.md`` § Proactive detection). Since #2578 the
+    external gate (``scripts/verify_uploads.py``) can verify rerouted runs
+    too: it discovers the pointer breadcrumb on the canonical repo and accepts
+    ``--hf-data-repo`` / ``EPM_<N>_DATA_WRITE_REPO`` as additive search-set
+    extensions. The contract still binds for any launcher whose verification
+    checks canonical paths WITHOUT those lanes (or whose reroute bypasses this
+    function and writes no pointer — the ``EPM_<N>_DATA_WRITE_REPO``
+    direct-write shape, where the env/flag lanes are load-bearing).
 
     Args:
         model_path: Local path to the model directory (adapter dir by project

@@ -322,26 +322,38 @@ _FAKE_SHA = "0123abcd" * 5  # the pinned revision the fake resolver hands out
 def _fetch_counting_fakes(monkeypatch, entries, resolved_sizes=None, fetch_rows=1):
     """Install signature-mirroring fakes for the four HF seams; return the
     (fetch_calls, probe_calls) counters. Every seam fake asserts it received
-    the pinned revision (#2148 round 2), so all HF-mode tests double as
-    revision-threading coverage at the seam boundary."""
+    the pinned revision (#2148 round 2) for the default data repo (#2578:
+    the seams are repo-threaded; these tests run the singleton default
+    search set), so all HF-mode tests double as revision-threading coverage
+    at the seam boundary."""
     fetch_calls: list[str] = []
     probe_calls: list[list[str]] = []
+    _REPO = verify_uploads.HF_DATA_REPO
 
-    def fake_resolve_revision() -> str:
+    def fake_resolve_revision(repo: str) -> str:
+        assert repo == _REPO, "the singleton default set resolves the default repo"
         return _FAKE_SHA
 
     def fake_hf_entries(
-        hf_prefixes: tuple[str, ...], *, revision: str | None
-    ) -> list[tuple[str, int | None]]:
-        assert revision == _FAKE_SHA, "the listing must read the pinned revision"
-        return list(entries)
+        hf_prefixes: tuple[str, ...],
+        data_repos: tuple[str, ...],
+        *,
+        revisions: dict[str, str | None],
+    ) -> list[tuple[str, str, int | None]]:
+        assert data_repos == (_REPO,), "the singleton default set walks the default repo"
+        assert revisions.get(_REPO) == _FAKE_SHA, "the listing must read the pinned revision"
+        return [(_REPO, path, size) for path, size in entries]
 
-    def fake_resolve_sizes(paths: list[str], *, revision: str | None) -> dict[str, int | None]:
+    def fake_resolve_sizes(
+        repo: str, paths: list[str], *, revision: str | None
+    ) -> dict[str, int | None]:
+        assert repo == _REPO, "the singleton default set probes the default repo"
         assert revision == _FAKE_SHA, "the size probe must read the pinned revision"
         probe_calls.append(list(paths))
         return dict(resolved_sizes or {})
 
-    def fake_fetch(path_in_repo: str, target: Path, *, revision: str | None) -> Path:
+    def fake_fetch(repo: str, path_in_repo: str, target: Path, *, revision: str | None) -> Path:
+        assert repo == _REPO, "the singleton default set fetches from the default repo"
         assert revision == _FAKE_SHA, "the staged fetch must read the pinned revision"
         fetch_calls.append(path_in_repo)
         rows = [_row("c0", k) for k in range(fetch_rows)]
@@ -535,11 +547,14 @@ def test_hf_entries_walks_each_distinct_prefix_once(monkeypatch):
         return [(f"{path_in_repo}/row_index_shard00.jsonl", 100)]
 
     monkeypatch.setattr(hub, "list_repo_entries_complete", fake_walk)
+    repo = verify_uploads.HF_DATA_REPO
     listed = verify_uploads._row_index_hf_entries(
-        ("issueX/jobA", "issueX/jobA/", "issueX/jobA"), revision="ab12"
+        ("issueX/jobA", "issueX/jobA/", "issueX/jobA"),
+        (repo,),
+        revisions={repo: "ab12"},
     )
     assert walks == [("issueX/jobA", "ab12")], "one walk per DISTINCT canonicalized prefix"
-    assert listed == [("issueX/jobA/row_index_shard00.jsonl", 100)]
+    assert listed == [(repo, "issueX/jobA/row_index_shard00.jsonl", 100)]
 
 
 # ---------------------------------------------------------------------------
@@ -798,7 +813,7 @@ def test_hf_entries_raises_on_empty_prefix():
     direct caller bypassing the check-entry validation still fails loud,
     before any walk)."""
     with pytest.raises(ValueError, match="empty prefix"):
-        verify_uploads._row_index_hf_entries(("/",), revision=None)
+        verify_uploads._row_index_hf_entries(("/",), (verify_uploads.HF_DATA_REPO,), revisions={})
 
 
 # ---------------------------------------------------------------------------
@@ -817,14 +832,19 @@ def test_duplicate_unknown_known_sizes_coalesce_both_orders(monkeypatch):
     row-index-duplicate-conflict. A true known-size disagreement
     (100 vs 101) still ERRORs."""
     path = "issueX/jobA/row_index_shard00.jsonl"
+    repo = verify_uploads.HF_DATA_REPO
     for pair in ([(path, None), (path, 100)], [(path, 100), (path, None)]):
         monkeypatch.setattr(
             verify_uploads,
             "_row_index_hf_entries",
-            lambda prefixes, *, revision, _pair=pair: list(_pair),
+            lambda prefixes, data_repos, *, revisions, _pair=pair: [(repo, p, s) for p, s in _pair],
         )
         entries = verify_uploads._row_index_entries(
-            ("issueX/jobA",), None, verify_uploads.ROW_INDEX_DEFAULT_GLOB, revision="ab12"
+            ("issueX/jobA",),
+            None,
+            verify_uploads.ROW_INDEX_DEFAULT_GLOB,
+            data_repos=(repo,),
+            revisions={repo: "ab12"},
         )
         assert isinstance(entries, list), (pair, entries)
         assert len(entries) == 1, (pair, entries)
@@ -833,10 +853,14 @@ def test_duplicate_unknown_known_sizes_coalesce_both_orders(monkeypatch):
     monkeypatch.setattr(
         verify_uploads,
         "_row_index_hf_entries",
-        lambda prefixes, *, revision: [(path, 100), (path, 101)],
+        lambda prefixes, data_repos, *, revisions: [(repo, path, 100), (repo, path, 101)],
     )
     res = verify_uploads._row_index_entries(
-        ("issueX/jobA",), None, verify_uploads.ROW_INDEX_DEFAULT_GLOB, revision="ab12"
+        ("issueX/jobA",),
+        None,
+        verify_uploads.ROW_INDEX_DEFAULT_GLOB,
+        data_repos=(repo,),
+        revisions={repo: "ab12"},
     )
     assert isinstance(res, dict)
     assert "row-index-duplicate-conflict" in res["detail"]
@@ -1092,7 +1116,10 @@ def test_pre_repair_shards_fail_and_live_store_passes(tmp_path):
         for i in range(n_shards):
             name = f"row_index_shard{i:02d}.jsonl"
             verify_uploads._row_index_fetch(
-                f"{_STORE}/{job}/{name}", tmp_path / job / name, revision=None
+                verify_uploads.HF_DATA_REPO,
+                f"{_STORE}/{job}/{name}",
+                tmp_path / job / name,
+                revision=None,
             )
     fail_res = verify_uploads.check_realized_row_counts(
         expected_rows=dict(_EXPECTED),
@@ -1134,7 +1161,9 @@ def test_resolve_sizes_live_body():
     body (ONE batched `get_paths_info` POST) against a known live index file
     and pins the size the scoped tree walk reports for it."""
     path = f"{_STORE}/greedy_evil_toxicchat/row_index_shard00.jsonl"
-    sizes = verify_uploads._row_index_resolve_sizes([path], revision=None)
+    sizes = verify_uploads._row_index_resolve_sizes(
+        verify_uploads.HF_DATA_REPO, [path], revision=None
+    )
     assert sizes.get(path) == 21756
 
 
@@ -1146,10 +1175,14 @@ def test_attribution_replay_per_prefix():
     v3's unsatisfiable PASS direction went unnoticed for two rounds)."""
     labels = tuple(_EXPECTED)
     for job in _EXPECTED:
-        listed = verify_uploads._row_index_hf_entries((f"{_STORE}/{job}",), revision=None)
+        listed = verify_uploads._row_index_hf_entries(
+            (f"{_STORE}/{job}",),
+            (verify_uploads.HF_DATA_REPO,),
+            revisions={verify_uploads.HF_DATA_REPO: None},
+        )
         matched = [
             p
-            for p, _size in listed
+            for _repo, p, _size in listed
             if verify_uploads.fnmatch.fnmatch(
                 p.rsplit("/", 1)[-1], verify_uploads.ROW_INDEX_DEFAULT_GLOB
             )

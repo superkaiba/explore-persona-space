@@ -260,8 +260,19 @@ Then run the mechanical name-set diff:
 uv run python scripts/verify_uploads.py --issue <N> \
   --outroot-listing /tmp/issue-<N>-outroot.txt \
   --hf-prefix <each HF prefix the run wrote> \
+  [--hf-data-repo <org/name>[,<org/name>...]] \
   [--outroot-exempt <glob>] [--discarded-name <plan §10 discard>] --json
 ```
+
+**Overflow-routed runs (#2578):** `--hf-data-repo` (repeatable; comma-list
+accepted) EXTENDS the data-repo search set — union semantics: the default
+data repo and the issue's `EPM_<N>_DATA_WRITE_REPO` env repo are always
+searched too, a repo is never removed, and an `OVERFLOW_POINTER.json`
+found on the canonical repo under a supplied prefix auto-extends the set
+(fail-loud on a broken pointer). The report header's `**HF repos
+searched:**` line names every repo + source; carry it into the Step-5
+note's `repos=` line. `--hf-model-repo` is the model-side single override
+(a reproducibility-card `hf_model_repo` still wins).
 
 `check_outroot_residue` computes `residue = names(disk) − (names(HF
 prefixes ∪ issue-scoped git trees) ∪ declared_discards ∪ exemptions)` —
@@ -363,9 +374,16 @@ uv run python scripts/verify_uploads.py --issue <N> \
   --expected-rows <label>=<N_rows> [...] \
   --row-index-hf-prefix <per-label prefix> [...] \
   --row-index-distinct-key <unit_field,rollout_field> \
+  [--hf-data-repo <org/name>[,<org/name>...]] \
   [--self-reported-rows <label>=<producer count>] \
   [--realized-rows-exempt <label>=<reason>] --json
 ```
+
+Overflow-routed stores (#2578): the same `--hf-data-repo` union (Step 2.10
+recipe above) extends this check — each prefix walks every searched repo
+at that repo's own pinned revision, entries dedup at `(mode, repo, path)`
+grain, and a distinct-key declaration collapses a store duplicated across
+repos at ROW grain.
 
 Verdict lattice (per non-exempt label; "distinct" mode = key declared):
 

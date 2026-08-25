@@ -393,7 +393,13 @@ count: a matching count is not a matching set (#2162: 236 pod files vs
 invocation:
 `uv run python scripts/verify_uploads.py --issue <N> --outroot-listing
 /tmp/issue-<N>-outroot.txt --hf-prefix <each prefix the run wrote> --json`.
-Any residue file → FAIL (blocker tag `outroot-residue`), named with its
+Overflow-routed runs (#2578): add `--hf-data-repo <org/name>` (repeatable;
+comma-list ok) for every ADDITIONAL data repo the run wrote — UNION
+semantics, the default repo + the issue's `EPM_<N>_DATA_WRITE_REPO` env
+repo are always searched too, and an `OVERFLOW_POINTER.json` on the
+canonical repo auto-extends the set; the report's `**HF repos searched:**`
+header line names every repo + source. Any residue file → FAIL (blocker
+tag `outroot-residue`), named with its
 size; per-hit disposition: upload it / `git add` it to
 `eval_results/issue_<N>/` / reference a declared discard (text/JSON is
 NEVER discardable). Git-only basename matches are content-disambiguated
@@ -421,8 +427,11 @@ invocation (repeat the prefix PER LABEL — a whole-store prefix trips
 `uv run python scripts/verify_uploads.py --issue <N> --expected-rows
 <label>=<N_rows> --row-index-hf-prefix <per-label prefix>
 --row-index-distinct-key <unit_field,rollout_field> --json`.
-Shortfall/surplus → FAIL; exempt/keyless labels → visible WARN rows
-named inline in the Step-5 note beside `rows=`.
+Overflow-routed stores (#2578): the same `--hf-data-repo` union extends
+this check too — each prefix is enumerated on every searched repo at that
+repo's own pinned revision. Shortfall/surplus → FAIL; exempt/keyless
+labels → visible WARN rows named inline in the Step-5 note beside
+`rows=`.
 
 > Full recipe: `.claude/rules/upload-verifier-section-reference.md` § Step 2.11 — Realized row-count reconciliation. Grep the heading, chunked-Read
 > that span — never the whole file. The operative trigger + verdict
@@ -453,10 +462,15 @@ readers know the verifier actually looked.
 
 outroot=<swept-clean|residue-committed|none>
 rows=<reconciled|no-declared-count|n/a>
+repos=<canonical-only | overflow-searched: <every non-default data repo searched, with source>>
 
 Discovered <K> files on pod under issue-<N> directories; reconciled
 against permanent storage. Name exempt/keyless (WARN) realized-rows
-labels beside `rows=` with realized counts.
+labels beside `rows=` with realized counts. The `repos=` line carries the
+searched-repo set from the report's `**HF repos searched:**` header
+(#2578) so a later session knows WHERE durability was established without
+re-running the tool — `overflow-searched` whenever any non-default repo
+(env / flag / pointer-discovered) was in the set.
 
 | Artifact | Required? | Status | URL / Justification |
 |----------|-----------|--------|----------------------|
