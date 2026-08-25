@@ -20,6 +20,16 @@ report "PASS (N pre-existing, 0 introduced)". For pytest, expose only your own
 breakage with `--ignore=tests/test_data_validation.py` (imports an untracked
 module; pre-broken in fresh worktrees).
 
+**A bare `uv run ruff format .` (no `--check`) REFORMATS the pre-existing
+format-dirty files** — 44 out-of-scope files churned on 2026-08-25 (#2568 r3;
+eps/experiments/, old issue scripts, tasks/ artifacts). Restore all but your
+payload with the guard-compliant worktree form:
+`git -C "$WT" status --porcelain | awk '{print $2}' | grep -vE '^(payload1|...)$' > /tmp/restore.txt`
+then `xargs -a /tmp/restore.txt git -C "$WT" checkout --` (a bare
+`git checkout --` without `-C <worktree>` is hook-BLOCKED as a repo-root
+working-tree revert even when cwd is the worktree — the guard matches command
+text, not cwd).
+
 Known states (verify before citing — these get fixed over time):
 - FIXED and fully passing — do not deselect: `tests/test_task_workflow.py`
   (79/79, `75c78e9f3`), `tests/test_verify_clean_result.py` (regex +

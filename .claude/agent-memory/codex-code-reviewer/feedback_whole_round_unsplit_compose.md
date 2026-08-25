@@ -128,6 +128,26 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    by-path (not inline) when the worktree copy is byte-identical — the
    spec default; r1's inline choice does not bind r2.
 
+8b. **Fix-round follow-up on the vendored tier + 1:1-ledgered union FAIL
+   (#2552 r2, 2026-08-25):** when the fix round touches ONLY the
+   VENDORED_FROM.txt declaration (additive blob-sha annotations; vendored
+   .py absent from numstat), the fidelity duty compresses to one check —
+   `git ls-tree HEAD scripts/vendored_.../` blob shas match the recorded
+   annotations — and the r1 fidelity verdict is stated as standing. Union
+   FAIL+FAIL rounds where the r1 Codex `CONCERN::` rows were persisted
+   1:1 as ledger ids need NO pseudo-IDs: inline the full r1 verdict
+   (head tag stripped, footer cut at first closing tag, rows blockquoted
+   `> CONCERN:: ` — assert 16) as the Evidence/Impact/Fix acceptance
+   contract, and key the closure table on the ledger ids + each
+   `addressed` row's summary + commit. A Claude split Critical closed by
+   a MARKER RE-POST (smoke-arch v2 arm-registry fix) is verified against
+   the INLINED v2 body (internal consistency: arms_stubbed ==
+   FALLBACK-rowed set), never against the code diff. Ledger noise: a
+   stray `addressed` row with a junk summary ("test") gets a compose-time
+   note naming the REAL row, so the twin scores the right claim. Plan
+   by-path (not inline) when the worktree copy is byte-identical — the
+   spec default; r1's inline choice does not bind r2.
+
 8c. **Reconciler-BINDING-FAIL fix round (#2552 r3, 2026-08-25):** when the
    prior round ended Claude-PASS / Codex-FAIL / reconciler BINDING FAIL, the
    reconcile record ALONE is the inlined acceptance contract — do NOT also

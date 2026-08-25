@@ -530,7 +530,19 @@ note the round under `**Design:**` + a per-round hyperparameter column +
 invalidated results into one `<details><summary>Superseded by round
 N</summary>` block; (5) compress absorbed results to heading + figure + ≤2
 bullets; (6) migrate-on-fold: a v3/v2-sentinel body is MIGRATED to v4 as
-part of the fold.
+part of the fold; (7) when the folded round REFUTES committed evidence
+with downstream consumers (the refutes-a-promoted-claim presumption),
+write/refresh the machine-readable supersession record
+(`superseded_<slug>.json` next to the replacement artifact, or
+`eval_results/issue_<N>/superseded_<slug>.json` when the replacement has
+no committed neighbor; schema: `scripts/audit_artifact_supersession.py`
+docstring) and run `uv run python scripts/audit_artifact_supersession.py
+--record <path>`. Record-landing is ATOMIC with consumer conformance: the
+same commit brings every enumerated consumer to PASS (label or repoint);
+genuinely unfixable residuals are routed BEFORE the record lands or
+carried in `acknowledged_pending` (audited as WARN). REPORT the routing
+in the return text for the orchestrator to route (direct edit or
+`kind: infra` filing) — the analyzer never files tasks itself.
 
 Full text: `analyzer-section-reference.md`
 § Step 6: Promote the source experiment to a clean-result (inline)

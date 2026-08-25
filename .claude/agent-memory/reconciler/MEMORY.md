@@ -70,6 +70,12 @@
 - [Insufficient smoke evidence](feedback_claude_concerns_on_smoke_gate.md) (#492); [dry-run misses CUDA init](feedback_claude_dry_run_smoke_misses_cuda_init.md) (#488); [synthetic fixture masks grid bug](feedback_claude_synthetic_fixture_smoke_masks_args_grid_bug.md) (#517)
 - [Overcorrected critic concern](feedback_claude_overcorrects_critic_concern_to_blocker.md) (#514)
 - [Read the named gate's ACTUAL semantics](feedback_claude_trusts_green_tests_over_verifier_semantics.md) (#454, #608); [nonexistent backstop semantics](feedback_claude_cites_nonexistent_backstop_semantics.md) (#594)
+- [Best-effort upload made load-bearing](feedback_claude_misses_besteffort_upload_made_loadbearing.md) — warn-only upload + ephemeral teardown (#613)
+- [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg new AND prior literals before believing ✓
+- [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes yourself (#897)
+- [Syntactic test pins + vacuous empty-set gates](feedback_syntactic_test_pins_and_vacuous_empty_gates.md) — semantic-bypass + empty-selection + producer-drift probes; execute the Mechanizable claim (#2329 r2, #2336 r3)
+- [Degenerate-token validation + files-mode scope gaps](feedback_claude_degenerate_token_validation_and_files_mode_scope.md) — `""` in containment = universal pass; diff CHECK_SCOPES surfaces vs the check's own enumeration; adopt-don't-duplicate forwarded Codex concerns (#2568 r1)
+- [Self-referential replay gate needs independent anchor](feedback_self_referential_replay_gate_needs_independent_anchor.md) — prediction inputs read from the artifact under validation ⇒ agreement entailed; probe falsifiability by input mutation (#2514 r2)
 - [Best-effort upload made load-bearing](feedback_claude_misses_besteffort_upload_made_loadbearing.md) (#613)
 - [Fabricated walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — rg new AND prior literals first
 - [Comment-tail waiver spoofs on raw-scan guards](feedback_claude_misses_comment_tail_spoof_on_rawscan_guards.md) — replay spoof shapes

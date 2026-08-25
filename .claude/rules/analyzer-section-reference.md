@@ -736,6 +736,22 @@ clean-result-critique gate (9a-bis) then re-runs on the updated body.
    `**Context:**` footer, and write the new round into the v4 shape. The
    body rebuilds cheaply from cached results + figures. Do NOT maintain a
    dual fold-in branch — migrate, then fold.
+7. **Supersession record + consumer audit (refuting rounds).** When the
+   folded round REFUTES committed evidence with downstream consumers
+   (the refutes-a-promoted-claim presumption), write/refresh the
+   machine-readable supersession record (`superseded_<slug>.json` next
+   to the replacement artifact, or
+   `eval_results/issue_<N>/superseded_<slug>.json` when the replacement
+   has no committed neighbor; schema:
+   `scripts/audit_artifact_supersession.py` docstring) and run
+   `uv run python scripts/audit_artifact_supersession.py --record <path>`.
+   Record-landing is ATOMIC with consumer conformance: the same commit
+   brings every enumerated consumer to PASS (label or repoint);
+   genuinely unfixable residuals are routed BEFORE the record lands or
+   carried in `acknowledged_pending` (audited as WARN). REPORT the
+   routing in the return text for the orchestrator to route (direct
+   edit or `kind: infra` filing) — the analyzer never files tasks
+   itself.
 
 The dashboard kanban routes the experiment to the Awaiting promotion
 column automatically once status is set to `awaiting_promotion` by the

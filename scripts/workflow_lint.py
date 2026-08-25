@@ -311,6 +311,25 @@ Behaviours:
   file passes; an allowlisted file with ZERO hits WARNs ``stale
   allowlist entry``, never FAILs — the ratchet direction, judged only
   over the scanned scope under files-mode; #2336 shrinks it per batch).
+* ``--check-artifact-supersession`` (also bundled into the no-flags
+  default run): discover committed artifact-supersession records
+  (basename-anchored ``superseded_*.json`` under ``eval_results/``,
+  index-read — JSONs under ``superseded_*`` DIRECTORIES are not
+  records), RE-RUN the consumer enumeration fresh (``git grep
+  --cached`` with tree-class pathspec excludes), and FAIL on any
+  consumer that neither consumes a replacement artifact nor carries a
+  supersession label within +/-5 lines of each refuted-artifact
+  mention (#2568). Malformed/unrecognized/non-UTF-8 records (degenerate
+  blank/separator-bearing artifact-name or label-pattern entries
+  included — the token rule in the core's docstring) and
+  ``acknowledged_pending`` consumers are non-blocking ``WARN:`` lines.
+  The audit core is ``scripts/audit_artifact_supersession.py`` (schema
+  spec in its docstring), loaded ``__file__``-relative; a core load
+  failure is itself a FAIL line, never a silent skip. Files-mode:
+  classified ``global`` with the ``REPO_WIDE_SURFACE`` sentinel — a
+  consumer can live at ANY tracked path, so the check runs on every
+  ``--files`` payload, payload-attributed (#2568 round 2). Verified
+  no-op on the live tree at landing (0 records discovered).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -19670,6 +19689,81 @@ def check_shared_tmp_name(
     return errors
 
 
+# `--check-artifact-supersession` (#2568): committed artifact-supersession
+# records (basename-anchored ``superseded_*.json`` under eval_results/) are
+# audited against a FRESH consumer enumeration on every default lint run — a
+# consumer of a refuted artifact must consume a replacement artifact or carry
+# a supersession label near every mention. The audit core lives in
+# scripts/audit_artifact_supersession.py (single source of truth for the
+# schema + discovery + enumeration + label check); this check is a thin
+# loader/mapper over it.
+def check_artifact_supersession(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL when a committed supersession record's fresh consumer
+    enumeration finds a consumer that neither consumes a replacement
+    artifact nor carries a supersession label within +/-5 lines of each
+    refuted-artifact mention (#2568).
+
+    Thin wrapper over the audit core
+    ``scripts/audit_artifact_supersession.py`` — loaded ``__file__``-relative
+    via importlib (single source of truth, NO logic duplication) and run
+    against the PASSED repo root, so fixture-tree tests exercise the REAL
+    core, not the load-failure branch. A core LOAD failure (or a core
+    crash) is itself a FAIL line, never a silent skip (the
+    new-fence-silent-pass class). Schema problems — a tracked non-UTF-8
+    record included (the core routes a decode failure to schema WARN, never
+    a UsageError, #2568 round 2), as well as degenerate / cross-list-
+    contained / subprocess-unsafe matching tokens (#2568 round 3: the core
+    rejects those at schema time, so a lone-surrogate token never reaches
+    the git argv and the except-Exception FAIL backstop below) — and
+    ``acknowledged_pending`` consumers are non-blocking ``WARN:`` stderr
+    lines. ``repo_root`` is a unit-test
+    override; production callers pass
+    None (``EPS_WORKFLOW_LINT_REPO_ROOT`` env override supported so
+    subprocess fixture tests can point the check at a tmp corpus). Bundled
+    into the no-flags default run. Verified no-op on the live tree at
+    landing: basename-anchored discovery returns 0 records (the 12
+    issue_1482 ``superseded_*``-DIRECTORY files do not match).
+    """
+    import importlib.util
+    import os as _os
+
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = _os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    core_path = Path(__file__).resolve().parent / "audit_artifact_supersession.py"
+    module_name = "_eps_artifact_supersession_core"
+    try:
+        spec = importlib.util.spec_from_file_location(module_name, core_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"no import spec for {core_path}")
+        core = importlib.util.module_from_spec(spec)
+        # sys.modules registration BEFORE exec: py3.12 dataclasses resolves
+        # `sys.modules.get(cls.__module__).__dict__` at decoration time and
+        # crashes on an unregistered spec-loaded module.
+        sys.modules[module_name] = core
+        try:
+            spec.loader.exec_module(core)
+        except BaseException:
+            sys.modules.pop(module_name, None)
+            raise
+    except Exception as exc:
+        # A missing/broken core must FAIL loud, never silently skip.
+        return [
+            "check-artifact-supersession: audit core failed to load from "
+            f"{core_path}: {exc!r} (a missing/broken core is a FAIL, never a silent skip)"
+        ]
+    try:
+        report = core.run_audit(root)
+    except Exception as exc:
+        # A core crash is equally a FAIL line, never a silent skip.
+        return [f"check-artifact-supersession: audit core raised: {exc!r}"]
+    for warning in report.warnings:
+        sys.stderr.write(f"WARN: check-artifact-supersession: {warning}\n")
+    return [f"check-artifact-supersession: {v}" for v in report.violations]
+
+
 # `--check-plan-version-immutability` (#2123): a persisted
 # ``tasks/**/plans/v<K>.md`` is immutable — an amendment requires a NEW
 # version file via ``task.py new-plan-version``, never an in-place edit.
@@ -20104,11 +20198,16 @@ def check_no_unannotated_gcp_pin_guidance(
 #   #2079 class) are the third class: under filtered enumeration every
 #   allowlist entry outside the scope reads "stale", so a naive scoped run
 #   would spuriously FAIL on ~100 corpus-global findings (probe 2026-08-11).
-#   Files-mode therefore keeps ONLY findings that name an in-scope path (the
-#   same substring-attribution rule inline_lint_gate.evaluate applies), and
-#   reports the suppressed count. This deliberately narrows the DIRECT
-#   `--files` verdict to payload-attributable findings; the bare no-flags run
-#   (Step 9c) remains the whole-repo instrument and is byte-unchanged.
+#   Files-mode therefore keeps ONLY findings that name an in-scope path as a
+#   COMPLETE path token (_finding_names_path — a token-boundary tightening of
+#   the raw substring-attribution rule inline_lint_gate.evaluate applies;
+#   #2568 round 3: raw substring attributed a superstring path's standing
+#   violation, archive/papers/foo.py.old, to an unrelated payload
+#   papers/foo.py), and reports the suppressed count. Every kept line still
+#   names a scope path verbatim, so the gate's evaluate() attributes it too.
+#   This deliberately narrows the DIRECT `--files` verdict to
+#   payload-attributable findings; the bare no-flags run (Step 9c) remains
+#   the whole-repo instrument and is byte-unchanged.
 # * Import closure: fixpoint over bare `issue*`-stem imports resolving to
 #   scripts/<name>.py. The stem restriction is LOAD-BEARING (plan §4 B4):
 #   without it every third-party/stdlib import would read "unresolvable". An
@@ -20138,12 +20237,89 @@ class CheckScope:
     surfaces: tuple[str, ...]  # what the check READS: "dir/" prefix or exact path
 
 
+# Files-mode repo-wide surface sentinel (#2568 round 2): a "global" check
+# whose read surface is genuinely the WHOLE tracked tree declares ("*",)
+# instead of enumerating top-level locations — location enumeration proved
+# incomplete for the artifact-supersession consumer scan (its "drawn WIDE"
+# set silently omitted tracked consumer locations: .github/, papers/,
+# archive/, artifacts/, dashboard/, patches/, analysis_tensors/, data/, and
+# root files like README.md / RESULTS.md, so a scoped payload there SKIPped
+# the check). A sentinel-surfaced check runs on EVERY files-mode payload;
+# the in-scope attribution filter keeps its verdict payload-attributed (a
+# finding blocks only when it names a payload/closure path).
+REPO_WIDE_SURFACE = "*"
+
+
 def _surface_hit(path: str, surface: str) -> bool:
-    """True when repo-relative *path* falls under *surface* (a "dir/" prefix
-    or an exact file path)."""
+    """True when repo-relative *path* falls under *surface* (a "dir/" prefix,
+    an exact file path, or the ``REPO_WIDE_SURFACE`` sentinel)."""
+    if surface == REPO_WIDE_SURFACE:
+        return True
     if surface.endswith("/"):
         return path.startswith(surface)
     return path == surface
+
+
+# Characters that can EXTEND a repo-relative path token. Used by
+# _finding_names_path to reject substring embeddings inside a longer path
+# (#2568 round 3, `repo-wide-substring-attribution-false-fail`).
+_PATH_TOKEN_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._/-")
+
+
+def _finding_names_path(finding: str, path: str) -> bool:
+    """True when *finding* names repo-relative *path* as a COMPLETE path
+    token. Two accepted shapes: (1) an occurrence not extended by path
+    characters on either side (bare repo-relative naming, incl. the
+    ``path:lineno`` shape and a sentence-final ``.``); (2) a
+    component-aligned SUFFIX of an ABSOLUTE path token — several checks
+    name payload files absolutely (``check_judge_model_pins`` emits
+    ``/abs/tree/scripts/foo.py:1: ...``), so the token's ``/``-initial
+    form marks it as the same file spelled from the filesystem root.
+
+    Payload ``papers/foo.py`` therefore does NOT match a finding about
+    ``archive/papers/foo.py.old`` (#2568 round 3,
+    `repo-wide-substring-attribution-false-fail`: the raw substring rule
+    retained such superstring-path findings and blocked unrelated
+    payloads): a REPO-RELATIVE superstring token starts with a path char
+    other than ``/``, and a right-side extension (``.old``, ``c`` of
+    ``.pyc``) rejects regardless of the left side. A trailing ``.`` counts
+    as a boundary only when not followed by another path character.
+
+    Disclosed residuals: a ``./``-prefixed naming is not matched (nothing
+    emits it; the bare no-flags run remains the whole-repo instrument),
+    and an ABSOLUTE token naming a DIFFERENT repo file whose trailing
+    components coincide (``/repo/archive/papers/foo.py`` vs payload
+    ``papers/foo.py``) is accepted — parity with the pre-#2568-round-3
+    substring rule for absolute naming, never a new false-PASS."""
+    start = finding.find(path)
+    while start != -1:
+        end = start + len(path)
+        if start == 0 or finding[start - 1] not in _PATH_TOKEN_CHARS:
+            before_ok = True
+        elif finding[start - 1] == "/":
+            # Component-aligned suffix of a longer path token: legitimate
+            # ONLY when that token is ABSOLUTE (walk left to the token
+            # start; it must be the leading "/"). A repo-relative
+            # superstring (archive/papers/foo.py...) starts with a
+            # non-"/" path char and stays rejected.
+            tok_start = start - 1
+            while tok_start > 0 and finding[tok_start - 1] in _PATH_TOKEN_CHARS:
+                tok_start -= 1
+            before_ok = finding[tok_start] == "/"
+        else:
+            before_ok = False
+        if end >= len(finding):
+            after_ok = True
+        else:
+            nxt = finding[end]
+            after_ok = nxt not in _PATH_TOKEN_CHARS or (
+                nxt == "."
+                and (end + 1 >= len(finding) or finding[end + 1] not in _PATH_TOKEN_CHARS)
+            )
+        if before_ok and after_ok:
+            return True
+        start = finding.find(path, start + 1)
+    return False
 
 
 def _run_warn_only(fn: Callable[[], object]) -> list[str]:
@@ -20253,6 +20429,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     ),
     "check_lane_order_adjective": lambda wf: check_lane_order_adjective(),
     "check_shared_tmp_name": lambda wf: check_shared_tmp_name(),
+    "check_artifact_supersession": lambda wf: check_artifact_supersession(),
 }
 
 # Classification of every dispatch-chain check (plan §4 B2). The task-body
@@ -20406,6 +20583,17 @@ CHECK_SCOPES: dict[str, CheckScope] = {
         "global", (".claude/", "CLAUDE.md", LANE_ORDER_ROUTER_REL)
     ),
     "check_shared_tmp_name": CheckScope("path-local", ("scripts/", "src/")),
+    # #2568: record-keyed repo scan — records live under eval_results/ and a
+    # consumer can be ANY tracked file outside the grep-time excluded trees,
+    # so the surface is the REPO-WIDE sentinel (round 2 blocker
+    # `artifact-supersession-files-scope-hole`: the previous enumerated
+    # "drawn WIDE" set omitted tracked consumer locations — .github/,
+    # papers/, archive/, root files — and a scoped payload there SKIPped the
+    # check). The check runs on every files-mode payload; verdicts stay
+    # payload-attributed via the in-scope attribution filter, and on the
+    # live tree the audit is a verified no-op (0 records), so the
+    # unconditional run is cheap.
+    "check_artifact_supersession": CheckScope("global", (REPO_WIDE_SURFACE,)),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
@@ -20551,9 +20739,16 @@ def _run_files_mode(raw_paths: list[str], workflow: dict) -> int:
     errors.extend(closure_errors)
     # In-scope attribution filter (the enumeration-dependent-sub-findings
     # rail, B2 third class): keep ONLY findings naming a payload/closure
-    # path — the same substring rule the gate's evaluate() attributes by, so
-    # nothing droppable here could ever have blocked at the gate.
-    kept = [e for e in errors if any(sp in e for sp in scope)]
+    # path as a COMPLETE path token (#2568 round 3,
+    # `repo-wide-substring-attribution-false-fail`: the raw substring rule
+    # retained a superstring path's standing violation — e.g.
+    # archive/papers/foo.py.old against payload papers/foo.py — and blocked
+    # unrelated payloads, reachable via the REPO_WIDE_SURFACE sentinel).
+    # STRICTER than the raw-substring rule the gate's evaluate() attributes
+    # by, in the safe direction: every kept line still names a scope path
+    # verbatim (gate-attributable), and a dropped superstring embedding
+    # could only ever have blocked spuriously.
+    kept = [e for e in errors if any(_finding_names_path(e, sp) for sp in scope)]
     suppressed = len(errors) - len(kept)
     if suppressed:
         sys.stderr.write(
@@ -21857,6 +22052,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "the immediately-preceding comment-only line. Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-artifact-supersession",
+        action="store_true",
+        help="Audit committed artifact-supersession records "
+        "(basename-anchored superseded_*.json under eval_results/, "
+        "index-read) against a FRESH consumer enumeration (git grep "
+        "--cached; tasks/, eval_results/, ood_eval_results/, figures/ "
+        "excluded at grep time): FAIL on any consumer that neither "
+        "consumes a replacement artifact nor carries a supersession "
+        "label within +/-5 lines of each refuted-artifact mention "
+        "(#2568). Malformed/unrecognized records and "
+        "acknowledged_pending consumers WARN (non-blocking). Core: "
+        "scripts/audit_artifact_supersession.py (schema spec in its "
+        "docstring), loaded __file__-relative — a load failure is "
+        "itself a FAIL line. Bundled into the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.files:
@@ -22001,6 +22212,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_unannotated_gcp_pin_guidance
         or args.check_lane_order_adjective
         or args.check_shared_tmp_name
+        or args.check_artifact_supersession
     )
 
     errors: list[str] = []
@@ -22238,6 +22450,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_lane_order_adjective())
     if args.check_shared_tmp_name or no_flags:
         errors.extend(check_shared_tmp_name())
+    if args.check_artifact_supersession or no_flags:
+        errors.extend(check_artifact_supersession())
 
     if errors:
         for err in errors:
