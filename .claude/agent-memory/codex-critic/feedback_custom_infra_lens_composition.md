@@ -2750,3 +2750,23 @@ Related: [[plan-path-missing-read-from-main]],
   Numcheck PASS first try at ~99 KB (spans = plan + lensitems + brief +
   empty prior; scaffold fully digit-free; "c71"/"c72"/"T17"/"V5" atom-free
   letter-prefixed).
+  Methodology-lens sibling round on the same plan (deltas only — the entry
+  above carries the shared moves): (i) for any check that EXECUTES
+  extracted probes with a stated expectation arm, press the POST-RUN
+  EXPECTATION class as its own lead — a healthy plan's verification recipe
+  states values its OWN run will create, executed against today's committed
+  bytes (the approval-time twin of the era-drift press; walk whether either
+  escape phrase is TRUTHFUL for such a plan); (ii) satisfier GRANULARITY
+  inversion of the too-narrow probe: a whole-plan `re.search` satisfier
+  guarding a line-local defect (the re-pin regex's "dedicated…engine"
+  alternative) lets an unrelated sentence suppress the WARN plan-wide —
+  press coarse and narrow both; (iii) the concrete hole probe for
+  stdin-only jq execution claims: jq's include/import module system
+  consults filesystem search paths even with no file argument — ask what
+  VERDICT such a filter draws, not just whether the claim is overstated;
+  (iv) when the plan version exists BECAUSE a prior trace was
+  reasoned-not-executed, mandate the twin REPLAY the revision's measured
+  traces itself (quote-the-command grounding) — "measured this session" is
+  a claim class, not a settled fact. Numcheck PASS first try at ~169 KB
+  (spans = brief-inputs + lensitems + plan + empty prior; version-suffixed
+  workspace; run from repo root for the registry leg).
