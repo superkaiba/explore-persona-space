@@ -42,6 +42,7 @@ from typing import Any
 # CRITICAL: load_dotenv() BEFORE importing numpy / torch — the shared-VM
 # thread caps (#847) freeze at first BLAS/torch import; a load_dotenv() call
 # below the imports is too late (pinned by tests/test_shared_vm_thread_caps.py).
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -1331,10 +1332,9 @@ def run_all_pairs(
         )
         if ckpt_path is not None:
             # Atomic same-dir tmp + replace (EXDEV rule: tmp INSIDE dest dir).
-            tmp_path = ckpt_path.with_name(f".{ckpt_path.name}.tmp")
-            with tmp_path.open("w") as fh:
-                json.dump({"meta": meta, "arms": out["pairs"][pair_key]}, fh)
-            tmp_path.replace(ckpt_path)
+            with atomic_replace(ckpt_path) as tmp_path:
+                with tmp_path.open("w") as fh:
+                    json.dump({"meta": meta, "arms": out["pairs"][pair_key]}, fh)
     return out
 
 
@@ -1583,10 +1583,9 @@ def run_pairs_generalized(
             flush=True,
         )
         if ckpt_path is not None:
-            tmp_path = ckpt_path.with_name(f".{ckpt_path.name}.tmp")
-            with tmp_path.open("w") as fh:
-                json.dump({"meta": meta, "arms": arms_out}, fh)
-            tmp_path.replace(ckpt_path)
+            with atomic_replace(ckpt_path) as tmp_path:
+                with tmp_path.open("w") as fh:
+                    json.dump({"meta": meta, "arms": arms_out}, fh)
     return out
 
 
