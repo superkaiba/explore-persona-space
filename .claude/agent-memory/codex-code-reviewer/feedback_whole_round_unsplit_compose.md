@@ -115,6 +115,25 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    by-path (not inline) when the worktree copy is byte-identical — the
    spec default; r1's inline choice does not bind r2.
 
+8c. **Reconciler-BINDING-FAIL fix round (#2552 r3, 2026-08-25):** when the
+   prior round ended Claude-PASS / Codex-FAIL / reconciler BINDING FAIL, the
+   reconcile record ALONE is the inlined acceptance contract — do NOT also
+   inline the twin's own r2 FAIL verdict when the record's Rationale carries
+   per-finding closure bars (leaner, and where the twin's Evidence/Fix text
+   and the record differ, the record governs; say so + author-neutrality).
+   Note the kind/sentinel split for the twin: `epm:review-reconcile` posts
+   top-level v1 while its HEAD SENTINEL reads `v<round>` — explain that in
+   the envelope preface or the twin flags it. Cumulative-class blockers
+   (here Step 0.71 enumeration over the r2+r3 diff) get ONE sanctioned
+   exception to round-scoping: the cumulative range GREP-SCOPED
+   (`| grep '^+.*smoke'` + hit hunks), never the wholesale body. Severity
+   fence: NOT-ADDRESSED on the one blocking finding = substantive FAIL;
+   honestly-incomplete closure of a reconciler-DOWNGRADED residual re-raises
+   at CONCERN (same-id row), never FAIL; false closure claims at the
+   ordinary bar. Composer pre-verifies the marker's cheap mechanical claims
+   (residual-conditional greps, parent-blob assert form, function-span
+   token absence) and hands them as ground-truth facts.
+
 **Why:** the whole-round view is the ONLY reviewer seeing commit
 interactions; a mis-based diff (origin/main) or a leaked split-token
 defeats exactly that purpose.
