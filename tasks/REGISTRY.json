@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2567,
+  "highest_id": 2568,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10424,8 +10424,8 @@
     "2349": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2349",
-      "status": "proposed",
+      "path": "tasks/running/2349",
+      "status": "running",
       "title": "plan-compute-sizing.md: a 1-unit pilot is not a sizing basis when the phase's own design admits unequal unit costs (1.5x grid under-projection, #2329)"
     },
     "235": {
@@ -11863,8 +11863,8 @@
     "2538": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2538",
-      "status": "running",
+      "path": "tasks/completed/2538",
+      "status": "completed",
       "title": "Step 10d merge-conflict-recovery block omits gh pr ready, so a recovery-path merge dies on the draft precondition and misroutes to the Failure bullet"
     },
     "2539": {
@@ -12080,6 +12080,13 @@
       "path": "tasks/proposed/2567",
       "status": "proposed",
       "title": "workflow-fix: Step 9c pristine-compare falsely attributes pre-existing main reds to the branch (traceback-flag asymmetry + base_identical not consulted for ordinary nodes)"
+    },
+    "2568": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2568",
+      "status": "planning",
+      "title": "workflow-fix: consumer-supersession audit \u2014 enumerate committed consumers of refuted evidence artifacts and require supersession labels"
     },
     "257": {
       "has_clean_result": false,
