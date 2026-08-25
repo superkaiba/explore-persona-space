@@ -217,8 +217,10 @@ def test_no_pr_anomaly_marker_present():
 
 def test_pr_ready_precedes_merge():
     """Pin 6: `gh pr ready "$PR"` still immediately precedes the safe-case
-    merge — the draft-merge precondition for PRs created by EITHER fresh-PR
-    arm — and no second ready call was added (hunk C durability)."""
+    merge (the draft-merge precondition for PRs created by EITHER fresh-PR
+    arm), and the prohibition on duplicate ready calls is scoped to the
+    safe-case block (#2538: the old file-wide wording is what left the
+    recovery path unfixed)."""
     span = _step10d_span()
     assert span.count('gh pr ready "$PR"') == 1
     idx_ready = span.index('gh pr ready "$PR"')
@@ -226,7 +228,8 @@ def test_pr_ready_precedes_merge():
     assert idx_ready < idx_merge
     flat = " ".join(span.split())
     assert "Draft-merge precondition (#2240 pin)" in flat
-    assert "do NOT add a second ready call elsewhere" in flat
+    assert "duplicate this call WITHIN the safe-case block" in flat
+    assert "do NOT add a second ready call elsewhere" not in flat
 
 
 def test_origin_precondition_precedes_rc_gated_create():
