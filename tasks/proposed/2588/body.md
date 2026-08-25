@@ -6,12 +6,19 @@ tags: []
 created_at: '2026-08-25T19:50:48Z'
 has_clean_result: false
 workflow: v1
+goal: Determine whether linear context-to-answer mapping quality (held-out kNN retrieval
+  primary, R^2 + identity+bias secondary) increases with general model capability
+  (Artificial Analysis Intelligence Index), across a cross-family open-weight panel
+  (Qwen3.5 ladder + fixed-size 27B capability column + OLMo dense control + Qwen2.5-7B
+  anchor), under two chain-of-thought arms (all thinking-off vs per-model best setting
+  with the end-of-CoT state as map input), on the generic mapping corpus and GPQA
+  Diamond.
 ---
 # Context-to-answer mapping quality vs general model capability (cross-family ladder, thinking on/off)
 
 ## Goal
 
-Determine whether the quality of the linear context-to-answer map (v_C to v_A, per `docs/glossary_context_answer_map.md`) increases with general model capability, where capability is measured independently of any single skill by a published composite index: the Artificial Analysis Intelligence Index (primary; it covers the full panel and scores thinking and non-thinking modes separately), with the Epoch Capabilities Index as a secondary check where covered.
+Determine whether linear context-to-answer mapping quality (held-out kNN retrieval primary, R^2 + identity+bias secondary) increases with general model capability (Artificial Analysis Intelligence Index), across a cross-family open-weight panel (Qwen3.5 ladder + fixed-size 27B capability column + OLMo dense control + Qwen2.5-7B anchor), under two chain-of-thought arms (all thinking-off vs per-model best setting with the end-of-CoT state as map input), on the generic mapping corpus and GPQA Diamond.
 
 Mapping quality per model: held-out kNN retrieval of the true answer vector among a fixed pool (primary cross-model metric; chance = k/n_pool, comparable across hidden widths) plus held-out R^2 with the identity+learned-bias baseline (per-model, secondary; standard rule).
 
