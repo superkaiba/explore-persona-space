@@ -84,6 +84,33 @@ Step 2 fit-loop note, Step 6 plan surface).
    discard" — hand both routings, cap the challenge at CONCERN with a
    NEW id, never a FAIL lever for a disclosed election).
 
+6. **Revise-round variant (#2502 r13, 2026-08-25 — fixing the r12
+   reconciler-upheld parity BLOCKER, scan_bytes→scan_file).** When the
+   round IS the fix for an upheld blocker on the same scrub surface:
+   (a) the hollow-gate lens SHIFTS from detection-parity adjudication
+   to gate-IDENTITY + residuals — once the fix calls the gate's OWN
+   function, parity holds by construction AT the loop's return, and
+   the review's center of mass moves to the offset→line mapping
+   arithmetic, the loop exits (bounded / converging / fail-loud), and
+   the no-mutation window between return and upload; (b) an
+   addressed-CLAIMED ledger BLOCKER arms the closure-verification
+   duty: verified-closed = status line only (never re-emit the id);
+   closure-FALSE = substantive FAIL + the ONE sanctioned same-id
+   `CONCERN::` re-emit (the ledger's latest event is `addressed`, so a
+   fresh raised row RE-OPENS rather than duplicates); (c) a body
+   rewrite that GROWS the function shifts EVERY downstream anchor —
+   re-grep all woven anchors (seam lines, stats chain, parser flags,
+   pin defs) fresh, never offset arithmetically; (d) the
+   docstring-corrected duty verifies the REPLACEMENT claims against
+   the underlying mechanism (read `_scan_stream` itself) — the
+   blocker's second face is a NEW overclaim; (e) disclosed
+   not-data-reachable defensive raises (unmappable finding,
+   non-convergence) adjudicate via the offset-semantics read, never as
+   smoke-run-missing; (f) prior-round pins that the rewrite could
+   stale get an explicit stale-pin grep duty (a loose
+   `match="refusing to upload"` matching all three new raises needs a
+   fixture-forces-the-right-branch check).
+
 **How to apply:** any round adding redaction/scrubbing before an
 upload/publish gate, and any compose reusing a rubric from a round
 with a large woven duty set — re-align the D-numbering references
@@ -93,7 +120,11 @@ two-pass strategy (~30 anchor-pair/exact replacements, each
 count-asserted, then the token audit with a CASE-SENSITIVE ALLOWED
 dict for deliberate history references — "ROUND-11" uppercase does not
 match a lowercase audit token, and substring hits like "corpus
-builder" need explicit allowance).
+builder" need explicit allowance). The r13 reuse of the FULL r12
+prompt (not just the rubric file) used the same recipe: slice at
+content-asserted section boundaries, keep the plan envelope +
+protocol core, rewrite head/duties/verdict wholesale, ~30
+replace_between/replace_once patches on the protocol span.
 Related: [[revision-round compose recipe (round 2+)]],
 [[data-hardening round compose]],
 [[marker-quoted-flags-verified-against-parser]].
