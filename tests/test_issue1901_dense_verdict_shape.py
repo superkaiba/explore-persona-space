@@ -29,6 +29,7 @@ _SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
+from issue1901_paper_densify import filter_listing_only_files  # noqa: E402
 from issue1901_paper_densify_mlp import (  # noqa: E402
     DENSE_PARITY_ANCHORS,
     G1_CROSS_STORE,
@@ -350,3 +351,21 @@ def test_annotate_g2_percell_durably_annotates_recorded_cells(tmp_path):
     # Idempotent + missing-file tolerant (annotates only what exists).
     (perfit / "dense_L19_n500000_ridge.json").unlink()
     assert _annotate_g2_percell(tmp_path, "dense", g2) == ["dense_L19_n150000_ridge.json"]
+
+
+def test_filter_listing_only_files_retains_requested_and_raises_on_missing():
+    """Round-4b reconciler blocker: pin the ``only_files`` fail-loud narrowing
+    (``issue1901_paper_densify.filter_listing_only_files``) with a committed
+    test — retention branch AND the missing-basename RuntimeError branch."""
+    listing = [
+        ("issue779_monitoring/n1m_readout/weights/mlp_w8192.pt", 1_000),
+        ("issue779_monitoring/n1m_readout/weights/ridge.pt", 500),
+        ("issue779_monitoring/n1m_readout/weights/manifest.json", 10),
+        ("issue779_monitoring/n1m_readout/weights/notes.txt", 5),
+    ]
+    kept = filter_listing_only_files(listing, ("mlp_w8192.pt", "ridge.pt"), "weights")
+    # Exactly the two requested entries, input order + sizes intact; extras dropped.
+    assert kept == listing[:2]
+    # Raise branch: one requested basename absent -> RuntimeError naming it.
+    with pytest.raises(RuntimeError, match=r"ridge\.pt"):
+        filter_listing_only_files([listing[0], listing[2]], ("mlp_w8192.pt", "ridge.pt"), "weights")
