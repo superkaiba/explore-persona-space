@@ -85,3 +85,4 @@
 - [Prescribed wording: grammar-check in situ](feedback_prescribed_wording_grammar_check.md) — verdict-prescribed text can break the host sentence; adapt minimally, keep word arithmetic, flag deviation. #823 r7.
 - [Touched-sentence scope sweep](feedback_touched_sentence_scope_sweep.md) — re-verify every number in a touched sentence vs its implied cell set; mixed-scope parentheticals ("A plus B (stat)") hide narrow-scope stats. #823 r8.
 - [snapshot_download allow_patterns stalls on the 1M-file data repo](feedback_snapshot_download_million_file_repo_stall.md) — enumerates the WHOLE tree client-side; use scoped list_repo_tree + per-file hf_hub_download (xet/hf_transfer off); cross-stage shard names do not align — search by row_id. #2378 r4.
+- [Ack paragraph goes in ## Goal, never after the last result](feedback_ack_paragraph_placement_goal_not_last_result.md) — check 20 counts it into that result (128→193 FAIL); "All three arms" trips the arm-count ban. #2564.
