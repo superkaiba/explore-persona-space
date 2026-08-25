@@ -1076,12 +1076,14 @@ import argparse
 import ast
 import dataclasses
 import functools
+import io
 import json
 import os
 import re
 import subprocess
 import sys
 import tempfile
+import tokenize
 import tomllib
 from collections import Counter
 from collections.abc import Callable, Collection, Iterator
@@ -10995,6 +10997,109 @@ def _hf_routing_scan_files(root: Path):
             yield py, rel
 
 
+# Token types whose SPANS are masked out of the routing scan: a predicate
+# match inside a string literal or a comment is text, never a call site
+# (#2351). f-PREFIXED strings are deliberately NOT masked: before py3.12 an
+# f-string is a SINGLE STRING token, so masking it would hide a REAL call in
+# a replacement field (`f"dest={hf_hub_download(r, p)}"`) — an under-flag,
+# the one direction this check must never take. f-strings therefore keep
+# today's over-flagging behavior; the false-positive class being fixed
+# (docstrings, triple-quoted constants, comments) is never an f-string.
+# FSTRING_MIDDLE (py3.12+, where the literal text parts tokenize separately)
+# is admitted so newer interpreters mask f-string TEXT without hiding
+# replacement-field code.
+_HF_ROUTING_MASK_TOKEN_TYPES: frozenset[int] = frozenset(
+    {tokenize.STRING, tokenize.COMMENT}
+    | {
+        tok
+        for tok in (getattr(tokenize, name, None) for name in ("FSTRING_MIDDLE",))
+        if tok is not None
+    }
+)
+
+
+def _hf_routing_token_is_fstring(tok: tokenize.TokenInfo) -> bool:
+    """True when ``tok`` is an f-prefixed STRING token (see
+    :data:`_HF_ROUTING_MASK_TOKEN_TYPES` for why those are left unmasked).
+    Reads the prefix letters before the opening quote, so ``rf"..."`` /
+    ``F'''...'''`` / ``fr"..."`` all count and a plain ``"f"`` string does not.
+    """
+    raw = tok.string
+    quote = min((raw.find(q) for q in "\"'" if raw.find(q) != -1), default=-1)
+    return quote > 0 and "f" in raw[:quote].lower()
+
+
+def _hf_routing_masked_spans(source: str) -> dict[int, list[tuple[int, int]]]:
+    """Map 1-based line number -> masked ``[start_col, end_col)`` column spans.
+
+    A span covers a string-literal or comment token, so
+    :func:`_hf_routing_file_errors` can drop a predicate match whose start
+    column falls inside one (#2351: the line-based scan flagged the
+    Schema-from-artifact ``Observed schema — probe:`` docstring blocks that
+    `.claude/agents/experiment-implementer.md` MANDATES).
+
+    Spans are COLUMN-grained, not line-grained, because a masked match and a
+    real call site can share a line.
+
+    FAIL-SAFE by design: a file that does not tokenize (unterminated
+    triple-quote, malformed source) returns ``{}`` — no masking, i.e. exactly
+    today's line-based behavior. The check then OVER-flags rather than
+    under-flags; a silent skip of an untokenizable file would be the
+    under-flag this check exists to prevent.
+    """
+    spans: dict[int, list[tuple[int, int]]] = {}
+    lines = source.splitlines()
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
+    except (tokenize.TokenError, SyntaxError, UnicodeDecodeError):
+        return {}
+    for tok in tokens:
+        if tok.type not in _HF_ROUTING_MASK_TOKEN_TYPES:
+            continue
+        if tok.type == tokenize.STRING and _hf_routing_token_is_fstring(tok):
+            continue
+        (srow, scol), (erow, ecol) = tok.start, tok.end
+        for row in range(srow, erow + 1):
+            start = scol if row == srow else 0
+            if row == erow:
+                end = ecol
+            else:
+                end = len(lines[row - 1]) if row - 1 <= len(lines) - 1 else scol + 1
+            if end > start:
+                spans.setdefault(row, []).append((start, end))
+    return spans
+
+
+def _hf_routing_blanked_lines(
+    lines: list[str], masked: dict[int, list[tuple[int, int]]]
+) -> list[str]:
+    """Return ``lines`` with every masked span overwritten by spaces (#2351).
+
+    EQUAL-LENGTH and COLUMN-PRESERVING by construction, so the view can be
+    handed to :func:`_hf_routing_call_is_wrapped` without shifting any column
+    offset. Purpose: that helper counts ``(``/``)`` and matches
+    :data:`HF_ROUTING_WRAP_RE` over RAW text, so a docstring mentioning
+    ``retry_transient(`` with a net-open paren inside the
+    :data:`HF_ROUTING_WRAP_WINDOW` launders a REAL bare call below it — an
+    under-flag that predates this change and that the span mask lets us close
+    for free. Only the WRAP probe reads this view; the reported line number and
+    the ``stripped[:100]`` message tail still come from the real line, so
+    message bytes are unchanged.
+    """
+    view: list[str] = []
+    for i, line in enumerate(lines):
+        spans = masked.get(i + 1)
+        if not spans:
+            view.append(line)
+            continue
+        buf = list(line)
+        for start, end in spans:
+            for col in range(start, min(end, len(buf))):
+                buf[col] = " "
+        view.append("".join(buf))
+    return view
+
+
 def _hf_routing_file_errors(py: Path, rel: str) -> list[str]:
     """Per-file scan body shared by :func:`check_live_hf_retry_routing`
     (verdict) and :func:`regen_hf_routing_snapshot` (offender enumeration).
@@ -11003,17 +11108,35 @@ def _hf_routing_file_errors(py: Path, rel: str) -> list[str]:
     HF Hub call.
     """
     errors: list[str] = []
-    lines = py.read_text(encoding="utf-8").splitlines()
+    source = py.read_text(encoding="utf-8")
+    lines = source.splitlines()
+    masked = _hf_routing_masked_spans(source)  # #2351
+    wrap_lines = _hf_routing_blanked_lines(lines, masked)  # #2351 (MF3)
     for i, line in enumerate(lines):
         stripped = line.lstrip()
         if stripped.startswith("#") or stripped.startswith("what="):
             continue
-        m = HF_ROUTING_CALL_RE.search(line)
+        # #2351: take the first match NOT inside a string literal / comment.
+        # `finditer`, not `search`: a masked match and a real call site can
+        # share a line (`X = """hf_hub_download(a)"""; Y = hf_hub_download(b)`),
+        # and skipping the whole LINE on a masked first match would suppress
+        # the real call — an under-flag. `None` here means every match on the
+        # line is masked. The pre-existing full-line `#` and `what=` skips
+        # above are kept: cheap, and their behavior is unchanged.
+        spans = masked.get(i + 1, ())
+        m = next(
+            (
+                cand
+                for cand in HF_ROUTING_CALL_RE.finditer(line)
+                if not any(start <= cand.start() < end for start, end in spans)
+            ),
+            None,
+        )
         if m is None:
             continue
         if "# NO_RETRY:" in line or (i > 0 and "# NO_RETRY:" in lines[i - 1]):
             continue
-        if _hf_routing_call_is_wrapped(lines, i, m.start()):
+        if _hf_routing_call_is_wrapped(wrap_lines, i, m.start()):
             continue
         # Message-edit hazard: the Step 10d merge gate compares normalized
         # message LINES (baseline vs gated legs), so rewording this error
@@ -11046,6 +11169,13 @@ def check_live_hf_retry_routing(*, repo_root: Path | None = None) -> list[str]:
     * a ``# NO_RETRY: <reason>`` waiver sits on the line or the line above; or
     * the line is the wrap idiom's own ``what=`` descriptor kwarg
       (``what=f"hf_hub_download({repo}/{path})"``); or
+    * the match sits inside a string literal or a comment — a per-file
+      ``tokenize`` span mask (:func:`_hf_routing_masked_spans`, #2351) drops
+      it, and the same spans are blanked out of the wrap probe's view
+      (:func:`_hf_routing_blanked_lines`) so string/comment text can neither
+      flag nor launder. f-PREFIXED strings are deliberately NOT masked on
+      py<3.12 (one STRING token — masking would hide a real call in a
+      replacement field), so f-string literal text keeps over-flagging; or
     * the file is in :data:`HF_ROUTING_FROZEN_SNAPSHOT` (the per-issue
       historical files frozen at #1547 landing time — the routing
       requirement attaches at REUSE time via artifact-reuse check (i)),

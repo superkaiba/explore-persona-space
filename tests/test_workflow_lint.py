@@ -9603,6 +9603,235 @@ def test_regen_flag_early_dispatch_and_not_in_no_flags_tuple():
 
 
 # ---------------------------------------------------------------------------
+# --check-live-hf-retry-routing string/comment span mask (#2351)
+# ---------------------------------------------------------------------------
+
+
+def test_check_live_hf_retry_routing_docstring_probe_block_not_flagged_but_real_call_is(tmp_path):
+    """#2351 headline: the Schema-from-artifact ``Observed schema — probe:``
+    docstring block (mandated by experiment-implementer.md) must not flag,
+    while a REAL call site in the same file still does."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        '"""Fixture.\n'
+        "Observed schema — probe: torch.load(hf_hub_download(REPO, 'x.pt'))\n"
+        "api.upload_file(a, b)\n"
+        '"""\n'
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:7" in errors[0]
+
+
+def test_check_live_hf_retry_routing_string_constant_and_trailing_comment_not_flagged(tmp_path):
+    """A triple-quoted constant carrying the predicate plus a trailing-comment
+    mention — no real call site — must return no errors (#2351)."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        'T = """\n'
+        "see hf_hub_download('org/repo', 'a.bin') for details\n"
+        '"""\n'
+        "x = 1  # see hf_hub_download(z)\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_masked_and_real_match_share_one_line(tmp_path):
+    """MF1 pin (#2351): a masked match and a real call site SHARE a line —
+    `finditer` with per-match filtering must still flag the real call
+    (v1's `search` + line-skip returned [] here, an under-flag)."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        'X = """hf_hub_download(inside)"""; Y = hf_hub_download("org/r", "a")\n',
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:1" in errors[0]
+
+
+def test_check_live_hf_retry_routing_real_call_in_fstring_replacement_field_still_flags(tmp_path):
+    """MF2 pin (#2351): on py3.11 an f-string is ONE STRING token — masking it
+    would hide a REAL call in a replacement field. The f-prefix exemption
+    keeps it visible; dropping the exemption returns [] here (under-flag)."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def dest(r, f):\n"
+        '    p = f"dest={hf_hub_download(r, f)}"\n'
+        "    return p\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
+def test_check_live_hf_retry_routing_fstring_literal_text_still_over_flags(tmp_path):
+    """DISCLOSED-BEHAVIOR pin (#2351 plan §4.3.1 / §7 residual 2): f-string
+    LITERAL text keeps over-flagging on py3.11 — this asserts an
+    ACKNOWLEDGED FALSE POSITIVE on purpose, so any future narrowing of the
+    f-string carve-out changes this test deliberately instead of drifting."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        'x = f"docs: hf_hub_download(a)"\n',
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:1" in errors[0]
+
+
+def test_check_live_hf_retry_routing_docstring_mentioning_retry_transient_does_not_launder(
+    tmp_path,
+):
+    """MF3 pin (#2351): a docstring carrying ``retry_transient(`` with a
+    net-open paren two lines above a real bare call laundered the call under
+    the RAW-line wrap probe (pre-#2351 shipped behavior returned [] here);
+    the blanked wrap-view must flag the call."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "def fetch():\n"
+        '    """Wraps retry_transient( in prose — the net-open paren\n'
+        "    would launder the call below under a raw-line wrap probe.\n"
+        '    """\n'
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:5" in errors[0]
+
+
+def test_check_live_hf_retry_routing_paren_inside_string_arg_does_not_break_real_wrap(tmp_path):
+    """Adversarial counterpart to the MF3 pin (#2351): blanking a string
+    argument carrying an UNBALANCED ``(`` must not turn a genuine
+    ``retry_transient`` wrap into a false positive — the pin that would
+    catch a column-arithmetic error in ``_hf_routing_blanked_lines``."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from explore_persona_space.orchestrate.hub import retry_transient\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return retry_transient(\n"
+        "        lambda: hf_hub_download('o/r', 'a(b'),\n"
+        "        what='x',\n"
+        "    )\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_closing_triple_quote_line_boundary(tmp_path):
+    """Pins the multi-line span split (srow / interior / erow, #2351): the
+    predicate on a docstring-constant INTERIOR line is masked; a real call
+    two lines below the closing triple-quote still flags."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        'T = """doc\n'
+        "hf_hub_download('org/repo', 'a.bin') in prose\n"
+        '"""\n'
+        "from huggingface_hub import hf_hub_download\n"
+        "x = hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:5" in errors[0]
+
+
+def test_check_live_hf_retry_routing_untokenizable_file_falls_back_to_line_scan(tmp_path):
+    """FAIL-SAFE direction pin (#2351): a file that does not tokenize
+    (unterminated triple-quote) gets NO masking — the check OVER-flags
+    (today's line-based behavior) rather than raising or under-flagging."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "DOC = \"\"\"unterminated\nx = hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:2" in errors[0]
+
+
+def test_hf_routing_masked_spans_returns_empty_on_token_error():
+    """Direct unit pin (#2351): an untokenizable source returns {} — the
+    fail-safe no-masking fallback, never a raise."""
+    from workflow_lint import _hf_routing_masked_spans
+
+    assert _hf_routing_masked_spans('DOC = """x\n') == {}
+
+
+def test_hf_routing_token_is_fstring_prefix_forms():
+    """Direct unit pin on the prefix parser (#2351): f-prefixed forms in any
+    casing/combination count; raw/bytes/plain strings — and a string whose
+    CONTENT starts with f — do not."""
+    import tokenize as _tokenize
+
+    from workflow_lint import _hf_routing_token_is_fstring
+
+    def _string_token(literal: str) -> _tokenize.TokenInfo:
+        return _tokenize.TokenInfo(
+            _tokenize.STRING, literal, (1, 4), (1, 4 + len(literal)), f"x = {literal}\n"
+        )
+
+    for lit in ('f"x"', "F'x'", 'rf"x"', "fr'''x'''"):
+        assert _hf_routing_token_is_fstring(_string_token(lit)), lit
+    for lit in ('"x"', 'r"x"', 'b"x"', '"foo"'):
+        assert not _hf_routing_token_is_fstring(_string_token(lit)), lit
+
+
+def test_hf_routing_message_bytes_pin_complete_error_string(tmp_path):
+    """A2a (#2351): the COMPLETE error string, byte for byte, message tail
+    included — the immutable leg of true-positive message preservation. The
+    Step 10d merge gate compares normalized message LINES (#1568 staleness
+    race), so a rewording or a masked-scan regression that moves a true
+    positive's line/tail breaks THIS pin first, in a tmp_path fixture no
+    concurrent session can perturb."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert errors == [
+        "[live-hf-retry-routing] scripts/new_tool.py:3: bare HF Hub "
+        "call in LIVE code — route through hub.retry_transient, waive with "
+        "`# NO_RETRY: <reason>`, or (pre-existing file this round never "
+        "touched — snapshot staleness, #1568) regen on a main-synced tree: "
+        "`workflow_lint.py --regen-hf-routing-snapshot`: "
+        "return hf_hub_download('org/repo', 'a.bin')"
+    ]
+
+
+# ---------------------------------------------------------------------------
 # --check-bare-list-repo-files (#1624): data-repo full-listing wedge
 # ---------------------------------------------------------------------------
 
