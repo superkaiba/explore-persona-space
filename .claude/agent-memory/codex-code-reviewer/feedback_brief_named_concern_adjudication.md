@@ -33,6 +33,21 @@ prose paragraph un-binds the concern the moment the round PASSes (#509
 class). Same-id re-emission keeps ledger continuity instead of forking a
 duplicate id.
 
+**Already-persisted-rows variant (#2578 r1, 2026-08-25):** when the brief
+names concerns the implementer ALREADY persisted pre-marker (raised rows in
+concerns.jsonl, not an undispositioned deviation) and asks "did any warrant
+BLOCKER?", the menu becomes `warranted-BLOCKER — <file:line>` /
+`stands-as-CONCERN` / `resolved-by-this-round`, and the row-disposition
+rule INVERTS: re-emit a same-id `CONCERN:: ` row ONLY on a CHANGED
+disposition (escalation or a prescribed fix with follow-through) — a
+"stands" adjudication must NOT re-emit, or the forwarder appends duplicate
+raised events for rows already open. Also inline the rows verbatim as
+compose-time facts (the worktree ledger copy is frozen at base and lacks
+post-cut rows) and, when the brief attaches a Goal-completeness question to
+one concern (an untouched parallel constant site), give the twin the key
+DISCRIMINATOR to answer it from code (read-path-of-the-gate vs
+write-side/launcher surface), not just the question.
+
 **How to apply:** any brief carrying "open concern to adjudicate" +
 concern_id + a disposition menu. Related: [[revision-round-compose-recipe]],
 [[concerns-machine-rows-2326]], [[whole-round-unsplit-compose]].
