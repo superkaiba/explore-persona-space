@@ -19,7 +19,7 @@ has_clean_result: true
 
 ## Takeaways
 
-- On the 6 of 9 instruction axes that passed the on-policy compliance gate (7 of 9 pass at a 50% comply threshold, 5 of 9 at 90%), plus both query axes, the frozen single-turn map's predicted answer-shift direction beats chance and the identity baseline everywhere. Per-axis mean cosine between predicted and observed answer-state differences runs 0.17 to 0.90 against shuffled-pair nulls whose 97.5th percentiles sit at 0.04 to 0.45; the paired map-minus-identity gap is +0.03 to +0.41, every bootstrap interval excluding zero (12 to 120 pairs per axis).
+- On the 6 of 9 instruction axes that passed the on-policy compliance gate (7 of 9 pass at a 50% comply threshold, 5 of 9 at 90%), plus both query axes, the frozen single-turn map's predicted answer-shift direction beats chance and the identity baseline everywhere. Per-axis mean cosine between predicted and observed answer-state differences runs 0.17 to 0.90 against shuffled-pair nulls whose 97.5th percentiles sit at 0.04 to 0.45; the paired map-minus-identity gap is +0.03 to +0.41, every bootstrap interval excluding zero (12 to 120 fired-value pairs per axis).
 - The tone instruction (very formal vs very casual) is carried almost perfectly: direction cosine 0.90 against a split-half reliability of 0.99, within-axis consistency 0.93 vs 0.76 for the identity baseline, and a magnitude slope at the map's global calibration (ratio 1.03, interval spanning 1).
 - The injected-name read is reliability-limited rather than diagnosably map-limited: the observed shift's split-half reliability is 0.13 (every other tested axis is at or above 0.60), which caps a perfect predictor near cosine 0.36; the observed 0.17 recovers about 48% of that bound, in line with the other axes, and a reliability this low means further map-direction loss can be neither shown nor excluded, even though the name appears in 589 of 600 base-value rollouts.
 - 3 of 9 instruction axes failed the compliance floor and are not tested: hedging (1 of 2 values fired), persona (2 of 5), stance (1 of 5). Qwen-2.5-7B-Instruct would not reliably argue one-sided stances, play most personas, or answer in strong-confidence mode on these debatable advice questions, so cross-axis claims use the 6-axis denominator and those rows appear as null bands only, never zero bars.
@@ -34,7 +34,7 @@ Decompose, by kind of context information, what the frozen context-to-answer map
 
 **Broader narrative:** the context-to-answer line of the project asks whether a single linear map from context-end hidden states predicts the answer representation a context will produce. Aggregate held-out fit says yes on pooled corpora; this battery says *which kinds* of context information survive the map (tone, query topic, audience description, content constraints) and which reads are limited by sampling noise or by the model's own unwillingness to comply, anchoring every representational claim to a behavioral manipulation check.
 
-Conciseness acknowledgment: this body, one experiment round plus a folded zero-GPU recount, deliberately ships three check-20 WARN classes (Takeaways bullet length over the 30-word guidance, per-result prose over the 120-word band on all seven results, and total prose over the 1,050-word round-scaled budget) because the battery reports 11 axes with per-axis nulls, reliabilities, baselines, and intrusion recounts that lose meaning when split.
+Conciseness acknowledgment: this body, one experiment round plus a folded zero-GPU recount, deliberately ships four check-20 WARN classes (Takeaways bullet length over the 30-word guidance, per-result prose over the 120-word band on all seven results, total prose over the 1,050-word round-scaled budget, and the hero-figure caption over the 60-word guidance to carry the per-axis fired-pair counts) because the battery reports 11 axes with per-axis nulls, reliabilities, baselines, and intrusion recounts that lose meaning when split.
 
 ## Methodology
 
@@ -117,6 +117,17 @@ Random sample (seed 42): 6 checks, one per axis not shown above; complying check
 
 </details>
 
+<details>
+<summary>Query axes (query content, query form, and the query-paraphrase yardstick): one worked pair each, both sides end to end</summary>
+
+Random sample (seed 42): 3 of 114 query pairs (one of 66 query-content, one of 36 query-form, one of 12 query-paraphrase pairs), with 1 of the 10 rollouts shown per side; every query context has an empty system prompt. Rollout text: [rollout shards on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair/raw_completions/anchors); line indexes 0-based into `anchors_query.jsonl`; each completion is truncated at its first paragraph break.
+
+1. **Query content (two different carrier questions in question form).** **User (side A):** Is it better to rent or to buy a home? **Completion (truncated):** "Whether it's better to rent or buy a home depends on several factors, and the answer can vary from person to person. Here are some key considerations for each option:" (line 10). **User (side B):** What's the best way to make new friends? **Completion (truncated):** "Making new friends can be enjoyable and rewarding. Here are some suggestions for making new friends:" (line 174).
+2. **Query form (question vs statement phrasing of the same question).** **User (question form):** Should students be required to learn coding? **Completion (truncated):** "Requiring students to learn coding is a topic of ongoing debate, but there are reasons to make it more widely available as part of a diverse curriculum. Here are some arguments for and against:" (line 33). **User (statement form):** I'm weighing whether students should be required to learn coding. **Completion (truncated):** "The decision to require students to learn coding is a complex one, and it ultimately depends on the goals of your educational system or institution. Here are some pros and cons to consider in making this decision:" (line 152).
+3. **Query paraphrase (the yardstick: a meaning-preserving rewording of the same question).** **User (base question):** Is it better to exercise in the morning or evening? **Completion (truncated):** "There isn't a one-size-fits-all answer when it comes to the best time to exercise, as it can depend on individual schedules, preferences, and goals. However, here are some points to consider for both morning and evening workouts:" (line 351). **User (paraphrase):** Does a morning workout beat an evening one? **Completion (truncated):** "Whether a morning workout or an evening workout is better can depend on various factors, including your personal preferences, sleep patterns, and daily schedule. Here are some points to consider:" (line 438).
+
+</details>
+
 ## Results
 
 ### Wherever the instruction fired, the map recovers the answer-shift direction and beats the identity baseline on all 8 tested axes
@@ -125,18 +136,7 @@ Plotted: per axis, the mean cosine between predicted and observed answer-state d
 
 ![Per-axis profile of frozen maps with direction recovery, per-pair spread, calibration, within-axis consistency, and text-vs-representation panels; direction recovery clears the null band on all 8 tested axes with the map above identity everywhere](https://raw.githubusercontent.com/superkaiba/explore-persona-space/772971c5716f53d0cbae867675e4a74a6c04ccb5/figures/issue_2564/fig_hero_axis_profile.png)
 
-> **Figure.** *Direction recovery clears the null on all 8 tested axes with the map above identity on every one.* Whiskers are carrier-clustered bootstrap intervals; grey bands are shuffled-pair null 97.5% ranges; diamonds mark split-half reliability; per-pair points are positive except 10 injected-name pairs; hedging, persona, and stance show null bands (floor failed); the query-content consistency cell is blank (carrier-dyad pairs).
-
-| Axis | Pairs | Map cosine [95%] | Null 97.5% | Identity cosine | Map minus identity [95%] |
-|---|---|---|---|---|---|
-| tone | 12 | 0.899 [0.894, 0.904] | 0.452 | 0.728 | +0.171 [0.163, 0.178] |
-| query content | 66 | 0.715 [0.675, 0.751] | 0.096 | 0.304 | +0.410 [0.387, 0.433] |
-| user description | 120 | 0.596 [0.568, 0.627] | 0.047 | 0.427 | +0.169 [0.144, 0.197] |
-| content constraint | 120 | 0.497 [0.479, 0.516] | 0.155 | 0.314 | +0.184 [0.169, 0.199] |
-| marker word | 120 | 0.416 [0.401, 0.429] | 0.071 | 0.273 | +0.143 [0.124, 0.159] |
-| output format | 120 | 0.362 [0.340, 0.379] | 0.042 | 0.229 | +0.133 [0.110, 0.152] |
-| query form | 36 | 0.304 [0.269, 0.335] | 0.077 | 0.221 | +0.083 [0.058, 0.114] |
-| injected name | 120 | 0.172 [0.152, 0.193] | 0.036 | 0.138 | +0.034 [0.018, 0.049] |
+> **Figure.** *Direction recovery clears the null on all 8 tested axes with the map above identity on every one.* Whiskers are carrier-clustered bootstrap intervals; grey bands are shuffled-pair null 97.5% ranges; diamonds mark split-half reliability; per-pair points are positive except 10 injected-name pairs; hedging, persona, and stance show null bands (floor failed); the query-content consistency cell is blank (carrier-dyad pairs). Per-axis fired-pair counts behind the means: tone 12, query content 66, user description 36, content constraint 120, marker word 120, output format 36, query form 36, injected name 120; the compliance gate shrinks output format and user description to 36 of their 120 designed value-swap pairs.
 
 Every tested axis clears its null and every paired gap excludes zero, so the map carries per-kind information beyond raw context-state geometry. The two frozen maps agree throughout (largest difference 0.047, on query content), and cross-wording-family medians of 0.72 to 0.97 show the recovered directions are not template artifacts. One caveat on tone: the manipulation also lengthens answers (mean +108 tokens), though the span-mean pooling twin reproduces the read (0.898), so pooling is not driving it.
 
@@ -220,5 +220,6 @@ The map therefore carries some purely formal query information that barely surfa
 
 > it's fine for you to generate them
 
-Plan v6 approved 2026-08-24; run, judging, and analysis 2026-08-25; interpretation round 1 folded 2026-08-25; round-2 ensemble revision applied 2026-08-25; zero-GPU CJK-excluded direction recompute folded 2026-08-25 as a same-issue follow-up round `cjk-excluded-direction`; clean-result-critique round-2 revision (figure vocabulary, per-pair panels, worked-example coverage) applied 2026-08-25; clean-result-critique round-3 revision (generator disclosure, hero per-pair spread panel) applied 2026-08-25.
+Plan v6 approved 2026-08-24; run, judging, and analysis 2026-08-25; interpretation round 1 folded 2026-08-25; round-2 ensemble revision applied 2026-08-25; zero-GPU CJK-excluded direction recompute folded 2026-08-25 as a same-issue follow-up round `cjk-excluded-direction`; clean-result-critique round-2 revision (figure vocabulary, per-pair panels, worked-example coverage) applied 2026-08-25; clean-result-critique round-3 revision (generator disclosure, hero per-pair spread panel) applied 2026-08-25; clean-result-critique round-4 revision (fired-pair denominators, headline table removed, query-axis worked examples) applied 2026-08-25.
+
 
