@@ -625,7 +625,14 @@ def stratified_subset(rows: list[dict], n: int, label: str) -> list[str]:
 
 # ── M3: exemplar bank (pool -> registered composition template) ──────────────
 
-EXEMPLAR_SCAN_CAP = 10_000  # bounded fresh LMSYS stream pass (fixed stop)
+# Bounded fresh LMSYS stream pass (fixed stop). MEASURED (Unit C smoke probe,
+# 2026-08-24, production filters + the 18k-corpus dedup set): the quotas below
+# fill at 34,834 scanned rows (math/code are the scarce classes — rejects
+# {"in_corpus": 13585, "not_single_turn": 8235, "language": 7756, ...}); the
+# original 10_000 stop would have stranded the pool at ~15 math / ~11 code and
+# crashed P0 at bank selection. The stream stops EARLY once quotas fill, so
+# the bound only pays when classes are rare. 60_000 ≈ 1.7× the measured fill.
+EXEMPLAR_SCAN_CAP = 60_000
 EXEMPLAR_POOL_QUOTAS: dict[str, int] = {"generic": 120, "math": 40, "code": 40}
 EXEMPLAR_ANS_MIN_TOKENS = 30
 EXEMPLAR_ANS_MAX_TOKENS = 180

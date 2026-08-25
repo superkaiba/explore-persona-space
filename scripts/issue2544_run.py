@@ -74,7 +74,12 @@ BOOKED_PASS_WALL_H = 8.5 + 3.5  # P2+P3a + P3b planned_wall_h
 CAPTURE_LAYER_FULL = "full17"
 SMOKE_SUBSET_SIZES: dict[str, int] = {"pilot": 8, "reliability": 4, "robust": 8, "natgen": 4}
 SMOKE_EXEMPLAR_QUOTAS: dict[str, int] = {"generic": 40, "math": 12, "code": 12}
-SMOKE_EXEMPLAR_SCAN_CAP = 6000
+# MEASURED (Unit C smoke, 2026-08-24): the production quotas {120,40,40} fill at
+# 34,834 scanned LMSYS rows under the production eligibility filters (math is
+# the scarce class); 6,000 left the math class at ~3 rows and the bank build
+# raised "spares infeasible". The stream stops EARLY once the smoke quotas
+# {40,12,12} fill, so this bound only pays when classes are rare.
+SMOKE_EXEMPLAR_SCAN_CAP = 40_000
 WILSON_Z = 1.959963984540054  # 95% two-sided
 
 
@@ -1715,7 +1720,7 @@ def main() -> None:
     ap.add_argument("--rungs", default=None, help="rung subset, e.g. 'r0 main R' (default: all)")
     ap.add_argument("--worker-id", default=None)
     ap.add_argument("--gpu-id", type=int, default=None, help="recorded; CVD pinned by dispatcher")
-    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--device", default=None, help="torch device (default cuda:0 if available)")
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument("--list-phases", action="store_true")
     args = ap.parse_args()
@@ -1733,6 +1738,15 @@ def main() -> None:
     out_root.mkdir(parents=True, exist_ok=True)
     if args.corpus_dir is None:
         args.corpus_dir = str(out_root / "corpus")
+    if args.device is None:
+        # #1902 parity: the dispatcher composes no --device, so the CPU-host
+        # smoke (tiny-real model) resolves cpu here; cuda hosts keep cuda:0.
+        try:
+            import torch
+
+            args.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        except Exception:  # noqa: BLE001 — CPU structural checks without torch cuda
+            args.device = "cpu"
     if args.smoke and C2.HF_WRITE_PREFIX == "issue2544_stage_map":
         raise SystemExit(
             "--smoke refuses the PRODUCTION HF write prefix — export "
