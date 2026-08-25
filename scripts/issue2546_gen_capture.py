@@ -188,6 +188,18 @@ REL_BASE = {
 REL_TOTAL_POST = {1: 1500, 2: 1000, 3: 1000}
 REL_TOTAL_SHORT = 500  # every arm (plan §4.2 P3)
 
+# Stratification keys reliability_row_ids reads per corpus (plan §4.2 quotas).
+# compose_prompts carries EXACTLY these through its composed-row rebuild by
+# HARD subscript — a staged row missing one fails loud at compose time, and
+# a composed row missing one fails loud at draw time (r8 crash-fix: the
+# rebuild stripped k_bin/ch_type/level and the arm-1 p1_smoke draw
+# KeyError'd at first pod contact — epm:failure v3). Corpora absent here
+# stratify by corpus name alone.
+REL_STRATUM_KEYS: dict[str, tuple[str, ...]] = {
+    "gsm8k_train": ("k_bin",),
+    "contexthub": ("ch_type", "level"),
+}
+
 
 # ---------------------------------------------------------------------------
 # Arm registry (plan §4.1)
@@ -463,9 +475,16 @@ def smoke_slice(rows_by_corpus: dict[str, list[dict]], arm: int) -> dict[str, li
     return out
 
 
-def scaled_quota(total_target: int, strata_sizes: dict[str, int]) -> dict[str, int]:
+def scaled_quota(
+    total_target: int, strata_sizes: dict[str, int]
+) -> tuple[dict[str, int], dict[str, float]]:
     """Largest-remainder allocation of ``total_target`` across strata,
-    proportional to the arm-1 base quotas (REL_BASE), capped at stratum size."""
+    proportional to the arm-1 base quotas (REL_BASE), capped at stratum size.
+
+    Returns ``(alloc, raw)``: the integer allocation actually drawable plus
+    the UNCAPPED proportional raw quota per stratum — the plan-§4.2 target
+    the caller records shortfalls against (r8: a thin draw is recorded,
+    never silently absorbed)."""
     base: dict[str, float] = {}
     for name in strata_sizes:
         if name.startswith("gsm8k_train:"):
@@ -486,33 +505,84 @@ def scaled_quota(total_target: int, strata_sizes: dict[str, int]) -> dict[str, i
             alloc[k] += 1
             rem -= 1
         i += 1
-    return alloc
+    return alloc, raw
 
 
-def reliability_row_ids(rows_by_corpus: dict[str, list[dict]], total_target: int) -> list[str]:
-    """Seeded stratified reliability-draw selection (plan §4.2 P2/P3 quotas)."""
+def reliability_row_ids(
+    rows_by_corpus: dict[str, list[dict]], total_target: int
+) -> tuple[list[str], dict]:
+    """Seeded stratified reliability-draw selection (plan §4.2 P2/P3 quotas).
+
+    Returns ``(picked row_ids, report)``. The report records, per stratum,
+    the realized population size, the plan-proportional raw quota, and the
+    allocation actually drawn, plus capped strata + the total shortfall —
+    a thin draw is RECORDED (WARN + persisted by the caller), never silently
+    absorbed (r8: per-arm per-stratum noise ceilings are a plan deliverable).
+
+    Rows MUST carry the REL_STRATUM_KEYS for their corpus. compose_prompts
+    carries them through its composed-row rebuild, so the draw samples the
+    COMPOSED (post-overlong-drop) population — the rows actually generated
+    (r8 crash-fix: the r7-era rebuild stripped k_bin/ch_type/level and this
+    function KeyError'd pod-side at p1_smoke_rig)."""
     strata: dict[str, list[str]] = {}
     for c, rows in rows_by_corpus.items():
+        if c == "gsm8k_test":
+            continue  # eval-only corpus: excluded from reliability quotas
         for r in rows:
-            if c == "gsm8k_train":
-                key = f"gsm8k_train:{r['k_bin']}"
-            elif c == "contexthub":
-                key = f"contexthub:{r['ch_type']}_L{r['level']}"
-            elif c == "gsm8k_test":
-                continue  # eval-only corpus: excluded from reliability quotas
-            else:
-                key = c
+            try:
+                if c == "gsm8k_train":
+                    key = f"gsm8k_train:{r['k_bin']}"
+                elif c == "contexthub":
+                    key = f"contexthub:{r['ch_type']}_L{r['level']}"
+                else:
+                    key = c
+            except KeyError as e:
+                raise KeyError(
+                    f"reliability stratification key {e.args[0]!r} missing on a {c!r} row "
+                    f"({r.get('row_id', '?')}) — compose_prompts must carry REL_STRATUM_KEYS "
+                    f"through its composed-row rebuild (r8 contract); refusing to collapse "
+                    f"strata (never .get()-default here: a wrong bucket corrupts the "
+                    f"per-stratum noise ceilings, plan §4.2)"
+                ) from e
             strata.setdefault(key, []).append(r["row_id"])
     sizes = {k: len(v) for k, v in strata.items()}
-    alloc = scaled_quota(total_target, sizes)
+    alloc, raw = scaled_quota(total_target, sizes)
     rng = np.random.default_rng(SEED + 77)
     picked: list[str] = []
+    picked_per: dict[str, int] = {}
     for k in sorted(strata):
         ids = sorted(strata[k])
         take = alloc[k]
         idx = rng.permutation(len(ids))[:take]
         picked.extend(ids[int(i)] for i in idx)
-    return picked
+        picked_per[k] = len(idx)
+    assert len(picked) == sum(alloc.values()), (len(picked), alloc)
+    capped = sorted(k for k in alloc if alloc[k] < int(raw[k]))
+    shortfall = total_target - len(picked)
+    report = {
+        "total_target": total_target,
+        "n_picked": len(picked),
+        "shortfall": shortfall,
+        "capped_strata": capped,
+        "strata": {
+            k: {
+                "size": sizes[k],
+                "quota_raw": round(raw[k], 3),
+                "alloc": alloc[k],
+                "picked": picked_per[k],
+            }
+            for k in sorted(strata)
+        },
+    }
+    if shortfall > 0 or capped:
+        logger.warning(
+            "[rel-draw] quota shortfall: picked %d of target %d (capped strata: %s) — "
+            "recorded in _reliability_draw.json against the plan §4.2 quotas",
+            len(picked),
+            total_target,
+            capped or "none",
+        )
+    return picked, report
 
 
 # ---------------------------------------------------------------------------
@@ -1910,6 +1980,12 @@ def compose_prompts(
                     "n_prompt_tokens": len(ids),
                     "read_idx": read_idx,
                     "read_distance": len(ids) - 1 - read_idx,
+                    # Reliability stratification keys (plan §4.2), carried by
+                    # HARD subscript: reliability_row_ids reads them off THIS
+                    # composed (post-overlong-drop) population — the rows the
+                    # workers actually generate (r8 crash-fix: the rebuild
+                    # stripped k_bin/ch_type/level; KeyError at p1_smoke_rig).
+                    **{k: r[k] for k in REL_STRATUM_KEYS.get(c, ())},
                 }
             )
         out[c] = keep
@@ -2004,7 +2080,30 @@ def run_generation(
     if not pending:
         return merged
     composed, compose_report = compose_prompts(tok, tok, side, pending, args.prefill_fallback)
-    rel_ids = set(reliability_row_ids(composed, rel_total)) if rel_total > 0 else set()
+    rel_ids: set[str] = set()
+    if rel_total > 0:
+        rel_picked, rel_report = reliability_row_ids(composed, rel_total)
+        rel_ids = set(rel_picked)
+        # Durable record of the realized per-stratum draw vs the plan-§4.2
+        # quotas (r8: a thin draw is recorded, never silently absorbed —
+        # per-arm per-stratum noise ceilings are an addendum deliverable).
+        _atomic_write_json(
+            stage_dir / "_reliability_draw.json",
+            {
+                **rel_report,
+                "side": side.side,
+                # A partial resume composes only PENDING corpora, so this
+                # record names exactly the population the draw covered.
+                "corpora_drawn_over": sorted(composed),
+                "repro": repro_meta(args.phase),
+            },
+        )
+        print(
+            f"[rel-draw] {side.stage}: picked {rel_report['n_picked']}/{rel_total} across "
+            f"{len(rel_report['strata'])} strata (shortfall {rel_report['shortfall']}, "
+            f"capped {rel_report['capped_strata'] or 'none'})",
+            flush=True,
+        )
     all_rows = [r for c in sorted(composed) for r in composed[c]]
     work_dir = out_root / "work" / f"{args.phase}_{side.side}"
     work_dir.mkdir(parents=True, exist_ok=True)
