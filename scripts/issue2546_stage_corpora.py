@@ -8,7 +8,11 @@ Builds the 8-corpus staging bundle consumed by every arm's pod:
    manifests/meta sidecars); join GSM8K gold solutions from ``openai/gsm8k`` by
    ``src_index``; k = count of ``<<`` per gold solution, binned 1 / 2-3 / 4-6 / >=7
    with the pre-registered thin-bin fallback (k=1 < 300 rows => lowest bin becomes
-   k<=2, recorded in the manifest).
+   k<=2, recorded in the manifest). Gold solutions with ZERO ``<<`` annotations are
+   DROPPED and counted (k=0 is not a defined bin — measured census 2026-08-25:
+   test 18/1,319, train 95/7,473; epm:failure v2), bounded by a >5%-of-corpus
+   sanity raise (an upstream annotation-convention change invalidates the k
+   stratifier and must fail loud, never be absorbed).
 2. Pull MMLU / ARC-Challenge / CSQA / PIQA / ContextHub (via TAUR-Lab configs) at the
    per-arm draws of plan section 4.1 (nested arm-1/2 subset of the arm-3 draw).
 3. Join the TAUR-Lab CoT Analysis collection (the UN-GATED per-model repos —
@@ -103,6 +107,26 @@ MMLU_DRAW_ARM3 = 7680
 CH_L24_CAP_ARM12 = 1000
 CH_L24_CAP_ARM3 = 1300
 K1_FALLBACK_FLOOR = 300  # k=1 bin below this => merge lowest bin to k<=2 (pre-registered)
+
+# Zero-'<<' gold solutions are DROPPED, never binned: the plan's k bins start at k=1
+# (calculator-step binning inherited from 2608.09942, plan section 2/4.1) — k=0 is not
+# a defined bin, and admitting these genuinely multi-step solutions written without
+# calculator markers would file them into the no-reasoning stratum, corrupting the
+# necessity contrast H1/H6 rest on (epm:failure v2 decision, 2026-08-25). Measured
+# census 2026-08-25: test 18/1,319 (1.36%), train 95/7,473 (1.27%); ALL 113 carry
+# '####', so gold_answer extraction is unaffected. The drop is bounded: a fraction
+# materially above the census means the upstream annotation convention changed and
+# the k stratifier is no longer valid => fail loud, never absorb.
+ZERO_ANNOTATION_DROP_FRAC_BOUND = 0.05  # ~3.7x the measured max census rate (1.36%)
+# The fraction arm alone is meaningless on tiny adversarial smoke slices (1 injected
+# offender in a 21-row slice = 4.8%); a systematic convention change at production
+# scale produces tens of drops (5% of 1,319 = 66), so this count arm is inert there.
+ZERO_ANNOTATION_DROP_MIN_COUNT = 3
+# First measured zero-annotation offender per corpus (census above). The smoke slice
+# APPENDS this row to the 20-row head so the drop path is REACHED at smoke scale —
+# round-6 blind spot: a [:20] head slice structurally cannot reach a per-row
+# invariant first violated at src_index 24 (test) / 29 (train).
+SMOKE_ZERO_ANNOTATION_PROBE_IDX = {"gsm8k_test": 24, "gsm8k_train": 29}
 
 # Dedup keep-first corpus order: gsm8k_test first (eval-only — protected), then train
 # (near-dup-of-test train rows drop: the decontamination direction), then the rest.
@@ -290,43 +314,123 @@ def extract_math_problems(rows: list[dict]) -> tuple[list[str], dict]:
     return problems, report
 
 
-def join_gsm8k_gold(staged: dict[str, list[dict]], smoke: bool) -> dict[str, list[dict]]:
-    """Join openai/gsm8k gold solutions by src_index; compute k = count('<<')."""
+def _join_gold_rows(
+    corpus: str, split: str, src, staged_rows: list[dict]
+) -> tuple[list[dict], dict]:
+    """Pure gold-join core (testable seam): join by src_index, k = count('<<').
+
+    Fatal (join/schema integrity — measured 0 violations across all 8,792 rows,
+    census 2026-08-25): src_index out of range, staged prompt != source question,
+    gold lacking '####' (checked on EVERY row, dropped ones included — a missing
+    '####' is a new anomaly regardless of k). DROPPED and counted: zero-'<<' rows
+    (k=0 is not a defined bin; see ZERO_ANNOTATION_DROP_FRAC_BOUND). Raises when
+    the dropped fraction exceeds the sanity bound.
+
+    Returns (rows, report) — report carries the coverage-loss counts the manifest
+    surfaces (After-Every-Experiment item 8).
+    """
+    rows: list[dict] = []
+    dropped_idx: list[int] = []
+    for r in staged_rows:
+        idx = int(r["src_index"])
+        if idx < 0 or idx >= len(src):
+            raise RuntimeError(f"{corpus}: src_index {idx} out of range for {split} split")
+        srow = src[idx]
+        if _norm(srow["question"]) != _norm(r["prompt"]):
+            raise RuntimeError(f"{corpus}: staged prompt != source question at src_index {idx}")
+        sol = srow["answer"]
+        if "####" not in sol:
+            raise RuntimeError(f"{corpus}: gold solution at src_index {idx} lacks '####'")
+        gold = sol.rsplit("####", 1)[-1].strip()
+        k = sol.count("<<")
+        if k < 1:
+            # Legitimate multi-step solution written without <<...>> calculator
+            # markers (1.3% of openai/gsm8k) — DROP + count, never bin as k=0.
+            dropped_idx.append(idx)
+            continue
+        rows.append(
+            {
+                "question": srow["question"],
+                "gold_answer": gold,
+                "k": k,
+                "src_index": idx,
+                "src_split": split,
+            }
+        )
+    n_staged = len(staged_rows)
+    n_dropped = len(dropped_idx)
+    drop_frac = n_dropped / n_staged if n_staged else 0.0
+    if n_dropped >= ZERO_ANNOTATION_DROP_MIN_COUNT and drop_frac > ZERO_ANNOTATION_DROP_FRAC_BOUND:
+        raise RuntimeError(
+            f"{corpus}: {n_dropped}/{n_staged} ({drop_frac:.1%}) gold solutions have zero "
+            f"'<<' — exceeds the {ZERO_ANNOTATION_DROP_FRAC_BOUND:.0%} sanity bound "
+            "(measured census 2026-08-25: test 1.36%, train 1.27%); the upstream "
+            "annotation convention likely changed and the k stratifier is no longer valid"
+        )
+    report = {
+        "n_staged": n_staged,
+        "n_dropped_zero_annotation": n_dropped,
+        "n_retained": len(rows),
+        "drop_frac": drop_frac,
+        "dropped_src_indices": dropped_idx,
+        "bound": {
+            "max_drop_frac": ZERO_ANNOTATION_DROP_FRAC_BOUND,
+            "min_count": ZERO_ANNOTATION_DROP_MIN_COUNT,
+        },
+    }
+    return rows, report
+
+
+def join_gsm8k_gold(
+    staged: dict[str, list[dict]], smoke: bool
+) -> tuple[dict[str, list[dict]], dict]:
+    """Join openai/gsm8k gold solutions by src_index; compute k = count('<<').
+
+    Returns (rows_by_corpus, join_report). The smoke slice is the 20-row head PLUS
+    the first measured zero-annotation offender (SMOKE_ZERO_ANNOTATION_PROBE_IDX),
+    so the drop path is exercised at smoke scale.
+    """
     ds = {
         "test": load_dataset("openai/gsm8k", "main", split="test"),
         "train": load_dataset("openai/gsm8k", "main", split="train"),
     }
     out: dict[str, list[dict]] = {}
+    join_report: dict = {
+        "coverage_loss_note": (
+            "zero-'<<' gold rows are DROPPED, not binned (k bins start at k=1, "
+            "2608.09942; k=0 would corrupt the no-reasoning stratum) — a coverage-loss "
+            "item per After-Every-Experiment item 8: per-corpus denominators are the "
+            "n_retained values below, revised everywhere downstream"
+        ),
+        "per_corpus": {},
+    }
     for corpus, split in [("gsm8k_test", "test"), ("gsm8k_train", "train")]:
         src = ds[split]
-        rows = []
-        staged_rows = staged[corpus][:20] if smoke else staged[corpus]
-        for r in staged_rows:
-            idx = int(r["src_index"])
-            if idx < 0 or idx >= len(src):
-                raise RuntimeError(f"{corpus}: src_index {idx} out of range for {split} split")
-            srow = src[idx]
-            if _norm(srow["question"]) != _norm(r["prompt"]):
-                raise RuntimeError(f"{corpus}: staged prompt != source question at src_index {idx}")
-            sol = srow["answer"]
-            k = sol.count("<<")
-            if k < 1:
-                raise RuntimeError(f"{corpus}: gold solution at src_index {idx} has zero '<<'")
-            gold = sol.rsplit("####", 1)[-1].strip() if "####" in sol else None
-            if gold is None:
-                raise RuntimeError(f"{corpus}: gold solution at src_index {idx} lacks '####'")
-            rows.append(
-                {
-                    "question": srow["question"],
-                    "gold_answer": gold,
-                    "k": k,
-                    "src_index": idx,
-                    "src_split": split,
-                }
-            )
+        if smoke:
+            staged_rows = list(staged[corpus][:20])
+            probe_idx = SMOKE_ZERO_ANNOTATION_PROBE_IDX[corpus]
+            if all(int(r["src_index"]) != probe_idx for r in staged_rows):
+                probe_rows = [r for r in staged[corpus] if int(r["src_index"]) == probe_idx]
+                if len(probe_rows) != 1:
+                    raise RuntimeError(
+                        f"{corpus}: expected exactly one staged row with src_index "
+                        f"{probe_idx} for the smoke zero-annotation probe; got "
+                        f"{len(probe_rows)}"
+                    )
+                staged_rows.extend(probe_rows)
+        else:
+            staged_rows = staged[corpus]
+        rows, report = _join_gold_rows(corpus, split, src, staged_rows)
         out[corpus] = rows
-        _log(f"{corpus}: joined gold for {len(rows)} rows (k>=1 asserted)")
-    return out
+        join_report["per_corpus"][corpus] = report
+        _log(
+            f"{corpus}: joined gold for {report['n_retained']} rows; dropped "
+            f"{report['n_dropped_zero_annotation']} zero-'<<' rows "
+            f"({report['drop_frac']:.2%}; bound {ZERO_ANNOTATION_DROP_FRAC_BOUND:.0%}; "
+            f"src_indices {report['dropped_src_indices'][:8]}"
+            f"{'...' if report['n_dropped_zero_annotation'] > 8 else ''})"
+        )
+    return out, join_report
 
 
 def assign_k_bins(rows_by_corpus: dict[str, list[dict]]) -> dict:
@@ -360,6 +464,13 @@ def assign_k_bins(rows_by_corpus: dict[str, list[dict]]) -> dict:
         "bin_counts": dict(
             Counter(r["k_bin"] for c in ("gsm8k_test", "gsm8k_train") for r in rows_by_corpus[c])
         ),
+        # Per-corpus histogram over RETAINED rows (zero-'<<' rows are dropped upstream
+        # by _join_gold_rows) — the coverage-loss record pairs these with the
+        # per-corpus n_retained in manifest['gsm8k_gold_join'].
+        "bin_counts_by_corpus": {
+            c: dict(Counter(r["k_bin"] for r in rows_by_corpus[c]))
+            for c in ("gsm8k_test", "gsm8k_train")
+        },
     }
 
 
@@ -1220,8 +1331,10 @@ def run_selftest() -> int:
     exclusion), the anchored contexthub pattern (round-6 __round_2_fixes
     collision fixture), CH source-repo selection (round-6 all-8-cells
     requirement), near-dup dedup (the 3-signature transitive fixture of r2
-    Major 6 + a text-level exact-dup fixture with manifest counters), and
-    nested draw redistribution (skewed strata forcing the deficit branch).
+    Major 6 + a text-level exact-dup fixture with manifest counters),
+    nested draw redistribution (skewed strata forcing the deficit branch),
+    and the gsm8k gold-join drop path (round 7, epm:failure v2: zero-'<<'
+    rows dropped + counted, '####' raise fatal, drop-rate sanity bound).
     """
     # -- TAUR discovery filter (known repo ids + round-6 gated exclusion) ----------
     ungated_per_model = [
@@ -1332,11 +1445,58 @@ def run_selftest() -> int:
     assert n12_by == {"sx": 0, "sy": 7, "sz": 6}, n12_by
     assert all(r["in_arm3"] for r in rows if r["in_arm12"]), "arm-1/2 row outside arm-3 draw"
 
+    # -- gsm8k gold join: zero-'<<' drop path + fatal guards (round 7, epm:failure v2)
+    annot = "First <<2+2=4>> then <<4*3=12>>.\n#### 12"  # k=2
+    # k=0 shape of the real offender (openai/gsm8k test src_index 24): a legitimate
+    # multi-step algebraic solution written without <<...>> calculator markers.
+    zero = "Let X be the price. .75X = $19.50 so X = $26.\n#### 26"
+    src_fx = [
+        {"question": "q0?", "answer": annot},
+        {"question": "q1?", "answer": zero},
+        {"question": "q2?", "answer": "One step <<1+1=2>>.\n#### 2"},  # k=1
+    ]
+    staged_fx = [{"prompt": f"q{i}?", "src_index": i} for i in range(3)]
+    rows_fx, rep_fx = _join_gold_rows("gsm8k_test", "test", src_fx, staged_fx)
+    assert [r["src_index"] for r in rows_fx] == [0, 2], rows_fx  # zero-'<<' row DROPPED
+    assert [r["k"] for r in rows_fx] == [2, 1], rows_fx
+    assert [r["gold_answer"] for r in rows_fx] == ["12", "2"], rows_fx
+    assert rep_fx["n_dropped_zero_annotation"] == 1 and rep_fx["dropped_src_indices"] == [1], rep_fx
+    assert rep_fx["n_staged"] == 3 and rep_fx["n_retained"] == 2, rep_fx
+    # '####' raise stays FATAL — checked on every row, zero-'<<' rows included
+    # (a missing '####' is a new anomaly regardless of k; measured 0/8,792).
+    try:
+        _join_gold_rows(
+            "gsm8k_test",
+            "test",
+            [{"question": "q?", "answer": "no hash marker and no annotations"}],
+            [{"prompt": "q?", "src_index": 0}],
+        )
+    except RuntimeError as e:
+        assert "lacks '####'" in str(e), e
+    else:
+        raise AssertionError("missing-'####' gold accepted (fatal raise regressed)")
+    # Drop-rate sanity bound: 3 of 40 (7.5% > 5%, count >= 3) => RAISE ...
+    src_b = [{"question": f"q{i}?", "answer": (zero if i < 3 else annot)} for i in range(40)]
+    staged_b = [{"prompt": f"q{i}?", "src_index": i} for i in range(40)]
+    try:
+        _join_gold_rows("gsm8k_train", "train", src_b, staged_b)
+    except RuntimeError as e:
+        assert "sanity bound" in str(e), e
+    else:
+        raise AssertionError("7.5% zero-annotation drop passed the 5% sanity bound")
+    # ... while the deterministic smoke composition (head-20 + 1 injected offender,
+    # 1/21 = 4.8%, under both bound arms) drops WITHOUT raising.
+    src_s = [{"question": f"q{i}?", "answer": (zero if i == 20 else annot)} for i in range(21)]
+    staged_s = [{"prompt": f"q{i}?", "src_index": i} for i in range(21)]
+    rows_s, rep_s = _join_gold_rows("gsm8k_test", "test", src_s, staged_s)
+    assert len(rows_s) == 20 and rep_s["n_dropped_zero_annotation"] == 1, rep_s
+
     print(
         "[selftest] PASS: TAUR repo filter (parent + experiment + GATED exclusions), "
         "contexthub pattern anchor (__round_2_fixes excluded), CH source all-8-cells "
         "selection, dedup (transitive band-owner union, exact-dup counters), nested "
-        "draw redistribution"
+        "draw redistribution, gsm8k gold-join drop path (zero-'<<' dropped+counted, "
+        "'####' fatal, drop-rate sanity bound)"
     )
     return 0
 
@@ -1396,7 +1556,7 @@ def main(argv: list[str] | None = None) -> int:
     # -- steps 1-3: pulls + joins ------------------------------------------------
     staged = stage_1336_corpora(dl_dir)
     math_problems, math_report = extract_math_problems(staged["math"])
-    gsm = join_gsm8k_gold(staged, args.smoke)
+    gsm, gold_join_report = join_gsm8k_gold(staged, args.smoke)
     k_report = assign_k_bins(gsm)
 
     corpora: dict[str, list[dict]] = {}
@@ -1532,6 +1692,7 @@ def main(argv: list[str] | None = None) -> int:
             "arm3": sum(v["n_arm3"] for v in counts.values()),
         },
         "k_report": k_report,
+        "gsm8k_gold_join": gold_join_report,
         "math_scaffold_extraction": math_report,
         "contexthub_cell_counts": {f"{t}_L{level}": n for (t, level), n in ch_level_counts.items()},
         "dedup": {
