@@ -424,3 +424,85 @@ def test_replication_zero_pair_assert_is_unconditional():
     # no smoke term anywhere in the zero-pair assert statement
     stmt = src.split("assert pooled.get", 1)[1].split(")", 3)[:3]
     assert "smoke" not in "".join(stmt)
+
+
+def _w7_cell(ns: int, nv: int, agree, kap) -> dict:
+    return {
+        "n_sampled": ns,
+        "n_both_valid": nv,
+        "drop_rate_cal": (1 - nv / ns) if ns else None,
+        "agreement": agree,
+        "agreement_wilson_ci95": [0.1, 0.9],
+        "kappa": kap,
+    }
+
+
+def test_w7_table_rows_render_all_registered_cells_and_flag_thin():
+    """r4 w7-calibration: figure 12c's table renders EVERY registered cell — W3
+    family x category joints, W4 config cells, W5 pair cells — with counts +
+    agreement/kappa per cell; n_both_valid < W7_THIN_CELL_N is dagger-FLAGGED
+    (rendered, never hidden); W3 family=/category= marginals stay OUT of the
+    table (the adjacent bar panel renders the category marginals). Fails
+    pre-fix: the r3 figure reduced the artifact to 3 instrument-level rows."""
+    inst_stats = {
+        "n_sampled": 200,
+        "n_both_valid": 190,
+        "raw_agreement": 0.8,
+        "agreement_wilson_ci95": [0.74, 0.85],
+        "kappa": 0.6,
+        "drop_rate_cal": 0.05,
+    }
+    w7 = {
+        "w3": {
+            **inst_stats,
+            "cells": {
+                "family=rep_ta|category=behavioral": _w7_cell(24, 22, 0.9, 0.7),
+                "family=pt|category=topical": _w7_cell(13, 5, 0.6, None),
+                "family=rep_ta": _w7_cell(70, 66, 0.8, 0.6),
+                "category=behavioral": _w7_cell(40, 38, 0.8, 0.6),
+            },
+        },
+        "w4": {
+            **inst_stats,
+            "cells": {
+                "config=pt_max": _w7_cell(40, 36, 0.75, 0.5),
+                "config=rep_ta": _w7_cell(40, 3, 1.0, None),
+            },
+        },
+        "w5": {**inst_stats, "cells": {"pair=rep_ta-vs-pt_max": _w7_cell(20, 18, 0.72, 0.44)}},
+    }
+    rows = L._w7_table_rows(w7)
+    labels = [r[0] for r in rows]
+    # 3 instrument rows + 2 w3 joints + 2 w4 configs + 1 w5 pair == 8 rows
+    assert labels.count("w3") == labels.count("w4") == labels.count("w5") == 1
+    for reg in (
+        "  w3 rep_ta|behavioral",
+        "  w3 pt|topical",
+        "  w4 pt_max",
+        "  w4 rep_ta",
+        "  w5 rep_ta-vs-pt_max",
+    ):
+        assert reg in labels, f"registered cell row missing: {reg}"
+    assert len(rows) == 8
+    # marginals excluded (they would render as bare "  w3 rep_ta" / "  w3 behavioral")
+    assert "  w3 rep_ta" not in labels and "  w3 behavioral" not in labels
+    by_label = {r[0]: r for r in rows}
+    # counts render as n_both_valid/n_sampled; thin cell (3 < W7_THIN_CELL_N) daggered
+    assert by_label["  w4 rep_ta"][1] == "3/40†"
+    assert by_label["  w4 pt_max"][1] == "36/40"
+    assert by_label["  w3 rep_ta|behavioral"][1] == "22/24"
+    # agreement + CI + kappa per cell (kappa None -> n/a, descriptive per plan)
+    assert by_label["  w5 rep_ta-vs-pt_max"][2].startswith("0.720 [")
+    assert by_label["  w4 rep_ta"][3] == "n/a"
+    assert by_label["  w3 rep_ta|behavioral"][3] == "0.700"
+
+
+def test_w7_smoke_fixture_carries_registered_w4_w5_cells():
+    """r4: the ladder smoke fixture writes non-empty REGISTERED cell tables for
+    w4 (config=) and w5 (pair=) — so the composed smoke executes the r4
+    registered-cell rows rather than rendering an instruments-only table."""
+    import inspect
+
+    src = inspect.getsource(L._synth_inputs)
+    assert '"config=pt_max"' in src and '"config=rep_ta"' in src
+    assert '"pair=rep_ta-vs-pt_max"' in src

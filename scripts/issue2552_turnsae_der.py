@@ -2280,6 +2280,37 @@ def _p4_embed_texts(args, model, tok, texts: list[str]) -> np.ndarray:
     return out
 
 
+def _p4_resume_mismatch(
+    prior_doc: dict,
+    regime_key: dict,
+    input_ids: dict,
+    outputs: tuple[Path, ...],
+    upload_required: bool,
+) -> str | None:
+    """Resume-skip predicate for the P4 completion sentinel (#2552 r4
+    p4-phase-contract: r3 RECORDED input hashes + upload disposition in
+    p4_done.json but the skip predicate never CONSULTED them). Returns None
+    when the sentinel licenses a skip, else a description of the first
+    mismatching field (regime_key / inputs / uploads / outputs) — any mismatch
+    means the caller RECOMPUTES. A DIFFERENT regime is additionally fail-loud
+    at the call site (the r2 clobber guard; --force to override)."""
+    if prior_doc.get("regime_key") != regime_key:
+        return f"regime_key (prior={prior_doc.get('regime_key')} vs now={regime_key})"
+    prior_inputs = prior_doc.get("inputs") or {}
+    if prior_inputs != input_ids:
+        bad = sorted(
+            k for k in set(prior_inputs) | set(input_ids) if prior_inputs.get(k) != input_ids.get(k)
+        )
+        return f"inputs (mismatched fields: {bad})"
+    uploads = str(prior_doc.get("uploads", ""))
+    if upload_required and not uploads.startswith("uploaded+verified"):
+        return f"uploads (recorded {uploads!r}; this run requires a verified upload)"
+    missing = [str(p) for p in outputs if not p.exists()]
+    if missing:
+        return f"outputs (missing: {missing})"
+    return None
+
+
 def phase_p4_embed(args) -> None:
     """P4 (plan §4): Qwen3-Embedding-8B coverage metric. Embed every description +
     every (turn, field) summary value; per (turn, config, field) the mean cosine of the
@@ -2297,7 +2328,8 @@ def phase_p4_embed(args) -> None:
     )
     io = _p4_dirs(args)
     # regime-keyed completion sentinel (#2552 r2 BLOCKER p4-clobber): a completed
-    # P4 at the SAME regime is skipped; a DIFFERENT regime fails loud; --force recomputes
+    # P4 at the SAME regime + inputs + satisfied uploads is skipped; a DIFFERENT
+    # regime fails loud; any other mismatch recomputes; --force recomputes
     regime_key = {
         "emb_model": args.emb_model,
         "emb_max_tokens": int(args.emb_max_tokens),
@@ -2311,21 +2343,16 @@ def phase_p4_embed(args) -> None:
     sent_dir.mkdir(parents=True, exist_ok=True)
     done_path = sent_dir / "p4_done.json"
     outputs = (io.dere / "embedding_coverage.json", io.stage / "embcov_topk.npz")
-    if done_path.exists() and not args.force:
-        prior = json.loads(done_path.read_text()).get("regime_key")
-        if prior == regime_key and all(p.exists() for p in outputs):
-            logger.info("[p4] resume: p4_done.json matches regime; skip (use --force to recompute)")
-            T._sentinel("p4_embed", "P4 resume-skip (completed at identical regime)")
-            return
-        assert prior == regime_key, (
-            f"[p4] completed sentinel at a DIFFERENT regime: prior={prior} vs now={regime_key} — "
-            "pass --force to recompute (prior outputs would be silently clobbered otherwise)"
-        )
-    if args.smoke:
+    if args.smoke and not (io.fixtures / "feature_lists_2000turns.json").exists():
+        # idempotent synth (r4 p4-phase-contract): T._write_json stamps provenance
+        # timestamps into the fixture files, so an unconditional re-synthesis would
+        # change the input hashes every run and permanently defeat the resume-skip
         _p4_synth_fixtures(args, io)
     # inputs: descriptions per family + summaries + per-turn lists — ALL contract
-    # validation runs BEFORE the 8B embedder load (#2552 r2: fail in seconds, not
-    # after a ~16 GB weight fetch)
+    # validation AND input-identity hashing run BEFORE the 8B embedder load (#2552
+    # r2: fail in seconds, not after a ~16 GB weight fetch) AND BEFORE the resume
+    # decision (r4 p4-phase-contract: the r3 sentinel RECORDED input hashes + the
+    # upload disposition but the skip predicate never read them)
     descs: dict[str, dict[int, str]] = {}
     input_ids: dict = {"descriptions_sha256": {}}
     for fam in ("pt", *TA_FAMILIES):
@@ -2355,6 +2382,27 @@ def phase_p4_embed(args) -> None:
             assert "row_id" in rec and "judged_top100" in rec, (
                 f"[p4] config {cfg} turn {k} schema unexpected: {sorted(rec)}"
             )
+    # resume decision (r4 p4-phase-contract): skip ONLY when the completed sentinel
+    # matches the CURRENT regime + input hashes AND its upload disposition satisfies
+    # this run's upload requirement AND every output exists; log the mismatching
+    # field otherwise and recompute. --force bypasses the whole check (recompute).
+    upload_required = not args.skip_upload and _production(args)
+    if done_path.exists() and not args.force:
+        prior_doc = json.loads(done_path.read_text())
+        prior = prior_doc.get("regime_key")
+        assert prior == regime_key, (
+            f"[p4] completed sentinel at a DIFFERENT regime: prior={prior} vs now={regime_key} — "
+            "pass --force to recompute (prior outputs would be silently clobbered otherwise)"
+        )
+        mismatch = _p4_resume_mismatch(prior_doc, regime_key, input_ids, outputs, upload_required)
+        if mismatch is None:
+            logger.info(
+                "[p4] resume: p4_done.json matches regime+inputs+uploads; skip "
+                "(use --force to recompute)"
+            )
+            T._sentinel("p4_embed", "P4 resume-skip (identical regime/inputs; uploads satisfied)")
+            return
+        logger.info("[p4] resume REJECTED — stale %s; recomputing", mismatch)
     # unique text pool: descriptions + (turn, field) values
     texts: list[str] = []
     t_index: dict[str, int] = {}
@@ -2445,14 +2493,14 @@ def phase_p4_embed(args) -> None:
             "phase": "p4-embed",
             "status": "done",
             "regime_key": regime_key,
-            # input identity + upload binding (#2552 r3 p4-phase-contract): a resume
-            # against DIFFERENT inputs, or one whose upload leg was skipped, is
-            # visible in the sentinel instead of silently reused
+            # input identity + upload binding (#2552 r3 p4-phase-contract; r4:
+            # _p4_resume_mismatch now CONSULTS both — a resume against DIFFERENT
+            # inputs, or one whose required upload was skipped, RECOMPUTES)
             "inputs": input_ids,
             "uploads": (
-                "skipped (skip_upload/non-production)"
-                if (args.skip_upload or not _production(args))
-                else "uploaded+verified (analysis_tensors/embcov)"
+                "uploaded+verified (analysis_tensors/embcov)"
+                if upload_required
+                else "skipped (skip_upload/non-production)"
             ),
         },
         phase="p4-embed",

@@ -1440,6 +1440,64 @@ def _fig_env():
     return plt, paper_palette, savefig_paper
 
 
+W7_THIN_CELL_N = 20  # per-cell n_both_valid floor: below it a row is FLAGGED, never hidden
+
+
+def _w7_table_rows(w7: dict) -> list[list[str]]:
+    """Figure-12c table data (#2552 r4 w7-calibration): the 3 instrument-level rows
+    PLUS one row per REGISTERED cell — W3 family x category joints
+    ("family=X|category=Y"), W4 config cells ("config=..."), W5 pair cells
+    ("pair=...") — each with realized n, agreement [Wilson CI95], kappa
+    (descriptive, plan line 95), and cal drop rate. Cells with
+    n_both_valid < W7_THIN_CELL_N carry a dagger on the n column (thin cell —
+    rendered + flagged, never hidden). W3 family=/category= MARGINALS stay out of
+    the table: the adjacent bar panel renders the category marginals."""
+
+    def _f3(v) -> str:
+        return "n/a" if v is None else f"{float(v):.3f}"
+
+    def _ci(d: dict) -> str:
+        ci = d.get("agreement_wilson_ci95") or [float("nan"), float("nan")]
+        return f"[{ci[0]:.2f},{ci[1]:.2f}]"
+
+    rows: list[list[str]] = []
+    for inst in ("w3", "w4", "w5"):
+        d = w7.get(inst)
+        if not isinstance(d, dict):
+            continue
+        rows.append(
+            [
+                inst,
+                f"{d.get('n_both_valid', 0)}/{d.get('n_sampled', 0)}",
+                f"{_f3(d.get('raw_agreement'))} {_ci(d)}",
+                _f3(d.get("kappa")),
+                _f3(d.get("drop_rate_cal")),
+            ]
+        )
+        cells = d.get("cells") or {}
+        if inst == "w3":
+            registered = [k for k in sorted(cells) if "|" in k]
+        else:
+            registered = [k for k in sorted(cells) if k.startswith(("config=", "pair="))]
+        for key in registered:
+            c = cells[key]
+            nbv = int(c.get("n_both_valid", 0) or 0)
+            thin = "†" if nbv < W7_THIN_CELL_N else ""
+            short = key
+            for pre in ("family=", "category=", "config=", "pair="):
+                short = short.replace(pre, "")
+            rows.append(
+                [
+                    f"  {inst} {short}",
+                    f"{nbv}/{c.get('n_sampled', 0)}{thin}",
+                    f"{_f3(c.get('agreement'))} {_ci(c)}",
+                    _f3(c.get("kappa")),
+                    _f3(c.get("drop_rate_cal")),
+                ]
+            )
+    return rows
+
+
 def phase_figures(args) -> None:
     """Hero ladder + the exploratory dump (plan §6 figure list), tolerant per-figure."""
     print("[phase=figures]", flush=True)
@@ -1750,38 +1808,25 @@ def phase_figures(args) -> None:
 
     # 12c. W7 pinned-judge calibration — the plan-registered kappa-table figure with
     # realized per-cell counts + per-category agreement/drop-rate bars (#2552 r3
-    # w7-calibration; plan Figures list "judge-agreement (kappa) table figure")
+    # w7-calibration; r4: the table renders the REGISTERED cells — W3 joints, W4
+    # config cells, W5 pair cells — not just instrument rows + category marginals)
     w7 = rep["optional_inputs"].get("w7_calibration")
     if isinstance(w7, dict) and any(k in w7 for k in ("w3", "w4", "w5")):
-        fig, (ax_t, ax_b) = plt.subplots(1, 2, figsize=(8.4, 3.2), width_ratios=[1.1, 1.0])
+        rows = _w7_table_rows(w7)
+        fig_h = max(3.2, 0.9 + 0.17 * len(rows))
+        fig, (ax_t, ax_b) = plt.subplots(1, 2, figsize=(8.6, fig_h), width_ratios=[1.35, 1.0])
         ax_t.axis("off")
-
-        def _f3(v) -> str:
-            return "n/a" if v is None else f"{float(v):.3f}"
-
-        rows = []
-        for inst in ("w3", "w4", "w5"):
-            d = w7.get(inst)
-            if not isinstance(d, dict):
-                continue
-            ci = d.get("agreement_wilson_ci95") or [float("nan"), float("nan")]
-            rows.append(
-                [
-                    inst,
-                    f"{d.get('n_both_valid', 0)}/{d.get('n_sampled', 0)}",
-                    f"{_f3(d.get('raw_agreement'))} [{ci[0]:.2f},{ci[1]:.2f}]",
-                    _f3(d.get("kappa")),
-                    _f3(d.get("drop_rate_cal")),
-                ]
-            )
         tbl = ax_t.table(
             cellText=rows,
-            colLabels=["instrument", "n valid/sampled", "agreement [CI95]", "kappa", "drop rate"],
+            colLabels=["cell", "n valid/sampled", "agreement [CI95]", "kappa", "drop rate"],
             loc="center",
         )
         tbl.auto_set_font_size(False)
-        tbl.set_fontsize(6.5)
-        ax_t.set_title("Judge agreement vs pinned judge (W7)", fontsize=8)
+        tbl.set_fontsize(5.5)
+        ax_t.set_title(
+            f"Judge agreement vs pinned judge (W7), per registered cell († n<{W7_THIN_CELL_N})",
+            fontsize=8,
+        )
         cat_cells = {
             k.split("=", 1)[1]: v
             for k, v in (w7.get("w3", {}).get("cells") or {}).items()
@@ -2113,8 +2158,74 @@ def _synth_inputs(args, io) -> None:
         {"rows": [], "summary": {"mean_rank": {c: float(i + 1) for i, c in enumerate(JW.CONFIGS)}}},
     )
     # W7 calibration fixture in the judge writer's shape (instruments + per-cell
-    # tables, joint + marginal w3 cells) so the r3 kappa-table figure leg executes
-    # under smoke rather than silently skipping (#2552 r3 w7-calibration)
+    # tables: w3 joint + marginal cells, w4 config cells, w5 pair cells) so the
+    # kappa-table figure leg — incl. the r4 registered-cell rows — executes under
+    # smoke rather than silently skipping (#2552 r3/r4 w7-calibration)
+    w7_fixture_cells = {
+        "w3": {
+            "family=rep_ta|category=behavioral": {
+                "n_sampled": 6,
+                "n_both_valid": 5,
+                "drop_rate_cal": 1 / 6,
+                "agreement": 0.8,
+                "agreement_wilson_ci95": [0.38, 0.96],
+                "kappa": 0.55,
+            },
+            "family=rep_ta": {
+                "n_sampled": 12,
+                "n_both_valid": 10,
+                "drop_rate_cal": 2 / 12,
+                "agreement": 0.8,
+                "agreement_wilson_ci95": [0.49, 0.94],
+                "kappa": 0.6,
+            },
+            "category=behavioral": {
+                "n_sampled": 6,
+                "n_both_valid": 5,
+                "drop_rate_cal": 1 / 6,
+                "agreement": 0.8,
+                "agreement_wilson_ci95": [0.38, 0.96],
+                "kappa": 0.55,
+            },
+            "category=topical": {
+                "n_sampled": 6,
+                "n_both_valid": 5,
+                "drop_rate_cal": 1 / 6,
+                "agreement": 0.6,
+                "agreement_wilson_ci95": [0.27, 0.86],
+                "kappa": None,
+            },
+        },
+        "w4": {
+            "config=pt_max": {
+                "n_sampled": 40,
+                "n_both_valid": 36,
+                "drop_rate_cal": 4 / 40,
+                "agreement": 0.75,
+                "agreement_wilson_ci95": [0.59, 0.86],
+                "kappa": 0.5,
+            },
+            "config=rep_ta": {
+                # deliberately thin (< W7_THIN_CELL_N) so the dagger flag renders
+                "n_sampled": 4,
+                "n_both_valid": 3,
+                "drop_rate_cal": 1 / 4,
+                "agreement": 1.0,
+                "agreement_wilson_ci95": [0.44, 1.0],
+                "kappa": None,
+            },
+        },
+        "w5": {
+            "pair=rep_ta-vs-pt_max": {
+                "n_sampled": 20,
+                "n_both_valid": 18,
+                "drop_rate_cal": 2 / 20,
+                "agreement": 0.72,
+                "agreement_wilson_ci95": [0.49, 0.88],
+                "kappa": 0.44,
+            },
+        },
+    }
     _write_json(
         io.agg_in / "w7_calibration.json",
         {
@@ -2127,44 +2238,7 @@ def _synth_inputs(args, io) -> None:
                     "raw_agreement": 0.8,
                     "agreement_wilson_ci95": [0.49, 0.94],
                     "kappa": 0.6,
-                    "cells": (
-                        {
-                            "family=rep_ta|category=behavioral": {
-                                "n_sampled": 6,
-                                "n_both_valid": 5,
-                                "drop_rate_cal": 1 / 6,
-                                "agreement": 0.8,
-                                "agreement_wilson_ci95": [0.38, 0.96],
-                                "kappa": 0.55,
-                            },
-                            "family=rep_ta": {
-                                "n_sampled": 12,
-                                "n_both_valid": 10,
-                                "drop_rate_cal": 2 / 12,
-                                "agreement": 0.8,
-                                "agreement_wilson_ci95": [0.49, 0.94],
-                                "kappa": 0.6,
-                            },
-                            "category=behavioral": {
-                                "n_sampled": 6,
-                                "n_both_valid": 5,
-                                "drop_rate_cal": 1 / 6,
-                                "agreement": 0.8,
-                                "agreement_wilson_ci95": [0.38, 0.96],
-                                "kappa": 0.55,
-                            },
-                            "category=topical": {
-                                "n_sampled": 6,
-                                "n_both_valid": 5,
-                                "drop_rate_cal": 1 / 6,
-                                "agreement": 0.6,
-                                "agreement_wilson_ci95": [0.27, 0.86],
-                                "kappa": None,
-                            },
-                        }
-                        if inst == "w3"
-                        else {}
-                    ),
+                    "cells": w7_fixture_cells[inst],
                     "cal_judge_model": "claude-sonnet-4-5-20250929",
                 }
                 for inst in ("w3", "w4", "w5")
