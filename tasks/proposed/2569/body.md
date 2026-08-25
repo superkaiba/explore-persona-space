@@ -29,6 +29,10 @@ goal: 'Exploit the linearity of the fitted residual context-answer mapping (bank
   (Llama-3.1-8B-Instruct) three-tier representation-vs-operator similarity report;
   (7) correlational validation of the effective null space via kernel-equivalent context
   pairs, plus closed-form monitor decision geometry and sensitivity certificates.'
+relates_to:
+- spec-context-as-vector
+- leak-predictor
+- identity-contextual-vs-base
 ---
 # Linear-map theory battery: operator eigenstructure, null-space fibers, theory-bridge gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and a cross-model operator atlas
 
