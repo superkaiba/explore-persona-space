@@ -11041,14 +11041,29 @@ def _hf_routing_masked_spans(source: str) -> dict[int, list[tuple[int, int]]]:
     Spans are COLUMN-grained, not line-grained, because a masked match and a
     real call site can share a line.
 
-    FAIL-SAFE by design: a file that does not tokenize (unterminated
-    triple-quote, malformed source) returns ``{}`` — no masking, i.e. exactly
-    today's line-based behavior. The check then OVER-flags rather than
-    under-flags; a silent skip of an untokenizable file would be the
-    under-flag this check exists to prevent.
+    FAIL-SAFE by design, two branches, both returning ``{}`` (no masking —
+    i.e. exactly today's line-based behavior; the check then OVER-flags
+    rather than under-flags; a silent skip would be the under-flag this
+    check exists to prevent):
+
+    * a file that does not tokenize (unterminated triple-quote, malformed
+      source);
+    * a file whose ``str.splitlines()`` line model DISAGREES with the
+      tokenizer's ``\\n``-only line model (#2351 round 2). ``splitlines``
+      also splits on FF/VT/FS/GS/RS/NEL/U+2028/U+2029 (and ``\\r`` forms),
+      which ``tokenize`` does not, so e.g. a form feed INSIDE a string
+      literal would shift every later token span onto the wrong consumer
+      row — suppressing a real call below it and reporting a line number
+      that matches no physical line. Refusing to mask keeps every reported
+      line number byte-identical to the line-based scan by construction.
     """
     spans: dict[int, list[tuple[int, int]]] = {}
     lines = source.splitlines()
+    joined = "\n".join(lines)
+    if joined != source and joined + "\n" != source:
+        # Line models disagree (a splitlines-only break is present) — the
+        # tokenizer's (row, col) coordinates would not index `lines`.
+        return {}
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
     except (tokenize.TokenError, SyntaxError, UnicodeDecodeError):
@@ -11109,6 +11124,18 @@ def _hf_routing_file_errors(py: Path, rel: str) -> list[str]:
     """
     errors: list[str] = []
     source = py.read_text(encoding="utf-8")
+    # #2351 round 2 (B4): no predicate match anywhere in the file ⇒ nothing
+    # to flag and nothing to mask — skip the per-file tokenize pass (the
+    # dominant cost; only ~17% of scanned files carry any match). Provably
+    # semantics-preserving: every error below requires a per-LINE
+    # `HF_ROUTING_CALL_RE` match; each splitlines line is a contiguous
+    # substring of `source` and the pattern carries no anchors — its `\b`
+    # cannot fail in `source` where it held at a line start, because the
+    # preceding char there is a line break (non-word) — so a line match
+    # implies a full-source match. No full-source match ⇒ no line match ⇒
+    # this function returns [] with or without the early return.
+    if HF_ROUTING_CALL_RE.search(source) is None:
+        return errors
     lines = source.splitlines()
     masked = _hf_routing_masked_spans(source)  # #2351
     wrap_lines = _hf_routing_blanked_lines(lines, masked)  # #2351 (MF3)
@@ -11175,7 +11202,10 @@ def check_live_hf_retry_routing(*, repo_root: Path | None = None) -> list[str]:
       (:func:`_hf_routing_blanked_lines`) so string/comment text can neither
       flag nor launder. f-PREFIXED strings are deliberately NOT masked on
       py<3.12 (one STRING token — masking would hide a real call in a
-      replacement field), so f-string literal text keeps over-flagging; or
+      replacement field), so f-string literal text keeps over-flagging.
+      Files whose ``splitlines`` line model disagrees with the tokenizer's
+      (an FF/VT/U+2028-class break inside a literal) refuse masking and
+      keep the line-based behavior (#2351 round 2); or
     * the file is in :data:`HF_ROUTING_FROZEN_SNAPSHOT` (the per-issue
       historical files frozen at #1547 landing time — the routing
       requirement attaches at REUSE time via artifact-reuse check (i)),

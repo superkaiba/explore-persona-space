@@ -9681,10 +9681,23 @@ def test_check_live_hf_retry_routing_real_call_in_fstring_replacement_field_stil
 
 
 def test_check_live_hf_retry_routing_fstring_literal_text_still_over_flags(tmp_path):
-    """DISCLOSED-BEHAVIOR pin (#2351 plan §4.3.1 / §7 residual 2): f-string
-    LITERAL text keeps over-flagging on py3.11 — this asserts an
-    ACKNOWLEDGED FALSE POSITIVE on purpose, so any future narrowing of the
-    f-string carve-out changes this test deliberately instead of drifting."""
+    """DISCLOSED-BEHAVIOR pin (#2351 plan §4.3.1 / §7 residuals 1+2),
+    interpreter-conditional since round 2 (B2): the correct expectation
+    differs BY MECHANISM, so the pin keys off
+    ``hasattr(tokenize, "FSTRING_MIDDLE")`` — never a version tuple.
+
+    * WITHOUT ``FSTRING_MIDDLE`` (<=3.11: an f-string is ONE STRING token,
+      kept unmasked by the f-prefix exemption): the literal text OVER-flags
+      — an ACKNOWLEDGED FALSE POSITIVE, asserted on purpose so a future
+      narrowing of the carve-out changes this test deliberately.
+    * WITH ``FSTRING_MIDDLE`` (3.12+: literal text tokenizes separately
+      from replacement-field code): the mask admits the literal-text token
+      and the text does NOT flag — plan §7 residual 1's first coverage.
+
+    The unconditional 1-error form FAILed on 3.12 while PASSing on 3.11,
+    which flips the Step 10d gate legs (worktree venv vs root venv)."""
+    import tokenize as _tokenize
+
     from workflow_lint import check_live_hf_retry_routing
 
     root = _hf_routing_root(tmp_path)
@@ -9693,8 +9706,11 @@ def test_check_live_hf_retry_routing_fstring_literal_text_still_over_flags(tmp_p
         encoding="utf-8",
     )
     errors = check_live_hf_retry_routing(repo_root=root)
-    assert len(errors) == 1, errors
-    assert "scripts/new_tool.py:1" in errors[0]
+    if hasattr(_tokenize, "FSTRING_MIDDLE"):
+        assert errors == [], errors
+    else:
+        assert len(errors) == 1, errors
+        assert "scripts/new_tool.py:1" in errors[0]
 
 
 def test_check_live_hf_retry_routing_docstring_mentioning_retry_transient_does_not_launder(
@@ -9720,25 +9736,56 @@ def test_check_live_hf_retry_routing_docstring_mentioning_retry_transient_does_n
     assert "scripts/new_tool.py:5" in errors[0]
 
 
+# Shared by pin 7 and its mutation guard (#2351 round 2, B3): the string
+# carrying the unbalanced `)` sits on its OWN physical line BETWEEN the
+# multi-line `retry_transient(` opening and the call, so it enters
+# `_hf_routing_call_is_wrapped`'s BACKWARD balance window (the round-1
+# fixture put it on the call's own line, which that window never counts —
+# the pin passed even with blanking removed, i.e. it was hollow).
+# Unblanked, the string's `)` cancels the wrap line's net-open `(`
+# (bal reaches 0 at the wrap line ⇒ wrap undetected ⇒ false positive);
+# blanked, the wrap is detected and the file is clean.
+_HF_ROUTING_PIN7_FIXTURE = (
+    "from explore_persona_space.orchestrate.hub import retry_transient\n"
+    "from huggingface_hub import hf_hub_download\n"
+    "def fetch():\n"
+    "    return retry_transient(\n"
+    "        what='closes ) inside a string',\n"
+    "        fn=lambda: hf_hub_download('o/r', 'a.bin'),\n"
+    "    )\n"
+)
+
+
 def test_check_live_hf_retry_routing_paren_inside_string_arg_does_not_break_real_wrap(tmp_path):
-    """Adversarial counterpart to the MF3 pin (#2351): blanking a string
-    argument carrying an UNBALANCED ``(`` must not turn a genuine
-    ``retry_transient`` wrap into a false positive — the pin that would
-    catch a column-arithmetic error in ``_hf_routing_blanked_lines``."""
+    """Adversarial counterpart to the MF3 pin (#2351): blanking string spans
+    out of the wrap probe's view must PROTECT a genuine ``retry_transient``
+    wrap whose argument string carries an unbalanced ``)`` — without the
+    blanking, that ``)`` zeroes the backward paren balance at the wrap line
+    and the wrapped call is falsely flagged. Sensitivity to the blanking is
+    itself pinned by
+    ``test_hf_routing_pin7_mutation_identity_blanking_flags_wrapped_call``."""
     from workflow_lint import check_live_hf_retry_routing
 
     root = _hf_routing_root(tmp_path)
-    (root / "scripts" / "new_tool.py").write_text(
-        "from explore_persona_space.orchestrate.hub import retry_transient\n"
-        "from huggingface_hub import hf_hub_download\n"
-        "def fetch():\n"
-        "    return retry_transient(\n"
-        "        lambda: hf_hub_download('o/r', 'a(b'),\n"
-        "        what='x',\n"
-        "    )\n",
-        encoding="utf-8",
-    )
+    (root / "scripts" / "new_tool.py").write_text(_HF_ROUTING_PIN7_FIXTURE, encoding="utf-8")
     assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_hf_routing_pin7_mutation_identity_blanking_flags_wrapped_call(tmp_path, monkeypatch):
+    """Mutation guard (#2351 round 2, B3): replacing
+    ``_hf_routing_blanked_lines`` with the identity function must make the
+    pin-7 fixture FLAG its wrapped call (the string's ``)`` breaks the raw
+    backward balance) — proving pin 7 actually exercises the blanking. If a
+    refactor ever makes the identity mutation pass pin 7 again, this test
+    fails first."""
+    import workflow_lint as wl
+
+    monkeypatch.setattr(wl, "_hf_routing_blanked_lines", lambda lines, masked: lines)
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(_HF_ROUTING_PIN7_FIXTURE, encoding="utf-8")
+    errors = wl.check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:6" in errors[0]
 
 
 def test_check_live_hf_retry_routing_closing_triple_quote_line_boundary(tmp_path):
@@ -9775,6 +9822,47 @@ def test_check_live_hf_retry_routing_untokenizable_file_falls_back_to_line_scan(
     errors = check_live_hf_retry_routing(repo_root=root)
     assert len(errors) == 1, errors
     assert "scripts/new_tool.py:2" in errors[0]
+
+
+def test_check_live_hf_retry_routing_formfeed_in_string_does_not_suppress_real_call(tmp_path):
+    """B1 pin (#2351 round 2): a REAL form feed (U+000C) inside a string
+    literal makes ``str.splitlines()`` produce one more row than the
+    tokenizer's ``\\n``-only line model. Round-1 code indexed tokenizer rows
+    into splitlines rows, shifting every later mask span one row down —
+    SUPPRESSING the real bare call (round-1 returned ONE error here: the
+    string, not the call). The line-model guard refuses to mask such files,
+    degrading to the pre-#2351 line-based scan: the real call MUST be
+    reported. Row numbers under the fallback are SPLITLINES rows — the
+    pre-#2351 scan's own numbering (the FF adds a row, so the real call
+    reports at :3) — which is the B1 guarantee: refusing to mask cannot
+    MOVE any reported line relative to the line-based scan. The string
+    false positive on the last row is the accepted over-flag cost."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        'A = "pre\x0cpost"\nB = hf_hub_download(x)\nC = "hf_hub_download(text)"\n',
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 2, errors
+    real = [e for e in errors if "B = hf_hub_download(x)" in e]
+    assert len(real) == 1, errors
+    assert "scripts/new_tool.py:3" in real[0], errors
+    assert any('C = "hf_hub_download(text)"' in e for e in errors), errors
+
+
+def test_hf_routing_masked_spans_refuses_on_line_model_disagreement():
+    """Direct unit pin on the B1 guard (#2351 round 2): any
+    splitlines-only line break (FF, U+2028) in the source => ``{}`` (refuse
+    to mask); a plain-``\\n`` source still masks. Trailing-newline and
+    no-trailing-newline forms both count as agreement."""
+    from workflow_lint import _hf_routing_masked_spans
+
+    assert _hf_routing_masked_spans('A = "pre\x0cpost"\nB = 1\n') == {}
+    assert _hf_routing_masked_spans('A = "pre\u2028post"\nB = 1\n') == {}
+    assert _hf_routing_masked_spans('A = "x"\n') != {}
+    assert _hf_routing_masked_spans('A = "x"') != {}
 
 
 def test_hf_routing_masked_spans_returns_empty_on_token_error():
