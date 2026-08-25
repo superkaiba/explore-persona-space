@@ -51,3 +51,30 @@ reject it. Until #2535 lands, any round auditing acknowledgement PLACEMENT
 placement against the SPEC text, never the verifier line. The Lens-14 caveat
 block now has TWO prongs: count undercount (#2530) + footer swallowing
 (#2535) — state both when either fires.
+
+**Third prong — in-cycle rows FAIL the verifier on remediation rounds
+(#2254 r6, added 2026-08-25):** a FAIL round's verdicts persist their
+`CONCERN:: ` rows to the ledger at verdict collection, so on the NEXT
+(remediation-verification) round those rows appear in the `--open-only`
+envelope AND drive a `concerns audit (Lens 14)` hard FAIL naming ids whose
+entire content is the defects the fix round just removed (r6: OVERALL FAIL
+1-of-76, the five `ladder-*` union blockers; nobody posts `address-concern`
+until the fixes verify). Handle with a THREE-WAY split in the adjudicated
+block — standing binding (body acknowledgement required) / standing NITs /
+IN-CYCLE fix rows — plus an item-1 discharge rule: fix VERIFIES ⇒ the row is
+discharged-pending-bookkeeping and the check-FAIL must not drive a non-PASS
+by itself; fix does NOT verify ⇒ genuinely open + unacknowledged = real
+blocker. Also guard the body's standing count ("Twelve review-ledger
+concerns stay open") — it counts the STANDING set only; flagging it stale
+for excluding in-cycle rows is a false finding. This shape recurs on EVERY
+remediation round that follows a concern-persisting FAIL round.
+
+**Why:** without the split, a correct remediation draws either a false
+structural-absence blocker (the verifier FAIL) or a false count/staleness
+flag against the body; with an unqualified "ignore the FAIL" the unfixed-row
+case escapes.
+
+**How to apply:** any round whose brief says remediation/fix-verification
+after a FAIL round: map each envelope row raised at the prior round's
+verdict-collection timestamp to its fix row, and wire the discharge rule
+into item 1 + Lens-14 caveat prong (c).
