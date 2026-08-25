@@ -73,6 +73,20 @@ Round-7 pins (concern-closure round):
       --allow-local-only escapes into the phase body for real — replacing
       the former inspect.getsource call-count, which never executed the
       refusal.
+
+Round-8 pins (decide-force-stale-sentinel-window residual closure):
+
+  (j6a/j6b) leg 1 — missing-input verify hole: every _decision_fingerprint
+      member is a REQUIRED decide input, so an ABSENT file raises naming its
+      relative path (j6a), and the pre-fix hole itself — a legacy sentinel
+      that RECORDED a member as absent, compared against a still-absent file
+      at skip time — fails loud at run_decide instead of verifying cleanly
+      (j6b);
+  (j7) leg 2 — skip telemetry bound to decision.json: a sentinel-ONLY
+      verdict mutation (content_sha256 intact, fingerprint still verifies)
+      raises on sentinel/decision disagreement instead of logging the
+      mutated value, and the healthy-path skip log reports the verdict read
+      from decision.json (the authoritative artifact).
 """
 
 from __future__ import annotations
@@ -532,6 +546,55 @@ def test_decide_skip_path_republishes_sentinel(tmp_path, monkeypatch):
     res = FT.run_decide(_decide_args(tmp_path, "--publish", "hf"))
     assert res.get("resumed_from_sentinel") is True
     assert calls == [(fits / ".p4_done", f"{FT.PUBLISH_EVAL_MIRROR}/fits/.p4_done")]
+
+
+def test_decision_fingerprint_refuses_missing_required_input(tmp_path):
+    """Pin (j6a): _decision_fingerprint REFUSES an absent member — every
+    fingerprint file is a mandatory _load_model_artifacts input, so absence
+    raises naming the relative path, never a placeholder entry that could
+    'verify' against an equally-absent sentinel record."""
+    _bound_decide_fixture(tmp_path)
+    (tmp_path / "fits" / "modelA" / "percontext_recon.json").unlink()
+    with pytest.raises(RuntimeError, match=r"modelA/percontext_recon\.json"):
+        FT._decision_fingerprint(tmp_path)
+
+
+def test_decide_skip_missing_input_with_matching_missing_record_fails_loud(tmp_path):
+    """Pin (j6b): the residual hole itself — a legacy sentinel that RECORDED
+    a member as absent, with the member still absent at skip time, FAILS
+    LOUD at run_decide (pre-fix both sides read the same placeholder, the
+    fingerprints matched, and the skip verified cleanly over a missing
+    required input)."""
+    fits = _bound_decide_fixture(tmp_path)
+    legacy = FT._decision_fingerprint(tmp_path)
+    legacy["modelB/percontext_recon.json"] = "missing"  # the pre-fix placeholder
+    (fits / "modelB" / "percontext_recon.json").unlink()
+    (fits / ".p4_done").write_text(
+        json.dumps({"done": True, "verdict": "Replicates", "content_sha256": legacy})
+    )
+    with pytest.raises(RuntimeError, match=r"modelB/percontext_recon\.json"):
+        FT.run_decide(_decide_args(tmp_path))
+
+
+def test_decide_skip_verdict_bound_to_decision_json(tmp_path, capsys):
+    """Pin (j7): skip telemetry is bound to decision.json — (a) a
+    sentinel-ONLY verdict mutation (content_sha256 intact, so the content
+    binding still verifies: the sentinel's own verdict field is metadata
+    OUTSIDE the fingerprint) fails loud on sentinel/decision disagreement
+    instead of logging the mutated value; (b) on the healthy path the
+    printed verdict is read from decision.json (the authoritative
+    artifact)."""
+    fits = _bound_decide_fixture(tmp_path)
+    doc = json.loads((fits / ".p4_done").read_text())
+    doc["verdict"] = "Tampered-metadata"
+    (fits / ".p4_done").write_text(json.dumps(doc))
+    with pytest.raises(RuntimeError, match=r"Tampered-metadata.*Replicates"):
+        FT.run_decide(_decide_args(tmp_path))
+    # healthy path: the printed skip line reports decision.json's verdict.
+    _bound_decide_fixture(tmp_path)
+    res = FT.run_decide(_decide_args(tmp_path))
+    assert res["verdict"] == "Replicates"
+    assert "verdict='Replicates'" in capsys.readouterr().out
 
 
 def test_publish_none_on_canonical_out_root_refused(monkeypatch):

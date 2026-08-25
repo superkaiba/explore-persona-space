@@ -2118,12 +2118,15 @@ def _decision_fingerprint(out_root: Path) -> dict:
     (round-7 concern decide-force-stale-sentinel-window): the decision it
     certifies PLUS the exact decide inputs it was composed from (the
     ``_load_model_artifacts`` file set for both models). Computed at
-    sentinel-write time and re-verified at sentinel-skip time; a missing file
-    hashes as the literal ``"missing"`` so drift surfaces as a loud mismatch,
-    never a FileNotFoundError. File BYTES are hashed as read from disk — never
-    a recomputed float structure — so the binding is machine-stable (#1336)."""
+    sentinel-write time and re-verified at sentinel-skip time. Every member
+    is a REQUIRED decide input, so an ABSENT file is a RuntimeError naming
+    its relative path (round-8 residual closure): hashing absence as a
+    placeholder would let a missing input "verify" against an equally-absent
+    sentinel record. File BYTES are hashed as read from disk — never a
+    recomputed float structure — so the binding is machine-stable (#1336)."""
     fits = Path(out_root) / "fits"
     fp: dict[str, str] = {}
+    missing: list[str] = []
     for rel in (
         "decision.json",
         "modelA/fits_summary.json",
@@ -2132,7 +2135,17 @@ def _decision_fingerprint(out_root: Path) -> dict:
         "modelB/percontext_recon.json",
     ):
         p = fits / rel
-        fp[rel] = hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else "missing"
+        if not p.is_file():
+            missing.append(rel)
+            continue
+        fp[rel] = hashlib.sha256(p.read_bytes()).hexdigest()
+    if missing:
+        raise RuntimeError(
+            f"decide: required decide input(s) missing under {fits}: {missing} — every "
+            "fingerprint member is a mandatory _load_model_artifacts input, so absence can "
+            "never verify against a sentinel; restore/re-run the fit+assemble phases (or "
+            "--force to re-decide once the inputs exist)"
+        )
     return fp
 
 
@@ -2151,7 +2164,11 @@ def run_decide(args) -> dict:
     time (mismatch fails loud, never a stale-done skip); a forced re-decide
     atomically INVALIDATES the sentinel before any recompute, so a mid-crash
     resume reads not-done; the skip path re-invokes the idempotent sentinel
-    publish (crash-window publish retry)."""
+    publish (crash-window publish retry). Round-8 residual closure: every
+    fingerprint member is REQUIRED on disk at skip time (absence raises via
+    _decision_fingerprint, never a clean skip over a missing input), and the
+    skip telemetry reports — and cross-checks — the authoritative
+    decision.json verdict (sentinel/decision disagreement fails loud)."""
     out_root = Path(args.out_root)
     sentinel = out_root / "fits" / ".p4_done"
     decision_path = out_root / "fits" / "decision.json"
@@ -2176,13 +2193,27 @@ def run_decide(args) -> dict:
                 "re-decide, post-decide artifact drift, or a pre-binding sentinel); "
                 "re-run with --force to re-decide"
             )
+        # round-8 (decide-force-stale-sentinel-window residual): the skip
+        # telemetry reports the AUTHORITATIVE decision.json verdict, never the
+        # sentinel's own verdict field — that field is metadata OUTSIDE the
+        # content binding (content_sha256 hashes the artifact files, not the
+        # sentinel itself), so a sentinel-only mutation leaves the fingerprint
+        # valid. Load the decision FIRST, fail loud on disagreement, and log
+        # from the decision.
+        decision = json.loads(decision_path.read_text())
+        if doc.get("verdict") != decision.get("verdict"):
+            raise RuntimeError(
+                f"decide: sentinel {sentinel} records verdict {doc.get('verdict')!r} but the "
+                f"authoritative {decision_path} says {decision.get('verdict')!r} — the "
+                "sentinel's verdict field is metadata outside the content binding "
+                "(hand-edited or stale sentinel); re-run with --force to re-decide"
+            )
         print(
-            f"[decide] fits/.p4_done present (verdict={doc.get('verdict')!r}, "
-            "content-binding verified) — SKIPPING re-decide (idempotent resume); "
-            "pass --force to re-run",
+            f"[decide] fits/.p4_done present (verdict={decision.get('verdict')!r} from "
+            "decision.json, content-binding verified, sentinel/decision verdicts agree) — "
+            "SKIPPING re-decide (idempotent resume); pass --force to re-run",
             flush=True,
         )
-        decision = json.loads(decision_path.read_text())
         decision["resumed_from_sentinel"] = True
         # Skip-path publish RETRY (round-7): a crash in the sentinel-write ->
         # sentinel-publish window otherwise leaves the REMOTE sentinel copy
