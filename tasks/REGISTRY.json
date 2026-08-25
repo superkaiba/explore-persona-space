@@ -12241,8 +12241,8 @@
       "goal": "Determine whether linear context-to-answer mapping quality (held-out kNN retrieval primary, R^2 + identity+bias secondary) increases with general model capability (Artificial Analysis Intelligence Index), across a cross-family open-weight panel (Qwen3.5 ladder + fixed-size 27B capability column + OLMo dense control + Qwen2.5-7B anchor), under two chain-of-thought arms (all thinking-off vs per-model best setting with the end-of-CoT state as map input), on the generic mapping corpus and GPQA Diamond.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/2588",
-      "status": "planning",
+      "path": "tasks/approved/2588",
+      "status": "approved",
       "title": "Context-to-answer mapping quality vs general model capability (cross-family ladder, thinking on/off)"
     },
     "2589": {
