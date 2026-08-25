@@ -34,6 +34,8 @@ from pathlib import Path
 
 import numpy as np
 
+from explore_persona_space.atomic_io import atomic_replace
+
 logger = logging.getLogger(__name__)
 
 # --- staging pins (plan v3 Step 2a-bis) -------------------------------------
@@ -188,11 +190,9 @@ def _fingerprint(**kwargs: object) -> str:
 
 
 def _write_jsonl_atomic(path: Path, rows: list[dict]) -> None:
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
 
 
 def read_jsonl(path: Path) -> list[dict]:
@@ -250,9 +250,8 @@ def _stream_stage(
 
     def _flush_partial() -> None:
         _write_jsonl_atomic(partial_path, kept)
-        tmp = partial_meta.with_name(partial_meta.name + ".tmp")
-        tmp.write_text(json.dumps({"fingerprint": fingerprint, "counters": counters}))
-        os.replace(tmp, partial_meta)
+        with atomic_replace(partial_meta) as tmp:
+            tmp.write_text(json.dumps({"fingerprint": fingerprint, "counters": counters}))
 
     t0 = time.time()
     it: Iterator[dict] = iter(row_iter_factory())
@@ -294,9 +293,8 @@ def _stream_stage(
         "n_kept": len(kept),
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    tmp = meta_path.with_name(meta_path.name + ".tmp")
-    tmp.write_text(json.dumps(meta, indent=2))
-    os.replace(tmp, meta_path)
+    with atomic_replace(meta_path) as tmp:
+        tmp.write_text(json.dumps(meta, indent=2))
     partial_path.unlink(missing_ok=True)
     partial_meta.unlink(missing_ok=True)
     logger.info(

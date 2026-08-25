@@ -81,6 +81,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # #847: thread caps land BEFORE numpy/torch import on the shared VM.
@@ -160,7 +161,9 @@ DEFAULT_ORIG_DIR = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-co
 # ── data assembly (pass_b + stream-reduced n1m capture) + provenance ────────────
 
 
-def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str:
+def _download_chunk_with_retry(
+    repo: str, filename: str, local_dir: Path, revision: str | None = None
+) -> str:
     """hf_hub_download through the canonical transient-retry envelope
     (``hub.retry_transient`` = ``_retry_upload``, #1402): Retry-After-aware,
     ``EPM_HF_RETRY_BUDGET_S`` wall budget (default 1800 s — sized to outlive an
@@ -176,7 +179,9 @@ def _download_chunk_with_retry(repo: str, filename: str, local_dir: Path) -> str
     from explore_persona_space.orchestrate import hub
 
     return hub.retry_transient(
-        lambda: hf_hub_download(repo, filename=filename, repo_type="dataset", local_dir=local_dir),
+        lambda: hf_hub_download(
+            repo, filename=filename, repo_type="dataset", local_dir=local_dir, revision=revision
+        ),
         what=f"[n1m] chunk download ({repo}:{filename})",
         max_attempts=STREAM_DOWNLOAD_ATTEMPTS,
     )
@@ -217,10 +222,8 @@ def _write_stream_ckpt(
     the ``cx.shape[0] != n_rows`` guard and the stale checkpoint is refused."""
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     npz_path, cur_path = _stream_ckpt_paths(ckpt_dir, layer)
-    tmp_npz = npz_path.parent / (npz_path.name + ".tmp")
-    with open(tmp_npz, "wb") as f:
+    with atomic_replace(npz_path) as tmp_npz, open(tmp_npz, "wb") as f:
         np.savez(f, cx=cx, vx=vx, ci=ci)
-    os.replace(tmp_npz, npz_path)
     meta = {
         "fingerprint": fingerprint,
         "layer": int(layer),
@@ -230,9 +233,8 @@ def _write_stream_ckpt(
         "n_rows": int(cx.shape[0]),
         "complete": bool(complete),
     }
-    tmp_cur = cur_path.parent / (cur_path.name + ".tmp")
-    tmp_cur.write_text(json.dumps(meta))
-    os.replace(tmp_cur, cur_path)
+    with atomic_replace(cur_path) as tmp_cur:
+        tmp_cur.write_text(json.dumps(meta))
 
 
 def _load_stream_ckpt(ckpt_dir: Path, layer: int, fingerprint: str, hf_prefix: str):
@@ -269,6 +271,7 @@ def _stream_n1m_layer(
     ckpt_dir: Path | None = None,
     ckpt_every: int = STREAM_CKPT_EVERY,
     fresh: bool = False,
+    revision: str | None = None,
 ):
     """Stream-reduce cx_last + v_x + ci at ``layer`` from the n1m capture chunks.
 
@@ -285,7 +288,13 @@ def _stream_n1m_layer(
     if local_dir is not None:
         return _stream_local_chunks(local_dir, layer)
     return _stream_hf_chunks(
-        prefix, layer, cache_dir, ckpt_dir=ckpt_dir, ckpt_every=ckpt_every, fresh=fresh
+        prefix,
+        layer,
+        cache_dir,
+        ckpt_dir=ckpt_dir,
+        ckpt_every=ckpt_every,
+        fresh=fresh,
+        revision=revision,
     )
 
 
@@ -354,28 +363,37 @@ def _resume_hf_stream(ckpt_dir, layer, fp, prefix, names, fresh, cx_parts, vx_pa
     return cursor, None
 
 
-def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
+def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh, revision=None):
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate import hub
 
     # r4: chunk-universe listing rides retry_transient (the #1482 429-storm class;
     # list_repo_tree is LAZY — materialize inside the thunk so iteration retries).
+    # ``revision`` pins listing + downloads to one Hub commit (#1901 C1; None =
+    # legacy main-tip read, byte-identical behavior incl. the ckpt fingerprint).
     names = hub.retry_transient(
         lambda: sorted(
             f.path.rsplit("/", 1)[-1]
             # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here (r4)
             for f in HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                C.HF_DATA_REPO,
+                path_in_repo=prefix,
+                repo_type="dataset",
+                recursive=True,
+                revision=revision,
             )
             if getattr(f, "size", None) is not None and f.path.endswith(".pt")
         ),
-        what=f"n1m chunk listing ({prefix})",
+        what=f"n1m chunk listing ({prefix}@{revision or 'main'})",
     )
     if not names:
         raise FileNotFoundError(f"no n1m capture chunks under HF {prefix}")
     cache_dir.mkdir(parents=True, exist_ok=True)
-    fp = _stream_ckpt_fingerprint(layer, prefix, names) if ckpt_dir is not None else ""
+    # Revision joins the checkpoint identity ONLY when pinned, so pre-existing
+    # unpinned checkpoints stay valid for every legacy caller.
+    fp_prefix = prefix if revision is None else f"{prefix}@{revision}"
+    fp = _stream_ckpt_fingerprint(layer, fp_prefix, names) if ckpt_dir is not None else ""
 
     cx_parts: list[np.ndarray] = []
     vx_parts: list[np.ndarray] = []
@@ -387,7 +405,9 @@ def _stream_hf_chunks(prefix, layer, cache_dir, *, ckpt_dir, ckpt_every, fresh):
         return complete_arrays
 
     for i in range(start, len(names)):
-        got = Path(_download_chunk_with_retry(C.HF_DATA_REPO, f"{prefix}/{names[i]}", cache_dir))
+        got = Path(
+            _download_chunk_with_retry(C.HF_DATA_REPO, f"{prefix}/{names[i]}", cache_dir, revision)
+        )
         b = F._mmap_load(got)
         cx_parts.append(N50._slice_layer(b, "cx_last", layer))
         vx_parts.append(N50._slice_layer(b, "v_x", layer))
@@ -460,9 +480,8 @@ def _ml_paths(mm_dir: Path, layers: list[int]) -> dict:
 
 def _ml_write_cursor(mm_dir: Path, meta: dict) -> None:
     cur = mm_dir / _ML_CURSOR_NAME
-    tmp = cur.parent / (cur.name + ".tmp")
-    tmp.write_text(json.dumps(meta))
-    os.replace(tmp, cur)
+    with atomic_replace(cur) as tmp:
+        tmp.write_text(json.dumps(meta))
 
 
 def _ml_load_cursor(mm_dir: Path) -> dict | None:
@@ -520,17 +539,16 @@ def _truncate_npy_rows(path: Path, n_rows: int) -> None:
     else:  # padded header length changed — chunked copy (rare; logged, not silent)
         logger.info("[n1m-ml] truncate via chunked copy (header length changed): %s", path)
         src = np.load(path, mmap_mode="r")
-        tmp = path.parent / (path.name + ".trunc.tmp")
-        dst = np.lib.format.open_memmap(
-            tmp, mode="w+", dtype=src.dtype, shape=(int(n_rows),) + src.shape[1:]
-        )
-        step = 50_000
-        for s in range(0, int(n_rows), step):
-            e = min(int(n_rows), s + step)
-            dst[s:e] = src[s:e]
-        dst.flush()
-        del dst, src
-        os.replace(tmp, path)
+        with atomic_replace(path) as tmp:
+            dst = np.lib.format.open_memmap(
+                tmp, mode="w+", dtype=src.dtype, shape=(int(n_rows),) + src.shape[1:]
+            )
+            step = 50_000
+            for s in range(0, int(n_rows), step):
+                e = min(int(n_rows), s + step)
+                dst[s:e] = src[s:e]
+            dst.flush()
+            del dst, src
 
 
 def _iter_chunks_prefetched(names, start: int, fetch, k: int):
@@ -806,6 +824,7 @@ def assemble_multilayer(args, layers: list[int]):
         out_dir=args.out_dir,
         manifest_from_hf=args.manifest_from_hf,
         hf_prefix=args.manifest_hf_prefix,
+        manifest_revision=getattr(args, "manifest_revision", None),
     )
     manifest_dir = N1G._resolve_manifest_dir(manifest_args)
     pool, man_meta = N1G.read_manifest_pool(manifest_dir)
@@ -922,12 +941,10 @@ def apply_map(payload: dict, X_eval: np.ndarray, dev: torch.device) -> np.ndarra
 def _persist_weights(weights_dir: Path, layer: int, name: str, payload: dict) -> Path:
     """Atomically save one (layer, fitter) weight payload (fp32 tensors)."""
     dest = weights_dir / f"L{int(layer)}" / f"{name}.pt"
-    dest.parent.mkdir(parents=True, exist_ok=True)
     payload = dict(payload)
     payload.update({"layer": int(layer), "fitter": name})
-    tmp = dest.parent / (dest.name + ".tmp")
-    torch.save(payload, tmp)
-    os.replace(tmp, dest)
+    with atomic_replace(dest) as tmp:
+        torch.save(payload, tmp)
     logger.info("[persist] wrote %s (%.0f MB)", dest, dest.stat().st_size / 1e6)
     return dest
 
@@ -955,6 +972,7 @@ def assemble(args, layer: int):
         out_dir=args.out_dir,
         manifest_from_hf=args.manifest_from_hf,
         hf_prefix=args.manifest_hf_prefix,
+        manifest_revision=getattr(args, "manifest_revision", None),
     )
     manifest_dir = N1G._resolve_manifest_dir(manifest_args)
     pool, man_meta = N1G.read_manifest_pool(manifest_dir)
@@ -969,6 +987,7 @@ def assemble(args, layer: int):
         ckpt_dir=(args.out_dir / ".n1m_stream_ckpt") if local_dir is None else None,
         ckpt_every=STREAM_CKPT_EVERY,
         fresh=args.fresh_stream,
+        revision=getattr(args, "store_revision", None),
     )
     # provenance for each captured new row (ci -> corpus); pass_b rows are lmsys.
     new_prov = np.array([ci_to_corpus[int(c)] for c in new_ci], dtype=object)
@@ -2326,10 +2345,15 @@ def _smoke_stream_ckpt(ckpt_root: Path) -> tuple[int, int]:
             self.path, self.size = path, 1
 
     class _FakeHfApi:
-        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+        # revision=None mirrors the production call shape (#1901 r3: the C1
+        # revision threading passes revision= unconditionally, so a fake
+        # without it TypeErrors the self-smoke).
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, recursive=False, revision=None
+        ):
             return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
 
-    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         dl_calls["n"] += 1
         base = filename.rsplit("/", 1)[-1]
         idx = remote[base]
@@ -2385,7 +2409,7 @@ def _smoke_download_retry(cache: Path) -> int:
 
     calls = {"n": 0}
 
-    def _flaky(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _flaky(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         if calls["n"] == 1:
             raise requests.exceptions.ReadTimeout("synthetic read timeout")
@@ -2406,7 +2430,7 @@ def _smoke_download_retry(cache: Path) -> int:
 
     calls["n"] = 0
 
-    def _hard(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _hard(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         raise ValueError("non-transient")
 
@@ -2471,10 +2495,14 @@ def _smoke_multilayer_stream(root: Path) -> dict:
             self.path, self.size = path, 1
 
     class _FakeHfApi:
-        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+        # revision=None mirrors the production call shape (#1901 r3, see the
+        # sibling fake in _smoke_stream_ckpt).
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, recursive=False, revision=None
+        ):
             return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
 
-    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         base = filename.rsplit("/", 1)[-1]
         idx = remote[base]
         if crash_at["i"] is not None and idx >= crash_at["i"]:

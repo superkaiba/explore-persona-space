@@ -48,12 +48,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import random
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.experiments.issue2094.bank import (
     prefix_end_index_multi,
     render_context_2094,
@@ -536,10 +536,8 @@ def bank_manifest_2329(
 
 
 def _write_json_atomic(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, sort_keys=True, ensure_ascii=False, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, sort_keys=True, ensure_ascii=False, indent=1))
 
 
 def _report_payload(report: TokenIdentityReport, tokenizer) -> dict:

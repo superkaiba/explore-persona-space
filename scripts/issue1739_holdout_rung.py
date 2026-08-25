@@ -69,12 +69,13 @@ import argparse
 import gc
 import json
 import logging
-import os
 import re
 import sys
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from explore_persona_space.atomic_io import atomic_replace
 
 if TYPE_CHECKING:
     import numpy as np
@@ -571,10 +572,8 @@ def _fit_eval_variant(
 
 
 def _write_json(path: Path, payload: dict) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
     return path
 
 

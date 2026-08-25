@@ -53,6 +53,8 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 logger = logging.getLogger("issue1739_sycoood_rescore_stage")
 
 SYCO_OOD_STORE_PREFIX = "issue1739_ctxmap/syco_ood/store"
@@ -62,10 +64,8 @@ _SHARD_RE = re.compile(r"^(?P<stem>.+_shard|row_index_shard)(?P<idx>\d+)(?P<ext>
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=1))
 
 
 def _shard_indices(store_dir: Path) -> set[int]:
@@ -157,9 +157,8 @@ def phase_new(args) -> dict:
                 hub.DEFAULT_DATASET_REPO, repo_path, stage / name, repo_type="dataset"
             )
             target = _target_for(repo_path)
-            tmp = target.with_name(target.name + ".tmp")
-            shutil.move(str(local), str(tmp))
-            os.replace(tmp, target)
+            with atomic_replace(target) as tmp:
+                shutil.move(str(local), str(tmp))
 
         done = 0
         with ThreadPoolExecutor(max_workers=6) as pool:

@@ -65,6 +65,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps land BEFORE numpy/torch on the shared VM (#847)
@@ -165,11 +166,9 @@ def meta_block(extra: dict | None = None) -> dict:
 
 
 def atomic_json(path: Path, obj: dict) -> None:
-    """Atomic JSON write (tmp + os.replace)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=1), encoding="utf-8")
-    os.replace(tmp, path)
+    """Atomic JSON write (shared process-safe tmp + os.replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=1), encoding="utf-8")
 
 
 def out_eval_dir(args) -> Path:
