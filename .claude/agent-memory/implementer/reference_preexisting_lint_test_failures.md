@@ -28,6 +28,15 @@ Known states (verify before citing — these get fixed over time):
 - Pre-broken on main as of 2026-06-11: `tests/test_workflow_yaml.py::
   test_gates_full_shape` (campaign commit `9eb2c7c57` added a second
   park_and_wait gate; test asserts len==1). Stash-compare proves it.
+- **Files-mode `workflow_lint.py --files` enumeration artifacts (2026-08-24,
+  #2336 b3/b4):** a restricted-enumeration run reddens on rows a full-tree run
+  does not — (i) `sha-pin-domain/grandfather-stale` (#2559 class; prove with
+  full-tree `--check-sha-pin-domain` → PASS rc=0) and (ii) #2235 per-issue
+  import-closure rows on payload files whose sibling modules were NEVER
+  tracked (e.g. `issue541_geometry_extract` → `issue541_personas`); prove by
+  running the SAME `--files <file>` invocation on the unmodified MAIN checkout
+  (read-only) → identical rows. Report both classes with the proof; never
+  block a batch on them.
 - **Cross-file FULL-SUITE flake — RESOLVED 2026-06-28 via #703.** The former
   isolation-pollution failures (HF_HOME env leak, root-logger-level leak,
   unguarded `sys.modules["worktree_audit"]` replacement, stale `_PR`

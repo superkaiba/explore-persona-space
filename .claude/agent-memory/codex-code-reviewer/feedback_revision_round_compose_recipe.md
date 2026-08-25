@@ -2573,3 +2573,28 @@ whole ref table (brief-supplied) and translate the marker's HEAD~1 forms.
 do not manufacture a third FAIL because the history expects one; enumerate
 the remaining hollowness routes in the crux and say a clean close IS the
 anchored-and-falsifiable verdict.
+
+**All-addressed ledger fix round + carve-out-form answer to a GPU-smoke
+concern (#2564 r2, 2026-08-25):** three deltas on the FAIL+FAIL union shape.
+(a) When EVERY round-1 concern id carries an implementer `addressed` row
+(zero ids in `raised` state), do not let the header read `empty` — record
+`0 raised-open; 9 addressed-pending-verification` and state explicitly that
+an addressed row is a CLAIM and verifying it is the round's job; a duplicate
+addressed pair on one id is a bookkeeping artifact → one status line,
+duplication named. (b) When a `gpu-phases-not-smoked`-class blocker is
+answered by Step 0.6 GPU-bound CARVE-OUT sub-sections (three substitute
+items) + a plan-pinned on-pod smoke gate rather than an actual GPU run,
+compose an explicit adjudication frame: the concern's Evidence stays
+factually true and (d)-disclosed; verify each carve-out item is REAL
+(claimed-but-absent test = substantive FAIL), then adjudicate
+VERIFIED-ADDRESSED vs open-with-reasoning — a fresh FAIL on "still not run
+on GPU" would relitigate the rubric's own carve-out allowance. (c) The
+inlined prior CODEX verdict's own historical `**Diff acquisition:**
+sha-range <old>..HEAD` header line survives tag-stripping and trips the
+old-acquisition zero-assert — envelope-scope it (total == embed count,
+composer spans == 0), the same rule as the stale `Prior-concerns ledger`
+header. Also: smoke-arch checker attestation runs BOTH modes; when
+`--repo-root` reports `registry symbol not statically extractable:
+sorted(ARMS)`, the driver-recompute arm is structurally unavailable — attest
+grammar as settled and hand SET-EQUALITY to Codex as the fallback arm with
+the members list verbatim.
