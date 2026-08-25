@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2577,
+  "highest_id": 2578,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12158,6 +12158,13 @@
       "path": "tasks/proposed/2577",
       "status": "proposed",
       "title": "Deflake test_issue1947_worker_dispatch quarantine race (load-dependent; false-blocked #2349 gate)"
+    },
+    "2578": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2578",
+      "status": "proposed",
+      "title": "verify_uploads.py hardcodes HF_DATA_REPO \u2014 the upload gate cannot verify overflow-routed runs"
     },
     "258": {
       "has_clean_result": false,
