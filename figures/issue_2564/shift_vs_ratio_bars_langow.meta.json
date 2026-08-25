@@ -1,20 +1,13 @@
 {
-  "commit": "336c18b6+dirty",
-  "render_id": "67413dd9b7f7437c",
-  "git_commit": "336c18b63e30f61850154fd8301ee9c0daa63ec6",
+  "commit": "82c46393+dirty",
+  "render_id": "4d2fd0d52d1645bd",
+  "git_commit": "82c46393d936c962b0dbf0bbd835c09768086377",
   "git_dirty": true,
   "git_dirty_paths": [
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/issue_2356/flippair_2afc.meta.json",
-    "figures/issue_2356/flippair_2afc.pdf",
-    "figures/issue_2356/flippair_2afc.png",
-    "figures/issue_2356/flippair_behavior_contrast.meta.json",
-    "figures/issue_2356/flippair_behavior_contrast.pdf",
-    "figures/issue_2356/flippair_behavior_contrast.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
-    "scripts/issue2054_paper_r2_figs.py",
     "scripts/issue2356_flippair_figures.py",
     "scripts/issue2474_n1m_map.py",
     "scripts/issue2564_shift_bars.py",
@@ -26,7 +19,6 @@
     "tasks/completed/2214/plans/v1.md",
     "tasks/completed/2214/plans/v2.md",
     "tasks/completed/2214/plans/v3.md",
-    "tasks/interpreting/2564/concerns.jsonl",
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
@@ -34,49 +26,63 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2564_shift_bars.py",
-  "created": "2026-08-25T21:58:04Z",
+  "created": "2026-08-25T23:25:32Z",
   "figsize": [
-    9.0,
+    11.2,
     7.2
   ],
   "points": [
     {
       "x": -0.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 14.575369228944961,
-      "error": 3.3650726395439934,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 11.937110449621628,
+      "error": 3.520645638839987,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 8.196632166842452,
+      "error": 1.7622000192168765,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 32.148951057995035,
       "error": 1.2661209552924184,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.81,
+      "x": 2.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 11.995874081597792,
+      "error": 2.395187940439097,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 30.213256811585836,
       "error": 1.1887344737164867,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 2.81,
+      "x": 4.81,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 47.18375212363655,
       "error": 2.6803267966114,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 3.81,
+      "x": 5.81,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 38.15012143594861,
       "error": 2.4399480581605353,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 4.81,
+      "x": 6.81,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 20.423941204391333,
       "error": 1.8548663859306078,
       "_kind": "bar",
@@ -84,41 +90,55 @@
     },
     {
       "x": 0.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 10.345317934953254,
-      "error": 2.106704324591064,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 8.482516145581842,
+      "error": 1.4636127561943857,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 6.431910698489695,
+      "error": 1.9731276859015257,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 26.345384841079472,
       "error": 1.2950397941527303,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 2.19,
+      "x": 3.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.307693100640435,
+      "error": 1.1191624523656092,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 26.432758761812885,
       "error": 1.5766941929849931,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 3.19,
+      "x": 5.19,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 48.965023435519925,
       "error": 1.4994843484054456,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 4.19,
+      "x": 6.19,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.53389071513429,
       "error": 0.27146213783232653,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 5.19,
+      "x": 7.19,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 25.439798772795623,
       "error": 2.2081458263470033,
       "_kind": "bar",
@@ -126,152 +146,207 @@
     },
     {
       "x": -0.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 12.399941552322668,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.906722036041213,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 31.12151076107942,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 6.012891440208514,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 28.736096925205604,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 31.12151076107942,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 43.96426218728475,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.901176841647388,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 36.32760210632957,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 28.736096925205604,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 4.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 43.96426218728475,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 36.32760210632957,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.81,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 17.63449490364192,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": -0.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 19.130086831410654,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 16.948013313721187,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 0.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 33.65375267166426,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.537291478642267,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 1.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 31.113565872638578,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 33.65375267166426,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 49.32491578050755,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 14.691552722525582,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.81,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 41.20749822265064,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 31.113565872638578,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 4.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 49.32491578050755,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.81,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 41.20749822265064,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.81,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 21.344227675503134,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 0.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 8.457544975050784,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 6.670013288894561,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 24.840518230076054,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 5.1779162733821416,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 24.05899245320055,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 24.840518230076054,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 3.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 48.02900749281763,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 8.096721923588836,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 4.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.266835924232694,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 24.05899245320055,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 5.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 48.02900749281763,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.266835924232694,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.19,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 21.67658968227901,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 0.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 12.670953624232911,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.597238801283332,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 1.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 27.430597818381514,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 9.124171645185193,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 27.212380839170535,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 27.430597818381514,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 3.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 51.02797618962852,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 10.335046828320055,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 4.19,
-      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.80976019989735,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 27.212380839170535,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 5.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 51.02797618962852,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.19,
+      "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 44.80976019989735,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.19,
       "answer-vector shift  \u2016\u0394\u2016\n(layer-19 residual-stream units)": 26.092881334973015,
       "_kind": "line",
       "_group": 5
     },
     {
-      "category": "question topic (one word)",
-      "ratio\nmapped / real": 0.6679049667822448,
-      "error": 0.062262714403770125,
+      "category": "topic: object noun",
+      "ratio\nmapped / real": 0.6310431043049698,
+      "error": 0.06631341856020107,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "topic: verb",
+      "ratio\nmapped / real": 0.7576611136509344,
+      "error": 0.1723185704525701,
       "_kind": "bar",
       "_group": 6
     },
@@ -279,6 +354,13 @@
       "category": "question topic",
       "ratio\nmapped / real": 0.8094788920457068,
       "error": 0.02301687670977609,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "topic: subject noun",
+      "ratio\nmapped / real": 0.8115038540036199,
+      "error": 0.10194786848330095,
       "_kind": "bar",
       "_group": 6
     },
@@ -312,79 +394,103 @@
     },
     {
       "x": 0.0,
-      "ratio\nmapped / real": 0.615382713836896,
+      "ratio\nmapped / real": 0.5866905532124673,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 1.0,
-      "ratio\nmapped / real": 0.7867368382043475,
+      "ratio\nmapped / real": 0.6444077429423916,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 2.0,
-      "ratio\nmapped / real": 0.8263456251102965,
+      "ratio\nmapped / real": 0.7867368382043475,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.0,
-      "ratio\nmapped / real": 0.9875564377007552,
+      "ratio\nmapped / real": 0.7350753339926193,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 4.0,
-      "ratio\nmapped / real": 1.087970575493459,
+      "ratio\nmapped / real": 0.8263456251102965,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 5.0,
+      "ratio\nmapped / real": 0.9875564377007552,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "ratio\nmapped / real": 1.087970575493459,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
       "ratio\nmapped / real": 1.1988687880923654,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 0.0,
-      "ratio\nmapped / real": 0.7399081426444363,
+      "ratio\nmapped / real": 0.7193173903328695,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 1.0,
-      "ratio\nmapped / real": 0.8327705916238997,
+      "ratio\nmapped / real": 0.9890448838475318,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 2.0,
-      "ratio\nmapped / real": 0.8645399499407427,
+      "ratio\nmapped / real": 0.8327705916238997,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 3.0,
-      "ratio\nmapped / real": 1.1551129485534588,
+      "ratio\nmapped / real": 0.9389710709592212,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 4.0,
-      "ratio\nmapped / real": 1.221710306750339,
+      "ratio\nmapped / real": 0.8645399499407427,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 5.0,
+      "ratio\nmapped / real": 1.1551129485534588,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "ratio\nmapped / real": 1.221710306750339,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
       "ratio\nmapped / real": 1.4204659433371782,
       "_kind": "line",
       "_group": 8
     }
   ],
   "n_series": 9,
-  "total_points": 54,
+  "total_points": 72,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -409,8 +515,10 @@
       {
         "ylabel": "ratio\nmapped / real",
         "xticklabels": [
-          "question topic (one word)",
+          "topic: object noun",
+          "topic: verb",
           "question topic",
+          "topic: subject noun",
           "answer language",
           "register",
           "persona",
