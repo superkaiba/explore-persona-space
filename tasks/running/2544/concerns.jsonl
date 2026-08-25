@@ -1,0 +1,1 @@
+{"ts": "2026-08-25T05:37:13Z", "event": "raised", "concern_id": "smoke-unified-fallback-mismatch", "severity": "BLOCKER", "summary": "PASS_UNIFIED contradicts FALLBACK resume and production-out-root rows.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
