@@ -1,16 +1,19 @@
-"""Issue #2569 P-A weights battery, part 1 (leg 1 core + leg 8 step 1).
+"""Issue #2569 P-A weights battery, parts 1+2 (leg 1 core + leg 8 steps 1/3/4).
 
 Phase driver over the banked layer-19 (primary; L14/L26 replicates) n1m ridge
 map's ROW operator ``x |-> x @ A`` (plan v4 SS4 leg 1 steps 1-3/5/6 + leg 8
-step 1). Weights-only: no rows are staged (P-B refinements — data-weighted
-mass fractions ``u_i^T Sigma_c u_i``, split-half spectrum error bars, fixed-
-point nearest banked answers — are the rowbattery driver's job and are NOT
-computed here from assumed inputs). Two later units extend THIS file with
-leg 3 (wiring/receipts/attribution) and leg 8 steps 3/4 (monitor decision
-geometry, sensitivity certificates); leg-1 step 4's two-sided SAE dashboards
-and the fixed point's #2476-encoder decode ALSO land with that dashboard
-unit (they need the SAE dictionary machinery shared with leg-8 step 3) —
-part 1 marks those keys ``deferred``, never stubs them.
+steps 1/3/4). Weights-only by default: no rows are staged (P-B refinements —
+data-weighted mass fractions ``u_i^T Sigma_c u_i``, split-half spectrum error
+bars, fixed-point nearest banked answers — are the rowbattery driver's job and
+are NOT computed here from assumed inputs); the ONE rows-consuming exception is
+the leg-8 step-4 certificates phase's probe/held-out legs, which run ONLY when
+``--rows-dir`` points at the P-B P1 assemble dir (layer 19 only) and otherwise
+record an EXPLICIT deferral (see the certificates phase docstring). One later
+unit extends THIS file with leg 3 (wiring/receipts/attribution) plus the
+two-sided SAE dashboards — including the SAE NAMING of the leg-8 step-3
+monitor gradients (``sae_naming`` keys read ``deferred``) and the fixed
+point's #2476-encoder decode (they need the shared SAE dictionary machinery) —
+this file marks those keys ``deferred``, never stubs them.
 
 Orientation (plan SS4 orientation dictionary — B1; verbatim, load-bearing):
 all reads are on A under the ROW action ``x @ A``. INPUT/read singular
@@ -83,6 +86,25 @@ on the generating-parameter regime dict — never a recomputed-float hash):
                 leg1/fixed_point_L<L>.pt + .json (sae_decode deferred).
   kernel        effective-kernel basis + stats -> leg8/effective_kernel_L<L>.pt
                 + .json.
+  monitor-geometry  leg 8 step 3: per-trait monitor decision geometry over the
+                #779 monitoring r_B set (evil/sycophancy/hallucination @
+                037fcbb2, unit-normalized) — flip gradient A r (B1), minimal
+                context change per unit read, least-norm pre-images
+                y @ A^+ (effective-rank truncated at tau_kernel + full-pinv
+                companion) WITH the coset ambiguity + gain-ratio context
+                stated in every artifact -> leg8/monitor_geometry_L<L>.pt
+                + .json. SAE naming of the gradient: deferred (next unit).
+  certificates  leg 8 step 4: sensitivity certificates for the monitor family
+                — (i) direct r^T v_C, (ii) mapped r.(v_C @ A + b), (iii) a
+                fitted 1-D context probe w^T v_C -> r^T v_A. Weights-only
+                sensitivities (grad norms; worst case = eps * grad_norm,
+                SINGLE-application only — measured rho(A) >= 1 forecloses any
+                geometric-series/iterated bound, stated as UNAVAILABLE) always
+                compute; the probe fit + held-out signal normalization need
+                the P-B row store and run ONLY at layer 19 with --rows-dir
+                (else an explicit deferral is recorded)
+                -> leg8/certificates_L<L>.json (+ certificates_probe_L19.pt
+                on rows-attached runs).
   upload        production-only HF upload of leg1/ + leg8/ (fail-loud
                 exact-set verify; smoke/skip is LOUD).
 
@@ -132,6 +154,50 @@ artifact, #1900 convention; every .json carries ``regime`` + ``metadata``
   leg8/effective_kernel_L<L>.json:
     tau_kernel, k99, k90, kernel_dim, tau_over_median_gain, tau_over_max_gain,
     pct_of_typical_gain, sigma_kernel_max, sigma_kernel_mean, claims_phrasing
+  leg8/monitor_geometry_L<L>.pt:
+    traits: {<trait>: {r_hat: float64 [d] (unit-normalized layer-<L> r_B row),
+                       gradient: float64 [d] (A @ r_hat — the B1 row-space
+                         monitor gradient),
+                       preimage_unit_level: float64 [d] (least-norm pre-image
+                         of y = r_hat under the ROW action, effective-rank
+                         truncated: retained sigma_i >= tau_kernel),
+                       preimage_unit_level_fullpinv: float64 [d] (untruncated
+                         full-pinv companion — every sigma_i > 0 kept)}}
+    tau_kernel, caveats: [str, str], regime
+  leg8/monitor_geometry_L<L>.json:
+    kernel_gain_context: {tau_kernel, k99, kernel_dim, sigma_median,
+      tau_over_median_gain, note (the gain-ratio caveat: tau_kernel EXCEEDS the
+      median gain on the banked L19 map, so a majority of directions sit below
+      tau — 'below-tau' is a RELATIVE-gain statement, never 'ignored')}
+    traits: {<trait>: {grad_norm, min_context_change_per_unit_read (= 1/|A r|),
+      read_at_zero_context (= r.b), gradient_mass_below_tau_frac,
+      preimage_norm, preimage_fullpinv_norm, target_mass_below_tau_frac,
+      achieved_level_fraction (measured r.(v_ln @ A)),
+      achieved_level_fraction_algebra (= 1 - target_mass_below_tau_frac),
+      preimage_orientation_residual, n_retained, kernel_dim}}
+    coset_ambiguity (per-layer string: every pre-image = particular solution +
+      arbitrary effective-kernel component, kernel_dim free directions + the
+      gain ratio attached), affine_note, sae_naming ("deferred-..."),
+    caveats: [activation-space caveat (a), map-level caveat (b)] — verbatim
+  leg8/certificates_L<L>.json:
+    monitors: {<trait>: {direct_projection: {gradient_is, grad_norm,
+      worst_case_score_movement}, mapped_read: {same keys},
+      mapped_over_direct_grad_ratio,
+      fitted_probe: {status: computed|deferred..., and when computed:
+        grad_norm (= |w|), selected_lambda, selector, lambda_grid_edge,
+        val_r2, heldout_r2, n_train, d, n_val, n_test},
+      heldout: {<monitor>: {std, corr_with_target, eps_to_move_one_heldout_sd,
+        signal_to_sensitivity}} | deferral string}}
+    rows: {n_train, d, n_val, n_test, ridge_convention, lambda_grid
+      {kind, lo, hi, num, widen_rounds_used}} | deferral string
+    formulas, bound_scope (single-application; rho >= 1 forecloses iterated
+      bounds — stated UNAVAILABLE, never computed under a false premise),
+    baselines: {identity_bias: "inapplicable — ...", knn_retrieval:
+      "inapplicable — ..."} (scalar target: dimension mismatch, stated not
+      skipped), caveats (verbatim), regime, metadata
+  leg8/certificates_probe_L19.pt (rows-attached runs only):
+    w: float64 [d, n_traits] (probe weights, train-centered raw-feature ridge)
+    x_mean: float64 [d], t_mean: float64 [n_traits], traits: [str], regime
 
 Smoke seam (plan SS4 Smoke run, P-A line): ``--smoke`` = L19-only layer list,
 top-8 per-direction reporting width, and the 100-draw budget recorded in
@@ -188,6 +254,42 @@ ALIGN_LO = 0.2  # |c| ceiling for transcoded
 TRANSCODED_GAIN_FLOOR = 0.8  # = the copied-class gain floor (C6: tau_read retired)
 ALPHA_RESIDUAL_KS = (1, 8, 32, 128)  # plan SS4 leg 1 step 5
 REGIME_VERSION = 1  # bump on any output-affecting logic change (resume key member)
+
+# ── leg 8 steps 3+4 (monitor geometry + certificates) ─────────────────────────────
+# #779 monitoring r_B set: HF data repo, full-revision pin (plan SS10: "@ 037fcbb2
+# (verified)"; schema probed from the real evil.pt blob 2026-08-24 — keys
+# ['counts', 'layers', 'metadata', 'r_b', 'smoke', 'trait'], r_b (28, 3584) fp32).
+RB_HF_PREFIX = "issue779_monitoring/r_b"
+RB_HF_REVISION = "037fcbb210bc52c459959b0746cc268fe08bae96"
+RB_TRAITS = ("evil", "sycophancy", "hallucination")  # issue1482_early_layer.py order
+# Certificate (iii) ridge probe: validation-split lambda selection (NEVER GCV —
+# CLAUDE.md GCV ban context) over the plan-C4 widened grid, generating params only
+# (machine-stable resume keys, #1336).
+CERT_LAMBDA_GRID = ("logspace", -5.0, 8.0, 27)
+CERT_GRID_WIDEN_MAX = 3  # widen-on-edge rounds (2 decades/edge each); residual edge REPORTED
+CERT_ROWS_LAYER = 19  # the only layer with a P-B row store (X19/Y19)
+CERT_CHUNK_DEFAULT = 65_536  # moment-accumulation chunk (issue2569_rowbattery.py parity)
+# Binding caveats — plan SS4 leg 8 step 4 requires BOTH verbatim in every output
+# artifact of these phases.
+CAVEAT_ACTIVATION = (
+    "activation-space perturbations are not established to correspond to realizable "
+    "text perturbations — this ships as sensitivity analysis and decision-geometry "
+    "characterization, NEVER a security guarantee"
+)
+CAVEAT_MAP_LEVEL = (
+    'all "the map cannot distinguish" claims are map-level (#1776), and the '
+    "kernel-pair validation is precisely the test of the stronger reading."
+)
+CERT_FORMULAS = {
+    "direct_projection": "s(v_C) = r_hat . v_C ; gradient = r_hat",
+    "mapped_read": "s(v_C) = r_hat . (v_C @ A + b) ; gradient = A @ r_hat (B1 row action)",
+    "fitted_probe": "s(v_C) = w . (v_C - x_mean) + t_mean ; gradient = w",
+    "worst_case": "max_{|dv|<=eps} |s(v_C+dv) - s(v_C)| = eps * |gradient| (Cauchy-Schwarz; "
+    "exact for a fixed linear read, SINGLE application of the map only)",
+    "eps_to_move_one_heldout_sd": "std_heldout(s) / |gradient|  (context-space L2 units)",
+    "signal_to_sensitivity": "corr_heldout(s, t) * std_heldout(s) / |gradient| "
+    "(target-signal movement per unit context-space perturbation budget)",
+}
 
 
 # ── small writers (atomic; provenance-stamped) ────────────────────────────────────
@@ -430,6 +532,314 @@ def effective_kernel_stats(read_input_u: np.ndarray, sigma: np.ndarray) -> tuple
     return basis, stats
 
 
+# ── pure computation core, leg 8 steps 3+4 (unit-tested on tiny synthetics) ───────
+
+
+def monitor_flip_geometry(A: np.ndarray, b: np.ndarray, r_hat: np.ndarray) -> dict:
+    """Leg-8 step 3 flip geometry for one unit-normalized monitor readout.
+
+    B1 ROW action: the mapped read is ``s(v) = r_hat . (v @ A + b)
+    = v . (A @ r_hat) + r_hat . b``, so the context-space gradient is
+    ``g = A @ r_hat`` and the minimal-norm context change moving the read by
+    one unit lies ALONG g with norm ``1/|g|``. Returns the gradient (fp64)
+    plus the scalar geometry; asserts a non-degenerate gradient.
+    """
+    g = OP.monitor_gradient(A, r_hat)
+    gn = float(np.linalg.norm(g))
+    assert gn > 0.0, "degenerate monitor: A @ r_hat == 0"
+    b64 = np.asarray(b, dtype=np.float64)
+    r64 = np.asarray(r_hat, dtype=np.float64)
+    return {
+        "gradient": g,
+        "grad_norm": gn,
+        "min_context_change_per_unit_read": 1.0 / gn,
+        "read_at_zero_context": float(b64 @ r64),
+    }
+
+
+def least_norm_preimage(
+    read_input_u: np.ndarray,
+    sigma: np.ndarray,
+    write_output_v: np.ndarray,
+    y: np.ndarray,
+    tau: float,
+) -> dict:
+    """Least-norm pre-image of the target output level ``y`` under the ROW action.
+
+    With ``A = sum_i sigma_i u_i v_i^T`` (row action ``x @ A = sum_i sigma_i
+    (x . u_i) v_i``; B1 orientation — u = INPUT/read, v = OUTPUT/write), the
+    pseudoinverse pre-image is ``v = y @ A^+ = sum_i sigma_i^-1 (y . v_i) u_i``.
+    Returns BOTH companions: the EFFECTIVE-RANK form (retain ``sigma_i >= tau``
+    — the strict complement of the ``sigma < tau`` kernel of
+    ``OP.kernel_read_directions``) and the FULL-pinv form (every
+    ``sigma_i > 0``). Coset ambiguity is quantified, never dropped: any
+    pre-image = this particular solution + an arbitrary effective-kernel
+    component (``kernel_dim`` free directions). Mass fractions are of
+    ``|y|^2``; ``achieved_level_fraction_algebra`` is exact when the v basis
+    is complete (full SVD of a square A).
+    """
+    u = np.asarray(read_input_u, dtype=np.float64)
+    s = np.asarray(sigma, dtype=np.float64)
+    v = np.asarray(write_output_v, dtype=np.float64)
+    y64 = np.asarray(y, dtype=np.float64)
+    y_norm2 = float(y64 @ y64)
+    assert y_norm2 > 0.0, "degenerate target level y == 0"
+    proj = v.T @ y64  # components y . v_i in the write basis
+    retained = s >= float(tau)
+    positive = s > 0.0
+    coeff_ret = np.where(retained, proj / np.where(retained, s, 1.0), 0.0)
+    coeff_full = np.where(positive, proj / np.where(positive, s, 1.0), 0.0)
+    v_ln = u @ coeff_ret
+    v_full = u @ coeff_full
+    below = proj[~retained]
+    mass_below = float(below @ below) / y_norm2
+    return {
+        "preimage": v_ln,
+        "preimage_fullpinv": v_full,
+        "n_retained": int(retained.sum()),
+        "kernel_dim": int((~retained).sum()),
+        "target_mass_below_tau_frac": mass_below,
+        "achieved_level_fraction_algebra": 1.0 - mass_below,
+        "preimage_norm": float(np.linalg.norm(v_ln)),
+        "preimage_fullpinv_norm": float(np.linalg.norm(v_full)),
+    }
+
+
+def select_lambda_with_widening(
+    val_r2_fn, grid_params: tuple = CERT_LAMBDA_GRID, widen_max: int = CERT_GRID_WIDEN_MAX
+) -> dict:
+    """Validation-split lambda selection with widen-on-edge (plan C4; NEVER GCV).
+
+    ``val_r2_fn(lams) -> np.ndarray`` returns the validation R^2 per lambda.
+    The grid travels as GENERATING PARAMETERS ``("logspace", lo, hi, num)`` —
+    never a materialized-float-array hash (machine-stable keys, #1336). An
+    argmax on a grid EDGE widens that edge by 2 decades (per-decade density
+    preserved) up to ``widen_max`` rounds; a residual edge after exhaustion
+    is REPORTED via ``lambda_grid_edge``, never silently accepted.
+    """
+    kind, lo, hi, num = grid_params
+    assert kind == "logspace", grid_params
+    lo, hi, num = float(lo), float(hi), int(num)
+    rounds = 0
+    while True:
+        lams = np.logspace(lo, hi, num)
+        r2 = np.asarray(val_r2_fn(lams), dtype=np.float64)
+        assert r2.shape == lams.shape, (r2.shape, lams.shape)
+        j = int(np.argmax(r2))
+        at_lo, at_hi = j == 0, j == lams.size - 1
+        if not (at_lo or at_hi) or rounds >= widen_max:
+            return {
+                "selected_lambda": float(lams[j]),
+                "val_r2": float(r2[j]),
+                "lambda_grid_edge": "low" if at_lo else ("high" if at_hi else "none"),
+                "widen_rounds_used": rounds,
+                "grid": {"kind": kind, "lo": lo, "hi": hi, "num": num},
+            }
+        per_decade = (num - 1) / max(hi - lo, 1e-9)
+        if at_lo:
+            lo -= 2.0
+        else:
+            hi += 2.0
+        num = int(round(per_decade * (hi - lo))) + 1
+        rounds += 1
+
+
+def _eigh_robust(g: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """torch.linalg.eigh with the canonical cuda->CPU LinAlgError fallback.
+
+    Exact numerical-backend swap, NO Gram jitter (#1335 convention; canonical
+    impl scripts/issue825_fit_cells.py::_eigh_robust). A Gram that fails on
+    CPU too is genuinely pathological input — let it raise.
+    """
+    try:
+        return torch.linalg.eigh(g)
+    except torch.linalg.LinAlgError:
+        print(
+            f"[eigh-robust] eigh failed on {g.device} (n={g.shape[0]}); CPU LAPACK retry",
+            flush=True,
+        )
+        w, vv = torch.linalg.eigh(g.cpu())
+        return w.to(g.device), vv.to(g.device)
+
+
+def _accumulate_probe_moments(
+    x_mm, y_mm, r_mat: np.ndarray, positions: np.ndarray, *, chunk: int, dev, tag: str
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, int]:
+    """Chunked fp64 raw-moment accumulation for the certificate ridge probe.
+
+    ``x_mm``/``y_mm`` are (N, d) fp16 np memmaps (the P-B P1 row store);
+    ``r_mat`` (d, T) stacks the unit monitor readouts; targets ``t = Y @ R``
+    are formed row-chunked (never materializing Y). Returns UNCENTERED torch
+    fp64 sums ``(gxx [d,d], gxt [d,T], sx [d], st_ [T], n)`` — centered by
+    the caller (issue2569_rowbattery.py moment-accumulation parity).
+    """
+    d = int(x_mm.shape[1])
+    n_traits = int(r_mat.shape[1])
+    r64 = torch.as_tensor(np.asarray(r_mat, dtype=np.float64), device=dev)
+    gxx = torch.zeros((d, d), dtype=torch.float64, device=dev)
+    gxt = torch.zeros((d, n_traits), dtype=torch.float64, device=dev)
+    sx = torch.zeros(d, dtype=torch.float64, device=dev)
+    st_ = torch.zeros(n_traits, dtype=torch.float64, device=dev)
+    n = int(positions.size)
+    t0 = time.time()
+    for k0 in range(0, n, chunk):
+        pos = positions[k0 : k0 + chunk]
+        xb = torch.as_tensor(np.asarray(x_mm[pos], dtype=np.float64), device=dev)
+        yb = torch.as_tensor(np.asarray(y_mm[pos], dtype=np.float64), device=dev)
+        tb = yb @ r64
+        gxx += xb.T @ xb
+        gxt += xb.T @ tb
+        sx += xb.sum(dim=0)
+        st_ += tb.sum(dim=0)
+        logger.info(
+            "[%s] moments rows %d..%d/%d elapsed=%.1fs",
+            tag,
+            k0,
+            min(k0 + chunk, n),
+            n,
+            time.time() - t0,
+        )
+    return gxx, gxt, sx, st_, n
+
+
+def _heldout_monitor_stats(scores: np.ndarray, target: np.ndarray, grad_norm: float) -> dict:
+    """Held-out normalization for one monitor: std, target corr, and the two
+    scale-invariant certificate reads (eps-to-move-one-SD; signal-to-sensitivity,
+    both in context-space L2 units)."""
+    sd = float(np.std(scores, ddof=1))
+    corr = (
+        float(np.corrcoef(scores, target)[0, 1])
+        if sd > 0.0 and float(np.std(target, ddof=1)) > 0.0
+        else 0.0
+    )
+    return {
+        "std": sd,
+        "corr_with_target": corr,
+        "eps_to_move_one_heldout_sd": sd / grad_norm,
+        "signal_to_sensitivity": corr * sd / grad_norm,
+    }
+
+
+def certificate_rows_core(
+    x_mm,
+    y_mm,
+    train_pos: np.ndarray,
+    val_pos: np.ndarray,
+    test_pos: np.ndarray,
+    r_mat: np.ndarray,
+    trait_names: tuple[str, ...],
+    a_mat: np.ndarray,
+    b_vec: np.ndarray,
+    *,
+    chunk: int = CERT_CHUNK_DEFAULT,
+    dev: str = "cpu",
+    grid_params: tuple = CERT_LAMBDA_GRID,
+    widen_max: int = CERT_GRID_WIDEN_MAX,
+) -> dict:
+    """Certificate (iii) fitted 1-D context probes + held-out normalization.
+
+    Fits, per trait, a train-centered raw-feature ridge probe ``w`` from
+    context states v_C to the trait target ``t = r_hat . v_A`` (= ``Y @
+    r_hat``), lambda selected on the pinned VALIDATION split (never GCV) with
+    widen-on-edge, then evaluates ALL THREE monitor forms on the held-out
+    TEST split. HARD ESTIMATOR-VALIDITY GATE: ``n_train < d`` is REFUSED
+    (RuntimeError) — every held-out R^2 in that regime is estimator-degenerate
+    (#1701). Returns ``{"probes", "heldout", "rows", "w", "x_mean", "t_mean"}``.
+    """
+    d = int(x_mm.shape[1])
+    n_train = int(train_pos.size)
+    if n_train < d:
+        raise RuntimeError(
+            f"certificate probe REFUSED: n_train={n_train} < d={d} — estimator-degenerate "
+            "regime (every held-out R^2 is a ceiling artifact, #1701); attach a row store "
+            "with n_train >= d or leave the probe leg deferred"
+        )
+    assert val_pos.size > 1 and test_pos.size > 1, (val_pos.size, test_pos.size)
+    dev_t = torch.device(dev)
+    r64 = np.asarray(r_mat, dtype=np.float64)
+    gxx, gxt, sx, st_, n = _accumulate_probe_moments(
+        x_mm, y_mm, r64, train_pos, chunk=chunk, dev=dev_t, tag="certificates"
+    )
+    sxx_c = gxx - torch.outer(sx, sx) / n
+    sxt_c = gxt - torch.outer(sx, st_) / n
+    evals_t, vecs_t = _eigh_robust(sxx_c / n)
+    evals = evals_t.cpu().numpy()
+    vecs = vecs_t.cpu().numpy()
+    bt = (vecs_t.T @ (sxt_c / n)).cpu().numpy()  # (d, T) in the eigenbasis
+    x_mean = (sx / n).cpu().numpy()
+    t_mean = (st_ / n).cpu().numpy()
+    xv_c = np.asarray(x_mm[val_pos], dtype=np.float64) - x_mean
+    tv = np.asarray(y_mm[val_pos], dtype=np.float64) @ r64
+    xt_raw = np.asarray(x_mm[test_pos], dtype=np.float64)
+    xt_c = xt_raw - x_mean
+    tt = np.asarray(y_mm[test_pos], dtype=np.float64) @ r64
+    vv_val = xv_c @ vecs  # precompute: validation rows in the eigenbasis
+
+    def _r2_cols(pred: np.ndarray, target: np.ndarray) -> np.ndarray:
+        """Columnwise R^2 of ``pred`` (n, k) against ``target`` (n,)."""
+        denom = float(((target - target.mean()) ** 2).sum())
+        assert denom > 0.0, "degenerate validation target (zero variance)"
+        return 1.0 - ((target[:, None] - pred) ** 2).sum(axis=0) / denom
+
+    probes: dict = {}
+    heldout: dict = {}
+    w_cols = []
+    b64 = np.asarray(b_vec, dtype=np.float64)
+    for j, trait in enumerate(trait_names):
+
+        def _val_r2(lams: np.ndarray, j: int = j) -> np.ndarray:
+            coef = bt[:, j][:, None] / (evals[:, None] + lams[None, :])
+            return _r2_cols(vv_val @ coef + t_mean[j], tv[:, j])
+
+        sel = select_lambda_with_widening(_val_r2, grid_params, widen_max)
+        w_j = vecs @ (bt[:, j] / (evals + sel["selected_lambda"]))
+        w_cols.append(w_j)
+        s_probe = xt_c @ w_j + t_mean[j]
+        heldout_r2 = float(_r2_cols(s_probe[:, None], tt[:, j])[0])
+        wn = float(np.linalg.norm(w_j))
+        probes[trait] = {
+            "status": "computed",
+            "selected_lambda": sel["selected_lambda"],
+            "selector": "validation-split R^2 on the pinned val split (GCV REFUSED)",
+            "lambda_grid_edge": sel["lambda_grid_edge"],
+            "widen_rounds_used": sel["widen_rounds_used"],
+            "realized_grid": sel["grid"],
+            "val_r2": sel["val_r2"],
+            "heldout_r2": heldout_r2,
+            "grad_norm": wn,
+            "n_train": n_train,
+            "d": d,
+            "n_val": int(val_pos.size),
+            "n_test": int(test_pos.size),
+        }
+        g_mapped = OP.monitor_gradient(a_mat, r64[:, j])
+        heldout[trait] = {
+            "direct_projection": _heldout_monitor_stats(xt_raw @ r64[:, j], tt[:, j], 1.0),
+            "mapped_read": _heldout_monitor_stats(
+                xt_raw @ g_mapped + float(b64 @ r64[:, j]),
+                tt[:, j],
+                float(np.linalg.norm(g_mapped)),
+            ),
+            "fitted_probe": _heldout_monitor_stats(s_probe, tt[:, j], wn),
+        }
+    return {
+        "probes": probes,
+        "heldout": heldout,
+        "rows": {
+            "n_train": n_train,
+            "d": d,
+            "n_val": int(val_pos.size),
+            "n_test": int(test_pos.size),
+            "ridge_convention": "(Sxx_c/n + lambda I) w = Sxt_c/n; train-centered raw "
+            "features; probe s(v) = w . (v - x_mean) + t_mean",
+            "lambda_grid": list(grid_params),
+        },
+        "w": np.stack(w_cols, axis=1),
+        "x_mean": x_mean,
+        "t_mean": t_mean,
+    }
+
+
 # ── driver plumbing (layers, regime keys, resume) ─────────────────────────────────
 
 
@@ -531,6 +941,136 @@ def _load_factor(args, layer: int) -> dict:
             f"(or pass --fresh) before downstream phases"
         )
     return obj
+
+
+# ── leg 8 steps 3+4 plumbing (r_B staging + phase-specific regime keys) ───────────
+
+
+def _stage_rb(args) -> dict[str, Path]:
+    """Stage the #779 monitoring r_B blobs and return ``{trait: path}``.
+
+    Local ``--rb-dir`` first (tests / pre-staged pods); else HF data repo at
+    the FULL pinned revision (plan SS10 line: `issue779_monitoring/r_b/...
+    @ 037fcbb2 (verified)`), via the retried/atomic/idempotent
+    ``hub.stage_hub_file``. Fail-loud: a missing trait blob raises — never a
+    substituted or fabricated readout.
+    """
+    out: dict[str, Path] = {}
+    if args.rb_dir is not None:
+        for trait in RB_TRAITS:
+            p = Path(args.rb_dir) / f"{trait}.pt"
+            if not p.exists():
+                raise FileNotFoundError(f"--rb-dir given but {p} is absent")
+            out[trait] = p
+        return out
+    from explore_persona_space.orchestrate import hub
+
+    dest_dir = args.out_root / "r_b"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    for trait in RB_TRAITS:
+        out[trait] = hub.stage_hub_file(
+            C.HF_DATA_REPO,
+            f"{RB_HF_PREFIX}/{trait}.pt",
+            dest_dir / f"{trait}.pt",
+            repo_type="dataset",
+            revision=RB_HF_REVISION,
+        )
+    return out
+
+
+def _rb_layer_vector(path: Path, trait: str, layer: int, d: int) -> np.ndarray:
+    """Load one r_B blob and return the UNIT-NORMALIZED fp64 layer-``layer`` row.
+
+    Schema asserts mirror the OBSERVED artifact (probed real blob
+    ``issue779_monitoring/r_b/evil.pt @ 037fcbb2``: keys counts/layers/
+    metadata/r_b/smoke/trait; ``r_b`` (28, 3584) fp32) + the
+    issue1482_early_layer.py consumer contract (trait match, ``smoke is
+    False``, per-layer indexability). ``weights_only=False`` is deliberate:
+    a revision-pinned project-produced artifact (#1900 convention).
+    """
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    assert payload.get("trait") == trait, (str(path), payload.get("trait"), trait)
+    assert payload.get("smoke") is False, f"{path}: smoke r_B blob refused"
+    arr = payload["r_b"]
+    assert arr.ndim == 2 and int(arr.shape[1]) == d, (tuple(arr.shape), d)
+    layers = list(payload.get("layers", range(int(arr.shape[0]))))
+    assert layers[layer] == layer, (str(path), layer, layers[:4])
+    r = np.asarray(arr[layer], dtype=np.float64)
+    rn = float(np.linalg.norm(r))
+    assert rn > 0.0, f"{path}: zero r_B row at layer {layer}"
+    return r / rn
+
+
+def _rb_source(args) -> str:
+    """Regime token for where r_B came from (generating parameter, not a hash)."""
+    return "local-dir" if args.rb_dir is not None else f"hf:{RB_HF_REVISION}"
+
+
+def _mg_regime(args, layer: int) -> dict:
+    """monitor-geometry resume key: base regime + this phase's generating params
+    under a SUB-KEY (the shared ``_regime`` stays untouched — ``_load_factor``
+    compares against it, so extending it in place would stale every banked
+    factor artifact)."""
+    return {
+        **_regime(args, layer),
+        "monitor_geometry": {"rb_source": _rb_source(args), "traits": list(RB_TRAITS)},
+    }
+
+
+def _cert_regime(args, layer: int) -> dict:
+    """certificates resume key: base regime + probe generating params.
+
+    ``rows_attached`` is a member so a later rows-attached re-run RECOMPUTES
+    the unit that previously recorded a deferral (never a stale skip);
+    ``cert_chunk``/``device`` are members because fp64 accumulation order is
+    output-affecting in last bits.
+    """
+    rows_attached = bool(args.rows_dir) and int(layer) == CERT_ROWS_LAYER
+    return {
+        **_regime(args, layer),
+        "certificates": {
+            "rb_source": _rb_source(args),
+            "traits": list(RB_TRAITS),
+            "lambda_grid": list(CERT_LAMBDA_GRID),
+            "grid_widen_max": CERT_GRID_WIDEN_MAX,
+            "rows_attached": rows_attached,
+            "cert_chunk": int(args.cert_chunk),
+            "device": str(args.device),
+        },
+    }
+
+
+def _load_rows_store(args) -> tuple:
+    """Open the P-B P1 assemble dir (``--rows-dir``) and derive the pinned splits.
+
+    Contract = the LANDED issue2569_rowbattery.py P1 outputs: ``X19.fp16.npy``
+    / ``Y19.fp16.npy`` ((N, 3584) fp16 np memmaps), ``rows_present.npy``
+    (sorted int64), ``split_meta.json``. Splits re-derive through the pinned
+    committed-split helpers (``T24._committed_split`` +
+    ``T24._assert_pinned_valtest``); the train pool = rows_present minus
+    val/test, positions via ``RB._positions_in_present`` — REUSED, never a
+    re-invented schema. Returns ``(x_mm, y_mm, train_pos, val_pos, test_pos)``.
+    """
+    import issue2476_turnavg_sae as T24
+    import issue2569_rowbattery as RB
+
+    rows_dir = Path(args.rows_dir)
+    need = ["X19.fp16.npy", "Y19.fp16.npy", "rows_present.npy", "split_meta.json"]
+    missing = [f for f in need if not (rows_dir / f).exists()]
+    if missing:
+        raise FileNotFoundError(f"--rows-dir {rows_dir} missing required files: {missing}")
+    x_mm = np.load(rows_dir / "X19.fp16.npy", mmap_mode="r")
+    y_mm = np.load(rows_dir / "Y19.fp16.npy", mmap_mode="r")
+    rows_present = np.load(rows_dir / "rows_present.npy")
+    assert x_mm.shape == y_mm.shape and x_mm.ndim == 2, (x_mm.shape, y_mm.shape)
+    assert int(x_mm.shape[0]) == int(rows_present.size), (x_mm.shape, rows_present.size)
+    committed = T24._committed_split()
+    _r1_train, val_ids, test_ids = T24._assert_pinned_valtest(committed)
+    pool_ids = np.setdiff1d(rows_present, np.union1d(val_ids, test_ids))
+    train_pos = np.searchsorted(rows_present, pool_ids)
+    val_pos = RB._positions_in_present(rows_present, val_ids, "val")
+    test_pos = RB._positions_in_present(rows_present, test_ids, "test")
+    return x_mm, y_mm, train_pos, val_pos, test_pos
 
 
 # ── phases ────────────────────────────────────────────────────────────────────────
@@ -805,6 +1345,270 @@ def phase_kernel(args) -> None:
     _sentinel("pa-kernel", f"kernel done layers={list(layers)}")
 
 
+def phase_monitor_geometry(args) -> None:
+    """Leg-8 step 3 monitor decision geometry -> leg8/monitor_geometry_L<L>.pt/.json.
+
+    Per trait readout r from the #779 monitoring r_B set (unit-normalized):
+    the B1 flip gradient A r, the minimal context change per unit read, and
+    least-norm pre-images of a unit read level (effective-rank truncated at
+    tau_kernel + full-pinv companion) — WITH the coset ambiguity + gain-ratio
+    context stated in every artifact. An orientation guard re-multiplies the
+    pre-image through the REAL A: a U/V letter flip (the B1 confusion class)
+    collapses the achieved level and raises.
+    """
+    layers = _layers(args)
+    rb_paths = _stage_rb(args)
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _mg_regime(args, layer)
+        jpath = _leg8(args) / f"monitor_geometry_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[monitor-geometry] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        payload = _load_payload(args, layer)
+        a_mat, b_vec = OP.row_operator(payload)
+        fac = _load_factor(args, layer)
+        s = fac["sigma"].numpy().astype(np.float64)
+        u = fac["read_input_u_fp32"].numpy().astype(np.float64)
+        v = fac["write_output_v_fp32"].numpy().astype(np.float64)
+        tau, k99 = OP.tau_kernel_threshold(s, mass=MASS_KERNEL)
+        kernel_dim = int((s < tau).sum())
+        med = float(np.median(s))
+        d = int(payload.d)
+        gain_ratio = tau / med if med > 0 else float("inf")
+        traits_pt: dict = {}
+        traits_json: dict = {}
+        for trait in RB_TRAITS:
+            r_hat = _rb_layer_vector(rb_paths[trait], trait, layer, d)
+            flip = monitor_flip_geometry(a_mat, b_vec, r_hat)
+            pre = least_norm_preimage(u, s, v, r_hat, tau)
+            # Orientation guard (B1): the measured achieved level through the
+            # REAL A must match the algebraic 1 - mass_below (fp32-factor
+            # noise tolerance 1e-2); a U/V letter flip collapses it.
+            achieved_meas = float(r_hat @ (pre["preimage"] @ a_mat))
+            resid = abs(achieved_meas - pre["achieved_level_fraction_algebra"])
+            if resid > 1e-2:
+                raise RuntimeError(
+                    f"[monitor-geometry] L{layer} {trait}: orientation guard breached — "
+                    f"measured achieved level {achieved_meas:.6f} vs algebraic "
+                    f"{pre['achieved_level_fraction_algebra']:.6f} (resid {resid:.3e}); "
+                    "U/V letter-flip suspected (B1 orientation dictionary)"
+                )
+            g = flip["gradient"]
+            gu = u.T @ g
+            below = gu[s < tau]
+            gmass = float(below @ below) / float(gu @ gu)
+            traits_pt[trait] = {
+                "r_hat": torch.from_numpy(r_hat),
+                "gradient": torch.from_numpy(g),
+                "preimage_unit_level": torch.from_numpy(pre["preimage"]),
+                "preimage_unit_level_fullpinv": torch.from_numpy(pre["preimage_fullpinv"]),
+            }
+            traits_json[trait] = {
+                "grad_norm": flip["grad_norm"],
+                "min_context_change_per_unit_read": flip["min_context_change_per_unit_read"],
+                "read_at_zero_context": flip["read_at_zero_context"],
+                "gradient_mass_below_tau_frac": gmass,
+                "preimage_norm": pre["preimage_norm"],
+                "preimage_fullpinv_norm": pre["preimage_fullpinv_norm"],
+                "target_mass_below_tau_frac": pre["target_mass_below_tau_frac"],
+                "achieved_level_fraction": achieved_meas,
+                "achieved_level_fraction_algebra": pre["achieved_level_fraction_algebra"],
+                "preimage_orientation_residual": resid,
+                "n_retained": pre["n_retained"],
+                "kernel_dim": pre["kernel_dim"],
+            }
+        caveats = [CAVEAT_ACTIVATION, CAVEAT_MAP_LEVEL]
+        coset = (
+            f"every pre-image is one particular solution only: any of the {kernel_dim} "
+            f"effective-kernel directions (sigma_i < tau_kernel = {tau:.6g}, i.e. reads at "
+            f"< {100.0 * gain_ratio:.1f}% of median gain) can be added while moving the "
+            "mapped read by < tau per unit norm — a least-norm pre-image is never 'the' "
+            "context (open concern effective-kernel-tau-above-median-gain)"
+        )
+        gain_note = (
+            (
+                f"tau_kernel={tau:.6g} EXCEEDS the median gain sigma_median={med:.6g} "
+                f"(ratio {gain_ratio:.3f}): a MAJORITY of input directions sit below tau, "
+                "so 'below-tau' is a RELATIVE-gain statement (low-gain read), NEVER "
+                "'ignored'"
+            )
+            if tau > med
+            else (
+                f"tau_kernel={tau:.6g} <= median gain sigma_median={med:.6g} "
+                f"(ratio {gain_ratio:.3f}) on this layer's map"
+            )
+        )
+        _atomic_torch_save(
+            {
+                "traits": traits_pt,
+                "tau_kernel": float(tau),
+                "caveats": caveats,
+                "regime": regime,
+            },
+            _leg8(args) / f"monitor_geometry_L{layer}.pt",
+        )
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "kernel_gain_context": {
+                    "tau_kernel": float(tau),
+                    "k99": int(k99),
+                    "kernel_dim": kernel_dim,
+                    "sigma_median": med,
+                    "tau_over_median_gain": gain_ratio,
+                    "note": gain_note,
+                },
+                "traits": traits_json,
+                "coset_ambiguity": coset,
+                "affine_note": "read_at_zero_context = r_hat . b is the affine offset — the "
+                "flip DISTANCE along the gradient depends on the current context's read, "
+                "not only on the geometry",
+                "sae_naming": "deferred-to-SAE-dashboard-unit (leg 1 step 4 machinery; the "
+                "next unit in this file names the gradient + pre-image directions)",
+                "caveats": caveats,
+            },
+            phase="pa-monitor-geometry",
+        )
+        logger.info(
+            "[monitor-geometry] unit %d/%d L%d elapsed=%.1fs kernel_dim=%d grad_norms=%s",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            kernel_dim,
+            {t: round(traits_json[t]["grad_norm"], 4) for t in RB_TRAITS},
+        )
+    _sentinel("pa-monitor-geometry", f"monitor geometry done layers={list(layers)}")
+
+
+def phase_certificates(args) -> None:
+    """Leg-8 step 4 sensitivity certificates -> leg8/certificates_L<L>.json
+    (+ leg8/certificates_probe_L19.pt on rows-attached runs).
+
+    Weights-only sensitivities (gradient norms; worst case = eps * |gradient|,
+    SINGLE application only — the measured rho(A) >= 1 forecloses iterated
+    bounds, stated UNAVAILABLE) always compute. The fitted probe (iii) + the
+    held-out normalization need the P-B P1 row store: they run ONLY at layer
+    19 with ``--rows-dir`` (P-A and P-B run concurrently on different pods) —
+    otherwise an EXPLICIT deferral is recorded, never a silent skip.
+    """
+    layers = _layers(args)
+    rb_paths = _stage_rb(args)
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _cert_regime(args, layer)
+        rows_attached = regime["certificates"]["rows_attached"]
+        jpath = _leg8(args) / f"certificates_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[certificates] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        payload = _load_payload(args, layer)
+        a_mat, b_vec = OP.row_operator(payload)
+        fac = _load_factor(args, layer)
+        rho = float(fac["stats"]["rho"])
+        d = int(payload.d)
+        r_mat = np.stack([_rb_layer_vector(rb_paths[t], t, layer, d) for t in RB_TRAITS], axis=1)
+        deferral = (
+            "deferred — the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached "
+            "via --rows-dir (P-A and P-B run concurrently on different pods; re-run "
+            "`--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; "
+            "concern leg8-cert-heldout-needs-pb-rows)"
+        )
+        core: dict | None = None
+        if rows_attached:
+            x_mm, y_mm, train_pos, val_pos, test_pos = _load_rows_store(args)
+            core = certificate_rows_core(
+                x_mm,
+                y_mm,
+                train_pos,
+                val_pos,
+                test_pos,
+                r_mat,
+                RB_TRAITS,
+                a_mat,
+                b_vec,
+                chunk=int(args.cert_chunk),
+                dev=str(args.device),
+                grid_params=CERT_LAMBDA_GRID,
+                widen_max=CERT_GRID_WIDEN_MAX,
+            )
+            _atomic_torch_save(
+                {
+                    "w": torch.from_numpy(core["w"]),
+                    "x_mean": torch.from_numpy(core["x_mean"]),
+                    "t_mean": torch.from_numpy(core["t_mean"]),
+                    "traits": list(RB_TRAITS),
+                    "regime": regime,
+                },
+                _leg8(args) / f"certificates_probe_L{layer}.pt",
+            )
+        monitors: dict = {}
+        for j, trait in enumerate(RB_TRAITS):
+            g_mapped = OP.monitor_gradient(a_mat, r_mat[:, j])
+            gn_m = float(np.linalg.norm(g_mapped))
+            monitors[trait] = {
+                "direct_projection": {
+                    "gradient_is": "r_hat (the unit monitor readout, applied in context space)",
+                    "grad_norm": 1.0,
+                    "worst_case_score_movement": "eps * 1.0",
+                },
+                "mapped_read": {
+                    "gradient_is": "A @ r_hat (B1 row action)",
+                    "grad_norm": gn_m,
+                    "worst_case_score_movement": f"eps * {gn_m:.6g}",
+                },
+                "mapped_over_direct_grad_ratio": gn_m,
+                "fitted_probe": core["probes"][trait] if core else {"status": deferral},
+                "heldout": core["heldout"][trait] if core else deferral,
+            }
+        bound_scope = (
+            (
+                f"worst-case movement eps*|gradient| holds for a SINGLE application of the "
+                f"map only; measured rho(A) = {rho:.4f} >= 1 on this layer FORECLOSES any "
+                "geometric-series / iterated-map bound in (I - A)^-1 — such bounds are "
+                "UNAVAILABLE and are not computed"
+            )
+            if rho >= 1.0
+            else (
+                f"worst-case movement eps*|gradient| stated for a single application; "
+                f"measured rho(A) = {rho:.4f} < 1 on this layer (iterated bounds still "
+                "not computed in this unit)"
+            )
+        )
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "monitors": monitors,
+                "rows": core["rows"] if core else deferral,
+                "formulas": CERT_FORMULAS,
+                "bound_scope": bound_scope,
+                "baselines": {
+                    "identity_bias": "inapplicable — scalar-target probe (d -> 1): the "
+                    "identity+learned-bias baseline requires matched input/output "
+                    "dimension (stated, never silently skipped)",
+                    "knn_retrieval": "inapplicable — scalar-target probe: kNN retrieval "
+                    "among held-out target VECTORS has no scalar-read analogue here "
+                    "(stated, never silently skipped)",
+                },
+                "caveats": [CAVEAT_ACTIVATION, CAVEAT_MAP_LEVEL],
+            },
+            phase="pa-certificates",
+        )
+        logger.info(
+            "[certificates] unit %d/%d L%d elapsed=%.1fs rows_attached=%s probe=%s",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            rows_attached,
+            "computed" if core else "deferred",
+        )
+    _sentinel("pa-certificates", f"certificates done layers={list(layers)}")
+
+
 def phase_upload(args) -> None:
     """Production-only HF upload of leg1/ + leg8/ with fail-loud exact-set verify.
 
@@ -845,13 +1649,24 @@ def phase_upload(args) -> None:
     _sentinel("pa-upload", "weights-battery leg1+leg8 uploaded")
 
 
-PHASE_ORDER = ("factor", "anatomy", "alpha-lowrank", "fixed-point", "kernel", "upload")
+PHASE_ORDER = (
+    "factor",
+    "anatomy",
+    "alpha-lowrank",
+    "fixed-point",
+    "kernel",
+    "monitor-geometry",
+    "certificates",
+    "upload",
+)
 PHASES = {
     "factor": phase_factor,
     "anatomy": phase_anatomy,
     "alpha-lowrank": phase_alpha_lowrank,
     "fixed-point": phase_fixed_point,
     "kernel": phase_kernel,
+    "monitor-geometry": phase_monitor_geometry,
+    "certificates": phase_certificates,
     "upload": phase_upload,
 }
 
@@ -900,6 +1715,33 @@ def _parse_args(argv=None):
         default=None,
         help="banked-map root override (else EPS2569_MAP_ROOT env / repo root)",
     )
+    ap.add_argument(
+        "--rb-dir",
+        type=Path,
+        default=None,
+        help="local #779 r_B blob dir override ({evil,sycophancy,hallucination}.pt; "
+        "else staged from HF at the pinned revision)",
+    )
+    ap.add_argument(
+        "--rows-dir",
+        type=Path,
+        default=None,
+        help="P-B P1 assemble dir (X19/Y19 fp16 row store) — arms the certificate "
+        "probe (iii) + held-out legs at layer 19 (post-P-B; else an explicit "
+        "deferral is recorded)",
+    )
+    ap.add_argument(
+        "--device",
+        default="cpu",
+        help="probe moment-accumulation device (cpu|cuda; regime member — last-bit "
+        "output-affecting)",
+    )
+    ap.add_argument(
+        "--cert-chunk",
+        type=int,
+        default=CERT_CHUNK_DEFAULT,
+        help="row chunk for probe moment accumulation (rowbattery parity; regime member)",
+    )
     ap.add_argument("--fresh", action="store_true", help="ignore the per-unit resume predicate")
     ap.add_argument("--skip-upload", action="store_true", help="local-only run (loud)")
     ap.add_argument(
@@ -919,6 +1761,8 @@ def main() -> None:
         assert_args_attributes_defined(__file__)
         # Deferred-import resolution (smoke-architecture Axis 1): execute every
         # function-body import of this driver so a missing symbol fails HERE.
+        import issue2476_turnavg_sae as T24  # noqa: F401
+        import issue2569_rowbattery as RB  # noqa: F401
         from huggingface_hub import HfApi  # noqa: F401
 
         from explore_persona_space.orchestrate import hub  # noqa: F401
@@ -935,6 +1779,10 @@ def main() -> None:
 
         assert callable(OP.load_apply_map) and callable(OP.run_driver_identity_asserts)
         assert callable(hub.verify_repo_paths_uploaded)
+        assert callable(hub.stage_hub_file)
+        # leg 8 steps 3+4 deferred symbols: the rows-store contract helpers
+        assert callable(T24._committed_split) and callable(T24._assert_pinned_valtest)
+        assert callable(RB._positions_in_present)
         print("[import-check] OK", flush=True)
         raise SystemExit(0)
     args.out_root.mkdir(parents=True, exist_ok=True)
