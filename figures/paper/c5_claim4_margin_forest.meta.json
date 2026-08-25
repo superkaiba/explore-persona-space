@@ -1,10 +1,9 @@
 {
-  "commit": "7ad5bf78+dirty",
-  "render_id": "c125b5520cdd4fe1",
-  "git_commit": "7ad5bf783b90617b4c6b6dbdc7835307676f04fe",
+  "commit": "9802452d+dirty",
+  "render_id": "a2d4aa044d024a5b",
+  "git_commit": "9802452ddf8427f1faa2917c0c6b979a48b58d1c",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/reconciler/MEMORY.md",
     "eval_results/issue_2474/n1m_map_arms.json",
     "figures/paper/c5_claim4_margin_forest.meta.json",
     "figures/paper/c5_claim4_margin_forest.pdf",
@@ -26,11 +25,12 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2569/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
-  "created": "2026-08-25T17:39:39Z",
+  "created": "2026-08-25T18:41:24Z",
   "figsize": [
     5.5,
     3.6300000000000003
@@ -38,439 +38,367 @@
   "points": [
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08295003199437437,
-      "y": 11.0,
+      "y": 9.0,
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12036031924691837,
-      "y": 10.0,
+      "y": 8.0,
       "_kind": "errorbar",
       "_group": 1
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.4531163941948357,
-      "y": 9.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03323828757268093,
+      "y": 7.0,
       "_kind": "errorbar",
       "_group": 2
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03323828757268093,
-      "y": 8.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04360358558373343,
+      "y": 6.0,
       "_kind": "errorbar",
       "_group": 3
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04360358558373343,
-      "y": 7.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03759503773547753,
+      "y": 5.0,
       "_kind": "errorbar",
       "_group": 4
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03759503773547753,
-      "y": 6.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01175181442723583,
+      "y": 4.0,
       "_kind": "errorbar",
       "_group": 5
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01175181442723583,
-      "y": 5.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.018691788808258836,
+      "y": 3.0,
       "_kind": "errorbar",
       "_group": 6
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.018691788808258836,
-      "y": 4.0,
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05470073167904595,
+      "y": 2.0,
       "_kind": "errorbar",
       "_group": 7
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05470073167904595,
-      "y": 3.0,
-      "_kind": "errorbar",
-      "_group": 8
-    },
-    {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.030182622646223022,
-      "y": 2.0,
-      "_kind": "errorbar",
-      "_group": 9
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.19604321268322364,
       "y": 1.0,
       "_kind": "errorbar",
-      "_group": 10
+      "_group": 8
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.3325134918858831,
       "y": 0.0,
       "_kind": "errorbar",
-      "_group": 11
+      "_group": 9
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08422516205428354,
-      "y": 11.0,
+      "y": 9.0,
       "_kind": "line",
-      "_group": 12
+      "_group": 10
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07738971379562881,
-      "y": 11.0,
+      "y": 9.0,
       "_kind": "line",
-      "_group": 12
+      "_group": 10
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03378874825409309,
-      "y": 11.0,
+      "y": 9.0,
       "_kind": "line",
-      "_group": 12
+      "_group": 10
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12819456990088104,
-      "y": 11.0,
+      "y": 9.0,
       "_kind": "line",
-      "_group": 12
+      "_group": 10
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.09115196596698538,
-      "y": 11.0,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12194344127357984,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07168056871116904,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.13669192186769455,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.10967795147416451,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.16180771290798387,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0451850838604344,
+      "y": 7.0,
       "_kind": "line",
       "_group": 12
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.12194344127357984,
-      "y": 10.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07168056871116904,
-      "y": 10.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.13669192186769455,
-      "y": 10.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.10967795147416451,
-      "y": 10.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.16180771290798387,
-      "y": 10.0,
-      "_kind": "line",
-      "_group": 13
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.43646288942122546,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.26467339963072717,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.23675716873276578,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.7060233649082119,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.6216651482812484,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 14
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0451850838604344,
-      "y": 8.0,
-      "_kind": "line",
-      "_group": 15
-    },
-    {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.028120250959086886,
-      "y": 8.0,
+      "y": 7.0,
       "_kind": "line",
-      "_group": 15
+      "_group": 12
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.042452302606152716,
-      "y": 8.0,
+      "y": 7.0,
       "_kind": "line",
-      "_group": 15
+      "_group": 12
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01792371510249928,
-      "y": 8.0,
+      "y": 7.0,
       "_kind": "line",
-      "_group": 15
+      "_group": 12
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.032510085335231385,
-      "y": 8.0,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05475632517695278,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05329073219054892,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.051813673815257644,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.036150608377017335,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.022006588358890466,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03698250217822191,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02561828045372888,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.035840101850297346,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.043809881435446174,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04572442275969335,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0174823018110134,
+      "y": 4.0,
       "_kind": "line",
       "_group": 15
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05475632517695278,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05329073219054892,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.051813673815257644,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.036150608377017335,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.022006588358890466,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 16
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.03698250217822191,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02561828045372888,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.035840101850297346,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.043809881435446174,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04572442275969335,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 17
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0174823018110134,
-      "y": 5.0,
-      "_kind": "line",
-      "_group": 18
-    },
-    {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.01969507193015385,
-      "y": 5.0,
+      "y": 4.0,
       "_kind": "line",
-      "_group": 18
+      "_group": 15
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.018104476392652613,
-      "y": 5.0,
+      "y": 4.0,
       "_kind": "line",
-      "_group": 18
+      "_group": 15
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.017017229908172504,
-      "y": 5.0,
+      "y": 4.0,
       "_kind": "line",
-      "_group": 18
+      "_group": 15
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.013540007905813223,
-      "y": 5.0,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02007061949138733,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.016395477127532754,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.024016995477239456,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.017661105916593423,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.015314746028541215,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0333978538272669,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08714396189240814,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04283193416623998,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07223706455855922,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.037892843950755484,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.0033615353469981235,
+      "y": 1.0,
       "_kind": "line",
       "_group": 18
     },
     {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.02007061949138733,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.016395477127532754,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.024016995477239456,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.017661105916593423,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.015314746028541215,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 19
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0333978538272669,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 20
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.08714396189240814,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 20
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04283193416623998,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 20
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.07223706455855922,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 20
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.037892843950755484,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 20
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.0033615353469981235,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 21
-    },
-    {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.05409605864434214,
-      "y": 2.0,
+      "y": 1.0,
       "_kind": "line",
-      "_group": 21
+      "_group": 18
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.0012627012111333658,
-      "y": 2.0,
+      "y": 1.0,
       "_kind": "line",
-      "_group": 21
+      "_group": 18
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.04597319267969974,
-      "y": 2.0,
+      "y": 1.0,
       "_kind": "line",
-      "_group": 21
+      "_group": 18
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.052942696042938,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 21
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.19860691945826559,
       "y": 1.0,
       "_kind": "line",
-      "_group": 22
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.1915732116870164,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 22
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.2120001255328067,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 22
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.1949846960421817,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 22
-    },
-    {
-      "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": -0.1830511106958478,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 22
+      "_group": 18
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.30425891301195646,
       "y": 0.0,
       "_kind": "line",
-      "_group": 23
+      "_group": 19
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.2101374352947532,
       "y": 0.0,
       "_kind": "line",
-      "_group": 23
+      "_group": 19
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.5260430757337337,
       "y": 0.0,
       "_kind": "line",
-      "_group": 23
+      "_group": 19
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.31247351106108606,
       "y": 0.0,
       "_kind": "line",
-      "_group": 23
+      "_group": 19
     },
     {
       "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)": 0.30965452432788587,
       "y": 0.0,
       "_kind": "line",
-      "_group": 23
+      "_group": 19
     }
   ],
-  "n_series": 24,
-  "total_points": 72,
+  "n_series": 20,
+  "total_points": 60,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -478,19 +406,18 @@
       {
         "xlabel": "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)",
         "xticklabels": [
-          "\u22120.8",
-          "\u22120.6",
-          "\u22120.4",
-          "\u22120.2",
+          "\u22120.1",
           "0.0",
+          "0.1",
           "0.2",
+          "0.3",
           "0.4",
+          "0.5",
           "0.6"
         ],
         "yticklabels": [
           "evil: multi-turn human jailbreaks",
           "evil: PAIR optimizer attacks *",
-          "evil: Tom Gibbs multi-turn",
           "evil: HH red-team",
           "evil: ToxicChat",
           "hallucination: NQ-Open",
@@ -498,7 +425,6 @@
           "sycophancy: AITA slot (held-out Reddit)",
           "sycophancy: answer",
           "sycophancy: feedback",
-          "sycophancy: mimicry",
           "sycophancy: model-written evaluations *"
         ]
       }

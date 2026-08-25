@@ -15,8 +15,9 @@ rung, the 5-seed mean RAW DIFFERENCE dtrue (regression on mapped answer −
 regression on context) with its seed t-CI, per-seed values as light points.
 User order 2026-08-25: the figure shows the raw difference; the margin over
 the shuffled-pairing control stays quoted in the paper prose (claims.md
-rev 3, C5 ruling), not in this display. The sycophancy are-you-sure set is
-excluded from the paper figure (same order).
+rev 3, C5 ruling), not in this display. The sycophancy are-you-sure,
+evil Tom Gibbs multi-turn, and sycophancy mimicry sets are excluded from the
+paper figure (same orders; negative-raw sets pending diagnosis).
 """
 
 from __future__ import annotations
@@ -57,10 +58,15 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
     )
 
     set_paper_style("iclr")
-    # Paper scope: the sycophancy are-you-sure set is excluded from the
-    # Applications forest (user order 2026-08-25); the pinned blog-register
-    # figures keep all 13 rungs.
-    paper_excluded = {("sycophancy", "sycoays")}
+    # Paper scope: the sycophancy are-you-sure, evil Tom Gibbs multi-turn, and
+    # sycophancy mimicry sets are excluded from the Applications forest (user
+    # orders 2026-08-25; the negative-raw sets are excluded pending diagnosis).
+    # The pinned blog-register figures keep all 13 rungs.
+    paper_excluded = {
+        ("sycophancy", "sycoays"),
+        ("evil", "evil_tomgibbs"),
+        ("sycophancy", "sycomim"),
+    }
     rows = [
         r
         for r in table["per_rung"]
