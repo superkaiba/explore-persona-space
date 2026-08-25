@@ -29,6 +29,18 @@ entirely (the two failure modes are opposite — both fire without the pair).
 or names a #2530-class reducer bug. Related: [[fold-round-context-file-briefs]]
 (explicit brief adjudications beat envelope/own-kind history).
 
+**Self-derivation rounds (#2254 r5, added 2026-08-25):** the #2530 drop
+PERSISTS across later folds, and a later-round brief may carry NO
+adjudication field at all. Do not wait for one — re-derive at compose
+time: full-ledger reduce over events.jsonl (last event per concern_id;
+raised/verified-open = open, addressed/deferred = closed), diff against
+the `--open-only` envelope, and cite BOTH the original binding
+adjudication markers AND the fresh reduce in the block (r5: envelope 11,
+reduce 12, same dropped id as r3/r4). When the body already agrees with
+the adjudicated count ("Twelve review-ledger concerns stay open"), the
+block's second job is preventing a false count-mismatch flag AGAINST the
+body.
+
 **Second blind spot in the same verifier line (#2535, added #2254 r4):** the
 mechanical `concerns audit (Lens 14)` PASS is ALSO placement-blind —
 `check_concerns_audit` locates acknowledgements via
