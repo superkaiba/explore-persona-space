@@ -1,0 +1,40 @@
+{
+  "issue": 2544,
+  "comment": "15-rung Olmo-3-7B ladder (#2544 plan §10). Consumed by scripts/issue1902_common.py via EPM_ISSUE1902_LADDER_JSON (scripts/issue2544_common.py sets the env before importing). branches: null = the repo's main branch; every rung's canonical GEN render is plain (plain_render_ckpts lists all 15) while chat-template AVAILABILITY for native legs is tokenizer-probed at run time.",
+  "ckpts": ["r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "mid", "main", "S", "D", "R"],
+  "model_ids": {
+    "r0": "allenai/Olmo-3-1025-7B",
+    "r1": "allenai/Olmo-3-1025-7B",
+    "r2": "allenai/Olmo-3-1025-7B",
+    "r3": "allenai/Olmo-3-1025-7B",
+    "r4": "allenai/Olmo-3-1025-7B",
+    "r5": "allenai/Olmo-3-1025-7B",
+    "r6": "allenai/Olmo-3-1025-7B",
+    "r7": "allenai/Olmo-3-1025-7B",
+    "r8": "allenai/Olmo-3-1025-7B",
+    "r9": "allenai/Olmo-3-1025-7B",
+    "mid": "allenai/Olmo-3-1025-7B",
+    "main": "allenai/Olmo-3-1025-7B",
+    "S": "allenai/Olmo-3-7B-Instruct-SFT",
+    "D": "allenai/Olmo-3-7B-Instruct-DPO",
+    "R": "allenai/Olmo-3-7B-Instruct"
+  },
+  "branches": {
+    "r0": "stage1-step0",
+    "r1": "stage1-step1000",
+    "r2": "stage1-step5000",
+    "r3": "stage1-step21000",
+    "r4": "stage1-step60000",
+    "r5": "stage1-step143000",
+    "r6": "stage1-step286000",
+    "r7": "stage1-step596047",
+    "r8": "stage1-step954000",
+    "r9": "stage1-step1413814",
+    "mid": "stage2-step47684",
+    "main": null,
+    "S": null,
+    "D": null,
+    "R": null
+  },
+  "plain_render_ckpts": ["r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "mid", "main", "S", "D", "R"]
+}
