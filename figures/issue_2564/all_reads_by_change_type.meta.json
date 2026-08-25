@@ -1,0 +1,315 @@
+{
+  "commit": "d119abbd+dirty",
+  "render_id": "7949c741f4064b61",
+  "git_commit": "d119abbd9ce92cebcb6c8d6cec392a1a1c04c8ef",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2564_combined_panels.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c4_speaker_ladder.meta.json",
+    "figures/paper/c4_speaker_ladder.pdf",
+    "figures/paper/c4_speaker_ladder.png",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2054_paper_speaker_ladder_fig.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2564_combined_panels.py",
+  "created": "2026-08-25T16:27:17Z",
+  "figsize": [
+    17.5,
+    6.0
+  ],
+  "points": [
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 0.938568584083826,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.0498867020649567,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.0231378271222564,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.2741877206891514,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 0.9065243848018155,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 0.8094788920457068,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.1634059424943233,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.0362050410874497,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.1762777093279464,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.4325815301909909,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.6196363004286426,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.38089048063496916,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.45357564271339196,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.7248566769739305,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.8297621654783593,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.8995506629818859,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 4.467316384717808,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 8.979145573325141,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 13.304008136329148,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 20.423941204391333,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 20.43511996289614,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 32.148951057995035,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 38.15012143594861,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 47.18375212363655,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 4.724816730522974,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 9.361706146330263,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 14.17667746850374,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 25.439798772795623,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 19.59806135907762,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 26.345384841079472,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 44.53389071513429,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 48.965023435519925,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 32,
+  "text": {
+    "suptitle": "Context\u2192answer map per change type (#2564)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "separation ratio\n(>1 inflate, <1 suppress)",
+        "xlabel": "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016",
+        "xticklabels": [
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1",
+          "1.2",
+          "1.3",
+          "1.4",
+          "1.5"
+        ],
+        "yticklabels": [
+          "user fact",
+          "lexical marker",
+          "user profile",
+          "format",
+          "content constraint",
+          "query content",
+          "persona",
+          "register"
+        ]
+      },
+      {
+        "title_left": "direction\n(1 = exact, 0 = chance)",
+        "xlabel": "cos(pred \u0394, obs \u0394)",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "real answer shift\n(dashed = noise floor)",
+        "xlabel": "\u2016obs \u0394\u2016 (L19 units)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "mapped answer shift\n(map's prediction)",
+        "xlabel": "\u2016pred \u0394\u2016 (L19 units)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
