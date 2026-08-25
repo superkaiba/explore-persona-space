@@ -1450,3 +1450,9 @@ eval_results/issue_2254/first-k-answer-token-steering/steer/percell_rows.jsonl:g
 scripts/issue2215_sepcmp_qwen_embed.py:generic-api-key:11
 tasks/running/2538/events.jsonl:generic-api-key:52
 tasks/proposed/2553/events.jsonl:generic-api-key:2
+tasks/approved/2564/plans/v1.md:generic-api-key:368
+tasks/approved/2564/plans/v2.md:generic-api-key:368
+tasks/approved/2564/plans/v3.md:generic-api-key:368
+tasks/approved/2564/plans/v4.md:generic-api-key:391
+tasks/approved/2564/plans/v5.md:generic-api-key:391
+tasks/approved/2564/plans/v6.md:generic-api-key:391
