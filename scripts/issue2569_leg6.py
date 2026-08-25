@@ -69,13 +69,14 @@ import dataclasses
 import hashlib
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
 import torch
+
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("issue2569_leg6")
@@ -654,11 +655,10 @@ def context_matrix(convention: str, lasttoken: dict, pooled_base: dict, layer: i
 
 
 def _atomic_json(path: Path, payload: dict) -> None:
-    """Atomic JSON write: tmp file + os.replace."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1, sort_keys=True))
-    os.replace(tmp, path)
+    """Atomic JSON write through the shared process-unique atomic-replace primitive
+    (#2336: a fixed ``.tmp`` sibling name is a concurrent-writer clobber)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1, sort_keys=True))
 
 
 def _meta() -> dict:

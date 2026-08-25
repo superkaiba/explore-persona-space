@@ -52,7 +52,6 @@ import hashlib
 import json
 import logging
 import math
-import os
 import re
 import sys
 import time
@@ -60,6 +59,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
+
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("issue2569_dw_fleet")
@@ -420,11 +421,10 @@ def enumerate_fleet(arms_json: dict, extra_arms: list[dict] | None = None) -> li
 
 
 def _atomic_json(path: Path, payload: dict) -> None:
-    """Atomic JSON write: tmp file + os.replace."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1, sort_keys=True))
-    os.replace(tmp, path)
+    """Atomic JSON write through the shared process-unique atomic-replace primitive
+    (#2336: a fixed ``.tmp`` sibling name is a concurrent-writer clobber)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1, sort_keys=True))
 
 
 def _meta(phase: str) -> dict:
@@ -451,32 +451,51 @@ def regime_key(**params: object) -> str:
 
 
 def _stage_adapter(entry: FleetEntry, dl_root: Path) -> Path:
-    """Download one LoRA adapter (config + safetensors) from the model repo."""
+    """Download one LoRA adapter (config + safetensors) from the model repo.
+
+    Fetches ride ``hub.retry_transient`` (#920: huggingface_hub retries only
+    429 natively — a transient 504 mid-stage kills the arm otherwise).
+    """
     from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
 
     dest = dl_root / entry.arm_id
     for fname in ("adapter_config.json", "adapter_model.safetensors"):
-        hf_hub_download(
-            entry.repo_id, f"{entry.subfolder}/{fname}", local_dir=dest, repo_type="model"
+        hub.retry_transient(
+            lambda f=fname: hf_hub_download(
+                entry.repo_id, f"{entry.subfolder}/{f}", local_dir=dest, repo_type="model"
+            ),
+            what=f"adapter fetch ({entry.arm_id}/{fname})",
         )
     return dest / entry.subfolder
 
 
 def _stage_checkpoint(repo_id: str, subfolder: str, dl_root: Path, tag: str) -> Path:
-    """Download one full HF checkpoint's safetensors shards + index."""
+    """Download one full HF checkpoint's safetensors shards + index.
+
+    The listing routes through ``hub.list_hf_files_under_path`` (one retried,
+    server-side-scoped tree walk) and each shard fetch rides
+    ``hub.retry_transient`` (#920: huggingface_hub retries only 429 natively).
+    """
     from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
 
     api = HfApi()
     dest = dl_root / tag
     files = [
-        e.path
-        for e in api.list_repo_tree(repo_id, repo_type="model", path_in_repo=subfolder)
-        if e.path.endswith((".safetensors", ".safetensors.index.json"))
+        p
+        for p in hub.list_hf_files_under_path(api, repo_id, subfolder, repo_type="model")
+        if p.endswith((".safetensors", ".safetensors.index.json"))
     ]
     if not files:
         raise RuntimeError(f"no safetensors under {repo_id}/{subfolder}")
     for f in files:
-        hf_hub_download(repo_id, f, local_dir=dest, repo_type="model")
+        hub.retry_transient(
+            lambda f=f: hf_hub_download(repo_id, f, local_dir=dest, repo_type="model"),
+            what=f"checkpoint shard fetch ({tag}/{f.rsplit('/', 1)[-1]})",
+        )
     return dest / subfolder
 
 
@@ -681,13 +700,18 @@ def cmd_fleet(args) -> int:
     """Enumerate + persist the realized fleet table BEFORE any checkpoint download."""
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     out_root = Path(args.out_root)
-    arms_path = hf_hub_download(
-        DATA_REPO,
-        ARMS_JSON_PATH,
-        repo_type="dataset",
-        revision=ARMS_JSON_REV,
-        local_dir=Path(args.dl_root) / "config",
+    arms_path = hub.retry_transient(
+        lambda: hf_hub_download(
+            DATA_REPO,
+            ARMS_JSON_PATH,
+            repo_type="dataset",
+            revision=ARMS_JSON_REV,
+            local_dir=Path(args.dl_root) / "config",
+        ),
+        what=f"arms.json fetch ({ARMS_JSON_PATH}@{ARMS_JSON_REV})",
     )
     arms_json = json.loads(Path(arms_path).read_text())
     extra: list[dict] = []
