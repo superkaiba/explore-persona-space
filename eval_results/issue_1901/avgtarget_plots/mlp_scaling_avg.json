@@ -1,0 +1,348 @@
+{
+ "per_n": {
+  "5000": {
+   "single": {
+    "test_r2": 0.6661842221035192,
+    "knn": {
+     "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.72,
+       "5": 0.869,
+       "10": 0.904,
+       "50": 0.988
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.790347380369971
+     },
+     "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.725,
+       "5": 0.873,
+       "10": 0.902,
+       "50": 0.987
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.7929319349005898
+     }
+    }
+   },
+   "avg": {
+    "test_r2": 0.7099448623469942,
+    "knn": {
+     "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.777,
+       "5": 0.892,
+       "10": 0.928,
+       "50": 0.993
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8323208601586578
+     },
+     "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.784,
+       "5": 0.891,
+       "10": 0.922,
+       "50": 0.994
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8368170869271288
+     }
+    }
+   },
+   "parity": {
+    "d_acc1_vs_banked": 0.0,
+    "note": "informational \u2014 MLP refits are seeded but GPU-nondeterministic; the 25k cell additionally rides the recorded #1491 recipe seam (lr 1e-3 / 50 ep / seed 0)"
+   },
+   "fit_meta": {
+    "width": 8192,
+    "lr": 0.0003,
+    "epochs_ran": 72,
+    "batch": 4096,
+    "best_val_mse": 0.14484520612444196,
+    "n_train": 5000,
+    "capacity_arm": false
+   },
+   "wall_time_s": 15.4
+  },
+  "10000": {
+   "single": {
+    "test_r2": 0.6945262919580171,
+    "knn": {
+     "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.77,
+       "5": 0.886,
+       "10": 0.924,
+       "50": 0.988
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8252557118953665
+     },
+     "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.768,
+       "5": 0.891,
+       "10": 0.913,
+       "50": 0.988
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8259431930247182
+     }
+    }
+   },
+   "avg": {
+    "test_r2": 0.7380914040166258,
+    "knn": {
+     "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.814,
+       "5": 0.914,
+       "10": 0.935,
+       "50": 0.994
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8582918061611127
+     },
+     "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.816,
+       "5": 0.913,
+       "10": 0.936,
+       "50": 0.995
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8615308701037497
+     }
+    }
+   },
+   "parity": {
+    "d_acc1_vs_banked": 0.0,
+    "note": "informational \u2014 MLP refits are seeded but GPU-nondeterministic; the 25k cell additionally rides the recorded #1491 recipe seam (lr 1e-3 / 50 ep / seed 0)"
+   },
+   "fit_meta": {
+    "width": 8192,
+    "lr": 0.0003,
+    "epochs_ran": 63,
+    "batch": 4096,
+    "best_val_mse": 0.1364191371372768,
+    "n_train": 10000,
+    "capacity_arm": false
+   },
+   "wall_time_s": 15.7
+  },
+  "25000": {
+   "single": {
+    "test_r2": 0.7249689631852241,
+    "knn": {
+     "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.795,
+       "5": 0.906,
+       "10": 0.938,
+       "50": 0.989
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.845244181658407
+     },
+     "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.8,
+       "5": 0.905,
+       "10": 0.95,
+       "50": 0.988
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.848625230291973
+     }
+    }
+   },
+   "avg": {
+    "test_r2": 0.7709815728611316,
+    "knn": {
+     "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.83,
+       "5": 0.918,
+       "10": 0.952,
+       "50": 0.994
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8721030005376904
+     },
+     "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+       "1": 0.841,
+       "5": 0.918,
+       "10": 0.953,
+       "50": 0.995
+      },
+      "chance_at_k": {
+       "1": 0.001,
+       "5": 0.005,
+       "10": 0.01,
+       "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8788117956104773
+     }
+    }
+   },
+   "parity": {
+    "d_acc1_vs_banked": 0.0,
+    "note": "informational \u2014 MLP refits are seeded but GPU-nondeterministic; the 25k cell additionally rides the recorded #1491 recipe seam (lr 1e-3 / 50 ep / seed 0)"
+   },
+   "fit_meta": {
+    "width": 8192,
+    "lr": 0.001,
+    "epochs_ran": 47,
+    "batch": 4096,
+    "best_val_mse": 0.11881661551339286,
+    "n_train": 25000,
+    "capacity_arm": false
+   },
+   "wall_time_s": 17.6
+  }
+ },
+ "subsample_seed": 42,
+ "conventions": {
+  "draw_averaged_target": "target_i = mean(original answer state_i + K=4 fresh on-policy draws_i); pool stays 1,000 with EVERY entry replaced (full coverage); queries = the map's test predictions",
+  "k_draws": 4,
+  "draw_seeds": [
+   43,
+   44,
+   45,
+   46
+  ],
+  "draw_text_source": {
+   "43": "banked #1491 ceiling_draws/seed43 raw_completions",
+   "44": "banked #1491 ceiling_draws/seed44 raw_completions",
+   "45": "generated this round (#779 pass-B recipe)",
+   "46": "generated this round (#779 pass-B recipe)"
+  },
+  "draw_capture": "batch-1 teacher-forced (LGC._capture_perrow; cx_last/v_x span == COL.capture_answer_vector by construction), all 28 layers, bf16 model, fp32 reduce; ONE shared capture serves both pools (mixed-geometry average, the #2202 convention)",
+  "generation_recipe": "vLLM temp 1.0 top_p 0.95 max_tokens 1024, per-request seed",
+  "engine_seed_note": "one vLLM engine per generated seed, engine seed == sampling seed (the ladder ceiling-draw convention)",
+  "rank": "mid-rank with 1e-9 relative tie tolerance; tie at top counts as failure",
+  "missing_draws": "a dropped (empty-response) draw row averages over the remaining draws",
+  "whitening_note": "Plot-1 whitened scoring stays task-locked to the SINGLE-DRAW train-answer whitening stats (the #2202 convention; averaged TRAIN targets do not exist \u2014 draws cover the test pool only), so the target swap is the only changed variable between the single and avg cells",
+  "pool_identity_note": "these draws are on the #779/#1491 pinned test pools \u2014 NOT the #1738 multiturn holdout the #2202 kresample numbers (0.9869 avg whiten-cos acc@1) were measured on; the two measurements share the convention but not the pool"
+ },
+ "metadata": {
+  "git_commit": "2326df2054590a7852c8c0fee936f74ba2eddba0",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/issue1901_avgtarget_plots.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1901_avgtarget_plots.py",
+  "script": "issue1901_avgtarget_plots",
+  "issue": 1901,
+  "round": "avgtarget-plots",
+  "phase": "mlp",
+  "timestamp_utc": "2026-08-25T09:30:17Z"
+ }
+}

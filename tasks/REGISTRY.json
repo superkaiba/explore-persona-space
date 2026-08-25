@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2578,
+  "highest_id": 2583,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10325,8 +10325,8 @@
     "2336": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2336",
-      "status": "running",
+      "path": "tasks/completed/2336",
+      "status": "completed",
       "title": "Hoist a process-safe atomic-write helper into shared code and sweep the shared-tmp pattern out of scripts/"
     },
     "2337": {
@@ -10731,8 +10731,8 @@
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/interpreting/2389",
-      "status": "interpreting",
+      "path": "tasks/blocked/2389",
+      "status": "blocked",
       "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
     },
     "239": {
@@ -11921,8 +11921,8 @@
       "goal": "(1) In CoT-trained models, measure R2 and acc@1 for four maps \u2014 post-context\u2192answer, post-context\u2192CoT, post-context\u2192CoT+answer, post-CoT\u2192answer \u2014 on a corpus that DOES versus DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained model's context vector can predict the POST-CoT-trained model's post-</think> answer state, and how the fitted map changes across the CoT-training step, using a matched same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/2546",
-      "status": "blocked",
+      "path": "tasks/running/2546",
+      "status": "running",
       "title": "Can the context\u2192answer map predict the POST-CoT answer, and how does CoT training change the map?"
     },
     "2547": {
@@ -12054,11 +12054,11 @@
     },
     "2564": {
       "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/2564",
       "status": "interpreting",
-      "title": "Controlled minimal-pair battery: does the context\u2192answer map predict the DIFFERENCE in answer vectors, per instruction axis?"
+      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)"
     },
     "2565": {
       "has_clean_result": false,
@@ -12162,9 +12162,16 @@
     "2578": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2578",
-      "status": "planning",
+      "path": "tasks/running/2578",
+      "status": "running",
       "title": "verify_uploads.py hardcodes HF_DATA_REPO \u2014 the upload gate cannot verify overflow-routed runs"
+    },
+    "2579": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2579",
+      "status": "proposed",
+      "title": "Shared-tmp follow-up capture: with_suffix class + literal residue + atomic-DIRECTORY recipe + lint-arm widening + orphan-sweep hardening + unreadable-file bypass"
     },
     "258": {
       "has_clean_result": false,
@@ -12172,6 +12179,34 @@
       "path": "tasks/on_hold/258",
       "status": "on_hold",
       "title": "Look at effect of length of system prompt/persona prompt"
+    },
+    "2580": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2580",
+      "status": "running",
+      "title": "gotchas.md: MooseFS errno-116 partial install passes uv audit while import fails (probe-by-import + UV_LINK_MODE=copy recipe)"
+    },
+    "2581": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2581",
+      "status": "proposed",
+      "title": "Session-namespace commit-message temp files so git commit -F cannot consume a concurrent session's message"
+    },
+    "2582": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2582",
+      "status": "proposed",
+      "title": "verify_task_body.py: add per-pair to the per-unit-evidence vocabulary"
+    },
+    "2583": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2583",
+      "status": "archived",
+      "title": "workflow-fix: canonical Codex review-dispatch snippet omits --no-write, so doubled review sites run write-enabled"
     },
     "259": {
       "has_clean_result": false,

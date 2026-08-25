@@ -1,0 +1,504 @@
+{
+  "commit": "d57486b2+dirty",
+  "render_id": "2ec28ec64afe4f94",
+  "git_commit": "d57486b2afbbd69f5776bb95889be0ca1c24f9ef",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2564_combined_panels.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c4_speaker_ladder.meta.json",
+    "figures/paper/c4_speaker_ladder.pdf",
+    "figures/paper/c4_speaker_ladder.png",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2054_paper_speaker_ladder_fig.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2564_combined_panels.py",
+  "created": "2026-08-25T16:31:10Z",
+  "figsize": [
+    22.0,
+    8.5
+  ],
+  "points": [
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 9.229771727932324,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 24.167136486468607,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 31.8531216220495,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 20.369073522223864,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 29.602403511694224,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 58.26520298249211,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 78.01535499256403,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 54.05767463534359,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 52.04617881154569,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 51.011953744458395,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 72.9298112360506,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)": 86.8102427025267,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 4.467316384717808,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 6.572482841243906,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 6.978947975293602,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 8.979145573325141,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 13.304008136329148,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 17.29724720234408,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 20.423941204391333,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 20.43511996289614,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 21.105005341295314,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 32.148951057995035,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 38.15012143594861,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "\u2016obs \u0394\u2016 (L19 units)": 47.18375212363655,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 4.724816730522974,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 10.050840255178947,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 11.028813038009826,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 9.361706146330263,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 14.17667746850374,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 24.82496313878611,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 25.439798772795623,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 19.59806135907762,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 22.296471592402252,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 26.345384841079472,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 44.53389071513429,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "\u2016pred \u0394\u2016 (L19 units)": 48.965023435519925,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 0.938568584083826,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.1614839841949431,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.6431352247661848,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.0498867020649567,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.0231378271222564,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.3917410646321107,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.2741877206891514,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 0.9065243848018155,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.0606661379737532,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 0.8094788920457068,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.1634059424943233,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016": 1.0362050410874497,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.1762777093279464,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.3481670286818156,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.3021951912268307,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.4325815301909909,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.6196363004286426,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.5231690575119688,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.38089048063496916,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.45357564271339196,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.5463064469689692,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.7248566769739305,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.8297621654783593,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "cos(pred \u0394, obs \u0394)": 0.8995506629818859,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 59
+    }
+  ],
+  "n_series": 60,
+  "total_points": 60,
+  "text": {
+    "suptitle": "Context\u2192answer map per change type (#2564)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context vector shift\n(the map's input)",
+        "xlabel": "\u2016v_C(A) \u2212 v_C(B)\u2016 (L19 units)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90",
+          "100"
+        ],
+        "yticklabels": [
+          "user fact",
+          "query paraphrase",
+          "query form",
+          "lexical marker",
+          "user profile",
+          "hedging (not fired)",
+          "format",
+          "content constraint",
+          "stance (not fired)",
+          "query content",
+          "persona",
+          "register"
+        ]
+      },
+      {
+        "title_left": "real answer shift\n(dashed = noise floor)",
+        "xlabel": "\u2016obs \u0394\u2016 (L19 units)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "mapped answer shift\n(map's prediction)",
+        "xlabel": "\u2016pred \u0394\u2016 (L19 units)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "separation ratio\n(>1 inflate, <1 suppress)",
+        "xlabel": "\u2016pred \u0394\u2016 / \u2016obs \u0394\u2016",
+        "xticklabels": [
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6",
+          "1.8",
+          "2.0",
+          "2.2"
+        ]
+      },
+      {
+        "title_left": "direction\n(1 = exact, 0 = chance)",
+        "xlabel": "cos(pred \u0394, obs \u0394)",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

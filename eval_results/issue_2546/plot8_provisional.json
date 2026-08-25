@@ -1,0 +1,492 @@
+{
+  "dv": "held-out skill-over-mean R^2, leave-one-context-out group folds, inputs PCA-reduced on the training fold only",
+  "n_rows": 1994,
+  "n_contexts": 50,
+  "headline_k": 64,
+  "k_sweep": [
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "pre_model": "Qwen2.5-7B-Instruct",
+  "post_model": "OpenThinker2-7B",
+  "pre_context_summary": "issue594 boundary-token residual (last context token)",
+  "post_context_summary": "ctx_last",
+  "cells": {
+    "E": {
+      "label": "pre context to post answer",
+      "input_side": "pre",
+      "target_summary": "ans_mean",
+      "layer_curve": [
+        {
+          "layer": 0,
+          "skill": 0.38271763752347354,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 1,
+          "skill": 0.39721300238470714,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 2,
+          "skill": 0.45105333756329813,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 3,
+          "skill": 0.4822493712068405,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 4,
+          "skill": 0.5353906537209165,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 5,
+          "skill": 0.5086297425293681,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 6,
+          "skill": 0.5283149124808673,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 7,
+          "skill": 0.5459382076647914,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 8,
+          "skill": 0.5560925875626084,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 9,
+          "skill": 0.4940187268521202,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 10,
+          "skill": 0.5248799630410454,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 11,
+          "skill": 0.529512932277606,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 12,
+          "skill": 0.5339010385309059,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 13,
+          "skill": 0.5468982496561285,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 14,
+          "skill": 0.5733944295247235,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 15,
+          "skill": 0.5645472155513998,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 16,
+          "skill": 0.5718656685267619,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 17,
+          "skill": 0.5618460457957637,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 18,
+          "skill": 0.5724246659345795,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 19,
+          "skill": 0.601317392332364,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 20,
+          "skill": 0.5915147614757299,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 21,
+          "skill": 0.60482344107603,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 22,
+          "skill": 0.6024225062836106,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 23,
+          "skill": 0.5993289265734871,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 24,
+          "skill": 0.5997358965534816,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 25,
+          "skill": 0.5916382689951732,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 26,
+          "skill": 0.5790741229532351,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 27,
+          "skill": 0.561561406581647,
+          "lambda_median": 10000.0
+        }
+      ],
+      "best_layer": 21,
+      "skill_at_best_layer": 0.60482344107603,
+      "k_sweep_at_best_layer": {
+        "16": 0.37642967230845725,
+        "32": 0.5104638252083744,
+        "64": 0.6048658777679412,
+        "128": 0.6193348187384509,
+        "256": 0.6206386631551012
+      },
+      "identity_bias_baseline": -2.1915359994498367
+    },
+    "F": {
+      "label": "post context to post answer",
+      "input_side": "post",
+      "target_summary": "ans_mean",
+      "layer_curve": [
+        {
+          "layer": 0,
+          "skill": 0.3368426862826408,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 1,
+          "skill": 0.39143517460481725,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 2,
+          "skill": 0.4760477004157273,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 3,
+          "skill": 0.49956892962262334,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 4,
+          "skill": 0.57957756083839,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 5,
+          "skill": 0.5823821820179068,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 6,
+          "skill": 0.602542222830962,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 7,
+          "skill": 0.6132075199821372,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 8,
+          "skill": 0.615492255746685,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 9,
+          "skill": 0.6171594139032968,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 10,
+          "skill": 0.6378186462252935,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 11,
+          "skill": 0.6374930609221896,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 12,
+          "skill": 0.6246854851625255,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 13,
+          "skill": 0.6507590357348457,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 14,
+          "skill": 0.650323124887086,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 15,
+          "skill": 0.6369865899866226,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 16,
+          "skill": 0.6284911631471347,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 17,
+          "skill": 0.6147378263593368,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 18,
+          "skill": 0.6080947754680655,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 19,
+          "skill": 0.641889261027426,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 20,
+          "skill": 0.6350560070416732,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 21,
+          "skill": 0.6482868390762766,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 22,
+          "skill": 0.6521626011982284,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 23,
+          "skill": 0.6537453921395667,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 24,
+          "skill": 0.6568178869446677,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 25,
+          "skill": 0.6480428664967784,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 26,
+          "skill": 0.6323356264112842,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 27,
+          "skill": 0.619024709968988,
+          "lambda_median": 10000.0
+        }
+      ],
+      "best_layer": 24,
+      "skill_at_best_layer": 0.6568178869446677,
+      "k_sweep_at_best_layer": {
+        "16": 0.42229337957525725,
+        "32": 0.5398817546437491,
+        "64": 0.6568430232087491,
+        "128": 0.6842698723951864,
+        "256": 0.6942557118609596
+      },
+      "identity_bias_baseline": -2.9534398630399084
+    },
+    "H": {
+      "label": "pre context to post CoT",
+      "input_side": "pre",
+      "target_summary": "cot_mean",
+      "layer_curve": [
+        {
+          "layer": 0,
+          "skill": 0.4880316486210461,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 1,
+          "skill": 0.48341780749601404,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 2,
+          "skill": 0.5131417069766413,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 3,
+          "skill": 0.5349124420206643,
+          "lambda_median": 1.0
+        },
+        {
+          "layer": 4,
+          "skill": 0.5597383324176762,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 5,
+          "skill": 0.508032405767881,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 6,
+          "skill": 0.5313796312866291,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 7,
+          "skill": 0.5569556459591821,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 8,
+          "skill": 0.5781962101172629,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 9,
+          "skill": 0.5048802974922784,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 10,
+          "skill": 0.535155054837743,
+          "lambda_median": 10.0
+        },
+        {
+          "layer": 11,
+          "skill": 0.5405138010498436,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 12,
+          "skill": 0.551518514688138,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 13,
+          "skill": 0.5743097446371314,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 14,
+          "skill": 0.6041958934531002,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 15,
+          "skill": 0.5956511575060628,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 16,
+          "skill": 0.6053803226220265,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 17,
+          "skill": 0.5953930247512174,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 18,
+          "skill": 0.6184366379654649,
+          "lambda_median": 100.0
+        },
+        {
+          "layer": 19,
+          "skill": 0.6518246791950897,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 20,
+          "skill": 0.6468234300784532,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 21,
+          "skill": 0.6665115653896836,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 22,
+          "skill": 0.6685885199458428,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 23,
+          "skill": 0.661848572846996,
+          "lambda_median": 1000.0
+        },
+        {
+          "layer": 24,
+          "skill": 0.6665429750847025,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 25,
+          "skill": 0.6602858287282005,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 26,
+          "skill": 0.6554901921627249,
+          "lambda_median": 10000.0
+        },
+        {
+          "layer": 27,
+          "skill": 0.6442142081710023,
+          "lambda_median": 10000.0
+        }
+      ],
+      "best_layer": 22,
+      "skill_at_best_layer": 0.6685885199458428,
+      "k_sweep_at_best_layer": {
+        "16": 0.38170089900195614,
+        "32": 0.5369148599114248,
+        "64": 0.6685181594826857,
+        "128": 0.6877199854196989,
+        "256": 0.6896467316863031
+      },
+      "identity_bias_baseline": -3.0481593542545573
+    }
+  },
+  "n_folds": 10,
+  "fold_scheme": "10 grouped folds over the 50 contexts (whole contexts assigned to folds, never split). Coarser than the banked 50-fold leave-one-context-out purely for wall-clock: a measured pilot put LOCO at ~170 min. All cells share this scheme, so within-figure contrasts are like-for-like."
+}

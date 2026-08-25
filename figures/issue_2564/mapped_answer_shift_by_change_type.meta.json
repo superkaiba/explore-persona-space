@@ -1,0 +1,126 @@
+{
+  "commit": "f8c2792f+dirty",
+  "render_id": "ac435bc27e664fa9",
+  "git_commit": "f8c2792fe60c20c4882027f6d914e25e2f4ef84c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2564_type_reads_plot.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2564_type_reads_plot.py",
+  "created": "2026-08-25T16:25:48Z",
+  "figsize": [
+    7.4,
+    4.96
+  ],
+  "points": [
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 4.724816730522974,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 9.361706146330263,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 14.17667746850374,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 19.59806135907762,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 25.439798772795623,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 26.345384841079472,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 44.53389071513429,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)": 48.965023435519925,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "How much answer-vector shift does the MAP predict? (#2564)",
+        "xlabel": "mapped answer-vector shift  \u2016predicted \u0394\u2016  (layer-19 residual-stream units)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "user fact",
+          "lexical marker",
+          "user profile",
+          "content constraint",
+          "format",
+          "query content",
+          "persona",
+          "register"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

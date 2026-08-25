@@ -800,7 +800,7 @@ _ARM_COLORS = {
 _ARM_ORDER = (
     ("self", "own map at this stage"),
     ("transferred", "previous stage's map, applied as-is"),
-    ("crossfit", "map refit: previous contexts $\\to$ this stage's answers"),
+    ("crossfit", "previous contexts $\\to$ this stage's answers"),
     ("identity", "identity + learned bias"),
 )
 
@@ -828,47 +828,44 @@ def _stage_ladder_arms(eval_dir: Path) -> dict[str, dict[str, tuple[float, float
     return out
 
 
-def fig_paper_c1_stage_ladder_arms(eval_dir: Path) -> None:
+def fig_paper_c1_stage_ladder_arms(eval_dir: Path, paper_out: Path | None = None) -> None:
     """ICLR paper figure (plan.tex plot 6): how the map evolves through post-training.
 
-    Four arms per stage of the OLMo-2 chain, single-turn context arm, ridge, at
-    the shared selected layer: the stage's own map, the previous stage's map
-    applied unchanged to this stage's pairs, a map refit from the previous
-    stage's context states onto this stage's on-policy answers, and the
-    identity + learned-bias baseline against the same target. Left panel
-    held-out R^2, right panel retrieval acc@1 under whitened cosine + CSLS
-    k=10 (the paper's standing retrieval convention).
+    Held-out R^2 for four arms per stage of the OLMo-2 chain, single-turn
+    context arm, ridge, at the shared selected layer: the stage's own map, the
+    previous stage's map applied unchanged to this stage's pairs, a map refit
+    from the previous stage's context states onto this stage's on-policy
+    answers, and the identity + learned-bias baseline against the same target.
+
+    Retrieval is deliberately NOT plotted here (user call, 2026-08-25). Under
+    the project's standing convention (whitened cosine + CSLS k=10) acc@1 is
+    near-saturated at 0.70-0.86 for every arm, identity+bias included at 0.77
+    despite a negative R^2, so it cannot separate a fitted map from the
+    copy-the-context baseline at this pool size. The per-arm retrieval reads
+    stay reported in retrieval_whitencsls/retrieval.json.
     """
     from explore_persona_space.analysis.paper_plots import figsize_iclr_full, set_paper_style
 
     set_paper_style("iclr")
     arms = _stage_ladder_arms(eval_dir)
-    ret = _load(eval_dir, "retrieval_whitencsls/retrieval.json")
-    n_pool = int(round(ret["arms"]["self"]["B"]["n_pool_mean"]))
     xs = np.arange(len(_STAGE_CODES))
     width = 0.20
-    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_full(height_frac=0.38))
-    for ax, idx, ylabel in ((axes[0], 0, "held-out $R^2$"), (axes[1], 1, "retrieval acc@1")):
-        for k, (arm, label) in enumerate(_ARM_ORDER):
-            offs = (k - (len(_ARM_ORDER) - 1) / 2.0) * width
-            present = [(i, s) for i, s in enumerate(_STAGE_CODES) if s in arms.get(arm, {})]
-            ax.bar(
-                [xs[i] + offs for i, _ in present],
-                [arms[arm][s][idx] for _, s in present],
-                width=width,
-                color=_ARM_COLORS[arm],
-                label=label if idx == 0 else None,
-            )
-        ax.axhline(0.0, color="black", lw=0.7, ls=":")
-        ax.set_xticks(xs, [_STAGE_LABELS[s] for s in _STAGE_CODES])
-        ax.set_ylabel(ylabel)
-    axes[1].axhline(
-        1.0 / n_pool, color="#999999", lw=0.8, ls="--", label=f"chance (pool $n$={n_pool})"
-    )
-    handles = [*axes[0].get_legend_handles_labels()[0], *axes[1].get_legend_handles_labels()[0]]
-    labels = [*axes[0].get_legend_handles_labels()[1], *axes[1].get_legend_handles_labels()[1]]
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=2)
-    paper_out = PROJECT_ROOT / "figures" / "paper"
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(height_frac=0.40))
+    for k, (arm, label) in enumerate(_ARM_ORDER):
+        offs = (k - (len(_ARM_ORDER) - 1) / 2.0) * width
+        present = [(i, s) for i, s in enumerate(_STAGE_CODES) if s in arms.get(arm, {})]
+        ax.bar(
+            [xs[i] + offs for i, _ in present],
+            [arms[arm][s][0] for _, s in present],
+            width=width,
+            color=_ARM_COLORS[arm],
+            label=label,
+        )
+    ax.axhline(0.0, color="black", lw=0.7, ls=":")
+    ax.set_xticks(xs, [_STAGE_LABELS[s] for s in _STAGE_CODES])
+    ax.set_ylabel("held-out $R^2$")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2)
+    paper_out = paper_out or (PROJECT_ROOT / "figures" / "paper")
     paper_out.mkdir(parents=True, exist_ok=True)
     savefig_paper(fig, "c1_stage_ladder_arms", dir=paper_out)
     plt.close(fig)

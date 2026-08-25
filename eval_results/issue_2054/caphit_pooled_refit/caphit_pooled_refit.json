@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "script_version": "issue2054_caphit_pooled_refit_v1",
+    "arm": "context",
+    "target_cell": "conversation_paired_stories_assistant__on_policy__bare_text__qwen2.5-7b-instruct",
+    "fold_map_sha256": "4ab1839a0e8c5e8705147cbb529b2df36975ac46b987fe71ab3f919265e4c39e",
+    "n_cells_pooled": 56,
+    "capped_rows_left_in_pool_train": true,
+    "wall_s": 175,
+    "git_commit": "46e1d0eb6a7d721e2f71ec793475c4b78bdb9ff4",
+    "git_dirty": false,
+    "phase": "caphit-pooled-refit",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2054_caphit_pooled_refit.py"
+  },
+  "result": {
+    "per_fold": [
+      {
+        "fold": 0,
+        "n_test": 1588,
+        "n_test_kept": 918,
+        "r2_all": 0.10099445196829859,
+        "r2_kept": 0.26678546444794526
+      },
+      {
+        "fold": 1,
+        "n_test": 1589,
+        "n_test_kept": 910,
+        "r2_all": 0.07547569595381554,
+        "r2_kept": 0.2592283243137271
+      },
+      {
+        "fold": 2,
+        "n_test": 1656,
+        "n_test_kept": 930,
+        "r2_all": 0.07970993968910756,
+        "r2_kept": 0.25635443654381806
+      },
+      {
+        "fold": 3,
+        "n_test": 1607,
+        "n_test_kept": 939,
+        "r2_all": 0.10549937653234809,
+        "r2_kept": 0.2585615994735406
+      },
+      {
+        "fold": 4,
+        "n_test": 1560,
+        "n_test_kept": 902,
+        "r2_all": 0.0941510207210493,
+        "r2_kept": 0.2510272177127929
+      }
+    ],
+    "r2_all_mean": 0.09116609697292381,
+    "r2_kept_mean": 0.2583914084983648,
+    "n_join": 8000,
+    "n_kept_in_join": 4599,
+    "validation": {
+      "banked_pooled_r2": 0.09116609697292373,
+      "recomputed_all_rows_r2": 0.09116609697292381,
+      "abs_delta": 8.326672684688674e-17,
+      "tol": 0.001,
+      "passed": true
+    }
+  }
+}

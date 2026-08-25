@@ -1,7 +1,7 @@
 {
-  "commit": "3c971217+dirty",
-  "render_id": "f06dbcd2a8e94702",
-  "git_commit": "3c9712174dc7769bd25f4ad49eccd29197b822e2",
+  "commit": "23995af2+dirty",
+  "render_id": "335e7a0c8e844227",
+  "git_commit": "23995af278a89174ca9eac1e0c51c9ffbd49458f",
   "git_dirty": true,
   "git_dirty_paths": [
     "eval_results/issue_2474/n1m_map_arms.json",
@@ -29,14 +29,15 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2544/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1902_figures.py",
-  "created": "2026-08-25T12:48:11Z",
+  "created": "2026-08-25T15:56:50Z",
   "figsize": [
     5.5,
-    2.09
+    2.2
   ],
   "points": [
     {
@@ -122,114 +123,22 @@
       "held-out $R^2$": -0.1170101291815917,
       "_kind": "bar",
       "_group": 3
-    },
-    {
-      "x": -0.3,
-      "retrieval acc@1": 0.8213685420507456,
-      "_kind": "bar",
-      "_group": 4
-    },
-    {
-      "x": 0.7,
-      "retrieval acc@1": 0.8574944786614623,
-      "_kind": "bar",
-      "_group": 4
-    },
-    {
-      "x": 1.7,
-      "retrieval acc@1": 0.8459654845427531,
-      "_kind": "bar",
-      "_group": 4
-    },
-    {
-      "x": 2.7,
-      "retrieval acc@1": 0.8431171483527365,
-      "_kind": "bar",
-      "_group": 4
-    },
-    {
-      "x": 0.9,
-      "retrieval acc@1": 0.6991829493962615,
-      "_kind": "bar",
-      "_group": 5
-    },
-    {
-      "x": 1.9,
-      "retrieval acc@1": 0.8078660639449705,
-      "_kind": "bar",
-      "_group": 5
-    },
-    {
-      "x": 2.9,
-      "retrieval acc@1": 0.8386497349724813,
-      "_kind": "bar",
-      "_group": 5
-    },
-    {
-      "x": 1.1,
-      "retrieval acc@1": 0.8461154477146872,
-      "_kind": "bar",
-      "_group": 6
-    },
-    {
-      "x": 2.1,
-      "retrieval acc@1": 0.8603499818626742,
-      "_kind": "bar",
-      "_group": 6
-    },
-    {
-      "x": 3.1,
-      "retrieval acc@1": 0.8452062974323217,
-      "_kind": "bar",
-      "_group": 6
-    },
-    {
-      "x": 0.3,
-      "retrieval acc@1": 0.7330843776993973,
-      "_kind": "bar",
-      "_group": 7
-    },
-    {
-      "x": 1.3,
-      "retrieval acc@1": 0.790717985162387,
-      "_kind": "bar",
-      "_group": 7
-    },
-    {
-      "x": 2.3,
-      "retrieval acc@1": 0.7700856370889643,
-      "_kind": "bar",
-      "_group": 7
-    },
-    {
-      "x": 3.3,
-      "retrieval acc@1": 0.7636070263690833,
-      "_kind": "bar",
-      "_group": 7
-    },
-    {
-      "x": 0.0,
-      "retrieval acc@1": 0.00036603221083455345,
-      "series": "chance (pool $n$=2732)",
-      "_kind": "line",
-      "_group": 8
-    },
-    {
-      "x": 1.0,
-      "retrieval acc@1": 0.00036603221083455345,
-      "series": "chance (pool $n$=2732)",
-      "_kind": "line",
-      "_group": 8
     }
   ],
-  "n_series": 9,
-  "total_points": 30,
+  "n_series": 4,
+  "total_points": 14,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
         "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "own map at this stage",
+          "previous stage's map, applied as-is",
+          "previous contexts $\\to$ this stage's answers",
+          "identity + learned bias"
+        ],
         "xticklabels": [
           "base",
           "SFT",
@@ -246,31 +155,13 @@
           "0.4",
           "0.5"
         ]
-      },
-      {
-        "ylabel": "retrieval acc@1",
-        "xticklabels": [
-          "base",
-          "SFT",
-          "DPO",
-          "RLVR"
-        ],
-        "yticklabels": [
-          "0.0",
-          "0.2",
-          "0.4",
-          "0.6",
-          "0.8",
-          "1.0"
-        ]
       }
     ],
     "series": [
       "own map at this stage",
       "previous stage's map, applied as-is",
       "previous contexts $\\to$ this stage's answers",
-      "identity + learned bias",
-      "chance (pool $n$=2732)"
+      "identity + learned bias"
     ]
   },
   "formats_written": [

@@ -1,0 +1,161 @@
+{
+  "commit": "9da3e88f+dirty",
+  "render_id": "7bd66695b9204f2d",
+  "git_commit": "9da3e88f6653c5dd8d31ccdf646f8c7725bbdb80",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1901/avgtarget_plots/bign_avg.json",
+    "eval_results/issue_1901/avgtarget_plots/draws_summary.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_avg.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n10000_prefix.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n1000_d0.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n1000_d1.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n1000_d2.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n100_d0.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n100_d1.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n100_d2.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n15000_prefix.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n20000_prefix.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n25000_prefix.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n2500_d0.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n2500_d1.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n2500_d2.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n250_d0.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n250_d1.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n250_d2.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n5000_prefix.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n500_d0.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n500_d1.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n500_d2.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n50_d0.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n50_d1.json",
+    "eval_results/issue_1901/avgtarget_plots/ladder_cells/L19_n50_d2.json",
+    "eval_results/issue_1901/avgtarget_plots/mlp_scaling_avg.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_avg.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L0.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L1.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L10.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L11.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L12.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L13.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L14.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L15.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L16.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L17.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L18.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L19.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L2.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L20.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L21.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L22.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L23.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L24.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L25.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L26.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L27.json",
+    "eval_results/issue_1901/avgtarget_plots/plot1_units/L3.json",
+    "... 51 more"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_sep_ratio_plot.py",
+  "created": "2026-08-25T16:47:55Z",
+  "figsize": [
+    8.8,
+    6.76
+  ],
+  "points": [
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 0.8094788920457068,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 0.9065243848018155,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 0.938568584083826,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.0231378271222564,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.0362050410874497,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.0498867020649567,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.1634059424943233,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.2741877206891514,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Does the map inflate or suppress the separation between two similar contexts? (#2564)",
+        "xlabel": "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)",
+        "legend_labels": [
+          "map inflates (>1)",
+          "map suppresses (<1)"
+        ],
+        "xticklabels": [
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1",
+          "1.2",
+          "1.3",
+          "1.4",
+          "1.5"
+        ],
+        "yticklabels": [
+          "question topic\n(e.g. 'dog or cat?' vs 'rent or buy?')",
+          "content constraint\n(e.g. exactly 3 reasons vs no numbers)",
+          "user fact\n(e.g. name is Marcus vs Diego)",
+          "user profile\n(e.g. single parent vs retired engineer)",
+          "register\n(e.g. formal vs casual tone)",
+          "lexical marker\n(e.g. say 'moreover' vs 'honestly')",
+          "persona\n(e.g. pirate captain vs zen teacher)",
+          "format\n(e.g. bulleted list vs JSON object)"
+        ]
+      }
+    ],
+    "series": [
+      "map inflates (>1)",
+      "map suppresses (<1)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
