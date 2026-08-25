@@ -10424,8 +10424,8 @@
     "2349": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2349",
-      "status": "reviewing",
+      "path": "tasks/completed/2349",
+      "status": "completed",
       "title": "plan-compute-sizing.md: a 1-unit pilot is not a sizing basis when the phase's own design admits unequal unit costs (1.5x grid under-projection, #2329)"
     },
     "235": {
