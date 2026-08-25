@@ -1,4 +1,6 @@
 # code-reviewer-lean memory index
+- [Loop-var tmp interpolation evades #2336 lint](loopvar_tmp_interpolation_evades_2336_lint.md) — arms E/F exempt post-`.tmp_` interpolations; a loop-variable name is still fixed-per-unit — grep all `.tmp` writers, classify interpolants (#2552 r1 g4)
+- [Embedded smoke leg in production chain](feedback_embedded_smoke_leg_production_chain.md) — a production `all` chain running its smoke leg internally defeats dispatcher-level out-root splits; smoke dial must be in the SCRIPT's resume fingerprint (#2546 r1 g2)
 - [Sibling-figure palette pair rebinding](sibling_figure_palette_pair_rebinding.md) — table each figure's color→factor binding; one palette pair bound to different factors across sibling figures = §2 violation (#2546 r1 g4)
 - [Fixed-name tmp atomic-write fan-out race](fixed_name_tmp_atomic_write_fanout_race.md) — every worker re-derives + writes the SAME artifact via `<path>.tmp`+replace → FileNotFoundError race; require process-unique temp (#2546 r1 g3)
 
@@ -71,6 +73,7 @@
 - [Empty-form blind-spot falsified by later unit](empty_form_blindspot_falsified_by_later_unit.md) — grep each unit's args.smoke reads vs the plan's `none` literal… (#2254-firstk R1 g3)
 - [Stub-decoder hook probe](stub_decoder_hook_probe.md) — drive the REAL hook subclass through a minimal model.model.layers stub; edit-index sets + fake-records flush… (#2254 firstk R1 g1)
 - [Verbatim-port commit review recipe](verbatim_port_commit_review_recipe.md) — hash vs source tip + plan commit-range/excluded-commit disjointness + post-commit delta… (#2479 R1 g1)
+- [Vendored-depth ROOT re-point completeness](vendored_depth_root_repoint_completeness.md) — subdir vendoring shifts __file__-ROOT one level; sweep module-level derived constants vs consumer re-point set (#2552 r1 g1)
 - [Manifest-internal determinism replay](manifest_internal_determinism_replay.md) — replay seeded sub-draws from the manifest's OWN committed ids + byte-compare module emits at… (#2479 R1 g4)
 - [Plan identifier renamed consistently](plan_identifier_renamed_consistently.md) — grep the round for BOTH names; zero old-name hits = disclosed Minor, mixed use = split-brain… (#2479 R1 g3)
 - [Greedy-digits suffix-tag regex backtrack](greedy_digits_suffix_tag_regex_backtrack.md) — `_nd\d+(.+)` misreads `_nd10` as tag "0"; probe multi-digit untagged case; anchor… (#2479 r1 g6)
