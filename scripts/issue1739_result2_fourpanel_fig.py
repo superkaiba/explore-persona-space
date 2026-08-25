@@ -92,6 +92,28 @@ METHOD_OF = {
     ("arm11_oracle_proj", "linear"): "oracle",
 }
 
+# --style iclr roster (user order 2026-08-25: "plot everything except
+# regression on real answer"): the four persona-vector arms PLUS the three
+# regression (ridge probe) arms, keyed by the points file's own `method`
+# field. Colour = input representation (one colour = one meaning paper-wide);
+# fill = readout family (solid = persona-vector projection, open = regression).
+# The open real-answer slot stays free for the regression-on-real-answer arm
+# once its inline run lands (no such arm exists under the fair protocol yet).
+# (method slot, label, paper-colour concept, filled?)
+ICLR_METHODS = [
+    ("pv_context", "Persona vector on context", "persona_vector", True),
+    ("regression_ctx", "Regression on context", "persona_vector", False),
+    ("pv_map_linear", "Persona vector on mapped answer (linear map)", "instruct", True),
+    ("reg_map_linear", "Regression on mapped answer (linear map)", "instruct", False),
+    ("pv_map_mlp", "Persona vector on mapped answer (MLP map)", "neural_map", True),
+    ("reg_map_mlp", "Regression on mapped answer (MLP map)", "neural_map", False),
+    ("oracle", "Persona vector on real answer", "oracle_answer", True),
+]
+ICLR_SLOTS = [m for m, _l, _c, _f in ICLR_METHODS]
+ICLR_LABEL = {m: lbl for m, lbl, _c, _f in ICLR_METHODS}
+ICLR_CONCEPT = {m: c for m, _l, c, _f in ICLR_METHODS}
+ICLR_FILLED = {m: f for m, _l, _c, f in ICLR_METHODS}
+
 GROUPS = ["synthetic", "generic chat", "in-distribution", "completely OOD"]
 GROUP_SETTINGS = {
     beh: {
@@ -130,6 +152,31 @@ def load_points() -> dict[tuple[str, str, str], dict]:
         for settings in GROUP_SETTINGS[beh].values():
             for s in settings:
                 for m in METHOD_SLOTS:
+                    if (beh, s, m) not in out:
+                        raise SystemExit(f"missing point {(beh, s, m)}")
+    return out
+
+
+def load_points_iclr() -> dict[tuple[str, str, str], dict]:
+    """{(behavior, setting, method): point record} for the ICLR_METHODS roster.
+
+    Keys off the points file's own `method` field (which already names every
+    arm x map-kind combination uniquely per cell), so the regression arms need
+    no (arm_id, map_kind) mapping of their own.
+    """
+    doc = json.loads(POINTS.read_text())
+    out: dict[tuple[str, str, str], dict] = {}
+    for p in doc["points"]:
+        if p["method"] not in ICLR_SLOTS:
+            continue
+        key = (p["behavior"], p["setting"], p["method"])
+        if key in out:
+            raise SystemExit(f"duplicate point {key}")
+        out[key] = p
+    for beh in BEHAVIORS:
+        for settings in GROUP_SETTINGS[beh].values():
+            for s in settings:
+                for m in ICLR_SLOTS:
                     if (beh, s, m) not in out:
                         raise SystemExit(f"missing point {(beh, s, m)}")
     return out
@@ -174,7 +221,7 @@ def group_cell(points: dict, verdicts: dict, beh: str, group: str, method: str) 
     }
 
 
-def behavior_panel(points: dict, verdicts: dict, beh: str) -> dict:
+def behavior_panel(points: dict, verdicts: dict, beh: str, slots: list[str] | None = None) -> dict:
     ident = {
         "synthetic": SETTING_IDENTITY[(beh, "pvsynth")],
         "generic chat": SETTING_IDENTITY[(beh, "wildchat_rung")],
@@ -185,7 +232,7 @@ def behavior_panel(points: dict, verdicts: dict, beh: str) -> dict:
     }
     groups = []
     for g in GROUPS:
-        bars = [group_cell(points, verdicts, beh, g, m) for m in METHOD_SLOTS]
+        bars = [group_cell(points, verdicts, beh, g, m) for m in (slots or METHOD_SLOTS)]
         groups.append(
             {
                 "label": f"{g}\n({ident[g]})",
@@ -483,29 +530,37 @@ PAPER_GROUP_LABEL = {
 
 def render_iclr(points: dict, verdicts: dict) -> int:
     """Three behaviour panels at final ICLR size; no average panel, no caption
-    block, no per-bar labels, no hatch (muted alpha marks spread-gate FAILs)."""
+    block, no per-bar labels, no hatch (muted alpha marks spread-gate FAILs).
+
+    ICLR_METHODS roster (7 arms): colour = input representation, solid fill =
+    persona-vector projection, open (edge-only) = regression readout.
+    """
     from explore_persona_space.analysis.paper_plots import figsize_iclr_panels, paper_color
 
-    panels = [behavior_panel(points, verdicts, beh) for beh in BEHAVIORS]
+    panels = [behavior_panel(points, verdicts, beh, slots=ICLR_SLOTS) for beh in BEHAVIORS]
     vals = [v for p in panels for g in p["groups"] for b in g["bars"] for v in (b["rho"], *b["ci"])]
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
+    bar_w = GROUP_WIDTH / len(ICLR_SLOTS)
 
     set_paper_style("iclr")
-    fig, axes = plt.subplots(1, 3, figsize=figsize_iclr_panels(3, height_in=2.05), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=figsize_iclr_panels(3, height_in=2.45), sharey=True)
     n_bars = 0
     for ax, panel in zip(axes, panels, strict=True):
         xs = list(range(len(panel["groups"])))
         ax.axhline(0.0, color=paper_color("reference"), linewidth=0.6, zorder=1)
         for x, grp in zip(xs, panel["groups"], strict=True):
             for mi, bar in enumerate(grp["bars"]):
-                offset = -GROUP_WIDTH / 2 + (mi + 0.5) * BAR_WIDTH
+                offset = -GROUP_WIDTH / 2 + (mi + 0.5) * bar_w
                 failed = bar["spread_failed"]
-                color = paper_color(PAPER_CONCEPT[bar["method"]])
+                color = paper_color(ICLR_CONCEPT[bar["method"]])
+                filled = ICLR_FILLED[bar["method"]]
                 ax.bar(
                     [x + offset],
                     [bar["rho"]],
-                    width=BAR_WIDTH,
-                    color=color,
+                    width=bar_w,
+                    color=color if filled else "none",
+                    edgecolor=None if filled else color,
+                    linewidth=0.0 if filled else 0.8,
                     alpha=0.35 if failed else 1.0,
                     zorder=3,
                 )
@@ -534,7 +589,15 @@ def render_iclr(points: dict, verdicts: dict) -> int:
         ax.set_ylim(*ylim)
         ax.set_title(panel["title"].capitalize())
     axes[0].set_ylabel("Spearman $\\rho$")
-    handles = [Patch(facecolor=paper_color(PAPER_CONCEPT[m]), label=LABEL[m]) for m in METHOD_SLOTS]
+    handles = [
+        Patch(
+            facecolor=paper_color(ICLR_CONCEPT[m]) if ICLR_FILLED[m] else "none",
+            edgecolor=None if ICLR_FILLED[m] else paper_color(ICLR_CONCEPT[m]),
+            linewidth=0.0 if ICLR_FILLED[m] else 0.8,
+            label=ICLR_LABEL[m],
+        )
+        for m in ICLR_SLOTS
+    ]
     handles.append(Patch(facecolor="#999999", alpha=0.35, label="spread gate failed (muted)"))
     fig.legend(
         handles=handles,
@@ -545,7 +608,7 @@ def render_iclr(points: dict, verdicts: dict) -> int:
         columnspacing=1.2,
         handlelength=1.2,
     )
-    fig.tight_layout(rect=(0.0, 0.22, 1.0, 1.0))
+    fig.tight_layout(rect=(0.0, 0.30, 1.0, 1.0))
     out_dir = ROOT / "figures/paper"
     out_dir.mkdir(parents=True, exist_ok=True)
     savefig_paper(fig, "c5_pv_methods_regimes", dir=out_dir)
@@ -568,13 +631,13 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    points = load_points()
     verdicts = load_verdicts()
     if args.style == "iclr":
-        n = render_iclr(points, verdicts)
-        if n != 3 * len(GROUPS) * len(METHOD_SLOTS):
-            raise SystemExit(f"iclr figure plotted {n} bars, expected 48")
+        n = render_iclr(load_points_iclr(), verdicts)
+        if n != 3 * len(GROUPS) * len(ICLR_SLOTS):
+            raise SystemExit(f"iclr figure plotted {n} bars, expected {3 * 4 * len(ICLR_SLOTS)}")
         return
+    points = load_points()
 
     OUT_FIG.mkdir(parents=True, exist_ok=True)
 
