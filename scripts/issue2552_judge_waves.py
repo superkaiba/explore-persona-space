@@ -138,6 +138,7 @@ PILOT_MIN_EFFECTIVE = 51  # floor(1/0.02)+1 (#2124) — n_draws=1 => 51 items/ar
 PILOT_PARSE_FAIL_THRESHOLD = 0.02
 PILOT_API_REFUSAL_THRESHOLD = 0.10
 RC_PILOT_FAIL = 7  # designed halt rc (the #1415 pilot-gate routing convention)
+RC_FLOOR_FAIL = 8  # rule-29 frac_items_complete hard gate (aggregation HALT, #2552 r2)
 TA_FAMILIES = ("rep_ta", "mat_k100", "mat_k200")
 ALL_FAMILIES = (*TA_FAMILIES, "pt")
 CONFIGS = ("rep_ta", "mat_k100", "mat_k200", "pt_max", "pt_sum")
@@ -436,14 +437,24 @@ def phase_prep(args) -> None:
 
     def fetch(path_in_repo: str) -> Path:
         got = t._hf_fetch(path_in_repo, p.inputs, revision)
-        fetched[path_in_repo] = _sha_text(Path(got).read_bytes().hex())
+        fetched[path_in_repo] = hashlib.sha256(Path(got).read_bytes()).hexdigest()
         return Path(got)
 
     hf = args.hf_prefix
     regime_measured = fetch(f"{hf}/analysis_tensors/eval/regime_measured.json")
     census_rep = fetch(f"{hf}/analysis_tensors/eval/census_rep.npz")
+    # sharded lists (P1.10 writer shape, #2552 r2 g3-M4): index JSON + per-config shards
     lists_path = fetch(f"{hf}/analysis_tensors/eval_lists/feature_lists_2000turns.json")
+    lists_index = json.loads(lists_path.read_text())
+    assert "configs" in lists_index, (
+        f"feature_lists_2000turns.json is not the sharded index (have {sorted(lists_index)}) — "
+        "P1.10 writes an index + per-config JSONL turn shards beside it"
+    )
+    for entry in lists_index["configs"].values():
+        for name in entry["files"]:
+            fetch(f"{hf}/analysis_tensors/eval_lists/{name}")
     mining_manifest = fetch(f"{hf}/analysis_tensors/mining_manifest.json")
+    fetch(f"{hf}/analysis_tensors/mining_row_ids.npz")  # MF-A manifest-side ids (#2552 r2 g3-M1)
     mining_files = [fetch(pth) for pth in _list_mining_files(revision, hf)]
     manifest.update(
         {
@@ -487,12 +498,30 @@ def phase_prep(args) -> None:
 # ── G2 measured-union descope gate ───────────────────────────────────────────────
 
 
-def _load_lists(p) -> dict[str, dict]:
-    doc = json.loads((p.inputs / "feature_lists_2000turns.json").read_text())
-    # producer shape: {cfg: {..., "turns": [{row_id, judged_top100, ...}]}}
-    missing = [c for c in CONFIGS if c not in doc]
-    assert not missing, f"feature_lists_2000turns.json missing configs: {missing}"
-    return doc
+def _load_lists(p, hf_prefix: str) -> dict[str, dict]:
+    """Reassemble the per-config judged lists from the P1.10 sharded index.
+
+    Producer shape (#2552 r2 g3-M4): ``feature_lists_2000turns.json`` is a small
+    INDEX ({"configs": {cfg: {meta, files, n_turns}}}); one-turn-per-line JSONL
+    shards (<9 MB each, never gzip — upload-policy) sit beside it. Files are staged
+    by prep under ``p.inputs/<full repo path>`` (the hf_hub_download local_dir
+    layout — the pre-r2 bare ``p.inputs/<name>`` read never resolved)."""
+    base = p.inputs / hf_prefix / "analysis_tensors" / "eval_lists"
+    index = json.loads((base / "feature_lists_2000turns.json").read_text())
+    assert "configs" in index, f"unexpected lists index shape: {sorted(index)}"
+    missing = [c for c in CONFIGS if c not in index["configs"]]
+    assert not missing, f"feature_lists index missing configs: {missing}"
+    out: dict[str, dict] = {}
+    for cfg, entry in index["configs"].items():
+        turns: list[dict] = []
+        for name in entry["files"]:
+            with (base / name).open(encoding="utf-8") as fh:
+                for line in fh:
+                    if line.strip():
+                        turns.append(json.loads(line))
+        assert len(turns) == int(entry["n_turns"]), (cfg, len(turns), entry["n_turns"])
+        out[cfg] = {**entry.get("meta", {}), "turns": turns}
+    return out
 
 
 def _turn_lists(lists_doc: dict, cfg: str, eval_ids: set[int]) -> dict[int, list[int]]:
@@ -567,7 +596,7 @@ def _g2_gate(args, p, *, row_ci: np.ndarray, prov_u8: np.ndarray) -> dict:
 
     census = np.load(p.inputs / args.hf_prefix / "analysis_tensors/eval/census_rep.npz")
     rep_panel = np.asarray(census["panel_ids"], np.int64)
-    lists_doc = _load_lists(p)
+    lists_doc = _load_lists(p, args.hf_prefix)
     mats = _mat_panels()
     measured = json.loads(
         (p.inputs / args.hf_prefix / "analysis_tensors/eval/regime_measured.json").read_text()
@@ -661,15 +690,32 @@ def _mfa_disjointness(args, p, g2: dict) -> None:
             f"mining manifest family {fam}: eval_ids sha mismatch vs committed regime.json"
         )
         report[fam] = {"manifest_assert": "PASS", "n_mining_rows": doc.get("n_mining_rows")}
+    # manifest-carried mining row ids (P1 writer; #2552 r2 g3-M1) — the check is
+    # DOUBLE-ENDED: the manifest-DECLARED pool ids AND the jsonl-REALIZED example
+    # rows must each be eval-disjoint, and the realized rows must be a SUBSET of
+    # the declared pool (the pool is the candidate set; top-25 selection realizes
+    # a subset of it)
+    ids_npz = np.load(p.inputs / args.hf_prefix / "analysis_tensors/mining_row_ids.npz")
     for fam in ALL_FAMILIES:
+        assert fam in ids_npz.files, (
+            f"mining_row_ids.npz missing family {fam} — have {sorted(ids_npz.files)}"
+        )
+        manifest_ids = {int(x) for x in np.asarray(ids_npz[fam], np.int64)}
         rows = {int(r["row_id"]) for r in _mining_records(p, args.hf_prefix, fam)}
-        overlap = rows & eval_set
+        stray = rows - manifest_ids
+        assert not stray, (
+            f"MF-A: family {fam} jsonl-realized mining rows outside the manifest-declared "
+            f"pool (n={len(stray)}, e.g. {sorted(stray)[:5]})"
+        )
+        overlap = (rows | manifest_ids) & eval_set
         assert not overlap, (
             f"MF-A VIOLATION: family {fam} mining rows intersect realized eval ids "
             f"(n={len(overlap)})"
         )
         report.setdefault(fam, {})["direct_check_n_overlap"] = 0
         report[fam]["n_mining_row_ids"] = len(rows)
+        report[fam]["n_manifest_pool_ids"] = len(manifest_ids)
+        report[fam]["realized_subset_of_declared"] = True
     t.C.write_json_atomic(
         out_path,
         {
@@ -922,6 +968,23 @@ def _arm_stats(item_ids: list[str], per_item: dict[str, dict]) -> dict:
     }
 
 
+def _reload_per_item(p, wave: str, base: str) -> dict[str, dict]:
+    """Rebuild a completed wave's FINAL per-item reduce from its persisted raw
+    (base batch file + the rule-28 sync re-issue overlay) with ZERO API calls —
+    the resume path when ``run_wave`` skips a done wave and returns None. The
+    overlay merge mirrors run_wave's in-band merge exactly (#2552 r2 g5-M1)."""
+    parser = WAVE_PARSERS[base]
+    raw = p.work / "raw" / wave / f"judge_raw_{wave}.json"
+    assert raw.exists(), f"[{wave}] resume: judge_meta says done but persisted raw missing: {raw}"
+    per = reduce_all_scores(_load_all_scores(raw), parser)
+    reissue = raw.with_name(f"judge_raw_{wave}_syncreissue.json")
+    if reissue.exists():
+        for i, rec in reduce_all_scores(_load_all_scores(reissue), parser).items():
+            if rec["class"] == "valid" or per.get(i, {}).get("class") != "valid":
+                per[i] = {**rec, "via": "sync_reissue"}
+    return per
+
+
 # ── dispatch + raw persistence ───────────────────────────────────────────────────
 
 
@@ -1146,7 +1209,20 @@ def run_wave(
     _upload_raw(args, p, wave, [save_raw, *shards])  # BEFORE reduction (plan §10)
 
     per_item = reduce_all_scores(all_scores, parser)
-    censored = [i for i, rec in per_item.items() if rec["class"] in ("api_refusal", "transport")]
+    # expected-but-missing items carry NO persisted result — transport-lost by
+    # definition (rule 24), so they join the re-issue set (#2552 r2 codex
+    # judge-completeness-floor)
+    missing = sorted({i for i, _q in items} - set(per_item))
+    if missing:
+        logger.warning(
+            "[%s] %d expected items MISSING from persisted results — treated as "
+            "transport-lost and re-issued (rule 24)",
+            wave,
+            len(missing),
+        )
+    censored = [
+        i for i, rec in per_item.items() if rec["class"] in ("api_refusal", "transport")
+    ] + missing
     n_sync = 0
     if censored and not args.smoke:
         logger.warning(
@@ -1187,6 +1263,32 @@ def run_wave(
             wave,
             below,
         )
+        if not (args.smoke or args.allow_below_floor):
+            # HARD GATE (#2552 r2 codex judge-completeness-floor): aggregation HALTS
+            # while any arm sits below the registered 0.95 floor. judge_meta is NOT
+            # written, so a re-run resumes from the persisted raw + judge cache;
+            # --allow-below-floor is the recorded triage-complete waiver.
+            t = _t2552()
+            t.C.write_json_atomic(
+                p.agg / f"floor_fail_{wave}.json",
+                {
+                    "wave": wave,
+                    "floor": FRAC_ITEMS_FLOOR,
+                    "below_floor_arms": below,
+                    "arms": per_arm,
+                    "n_censored_reissued": len(censored),
+                    "n_valid_from_sync_reissue": n_sync,
+                    **as_metadata_dict(git_provenance(), phase=f"judge-{wave}-floorfail"),
+                },
+            )
+            print(
+                f"[{wave}] HALT: arms below the {FRAC_ITEMS_FLOOR} frac_items_complete "
+                f"floor: {below} — triage the drop classes (rule 29; report at "
+                f"floor_fail_{wave}.json); re-run resumes from persisted raw; "
+                "--allow-below-floor records a waiver",
+                flush=True,
+            )
+            raise SystemExit(RC_FLOOR_FAIL)
     meta = {
         "wave": wave,
         "regime_key": regime_key,
@@ -1198,6 +1300,7 @@ def run_wave(
         "n_draws": 1,
         "arms": per_arm,
         "below_floor_arms": below,
+        "below_floor_waiver": bool(below and args.allow_below_floor),
         "batch_sync_split": {
             "n_valid_from_sync_reissue": n_sync,
             "n_censored_reissued": len(censored),
@@ -1245,11 +1348,14 @@ def _w1_block_pt(recs: list[dict]) -> str:
     parts = ["FEATURE EXAMPLES (top-activating token contexts):", ""]
     for k, r in enumerate(recs):
         peak_rel = int(r["peak_token_abs"]) - int(r.get("window_lo_abs", 0))
-        offs = [int(t) for t, _a in r.get("window_token_acts", [])][:12]
+        # render offset AND activation VALUE per retained token (#2552 r2 codex
+        # pt-activation-values) — offsets alone discard the activation profile
+        pairs = [(int(t), float(a)) for t, a in r.get("window_token_acts", [])][:12]
+        shown = ", ".join(f"{t}:{a:.3f}" for t, a in pairs)
         parts.append(
             f"### Example {k + 1} (peak activation={float(r['activation']):.4f}; "
             f"peak token at offset {peak_rel} of this window; "
-            f"activating token offsets: {offs})"
+            f"activating token offsets with activations: [{shown}])"
         )
         parts.append(str(r["window_text"]))
         parts.append("")
@@ -1259,7 +1365,7 @@ def _w1_block_pt(recs: list[dict]) -> str:
 def compose_w1(args, p, g2: dict) -> dict[str, list[tuple[str, str]]]:
     """W1 arms keyed by description family; item per feature in the family's
     realized description-need set; examples from the mining jsonls."""
-    lists_doc = _load_lists(p)
+    lists_doc = _load_lists(p, args.hf_prefix)
     mats = _mat_panels()
     need = compute_need_sets(
         set(int(x) for x in g2["eval_ids"]),
@@ -1360,7 +1466,7 @@ def compose_w4(args, p, g2: dict) -> tuple[dict[str, list[tuple[str, str]]], dic
     """W4 arms keyed by config. Returns (arms, row_meta by item_id, presentation)."""
     eval_ids = [int(x) for x in g2["eval_ids"]]
     texts = _load_texts(p, np.asarray(eval_ids, np.int64))
-    lists_doc = _load_lists(p)
+    lists_doc = _load_lists(p, args.hf_prefix)
     desc_by_fam = {fam: _descriptions(p, fam) for fam in ALL_FAMILIES}
     pres = {int(r): w4_presentation(int(r), eval_ids) for r in eval_ids}
     arms: dict[str, list[tuple[str, str]]] = {}
@@ -1423,7 +1529,7 @@ def compose_w5(args, p, g2: dict) -> tuple[dict[str, list[tuple[str, str]]], dic
     """W5 arms keyed by 'cfgA__vs__cfgB'... (single-underscore-safe: 'cfgA-vs-cfgB')."""
     eval_ids = [int(x) for x in g2["eval_ids"]]
     summaries = _load_summaries(p, g2)
-    lists_doc = _load_lists(p)
+    lists_doc = _load_lists(p, args.hf_prefix)
     desc_by_fam = {fam: _descriptions(p, fam) for fam in ALL_FAMILIES}
     turn_feats = {cfg: _turn_lists(lists_doc, cfg, set(eval_ids)) for cfg in CONFIGS}
     arms: dict[str, list[tuple[str, str]]] = {}
@@ -1478,7 +1584,7 @@ def w6_assignment(row_id: int) -> dict[str, str]:
 def compose_w6(args, p, g2: dict) -> tuple[dict[str, list[tuple[str, str]]], dict[str, dict]]:
     eval_ids = [int(x) for x in g2["eval_ids"]]
     summaries = _load_summaries(p, g2)
-    lists_doc = _load_lists(p)
+    lists_doc = _load_lists(p, args.hf_prefix)
     desc_by_fam = {fam: _descriptions(p, fam) for fam in ALL_FAMILIES}
     turn_feats = {cfg: _turn_lists(lists_doc, cfg, set(eval_ids)) for cfg in CONFIGS}
     items: list[tuple[str, str]] = []
@@ -1708,12 +1814,14 @@ def phase_w1(args) -> None:
     if args.dry_run:
         return
     t = _t2552()
-    merged: dict[str, dict] = {}
-    for per in (per_ta, per_pt):
-        if per:
-            merged.update(per)
-    if not merged and all((p.agg / f"descriptions_{fam}.json").exists() for fam in ALL_FAMILIES):
-        return  # resumed: aggregates already written
+    # resume-safe aggregate rebuild (#2552 r2 g5-M1): a done dispatch group returns
+    # None — rebuild its per-item map from the persisted raw (+ sync overlay) and
+    # ALWAYS rewrite the deterministic aggregates (kills the empty-aggregate shape)
+    if per_ta is None:
+        per_ta = _reload_per_item(p, "w1", "w1")
+    if per_pt is None:
+        per_pt = _reload_per_item(p, "w1pt", "w1")
+    merged: dict[str, dict] = {**per_ta, **per_pt}
     for fam in ALL_FAMILIES:
         pref = f"w1-{fam}-f"
         descs = {
@@ -1741,8 +1849,10 @@ def phase_w2(args) -> None:
     g2 = _require_g2(args, p)
     arms = compose_w2(args, p, g2)
     per_item = run_wave(args, p, g2, wave="w2", arms=arms, system=W2_SYSTEM)
-    if args.dry_run or per_item is None:
+    if args.dry_run:
         return
+    if per_item is None:  # resumed: rebuild from persisted raw (#2552 r2 g5-M1)
+        per_item = _reload_per_item(p, "w2", "w2")
     t = _t2552()
     summaries = {
         str(int(i.removeprefix("w2-r"))): rec["value"]
@@ -1772,8 +1882,10 @@ def phase_w3(args) -> None:
     g2 = _require_g2(args, p)
     arms = compose_w3(args, p, g2)
     per_item = run_wave(args, p, g2, wave="w3", arms=arms, system=W3_SYSTEM, pilot_label="w3")
-    if args.dry_run or per_item is None:
+    if args.dry_run:
         return
+    if per_item is None:  # resumed: rebuild from persisted raw (#2552 r2 g5-M1)
+        per_item = _reload_per_item(p, "w3", "w3")
     t = _t2552()
     for fam in TA_FAMILIES:
         pref = f"w3-{fam}-f"
@@ -1820,8 +1932,10 @@ def phase_w4(args) -> None:
     t = _t2552()
     t.C.write_json_atomic(p.work / "w4_presentation.json", pres)
     per_item = run_wave(args, p, g2, wave="w4", arms=arms, system=W4_SYSTEM, pilot_label="w4")
-    if args.dry_run or per_item is None:
+    if args.dry_run:
         return
+    if per_item is None:  # resumed: rebuild from persisted raw (#2552 r2 g5-M1)
+        per_item = _reload_per_item(p, "w4", "w4")
     rows = []
     for item_id, meta in sorted(row_meta.items()):
         rec = per_item.get(item_id)
@@ -1883,8 +1997,10 @@ def phase_w5(args) -> None:
     g2 = _require_g2(args, p)
     arms, row_meta = compose_w5(args, p, g2)
     per_item = run_wave(args, p, g2, wave="w5", arms=arms, system=W5_SYSTEM, pilot_label="w5")
-    if args.dry_run or per_item is None:
+    if args.dry_run:
         return
+    if per_item is None:  # resumed: rebuild from persisted raw (#2552 r2 g5-M1)
+        per_item = _reload_per_item(p, "w5", "w5")
     t = _t2552()
     rows = []
     for item_id, meta in sorted(row_meta.items()):
@@ -1922,8 +2038,10 @@ def phase_w6(args) -> None:
     g2 = _require_g2(args, p)
     arms, row_meta = compose_w6(args, p, g2)
     per_item = run_wave(args, p, g2, wave="w6", arms=arms, system=W6_SYSTEM)
-    if args.dry_run or per_item is None:
+    if args.dry_run:
         return
+    if per_item is None:  # resumed: rebuild from persisted raw (#2552 r2 g5-M1)
+        per_item = _reload_per_item(p, "w6", "w6")
     t = _t2552()
     rows = []
     rank_sums: dict[str, list[int]] = {c: [] for c in CONFIGS}
@@ -1955,6 +2073,34 @@ def phase_w6(args) -> None:
     logger.info("[w6] rows=%d n_valid=%d", len(rows), summary["n_valid"])
 
 
+def _wilson(k: int, n: int, z: float = 1.959964) -> tuple[float, float]:
+    """Wilson score interval for a binomial proportion (nan-nan at n=0)."""
+    if n == 0:
+        return (float("nan"), float("nan"))
+    p_ = k / n
+    denom = 1 + z * z / n
+    center = (p_ + z * z / (2 * n)) / denom
+    half = z * float(np.sqrt(p_ * (1 - p_) / n + z * z / (4 * n * n))) / denom
+    return (float(center - half), float(center + half))
+
+
+def _w7_cells(wave: str, item_id: str, primary_rec: dict) -> tuple[str, ...]:
+    """Per-instrument calibration cell keys (#2552 r2 codex w7-calibration):
+    w3 -> (family, primary category); w4 -> config; w5 -> config pair."""
+    if wave == "w3":
+        fam = item_id.split("-")[1]
+        cat = primary_rec["value"][1]
+        return (f"family={fam}", f"category={cat}")
+    if wave == "w4":
+        cfg = item_id[len("w4-") : item_id.rfind("-r")]
+        return (f"config={cfg}",)
+    if wave == "w5":
+        pi = int(item_id.rsplit("-", 1)[1])
+        a, b = W5_PAIRS[pi]
+        return (f"pair={a}-vs-{b}",)
+    return ()
+
+
 def _cohen_kappa(a: list[str], b: list[str]) -> float:
     assert len(a) == len(b) and a, "kappa needs equal nonempty label lists"
     labels = sorted(set(a) | set(b))
@@ -1980,9 +2126,9 @@ def phase_w7(args) -> None:
     }
     out: dict[str, dict] = {}
     for k, (wave, (arms, system)) in enumerate(sorted(parents.items())):
-        primary_raw = p.work / "raw" / wave / f"judge_raw_{wave}.json"
-        assert primary_raw.exists(), f"[w7] {wave} raw missing — run --wave {wave} first"
-        primary = reduce_all_scores(_load_all_scores(primary_raw), WAVE_PARSERS[wave])
+        # the SAME final overlay production reductions use — base raw + rule-28 sync
+        # re-issues folded in (#2552 r2 codex w7-calibration)
+        primary = _reload_per_item(p, wave, wave)
         items = [it for arm_items in arms.values() for it in arm_items]
         valid_items = [it for it in items if primary.get(it[0], {}).get("class") == "valid"]
         rng = np.random.default_rng([SEED, 7, k])
@@ -2003,29 +2149,54 @@ def phase_w7(args) -> None:
         )
         if args.dry_run:
             continue
-        if per_cal is None:
-            per_cal = reduce_all_scores(
-                _load_all_scores(p.work / "raw" / cal_wave / f"judge_raw_{cal_wave}.json"),
-                WAVE_PARSERS[wave],
-            )
+        if per_cal is None:  # resumed: rebuild WITH the sync overlay (#2552 r2)
+            per_cal = _reload_per_item(p, cal_wave, wave)
         la: list[str] = []
         lb: list[str] = []
         n_cal_drop = 0
+        cells: dict[str, dict] = {}
         for item_id, _q in pick:
+            prim = primary[item_id]
             rec = per_cal.get(item_id)
-            if rec is None or rec["class"] != "valid":
+            ok = rec is not None and rec["class"] == "valid"
+            for cell_key in _w7_cells(wave, item_id, prim):
+                c = cells.setdefault(
+                    cell_key, {"n_sampled": 0, "n_both_valid": 0, "la": [], "lb": []}
+                )
+                c["n_sampled"] += 1
+                if ok:
+                    c["n_both_valid"] += 1
+                    c["la"].append(json.dumps(prim["value"]))
+                    c["lb"].append(json.dumps(rec["value"]))
+            if not ok:
                 n_cal_drop += 1
                 continue
-            la.append(json.dumps(primary[item_id]["value"]))
+            la.append(json.dumps(prim["value"]))
             lb.append(json.dumps(rec["value"]))
+        n_agree = sum(1 for x, y in zip(la, lb, strict=True) if x == y)
+        cell_out = {}
+        for cell_key, c in sorted(cells.items()):
+            nbv = c["n_both_valid"]
+            k_agree = sum(1 for x, y in zip(c["la"], c["lb"], strict=True) if x == y)
+            lo, hi = _wilson(k_agree, nbv)
+            cell_out[cell_key] = {
+                "n_sampled": c["n_sampled"],
+                "n_both_valid": nbv,
+                "drop_rate_cal": (1.0 - nbv / c["n_sampled"]) if c["n_sampled"] else None,
+                "agreement": (k_agree / nbv) if nbv else None,
+                "agreement_wilson_ci95": [lo, hi],
+                "kappa": _cohen_kappa(c["la"], c["lb"]) if nbv >= 2 else None,
+            }
+        lo_all, hi_all = _wilson(n_agree, len(la))
         out[wave] = {
             "n_sampled": n,
             "n_both_valid": len(la),
             "n_cal_dropped": n_cal_drop,
-            "raw_agreement": (sum(1 for x, y in zip(la, lb, strict=True) if x == y) / len(la))
-            if la
-            else float("nan"),
+            "drop_rate_cal": (n_cal_drop / n) if n else float("nan"),
+            "raw_agreement": (n_agree / len(la)) if la else float("nan"),
+            "agreement_wilson_ci95": [lo_all, hi_all],
             "kappa": _cohen_kappa(la, lb) if la else float("nan"),
+            "cells": cell_out,
             "cal_judge_model": CAL_JUDGE_MODEL,
         }
     if args.dry_run:
@@ -2088,10 +2259,7 @@ def phase_smoke_probes(args) -> None:
     def probe(wave: str, base: str, arms: dict, system: str) -> dict[str, dict]:
         per = run_wave(args, p, g2, wave=f"smoke_{wave}", base_wave=base, arms=arms, system=system)
         if per is None and not args.dry_run:  # resumed probe: reload from saved raw
-            per = reduce_all_scores(
-                _load_all_scores(p.work / "raw" / f"smoke_{wave}" / f"judge_raw_smoke_{wave}.json"),
-                WAVE_PARSERS[base],
-            )
+            per = _reload_per_item(p, f"smoke_{wave}", base)
         per = per or {}
         n_valid = sum(1 for r in per.values() if r["class"] == "valid")
         results[wave] = {"n_items": sum(len(v) for v in arms.values()), "n_valid": n_valid}
@@ -2190,6 +2358,12 @@ def build_argparser() -> argparse.ArgumentParser:
         help="tiny live SYNC probes; outputs divert under <out_root>/smoke",
     )
     ap.add_argument("--skip-upload", action="store_true", help="local-only (loud)")
+    ap.add_argument(
+        "--allow-below-floor",
+        action="store_true",
+        help="waive the rule-29 frac_items_complete HALT after drop-class triage "
+        "(recorded in judge_meta as below_floor_waiver)",
+    )
     ap.add_argument(
         "--max-chunks", type=int, default=0, help="0 = all 1,920 rollout chunks (production)"
     )

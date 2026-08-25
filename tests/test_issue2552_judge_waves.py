@@ -369,3 +369,137 @@ def test_render_summary_orders_by_schema():
     assert out == [f"{f}: v-{f}" for f in J.APP_D_FIELDS]
     partial = J._render_summary({"tone": "warm"})
     assert partial == "tone: warm"
+
+
+# ── r2 round: resume/aggregate recovery + completeness-floor halt + W1 pt render ──
+
+
+def test_reload_per_item_sync_overlay(tmp_path):
+    """`_reload_per_item` rebuilds the FINAL reduce from persisted raw + the
+    rule-28 sync-reissue overlay with zero API calls (r2 g5-M1)."""
+    raw_dir = tmp_path / "raw" / "w5"
+    raw_dir.mkdir(parents=True)
+    base_scores = {
+        "w5-r1-0__00000__00": {"choice": 99, "stop_reason": "end_turn"},  # parse_fail
+        "w5-r2-0__00000__00": {"choice": 1, "stop_reason": "end_turn"},  # valid
+    }
+    (raw_dir / "judge_raw_w5.json").write_text(json.dumps({"all_scores": base_scores}))
+    (raw_dir / "judge_raw_w5_syncreissue.json").write_text(
+        json.dumps({"all_scores": {"w5-r1-0__00000__00": {"choice": 2, "stop_reason": "end_turn"}}})
+    )
+    from types import SimpleNamespace
+
+    per = J._reload_per_item(SimpleNamespace(work=tmp_path), "w5", "w5")
+    assert per["w5-r1-0"] == {"class": "valid", "value": 2, "via": "sync_reissue"}
+    assert per["w5-r2-0"] == {"class": "valid", "value": 1}  # base draw kept, no via
+
+
+def _fake_dispatch_factory(n_valid: int, omit: set[str]):
+    """Signature-mirrored `_dispatch` fake (external API boundary): base call writes
+    n_valid valid + the rest parse_fail, OMITS `omit` items (transport-lost shape);
+    the sync-reissue call returns every requested item VALID."""
+
+    def fake(
+        args,
+        *,
+        wave,
+        items,
+        system,
+        max_tokens,
+        cache_dir,
+        save_raw,
+        judge_model,
+        force_sync=False,
+        dry_run=False,
+    ):
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        scores = {}
+        if "syncreissue" in save_raw.name:
+            for item_id, _q in items:
+                scores[f"{item_id}__00000__00"] = {"choice": 1, "stop_reason": "end_turn"}
+        else:
+            for k, (item_id, _q) in enumerate(items):
+                if item_id in omit:
+                    continue
+                choice = 1 if k < n_valid else 99
+                scores[f"{item_id}__00000__00"] = {"choice": choice, "stop_reason": "end_turn"}
+        save_raw.write_text(json.dumps({"all_scores": scores}))
+
+    return fake
+
+
+def _floor_env(tmp_path, monkeypatch, *, allow_below_floor: bool):
+    from types import SimpleNamespace
+
+    from explore_persona_space.atomic_io import write_json_atomic
+
+    monkeypatch.setattr(
+        J, "_t2552", lambda: SimpleNamespace(C=SimpleNamespace(write_json_atomic=write_json_atomic))
+    )
+    monkeypatch.setattr(J, "_stage_draws_jsonl", lambda p, wave, tag, scores: [])
+    args = SimpleNamespace(
+        dry_run=False,
+        smoke=False,
+        allow_below_floor=allow_below_floor,
+        skip_upload=True,
+        hf_prefix="pfx",
+    )
+    p = SimpleNamespace(work=tmp_path / "work", agg=tmp_path / "agg")
+    for d in (p.work, p.agg):
+        d.mkdir(parents=True, exist_ok=True)
+    g2 = {
+        "eval_ids_sha256": "sha-e",
+        "rep_panel_sha256": "sha-p",
+        "n_eval_realized": 10,
+        "descoped": False,
+    }
+    items = [(f"w5-r{i}-0", f"Q{i}") for i in range(10)]
+    return args, p, g2, {"armA": items}
+
+
+def test_run_wave_floor_halt_and_missing_item_reissue(tmp_path, monkeypatch):
+    """PRODUCTION-BODY run_wave: expected-but-missing items are re-issued as
+    transport-lost (r2 12a), and a below-floor arm HALTS aggregation with
+    SystemExit(RC_FLOOR_FAIL) BEFORE judge_meta is written (r2 12b)."""
+    args, p, g2, arms = _floor_env(tmp_path, monkeypatch, allow_below_floor=False)
+    monkeypatch.setattr(J, "_dispatch", _fake_dispatch_factory(2, omit={"w5-r9-0"}))
+    with pytest.raises(SystemExit) as ex:
+        J.run_wave(args, p, g2, wave="w5", arms=arms, system="SYS")
+    assert ex.value.code == J.RC_FLOOR_FAIL
+    fail = json.loads((p.agg / "floor_fail_w5.json").read_text())
+    assert fail["below_floor_arms"] == ["armA"] and fail["n_censored_reissued"] == 1
+    assert not (p.agg / "judge_meta_w5.json").exists()  # NOT done => re-run resumes
+    # the omitted item was sync-reissued (transport-lost by definition, rule 24)
+    assert (p.work / "raw" / "w5" / "judge_raw_w5_syncreissue.json").exists()
+
+
+def test_run_wave_below_floor_waiver_records_meta(tmp_path, monkeypatch):
+    args, p, g2, arms = _floor_env(tmp_path, monkeypatch, allow_below_floor=True)
+    monkeypatch.setattr(J, "_dispatch", _fake_dispatch_factory(2, omit={"w5-r9-0"}))
+    per = J.run_wave(args, p, g2, wave="w5", arms=arms, system="SYS")
+    assert per is not None and per["w5-r9-0"]["via"] == "sync_reissue"
+    meta = json.loads((p.agg / "judge_meta_w5.json").read_text())
+    assert meta["below_floor_waiver"] is True and meta["below_floor_arms"] == ["armA"]
+    assert meta["batch_sync_split"] == {
+        "n_valid_from_sync_reissue": 1,
+        "n_censored_reissued": 1,
+    }
+    assert meta["arms"]["armA"]["frac_items_complete"] == 0.3  # 2 valid + 1 reissued
+
+
+def test_w1_block_pt_renders_activation_values():
+    """The W1 per-token prompt shows offset:activation PAIRS, never offsets alone
+    (r2 codex pt-activation-values)."""
+    recs = [
+        {
+            "activation": 1.5,
+            "peak_token_abs": 130,
+            "window_lo_abs": 100,
+            "window_token_acts": [[105, 0.5], [130, 1.5]],
+            "window_text": "some window text",
+        }
+    ]
+    block = J._w1_block_pt(recs)
+    assert "105:0.500" in block and "130:1.500" in block
+    assert "peak token at offset 30" in block
+    assert "activating token offsets with activations:" in block
