@@ -1,4 +1,8 @@
 # code-reviewer-lean memory index
+- [Spec-sync import purity probe](spec_sync_import_purity_probe.md) — triple blob equality (commit==main-tip==HEAD) per file; worktree diff alone maskable by later commits (#2544 r2 g5)
+- [Ported headroom gate vs footprint model](ported_headroom_gate_footprint_model.md) — inherited all-units-resident disk gate under a per-cell upload→delete design: vacuous on MooseFS statvfs, false-refusing on honest FS; diff vs plan §9 floors (#2544 r1 g1)
+- [0.55 FALLBACK-row scope](smokearch_fallback_row_scope_055.md) — FALLBACK under PASS_UNIFIED blocks only in per-arm-resolution ARM rows; resume-matrix/outroot sub-blocks use it legitimately (#2544 r1 g7)
+- [Disk-row reconcile: check the coded assert](disk_row_reconcile_check_coded_assert.md) — disclosed §9 disk deviation: recompute the phase-entry headroom assert (base+units×per_unit) vs the realized worst-wave; assert < demand = Major (#2544 r1 g2)
 - [Dial-change stale-bundle reachability](dial_change_stale_bundle_reachability.md) — presence-only resume vs changed dial discharges when every pre-change value RAISED before the bundle write; else Major (#2544 r1 g4)
 - [Single-tokenizer fixture probe-branch collapse](single_tokenizer_fixture_probe_branch_collapse.md) — one-tokenizer smoke fixture makes tokenizer-probed branches one-sided; check static scheduling covers the other arm + SHA-cited enumeration (#2544 r1 g5)
 - [Loop-var tmp interpolation evades #2336 lint](loopvar_tmp_interpolation_evades_2336_lint.md) — arms E/F exempt post-`.tmp_` interpolations; a loop-variable name is still fixed-per-unit — grep all `.tmp` writers, classify interpolants (#2552 r1 g4)
