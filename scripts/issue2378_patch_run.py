@@ -1061,6 +1061,58 @@ def _run_hooked_block(
     return out_rows
 
 
+_ROW_CELL_KEYS = (
+    "cell_id",
+    "arm",
+    "variant",
+    "src",
+    "tgt",
+    "qid",
+    "char",
+    "pair_type",
+    "direction",
+    "family",
+    "donor_ctx",
+)
+OPENER_EMPTY_DROP = "opener_empty"
+
+
+def _check_opener_drop_floor(n_dropped: int, n_prefill_cells: int) -> None:
+    """Fail-loud floor over counted opener_empty drops (r19): an isolated
+    all-stop-text greedy opener is a recorded data pathology, but above
+    max(1, 5% of the prefill cells this invocation processes) the stop
+    wiring itself is suspect and the run must still crash."""
+    floor = max(1.0, 0.05 * n_prefill_cells)
+    if n_dropped > floor:
+        raise AssertionError(
+            f"{n_dropped} opener_empty drops exceed floor {floor:g} "
+            f"(max(1, 5% of {n_prefill_cells} prefill cells)) — systematic "
+            "stop-wiring pathology (fail loud)"
+        )
+
+
+def _prefill_drop_row(c, tgt_framing, prompt_text, d) -> dict:
+    """Counted-drop row for a prefill cell whose SOURCE opener is EMPTY (the
+    greedy reply was entirely stop text under the v18 stop wiring, r19): the
+    cell gets no generation slot and no v_A; the row lands in the rollout
+    JSONL and the screen report's ``dropped`` bucket (same counted-bucket
+    pattern as ``families_no_null_pairs``), never a crash."""
+    return {
+        **{k: c[k] for k in _ROW_CELL_KEYS},
+        "draw": d,
+        "framing": tgt_framing,
+        "prompt_text": prompt_text,
+        "answer": "",
+        "gen_text": "",
+        "n_completion_tokens": 0,
+        "hit_eos": False,
+        "hit_stop": False,
+        "drop_reason": OPENER_EMPTY_DROP,
+        "prefill_k": pc.PREFILL_K,
+        "va_span": "completion_ids",
+    }
+
+
 def _prefill_row(tokz, c, tgt_framing, prompt_ids, opener_ids, gen_row, d) -> dict:
     """One prefill rollout row (#2333 token-identity convention, r17 codex
     patch-prefill-token-identity-loss): the judged reply is the ONE-SHOT
@@ -1072,22 +1124,7 @@ def _prefill_row(tokz, c, tgt_framing, prompt_ids, opener_ids, gen_row, d) -> di
     text = tokz.decode(completion_ids, skip_special_tokens=True)
     ans, drop = _extract_answer(tgt_framing, text)
     return {
-        **{
-            k: c[k]
-            for k in (
-                "cell_id",
-                "arm",
-                "variant",
-                "src",
-                "tgt",
-                "qid",
-                "char",
-                "pair_type",
-                "direction",
-                "family",
-                "donor_ctx",
-            )
-        },
+        **{k: c[k] for k in _ROW_CELL_KEYS},
         "draw": d,
         "framing": tgt_framing,
         "prompt_text": None,  # filled by the caller (by_ctx lookup)
@@ -1114,15 +1151,26 @@ def _run_prefill_block(args, mctx, tokz, block_cells, by_ctx, openers, greedy, d
     from explore_persona_space.experiments.issue2333.decode_hooks import generate_batch_ids
 
     tgt_framing = block_cells[0]["tgt"].split(":", 1)[0]
-    rows_ids, opener_by_b = [], []
+    rows_ids, opener_by_b, kept_cells, empty_cells = [], [], [], []
     for c in block_cells:
+        c["donor_ctx"] = c["src"]
         opener = list(openers[c["src"]][: pc.PREFILL_K])
-        assert opener, f"empty opener for {c['src']} (fail loud)"
+        if not opener:
+            # r19 counted drop: an all-stop-text greedy reply yields an empty
+            # opener (isolated data pathology) — skip the cell, record it;
+            # phase_grid enforces the systematic-pathology floor.
+            empty_cells.append(c)
+            continue
         rows_ids.append(list(by_ctx[c["tgt"]]["input_ids"]) + opener)
         opener_by_b.append(opener)
-        c["donor_ctx"] = c["src"]
+        kept_cells.append(c)
     cap_tokens = 16 if args.tiny else pc.FRAMING_MAX_TOKENS[tgt_framing]
     out_rows = []
+    for d in range(draws):
+        for c in empty_cells:
+            out_rows.append(_prefill_drop_row(c, tgt_framing, by_ctx[c["tgt"]]["prompt_text"], d))
+    if not kept_cells:
+        return out_rows  # zero-dispatch guard: never generate on an empty batch
     for d in range(draws):
         g = generate_batch_ids(
             model=mctx["model"],
@@ -1135,7 +1183,7 @@ def _run_prefill_block(args, mctx, tokz, block_cells, by_ctx, openers, greedy, d
             seed_base=cm.derived_seed(seed_tag, block_cells[0]["cell_id"], d),
             stop_strings=pc.stop_strings_for(tgt_framing),
         )
-        for b, c in enumerate(block_cells):
+        for b, c in enumerate(kept_cells):
             row = _prefill_row(
                 tokz, c, tgt_framing, by_ctx[c["tgt"]]["input_ids"], opener_by_b[b], g[0][b], d
             )
@@ -1226,6 +1274,11 @@ def phase_grid(args) -> int:
     _log(f"[grid] {len(todo)}/{len(units)} units to run (resume skips the rest)")
     if not todo:
         return 0
+    # r19 counted-drop accounting (OUTPUT only — no regime key, so resumed runs
+    # skip completed units unchanged): floor over the prefill cells THIS
+    # invocation processes; resume-skipped units keep their committed rollouts.
+    n_prefill_cells = sum(len(cs) for _, cs in todo if cs[0]["arm"] == "prefill")
+    dropped_opener_empty: list[str] = []
     mctx = _ensure_mctx(args)  # lazy: a fully-resumed phase never loads
     tokz = _tok(args, mctx)
     t0 = time.time()
@@ -1235,6 +1288,16 @@ def phase_grid(args) -> int:
             rows = _run_prefill_block(
                 args, mctx, tokz, block_cells, by_ctx, openers, True, 1, "patch-grid"
             )
+            unit_empty = sorted(
+                {r["cell_id"] for r in rows if r["drop_reason"] == OPENER_EMPTY_DROP}
+            )
+            if unit_empty:
+                dropped_opener_empty.extend(unit_empty)
+                _log(
+                    f"[grid] {unit_key}: dropped_opener_empty={unit_empty} "
+                    f"(total {len(dropped_opener_empty)}/{n_prefill_cells} prefill cells)"
+                )
+                _check_opener_drop_floor(len(dropped_opener_empty), n_prefill_cells)
         else:
             rows = _run_hooked_block(
                 args, mctx, tokz, block_cells, by_ctx, bank_vc, dmaps, True, 1, "patch-grid"

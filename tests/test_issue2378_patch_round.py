@@ -385,3 +385,104 @@ def test_cap_hit_fractions_hit_stop():
     frac = pa._cap_hit_fractions(rows)
     assert frac["f"] == pytest.approx(1 / 3)
     assert frac["g"] == pytest.approx(1 / 2)
+
+
+class _LenTok:
+    """Length-coded decode: enough for _extract_answer to see non-stop text."""
+
+    def decode(self, ids, skip_special_tokens=True):
+        return "x" * len(ids)
+
+
+def _prefill_cell(cid: str, src: str, tgt: str) -> dict:
+    return {
+        "cell_id": cid,
+        "arm": "prefill",
+        "variant": "vc",
+        "src": src,
+        "tgt": tgt,
+        "qid": "storyq_vex_00",
+        "char": "Vex",
+        "pair_type": "steered",
+        "direction": "fwd",
+        "family": "fam|steered",
+    }
+
+
+def test_prefill_empty_opener_counted_drop(monkeypatch):
+    """r19 crash fix (grid unit 78/94): ONE empty opener → that cell is
+    SKIPPED from generation (no decoding slot), recorded as a counted
+    drop_reason='opener_empty' row (bucket=1), and the block completes —
+    never the pre-fix AssertionError at issue2378_patch_run.py:1120."""
+    import issue2378_patch_run as run
+
+    import explore_persona_space.experiments.issue2333.decode_hooks as dh
+
+    dispatched = []
+
+    def fake_generate_batch_ids(
+        model,
+        tokenizer,
+        rows_ids,
+        *,
+        n=1,
+        stack=None,
+        donors_full=None,
+        max_new_tokens=2048,
+        temperature=1.0,
+        seed_base=42,
+        greedy=False,
+        stop_strings=None,
+    ):
+        dispatched.append(list(rows_ids))
+        return [[{"gen_ids": [9], "hit_eos": True} for _ in rows_ids]]
+
+    monkeypatch.setattr(dh, "generate_batch_ids", fake_generate_batch_ids)
+    args = run.build_argparser().parse_args(["--phase", "grid", "--tiny"])
+    by_ctx = {"plain:q1": {"input_ids": [7, 7], "prompt_text": "P?"}}
+    openers = {"plain:src_ok": [1, 2], "plain:storyq_astra_06": []}
+    cells = [
+        _prefill_cell("cell_a", "plain:src_ok", "plain:q1"),
+        _prefill_cell("cell_b", "plain:storyq_astra_06", "plain:q1"),
+    ]
+    rows = run._run_prefill_block(
+        args, {"model": object()}, _LenTok(), cells, by_ctx, openers, True, 1, "t"
+    )
+    # The empty-opener cell never reaches generation; the kept cell does.
+    assert dispatched == [[[7, 7, 1, 2]]]
+    drops = [r for r in rows if r["drop_reason"] == run.OPENER_EMPTY_DROP]
+    assert len(drops) == 1 and drops[0]["cell_id"] == "cell_b"
+    assert drops[0]["n_completion_tokens"] == 0 and drops[0]["donor_ctx"] == (
+        "plain:storyq_astra_06"
+    )
+    kept = [r for r in rows if r["cell_id"] == "cell_a"]
+    assert len(kept) == 1 and kept[0]["drop_reason"] != run.OPENER_EMPTY_DROP
+
+    # All-empty block: zero-dispatch guard — generate is never called.
+    rows2 = run._run_prefill_block(
+        args,
+        {"model": object()},
+        _LenTok(),
+        [_prefill_cell("cell_c", "plain:storyq_astra_06", "plain:q1")],
+        by_ctx,
+        openers,
+        True,
+        1,
+        "t",
+    )
+    assert dispatched == [[[7, 7, 1, 2]]]  # unchanged
+    assert [r["drop_reason"] for r in rows2] == [run.OPENER_EMPTY_DROP]
+
+
+def test_opener_drop_floor_raise():
+    """Counted drops stay <= max(1, 5% of prefill cells); above that the
+    stop wiring is systematically pathological and the run must crash."""
+    import issue2378_patch_run as run
+
+    run._check_opener_drop_floor(0, 0)
+    run._check_opener_drop_floor(1, 4)  # isolated drop under max(1, 0.2)
+    run._check_opener_drop_floor(4, 94)  # 4 <= 4.7 (the resumed-run shape)
+    with pytest.raises(AssertionError, match="systematic"):
+        run._check_opener_drop_floor(2, 4)  # 2 > max(1, 0.2)
+    with pytest.raises(AssertionError, match="opener_empty"):
+        run._check_opener_drop_floor(6, 100)  # 6 > 5.0
