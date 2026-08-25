@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2589,
+  "highest_id": 2590,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12258,6 +12258,13 @@
       "path": "tasks/on_hold/259",
       "status": "on_hold",
       "title": "Finetune model to predict really long completions and measure leakage"
+    },
+    "2590": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2590",
+      "status": "proposed",
+      "title": "verify_plan.py: dry-run plan-embedded jq probes; gate contingent judge waves; require regen-time max_model_len re-pin"
     },
     "26": {
       "has_clean_result": false,
