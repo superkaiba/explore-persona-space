@@ -1,0 +1,233 @@
+{
+  "commit": "22d92210+dirty",
+  "render_id": "315fb0bd446d4076",
+  "git_commit": "22d9221057ad597327cc4bfefa07f782f4dc1b40",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
+    "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_failure_attribution.meta.json",
+    "figures/paper/c3_failure_attribution.pdf",
+    "figures/paper/c3_failure_attribution.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
+    "figures/paper/c3_sae_tier_gradient.pdf",
+    "figures/paper/c3_sae_tier_gradient.png",
+    "scripts/issue1482_plot4_redesign.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1902_figures.py",
+  "created": "2026-08-25T07:00:53Z",
+  "figsize": [
+    5.5,
+    1.98
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out $R^2$": 0.3285527356235166,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out $R^2$": 0.36614485215737846,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out $R^2$": 0.37953080378148185,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "held-out $R^2$": 0.37507118398242656,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "SFT",
+      "held-out $R^2$": -0.13071640079644364,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "DPO",
+      "held-out $R^2$": 0.22866688173775762,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "RLVR",
+      "held-out $R^2$": 0.3685876388856769,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.26,
+      "held-out $R^2$": 0.3766574505599912,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out $R^2$": 0.39745158906522404,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "held-out $R^2$": 0.3752228748234484,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "retrieval acc@1": 0.2514330157176598,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "retrieval acc@1": 0.44144290151240967,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.74,
+      "retrieval acc@1": 0.4742764725455209,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "retrieval acc@1": 0.44346411005748204,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "SFT",
+      "retrieval acc@1": 0.14484328750968173,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "DPO",
+      "retrieval acc@1": 0.4934835295125155,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "RLVR",
+      "retrieval acc@1": 0.47313720285857325,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.26,
+      "retrieval acc@1": 0.3643986326766708,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.26,
+      "retrieval acc@1": 0.5084882738096489,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.26,
+      "retrieval acc@1": 0.4402951744232702,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "retrieval acc@1": 0.00036886757654002215,
+      "series": "chance (pool $n$=2711)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1": 0.00036886757654002215,
+      "series": "chance (pool $n$=2711)",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 22,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out $R^2$",
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "ylabel": "retrieval acc@1",
+        "xticklabels": [
+          "base",
+          "SFT",
+          "DPO",
+          "RLVR"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "own map at this stage",
+      "previous stage's map, applied as-is",
+      "map refit: previous contexts $\\to$ this stage's answers",
+      "chance (pool $n$=2711)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
