@@ -34,6 +34,7 @@ schemas (the mat-family DV join still reads the REAL committed #2476 union npzs)
 from __future__ import annotations
 
 import argparse
+import hashlib
 import itertools
 import json
 import logging
@@ -97,10 +98,18 @@ CONFIG_BUNDLE = {
     "mat_k100": "#2476 matryoshka k=100 turn-averaged (65,536-wide)",
     "mat_k200": "#2476 matryoshka k=200 turn-averaged (65,536-wide)",
 }
+CFG_TICK = {  # MF-E: compact per-config bundle attribution for figure tick labels
+    "pt_max": "pt_max\n(andyrdt trainer_2, 131k)",
+    "pt_sum": "pt_sum\n(andyrdt trainer_2, 131k)",
+    "rep_ta": "rep_ta\n(replication TA, 32k)",
+    "mat_k100": "mat_k100\n(#2476 matryoshka, 65k)",
+    "mat_k200": "mat_k200\n(#2476 matryoshka, 65k)",
+}
 PAPER_REFERENCE = {
     "matching_accuracy": {"pt_max": 0.950, "rep_ta": 0.739},
     "coverage": {"avg": 0.879, "head_to_head": 0.797},
-    "embedding": {"pt_max": 0.663, "rep_ta": 0.617},
+    # plan §6 / paper Table: turn-averaged (rep_ta) = 0.663, per-token max = 0.617 at k=3
+    "embedding": {"pt_max": 0.617, "rep_ta": 0.663},
     "note": "Der et al. arXiv 2606.28548 reference points (their configs; plan §6)",
 }
 
@@ -261,9 +270,12 @@ def _hf_fetch(path_in_repo: str, dest_dir: Path, revision: str) -> Path:
 
 
 def _ensure_eval_inputs(args, io) -> Path:
-    """Resolve perfeature_rep.npz + covariates_{fam}.npz: --p1-eval-dir first, else a
-    revision-pinned HF fetch from {hf_prefix}/analysis_tensors/eval/ (fail-loud last)."""
-    names = ["perfeature_rep.npz"] + [f"covariates_{fam}.npz" for fam in DICTS]
+    """Resolve perfeature_rep.npz + regime_measured.json + covariates_{fam}.npz:
+    --p1-eval-dir first, else a revision-pinned HF fetch from
+    {hf_prefix}/analysis_tensors/eval/ (fail-loud last)."""
+    names = ["perfeature_rep.npz", "regime_measured.json"] + [
+        f"covariates_{fam}.npz" for fam in DICTS
+    ]
     if args.smoke:
         missing = [n for n in names if not (io.eval_in / n).exists()]
         assert not missing, f"smoke fixtures missing (run --phase smoke): {missing}"
@@ -295,12 +307,20 @@ def _load_dv(args, io, fam: str, floor: int) -> SimpleNamespace:
     eval_dir = _ensure_eval_inputs(args, io)
     if fam == "rep_ta":
         z = np.load(eval_dir / "perfeature_rep.npz")
+        # producer key set: turnsae_der.phase_perfeature_r2 savez (r2_map/counts/alive_f*;
+        # NO tier — the flat rep SAE has no matryoshka tiers). #2552 r2 g6-C1.
+        alive_key = f"alive_f{floor}"
+        required = {"feat_ids", "r2_map", "counts", alive_key}
+        missing = sorted(required - set(z.files))
+        assert not missing, (
+            f"perfeature_rep.npz missing producer keys {missing} — have {sorted(z.files)}"
+        )
         feat_ids = np.asarray(z["feat_ids"], np.int64)
-        r2 = np.asarray(z["r2"], np.float64)
-        counts = np.asarray(z["activity"], np.float64)
+        r2 = np.asarray(z["r2_map"], np.float64)
+        counts = np.asarray(z["counts"], np.float64)
         tier = None
-        panel = (counts >= floor) & np.isfinite(r2)
-        panel_rule = f"activity >= {floor} (perfeature_rep counts_sel) & finite r2"
+        panel = np.asarray(z[alive_key]).astype(bool) & np.isfinite(r2)
+        panel_rule = f"{alive_key} (producer alive mask) & finite r2_map"
     else:
         path = io.union_paths[fam]
         assert path.exists(), (
@@ -383,20 +403,24 @@ def _labels_status(args, io, fam: str, feat_ids: np.ndarray) -> tuple[np.ndarray
         if not item.startswith(pref):
             continue
         cls = rec["class"]
-        status_by_feat[int(item[len(pref) :])] = (
-            "valid"
-            if cls == "valid"
-            else ("malformed" if cls in ("parse_fail", "truncation") else cls)
-        )
+        if cls == "valid":
+            # semantic none is a VALID parse with field == none; the producer (phase_w3)
+            # EXCLUDES none features from `assignments`, so status must be derived from
+            # the per-item VALUE, never from absence-in-assignments (#2552 r2 g6-M2).
+            st = "none" if tuple(rec.get("value") or ()) == ("none", "none") else "valid"
+        elif cls in ("parse_fail", "truncation"):
+            st = "malformed"
+        else:
+            st = cls
+        status_by_feat[int(item[len(pref) :])] = st
     cats = np.empty(len(feat_ids), dtype=object)
     stats = np.empty(len(feat_ids), dtype=object)
     for i, f in enumerate(feat_ids):
         a = assigned.get(str(int(f)))
         st = status_by_feat.get(int(f), "unjudged")
-        if a is not None and a.get("category") in CATEGORIES:
+        if a is not None:
+            assert a.get("category") in CATEGORIES, (int(f), a)
             cats[i], stats[i] = a["category"], "valid"
-        elif a is not None:  # semantic none — a VALID parse with field == none
-            cats[i], stats[i] = "", "none"
         else:
             cats[i], stats[i] = "", st if st != "valid" else "malformed"
     return cats, stats
@@ -491,16 +515,20 @@ def _run_ladder(
     *,
     draws: int,
     depth: int,
-    rng: np.random.Generator,
+    seed_key: tuple[int, ...],
     with_nulls: bool,
     flexible_base: bool = False,
     draw_sink=None,
+    draw_probe=None,
     progress: str = "",
 ) -> dict:
     """Forward-selection partial ladder with Freedman–Lane within-quintile nulls.
 
-    Returns the run record; ``draw_sink(step, names, drawmat)`` persists per-draw
-    matrices the moment each step completes (checkpoint-per-unit)."""
+    Each step draws from an INDEPENDENT rng seeded ``[*seed_key, step]`` so a resumed
+    run reproduces the identical draw matrix per step (restartability, #2552 r2).
+    ``draw_sink(step, names, drawmat, obs)`` persists per-draw matrices the moment each
+    step completes (checkpoint-per-unit); ``draw_probe(step, names)`` returns a
+    fingerprint-matched persisted drawmat (or None) so completed steps are not redrawn."""
     n = y_rank.size
     if flexible_base:
         dummies = np.stack([(quint == q).astype(np.float64) for q in range(N_QUINT)], axis=1)
@@ -542,18 +570,24 @@ def _run_ladder(
             "df_all": {k: int(qcs[k].shape[1]) for k in names},
         }
         if with_nulls:
-            drawmat = np.empty((draws, len(names)), np.float32)
-            for s in range(0, draws, DRAW_CHUNK):
-                b = min(DRAW_CHUNK, draws - s)
-                e0p = _perm_within(rng, e0, quint, b)
-                ep = e0p - q_mat @ (q_mat.T @ e0p)
-                den = (ep**2).sum(axis=0)
-                for j, name in enumerate(names):
-                    qc = qcs[name]
-                    if qc.shape[1] == 0:
-                        drawmat[s : s + b, j] = 0.0
-                    else:
-                        drawmat[s : s + b, j] = ((qc.T @ ep) ** 2).sum(axis=0) / den
+            drawmat = draw_probe(t, names) if draw_probe is not None else None
+            resumed = drawmat is not None
+            if drawmat is None:
+                rng_t = np.random.default_rng([*seed_key, t])
+                drawmat = np.empty((draws, len(names)), np.float32)
+                for s in range(0, draws, DRAW_CHUNK):
+                    b = min(DRAW_CHUNK, draws - s)
+                    e0p = _perm_within(rng_t, e0, quint, b)
+                    ep = e0p - q_mat @ (q_mat.T @ e0p)
+                    den = (ep**2).sum(axis=0)
+                    for j, name in enumerate(names):
+                        qc = qcs[name]
+                        if qc.shape[1] == 0:
+                            drawmat[s : s + b, j] = 0.0
+                        else:
+                            drawmat[s : s + b, j] = ((qc.T @ ep) ** 2).sum(axis=0) / den
+                if draw_sink is not None:
+                    draw_sink(t, names, drawmat, obs)
             null_max = drawmat.max(axis=1)
             p95 = float(np.quantile(null_max, 0.95))
             rec.update(
@@ -569,10 +603,9 @@ def _run_ladder(
                         p95 * rec["residual_share"] >= rec["residual_share"]
                     ),
                     "n_draws": draws,
+                    "resumed_drawmat": resumed,
                 }
             )
-            if draw_sink is not None:
-                draw_sink(t, names, drawmat, obs)
         steps.append(rec)
         q_mat = np.column_stack([q_mat, qcs[pick]])  # qc ⊥ q_mat by construction
         e = e - qcs[pick] @ (qcs[pick].T @ e)
@@ -591,6 +624,64 @@ def _run_ladder(
         "final_design_rank": int(q_mat.shape[1]),
         "_final": (q_mat, e),  # stripped before JSON
     }
+
+
+def _draw_store(
+    draws_dir: Path,
+    fam: str,
+    tag: str,
+    feat_ids_sel: np.ndarray,
+    seed_key: tuple[int, ...],
+    draws: int,
+    depth: int,
+):
+    """Fingerprinted per-(step, run-tag) draw-matrix store -> (probe, sink).
+
+    The resume predicate matches the FULL generating regime — fam/tag/draws/seed/depth,
+    the panel's file-read int64 feature ids (sha over pinned-dtype bytes; never a
+    recomputed float array), plus step + candidate names — so a stale or re-scoped
+    drawmat is recomputed, never silently reused (#2552 r2 ladder-restartability)."""
+    fid = np.ascontiguousarray(np.asarray(feat_ids_sel, np.int64))
+    fp = {
+        "fam": fam,
+        "tag": tag,
+        "draws": int(draws),
+        "seed_key": [int(s) for s in seed_key],
+        "depth": int(depth),
+        "n": int(fid.size),
+        "feat_sha": hashlib.sha256(fid.tobytes()).hexdigest(),
+    }
+
+    def _path(step: int) -> Path:
+        return draws_dir / f"step{step}_{fam}{tag}_drawmatrix.npz"
+
+    def _want(step: int, names) -> str:
+        return json.dumps({**fp, "step": int(step), "names": list(names)}, sort_keys=True)
+
+    def probe(step: int, names) -> np.ndarray | None:
+        p = _path(step)
+        if not p.exists():
+            return None
+        with np.load(p, allow_pickle=False) as z:
+            if "fingerprint" not in z.files or str(z["fingerprint"]) != _want(step, names):
+                return None
+            print(f"[ladder] resume drawmat {p.name}", flush=True)
+            return np.asarray(z["drawmat"], np.float32)
+
+    def sink(step: int, names, drawmat: np.ndarray, obs: dict) -> None:
+        from explore_persona_space.atomic_io import savez_atomic
+
+        savez_atomic(
+            _path(step),
+            drawmat=drawmat,
+            covariate_names=np.asarray(names),
+            observed=np.asarray([obs[k] for k in names], np.float64),
+            n_draws=np.int64(drawmat.shape[0]),
+            seed=np.int64(seed_key[0]),
+            fingerprint=np.asarray(_want(step, names)),
+        )
+
+    return probe, sink
 
 
 def _pilot_block(y_rank, log_act, quint, block: np.ndarray, draws: int) -> float:
@@ -669,29 +760,18 @@ def phase_ladder(args) -> None:
 
         runs: dict[str, dict] = {}
 
-        def _sink(tag):
-            def sink(step, names, drawmat, obs):
-                from explore_persona_space.atomic_io import savez_atomic
-
-                stem = f"step{step}_{fam}{tag}_drawmatrix.npz"
-                savez_atomic(
-                    io.draws / stem,
-                    drawmat=drawmat,
-                    covariate_names=np.asarray(names),
-                    observed=np.asarray([obs[k] for k in names], np.float64),
-                    n_draws=np.int64(drawmat.shape[0]),
-                    seed=np.int64(SEED_LADDER),
-                )
-
-            return sink
-
         def _go(
             tag, idx, include_category, *, exclude=(), flexible=False, nulls=True, seed_extra=0
         ):
             nonlocal unit
             unit += 1
             y, log_act, quint, blocks, notes = _prep(idx, include_category, exclude)
-            rng = np.random.default_rng([SEED_LADDER, DICTS.index(fam), seed_extra])
+            seed_key = (SEED_LADDER, DICTS.index(fam), seed_extra)
+            probe = sink = None
+            if nulls:
+                probe, sink = _draw_store(
+                    io.draws, fam, tag, dv.feat_ids[idx], seed_key, draws, LADDER_DEPTH
+                )
             rec = _run_ladder(
                 y,
                 log_act,
@@ -699,10 +779,11 @@ def phase_ladder(args) -> None:
                 blocks,
                 draws=draws,
                 depth=LADDER_DEPTH,
-                rng=rng,
+                seed_key=seed_key,
                 with_nulls=nulls,
                 flexible_base=flexible,
-                draw_sink=_sink(tag if tag != "" else "") if nulls else None,
+                draw_sink=sink,
+                draw_probe=probe,
                 progress=f"{unit}/24 {fam}:{tag or 'primary'}",
             )
             rec["covariate_notes"] = notes
@@ -1132,7 +1213,6 @@ def _delta_reads(
             }
         )
     wins = losses = 0
-    per_turn: list[int] = []
     for r in pair_rows:
         if not r.get("valid"):
             continue
@@ -1144,10 +1224,8 @@ def _delta_reads(
             continue
         if r["winner"] == "rep_ta":
             wins += 1
-            per_turn.append(1)
         else:
             losses += 1
-            per_turn.append(0)
     n_cov = wins + losses
     if n_cov:
         rate = wins / n_cov
@@ -1178,13 +1256,33 @@ def phase_replication(args) -> None:
     draws = int(args.draws)
     match_path = io.dere_in / "matching_perturn.json"
     pair_path = io.dere_in / "pairwise_perturn.json"
-    for p in (match_path, pair_path, io.regime_path):
-        assert p.exists(), f"replication input missing: {p}"
+    g2_path = io.agg_in / "g2_decision.json"
+    for p in (match_path, pair_path, io.regime_path, g2_path):
+        assert p.exists(), (
+            f"replication input missing: {p} — the REALIZED eval regime (ids/sha/counts) "
+            "derives from g2_decision.json, never the committed regime.json (#2552 r2)"
+        )
     match_doc = json.loads(match_path.read_text())
     pair_doc = json.loads(pair_path.read_text())
-    regime = json.loads(io.regime_path.read_text())
+    regime = json.loads(io.regime_path.read_text())  # committed reference, reported only
+    # measured P1 regime (canonical resolution path — local dir / HF fetch): carries
+    # BOTH reconstruction FVEs (#2552 r2 codex M-trainer2-fve)
+    measured = json.loads((_ensure_eval_inputs(args, io) / "regime_measured.json").read_text())
+    g2 = json.loads(g2_path.read_text())
+    for k in ("eval_ids", "eval_ids_sha256", "n_eval_realized"):
+        assert k in g2, f"g2_decision.json missing key {k!r} — have {sorted(g2)}"
+    eval_ids = np.asarray(g2["eval_ids"], np.int64)
+    assert eval_ids.size == int(g2["n_eval_realized"]), (
+        eval_ids.size,
+        g2["n_eval_realized"],
+    )
     match_rows = match_doc["rows"]
     pair_rows = pair_doc["rows"]
+    realized = {int(r) for r in eval_ids}
+    stray = ({int(r["row_id"]) for r in match_rows} | {int(r["row_id"]) for r in pair_rows}) - (
+        realized
+    )
+    assert not stray, f"per-turn rows outside the realized G2 eval set: {sorted(stray)[:5]}"
     # per-config accuracy + Wilson
     per_config = {}
     for cfg in JW.CONFIGS:
@@ -1218,9 +1316,14 @@ def phase_replication(args) -> None:
                 "wilson_ci95": [lo, hi],
             }
     pooled = _delta_reads(match_rows, pair_rows, None, draws)
-    # LMSYS-only advisory subset (prov 0 = lmsys)
+    assert args.smoke or (
+        pooled.get("n_complete_pairs", 0) > 0 and pooled.get("n_cov_trials", 0) > 0
+    ), (
+        "0 complete rep_ta/pt_max pairs (or 0 coverage trials) in the pooled read — "
+        f"matching/pairwise rows missing or all-invalid: {pooled}"
+    )
+    # LMSYS-only advisory subset (prov 0 = lmsys), over the REALIZED eval ids
     prov = _prov_u8(args, io)
-    eval_ids = np.asarray(regime["eval_ids"], np.int64)
     assert prov.size > int(eval_ids.max()), (prov.size, int(eval_ids.max()))
     lmsys_rows = {int(r) for r in eval_ids if prov[int(r)] == 0}
     advisory = _delta_reads(match_rows, pair_rows, lmsys_rows, draws)
@@ -1234,26 +1337,43 @@ def phase_replication(args) -> None:
         ("w6_mean_rank", io.agg_in / "w6_ranking_perturn.json"),
         ("w7_calibration", io.agg_in / "w7_calibration.json"),
         ("embedding_coverage", io.dere_in / "embedding_coverage.json"),
-        ("g2_decision", io.agg_in / "g2_decision.json"),
     ):
         if path.exists():
             d = json.loads(path.read_text())
+            if name == "embedding_coverage":
+                # --tiny-model is a smoke-only twin; its coverage numbers must never
+                # ride a production replication read (#2552 r2 g6-M3)
+                assert args.smoke or not d.get("tiny_model_smoke", False), (
+                    f"{path} was produced under --tiny-model (tiny_model_smoke: true) — "
+                    "refuse in production; rerun P4 with the real embedder"
+                )
             optional[name] = d.get("summary", d.get("instruments", d))
         else:
             optional[name] = f"absent - {path.name} not produced yet"
     doc = {
         "registered_carrier": "POOLED (LMSYS+WildChat) read",
-        "n_eval_realized": int(regime["n_eval"]),
-        "eval_ids_sha256": regime["eval_ids_sha256"],
+        "n_eval_realized": int(g2["n_eval_realized"]),
+        "eval_ids_sha256": g2["eval_ids_sha256"],
+        "n_eval_committed": int(regime["n_eval"]),
+        "g2_descoped": bool(g2.get("descoped", False)),
         "chance_matching": match_doc.get("summary", {}).get("chance", 0.1),
         "per_config_matching": per_config,
         "pairwise_win_matrix": win_matrix,
         "pooled": pooled,
         "lmsys_only_advisory": advisory,
         "paper_reference": PAPER_REFERENCE,
+        "reconstruction_fve": {
+            "trainer2_fve_evalpass": measured.get("trainer2_fve_evalpass"),
+            "replication_sae_val_var_fve": measured.get("rep_sae_val_var_fve"),
+            "note": (
+                "trainer_2 on-corpus eval-pass FVE vs the replication TA SAE's holdout "
+                "var-FVE — both global fp64 per-dim unbiased variance (T._recon_fve parity)"
+            ),
+        },
         "optional_inputs": optional,
-        "n_lmsys": int(regime.get("n_lmsys", -1)),
-        "n_wildchat": int(regime.get("n_wildchat", -1)),
+        "g2_decision": {k: v for k, v in g2.items() if k != "eval_ids"},
+        "n_lmsys": int((prov[eval_ids] == 0).sum()),
+        "n_wildchat": int((prov[eval_ids] == 1).sum()),
         **_meta("p3-replication"),
     }
     _write_json(io.dere_out / "replication_stats.json", doc)
@@ -1373,8 +1493,12 @@ def phase_figures(args) -> None:
                 v = [cell[key][c]["effect"] for c in names]
                 ci = np.array([cell[key][c]["ci95"] for c in names])
             else:
+                # raw median is None for an empty class — plot as NaN, never TypeError
                 v = [cell[key][c]["median"] for c in names]
-                ci = np.array([cell[key][c]["ci95"] for c in names])
+                ci = np.array(
+                    [[np.nan if q is None else q for q in cell[key][c]["ci95"]] for c in names]
+                )
+            v = [np.nan if x_ is None else x_ for x_ in v]
             x = np.arange(5)
             v = np.asarray(v, np.float64)
             yerr = np.abs(ci.T - v[None, :])
@@ -1456,9 +1580,9 @@ def phase_figures(args) -> None:
         if cfg in cfgs:
             ax.scatter([cfgs.index(cfg)], [ref], marker="_", s=300, color="k", zorder=3)
     ax.axhline(rep["chance_matching"], color="grey", ls=":", lw=1)
-    ax.set_xticks(x, cfgs, rotation=20, ha="right", fontsize=7)
+    ax.set_xticks(x, [CFG_TICK.get(c, c) for c in cfgs], rotation=20, ha="right", fontsize=6)
     ax.set_ylabel("10-way matching accuracy")
-    ax.set_title("Matching accuracy (black dash = Der et al. reference)")
+    ax.set_title("Matching accuracy, top-100 judged lists (black dash = Der et al. reference)")
     fig.tight_layout()
     save(fig, "matching_accuracy", dir=io.figs)
     plt.close(fig)
@@ -1473,9 +1597,10 @@ def phase_figures(args) -> None:
             mat[ia, ib] = cell["win_rate_first"]
             mat[ib, ia] = 1.0 - cell["win_rate_first"]
     im = ax.imshow(mat, vmin=0, vmax=1, cmap="RdBu_r")
-    ax.set_xticks(range(len(JW.CONFIGS)), JW.CONFIGS, rotation=40, ha="right", fontsize=7)
-    ax.set_yticks(range(len(JW.CONFIGS)), JW.CONFIGS, fontsize=7)
-    ax.set_title("Pairwise coverage win rate (row beats column)")
+    ticks = [CFG_TICK.get(c, c) for c in JW.CONFIGS]
+    ax.set_xticks(range(len(JW.CONFIGS)), ticks, rotation=40, ha="right", fontsize=5.5)
+    ax.set_yticks(range(len(JW.CONFIGS)), ticks, fontsize=5.5)
+    ax.set_title("Pairwise coverage win rate, top-100 judged lists (row beats column)")
     fig.colorbar(im, ax=ax, shrink=0.85)
     save(fig, "pairwise_win_matrix", dir=io.figs)
     plt.close(fig)
@@ -1487,10 +1612,16 @@ def phase_figures(args) -> None:
         mr = w6["mean_rank"]
         cfgs = [c for c in JW.CONFIGS if c in mr and np.isfinite(mr[c])]
         ax.bar(range(len(cfgs)), [mr[c] for c in cfgs], color=cols[: len(cfgs)])
-        ax.set_xticks(range(len(cfgs)), cfgs, rotation=20, ha="right", fontsize=7)
+        ax.set_xticks(
+            range(len(cfgs)),
+            [CFG_TICK.get(c, c) for c in cfgs],
+            rotation=20,
+            ha="right",
+            fontsize=6,
+        )
         ax.set_ylabel("mean rank (1 = best)")
         ax.invert_yaxis()
-        ax.set_title("5-way ranking (W6)")
+        ax.set_title("5-way ranking (W6), top-100 judged lists")
         fig.tight_layout()
         save(fig, "mean_rank", dir=io.figs)
         plt.close(fig)
@@ -1522,12 +1653,40 @@ def phase_figures(args) -> None:
                 color=cols[j],
                 label=f"top-{k.split('_')[-1]}",
             )
-        ax.set_xticks(np.arange(len(cfgs)) + 0.4, cfgs, rotation=20, ha="right", fontsize=7)
+        ax.set_xticks(
+            np.arange(len(cfgs)) + 0.4,
+            [CFG_TICK.get(c, c) for c in cfgs],
+            rotation=20,
+            ha="right",
+            fontsize=6,
+        )
         ax.set_ylabel("mean top-k cosine")
         ax.legend(fontsize=7)
-        ax.set_title("Embedding coverage (Qwen3-Embedding-8B)")
+        ax.set_title("Embedding coverage (Qwen3-Embedding-8B), top-100 judged lists")
         fig.tight_layout()
         save(fig, "embedding_coverage", dir=io.figs)
+        plt.close(fig)
+
+    # 12b. reconstruction FVEs — trainer_2 eval-pass vs replication SAE holdout
+    # (#2552 r2 codex M-trainer2-fve: both reported, T._recon_fve semantics)
+    fve_pair = rep.get("reconstruction_fve", {})
+    fve_vals = [
+        fve_pair.get("trainer2_fve_evalpass"),
+        fve_pair.get("replication_sae_val_var_fve"),
+    ]
+    if any(v is not None for v in fve_vals):
+        fig, ax = plt.subplots(figsize=(4.4, 3.0))
+        labels = [
+            "trainer_2\n(andyrdt, eval-pass)",
+            "replication TA SAE\n(holdout val)",
+        ]
+        vals = [np.nan if v is None else float(v) for v in fve_vals]
+        ax.bar(np.arange(2), vals, color=[cols[0], cols[1]])
+        ax.set_xticks(np.arange(2), labels, fontsize=7)
+        ax.set_ylabel("var-FVE")
+        ax.set_title("Reconstruction FVE (global fp64 per-dim variance)")
+        fig.tight_layout()
+        save(fig, "reconstruction_fve", dir=io.figs)
         plt.close(fig)
 
     # 13. per-covariate scatters with decile medians (primary panel, per dictionary)
@@ -1589,7 +1748,9 @@ def phase_upload(args) -> None:
         shard_glob="*.npz",
         verify=True,
         delete_local=False,
-        resume_skip=True,
+        # presence+size resume is a stale-mirror channel for same-size re-runs (#2225
+        # class): draw matrices are cheap to re-push, so always overwrite
+        resume_skip=False,
     )
     if not res.rerouted:
         expected = [f"{prefix}/{q.name}" for q in files]
@@ -1635,7 +1796,9 @@ def _synth_inputs(args, io) -> None:
     rng = np.random.default_rng(TASK_ID)
     for d in (io.eval_in, io.agg_in, io.raw_w3, io.dere_in):
         d.mkdir(parents=True, exist_ok=True)
-    # rep_ta perfeature (producer: vendored turnavg_sae._write_perfeature key set)
+    # rep_ta perfeature — the P1.4 producer's LITERAL key set (turnsae_der.
+    # phase_perfeature_r2 savez_atomic call; NO tier / r2 / activity keys — a
+    # consumer-keyed fixture self-certifies, #2379 class / #2552 r2 g6-C1)
     n_rep, width_rep = 300, 32768
     feat_ids = np.sort(rng.choice(width_rep, size=n_rep, replace=False)).astype(np.int64)
     counts = np.concatenate(
@@ -1645,15 +1808,28 @@ def _synth_inputs(args, io) -> None:
     np.savez(
         io.eval_in / "perfeature_rep.npz",
         feat_ids=feat_ids,
-        r2=r2,
+        r2_map=r2,
         spearman=r2 * 0.9,
         ss_tot=rng.random(n_rep),
-        activity=counts.astype(np.float64),
+        r2_ib=r2 * 0.5,
+        r2_trainmean=np.zeros(n_rep),
         r2_lmsys=r2,
         r2_wildchat=r2,
-        tier=np.zeros(n_rep, np.int64),
+        r2_corpusfold=r2 * 0.8,
+        null_r2_map=np.zeros(n_rep),
+        null_r2_ib=np.zeros(n_rep),
+        counts=counts,
+        alive_f240=(counts >= 240),
+        alive_f1200=(counts >= 1200),
+        shuffle_seeds=np.asarray([0, 1, 2], np.int64),
         n_fit_rows=np.int64(120000),
-        alive_floor=np.int64(240),
+        n_holdout=np.int64(2000),
+    )
+    # measured P1 regime (producer: turnsae _measured_update) — carries both
+    # reconstruction FVEs for the replication doc (#2552 r2 codex M-trainer2-fve)
+    _write_json(
+        io.eval_in / "regime_measured.json",
+        {"trainer2_fve_evalpass": 0.71, "rep_sae_val_var_fve": 0.62, "rep_sae_val_nmse": 0.38},
     )
     # covariates per family — full-width arrays (producer: phase_covariates key set)
     widths = {"rep_ta": width_rep, "mat_k100": 65536, "mat_k200": 65536}
@@ -1721,28 +1897,43 @@ def _synth_inputs(args, io) -> None:
             per[item] = rec
     for fam in DICTS:
         pref = f"w3-{fam}-f"
-        assigned = {
-            item[len(pref) :]: {"field": rec["value"][0], "category": rec["value"][1]}
+        valid_recs = {
+            item[len(pref) :]: rec
             for item, rec in per.items()
             if item.startswith(pref) and rec["class"] == "valid"
+        }
+        # producer parity (phase_w3): semantic-none features are EXCLUDED from
+        # `assignments` (counted in n_none) — the fixture must mirror that, or the
+        # consumer's none-derivation is never exercised (#2552 r2 g6-M2)
+        assigned = {
+            fid: {"field": rec["value"][0], "category": rec["value"][1]}
+            for fid, rec in valid_recs.items()
+            if rec["value"][1] != "none"
         }
         _write_json(
             io.agg_in / f"w3_categories_{fam}.json",
             {
                 "dictionary": fam,
-                "n_assigned": sum(1 for a in assigned.values() if a["category"] != "none"),
-                "n_none": sum(1 for a in assigned.values() if a["category"] == "none"),
-                "n_dropped": 0,
+                "n_assigned": len(assigned),
+                "n_none": sum(1 for r in valid_recs.values() if r["value"][1] == "none"),
+                "n_dropped": sum(
+                    1
+                    for item, rec in per.items()
+                    if item.startswith(pref) and rec["class"] != "valid"
+                ),
                 "assignments": assigned,
             },
         )
     # replication fixtures (producer shapes: phase_w4 / phase_w5 / phase_w6 writers)
     n_turns = 24
     row_ids = np.sort(rng.choice(20000, size=n_turns, replace=False))
+    # G2 realized subset != committed regime — exercises the g2-derivation path (#2552 r2):
+    # per-turn rows exist ONLY for the realized ids; regime.json keeps the committed 24
+    realized_ids = row_ids[: n_turns - 4]
     acc_true = {"pt_max": 0.9, "pt_sum": 0.8, "rep_ta": 0.7, "mat_k100": 0.6, "mat_k200": 0.55}
     m_rows = []
     for cfg in JW.CONFIGS:
-        for rid in row_ids:
+        for rid in realized_ids:
             valid = rng.random() > 0.08
             row = {
                 "row_id": int(rid),
@@ -1763,13 +1954,13 @@ def _synth_inputs(args, io) -> None:
         io.dere_in / "matching_perturn.json",
         {
             "rows": m_rows,
-            "summary": {"chance": 0.1, "n_eval_realized": n_turns},
+            "summary": {"chance": 0.1, "n_eval_realized": int(realized_ids.size)},
         },
     )
     p_rows = []
     for a_i, a in enumerate(JW.CONFIGS):
         for b in JW.CONFIGS[a_i + 1 :]:
-            for rid in row_ids:
+            for rid in realized_ids:
                 valid = rng.random() > 0.08
                 row = {
                     "row_id": int(rid),
@@ -1802,6 +1993,16 @@ def _synth_inputs(args, io) -> None:
             "n_eval": n_turns,
             "n_lmsys": int(n_turns // 2),
             "n_wildchat": int(n_turns - n_turns // 2),
+        },
+    )
+    _write_json(
+        io.agg_in / "g2_decision.json",
+        {
+            "eval_ids": [int(r) for r in realized_ids],
+            "eval_ids_sha256": "smoke-fixture-g2",
+            "n_eval_realized": int(realized_ids.size),
+            "descoped": True,
+            "rep_panel_ok": True,
         },
     )
     prov = rng.integers(0, 2, size=20001).astype(np.uint8)
