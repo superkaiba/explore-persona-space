@@ -76,6 +76,7 @@ import argparse
 import hashlib
 import json
 import logging
+import re
 import shutil
 import sys
 import time
@@ -275,18 +276,48 @@ def _assert_directions_upload_headroom(n_files: int, n_bytes: int) -> None:
     )
 
 
-def _verify_directions_upload(expected_names: set[str]) -> None:
-    """Exact-set post-upload verification BEFORE the phase sentinel (r1 Major:
-    a partial/failed append must never be marked complete): scoped listing of
-    the bank prefix must contain EVERY expected .pt name, and the round prefix
-    must contain ladder_report.json."""
+# Ladder filename grammar (this round's OWN bank-append scope): the exact-set
+# upload verification filters the shared parent prefix to THESE names, so
+# legitimate parent files (pre/ctxext slugs, manifests) never false-fail it.
+_LADDER_PT_RE = re.compile(
+    rf"^(?:{'|'.join(ROUND_BEHAVIORS)})_(?:{'|'.join(LADDER_SLUGS)})_L\d+\.pt$"
+)
+
+
+def _registered_direction_names(layers) -> set[str]:
+    """The registered expected direction-file name set for a layer list —
+    independently constructed from the round registry (ROUND_BEHAVIORS ×
+    LADDER_SLUGS × layers), NEVER a local glob: on a crash-window re-entry
+    the local files are complete while the remote append may not be."""
+    return {
+        f"{b}_{slug}_L{int(ly)}.pt"
+        for b in ROUND_BEHAVIORS
+        for slug in LADDER_SLUGS
+        for ly in layers
+    }
+
+
+def _verify_directions_upload(layers) -> None:
+    """EXACT-SET post-upload verification BEFORE the phase sentinel (r1 Major:
+    a partial/failed append must never be marked complete; r2 concern
+    ladder-directions-upload-not-exact): the scoped bank-prefix listing,
+    filtered to the ladder filename grammar, must EQUAL the registered
+    expected set — missing AND extra ladder-grammar names both FAIL (parent
+    files outside the grammar are ignored) — and the round prefix must
+    contain ladder_report.json."""
+    expected = _registered_direction_names(layers)
     prefix = f"{i2254._hf_prefix()}/directions"
-    remote = {Path(e.path).name for e in fk._hub_tree(prefix)}
-    missing = sorted(set(expected_names) - remote)
-    if missing:
+    remote_ladder = {
+        n for n in (Path(e.path).name for e in fk._hub_tree(prefix)) if _LADDER_PT_RE.match(n)
+    }
+    missing = sorted(expected - remote_ladder)
+    extras = sorted(remote_ladder - expected)
+    if missing or extras:
         raise LadderHaltError(
-            f"directions upload verification FAIL: {len(missing)}/{len(expected_names)} "
-            f"direction file(s) absent at {prefix} (e.g. {missing[:6]})"
+            f"directions upload verification FAIL at {prefix}: exact-set mismatch on the "
+            f"ladder-grammar scope — {len(missing)}/{len(expected)} expected name(s) absent "
+            f"(e.g. {missing[:6]}); {len(extras)} unexpected ladder-grammar name(s) present "
+            f"(e.g. {extras[:6]})"
         )
     round_names = {Path(e.path).name for e in fk._hub_tree(_round_hf_prefix())}
     if "ladder_report.json" not in round_names:
@@ -295,9 +326,10 @@ def _verify_directions_upload(expected_names: set[str]) -> None:
             f"{_round_hf_prefix()}"
         )
     logger.info(
-        "[%s] upload verification PASS: %d direction files + ladder_report present remotely",
+        "[%s] upload verification PASS: exact ladder set (%d files) + ladder_report "
+        "present remotely",
         SENTINEL_DIRECTIONS,
-        len(expected_names),
+        len(expected),
     )
 
 
@@ -593,9 +625,12 @@ def phase_directions(args) -> None:
     file through the production loader, persist ladder_report.json, copy the
     bank files where ``_steer_hook_factory`` reads them, upload, and VERIFY
     the exact remote set before the sentinel. Idempotent: a completed prior
-    run is skipped (sentinel re-written) unless --force."""
-    from concurrent.futures import ProcessPoolExecutor, as_completed
-
+    LOCAL run skips ONLY the SVD recompute (--force recomputes) — the
+    idempotent upload + exact-set remote verification run on EVERY path
+    before any success sentinel (r2 blocker
+    ladder-directions-upload-verify-bypass: a crash between the local report
+    write and the upload must never let a re-entry declare the HF
+    deliverable durable)."""
     out_root = i2254._out_root(args)
     rroot = round_root(out_root)
     layers = sorted(int(x) for x in args.layers)
@@ -606,23 +641,59 @@ def phase_directions(args) -> None:
             f"directions runs BOTH round behaviors {ROUND_BEHAVIORS} (gate (ii) spans both); "
             f"got {args.behaviors}"
         )
-    if _directions_done(args, rroot, layers, behaviors):
-        n = len(behaviors) * len(LADDER_SLUGS) * len(layers)
-        logger.info(
-            "[%s] prior completed run found (report + %d files) — skipping recompute "
-            "(--force recomputes)",
-            SENTINEL_DIRECTIONS,
-            n,
-        )
-        i2254._write_sentinel(
-            out_root,
-            SENTINEL_DIRECTIONS,
-            "done",
-            {"n_direction_files": n, "layers": len(layers), "skipped_prior_complete": True},
-        )
-        i2254._breadcrumb(SENTINEL_DIRECTIONS, status="done", files=n, skipped=1)
-        return
     fk._wipe_stale_sentinels([SENTINEL_DIRECTIONS])
+    t0 = time.time()
+    skipped_prior = _directions_done(args, rroot, layers, behaviors)
+    if skipped_prior:
+        n_files = len(behaviors) * len(LADDER_SLUGS) * len(layers)
+        logger.info(
+            "[%s] prior completed LOCAL run found (report + %d files) — skipping the SVD "
+            "recompute ONLY (--force recomputes); upload + remote verification still run "
+            "before the sentinel (local completeness never certifies remote durability)",
+            SENTINEL_DIRECTIONS,
+            n_files,
+        )
+    else:
+        n_files = _compute_directions(args, out_root, rroot, layers, behaviors)
+    dir_out = rroot / "directions_ladder"
+    # Uploads on BOTH the fresh and the re-entry path (phase-D end, BEFORE
+    # steer — §-phase-order persistence): the 224 .pt APPEND to the parent
+    # bank prefix (zero loader change — §4.1; an idempotent re-append on
+    # re-entry), the report to the round prefix. ONE bulk commit each, never
+    # per-file loops.
+    _UPLOAD(dir_out, f"{i2254._hf_prefix()}/directions", ["*.pt"])
+    _UPLOAD(rroot, _round_hf_prefix(), ["ladder_report.json"])
+    # Exact-set remote verification BEFORE the sentinel (r1 Major): a partial
+    # append is never marked complete — on re-entry either.
+    _UPLOAD_VERIFY(layers)
+    i2254._write_sentinel(
+        out_root,
+        SENTINEL_DIRECTIONS,
+        "done",
+        {
+            "n_direction_files": n_files,
+            "layers": len(layers),
+            "skipped_prior_complete": bool(skipped_prior),
+        },
+    )
+    i2254._breadcrumb(
+        SENTINEL_DIRECTIONS,
+        status="done",
+        files=n_files,
+        skipped=int(skipped_prior),
+        wall_s=round(time.time() - t0, 1),
+    )
+
+
+def _compute_directions(args, out_root: Path, rroot: Path, layers, behaviors) -> int:
+    """The build core of phase D (fresh path only): headroom preflights, HALT
+    gates (i)/(ii)/(iii), the ProcessPool ladder build, the bank copy +
+    production-loader round-trip, diagnostics, and the LOCAL
+    ladder_report.json write. Returns the built file count. Upload + remote
+    verification + the sentinel live in ``phase_directions`` so the re-entry
+    path can never bypass them."""
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
     i2254._assert_phase_headroom(out_root, 1.0, SENTINEL_DIRECTIONS)
     maps_dir = _maps_dir(args)
     i2254._breadcrumb(SENTINEL_DIRECTIONS, layers=len(layers), behaviors=len(behaviors))
@@ -760,24 +831,7 @@ def phase_directions(args) -> None:
         },
     }
     i2254._write_json_atomic(rroot / "ladder_report.json", _ladder_metadata(report))
-
-    # Uploads (phase-D end, BEFORE steer — §-phase-order persistence): the 224
-    # .pt APPEND to the parent bank prefix (zero loader change — §4.1), the
-    # report to the round prefix. ONE bulk commit each, never per-file loops.
-    _UPLOAD(dir_out, f"{i2254._hf_prefix()}/directions", ["*.pt"])
-    _UPLOAD(rroot, _round_hf_prefix(), ["ladder_report.json"])
-    # Exact-set remote verification BEFORE the sentinel (r1 Major): a partial
-    # append is never marked complete.
-    _UPLOAD_VERIFY({p.name for p in dir_out.glob("*.pt")})
-    i2254._write_sentinel(
-        out_root,
-        SENTINEL_DIRECTIONS,
-        "done",
-        {"n_direction_files": n_files, "layers": len(layers)},
-    )
-    i2254._breadcrumb(
-        SENTINEL_DIRECTIONS, status="done", files=n_files, wall_s=round(time.time() - t0, 1)
-    )
+    return n_files
 
 
 # ---------------------------------------------------------------------------
@@ -901,11 +955,16 @@ def _directions_fp(report: dict) -> str:
 
 def _assert_steer_preconditions(args, rroot: Path, bank_root: Path, cells: list[dict]) -> str:
     """Steer input contract, checked BEFORE any model init (r1 blocker
-    ladder-steer-precondition-post-model): (1) the directions sentinel at
-    status=done; (2) a successful ladder_report (every gate-(ii) parity cell
-    ≥ the threshold) covering every layer any registered cell injects; (3)
-    the exact expected direction file set present in the bank dir. Returns
-    the directions fingerprint folded into the steer regime fp."""
+    ladder-steer-precondition-post-model; r2 concern extends it with
+    report-IDENTITY checks): (1) the directions sentinel at status=done;
+    (2) a ladder_report that IS this registered regime's — current r_B pin,
+    the registered slug/behavior sets, the EXACT 4-cell gate-(ii) parity map
+    at/above threshold, and every per-layer arm row passing the residual +
+    loader-round-trip gates — covering every layer any registered cell
+    injects; (3) the exact expected direction file set present in the bank
+    dir. A stale/foreign/partial report is rejected here, never trusted
+    because files exist. Returns the directions fingerprint folded into the
+    steer regime fp."""
     sent = (
         Path(os.environ.get("EPM_SENTINEL_DIR", "/workspace/logs"))
         / f"issue-{i2254.ISSUE}-{SENTINEL_DIRECTIONS}.json"
@@ -916,7 +975,29 @@ def _assert_steer_preconditions(args, rroot: Path, bank_root: Path, cells: list[
             "run --phases directions first (never initialize the model on an unbuilt bank)"
         )
     report = _load_ladder_report(rroot)
-    for cell_key, cval in report["gates"]["rebuild_parity_cos"].items():
+    if report.get("rb_rev") != i2254.HF_REV:
+        raise LadderHaltError(
+            f"steer preconditions: ladder_report rb_rev {report.get('rb_rev')!r} != the "
+            f"registered r_B pin {i2254.HF_REV!r} — stale directions build"
+        )
+    if list(report.get("slugs", [])) != list(LADDER_SLUGS):
+        raise LadderHaltError(
+            f"steer preconditions: ladder_report slugs {report.get('slugs')!r} != the "
+            f"registered {list(LADDER_SLUGS)!r} — foreign/partial directions build"
+        )
+    if tuple(report.get("behaviors", ())) != ROUND_BEHAVIORS:
+        raise LadderHaltError(
+            f"steer preconditions: ladder_report behaviors {report.get('behaviors')!r} != "
+            f"the registered {ROUND_BEHAVIORS!r} — foreign/partial directions build"
+        )
+    parity = report["gates"]["rebuild_parity_cos"]
+    expected_parity = {f"{b}__L{ly}" for b in ROUND_BEHAVIORS for ly in PARITY_LAYERS}
+    if set(parity) != expected_parity:
+        raise LadderHaltError(
+            f"steer preconditions: ladder_report parity cells {sorted(parity)} != the "
+            f"registered gate-(ii) set {sorted(expected_parity)} — partial/foreign parity map"
+        )
+    for cell_key, cval in parity.items():
         if not (float(cval) >= PARITY_COS_MIN):
             raise LadderHaltError(
                 f"steer preconditions: ladder_report parity {cell_key}={cval} < "
@@ -943,6 +1024,27 @@ def _assert_steer_preconditions(args, rroot: Path, bank_root: Path, cells: list[
             f"steer preconditions: ladder_report n_direction_files="
             f"{report['n_direction_files']} != expected {len(expected)} for its layer set"
         )
+    # Gate-(i)/(iii) row content (r2 concern ladder-steer-precondition-post-
+    # model): every per-layer arm row must exist and PASS — a report whose
+    # rows fail residual/round-trip gates certifies nothing.
+    expected_arms = {f"{b}__{slug}" for b in ROUND_BEHAVIORS for slug in LADDER_SLUGS}
+    for ly_key in sorted(report["layers"], key=int):
+        arms = report["layers"][ly_key].get("arms", {})
+        if set(arms) != expected_arms:
+            raise LadderHaltError(
+                f"steer preconditions: ladder_report L{ly_key} arm rows {sorted(arms)} != "
+                f"the registered {sorted(expected_arms)} — partial/foreign directions build"
+            )
+        for key, row in arms.items():
+            if not (float(row["residual"]) <= RESIDUAL_RTOL) or not (
+                float(row["loader_roundtrip_cos"]) >= LOADER_ROUNDTRIP_MIN_COS
+            ):
+                raise LadderHaltError(
+                    f"steer preconditions: ladder_report L{ly_key} {key} gate row failed "
+                    f"(residual={row['residual']!r}, "
+                    f"loader_roundtrip_cos={row['loader_roundtrip_cos']!r}) — the "
+                    "directions build did not pass gates (i)/(iii)"
+                )
     bank_dir = Path(bank_root) / "directions"
     missing = sorted(n for n in expected if not (bank_dir / n).is_file())
     if missing:
@@ -1383,17 +1485,26 @@ def _judge_ladder_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
 
 
 def _enforce_judge_completeness(rroot: Path) -> dict:
-    """Rule-29 ENFORCEMENT (r1 blocker ladder-completeness-not-enforced):
-    persist the completeness block, then RAISE — wave_done.json withheld —
-    when any cell sits below the {COMPLETENESS_FLOOR} floor (API drops
-    correlated with content must never silently censor a cell)."""
+    """Rule-29 ENFORCEMENT (r1 blocker + r2 concern
+    ladder-completeness-not-enforced): persist the completeness block, then
+    RAISE — wave_done.json withheld — when any cell sits below the
+    {COMPLETENESS_FLOOR} floor OR carries no FINITE completeness value
+    (None / non-finite is a MISSING measurement, treated as below-floor,
+    never a pass: API drops correlated with content must never silently
+    censor a cell)."""
     judged_files = sorted((rroot / "judge" / "judged").glob("*.json"))
     block = i2254._completeness_block(judged_files, floor=COMPLETENESS_FLOOR)
+    non_finite = sorted(
+        cid for cid, fc in block["per_cell"].items() if fc is None or not np.isfinite(float(fc))
+    )
+    block["non_finite_cells"] = non_finite
+    block["below_floor_cells"] = sorted(set(block["below_floor_cells"]) | set(non_finite))
     i2254._write_json_atomic(rroot / "judge" / "completeness.json", _ladder_metadata(block))
     if block["below_floor_cells"]:
         raise RuntimeError(
             f"ladder judge: {len(block['below_floor_cells'])} cell(s) below the rule-29 "
-            f"completeness floor {COMPLETENESS_FLOOR} (e.g. {block['below_floor_cells'][:8]}) "
+            f"completeness floor {COMPLETENESS_FLOOR} — None/non-finite counts as "
+            f"below-floor ({len(non_finite)} such) — (e.g. {block['below_floor_cells'][:8]}) "
             "— wave_done.json WITHHELD; triage per judge/completeness.json remediation, "
             "re-issue, then re-run the judge phase"
         )
@@ -1464,6 +1575,21 @@ def phase_judge(args) -> None:
 # ---------------------------------------------------------------------------
 # phase: reduce (VM CPU; §3 verdict lattice; §6 conventions)
 # ---------------------------------------------------------------------------
+
+
+def _require_finite_completeness(cid: str, fic) -> float:
+    """Rule-29 reduce-entry refusal (r2 concern
+    ladder-completeness-not-enforced): a judged cell's frac_items_complete
+    must be a FINITE value >= {COMPLETENESS_FLOOR}; None / non-finite (a
+    missing measurement) is treated as below-floor, never a pass."""
+    val = None if fic is None else float(fic)
+    if val is None or not np.isfinite(val) or val < COMPLETENESS_FLOOR:
+        raise RuntimeError(
+            f"reduce: {cid} frac_items_complete {fic!r} is not a finite value >= "
+            f"{COMPLETENESS_FLOOR} — rule-29 below-floor judged artifact refused "
+            "(re-judge before reducing)"
+        )
+    return val
 
 
 def _ensure_reduce_git_inputs() -> None:
@@ -1650,8 +1776,6 @@ def phase_reduce(args) -> None:
     family, /11 within-arm), per-arm + all-44 selection-aware companions,
     intrusion/cap-hit sensitivity reads, and the §3 H1/H2 lattice with
     ``fresh_nulls: false``. The §12.19 parent-reference fixture runs FIRST."""
-    import re
-
     out_root = i2254._out_root(args)
     rroot = round_root(out_root)
     _ensure_reduce_git_inputs()
@@ -1693,14 +1817,10 @@ def phase_reduce(args) -> None:
                 f"reduce: {cid} has {len(cell_q)} questions vs floor "
                 f"{len(floor_q)} — a truncated grain is refused in every mode"
             )
-        fic = judged["accounting"]["frac_items_complete"]
-        if fic is not None and fic < COMPLETENESS_FLOOR:
-            # Independent rule-29 refusal (r1 blocker
-            # ladder-completeness-not-enforced): never reduce a censored cell.
-            raise RuntimeError(
-                f"reduce: {cid} frac_items_complete {fic:.3f} < {COMPLETENESS_FLOOR} — "
-                "rule-29 below-floor judged artifact refused (re-judge before reducing)"
-            )
+        # Independent rule-29 refusal (r1 blocker + r2 concern
+        # ladder-completeness-not-enforced): never reduce a censored cell;
+        # None/non-finite is a missing measurement, treated as below-floor.
+        fic = _require_finite_completeness(cid, judged["accounting"]["frac_items_complete"])
         sens = _intrusion_sensitivity(judged, gen_rec, rx, tok, floor_mean)
         row: dict = {
             "cell": cell,
@@ -2150,12 +2270,13 @@ def _fixture_upload(local_dir: Path, path_in_repo: str, allow=None) -> None:
     logger.info("[cpu-smoke] upload SKIPPED (fixture seam): %s -> %s", local_dir, path_in_repo)
 
 
-def _fixture_upload_verify(expected_names: set[str]) -> None:
+def _fixture_upload_verify(layers) -> None:
     """Seam stand-in for ``_verify_directions_upload`` (no network) — logs the
-    verification plan; the pod smoke runs the production verifier."""
+    registered exact-set verification plan; the pod smoke runs the production
+    verifier."""
     logger.info(
-        "[cpu-smoke] upload verification SKIPPED (fixture seam): %d expected names",
-        len(expected_names),
+        "[cpu-smoke] upload verification SKIPPED (fixture seam): %d registered names",
+        len(_registered_direction_names(layers)),
     )
 
 

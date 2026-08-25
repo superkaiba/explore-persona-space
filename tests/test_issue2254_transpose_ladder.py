@@ -278,7 +278,11 @@ def test_phase_directions_end_to_end_tiny(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ladder, "_UPLOAD", recording_upload)
     verifies: list[int] = []
-    monkeypatch.setattr(ladder, "_UPLOAD_VERIFY", lambda names: verifies.append(len(names)))
+    monkeypatch.setattr(
+        ladder,
+        "_UPLOAD_VERIFY",
+        lambda layers: verifies.append(len(ladder._registered_direction_names(layers))),
+    )
     headrooms: list[tuple[int, int]] = []
     monkeypatch.setattr(ladder, "_DIR_HEADROOM", lambda n, b: headrooms.append((n, b)))
     args = argparse.Namespace(
@@ -319,11 +323,127 @@ def test_phase_directions_end_to_end_tiny(tmp_path, monkeypatch):
     # report carries the regime identity the steer/judge fingerprint folds in
     assert report["rb_rev"] == i2254.HF_REV
     assert report["slugs"] == list(ladder.LADDER_SLUGS)
-    # idempotent skip (r1 concern ladder-directions-phase-no-skip): a second
-    # invocation recomputes nothing (no new uploads/headroom/verify calls)
+    # idempotent re-entry (r1 concern ladder-directions-phase-no-skip; r2
+    # blocker ladder-directions-upload-verify-bypass): a second invocation
+    # skips the SVD recompute (no new SVD-side headroom preflight) but MUST
+    # re-run the idempotent uploads + exact-set remote verification before
+    # re-writing the sentinel — local completeness never certifies remote
+    # durability.
     n_up, n_hr, n_vf = len(uploads), len(headrooms), len(verifies)
     ladder.phase_directions(args)
-    assert (len(uploads), len(headrooms), len(verifies)) == (n_up, n_hr, n_vf)
+    assert len(headrooms) == n_hr, "re-entry must not re-run the SVD-side compute preflight"
+    assert len(uploads) == n_up + 2, "re-entry must re-run BOTH idempotent uploads"
+    assert len(verifies) == n_vf + 1, "re-entry must re-run remote verification"
+    assert verifies[-1] == n_expected
+
+
+def test_directions_reentry_after_crash_before_upload_verifies(tmp_path, monkeypatch):
+    """Crash-window regression (r2 blocker ladder-directions-upload-verify-
+    bypass): run 1 completes LOCALLY but the remote verifier RAISES (the
+    crash window between the local report write and a durable upload) ⇒ no
+    done sentinel; the plan-registered re-entry MUST re-run upload +
+    verification, and only a PASSING verify writes status=done."""
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "logs"))
+    maps_dir = tmp_path / "maps"
+    rb = ladder.make_fixture_maps(maps_dir, layers=ladder.FIXTURE_LAYERS)
+    ladder.make_fixture_parent_bank(tmp_path, maps_dir, rb)
+    monkeypatch.setattr(ladder, "_RB_LOADER", lambda: rb)
+    monkeypatch.setattr(ladder, "_PARENT_VEC_LOADER", ladder._fixture_parent_vec_loader)
+    uploads: list[str] = []
+    monkeypatch.setattr(ladder, "_UPLOAD", lambda d, p, allow=None: uploads.append(p))
+    monkeypatch.setattr(ladder, "_DIR_HEADROOM", lambda n, b: None)
+    verify_layers: list[list[int]] = []
+
+    def failing_verify(layers):
+        verify_layers.append(sorted(int(x) for x in layers))
+        raise ladder.LadderHaltError("upload verification FAIL (simulated crash window)")
+
+    monkeypatch.setattr(ladder, "_UPLOAD_VERIFY", failing_verify)
+    args = argparse.Namespace(
+        out_root=str(tmp_path),
+        maps_dir=str(maps_dir),
+        layers=list(ladder.FIXTURE_LAYERS),
+        behaviors=list(ladder.ROUND_BEHAVIORS),
+        smoke=False,
+        fit_workers=2,
+        force=False,
+    )
+    with pytest.raises(ladder.LadderHaltError, match="verification FAIL"):
+        ladder.phase_directions(args)
+    sent = tmp_path / "logs" / f"issue-{i2254.ISSUE}-{ladder.SENTINEL_DIRECTIONS}.json"
+    assert not sent.exists(), "a failed verify must never leave a done sentinel"
+    # the local run IS complete on disk (skip predicate True) — yet re-entry
+    # must STILL upload + verify, and still refuse while the verify fails
+    rroot = tmp_path / ladder.FOLLOWUP_LABEL
+    assert ladder._directions_done(args, rroot, list(ladder.FIXTURE_LAYERS), ladder.ROUND_BEHAVIORS)
+    n_up = len(uploads)
+    with pytest.raises(ladder.LadderHaltError, match="verification FAIL"):
+        ladder.phase_directions(args)
+    assert len(verify_layers) == 2, "re-entry must call remote verification"
+    assert len(uploads) == n_up + 2, "re-entry must re-run BOTH idempotent uploads"
+    assert not sent.exists()
+    # verify now passes ⇒ the re-entry path writes the done sentinel (with
+    # the skip flag), upload/verify having run FIRST
+    ok_layers: list[list[int]] = []
+    monkeypatch.setattr(
+        ladder, "_UPLOAD_VERIFY", lambda layers: ok_layers.append(sorted(map(int, layers)))
+    )
+    ladder.phase_directions(args)
+    assert ok_layers == [sorted(ladder.FIXTURE_LAYERS)]
+    payload = json.loads(sent.read_text())
+    assert payload["status"] == "done"
+    assert payload["skipped_prior_complete"] is True
+
+
+# ---------------------------------------------------------------------------
+# _verify_directions_upload — PRODUCTION body (r2 concern
+# ladder-directions-upload-not-exact): exact-set on the grammar-filtered
+# scope; fake ONLY the fk._hub_tree network boundary (signature-conformant)
+# ---------------------------------------------------------------------------
+
+
+class _TreeEntry:
+    def __init__(self, path: str):
+        self.path = path
+
+
+def _fake_hub_tree_factory(bank_names: set[str], round_names: set[str]):
+    """Signature mirror of ``fk._hub_tree`` serving the bank prefix vs the
+    round prefix from two fixed name sets."""
+
+    def fake_hub_tree(prefix: str, *, recursive: bool = False) -> list:
+        names = round_names if prefix == ladder._round_hf_prefix() else bank_names
+        return [_TreeEntry(f"{prefix}/{n}") for n in sorted(names)]
+
+    return fake_hub_tree
+
+
+def test_verify_directions_upload_exact_set_production_body(monkeypatch):
+    layers = [14, 17]
+    expected = ladder._registered_direction_names(layers)
+    assert len(expected) == 16
+    parent_files = {"evil_pre_L14.pt", "sycophancy_ctxext_L17.pt", "directions_manifest.json"}
+    ok_round = {"ladder_report.json"}
+    # exact set + legitimate parent-prefix files outside the grammar ⇒ PASS
+    monkeypatch.setattr(fk, "_hub_tree", _fake_hub_tree_factory(expected | parent_files, ok_round))
+    ladder._verify_directions_upload(layers)
+    # one expected ladder name missing remotely ⇒ FAIL
+    short = set(sorted(expected)[1:])
+    monkeypatch.setattr(fk, "_hub_tree", _fake_hub_tree_factory(short | parent_files, ok_round))
+    with pytest.raises(ladder.LadderHaltError, match="absent"):
+        ladder._verify_directions_upload(layers)
+    # an EXTRA ladder-grammar name (stale foreign layer) ⇒ FAIL
+    monkeypatch.setattr(
+        fk,
+        "_hub_tree",
+        _fake_hub_tree_factory(expected | {"evil_tr_L3.pt"} | parent_files, ok_round),
+    )
+    with pytest.raises(ladder.LadderHaltError, match="unexpected ladder-grammar"):
+        ladder._verify_directions_upload(layers)
+    # ladder_report.json absent at the round prefix ⇒ FAIL
+    monkeypatch.setattr(fk, "_hub_tree", _fake_hub_tree_factory(expected, set()))
+    with pytest.raises(ladder.LadderHaltError, match=r"ladder_report\.json absent"):
+        ladder._verify_directions_upload(layers)
 
 
 # ---------------------------------------------------------------------------
@@ -528,13 +648,59 @@ def test_judge_completeness_enforcement_withholds_wave_done(tmp_path):
     assert ladder._enforce_judge_completeness(rroot)["below_floor_cells"] == []
 
 
-def test_reduce_refuses_below_floor_completeness(tmp_path, monkeypatch):
+# r2 concern ladder-completeness-not-enforced: a FINITE value is REQUIRED at
+# both rule-29 entry points — None / non-finite is a MISSING measurement,
+# treated as below-floor (raise), never a pass.
+_COMPLETENESS_CASES = [
+    (None, False),
+    (float("nan"), False),
+    (0.94, False),
+    (0.95, True),
+    (0.96, True),
+]
+
+
+@pytest.mark.parametrize("fic,ok", _COMPLETENESS_CASES)
+def test_judge_completeness_requires_finite_value(tmp_path, fic, ok):
+    rroot = tmp_path / "round"
+    jd = rroot / "judge" / "judged"
+    jd.mkdir(parents=True)
+    (jd / "cell_x.json").write_text(
+        json.dumps({"cell_id": "cell_x", "accounting": {"frac_items_complete": fic}})
+    )
+    if ok:
+        block = ladder._enforce_judge_completeness(rroot)
+        assert block["below_floor_cells"] == []
+        assert block["non_finite_cells"] == []
+    else:
+        with pytest.raises(RuntimeError, match="completeness floor"):
+            ladder._enforce_judge_completeness(rroot)
+        block = json.loads((rroot / "judge" / "completeness.json").read_text())
+        assert block["below_floor_cells"] == ["cell_x"]
+        assert block["non_finite_cells"] == ([] if fic == 0.94 else ["cell_x"])
+        assert not (rroot / "judge" / "wave_done.json").exists()
+
+
+@pytest.mark.parametrize("fic,ok", _COMPLETENESS_CASES)
+def test_reduce_completeness_requires_finite_value(fic, ok):
+    """The reduce-entry check (``_require_finite_completeness`` — the exact
+    predicate ``phase_reduce`` calls per cell; wiring pinned by the
+    integration test below) over the same five values."""
+    if ok:
+        assert ladder._require_finite_completeness("cell_x", fic) == fic
+    else:
+        with pytest.raises(RuntimeError, match="rule-29 below-floor"):
+            ladder._require_finite_completeness("cell_x", fic)
+
+
+@pytest.mark.parametrize("fic", [0.94, None, float("nan")])
+def test_reduce_refuses_below_floor_completeness(tmp_path, monkeypatch, fic):
     args = argparse.Namespace(out_root=str(tmp_path), smoke=False)
     rroot = tmp_path / ladder.FOLLOWUP_LABEL
     ladder.make_fixture_round(rroot, args)
     target = rroot / "judge" / "judged" / "evil__tr__ctx__L14__c4.json"
     j = json.loads(target.read_text())
-    j["accounting"]["frac_items_complete"] = 0.94
+    j["accounting"]["frac_items_complete"] = fic
     target.write_text(json.dumps(j))
     monkeypatch.setattr(ladder, "_TOKENIZER_LOADER", ladder._FixtureTokenizer)
     with pytest.raises(RuntimeError, match="rule-29 below-floor"):
@@ -557,6 +723,31 @@ def _steer_args(tmp_path):
         draws=5,
         force=False,
     )
+
+
+def _valid_ladder_report() -> dict:
+    """A report satisfying EVERY registered identity/gate check (the r2
+    steer-precondition contract), so each test case below can break exactly
+    one thing."""
+    parity = {
+        f"{b}__L{ly}": 0.9999999 for b in ladder.ROUND_BEHAVIORS for ly in ladder.PARITY_LAYERS
+    }
+    arms = {
+        f"{b}__{slug}": {"residual": 0.0, "loader_roundtrip_cos": 1.0}
+        for b in ladder.ROUND_BEHAVIORS
+        for slug in ladder.LADDER_SLUGS
+    }
+    return {
+        "rb_rev": i2254.HF_REV,
+        "slugs": list(ladder.LADDER_SLUGS),
+        "behaviors": list(ladder.ROUND_BEHAVIORS),
+        "n_direction_files": len(arms) * i2254.N_LAYERS,
+        "gates": {"rebuild_parity_cos": parity},
+        "layers": {
+            str(ly): {"lambdas": {}, "arms": {k: dict(v) for k, v in arms.items()}}
+            for ly in range(i2254.N_LAYERS)
+        },
+    }
 
 
 def test_steer_preconditions_run_before_model_load(tmp_path, monkeypatch):
@@ -587,8 +778,6 @@ def test_steer_preconditions_run_before_model_load(tmp_path, monkeypatch):
         ladder.phase_steer(args)
     assert model_loader.call_count == 0
     assert hub_headroom.call_count == 0
-    # (B) sentinel done + parseable report, but the exact direction file set
-    # is absent ⇒ refuse, still zero model-loader calls
     logs = tmp_path / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     (logs / f"issue-{i2254.ISSUE}-{ladder.SENTINEL_DIRECTIONS}.json").write_text(
@@ -596,17 +785,43 @@ def test_steer_preconditions_run_before_model_load(tmp_path, monkeypatch):
     )
     rroot = tmp_path / ladder.FOLLOWUP_LABEL
     rroot.mkdir(parents=True, exist_ok=True)
-    report = {
-        "rb_rev": i2254.HF_REV,
-        "slugs": list(ladder.LADDER_SLUGS),
-        "n_direction_files": 224,
-        "gates": {"rebuild_parity_cos": {"evil__L14": 0.99999}},
-        "layers": {str(ly): {"lambdas": {}} for ly in range(i2254.N_LAYERS)},
-    }
-    (rroot / "ladder_report.json").write_text(json.dumps(report))
-    with pytest.raises(ladder.LadderHaltError, match="direction file"):
-        ladder.phase_steer(args)
-    assert model_loader.call_count == 0
+    report_path = rroot / "ladder_report.json"
+
+    def expect_refusal(report: dict, pattern: str) -> None:
+        report_path.write_text(json.dumps(report))
+        with pytest.raises(ladder.LadderHaltError, match=pattern):
+            ladder.phase_steer(args)
+        assert model_loader.call_count == 0, pattern
+
+    # (B) fully valid report identity, but the direction file set is absent
+    # on disk ⇒ refuse, still zero model-loader calls
+    expect_refusal(_valid_ladder_report(), "direction file")
+    # (C) report-identity checks (r2 concern
+    # ladder-steer-precondition-post-model): stale rb_rev
+    stale = _valid_ladder_report()
+    stale["rb_rev"] = "deadbeefdeadbeef"
+    expect_refusal(stale, "rb_rev")
+    # (D) EMPTY parity map — existing files must not certify a report that
+    # carries no gate-(ii) evidence
+    empty_parity = _valid_ladder_report()
+    empty_parity["gates"]["rebuild_parity_cos"] = {}
+    expect_refusal(empty_parity, "parity cells")
+    # (E) partial parity map (one registered cell missing) ⇒ refuse
+    partial_parity = _valid_ladder_report()
+    del partial_parity["gates"]["rebuild_parity_cos"]["sycophancy__L17"]
+    expect_refusal(partial_parity, "parity cells")
+    # (F) wrong slug set ⇒ refuse
+    wrong_slug = _valid_ladder_report()
+    wrong_slug["slugs"] = ["tr", "rl1", "rl2", "WRONG"]
+    expect_refusal(wrong_slug, "slugs")
+    # (G) missing behaviors key (foreign/legacy report) ⇒ refuse
+    no_behaviors = _valid_ladder_report()
+    del no_behaviors["behaviors"]
+    expect_refusal(no_behaviors, "behaviors")
+    # (H) a failing gate-(iii) residual row ⇒ refuse
+    bad_row = _valid_ladder_report()
+    bad_row["layers"]["14"]["arms"]["evil__tr"]["loader_roundtrip_cos"] = 0.5
+    expect_refusal(bad_row, "gate row failed")
 
 
 # ---------------------------------------------------------------------------
@@ -782,6 +997,66 @@ def test_selection_aware_per_behavior_independent_matrices():
         float(np.nanquantile(exp, 0.025)),
         float(np.nanquantile(exp, 0.975)),
     ]
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — the three now-unconditional gates hold under smoke=True (r2
+# concern ladder-smoke-blind-spots: the r1 downgrades were removed; these
+# pins keep them from silently regressing to smoke-conditional)
+# ---------------------------------------------------------------------------
+
+
+def test_directions_parity_layer_refusal_under_smoke(tmp_path, monkeypatch):
+    """smoke=True: a layer set missing a registered parity layer refuses
+    BEFORE any SVD compute — the coverage gate is unconditional."""
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "logs"))
+    maps_dir = tmp_path / "maps"
+    rb = ladder.make_fixture_maps(maps_dir, layers=(14,))
+    ladder.make_fixture_parent_bank(tmp_path, maps_dir, rb, layers=(14,))
+    monkeypatch.setattr(ladder, "_RB_LOADER", lambda: rb)
+    monkeypatch.setattr(ladder, "_PARENT_VEC_LOADER", ladder._fixture_parent_vec_loader)
+    args = argparse.Namespace(
+        out_root=str(tmp_path),
+        maps_dir=str(maps_dir),
+        layers=[14],  # parity layer 17 missing
+        behaviors=list(ladder.ROUND_BEHAVIORS),
+        smoke=True,
+        fit_workers=1,
+        force=False,
+    )
+    with pytest.raises(RuntimeError, match="parity layers"):
+        ladder.phase_directions(args)
+    sent = tmp_path / "logs" / f"issue-{i2254.ISSUE}-{ladder.SENTINEL_DIRECTIONS}.json"
+    assert not sent.exists()
+
+
+def test_reduce_grain_refusal_under_smoke(tmp_path, monkeypatch):
+    """smoke=True: a judged cell whose per-question grain is shorter than the
+    committed parent floor refuses — no smoke-mode floor truncation."""
+    args = argparse.Namespace(out_root=str(tmp_path), smoke=True)
+    rroot = ladder.round_root(i2254._out_root(args))
+    ladder.make_fixture_round(rroot, args)  # smoke ⇒ the single registered smoke cell
+    cid = "evil__tr__ctx__L14__c4"
+    target = rroot / "judge" / "judged" / f"{cid}.json"
+    j = json.loads(target.read_text())
+    for k in ("per_question_mean_score", "per_question_rate", "per_question_n"):
+        j[k] = j[k][:2]
+    j["n_questions"] = 2
+    target.write_text(json.dumps(j))
+    monkeypatch.setattr(ladder, "_TOKENIZER_LOADER", ladder._FixtureTokenizer)
+    with pytest.raises(RuntimeError, match="refused in every mode"):
+        ladder.phase_reduce(args)
+
+
+def test_figures_required_gate_under_smoke(tmp_path, monkeypatch):
+    """smoke=True: the required-figure (hero) gate fails loud when the reduce
+    outputs are absent — no smoke-mode ``require=()`` downgrade."""
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "logs"))
+    args = argparse.Namespace(out_root=str(tmp_path), smoke=True, fig_dir=str(tmp_path / "figs"))
+    with pytest.raises(RuntimeError, match="required figures not rendered"):
+        ladder.phase_figures(args)
+    sent = tmp_path / "logs" / f"issue-{i2254.ISSUE}-{ladder.SENTINEL_FIGURES}.json"
+    assert not sent.exists()
 
 
 # ---------------------------------------------------------------------------
