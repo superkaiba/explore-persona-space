@@ -186,15 +186,16 @@ REFIT_HOLDOUT_PATH = (
 )
 # Parent-tensor prefixes probed unpinned at plan time: pinned at the P0-recorded
 # revision (eval_results/issue_2552/regime_pins.json — committed on this branch;
-# plan §11 reused-input-data bullet). The r_B bank rides the same recorded pin
-# (supersedes the plan-time 037fcbb probe via the same §11 record-at-fetch-time
-# mechanism).
+# plan §11 reused-input-data bullet). The r_B bank does NOT ride the recorded
+# parent pin: the plan §10 reuse row pins it at the approved LITERAL revision
+# 037fcbb (#2552 r2 codex rb-pin-drift).
 REGIME_PINS_PATH = PROJECT_ROOT / "eval_results" / "issue_2552" / "regime_pins.json"
 SAE_C_PREFIX = "issue2476_turnavg/analysis_tensors/sae_c"
 SAE_C_K200_PREFIX = "issue2476_turnavg/analysis_tensors/sae_c_k200"
 CENSUS_C_PATH = "issue2476_turnavg/analysis_tensors/floor_sweep/firing_census_c.npz"
 CENSUS_K200_PATH = "issue2476_turnavg/analysis_tensors/k200_census/firing_census_k200.npz"
 RB_PREFIX = "issue779_monitoring/r_b"
+RB_REVISION = "037fcbb"  # plan §10 approved literal pin (resolved to 40-hex at fetch time)
 RB_TRAITS = ("evil", "hallucination", "sycophancy")
 LAYER = 19  # the map's native layer (parent LAYER_C)
 UNION_C_NPZ = (
@@ -220,6 +221,25 @@ def _pins_revision() -> str:
     return str(_regime_pins()["data_repo_revision"])
 
 
+def _resolve_repo_revision(revision: str | None, what: str) -> str:
+    """Resolve a ref/short-sha (None = current HEAD) on the data repo to the full
+    40-hex sha through the transient-retry envelope. P4's HF fallback MUST resolve
+    HEAD at fetch time: P1.10 uploads land AFTER the P0 pin was recorded, so the
+    parent ``_pins_revision()`` structurally cannot see them (#2552 r2
+    p4-future-revision); the r_B bank resolves its own literal plan pin
+    (RB_REVISION, #2552 r2 rb-pin-drift). Sibling of the judge driver's
+    ``_resolve_data_repo_revision`` (no import: the judge imports THIS module)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    info = hub.retry_transient(
+        lambda: HfApi().repo_info(C.HF_DATA_REPO, repo_type="dataset", revision=revision),
+        what=what,
+    )
+    return str(info.sha)
+
+
 # ── small shared helpers ─────────────────────────────────────────────────────────
 
 
@@ -240,7 +260,17 @@ def _sae_rep_dir(args) -> Path:
 
 
 def _production(args) -> bool:
-    return args.max_chunks == 0 and args.smoke_rows == 0 and not args.smoke
+    """True only when EVERY smoke knob is off (#2552 r2 g3-M5): a run with a smoke
+    SAE-step count, a sliced eval-turn count, or the from-config tiny model must
+    never take production-only paths (uploads, canonical writes, hard joins)."""
+    return (
+        args.max_chunks == 0
+        and args.smoke_rows == 0
+        and not args.smoke
+        and args.sae_steps == 0
+        and args.n_eval_turns == 0
+        and not args.tiny_model
+    )
 
 
 def _regime_json_path(args) -> Path:
@@ -378,6 +408,64 @@ def _upload_leaf(args, local_dir: Path, leaf: str, *, resume_skip: bool) -> None
         )
         assert not missing, f"[upload] verify FAILED — missing on Hub under {prefix}: {missing}"
     logger.info("[upload] %s -> %s (rerouted=%s)", local_dir.name, prefix, res.rerouted)
+
+
+def _stage_and_upload_eval_lists(args) -> None:
+    """Build + upload the SHARDED eval_lists artifact: a small index JSON
+    (`feature_lists_2000turns.json` — {"configs": {cfg: {meta, files, n_turns}}})
+    plus one-turn-per-line JSONL shards < 9 MB each (never gzip — upload-policy;
+    #2552 r2 g3-M4). Judge-side consumer: issue2552_judge_waves._load_lists.
+    Called at the end of phase_eval_lists (per-sub-phase persistence, g3-M3)
+    and again from phase_upload (idempotent rebuild; resume_skip=False, g3-M2)."""
+    if args.skip_upload or not _production(args):
+        logger.warning("[upload] skip_upload/non-production: eval_lists upload SKIPPED (loud)")
+        return
+    el = T._stage_dir(args) / "upload_stage_eval_lists"
+    if el.exists():
+        shutil.rmtree(el)
+    el.mkdir(parents=True, exist_ok=True)
+    index: dict = {"schema": "sharded-jsonl-v1", "configs": {}}
+    for cfg in (*TA_FAMILIES, "pt_max", "pt_sum"):
+        doc = json.loads((_lists_dir(args) / f"lists_{cfg}.json").read_text())
+        turns = doc.pop("turns")
+        parts = _jsonl_write_sharded(el / f"feature_lists_{cfg}.jsonl", turns)
+        index["configs"][cfg] = {
+            "meta": doc,
+            "files": [p.name for p in parts],
+            "n_turns": len(turns),
+        }
+    (el / "feature_lists_2000turns.json").write_text(json.dumps(index))
+    _upload_leaf(args, el, "analysis_tensors/eval_lists", resume_skip=False)
+
+
+def _upload_mining(args) -> None:
+    """Persist mining artifacts as they land (per-sub-phase persistence, #2552 r2
+    g3-M3): every top25_* file + pt_heap.npz under raw_completions/mining, and the
+    manifest + per-family pool row ids (mining_row_ids.npz — the MF-A double-ended
+    check's manifest side, g3-M1) under analysis_tensors/. resume_skip=False so a
+    fixed-artifact re-run re-uploads instead of presence-skipping (g3-M2)."""
+    if args.skip_upload or not _production(args):
+        logger.warning("[upload] skip_upload/non-production: mining upload SKIPPED (loud)")
+        return
+    mn = T._stage_dir(args) / "upload_stage_mining"
+    if mn.exists():
+        shutil.rmtree(mn)
+    mn.mkdir(parents=True, exist_ok=True)
+    for p in sorted(_mining_dir(args).glob("top25_*")):
+        shutil.copy2(p, mn / p.name)
+    heap = _mining_dir(args) / "pt_heap.npz"
+    if heap.exists():
+        shutil.copy2(heap, mn / heap.name)
+    _upload_leaf(args, mn, "raw_completions/mining", resume_skip=False)
+    mm = T._stage_dir(args) / "upload_stage_manifest"
+    if mm.exists():
+        shutil.rmtree(mm)
+    mm.mkdir(parents=True, exist_ok=True)
+    for name in ("mining_manifest.json", "mining_row_ids.npz"):
+        src = _eval_dir(args) / name
+        assert src.exists(), f"[upload] mining artifact missing: {src}"
+        shutil.copy2(src, mm / name)
+    _upload_leaf(args, mm, "analysis_tensors", resume_skip=False)
 
 
 # ── raw-chunk iteration with a persistent cache + ci index (three passes reuse it) ──
@@ -681,6 +769,10 @@ def phase_sae_train(args) -> None:
         phase="sae_train_rep",
     )
     T._write_json(gates_path, gates, phase="sae_train_rep")
+    # both-FVEs reporting (#2552 r2 codex M-trainer2-fve): the replication SAE's
+    # holdout var-FVE rides regime_measured.json beside trainer2_fve_evalpass so
+    # P3 can report the pair in replication_stats.json
+    _measured_update(args, rep_sae_val_var_fve=fve_val, rep_sae_val_nmse=nmse)
     if not in_band:
         logger.warning(
             "[sae_train_rep] ADVISORY: nMSE %.4f outside band %s", nmse, NMSE_ADVISORY_BAND
@@ -893,8 +985,17 @@ def phase_perfeature_r2(args) -> None:
     # banked dense map predictions @ the lineage pin (plan §10 reuse row)
     hz_path = _hf_fetch(REFIT_HOLDOUT_PATH, T._stage_dir(args) / "refit", LINEAGE_REVISION)
     hz = np.load(hz_path)
+    # schema assert IMMEDIATELY after load, before any GPU work (#2552 r2
+    # cached-artifact-schema)
+    assert {"holdout_pred16", "holdout_rows"} <= set(hz.files), (
+        f"banked refit npz missing required keys — have {sorted(hz.files)}"
+    )
     vhat_all = np.asarray(hz["holdout_pred16"], np.float16)
     hold_rows = np.asarray(hz["holdout_rows"], np.int64)
+    assert vhat_all.ndim == 2 and len(vhat_all) == len(hold_rows), (
+        vhat_all.shape,
+        hold_rows.shape,
+    )
     if _production(args):
         assert set(int(x) for x in hold_rows) == set(int(x) for x in pools["holdout"]), (
             "banked refit holdout_rows != pinned holdout pool"
@@ -1129,8 +1230,19 @@ def _manifest_update(args, fam: str, pool_ids: np.ndarray, pool_doc: dict) -> No
         "mining_ids_sha256": sha,
         "eval_disjoint_assert": "PASS",
         "eval_ids_sha256": json.loads(_regime_json_path(args).read_text())["eval_ids_sha256"],
+        "row_ids_npz": "mining_row_ids.npz",  # per-family declared ids beside the manifest
     }
     T._write_json(path, doc, phase="mining_manifest")
+    # per-family mining ROW IDS beside the manifest (#2552 r2 g3-M1): the judge's
+    # MF-A check is DOUBLE-ENDED — manifest-declared ids ∩ eval == ∅ AND the
+    # realized jsonl rows ⊆ this declared pool set
+    ids_path = _eval_dir(args) / "mining_row_ids.npz"
+    ids: dict[str, np.ndarray] = {}
+    if ids_path.exists():
+        with np.load(ids_path) as z:
+            ids = {k: np.asarray(z[k], np.int64) for k in z.files}
+    ids[fam] = np.sort(np.asarray(pool_ids, np.int64))
+    savez_atomic(ids_path, **ids)
 
 
 def phase_mat_encodes(args) -> None:
@@ -1156,7 +1268,11 @@ def phase_mat_encodes(args) -> None:
         acc = _census_pass(sae, y_mm, fit_pos_all, prov_u8[rows_present[fit_pos_all]], args.device)
         # counts reconciliation vs the banked census (plan §8 risk row) BEFORE mining
         bz = np.load(_hf_fetch(census_path, T._stage_dir(args) / f"census_{fam}", rev))
+        assert "counts" in bz.files, (  # schema assert right after load (#2552 r2)
+            f"banked census {census_path} missing 'counts' — have {sorted(bz.files)}"
+        )
         banked = np.asarray(bz["counts"], np.int64)
+        assert banked.shape == acc["counts"].shape, (banked.shape, acc["counts"].shape)
         if _production(args):
             diff = np.abs(acc["counts"] - banked)
             frac_exact = float((diff == 0).mean())
@@ -1274,6 +1390,7 @@ def phase_rep_mining(args) -> None:
     T._write_json(
         done_marker, {"written": written, "n_unique_rows": len(texts)}, phase="rep_mining"
     )
+    _upload_mining(args)  # per-sub-phase persistence (#2552 r2 g3-M3)
     T._sentinel("rep_mining", f"P1.6 done ({len(texts)} unique example rows joined)")
 
 
@@ -1358,8 +1475,11 @@ def phase_eval_lists(args) -> None:
             "recovered from the rollout chunks"
         )
     rows_buf.sort(key=lambda r: len(r[2]))
-    ss_tot = 0.0
-    ss_res = 0.0
+    # trainer_2 FVE accumulators — GLOBAL fp64 per-dim sums/squares over ALL kept
+    # tokens, matching the vendored T._recon_fve semantics (per-dim unbiased
+    # variance, summed; NOT per-turn-centered — #2552 r2 codex M-trainer2-fve)
+    x_sum = x_sq = r_sum = r_sq = None
+    n_tok = 0
     pt_turns: dict[str, list[dict]] = {"pt_max": [], "pt_sum": []}
     t0 = time.time()
     for s0 in range(0, len(rows_buf), args.gen_batch):
@@ -1377,9 +1497,16 @@ def phase_eval_lists(args) -> None:
             f_tok = trainer2.encode(kept.to(args.device))
             x_dev = kept.to(device=args.device, dtype=torch.float32)
             r = x_dev - trainer2.decode(f_tok)
-            mu_x = x_dev.mean(0, keepdim=True)
-            ss_tot += float(((x_dev - mu_x) ** 2).sum())
-            ss_res += float((r**2).sum())
+            if x_sum is None:
+                x_sum = torch.zeros(x_dev.shape[1], dtype=torch.float64, device=x_dev.device)
+                x_sq = torch.zeros_like(x_sum)
+                r_sum = torch.zeros_like(x_sum)
+                r_sq = torch.zeros_like(x_sum)
+            x_sum += x_dev.sum(0, dtype=torch.float64)
+            x_sq += (x_dev * x_dev).sum(0, dtype=torch.float64)
+            r_sum += r.sum(0, dtype=torch.float64)
+            r_sq += (r * r).sum(0, dtype=torch.float64)
+            n_tok += int(x_dev.shape[0])
             pooled = {"pt_sum": f_tok.sum(0), "pt_max": f_tok.max(0).values}
             for cfg, vec in pooled.items():
                 nz = torch.nonzero(vec > 0, as_tuple=False).squeeze(-1)
@@ -1404,10 +1531,19 @@ def phase_eval_lists(args) -> None:
     del model
     if args.device == "cuda":
         torch.cuda.empty_cache()
-    fve = float("nan") if ss_tot < 1e-12 else 1.0 - ss_res / ss_tot
+
+    def _var_sum(ssum: torch.Tensor, ssq: torch.Tensor) -> float:
+        return float(((ssq - ssum * ssum / n_tok) / (n_tok - 1)).sum())
+
+    if x_sum is None or n_tok < 2:
+        fve = float("nan")
+    else:
+        ss_tot = _var_sum(x_sum, x_sq)
+        fve = float("nan") if ss_tot < 1e-12 else 1.0 - _var_sum(r_sum, r_sq) / ss_tot
     meta = {
         "pooling_mask": "reference token-pool (S.token_inlier_mask + BOS strip; unmasked fallback)",
         "trainer2_fve_evalpass": fve,
+        "fve_semantics": "global fp64 per-dim unbiased variance over all kept tokens (T._recon_fve parity)",
         "list_convention": f"top-{LIST_TOP} pooled trainer_2 codes (pre-truncation), top-{JUDGED_TOP} judged",
     }
     for cfg in ("pt_max", "pt_sum"):
@@ -1433,6 +1569,7 @@ def phase_eval_lists(args) -> None:
         trainer2_fve_evalpass=fve,
         n_eval_rows_captured=len(rows_buf),
     )
+    _stage_and_upload_eval_lists(args)  # per-sub-phase persistence (#2552 r2 g3-M3)
     T._sentinel("eval_lists", f"P1.7 done (5 configs, pt-union={len(pt_union)}, fve={fve:.4f})")
 
 
@@ -1497,8 +1634,10 @@ def phase_pt_mining(args) -> None:
     W_FULL = trainer2.dict_size
     frac_sum = torch.zeros(W_FULL, dtype=torch.float64, device=args.device)
     frac_rows = torch.zeros(W_FULL, dtype=torch.int64, device=args.device)
-    ss_tot = 0.0
-    ss_res = 0.0
+    # global fp64 per-dim accumulators (T._recon_fve parity — #2552 r2, same class
+    # as the eval_lists fix; per-turn centering understated ss_tot)
+    x_sum = x_sq = r_sum = r_sq = None
+    n_tok = 0
     needed_ci = {int(row_ci[r]): int(r) for r in pool_ids}
     rows_iter: list[tuple] = []
     for row_idx, ci, prompt, response in _iter_rows_pinned(args, needed_ci, tag="pt_mining"):
@@ -1532,9 +1671,16 @@ def phase_pt_mining(args) -> None:
             f_tok = trainer2.encode(kept.to(args.device))
             x_dev = kept.to(device=args.device, dtype=torch.float32)
             r = x_dev - trainer2.decode(f_tok)
-            mu_x = x_dev.mean(0, keepdim=True)
-            ss_tot += float(((x_dev - mu_x) ** 2).sum())
-            ss_res += float((r**2).sum())
+            if x_sum is None:
+                x_sum = torch.zeros(x_dev.shape[1], dtype=torch.float64, device=x_dev.device)
+                x_sq = torch.zeros_like(x_sum)
+                r_sum = torch.zeros_like(x_sum)
+                r_sq = torch.zeros_like(x_sum)
+            x_sum += x_dev.sum(0, dtype=torch.float64)
+            x_sq += (x_dev * x_dev).sum(0, dtype=torch.float64)
+            r_sum += r.sum(0, dtype=torch.float64)
+            r_sq += (r * r).sum(0, dtype=torch.float64)
+            n_tok += int(x_dev.shape[0])
             act_full = f_tok > 0
             frac_row = act_full.to(torch.float64).mean(0)
             frac_sum += frac_row
@@ -1559,7 +1705,15 @@ def phase_pt_mining(args) -> None:
                 flush=True,
             )
     top_r[top_v <= 0] = -1
-    fve = float("nan") if ss_tot < 1e-12 else 1.0 - ss_res / ss_tot
+
+    def _var_sum(ssum: torch.Tensor, ssq: torch.Tensor) -> float:
+        return float(((ssq - ssum * ssum / n_tok) / (n_tok - 1)).sum())
+
+    if x_sum is None or n_tok < 2:
+        fve = float("nan")
+    else:
+        ss_tot = _var_sum(x_sum, x_sq)
+        fve = float("nan") if ss_tot < 1e-12 else 1.0 - _var_sum(r_sum, r_sq) / ss_tot
     savez_atomic(
         heap_path,
         feat_ids=need,
@@ -1648,6 +1802,7 @@ def phase_pt_mining(args) -> None:
         },
         phase="pt_mining",
     )
+    _upload_mining(args)  # per-sub-phase persistence (#2552 r2 g3-M3)
     T._sentinel(
         "pt_mining", f"P1.8 done ({len(recs)} windows over {len(sel_rows)} rows; fve={fve:.4f})"
     )
@@ -1753,11 +1908,17 @@ def phase_covariates(args) -> None:
     t2_dec = trainer2.w_dec  # (act_dim, dict_size)
     t2_dec_n = t2_dec / t2_dec.norm(dim=0, keepdim=True).clamp_min(1e-12)
 
-    rev = _pins_revision()
+    # r_B bank @ the plan §10 approved LITERAL pin — NOT the P0 parent pin
+    # (#2552 r2 codex rb-pin-drift)
+    rb_rev = _resolve_repo_revision(RB_REVISION, f"resolve r_B pin {RB_REVISION}")
     rb_rows = []
     for trait in RB_TRAITS:
-        p = _hf_fetch(f"{RB_PREFIX}/{trait}.pt", T._stage_dir(args) / "rb", rev)
+        p = _hf_fetch(f"{RB_PREFIX}/{trait}.pt", T._stage_dir(args) / "rb", rb_rev)
         obj = torch.load(p, map_location="cpu", weights_only=True)
+        assert isinstance(obj, dict) and "r_b" in obj, (  # schema assert (#2552 r2)
+            f"r_B artifact {trait}.pt missing 'r_b' — have "
+            f"{sorted(obj) if isinstance(obj, dict) else type(obj).__name__}"
+        )
         r_b = obj["r_b"]
         assert r_b.shape[1] == d_model and r_b.shape[0] > LAYER, tuple(r_b.shape)
         rb_rows.append(r_b[LAYER].to(torch.float32))
@@ -1861,26 +2022,13 @@ def phase_upload(args) -> None:
     for p in sorted(_eval_dir(args).glob("*")):
         if p.is_file() and p.name != "regime.json":
             shutil.copy2(p, ev / p.name)
-    _upload_leaf(args, ev, "analysis_tensors/eval", resume_skip=True)
-    # analysis_tensors/eval_lists: the P2 read path (plan §9 off_pod reads)
-    el = stage / "eval_lists"
-    el.mkdir(parents=True, exist_ok=True)
-    lists_doc = {}
-    for cfg in (*TA_FAMILIES, "pt_max", "pt_sum"):
-        lists_doc[cfg] = json.loads((_lists_dir(args) / f"lists_{cfg}.json").read_text())
-    (el / "feature_lists_2000turns.json").write_text(json.dumps(lists_doc))
-    _upload_leaf(args, el, "analysis_tensors/eval_lists", resume_skip=True)
-    # mining_manifest.json at its declared standalone path
-    mm = stage / "manifest"
-    mm.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(_eval_dir(args) / "mining_manifest.json", mm / "mining_manifest.json")
-    _upload_leaf(args, mm, "analysis_tensors", resume_skip=True)
-    # raw_completions/mining: the top-25 example texts (unconditional text uploads)
-    mn = stage / "mining"
-    mn.mkdir(parents=True, exist_ok=True)
-    for p in sorted(_mining_dir(args).glob("top25_*")):
-        shutil.copy2(p, mn / p.name)
-    _upload_leaf(args, mn, "raw_completions/mining", resume_skip=True)
+    # resume_skip=False everywhere in P1.10 (#2552 r2 g3-M2): a fixed-artifact
+    # re-run must re-upload, never presence-skip a corrupted prior copy
+    _upload_leaf(args, ev, "analysis_tensors/eval", resume_skip=False)
+    # analysis_tensors/eval_lists: sharded index + JSONL turn shards (g3-M4);
+    # raw_completions/mining + analysis_tensors manifest/row-ids (g3-M1/M3)
+    _stage_and_upload_eval_lists(args)
+    _upload_mining(args)
     # the plan §9 phase sentinel
     sent_dir = args.out_root / "sentinels"
     sent_dir.mkdir(parents=True, exist_ok=True)
@@ -1948,22 +2096,42 @@ def _p4_synth_fixtures(args, io) -> None:
 
 def _p4_lists(args, io) -> dict:
     """Per-turn judged top-100 lists: local P1 out-root first, then the HF
-    analysis_tensors/eval_lists copy (pinned revision), fail-loud last."""
+    analysis_tensors/eval_lists SHARDED copy (index + JSONL turn shards — the
+    P1.10 writer shape, #2552 r2 g3-M4), fail-loud last.
+
+    The HF fallback resolves the data repo's CURRENT HEAD at fetch time and
+    persists it in p4_inputs_manifest.json (#2552 r2 BLOCKER p4-future-revision:
+    the P0 ``_pins_revision()`` predates P1.10's own uploads, so eval_lists can
+    NEVER exist at that revision — the old fallback 404'd deterministically)."""
     if args.smoke:
         return json.loads((io.fixtures / "feature_lists_2000turns.json").read_text())
+    cfgs = ("pt_max", "pt_sum", *TA_FAMILIES)
     local = _lists_dir(args)
-    if all((local / f"lists_{cfg}.json").exists() for cfg in ("pt_max", "pt_sum", *TA_FAMILIES)):
-        return {
-            cfg: json.loads((local / f"lists_{cfg}.json").read_text())
-            for cfg in ("pt_max", "pt_sum", *TA_FAMILIES)
-        }
-    rev = _pins_revision()
-    got = _hf_fetch(
-        f"{args.hf_prefix}/analysis_tensors/eval_lists/feature_lists_2000turns.json",
-        T._stage_dir(args) / "p4_lists",
-        rev,
+    if all((local / f"lists_{cfg}.json").exists() for cfg in cfgs):
+        return {cfg: json.loads((local / f"lists_{cfg}.json").read_text()) for cfg in cfgs}
+    rev = _resolve_repo_revision(None, "resolve data-repo HEAD (post-P1 eval_lists)")
+    dest = T._stage_dir(args) / "p4_lists"
+    prefix = f"{args.hf_prefix}/analysis_tensors/eval_lists"
+    index = json.loads(_hf_fetch(f"{prefix}/feature_lists_2000turns.json", dest, rev).read_text())
+    assert "configs" in index, f"unexpected eval_lists index shape: {sorted(index)}"
+    missing = [c for c in cfgs if c not in index["configs"]]
+    assert not missing, f"eval_lists index missing configs: {missing}"
+    out: dict[str, dict] = {}
+    for cfg, entry in index["configs"].items():
+        turns: list[dict] = []
+        for name in entry["files"]:
+            with _hf_fetch(f"{prefix}/{name}", dest, rev).open(encoding="utf-8") as fh:
+                for line in fh:
+                    if line.strip():
+                        turns.append(json.loads(line))
+        assert len(turns) == int(entry["n_turns"]), (cfg, len(turns), entry["n_turns"])
+        out[cfg] = {**entry.get("meta", {}), "turns": turns}
+    T._write_json(
+        io.stage / "p4_inputs_manifest.json",
+        {"data_repo_revision": rev, "source": "hf-fallback", "prefix": prefix},
+        phase="p4-embed",
     )
-    return json.loads(got.read_text())
+    return out
 
 
 def _p4_load_embedder(args):
@@ -2025,21 +2193,60 @@ def phase_p4_embed(args) -> None:
     JSON -> eval_results/issue_2552/dere_repl/embedding_coverage.json (git-committed
     by the VM harvest step)."""
     C.phase("p4_embed")
+    # --tiny-model is a smoke-only knob: a production P4 with random weights would
+    # silently ship garbage cosines (#2552 r2 g6-M3; _production() also refuses it)
+    assert args.smoke or not args.tiny_model, (
+        "[p4] --tiny-model is smoke-only — a production P4 run must load the real "
+        "Qwen3-Embedding-8B weights (drop --tiny-model or add --smoke)"
+    )
     io = _p4_dirs(args)
+    # regime-keyed completion sentinel (#2552 r2 BLOCKER p4-clobber): a completed
+    # P4 at the SAME regime is skipped; a DIFFERENT regime fails loud; --force recomputes
+    regime_key = {
+        "emb_model": args.emb_model,
+        "emb_max_tokens": int(args.emb_max_tokens),
+        "ks": list(P4_KS),
+        "smoke": bool(args.smoke),
+        "tiny_model": bool(args.tiny_model),
+    }
+    done_path = io.stage.parent / "p4_done.json"
+    outputs = (io.dere / "embedding_coverage.json", io.stage / "embcov_topk.npz")
+    if done_path.exists() and not args.force:
+        prior = json.loads(done_path.read_text()).get("regime_key")
+        if prior == regime_key and all(p.exists() for p in outputs):
+            logger.info("[p4] resume: p4_done.json matches regime; skip (use --force to recompute)")
+            T._sentinel("p4_embed", "P4 resume-skip (completed at identical regime)")
+            return
+        assert prior == regime_key, (
+            f"[p4] completed sentinel at a DIFFERENT regime: prior={prior} vs now={regime_key} — "
+            "pass --force to recompute (prior outputs would be silently clobbered otherwise)"
+        )
     if args.smoke:
         _p4_synth_fixtures(args, io)
-    # inputs: descriptions per family + summaries + per-turn lists
+    # inputs: descriptions per family + summaries + per-turn lists — ALL contract
+    # validation runs BEFORE the 8B embedder load (#2552 r2: fail in seconds, not
+    # after a ~16 GB weight fetch)
     descs: dict[str, dict[int, str]] = {}
     for fam in ("pt", *TA_FAMILIES):
         path = io.agg / f"descriptions_{fam}.json"
         assert path.exists(), f"[p4] descriptions missing: {path} — run judge W1 first"
         d = json.loads(path.read_text())["descriptions"]
+        assert d, f"[p4] empty descriptions for family {fam}: {path}"
         descs[fam] = {int(k): v for k, v in d.items()}
     summ_paths = sorted(io.agg.glob("summaries_*.json"))
     assert summ_paths, f"[p4] summaries_*.json missing under {io.agg} — run judge W2 first"
     summaries = json.loads(summ_paths[-1].read_text())["summaries"]
+    assert summaries, f"[p4] empty summaries doc: {summ_paths[-1]}"
     lists_doc = _p4_lists(args, io)
     cfgs = ("pt_max", "pt_sum", *TA_FAMILIES)
+    for cfg in cfgs:
+        assert cfg in lists_doc, f"[p4] lists missing config {cfg} (have {sorted(lists_doc)})"
+        turns = lists_doc[cfg].get("turns")
+        assert turns, f"[p4] config {cfg} has no turns"
+        t0_rec = turns[0]
+        assert "row_id" in t0_rec and "judged_top100" in t0_rec, (
+            f"[p4] config {cfg} turn schema unexpected: {sorted(t0_rec)}"
+        )
     # unique text pool: descriptions + (turn, field) values
     texts: list[str] = []
     t_index: dict[str, int] = {}
@@ -2110,7 +2317,9 @@ def phase_p4_embed(args) -> None:
         "model": args.emb_model,
         "pooling": "last-token pool, L2-normalized, no instruction prefix",
         "tiny_model_smoke": bool(args.tiny_model or args.smoke),
-        "paper_reference_embedding": {"pt_max": 0.663, "rep_ta": 0.617},
+        # Der et al. Fig.: pt_max 0.617 / rep_ta (TA) 0.663 — plan §6 (r2 swap fix:
+        # the values were transposed in r1; regression-pinned in tests)
+        "paper_reference_embedding": {"pt_max": 0.617, "rep_ta": 0.663},
     }
     T._write_json(io.dere / "embedding_coverage.json", doc, phase="p4-embed")
     savez_atomic(
@@ -2122,6 +2331,11 @@ def phase_p4_embed(args) -> None:
     )
     shutil.copy2(io.dere / "embedding_coverage.json", io.stage / "embedding_coverage.json")
     _upload_leaf(args, io.stage, "analysis_tensors/embcov", resume_skip=False)
+    T._write_json(
+        io.stage.parent / "p4_done.json",
+        {"phase": "p4-embed", "status": "done", "regime_key": regime_key},
+        phase="p4-embed",
+    )
     T._sentinel("p4_embed", f"P4 done ({len(texts)} texts, {len(row_ids)} turns)")
 
 
@@ -2244,6 +2458,11 @@ def _parse_args(argv=None):
     ap.add_argument("--emb-model", default="Qwen/Qwen3-Embedding-8B")
     ap.add_argument("--emb-batch", type=int, default=64, help="P4 embedding forward batch")
     ap.add_argument("--emb-max-tokens", type=int, default=512, help="P4 tokenizer truncation")
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="p4-embed: recompute past a completed p4_done.json sentinel (default off)",
+    )
     ap.add_argument("--sae-dict", type=int, default=0, help="parent passthrough (unused here)")
     ap.add_argument("--sae-k", type=int, default=0, help="parent passthrough (unused here)")
     ap.add_argument("--fit-n", type=int, default=0, help="parent passthrough (regime hash)")
@@ -2301,7 +2520,8 @@ def main() -> None:
         raise SystemExit(0)
     if args.production:
         assert _production(args), (
-            "--production forbids smoke knobs (--smoke/--smoke-rows/--max-chunks)"
+            "--production forbids smoke knobs (--smoke/--smoke-rows/--max-chunks/"
+            "--sae-steps/--n-eval-turns/--tiny-model)"
         )
     if args.device == "auto":
         args.device = "cuda" if torch.cuda.is_available() else "cpu"
