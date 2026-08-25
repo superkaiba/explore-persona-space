@@ -2655,3 +2655,33 @@ Related: [[plan-path-missing-read-from-main]],
   press + lensitems + plan + empty prior; unsigned both-sides-guard atoms +
   comma-grouping first + isfinite literal-keep + collect-all + registry leg
   from repo root; version-suffixed workspace keyed to PLAN version).
+
+- **Gate-tool plan whose safe direction is fail-CLOSED, standard methodology
+  lens + brief press bullets (#2578 round one, verify_uploads multi-repo
+  union): when the orchestrator orders "cannot become fail-open" as the
+  primary design constraint, compose it as its own PRIMARY DESIGN CONSTRAINT
+  header paragraph** — per new search lane, "construct the simplest
+  realistic scenario in which that lane lets a never-uploaded file read as
+  covered; judge whether the defenses CLOSE it or merely narrate it; a
+  disclosure that materially understates the hole is itself a finding" — and
+  add a matching do-not-flag line gagging residual fail-CLOSED annoyance
+  unless it defeats the Goal. The #2332 live-Hub ban extends to a VERIFIER
+  plan whose own acceptance recipe hits the Hub: ban all Hub calls AND
+  running the tool itself ("its HF-touching paths hit the live Hub"), with
+  the justification that every wanted live count is already plan-measured +
+  fact-check-confirmed. Snapshot-note extension for live-measured-count
+  plans: drift between plan-measured Hub counts and later repo state is
+  expected, pre-covered by the plan's own flake row, not a finding. Brief
+  bullets got letter labels (a)-(g) in the press span with a mandated
+  `### Answers to the review questions` section (SOUND | CONCERN | MUST-FIX
+  | UNVERIFIED); one 1:1 sharpener rode inside the fail-open-defense bullet
+  as a "lead worth walking" (stale pointer from a PRIOR attempt at the same
+  prefix widening the union). Scaffold hygiene: "Phase-1.5" is NOT
+  scaffold-safe (1.5 atoms) — write "a dedicated pre-critique fact-check
+  pass" and keep the literal phrase in the inputs span; `tasks/<status>/<N>`
+  paths in scaffold LABELS are fine (task-ref extraction removes them)
+  provided the same path also appears in a span. Numcheck PASS first try at
+  ~137 KB (spans = inputs + press + lensitems + plan + body + empty prior;
+  unsigned both-sides-guard atoms + comma-grouping first + pair-split +
+  isfinite literal-keep + collect-all + registry leg from repo root;
+  version-suffixed workspace keyed to PLAN version).

@@ -57,3 +57,19 @@ FINAL `epm:plan` marker, never by the bare `plan.md` symlink. Keep pinning that
 version across re-compose rounds until the concurrent follow-ups settle. Related:
 [[gh_graphql fallback to REST]] is unrelated; this is a plan-resolution lesson
 for the Step 2-pre-b compose stage.
+
+**Live reconfirmation + a THIRD contaminated surface (#1901 r2, 2026-08-24):**
+`latest-marker --prefix epm:smoke-architecture-check` returned v7 — a CONCURRENT
+`plot1-remake` inline round's marker posted 20 min after this round's v6
+("inline round plot1-remake (no plan.md...)"). Round-matched by note body and
+inlined v6 with an explicit contamination warning in the prompt (also stating
+v6 legitimately PREDATES the fix commit — smoke-arch presence is per-round,
+never per-fix-commit, so Codex must not FAIL 0.55 on "no round-2 marker").
+NEW surface: the composer's own `/tmp/codex-code-reviewer-<N>-r<k>-*` files
+collide ACROSS follow-up rounds of the same issue — a PRIOR follow-up's round-2
+files (Aug 22, `generic-boundary-token-control`) sat at the exact r2 paths this
+round composes to. Detect by mtime vs this round's `epm:followup-scope` ts:
+prior-round files OLDER than the round's scope marker are a DIFFERENT
+follow-up's artifacts — overwrite them, never reuse them as "the prior template";
+the correct reuse source is THIS round's r<k-1> files (mtime after the scope
+marker).

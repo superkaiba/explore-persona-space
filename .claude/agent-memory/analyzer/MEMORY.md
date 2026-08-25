@@ -26,7 +26,7 @@
 - [Check paraphrase pool matches chosen fact](feedback_check_paraphrase_pool_matches_chosen_fact.md) — after a mid-run fact switch, sample 3-5 raw completions per cell; caches go stale. #407.
 - [Coverage: user prompt can misstate it](feedback_user_prompt_can_misstate_coverage.md) — decode the cell key from sweep_summary.json before accepting which cells failed.
 - [Raw completions lost to pod auto-terminate](feedback_raw_completions_lost_to_pod_terminate.md) — use parent-issue + floor surrogates, annotated; never fabricate.
-- [set_title_subtitle breaks grids + blog style](feedback_set_title_subtitle_breaks_subplot_grids.md) — grids: fig.text + disable constrained_layout; single-axis: set_title(pad=36). #398/#468.
+- [set_title_subtitle breaks grids + blog style](feedback_set_title_subtitle_breaks_subplot_grids.md) — grids: fig.text + disable constrained_layout; single-axis: set_title(pad=36); blog single-axis subtitle = ONE line ≤~105 chars at 8in (#2378 r6). #398/#468.
 - [Open-marker scatter needs explicit linewidths](feedback_open_marker_scatter_linewidths.md) — facecolors="none" + zero edge width = invisible; same for hist(histtype="step") — pass linewidth=1.5 (#1902); pixel-probe. #613.
 - [Default sentinel](feedback_default_sentinel.md) — verifier flags bare "default" in repro card; spell out the value.
 - [default-assistant trips Repro sentinel scrub](feedback_default_assistant_trips_sentinel_scrub.md) — use the `default_assistant` slug in the footer. #611.
@@ -84,3 +84,5 @@
 - [Bar sidecars need generator-side series annotation](feedback_bar_sidecar_series_annotation.md) — savefig_paper bars drop per-row series; re-annotate from container order + jq-verify; Lens-14 clears via address-concern alone. #2479 r2.
 - [Prescribed wording: grammar-check in situ](feedback_prescribed_wording_grammar_check.md) — verdict-prescribed text can break the host sentence; adapt minimally, keep word arithmetic, flag deviation. #823 r7.
 - [Touched-sentence scope sweep](feedback_touched_sentence_scope_sweep.md) — re-verify every number in a touched sentence vs its implied cell set; mixed-scope parentheticals ("A plus B (stat)") hide narrow-scope stats. #823 r8.
+- [snapshot_download allow_patterns stalls on the 1M-file data repo](feedback_snapshot_download_million_file_repo_stall.md) — enumerates the WHOLE tree client-side; use scoped list_repo_tree + per-file hf_hub_download (xet/hf_transfer off); cross-stage shard names do not align — search by row_id. #2378 r4.
+- [Ack paragraph goes in ## Goal, never after the last result](feedback_ack_paragraph_placement_goal_not_last_result.md) — check 20 counts it into that result (128→193 FAIL); "All three arms" trips the arm-count ban. #2564.

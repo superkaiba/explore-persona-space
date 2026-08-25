@@ -50,6 +50,12 @@ derivation (`arm-registry: bash pod.sh | grep -oE ... -> p0 p1 ...`) is also
 REFUSE-malformed (neither accepted form), parenthetical-decorated row keys
 (`p0 (pod smoke): REAL`) re-appeared, and the hand-enumeration omitted two sibling
 drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
+omission shape). The one-post fix recipe held unchanged.
+the whole point of gate 0.55. Re-hit #2379 R1 g6 (2026-08-19): a COMMAND-PIPELINE
+derivation (`arm-registry: bash pod.sh | grep -oE ... -> p0 p1 ...`) is also
+REFUSE-malformed (neither accepted form), parenthetical-decorated row keys
+(`p0 (pod smoke): REAL`) re-appeared, and the hand-enumeration omitted two sibling
+drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
 omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
 (2026-08-22): command-pipeline derivation again (backtick `uv run python -c
 "...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully
@@ -91,6 +97,18 @@ N/A claim (grep the module for a real no-registry unconditional-dispatch shape).
 **How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
 + bare `per-arm-resolution:` heading + bare-token row keys, in one re-post.
+
+Seventh hit #2552 R1 g7 (2026-08-24): bare `arm-registry:` heading + per-driver
+`--list-phases` command-transcript BULLETS (pitfall 4 + the dominant transcript
+variant combined) on a 3-driver round whose substance was fully correct (35/35
+set-equality via live `--list-phases`). NEW wrinkle: a DISPATCHER arm
+(`judge:all`) listed in `arms_stubbed` while rowed `N/A — dispatcher` — under
+PASS_PARTIAL that breaks arms_stubbed == FALLBACK-rowed-set consistency (sibling
+dispatchers `ladder:all`/`*:smoke` were correctly N/A and NOT in arms_stubbed);
+fix = drop the dispatcher from arms_stubbed, fold into the same one-post
+marker-shape fix. Multi-driver re-key recipe confirmed: ONE primary-driver
+`source= file= n= members=` line, primary rows BARE, other drivers' rows DOTTED
+(colon-namespaced keys parse as the prefix and fail clause-5 for every member).
 
 **Argparse-choices drivers tempt PROSE-form registry lines (#2502 R1 g4).** A round
 whose drivers dispatch on argparse `choices=` (no `PHASES` dict) has no `source=`
