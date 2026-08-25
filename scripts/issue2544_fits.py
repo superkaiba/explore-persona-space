@@ -120,12 +120,20 @@ BOOT_SEED = C.FOLD_SEED + 2544
 GATE_B_FLOOR = 0.15  # §7 Gate B: diagonal Q(main) at layer*
 SCRAMBLE_LEAK_CAP = 0.05  # §7 Gate B: ONE-SIDED scramble leak cap (never |R^2|<eps)
 
-# In-run pilot bases (plan §9, MEASURED #1902 per-unit-class figures) + the
-# pre-registered abort ratio.
+# In-run pilot gates (plan v8 §9 bookings + the pre-registered §7 cost
+# abort: pilot-extrapolated PHASE TOTAL > 2x the booking). The #1902
+# per-unit-class figures below are RECORDED in the gate report for the
+# audit trail, never compared per-unit: a #1902 "unit" is one (cell, fold)
+# at a SINGLE layer class, while a realized #2544 unit batches all 17
+# layers (P4a sweep) / the B6 band (P4b cells) — the per-unit comparison
+# false-halted production (rc=7, pod-2544, 2026-08-25: 100.57 s/unit vs
+# basis 15.3 s while the phase total projected 2.5 of 4.0 booked GPU-h).
 P4A_UNIT_BASIS_S = 15.3
 P4B_GRID_BASIS_S = 12.8
 P4B_XFER_BASIS_S = 43.0
 PILOT_ABORT_RATIO = 2.0
+P4A_BOOKED_GPU_H = 4.0  # plan v8 §9 P4a row: planned_gpu_h (wall 1.0 h at 8-way)
+P4B_BOOKED_GPU_H = 17.0  # plan v8 §9 P4b row: planned_gpu_h (wall 2.2 h at 8-way)
 
 FORMATION_FLOORS = (0.05, 0.10, 0.15)  # §3 floor-sensitivity read
 # v8 §6 truncated-vs-natural within-rung split: values reported only where
@@ -191,6 +199,49 @@ def _eval_dir(out_root: Path, smoke: bool) -> Path:
     if smoke:
         return out_root / "eval_results" / "issue_2544"
     return R.PROJECT_ROOT / "eval_results" / "issue_2544"
+
+
+# ── in-run pilot gate (projection vs booking) ────────────────────────────────
+
+
+def pilot_projection_gate(
+    *,
+    klass: str,
+    per_unit_s: float,
+    n_units: int,
+    booked_gpu_h: float,
+    basis_s: float,
+    grain: str,
+    other_gpu_h: float = 0.0,
+) -> dict[str, Any]:
+    """Projection-vs-booking pilot verdict (plan §7 cost abort: halt iff the
+    pilot-extrapolated PHASE TOTAL exceeds ``PILOT_ABORT_RATIO`` x the plan
+    v8 §9 GPU-h booking, strict ``>``).
+
+    Chosen form: ``projected_gpu_h = per_unit_s * n_units / 3600 +
+    other_gpu_h`` vs ``2 x booked_gpu_h`` (GPU-h, worker-count independent —
+    robust to the plan's sanctioned degraded narrower launches). A realized
+    per-unit wall is NEVER compared against the #1902 per-unit-class basis:
+    the grains differ (see the constants block above; production false halt
+    2026-08-25), so ``per_unit_s``/``basis_s``/``grain`` ride the report as
+    audit-trail fields only. ``other_gpu_h`` carries sibling unit classes'
+    projected share (measured when available, else basis-projected) so a
+    multi-class phase (P4b) gates on its phase total.
+    """
+    projected = per_unit_s * n_units / 3600.0 + other_gpu_h
+    return {
+        "form": "projected_gpu_h_vs_booked",
+        "klass": klass,
+        "per_unit_s": float(per_unit_s),
+        "n_units": int(n_units),
+        "basis_s": float(basis_s),
+        "grain": grain,
+        "other_classes_gpu_h": round(float(other_gpu_h), 4),
+        "projected_gpu_h": round(projected, 4),
+        "booked_gpu_h": float(booked_gpu_h),
+        "abort_ratio": PILOT_ABORT_RATIO,
+        "halt": bool(projected > PILOT_ABORT_RATIO * booked_gpu_h),
+    }
 
 
 # ── the S2 ridge chokepoint ──────────────────────────────────────────────────
@@ -1077,18 +1128,25 @@ def run_p4a(args: argparse.Namespace, out_root: Path) -> None:
                 resident={(sub, layer) for sub, ls in needed.items() for layer in ls},
             )
         if not piloted:
-            # In-run P4a-entry pilot: FIRST unit timed alone; abort > 2x the
-            # measured 15.3 s grid-class basis (plan §9; smoke informational).
+            # In-run P4a-entry pilot: FIRST unit timed alone; halt iff the
+            # PHASE-TOTAL projection exceeds 2x the §9 booking (plan §7 cost
+            # abort; smoke informational). Never per-unit-vs-basis: a sweep
+            # unit fits ALL 17 layers of one (rung, fold) while the 15.3 s
+            # #1902 basis is single-layer-class grain (production false halt
+            # rc=7, 2026-08-25).
             pool.run(f"sweep-pilot-w{wi}", units[:1])
             timed = [t for t in ctx.pilot_timings if t.get("klass") == "sweep"]
             if timed:
-                pilot = {
-                    "per_unit_s": timed[0]["wall_s"],
-                    "basis_s": P4A_UNIT_BASIS_S,
-                    "abort_ratio": PILOT_ABORT_RATIO,
-                }
+                pilot = pilot_projection_gate(
+                    klass="sweep",
+                    per_unit_s=float(timed[0]["wall_s"]),
+                    n_units=len(rungs) * ctx.spine.n_folds,
+                    booked_gpu_h=P4A_BOOKED_GPU_H,
+                    basis_s=P4A_UNIT_BASIS_S,
+                    grain="17L-rung-fold-unit",
+                )
                 logger.info("[fits] P4a-entry pilot: %s", pilot)
-                if not ctx.smoke and timed[0]["wall_s"] > PILOT_ABORT_RATIO * P4A_UNIT_BASIS_S:
+                if not ctx.smoke and pilot["halt"]:
                     R.designed_halt(ctx.out_root, "p4a_pilot_wall", pilot)
             units = units[1:]
             piloted = True
@@ -2738,14 +2796,36 @@ def _ensure_p4a_artifacts(ctx: FitsCtx) -> None:
         )
 
 
-def _check_class_pilot(ctx: FitsCtx, klass: str, basis_s: float) -> None:
+def _check_class_pilot(
+    ctx: FitsCtx,
+    klass: str,
+    basis_s: float,
+    *,
+    n_units: int,
+    other_gpu_h: float,
+    grain: str,
+) -> None:
+    """P4b per-class entry pilot in projection-vs-booking form (plan §7 cost
+    abort): halt iff this class's pilot-extrapolated GPU-h + the sibling
+    classes' share (``other_gpu_h`` — measured when available, else
+    basis-projected) exceeds 2x ``P4B_BOOKED_GPU_H``. The #1902 per-class
+    bases ride the report as audit fields only (grain-mismatch fix,
+    production false halt 2026-08-25 — realized cell units batch the B6
+    band + a wider n_tr vs the single-layer-class basis grain)."""
     timed = [t for t in ctx.pilot_timings if t.get("klass") == klass]
     if not timed:
         return  # resumed-done pilot unit: the prior process already gated it
-    per_unit = timed[0]["wall_s"]
-    pilot = {"klass": klass, "per_unit_s": per_unit, "basis_s": basis_s, "ratio": PILOT_ABORT_RATIO}
+    pilot = pilot_projection_gate(
+        klass=klass,
+        per_unit_s=float(timed[0]["wall_s"]),
+        n_units=n_units,
+        booked_gpu_h=P4B_BOOKED_GPU_H,
+        basis_s=basis_s,
+        grain=grain,
+        other_gpu_h=other_gpu_h,
+    )
     logger.info("[fits] P4b-entry pilot: %s", pilot)
-    if not ctx.smoke and per_unit > PILOT_ABORT_RATIO * basis_s:
+    if not ctx.smoke and pilot["halt"]:
         R.designed_halt(ctx.out_root, f"p4b_pilot_wall_{klass}", pilot)
 
 
@@ -2843,7 +2923,19 @@ def run_p4b(args: argparse.Namespace, out_root: Path) -> None:
         ensure_cells_staged(out_root, wave_needed, soft=frozenset(wave_soft))
         if not piloted:
             pool.run("cells-pilot", units[:1])
-            _check_class_pilot(ctx, "grid", P4B_GRID_BASIS_S)
+            # Phase-total projection: grid share measured (this pilot) +
+            # xfer share basis-projected (not yet piloted). Alignment/
+            # operator/bootstrap shares (~0.5-1 GPU-h, plan §9) ride the
+            # 2x margin.
+            n_xfer = len(C2.transfer_pairs(tuple(rungs))) * ctx.spine.n_folds
+            _check_class_pilot(
+                ctx,
+                "grid",
+                P4B_GRID_BASIS_S,
+                n_units=len(specs) * ctx.spine.n_folds,
+                other_gpu_h=n_xfer * P4B_XFER_BASIS_S / 3600.0,
+                grain="B6-cell-fold-unit",
+            )
             units = units[1:]
             piloted = True
         pool.run(f"cells-{'-'.join(wave)}", units)
@@ -2883,7 +2975,24 @@ def run_p4b(args: argparse.Namespace, out_root: Path) -> None:
 
     xfer_units = [_xfer_unit(i, j, fold) for i, j in pairs for fold in range(ctx.spine.n_folds)]
     pool.run("xfer-pilot", xfer_units[:1])
-    _check_class_pilot(ctx, "xfer", P4B_XFER_BASIS_S)
+    # Grid share: mean of THIS process's measured cell-unit walls when any
+    # ran (every run_cell_unit reports one), else the #1902 basis (fully-
+    # resumed cell waves time nothing in this process).
+    grid_walls = [float(t["wall_s"]) for t in ctx.pilot_timings if t.get("klass") == "grid"]
+    n_cells = len(specs) * ctx.spine.n_folds
+    grid_gpu_h = (
+        sum(grid_walls) / len(grid_walls) * n_cells / 3600.0
+        if grid_walls
+        else n_cells * P4B_GRID_BASIS_S / 3600.0
+    )
+    _check_class_pilot(
+        ctx,
+        "xfer",
+        P4B_XFER_BASIS_S,
+        n_units=len(xfer_units),
+        other_gpu_h=grid_gpu_h,
+        grain="star-pair-fold-unit",
+    )
     pool.run("xfer", xfer_units[1:])
 
     op_units = [
