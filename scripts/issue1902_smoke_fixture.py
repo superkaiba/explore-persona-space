@@ -63,7 +63,7 @@ ARCH_TOKENIZER = {
     # has_chat_template on post rungs (R) — a template-less base tokenizer
     # kills pass1 there (measured 2026-08-24). Mirrors the olmo2 row's
     # Instruct choice; plain-render cells ignore the template.
-    "olmo3": "allenai/Olmo-3-1025-7B-Instruct",
+    "olmo3": "allenai/Olmo-3-7B-Instruct",  # rung R's production id (ladder JSON)
 }
 
 
