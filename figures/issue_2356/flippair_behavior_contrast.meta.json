@@ -1,13 +1,16 @@
 {
-  "commit": "60653c41+dirty",
-  "render_id": "1987dddcaf014aac",
-  "git_commit": "60653c41a82f0c5c386c4ed8a85ffe52f4569fac",
+  "commit": "919e2e4a+dirty",
+  "render_id": "69c76104bcac4d3b",
+  "git_commit": "919e2e4a3ac1d6b1a8caa5eafda5ef7affd6d7f2",
   "git_dirty": true,
   "git_dirty_paths": [
     "eval_results/issue_2474/n1m_map_arms.json",
     "figures/issue_2356/flippair_2afc.meta.json",
     "figures/issue_2356/flippair_2afc.pdf",
     "figures/issue_2356/flippair_2afc.png",
+    "figures/issue_2356/flippair_behavior_contrast.meta.json",
+    "figures/issue_2356/flippair_behavior_contrast.pdf",
+    "figures/issue_2356/flippair_behavior_contrast.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
@@ -29,7 +32,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2356_flippair_figures.py",
-  "created": "2026-08-25T22:30:03Z",
+  "created": "2026-08-25T22:35:19Z",
   "figsize": [
     10.5,
     4.3
@@ -56,14 +59,14 @@
     {
       "x": 0.0,
       "Median distance between the pair's context vectors": 44.8475015136091,
-      "series": "Prompts from unrelated bases",
+      "series": "Prompts from unrelated base queries",
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.0,
       "Median distance between the pair's context vectors": 44.8475015136091,
-      "series": "Prompts from unrelated bases",
+      "series": "Prompts from unrelated base queries",
       "_kind": "line",
       "_group": 1
     },
@@ -180,10 +183,24 @@
       "Two-alternative accuracy": 0.6696976647206004,
       "_kind": "line",
       "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Two-alternative accuracy": 0.5,
+      "series": "Chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Two-alternative accuracy": 0.5,
+      "series": "Chance (0.5)",
+      "_kind": "line",
+      "_group": 8
     }
   ],
-  "n_series": 8,
-  "total_points": 23,
+  "n_series": 9,
+  "total_points": 25,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -192,7 +209,7 @@
         "title_left": "How far apart are the two prompts?",
         "ylabel": "Median distance between the pair's context vectors",
         "legend_labels": [
-          "Prompts from unrelated bases"
+          "Prompts from unrelated base queries"
         ],
         "xticklabels": [
           "Behavior differs\n(one refused, one complied)",
@@ -213,6 +230,7 @@
         "title_left": "Does the map tell the pair apart?",
         "ylabel": "Two-alternative accuracy",
         "legend_labels": [
+          "Chance (0.5)",
           "Fitted map",
           "Identity + bias"
         ],
@@ -236,7 +254,8 @@
       }
     ],
     "series": [
-      "Prompts from unrelated bases",
+      "Prompts from unrelated base queries",
+      "Chance (0.5)",
       "Fitted map",
       "Identity + bias"
     ]
