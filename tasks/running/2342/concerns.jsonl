@@ -1,1 +1,2 @@
 {"ts": "2026-08-25T01:03:26Z", "event": "raised", "concern_id": "reconcile-sweep-digit-gap", "severity": "BLOCKER", "summary": "Workflow sweep misses valid digit-bearing reconcile marker kinds, allowing documentation drift to bypass CI.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-25T01:03:32Z", "event": "raised", "concern_id": "file-channel-order-test", "severity": "NIT", "summary": "The file-channel test does not prove refusal occurs before reading the note file.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
