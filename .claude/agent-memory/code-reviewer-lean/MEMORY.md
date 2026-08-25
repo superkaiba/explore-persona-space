@@ -1,4 +1,6 @@
 # code-reviewer-lean memory index
+- [Dial-added fingerprint arms refuse-on-relaunch](dial_added_fingerprint_arms_refuse_on_relaunch.md) — fingerprint-dial fix + flag-flipping relaunch leg = DOA on the producer's refuse-to-mix arm; audit all 3 mismatch polarities (#2546 r2 g1)
+- [Anchored letter extractor boundary probe](anchored_letter_extractor_boundary_probe.md) — IGNORECASE [A-J] + no right lookahead captures next-word initials ('answer is clearly B'→C); 3 live probes (#2546 r2 g1)
 - [Loop-var tmp interpolation evades #2336 lint](loopvar_tmp_interpolation_evades_2336_lint.md) — arms E/F exempt post-`.tmp_` interpolations; a loop-variable name is still fixed-per-unit — grep all `.tmp` writers, classify interpolants (#2552 r1 g4)
 - [Size-match resume skip == presence for npz](size_match_resume_skip_npz.md) — resume_skip size probe skips recomputed same-shape npz (byte-identical size, different content); require resume_skip=False after wipe-recompute paths (#2552 r1 g3)
 - [Embedded smoke leg in production chain](feedback_embedded_smoke_leg_production_chain.md) — a production `all` chain running its smoke leg internally defeats dispatcher-level out-root splits; smoke dial must be in the SCRIPT's resume fingerprint (#2546 r1 g2)
