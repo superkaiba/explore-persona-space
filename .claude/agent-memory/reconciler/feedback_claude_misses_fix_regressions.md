@@ -11,6 +11,20 @@ metadata:
 
 **Plan-level instance (#554 r1 alt):** plan demoted the false-positive behind-origin/main ERROR to WARNING and replaced it with a behind-own-ref ERROR whose freshness depends on a `git fetch` whose rc the plan ignores — fetch failure → `behind_own=0` → silent PASS of a stale resumed pod, the exact class the old (spurious) ERROR accidentally blocked. "Pre-existing ignore-rc" does NOT save a plan whose change converts a benign ignore into a hole in its own acceptance criterion. Also check whether the mocked test seam can even EXPRESS the failure (fake `_run` hardcoding fetch rc 0 pins the hollow guarantee green). REVISE.
 
+**Same-round mutual-defeat instance (#2254 r6v2):** two fixes landed in ONE
+round — (a) verify-uploads-before-sentinel (the r1 Major), (b) an idempotent
+phase-entry skip (closing an r1 CONCERN) — and (b) silently defeated (a): the
+skip predicate keyed on LOCAL report+files (written BEFORE upload), so
+crash-in-upload-window + plan-registered re-entry wrote the done sentinel with
+zero upload/verify. Claude verified (a) on the normal path and PASSed; the
+committed test even PINNED the bypass (asserting ZERO verifier calls on
+re-invocation). Two new tells: (1) any fix-round that ADDS an idempotent
+skip/resume path — trace whether the skip re-runs the durability legs
+(upload/verify/remote check) the normal path guards, and whether the skip
+predicate can be true in a state the normal path would refuse; (2) a test
+asserting zero side-effect calls on re-entry is a red flag to interrogate,
+never evidence the skip is safe.
+
 Related: [[feedback_claude_underclasses_silent_failures]]; [[feedback_claude_misses_same_file_siblings]].
 
 ## Index hooks moved from MEMORY.md (#1891 curation, 2026-07-30)
