@@ -3,8 +3,10 @@
 
 Pins, on synthetic fixtures (no GPU, no downloads, no staged stores):
 - ``_validate_run_shape`` (C2): production asserts the exact registered rung
-  set / seed set / 1,920-chunk capture / captured==manifest / 963,444 pool;
-  smoke asserts its OWN registered expectations (never skip-under-smoke).
+  set / seed set / 1,920-chunk capture / captured == the plan-§10 registered
+  realized grain (959,844; the manifest DECLARES 960,000 — round-4c fix) /
+  963,444 pool; smoke asserts its OWN registered expectations (never
+  skip-under-smoke).
 - ``_endpoint_verdict`` (M2): the plan-v13 §3 lattice — seed-paired slopes,
   S_mlp seed mean, S_ridge, D_gap = (S_mlp - S_ridge) - 0.01, Confirmed ⇔
   D_gap >= 0 — with exact arithmetic, plus structured computed:false records.
@@ -47,7 +49,10 @@ from issue1901_paper_densify_mlp import (  # noqa: E402
 PROD_RUNGS = [(n, "n1m") for n in PRODUCTION_DENSE_NS]
 
 
-def _split(cap=959_844, man=959_844):
+def _split(cap=959_844, man=960_000):
+    """Default = the banked store's REALIZED grain (959,844 captured) vs the
+    manifest's DECLARED 960,000 (156-row capture attrition, plan §10) — the
+    healthy production shape the round-4c gate must ACCEPT."""
     return {"n_new_captured": cap, "n_new_manifest": man}
 
 
@@ -82,10 +87,15 @@ def _smoke_kwargs(**over):
 
 
 def test_shape_production_passes_and_audits():
+    """Round-4c pin: the healthy banked shape — 959,844 realized captured rows
+    against the manifest's declared 960,000 — PASSES the production gate, and
+    the declared-vs-realized delta stays recorded in the audit."""
     audit = _validate_run_shape(**_prod_kwargs())
     assert audit["mode"] == "production"
     assert audit["seeds"] == [42, 43, 44]
     assert audit["n_capture_files"] == 1_920
+    assert audit["n_new_captured"] == 959_844
+    assert audit["n_new_manifest"] == 960_000
     assert audit["n_pool_full"] == 963_444
 
 
@@ -95,6 +105,11 @@ def test_shape_production_passes_and_audits():
         (dict(rung_specs=PROD_RUNGS[:-1]), "rung set"),
         (dict(n_capture_files=1_919), "chunk count"),
         (dict(split=_split(cap=900_000)), "captured rows"),
+        # Genuine one-row tear vs the registered realized grain (round 4c).
+        (dict(split=_split(cap=959_843)), "registered realized grain"),
+        # The pre-4c passing shape (cap == man == declared 960,000) is a
+        # WRONG-grain capture under the registered-grain gate — must raise.
+        (dict(split=_split(cap=960_000)), "registered realized grain"),
         (dict(n_pool_full=963_443), "train pool"),
     ],
 )
