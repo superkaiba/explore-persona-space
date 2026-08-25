@@ -16,7 +16,10 @@ record content via ``git cat-file blob :<path>`` (never a working-tree
 ``open()``), consumer enumeration via ``git grep --cached``, and consumer
 content via index blobs. A record passed via ``--record`` must therefore be
 in the git index (``git add`` it first); a not-in-index path is a usage
-error (exit 2).
+error (exit 2). A tracked record whose index bytes are NOT decodable as
+UTF-8 is a MALFORMED record — WARN by default, FAIL under ``--strict`` —
+never a usage error (a non-UTF-8 record must not hard-block the fleet
+no-flags lint; #2568 round 2).
 
 Record schema (``artifact-supersession-record-v1``) — this docstring plus the
 :data:`SCHEMA_VERSION` constant are the schema's single source of truth.
@@ -33,12 +36,22 @@ Required keys:
 - ``issue``             — owning issue number (int).
 - ``refuted_claim``     — one-line prose of the refuted claim/join.
 - ``refuted_artifacts`` — non-empty list of artifact FILENAMES; each name
-  must be >= 8 chars (bare common words make the grep useless).
+  must be a nonblank filename token (see the token rule below) with >= 8
+  NON-WHITESPACE chars (bare common words make the grep useless).
 - ``evidence``          — non-empty list of refuting-evidence pointers
   (marker refs, log paths).
 - ``replacement_artifacts`` — list of replacement artifact filenames. MAY be
   empty when no replacement exists — then only the label arm can pass a
-  consumer.
+  consumer. Every PRESENT entry must be a nonblank filename token.
+
+Token rule (#2568 round 2): every ``refuted_artifacts`` /
+``replacement_artifacts`` / ``label_patterns`` entry must be nonblank after
+stripping and carry no path separator (``/`` or ``\\``) and no control
+character. A degenerate entry is a SCHEMA problem (WARN; ``--strict``:
+FAIL) and the record's consumers are NEVER audited against it — an empty
+replacement string is a substring of every file (a silent universal
+``pass-replacement``), and a whitespace-only name/pattern matches nearly
+any indented line.
 
 Optional keys (unknown keys are tolerated — forward-compat):
 
@@ -66,9 +79,10 @@ Worked example (the #1901 plan-v15 §10 instance)::
 
 Audit algorithm (per record):
 
-1. Validate the schema. Malformed / unrecognized record => one WARN line
-   naming the record + the missing/wrong field, plus a migration recipe
-   pointer to this docstring (``--strict``: FAIL instead).
+1. Validate the schema. Malformed / unrecognized / non-UTF-8 record => one
+   WARN line naming the record + the missing/wrong field, plus a migration
+   recipe pointer to this docstring (``--strict``: FAIL instead); the
+   record's consumers are not audited.
 2. Enumerate consumers FRESH: per refuted name,
    ``git grep --cached -l -F <name> -- . ':!tasks' ':!eval_results'
    ':!ood_eval_results' ':!figures'`` (grep-time pathspec excludes keep the
@@ -92,7 +106,7 @@ Audit algorithm (per record):
 5. Exit 0 when clean (WARNs allowed), 1 on >= 1 violation, 2 on usage error.
 
 Disclosed false-negative / false-PASS modes (the reviewer/analyzer remains
-the catching arm for all four; the #2165 scanner-disclosure norm):
+the catching arm for all six; the #2165 scanner-disclosure norm):
 
 1. FALSE NEGATIVE — a consumer referencing a refuted artifact via a
    variable, glob, f-string fragment, or wrapped/split literal escapes the
@@ -106,6 +120,15 @@ the catching arm for all four; the #2165 scanner-disclosure norm):
    row grain.
 4. FALSE PASS — a "superseded" occurrence within +/-5 lines that refers to
    a DIFFERENT claim satisfies arm (b).
+5. FALSE NEGATIVE — a genuine consumer whose OWN basename matches
+   ``superseded_*.json`` OUTSIDE ``eval_results/`` is excluded as a
+   "record" (``_is_record_path`` applies to every enumerated index path,
+   not only ``eval_results/`` paths) and is never audited.
+6. FALSE NEGATIVE — a consumer whose index path suffix-matches a
+   refuted/replacement artifact NAME is excluded as the artifact file
+   itself (``_matches_artifact_name`` is an index-path suffix match on
+   BASENAMES) — an UNRELATED same-basename consumer elsewhere in the tree
+   is never audited.
 
 Dependencies: stdlib + subprocess git only — no ``explore_persona_space``
 imports, no dotenv/HF (keeps this script outside the scripts-import-guard /
@@ -197,19 +220,50 @@ def discover_records(repo_root: Path) -> list[str]:
     return sorted(p for p in paths if _is_record_path(p))
 
 
-def _read_index_blob(repo_root: Path, path: str) -> str | None:
-    """Stage-0 index content of *path* (checkout-independent); None if absent
-    from the index or not decodable as UTF-8 text."""
+def _read_index_blob_bytes(repo_root: Path, path: str) -> bytes | None:
+    """Stage-0 index BYTES of *path* (checkout-independent); None only when
+    *path* is absent from the index. Record reads use this form so
+    index-absence (a ``--record`` usage error) and a UTF-8 decode failure
+    (a malformed record) stay distinguishable (#2568 round 2)."""
     proc = subprocess.run(
         ["git", "-C", str(repo_root), "cat-file", "blob", f":{path}"],
         capture_output=True,
     )
     if proc.returncode != 0:
         return None
+    return proc.stdout
+
+
+def _read_index_blob(repo_root: Path, path: str) -> str | None:
+    """Stage-0 index content of *path* decoded as UTF-8; None if absent from
+    the index OR not decodable (consumer-read convenience — a binary/non-UTF-8
+    consumer is WARNed and skipped, so the two states may stay conflated
+    here)."""
+    raw = _read_index_blob_bytes(repo_root, path)
+    if raw is None:
+        return None
     try:
-        return proc.stdout.decode("utf-8")
+        return raw.decode("utf-8")
     except UnicodeDecodeError:
         return None
+
+
+def _degenerate_token_reason(value: str) -> str | None:
+    """Why *value* is unusable as a matching token (None == usable).
+
+    A degenerate token silently inverts the audit (#2568 round 2): an empty
+    replacement string is a substring of EVERY file (universal
+    ``pass-replacement``), and a whitespace-only name/pattern matches nearly
+    any indented line. The schema carries FILENAMES / short label phrases,
+    so path separators and control characters are rejected too.
+    """
+    if not value.strip():
+        return "empty or whitespace-only"
+    if "/" in value or "\\" in value:
+        return "contains a path separator"
+    if any(ord(ch) < 32 or 127 <= ord(ch) <= 159 for ch in value):
+        return "contains a control character"
+    return None
 
 
 def validate_record(data: object) -> list[str]:
@@ -220,7 +274,9 @@ def validate_record(data: object) -> list[str]:
     schema = data.get("schema")
     if schema != SCHEMA_VERSION:
         problems.append(f"schema: expected {SCHEMA_VERSION!r}, got {schema!r} ({MIGRATION_HINT})")
-    if not isinstance(data.get("issue"), int):
+    issue_val = data.get("issue")
+    # bool subclasses int — reject it explicitly (Claude review round 1).
+    if not isinstance(issue_val, int) or isinstance(issue_val, bool):
         problems.append("issue: required int is missing or non-int")
     claim = data.get("refuted_claim")
     if not isinstance(claim, str) or not claim.strip():
@@ -229,11 +285,22 @@ def validate_record(data: object) -> list[str]:
     if not isinstance(refuted, list) or not refuted or not all(isinstance(n, str) for n in refuted):
         problems.append("refuted_artifacts: required non-empty list of strings is missing")
     else:
-        short = [n for n in refuted if len(n) < MIN_ARTIFACT_NAME_LEN]
+        for name in refuted:
+            reason = _degenerate_token_reason(name)
+            if reason:
+                problems.append(
+                    f"refuted_artifacts: degenerate name {name!r} ({reason}) — it would "
+                    f"grep-match nothing or everything"
+                )
+        # The >= 8 floor counts NON-WHITESPACE chars: eight spaces must not
+        # satisfy it (#2568 round 2).
+        short = [
+            n for n in refuted if sum(1 for ch in n if not ch.isspace()) < MIN_ARTIFACT_NAME_LEN
+        ]
         if short:
             problems.append(
-                f"refuted_artifacts: names shorter than {MIN_ARTIFACT_NAME_LEN} chars make the "
-                f"fixed-string grep useless: {short}"
+                f"refuted_artifacts: names with fewer than {MIN_ARTIFACT_NAME_LEN} "
+                f"non-whitespace chars make the fixed-string grep useless: {short}"
             )
     evidence = data.get("evidence")
     if (
@@ -247,6 +314,14 @@ def validate_record(data: object) -> list[str]:
         # MAY be empty (no replacement exists -> only the label arm can pass),
         # but it must be present as a list of strings.
         problems.append("replacement_artifacts: required list of strings is missing")
+    else:
+        for name in replacements:
+            reason = _degenerate_token_reason(name)
+            if reason:
+                problems.append(
+                    f"replacement_artifacts: degenerate name {name!r} ({reason}) — an "
+                    f"empty/blank entry would mark EVERY consumer pass-replacement"
+                )
     for optional in ("consumers_at_record_time", "producers", "acknowledged_pending"):
         val = data.get(optional)
         if val is not None and (
@@ -260,6 +335,14 @@ def validate_record(data: object) -> list[str]:
         or not all(isinstance(p, str) and p for p in patterns)
     ):
         problems.append("label_patterns: optional field must be a non-empty list of strings")
+    elif patterns is not None:
+        for pat in patterns:
+            reason = _degenerate_token_reason(pat)
+            if reason:
+                problems.append(
+                    f"label_patterns: degenerate pattern {pat!r} ({reason}) — a blank "
+                    f"pattern would label-match any window"
+                )
     return problems
 
 
@@ -321,18 +404,31 @@ def _audit_one_record(
         "excluded": {"tree_classes": [], "files": {}},
     }
     report.records.append(rec_entry)
-    raw = _read_index_blob(repo_root, record_path)
-    if raw is None:
+    raw_bytes = _read_index_blob_bytes(repo_root, record_path)
+    if raw_bytes is None:
+        # Index-ABSENT: only reachable via --record misuse (discovery is
+        # `git ls-files`, so discovered records are in the index by
+        # construction) — a caller-input problem, exit 2.
         raise UsageError(
-            f"record {record_path} is not readable from the git index — `git add` it first "
+            f"record {record_path} is not in the git index — `git add` it first "
             "(all reads are index-based; sparse worktrees lack eval_results/ on disk)"
         )
     try:
-        data = json.loads(raw)
-        problems = validate_record(data)
-    except json.JSONDecodeError as exc:
-        problems = [f"unparseable JSON: {exc} ({MIGRATION_HINT})"]
-        data = None
+        raw: str | None = raw_bytes.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        # Index-PRESENT but undecodable: a MALFORMED record (WARN; --strict:
+        # FAIL), never a UsageError — a tracked non-UTF-8 record must not
+        # hard-block the fleet no-flags lint (#2568 round 2).
+        raw = None
+        problems = [f"record bytes are not decodable as UTF-8: {exc} ({MIGRATION_HINT})"]
+        data: object | None = None
+    if raw is not None:
+        try:
+            data = json.loads(raw)
+            problems = validate_record(data)
+        except json.JSONDecodeError as exc:
+            problems = [f"unparseable JSON: {exc} ({MIGRATION_HINT})"]
+            data = None
     if problems:
         rec_entry["schema_problems"] = problems
         for prob in problems:

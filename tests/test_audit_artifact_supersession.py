@@ -15,6 +15,13 @@ Covered (plan #2568 §3):
   unlabeled -> violation with file:line, producer-listed -> excluded;
 - ``acknowledged_pending`` -> WARN (exit 0);
 - malformed record -> WARN + exit 0 (``--strict``: FAIL + exit 1);
+- degenerate matching tokens (#2568 round 2): ``replacement_artifacts=[""]``,
+  an eight-space refuted name, a whitespace-only label pattern, path
+  separators / control characters, and a bool ``issue`` — each a schema
+  WARN (strict: FAIL) with ZERO consumer verdicts (no pass-replacement
+  from a degenerate token);
+- non-UTF-8 tracked record bytes (#2568 round 2) -> malformed-record WARN
+  (strict: FAIL), never a UsageError/exit-2;
 - ``--record`` single-record mode (+ not-in-index -> exit 2);
 - ``--json`` report written + parseable;
 - ``--include-tasks`` flips the tasks/** exclusion;
@@ -273,6 +280,115 @@ def test_unparseable_json_record_warns(repo: Path) -> None:
     report = run_audit(repo)
     assert report.violations == []
     assert any("unparseable JSON" in w for w in report.warnings)
+
+
+# ---------------------------------------------------------------------------
+# Degenerate matching tokens (#2568 round 2, blocker
+# `empty-replacement-universal-pass`): a blank/degenerate entry is a schema
+# problem and NO consumer is ever audited against it — in particular no
+# consumer may receive a pass-replacement verdict from an empty string.
+# ---------------------------------------------------------------------------
+
+
+def _assert_degenerate_record_semantics(repo: Path, *, field_token: str) -> None:
+    """Default: WARN + exit 0, ZERO consumer verdicts; --strict: FAIL + 1."""
+    report = run_audit(repo)
+    assert report.violations == [], report.violations
+    assert any(field_token in w and RECORD_REL in w for w in report.warnings), report.warnings
+    rec = report.records[0]
+    assert rec["schema_ok"] is False
+    # NO consumer processing on a degenerate record — zero verdicts of any
+    # kind, so a pass-replacement verdict from a degenerate token is
+    # structurally unreachable.
+    assert rec["consumers"] == {}, rec["consumers"]
+    strict_report = run_audit(repo, strict=True)
+    assert any(field_token in v for v in strict_report.violations)
+    assert all(
+        c["status"] != "pass-replacement"
+        for r in strict_report.records
+        for c in r["consumers"].values()
+    )
+    assert _run_cli(repo).returncode == 0
+    assert _run_cli(repo, "--strict").returncode == 1
+
+
+def test_empty_replacement_entry_is_schema_warn_never_universal_pass(repo: Path) -> None:
+    """``replacement_artifacts=[""]``: '"" in content' is True for every
+    file, so an empty entry must be rejected at schema time — never reach
+    the consumption arm."""
+    _build_standard_repo(repo, record_overrides={"replacement_artifacts": [""]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="replacement_artifacts")
+
+
+def test_whitespace_only_refuted_name_is_schema_warn(repo: Path) -> None:
+    """Eight spaces satisfy a raw-length >= 8 floor while grep-matching most
+    indented files — the floor counts NON-whitespace chars and the blank
+    token is rejected outright."""
+    _build_standard_repo(repo, record_overrides={"refuted_artifacts": [" " * 8]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="refuted_artifacts")
+
+
+def test_whitespace_only_label_pattern_is_schema_warn(repo: Path) -> None:
+    """A whitespace-only label pattern would satisfy the +/-5-line window on
+    nearly any line — rejected at schema time."""
+    _build_standard_repo(repo, record_overrides={"label_patterns": ["   "]})
+    _git_add_all(repo)
+    _assert_degenerate_record_semantics(repo, field_token="label_patterns")
+
+
+def test_path_separator_and_control_char_tokens_are_schema_warns(repo: Path) -> None:
+    _build_standard_repo(
+        repo,
+        record_overrides={
+            "refuted_artifacts": ["dir/alpha_metrics_v1.json"],
+            "replacement_artifacts": ["alpha\tmetrics_v2.json"],
+        },
+    )
+    _git_add_all(repo)
+    report = run_audit(repo)
+    assert report.violations == []
+    assert any("path separator" in w for w in report.warnings), report.warnings
+    assert any("control character" in w for w in report.warnings), report.warnings
+    assert report.records[0]["consumers"] == {}
+
+
+def test_bool_issue_is_schema_warn(repo: Path) -> None:
+    """bool subclasses int — ``issue: true`` must not validate."""
+    _build_standard_repo(repo, record_overrides={"issue": True})
+    _git_add_all(repo)
+    report = run_audit(repo)
+    assert report.violations == []
+    assert any("issue" in w and RECORD_REL in w for w in report.warnings), report.warnings
+    assert report.records[0]["schema_ok"] is False
+
+
+# ---------------------------------------------------------------------------
+# Non-UTF-8 record bytes (#2568 round 2, blocker
+# `malformed-nonutf8-record-false-fail`): a DISCOVERED tracked record that is
+# undecodable is a MALFORMED record (WARN; --strict: FAIL) — never a
+# UsageError/exit-2 (which the lint wrapper would convert into a
+# fleet-blocking FAIL).
+# ---------------------------------------------------------------------------
+
+
+def test_nonutf8_record_is_malformed_warn_not_usage_error(repo: Path) -> None:
+    _build_standard_repo(repo)
+    p = repo / RECORD_REL
+    p.write_bytes(b"\xff\xfe{ this is not utf-8 \x80\x81 }\n")
+    _git_add_all(repo)
+    report = run_audit(repo)  # must NOT raise UsageError
+    assert report.violations == []
+    assert any("not decodable as UTF-8" in w and RECORD_REL in w for w in report.warnings), (
+        report.warnings
+    )
+    assert report.records[0]["schema_ok"] is False
+    assert report.records[0]["consumers"] == {}
+    strict_report = run_audit(repo, strict=True)
+    assert any("not decodable as UTF-8" in v for v in strict_report.violations)
+    assert _run_cli(repo).returncode == 0
+    assert _run_cli(repo, "--strict").returncode == 1
 
 
 # ---------------------------------------------------------------------------

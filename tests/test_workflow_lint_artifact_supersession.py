@@ -19,6 +19,14 @@ Four pins:
    main()'s no-flags dispatch set from the workflow_lint.py SOURCE (the c37
    satisfier shape / duty-mirror Part-B pattern) and asserts the check is
    bundled, so a later dispatcher refactor cannot silently unbundle it.
+5. Non-UTF-8 tracked record (#2568 round 2) -> non-blocking ``WARN:`` line,
+   empty FAIL list — never a wrapper except-Exception FAIL.
+6. Degenerate ``replacement_artifacts=[""]`` (#2568 round 2) -> schema
+   ``WARN:`` line, never a silent universal pass.
+7. Files-mode scope (#2568 round 2, `artifact-supersession-files-scope-hole`):
+   the check carries the ``REPO_WIDE_SURFACE`` sentinel, so a ``--files``
+   payload under a location the old enumerated surface set omitted (papers/)
+   still RUNS the check and FAILs on a planted unlabeled mention.
 
 Scratch repos use ``tempfile.mkdtemp`` (NOT ``tmp_path``): concurrent pytest
 sessions prune ``/tmp/pytest-of-*`` numbered roots and have deleted live
@@ -162,6 +170,39 @@ def test_direct_call_schema_problem_is_warn_line(
     assert "evidence" in err_stream
 
 
+def test_nonutf8_record_is_warn_line_not_fleet_fail(
+    fixture_repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#2568 round 2 (`malformed-nonutf8-record-false-fail`): a tracked
+    non-UTF-8 record routes to a non-blocking ``WARN:`` line — the wrapper's
+    except-Exception FAIL backstop must never fire on it (default lint stays
+    exit 0; the strict AUDIT exit-1 arm is pinned in
+    tests/test_audit_artifact_supersession.py)."""
+    (fixture_repo / RECORD_REL).write_bytes(b"\xff\xfe{ not utf-8 \x80 }\n")
+    subprocess.run(["git", "-C", str(fixture_repo), "add", "-A"], check=True)
+    errors = check_artifact_supersession(repo_root=fixture_repo)
+    assert errors == [], errors
+    err_stream = capsys.readouterr().err
+    assert "WARN: check-artifact-supersession:" in err_stream
+    assert "not decodable as UTF-8" in err_stream
+
+
+def test_degenerate_empty_replacement_is_warn_line_no_pass(
+    fixture_repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#2568 round 2 (`empty-replacement-universal-pass`): a record carrying
+    ``replacement_artifacts=[""]`` is a schema WARN at the lint surface —
+    never a silent universal pass (and never a FAIL line)."""
+    rec = _record_dict(replacement_artifacts=[""])
+    (fixture_repo / RECORD_REL).write_text(json.dumps(rec) + "\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(fixture_repo), "add", "-A"], check=True)
+    errors = check_artifact_supersession(repo_root=fixture_repo)
+    assert errors == [], errors
+    err_stream = capsys.readouterr().err
+    assert "WARN: check-artifact-supersession:" in err_stream
+    assert "replacement_artifacts" in err_stream
+
+
 # ---------------------------------------------------------------------------
 # (3) Core load failure -> FAIL line, never a silent skip
 # ---------------------------------------------------------------------------
@@ -215,3 +256,44 @@ def test_check_artifact_supersession_bundled_in_no_flags() -> None:
     # unclassified dispatch-site check, so both registries must carry it.
     assert "check_artifact_supersession" in workflow_lint.CHECK_SCOPES
     assert "check_artifact_supersession" in workflow_lint._FILES_MODE_RUNNERS
+
+
+# ---------------------------------------------------------------------------
+# (5) Files-mode scope: repo-wide sentinel — an omitted-location payload
+#     still runs the check (#2568 round 2, files-scope-hole blocker).
+# ---------------------------------------------------------------------------
+
+
+def test_files_mode_repo_wide_sentinel_declared() -> None:
+    """The CHECK_SCOPES entry is ``global`` with the REPO_WIDE_SURFACE
+    sentinel — a consumer can live at ANY tracked path, so an enumerated
+    top-level surface set (the round-1 shape) structurally under-covers."""
+    scope = workflow_lint.CHECK_SCOPES["check_artifact_supersession"]
+    assert scope.kind == "global"
+    assert workflow_lint.REPO_WIDE_SURFACE in scope.surfaces
+    assert workflow_lint._surface_hit("papers/new_consumer.py", workflow_lint.REPO_WIDE_SURFACE)
+    assert workflow_lint._surface_hit("README.md", workflow_lint.REPO_WIDE_SURFACE)
+
+
+def test_files_mode_omitted_location_payload_runs_check_and_fails(
+    fixture_repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A ``--files`` payload adding an unlabeled consumer under papers/ — a
+    location the pre-round-2 enumerated surface set OMITTED — must RUN the
+    check (no SKIP) and FAIL on the planted mention (the violation names the
+    payload path, so the in-scope attribution filter keeps it)."""
+    consumer = fixture_repo / "papers" / "new_consumer.py"
+    consumer.parent.mkdir(parents=True, exist_ok=True)
+    consumer.write_text('DATA = "gamma_metrics_v1.json"\n', encoding="utf-8")
+    subprocess.run(["git", "-C", str(fixture_repo), "add", "-A"], check=True)
+    monkeypatch.chdir(workflow_lint._REPO_ROOT)
+    monkeypatch.setenv("EPS_WORKFLOW_LINT_REPO_ROOT", str(fixture_repo))
+    rc = workflow_lint.main(["--files", "papers/new_consumer.py"])
+    cap = capsys.readouterr()
+    out = cap.out + "\n" + cap.err
+    assert "SKIP check_artifact_supersession" not in out, out
+    assert "check-artifact-supersession" in out, out
+    assert "papers/new_consumer.py:1" in out, out
+    assert rc == 1, out

@@ -319,12 +319,17 @@ Behaviours:
   --cached`` with tree-class pathspec excludes), and FAIL on any
   consumer that neither consumes a replacement artifact nor carries a
   supersession label within +/-5 lines of each refuted-artifact
-  mention (#2568). Malformed/unrecognized records and
+  mention (#2568). Malformed/unrecognized/non-UTF-8 records (degenerate
+  blank/separator-bearing artifact-name or label-pattern entries
+  included — the token rule in the core's docstring) and
   ``acknowledged_pending`` consumers are non-blocking ``WARN:`` lines.
   The audit core is ``scripts/audit_artifact_supersession.py`` (schema
   spec in its docstring), loaded ``__file__``-relative; a core load
-  failure is itself a FAIL line, never a silent skip. Verified no-op
-  on the live tree at landing (0 records discovered).
+  failure is itself a FAIL line, never a silent skip. Files-mode:
+  classified ``global`` with the ``REPO_WIDE_SURFACE`` sentinel — a
+  consumer can live at ANY tracked path, so the check runs on every
+  ``--files`` payload, payload-attributed (#2568 round 2). Verified
+  no-op on the live tree at landing (0 records discovered).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -19775,9 +19780,11 @@ def check_artifact_supersession(*, repo_root: Path | None = None) -> list[str]:
     against the PASSED repo root, so fixture-tree tests exercise the REAL
     core, not the load-failure branch. A core LOAD failure (or a core
     crash) is itself a FAIL line, never a silent skip (the
-    new-fence-silent-pass class). Schema problems and
-    ``acknowledged_pending`` consumers are non-blocking ``WARN:`` stderr
-    lines. ``repo_root`` is a unit-test override; production callers pass
+    new-fence-silent-pass class). Schema problems — a tracked non-UTF-8
+    record included (the core routes a decode failure to schema WARN, never
+    a UsageError, #2568 round 2) — and ``acknowledged_pending`` consumers
+    are non-blocking ``WARN:`` stderr lines. ``repo_root`` is a unit-test
+    override; production callers pass
     None (``EPS_WORKFLOW_LINT_REPO_ROOT`` env override supported so
     subprocess fixture tests can point the check at a tmp corpus). Bundled
     into the no-flags default run. Verified no-op on the live tree at
@@ -20292,9 +20299,24 @@ class CheckScope:
     surfaces: tuple[str, ...]  # what the check READS: "dir/" prefix or exact path
 
 
+# Files-mode repo-wide surface sentinel (#2568 round 2): a "global" check
+# whose read surface is genuinely the WHOLE tracked tree declares ("*",)
+# instead of enumerating top-level locations — location enumeration proved
+# incomplete for the artifact-supersession consumer scan (its "drawn WIDE"
+# set silently omitted tracked consumer locations: .github/, papers/,
+# archive/, artifacts/, dashboard/, patches/, analysis_tensors/, data/, and
+# root files like README.md / RESULTS.md, so a scoped payload there SKIPped
+# the check). A sentinel-surfaced check runs on EVERY files-mode payload;
+# the in-scope attribution filter keeps its verdict payload-attributed (a
+# finding blocks only when it names a payload/closure path).
+REPO_WIDE_SURFACE = "*"
+
+
 def _surface_hit(path: str, surface: str) -> bool:
-    """True when repo-relative *path* falls under *surface* (a "dir/" prefix
-    or an exact file path)."""
+    """True when repo-relative *path* falls under *surface* (a "dir/" prefix,
+    an exact file path, or the ``REPO_WIDE_SURFACE`` sentinel)."""
+    if surface == REPO_WIDE_SURFACE:
+        return True
     if surface.endswith("/"):
         return path.startswith(surface)
     return path == surface
@@ -20562,29 +20584,16 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     ),
     "check_shared_tmp_name": CheckScope("path-local", ("scripts/", "src/")),
     # #2568: record-keyed repo scan — records live under eval_results/ and a
-    # consumer can be ANY tracked file outside the excluded trees, so the
-    # surface set is drawn WIDE (the #2235 critic note: a scripts/ ADD can
-    # newly produce a red line naming a payload path). tasks/ + figures/ are
-    # deliberately absent: both are excluded from the consumer enumeration at
-    # grep time, so a payload there can never redden this check.
-    "check_artifact_supersession": CheckScope(
-        "global",
-        (
-            ".claude/",
-            "CLAUDE.md",
-            "scripts/",
-            "tests/",
-            "src/",
-            "external/",
-            "eval_results/",
-            "eps/",
-            "eval/",
-            "experiments/",
-            "docs/",
-            "configs/",
-            "raw/",
-        ),
-    ),
+    # consumer can be ANY tracked file outside the grep-time excluded trees,
+    # so the surface is the REPO-WIDE sentinel (round 2 blocker
+    # `artifact-supersession-files-scope-hole`: the previous enumerated
+    # "drawn WIDE" set omitted tracked consumer locations — .github/,
+    # papers/, archive/, root files — and a scoped payload there SKIPped the
+    # check). The check runs on every files-mode payload; verdicts stay
+    # payload-attributed via the in-scope attribution filter, and on the
+    # live tree the audit is a verified no-op (0 records), so the
+    # unconditional run is cheap.
+    "check_artifact_supersession": CheckScope("global", (REPO_WIDE_SURFACE,)),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
