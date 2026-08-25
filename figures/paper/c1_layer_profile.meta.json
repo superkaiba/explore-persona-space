@@ -1,26 +1,31 @@
 {
-  "commit": "00d572fb+dirty",
-  "render_id": "ef249b874d914adc",
-  "git_commit": "00d572fb588f3500673749319462d5395f8a7f2b",
+  "commit": "c0cfbbdc+dirty",
+  "render_id": "f21ea280b61b4264",
+  "git_commit": "c0cfbbdc62b51342a0a1013fc1c71369fcbf043c",
   "git_dirty": true,
   "git_dirty_paths": [
+    "scripts/_i1901_render_tmp.py",
     "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.meta.json",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.pdf",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.png",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.meta.json",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.pdf",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.png",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
-    "figures/paper/c1_stage_retention.meta.json",
-    "figures/paper/c1_stage_retention.pdf",
-    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
     "figures/paper/c3_persona_direction_spectrum.meta.json",
     "figures/paper/c3_persona_direction_spectrum.pdf",
     "figures/paper/c3_persona_direction_spectrum.png",
-    "figures/paper/c4_speaker_ladder.meta.json",
-    "figures/paper/c4_speaker_ladder.pdf",
-    "figures/paper/c4_speaker_ladder.png",
     "scripts/issue1901_avgtarget_plots.py",
-    "scripts/issue2054_paper_speaker_ladder_fig.py",
     "scripts/issue2474_n1m_map.py",
-    "scripts/issue2564_type_reads_plot.py",
     "scripts/issue779_plot3_redesign.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
@@ -36,9 +41,9 @@
     "tasks/running/2568/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "modified",
-  "git_argv0_path": "scripts/issue1901_avgtarget_plots.py",
-  "created": "2026-08-25T16:40:40Z",
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/_i1901_render_tmp.py",
+  "created": "2026-08-25T17:14:46Z",
   "figsize": [
     9.0,
     3.4
@@ -438,1197 +443,609 @@
     },
     {
       "Layer": 0.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.31416542100947664,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 1.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.3254476066952565,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 2.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.286734027878744,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 3.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.2667721100071283,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 4.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.3695605528506052,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 5.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.6300224626971953,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 6.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.5600415174231759,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 7.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.4128467059740246,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 8.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.4994480545767226,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 9.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.5696545929518191,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 10.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.5299453711953448,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 11.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.5846793298635842,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 12.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.48474706764733666,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 13.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.530135615276675,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 14.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.6139408821868269,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 15.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.5671434951531524,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 16.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.6741654838636677,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 17.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.7435530635267389,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 18.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.8842336363499306,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 19.0,
-      "Held-out $R^2$ (test, n=1,000)": -0.8795987011227666,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 20.0,
-      "Held-out $R^2$ (test, n=1,000)": -1.2689665186738575,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 21.0,
-      "Held-out $R^2$ (test, n=1,000)": -1.255118599713632,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 22.0,
-      "Held-out $R^2$ (test, n=1,000)": -1.708608802879962,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 23.0,
-      "Held-out $R^2$ (test, n=1,000)": -1.8763707754608818,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 24.0,
-      "Held-out $R^2$ (test, n=1,000)": -1.8320067068580173,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 25.0,
-      "Held-out $R^2$ (test, n=1,000)": -2.0462108985916188,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 26.0,
-      "Held-out $R^2$ (test, n=1,000)": -2.543764623679317,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 27.0,
-      "Held-out $R^2$ (test, n=1,000)": -2.3486566786076595,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "Layer": 0.0,
       "Held-out $R^2$ (test, n=1,000)": 0.18047693651655794,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 1.0,
       "Held-out $R^2$ (test, n=1,000)": 0.1876613644193127,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 2.0,
       "Held-out $R^2$ (test, n=1,000)": 0.2142006171060642,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 3.0,
       "Held-out $R^2$ (test, n=1,000)": 0.18434669663751957,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 4.0,
       "Held-out $R^2$ (test, n=1,000)": 0.21443906334282292,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 5.0,
       "Held-out $R^2$ (test, n=1,000)": 0.2130162050586485,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 6.0,
       "Held-out $R^2$ (test, n=1,000)": 0.2410859490697943,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 7.0,
       "Held-out $R^2$ (test, n=1,000)": 0.23573480768260324,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 8.0,
       "Held-out $R^2$ (test, n=1,000)": 0.27520324428179244,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 9.0,
       "Held-out $R^2$ (test, n=1,000)": 0.30271565596797756,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 10.0,
       "Held-out $R^2$ (test, n=1,000)": 0.32179740189384054,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 11.0,
       "Held-out $R^2$ (test, n=1,000)": 0.31453626623610753,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 12.0,
       "Held-out $R^2$ (test, n=1,000)": 0.3190423633196029,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 13.0,
       "Held-out $R^2$ (test, n=1,000)": 0.32947098579687617,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 14.0,
       "Held-out $R^2$ (test, n=1,000)": 0.3260238556141263,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 15.0,
       "Held-out $R^2$ (test, n=1,000)": 0.3291582323186101,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 16.0,
       "Held-out $R^2$ (test, n=1,000)": 0.3251505049702407,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 17.0,
       "Held-out $R^2$ (test, n=1,000)": 0.3216414242656307,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 18.0,
       "Held-out $R^2$ (test, n=1,000)": 0.3437831032428512,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 19.0,
       "Held-out $R^2$ (test, n=1,000)": 0.4145990975930267,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 20.0,
       "Held-out $R^2$ (test, n=1,000)": 0.41464672739784825,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 21.0,
       "Held-out $R^2$ (test, n=1,000)": 0.42115815486103514,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 22.0,
       "Held-out $R^2$ (test, n=1,000)": 0.4438672595227092,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 23.0,
       "Held-out $R^2$ (test, n=1,000)": 0.46464921773374956,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 24.0,
       "Held-out $R^2$ (test, n=1,000)": 0.4622920284201648,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 25.0,
       "Held-out $R^2$ (test, n=1,000)": 0.4347543927627022,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 26.0,
       "Held-out $R^2$ (test, n=1,000)": 0.4247413112737656,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 27.0,
       "Held-out $R^2$ (test, n=1,000)": 0.465770044531698,
       "series": "boundary token",
       "_kind": "line",
-      "_group": 3
+      "_group": 2
     },
     {
       "Layer": 0.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.894,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 1.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.906,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 2.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.888,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 3.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.878,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 4.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.883,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 5.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.884,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 6.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.886,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 7.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.869,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 8.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.871,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 9.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.857,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 10.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.867,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 11.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.866,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 12.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.88,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 13.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.895,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 14.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.893,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 15.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.896,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 16.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.897,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 17.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.897,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 18.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.902,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 19.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.907,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 20.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.904,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 21.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.902,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 22.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.902,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 23.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.906,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 24.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.894,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 25.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.891,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 26.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.889,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 27.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.888,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 3
     },
     {
       "Layer": 0.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.839,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 1.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.853,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 2.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.854,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 3.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.853,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 4.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.872,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 5.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.868,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 6.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.87,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 7.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.85,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 8.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.844,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 9.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.838,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 10.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.856,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 11.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.858,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 12.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.866,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 13.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.886,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 14.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.885,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 15.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.893,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 16.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.892,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 17.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.892,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 18.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.896,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 19.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.905,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 20.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.901,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 21.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.897,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 22.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.898,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 23.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.897,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 24.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.892,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 25.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.888,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 26.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.88,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
-      "_group": 5
+      "_group": 4
     },
     {
       "Layer": 27.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.874,
       "series": "nonlinear map (MLP)",
       "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.001,
+      "series": "Chance (1/1000)",
+      "_kind": "line",
       "_group": 5
     },
     {
-      "Layer": 0.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.445,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 1.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.512,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 2.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.472,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 3.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.482,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 4.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.474,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 5.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.373,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 6.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.296,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 7.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.255,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 8.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.228,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 9.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.263,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 10.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.236,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 11.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.236,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 12.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.243,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 13.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.349,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 14.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.417,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 15.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.39,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 16.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.411,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 17.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.418,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 18.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.515,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 19.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.67,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 20.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.642,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 21.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.666,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 22.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.672,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 23.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.662,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 24.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.654,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 25.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.645,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 26.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.688,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 27.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.697,
-      "series": "copy context vector + trained bias",
-      "_kind": "line",
-      "_group": 6
-    },
-    {
-      "Layer": 0.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.819,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 1.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.854,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 2.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.772,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 3.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.746,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 4.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.688,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 5.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.705,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 6.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.682,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 7.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.605,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 8.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.569,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 9.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.494,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 10.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.477,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 11.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.478,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 12.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.529,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 13.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.531,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 14.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.513,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 15.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.564,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 16.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.581,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 17.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.589,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 18.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.634,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 19.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.642,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 20.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.618,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 21.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.618,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 22.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.588,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 23.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.545,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 24.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.516,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 25.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.524,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 26.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.545,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 27.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.53,
-      "series": "boundary token",
-      "_kind": "line",
-      "_group": 7
-    },
-    {
-      "Layer": 0.0,
-      "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.001,
-      "series": "Chance (1/1000)",
-      "_kind": "line",
-      "_group": 8
-    },
-    {
       "Layer": 1.0,
       "acc@1, draw-averaged target\n(whitened cosine + CSLS)": 0.001,
       "series": "Chance (1/1000)",
       "_kind": "line",
-      "_group": 8
+      "_group": 5
     }
   ],
-  "n_series": 9,
-  "total_points": 226,
+  "n_series": 6,
+  "total_points": 142,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -1639,7 +1056,6 @@
         "legend_labels": [
           "linear map (ridge)",
           "nonlinear map (MLP)",
-          "copy context vector + trained bias",
           "boundary token"
         ],
         "xticklabels": [
@@ -1653,15 +1069,15 @@
           "30"
         ],
         "yticklabels": [
-          "\u22123.0",
-          "\u22122.5",
-          "\u22122.0",
-          "\u22121.5",
-          "\u22121.0",
-          "\u22120.5",
-          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
           "0.5",
-          "1.0"
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
         ]
       },
       {
@@ -1670,8 +1086,6 @@
         "legend_labels": [
           "linear map (ridge)",
           "nonlinear map (MLP)",
-          "copy context vector + trained bias",
-          "boundary token",
           "Chance (1/1000)"
         ],
         "xticklabels": [
@@ -1698,7 +1112,6 @@
     "series": [
       "linear map (ridge)",
       "nonlinear map (MLP)",
-      "copy context vector + trained bias",
       "boundary token",
       "Chance (1/1000)"
     ]
