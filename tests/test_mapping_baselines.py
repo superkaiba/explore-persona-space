@@ -64,6 +64,18 @@ def test_identity_bias_blocked_invalid_inputs_raise():
         identity_bias_predict_blocked(x, y, np.arange(10), np.zeros((2, 3)), block=0)
 
 
+def test_identity_bias_blocked_row_count_and_index_bounds_validated():
+    """#1901 round-2 review (Codex Minor): row-count equality between the full
+    stores, negative-index rejection, and index upper-bound validation."""
+    x = np.zeros((10, 3))
+    with pytest.raises(ValueError, match="row counts"):  # x/y row-count mismatch
+        identity_bias_predict_blocked(x, np.zeros((9, 3)), np.arange(5), np.zeros((2, 3)))
+    with pytest.raises(ValueError, match="non-negative"):  # negative indexing rejected
+        identity_bias_predict_blocked(x, np.zeros((10, 3)), np.array([-1, 2]), np.zeros((2, 3)))
+    with pytest.raises(ValueError, match="out of bounds"):  # index >= n_rows
+        identity_bias_predict_blocked(x, np.zeros((10, 3)), np.array([0, 10]), np.zeros((2, 3)))
+
+
 def test_knn_perfect_predictions():
     rng = np.random.default_rng(1)
     true = rng.standard_normal((30, 6))

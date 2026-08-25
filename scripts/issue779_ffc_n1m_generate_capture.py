@@ -607,8 +607,11 @@ def _manifest_complete_locally(dest: Path) -> bool:
     return len(list(dest.glob("part_*.jsonl"))) == n_parts
 
 
-def _download_manifest(hf_prefix: str, dest: Path) -> Path:
+def _download_manifest(hf_prefix: str, dest: Path, *, revision: str | None = None) -> Path:
     """Download the HF-hosted manifest folder (parts + meta) to ``dest``.
+
+    ``revision`` pins the listing + downloads to one Hub commit (stage-revision
+    threading, #1901 C1); ``None`` keeps the legacy main-tip read.
 
     Fleet-safe: N shards per pod may call this concurrently against the SAME
     local dir (8 shards raced the same 88 files at fleet launch — the winner's
@@ -648,11 +651,15 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
                 f.path
                 # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here (r4)
                 for f in HfApi().list_repo_tree(
-                    C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                    C.HF_DATA_REPO,
+                    path_in_repo=prefix,
+                    repo_type="dataset",
+                    recursive=True,
+                    revision=revision,
                 )
                 if getattr(f, "size", None) is not None
             ],
-            what=f"manifest listing ({prefix})",
+            what=f"manifest listing ({prefix}@{revision or 'main'})",
         )
         if not names:
             raise SystemExit(
@@ -663,7 +670,11 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
             got = Path(
                 hub.retry_transient(
                     lambda name=name: hf_hub_download(
-                        C.HF_DATA_REPO, filename=name, repo_type="dataset", local_dir=dest.parent
+                        C.HF_DATA_REPO,
+                        filename=name,
+                        repo_type="dataset",
+                        local_dir=dest.parent,
+                        revision=revision,
                     ),
                     what=f"manifest download ({name})",
                 )
@@ -704,7 +715,11 @@ def build_manifest(args) -> dict:
 def _resolve_manifest_dir(args) -> Path:
     local = args.out_dir / MANIFEST_SUBDIR
     if args.manifest_from_hf:
-        return _download_manifest(args.hf_prefix, local)
+        # Optional revision pin threaded from callers that stage-pin (#1901 C1);
+        # absent attr (every legacy caller) keeps the unpinned main-tip read.
+        return _download_manifest(
+            args.hf_prefix, local, revision=getattr(args, "manifest_revision", None)
+        )
     if not (local / "meta.json").exists():
         raise SystemExit(
             f"manifest {local}/meta.json absent — run --build-sampling-manifest first, "

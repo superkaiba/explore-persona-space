@@ -63,8 +63,9 @@ def identity_bias_predict_blocked(
     ``identity_bias_predict(x_train[tr_idx], y_train[tr_idx], x_eval)``, it
     never materializes fp64 train copies or full fp32 advanced-index copies:
     at n_train=963k × d=3584 the exact route peaks ≈138 GB where this route's
-    per-block temporaries are a few GB at the default block (#1901
-    mlp-scaling-densify, plan §9 LARGEST-CELL keying).
+    per-block temporaries peak ≈5.6 GB at the default block (65,536 rows ×
+    3,584 dims × 8 B ≈ 1.9 GB each for the xb/yb fp64 copies + their
+    difference) (#1901 mlp-scaling-densify, plan §9 LARGEST-CELL keying).
 
     ``x_train`` / ``y_train`` are the FULL (N, d) stores (any indexable
     array-like of matching row dim); ``tr_idx`` selects the train rows.
@@ -76,6 +77,17 @@ def identity_bias_predict_blocked(
         raise ValueError(f"tr_idx must be a non-empty 1-D index array, got shape {tr_idx.shape}")
     if block <= 0:
         raise ValueError(f"block must be positive, got {block}")
+    n_rows = int(x_train.shape[0])
+    if int(y_train.shape[0]) != n_rows:
+        raise ValueError(
+            f"identity+bias baseline needs matching train row counts, got "
+            f"{n_rows} vs {y_train.shape[0]}"
+        )
+    lo, hi = int(tr_idx.min()), int(tr_idx.max())
+    if lo < 0:
+        raise ValueError(f"tr_idx must be non-negative (no negative indexing), got min {lo}")
+    if hi >= n_rows:
+        raise ValueError(f"tr_idx out of bounds: max {hi} >= n_rows {n_rows}")
     d_tr = tuple(x_train.shape[1:])
     if tuple(y_train.shape[1:]) != d_tr:
         raise ValueError(
