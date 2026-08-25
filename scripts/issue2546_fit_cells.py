@@ -134,6 +134,12 @@ TEMPLATE_POOL_MIN = 20
 # rate_c = R2_F(corpus)/COMMITTED_ANCHOR — the #1336 exchange-rate formula
 # (rate = s/anchor, issue_1336.common.load_qwen_recal_cal) recomputed from THAT
 # corpus's own within-post reference map. Prior anchor: #1336's pooled 0.0207.
+# r2 adjudication (delta-elicit-band-plan-deviation): 0.02 IS the parent
+# CONSTANT — src/explore_persona_space/experiments/issue_1336/common.py:325
+# (DELTA_ELICIT_BAND = 0.02, tracked at HEAD; last commit ba8359381c). The plan
+# v4's "0.021" is the ROUNDED realized pooled band VALUE (0.02 x #1336's
+# realized rate = 0.0207 ~= 0.021), not the constant; MF-5 recomputes
+# band_value = 0.02 x rate_c per corpus, so the parent constant is kept.
 DELTA_ELICIT_BAND = 0.02
 COMMITTED_ANCHOR_R2 = 0.6731  # #825 Qwen S1 @ L19 (issue_1336.common.G0)
 
@@ -299,6 +305,15 @@ def _load_shard(path: Path) -> dict:
         return torch.load(path, map_location="cpu", weights_only=False)
 
 
+def _sha256_file(path: Path) -> str:
+    """Chunked sha256 of a file's bytes (shard content identity, r2 Major 7)."""
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def build_fitcache(
     out_root: Path, prof: LayerProfile, smoke: bool, *, offline: bool = False
 ) -> dict[str, Path]:
@@ -315,22 +330,30 @@ def build_fitcache(
         cdir = cache_root / stem
         marker = cdir / "_cache_complete.json"
         if marker.is_file():
-            # Store-content resume check (g3 concern 1): when local shards are
-            # still present, a shard-name mismatch vs the marker fingerprint
-            # means the store was re-captured after this cache was built —
+            # Store-content resume check (g3 concern 1 + r2 Major 7): when
+            # local shards are still present, a shard NAME mismatch OR a shard
+            # CONTENT-hash mismatch vs the marker fingerprint means the store
+            # was re-captured after this cache was built (a same-shape
+            # recapture keeps names/counts — only content hashes catch it) —
             # rebuild instead of resume-skipping onto stale reduced tensors.
             # (Local shards absent = freed post-upload; the marker is accepted.)
+            # Markers WITHOUT shard_sha256 predate the content key: rebuild.
             local_store = out_root / "store" / g25.arm_dirname(prof.arm, smoke) / stem
-            local_shards = sorted(f.name for f in _shard_files(local_store))
-            marker_shards = sorted(
-                json.loads(marker.read_text()).get("fingerprint", {}).get("shards", [])
-            )
-            if local_shards and local_shards != marker_shards:
-                print(
-                    f"[p5-cache] {stem}: STALE cache (store shards {len(local_shards)} != "
-                    f"marker {len(marker_shards)}) — rebuilding",
-                    flush=True,
-                )
+            local_files = _shard_files(local_store)
+            mk_fp = json.loads(marker.read_text()).get("fingerprint", {})
+            marker_hashes = mk_fp.get("shard_sha256")
+            stale_reason = ""
+            if not isinstance(marker_hashes, dict):
+                stale_reason = "marker lacks shard_sha256 (pre-content-key cache)"
+            elif local_files:
+                local_hashes = {f.name: _sha256_file(f) for f in local_files}
+                if local_hashes != marker_hashes:
+                    stale_reason = (
+                        f"store content differs (local {len(local_hashes)} shards "
+                        f"vs marker {len(marker_hashes)})"
+                    )
+            if stale_reason:
+                print(f"[p5-cache] {stem}: STALE cache ({stale_reason}) — rebuilding", flush=True)
                 shutil.rmtree(cdir)
             else:
                 done[stem] = cdir
@@ -386,12 +409,29 @@ def build_fitcache(
         )
         del fulls, tks, full
         _pygc.collect()
+        # Content-bearing fingerprint (r2 Major 7): per-shard byte hashes +
+        # the capture stage's own regime fingerprint (from the store's
+        # _complete.json, mirrored to the Hub alongside the shards), so
+        # _store_content_key/unit fingerprints change whenever the CONTENT the
+        # cache was reduced from changes — a same-shape recapture included.
+        shard_hashes = {f.name: _sha256_file(f) for f in files}
+        capture_done = shard_dir / "_complete.json"
+        capture_fp = (
+            json.loads(capture_done.read_text()).get("fingerprint")
+            if capture_done.is_file()
+            else None
+        )
         if staged:
             shutil.rmtree(shard_dir)  # free the HF mirror only, never store originals
         _atomic_json(
             marker,
             {
-                "fingerprint": {"n_rows": len(row_ids), "shards": [f.name for f in files]},
+                "fingerprint": {
+                    "n_rows": len(row_ids),
+                    "shards": [f.name for f in files],
+                    "shard_sha256": shard_hashes,
+                    "capture_fp": capture_fp,
+                },
                 "wall_s": time.time() - t0,
             },
         )
@@ -635,8 +675,14 @@ def answer_content_class(corpus: str, ans_text: str, row_id: str) -> str:
         boxed = g25.extract_boxed(ans_text)
         return f"math:{g25._norm_math(boxed)}" if boxed is not None else f"__row__:{row_id}"
     if corpus in MCQ_CORPORA:
-        m = g25._LETTER_RE.search(ans_text)
-        return f"letter:{m.group(1)}" if m else f"__row__:{row_id}"
+        # Full extraction ladder (boxed -> anchored -> bare-letter -> last-line),
+        # NOT the bare last-line _LETTER_RE rung alone: the capture side's
+        # exact_match_correct grades via extract_mcq_letter, so the fit-side
+        # content class must agree with the graded letter (r2 g1 Major 4 —
+        # _LETTER_RE alone mislabels "The answer is (B)." rows whose last line
+        # is prose, splitting/merging retrieval pools vs the graded identity).
+        letter = g25.extract_mcq_letter(ans_text)
+        return f"letter:{letter}" if letter is not None else f"__row__:{row_id}"
     if corpus == "contexthub":
         lines = [ln for ln in ans_text.strip().split("\n") if ln.strip()]
         return f"free:{g25._norm_free(lines[-1])}" if lines else f"__row__:{row_id}"
@@ -668,10 +714,14 @@ class AnswerInfo:
         raise KeyError(side_name)
 
     def _stage_if_missing(self, side, corpus: str) -> Path:
-        p = self.out_root / "rollouts" / side.stage / f"{corpus}.jsonl"
+        # Namespace via the SAME helper the producer uses (r2 g1 Major 5):
+        # smoke rollouts live under rollouts/smoke_<stage>/ locally AND on the
+        # Hub — a hand-built local path here reads a stale/absent production
+        # file in smoke mode instead of the smoke artifact.
+        stage = g25.stage_dirname(side.stage, self.smoke)
+        p = self.out_root / "rollouts" / stage / f"{corpus}.jsonl"
         if p.is_file():
             return p
-        stage = f"smoke_{side.stage}" if self.smoke else side.stage
         rel = f"{g25.RAW_PREFIX}/{stage}/{corpus}.jsonl"
         from huggingface_hub import hf_hub_download
 
@@ -852,13 +902,16 @@ def _fingerprint(unit: Unit, params: dict) -> str:
 
 
 def _store_content_key(out_root: Path, prof: LayerProfile, smoke: bool) -> str:
-    """sha1 over each cached stem's shard fingerprint (names + row counts).
+    """sha1 over each cached stem's shard fingerprint (CONTENT-bearing, r2 M7).
 
-    A re-captured store rebuilds the fitcache under a different shard set, so
-    folding this key into every unit fingerprint makes completed-unit
-    resume-skips store-generation-scoped (g2/g3 resume-contamination class).
-    Keys on the marker's RECORDED shard names — never recomputed floats
-    (machine-stable resume-key rule, #1336).
+    The marker fingerprint carries per-shard sha256 byte hashes + the capture
+    stage's regime fingerprint (build_fitcache), so folding this key into
+    every unit fingerprint makes completed-unit resume-skips
+    store-CONTENT-scoped: a re-capture invalidates them even when shard names
+    and row counts are unchanged (g2/g3 resume-contamination class). Keys on
+    RECORDED hashes of file bytes — never recomputed floats (machine-stable
+    resume-key rule, #1336; byte hashes of files-read-from-disk are the
+    sanctioned bit-exact input class).
     """
     cache_root = out_root / "fitcache" / g25.arm_dirname(prof.arm, smoke)
     assert cache_root.is_dir(), f"fitcache missing at {cache_root} — parent must run first"
@@ -1155,6 +1208,42 @@ def run_sweep_unit(
     }
 
 
+def _traj_scatter_fill(
+    rows: list[str], corpus_of: dict[str, str], post: dict, prof: LayerProfile
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Scatter-fill (X27, Y27, short_think) keyed on the CANONICAL row order.
+
+    X27/Y27 row i is rows[i] (the `_load_xy` pattern), so conv_ids /
+    fitted_mask zips / persisted preds all share ONE order regardless of how
+    the per-corpus caches group rows (round-1 Codex blocker: a grouped-cursor
+    fill misaligned data rows against original-order conv_ids; the selftest's
+    interleaved-corpus fixture pins this — r2 Major 8).
+    """
+    n = len(rows)
+    n_t = len(g25.T_GRID)
+    n_f = len(prof.frozen)
+    pos_of = {r: i for i, r in enumerate(rows)}
+    X27 = np.empty((n, n_t * n_f, prof.hidden), dtype=np.float32)
+    Y27 = np.empty_like(X27)
+    short_think = np.zeros(n, dtype=bool)
+    filled = 0
+    for corpus in sorted(set(corpus_of.values())):
+        crows = [r for r in rows if corpus_of[r] == corpus]
+        cache = post[corpus]
+        tk = cache.kind_rows("tk", crows)  # (nc, 9, 3, H)
+        ans = cache.kind_rows("ans_mean", crows)  # (nc, L, H)
+        dest = np.asarray([pos_of[r] for r in crows], dtype=np.int64)
+        for ti in range(n_t):
+            for fi, layer in enumerate(prof.frozen):
+                X27[dest, ti * n_f + fi] = tk[:, ti, fi]
+                Y27[dest, ti * n_f + fi] = ans[:, layer]
+        for j, rid in enumerate(crows):
+            short_think[dest[j]] = bool(cache.meta[cache.pos[rid]].get("short_think", False))
+        filled += len(crows)
+    assert filled == n
+    return X27, Y27, short_think
+
+
 def run_traj_unit(
     unit: Unit,
     prof: LayerProfile,
@@ -1204,29 +1293,7 @@ def run_traj_unit(
                 "floor": floor,
             }
             continue
-        # Scatter-fill keyed on the CANONICAL row order (the `_load_xy` pattern):
-        # X27/Y27 row i is rows[i], so conv_ids / fitted_mask zips / persisted
-        # preds all share ONE order (round-1 Codex blocker: the grouped-cursor
-        # fill misaligned data rows against original-order conv_ids).
-        pos_of = {r: i for i, r in enumerate(rows)}
-        X27 = np.empty((n, n_t * n_f, prof.hidden), dtype=np.float32)
-        Y27 = np.empty_like(X27)
-        short_think = np.zeros(n, dtype=bool)
-        filled = 0
-        for corpus in sorted(set(corpus_of.values())):
-            crows = [r for r in rows if corpus_of[r] == corpus]
-            cache = post[corpus]
-            tk = cache.kind_rows("tk", crows)  # (nc, 9, 3, H)
-            ans = cache.kind_rows("ans_mean", crows)  # (nc, L, H)
-            dest = np.asarray([pos_of[r] for r in crows], dtype=np.int64)
-            for ti in range(n_t):
-                for fi, layer in enumerate(prof.frozen):
-                    X27[dest, ti * n_f + fi] = tk[:, ti, fi]
-                    Y27[dest, ti * n_f + fi] = ans[:, layer]
-            for j, rid in enumerate(crows):
-                short_think[dest[j]] = bool(cache.meta[cache.pos[rid]].get("short_think", False))
-            filled += len(crows)
-        assert filled == n
+        X27, Y27, short_think = _traj_scatter_fill(rows, corpus_of, post, prof)
         headline_idx = tuple(ti * n_f + hl_fi for ti in range(n_t))
         sweep = fc.heldout_r2_sweep(
             X27,
@@ -1661,7 +1728,7 @@ def unit_out_path(out_root: Path, unit: Unit) -> Path:
     return out_root / "out" / sub / f"{unit.unit_id}.json"
 
 
-def run_units(args, prof: LayerProfile, units: list[Unit]) -> int:
+def run_units(args, prof: LayerProfile, units: list[Unit], claim_dir: Path | None = None) -> int:
     out_root = Path(args.out_root)
     smoke = bool(args.smoke)
     null_draws = (
@@ -1672,9 +1739,14 @@ def run_units(args, prof: LayerProfile, units: list[Unit]) -> int:
     n_boot = args.n_boot if args.n_boot is not None else (SMOKE_N_BOOT if smoke else N_BOOT)
     params = _fit_params(smoke, null_draws, n_boot)
     # Store CONTENT identity folded into every unit fingerprint (g2/g3 resume
-    # class): a re-captured store rebuilds the fitcache with new shard names,
-    # so completed-unit resume-skips can never bless fits from a prior store.
+    # class): a re-captured store rebuilds the fitcache with NEW CONTENT hashes
+    # (same-shape recaptures included, r2 Major 7), so completed-unit
+    # resume-skips can never bless fits from a prior store.
     params["store_key"] = _store_content_key(out_root, prof, smoke)
+    # P2-P4 fallback rungs are output-affecting regime keys (r2 Critical 1):
+    # a fallback relaunch's units must never resume-skip onto pre-fallback fits.
+    params["prefill_fallback"] = bool(args.prefill_fallback)
+    params["decode_fallback"] = bool(args.decode_fallback)
     caches = load_caches(out_root, prof, smoke)
     rowsets_path = out_root / "out" / "rowsets" / f"arm{prof.arm}.json"
     assert rowsets_path.is_file(), f"rowsets missing at {rowsets_path} — parent must run first"
@@ -1683,6 +1755,15 @@ def run_units(args, prof: LayerProfile, units: list[Unit]) -> int:
     t0 = time.time()
     n_total = len(units)
     for k, unit in enumerate(units):
+        if claim_dir is not None:
+            try:
+                os.close(
+                    os.open(
+                        claim_dir / f"{unit.unit_id}.claim", os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                    )
+                )
+            except FileExistsError:
+                continue  # a sibling worker owns this unit
         dest = unit_out_path(out_root, unit)
         fp = _fingerprint(unit, params)
         if dest.is_file():
@@ -1746,25 +1827,6 @@ def run_units(args, prof: LayerProfile, units: list[Unit]) -> int:
     return 0
 
 
-def _visible_gpu_count() -> int:
-    """GPU count via an nvidia-smi subprocess (never torch — CVD clobber family)."""
-    try:
-        p = subprocess.run(
-            ["nvidia-smi", "--list-gpus"],
-            capture_output=True,
-            text=True,
-            check=False,
-            env={**os.environ},
-        )
-        n = len([ln for ln in p.stdout.split("\n") if ln.strip()]) if p.returncode == 0 else 0
-    except OSError:
-        n = 0
-    cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
-    if cvd is not None and cvd.strip() != "":
-        n = min(n, len([c for c in cvd.split(",") if c.strip() != ""])) if n else 0
-    return n
-
-
 def run_parent(args, prof: LayerProfile) -> int:
     out_root = Path(args.out_root)
     smoke = bool(args.smoke)
@@ -1777,11 +1839,28 @@ def run_parent(args, prof: LayerProfile) -> int:
     assert registry_stat_totals() == 222, registry_stat_totals()  # plan §9
     del caches
     _pygc.collect()
-    ngpu = _visible_gpu_count()
+    # Allocation-first GPU identity (r2 Critical 2): the SHARED gpu_allocation
+    # ladder (CVD array > SLURM_STEP/JOB_GPUS ids > SLURM_GPUS_ON_NODE count;
+    # nvidia-smi only on non-SLURM exclusive hosts — gotchas #1902/#1336).
+    alloc = g25.gpu_allocation()
+    ngpu = len(alloc)
     n_workers = max(1, min(int(args.num_workers), ngpu if ngpu > 0 else 1))
-    print(f"[p5] fan-out: {len(units)} registry jobs across {n_workers} worker(s)", flush=True)
+    print(
+        f"[p5] fan-out: {len(units)} registry jobs across {n_workers} worker(s) "
+        f"(alloc={','.join(alloc) if alloc else 'cpu'})",
+        flush=True,
+    )
     work_dir = out_root / "work" / f"fits_a{prof.arm}"
     work_dir.mkdir(parents=True, exist_ok=True)
+    # Work-conserving fan-out (r2 Codex Major): workers CLAIM units from one
+    # shared atomic claim dir instead of static i::N shards — an idle worker
+    # + a pending independent unit is the #813/#778 anti-pattern. Claims are
+    # per-fan-out-session state (completed units resume-skip by fingerprint),
+    # so a fresh parent wipes any prior session's claims.
+    claim_dir = work_dir / "claims"
+    if claim_dir.is_dir():
+        shutil.rmtree(claim_dir)
+    claim_dir.mkdir(parents=True)
     procs = []
     for slot in range(n_workers):
         cmd = [
@@ -1793,24 +1872,28 @@ def run_parent(args, prof: LayerProfile) -> int:
             str(out_root),
             "--shard",
             f"{slot}/{n_workers}",
+            "--claim-dir",
+            str(claim_dir),
         ]
         if smoke:
             cmd.append("--smoke")
         if args.prefill_fallback:
             cmd.append("--prefill-fallback")
+        if args.decode_fallback:
+            cmd.append("--decode-fallback")
         if args.null_draws is not None:
             cmd += ["--null-draws", str(args.null_draws)]
         if args.n_boot is not None:
             cmd += ["--n-boot", str(args.n_boot)]
         env = {**os.environ}  # explicit env passthrough (subprocess-env contract)
-        if ngpu > 0:
-            # Launcher-env CVD pin (#543/#545). Allocation-first: pin the
-            # slot-th INHERITED CVD entry, never the bare ordinal — under an
-            # inherited CVD=4,5 the ordinal would retarget unallocated GPUs
-            # (#1336 precheck gotcha).
-            inherited = os.environ.get("CUDA_VISIBLE_DEVICES", "")
-            entries = [c.strip() for c in inherited.split(",") if c.strip() != ""]
-            env["CUDA_VISIBLE_DEVICES"] = entries[slot] if entries else str(slot)
+        if alloc:
+            # Launcher-env CVD pin (#543/#545): pin the slot-th ALLOCATED
+            # physical id — never the bare ordinal (under an inherited CVD=4,5
+            # or a SLURM_JOB_GPUS=4,5 allocation the ordinal would retarget
+            # unallocated GPUs — #1336 precheck / #1902 shared-node gotchas).
+            if slot >= len(alloc):  # pragma: no cover - n_workers is min-capped
+                raise RuntimeError(f"worker slot {slot} >= allocation width {len(alloc)}")
+            env["CUDA_VISIBLE_DEVICES"] = alloc[slot]
         log = (work_dir / f"slot{slot}.log").open("w")
         procs.append(
             (slot, subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT), log)
@@ -2049,7 +2132,9 @@ def run_selftest() -> int:
         # under arm-1's "emergent" mode (one think block), pre side plain "off".
         for side, stage in (("post", "post_greedy_a1"), ("pre", "pre_greedy_a1")):
             for corpus, rows in corpora.items():
-                rdir = root / "rollouts" / stage
+                # Resolve via the SAME namespace helper the producer/consumer
+                # use (r2 Major 5): smoke rollouts live under smoke_<stage>/.
+                rdir = root / "rollouts" / g25.stage_dirname(stage, True)
                 rdir.mkdir(parents=True, exist_ok=True)
                 recs = []
                 for i, r in enumerate(rows):
@@ -2068,6 +2153,47 @@ def run_selftest() -> int:
         caches = load_caches(root, prof, smoke=True)
         rowsets = build_rowsets(root, prof, caches, smoke=True)
         assert rowsets["strata"]["does"] and rowsets["strata"]["doesnt"]
+        # Traj scatter-fill regression (r2 Major 8): an INTERLEAVED-corpus
+        # canonical order with row-specific tensors — the corpus-grouped r1
+        # fixture could not distinguish the shipped scatter-fill from the OLD
+        # grouped-cursor fill (both agree when rows arrive corpus-grouped).
+        post_c = caches["post"]
+        g_ids = list(post_c["gsm8k_train"].pos)[:4]
+        m_ids = list(post_c["mmlu"].pos)[:4]
+        inter_rows = [r for pair in zip(g_ids, m_ids) for r in pair]
+        corp_of = {r: r.rsplit("-", 1)[0] for r in inter_rows}
+        Xn, Yn, _st = _traj_scatter_fill(inter_rows, corp_of, post_c, prof)
+        n_f_probe = len(prof.frozen)
+        for i, rid in enumerate(inter_rows):
+            # Row-identity sentinel: canonical slot i holds row i's OWN tensors.
+            own_tk = post_c[corp_of[rid]].kind_rows("tk", [rid])[0]  # (9, 3, H)
+            own_ans = post_c[corp_of[rid]].kind_rows("ans_mean", [rid])[0]  # (L, H)
+            assert np.array_equal(Xn[i, 0], own_tk[0, 0]), rid
+            assert np.array_equal(Yn[i, n_f_probe - 1], own_ans[prof.frozen[n_f_probe - 1]]), rid
+        # The OLD append-by-corpus cursor fill provably DIFFERS on this fixture
+        # (i.e. the fixture FAILS pre-fix — demonstrated, not assumed):
+        x_old0 = np.concatenate(
+            [
+                post_c[c].kind_rows("tk", [r for r in inter_rows if corp_of[r] == c])[:, 0, 0]
+                for c in sorted(set(corp_of.values()))
+            ]
+        )
+        assert not np.array_equal(x_old0, Xn[:, 0]), "interleaved fixture cannot distinguish fills"
+        # Fit-side MCQ content class == the graded letter (r2 Major 4): the
+        # class must route through extract_mcq_letter's full ladder — incl.
+        # the next-word-initial trap the anchored regex alone mislabels.
+        for txt, want in (
+            ("The correct option is B.", "letter:B"),
+            ("The answer is clearly B.", "letter:B"),
+            ("Answer: (C)", "letter:C"),
+            ("The answer is Because of the argument above, unclear.", "__row__:row-x"),
+        ):
+            got = answer_content_class("mmlu", txt, "row-x")
+            assert got == want, (txt, got, want)
+            graded = g25.extract_mcq_letter(txt)
+            assert (graded is not None) == got.startswith("letter:"), (txt, graded, got)
+            if graded is not None:
+                assert got == f"letter:{graded}", (txt, graded, got)
         # Content-identity hit rule: identical class -> hit even on a different row.
         ans = {"a": "\\boxed{7}", "b": "\\boxed{7}", "c": "\\boxed{9}"}
         pred = np.asarray([[0.0, 1.0], [0.9, 0.1], [10.0, 10.0]])
@@ -2091,6 +2217,7 @@ def run_selftest() -> int:
             null_draws = 2
             n_boot = 20
             prefill_fallback = False
+            decode_fallback = False
 
         args = _Args()
         fc.N_INNER_LAMBDA_FOLDS = INNER_LAMBDA_FOLDS
@@ -2189,10 +2316,56 @@ def run_selftest() -> int:
         )
         st3 = rel3["per_stratum"]["does"]
         assert st3["status"] == "ok" and st3["split_half_r2"] > 0.8, st3
+        # Shard-content-swap invalidation (r2 Major 7): a SAME-shape recapture
+        # (same shard names, counts, rows — different bytes) must rebuild the
+        # fitcache and flip the store content key; a no-op rebuild resume-skips.
+        swap_stem = "pre__mmlu"
+        swap_shard = root / "store" / g25.arm_dirname(1, True) / swap_stem / "slot0.shard000.pt"
+        swap_marker = (
+            root / "fitcache" / g25.arm_dirname(1, True) / swap_stem / "_cache_complete.json"
+        )
+        marker_txt_before = swap_marker.read_text()
+        key_before = _store_content_key(root, prof, True)
+        build_fitcache(root, prof, smoke=True, offline=True)  # no-op: resume-skip
+        assert swap_marker.read_text() == marker_txt_before, "no-op rebuild mutated the marker"
+        sh_swap = torch.load(swap_shard, map_location="cpu", weights_only=False)
+        sh_swap["full"] = sh_swap["full"] + 1  # same shape/names, different content
+        torch.save(sh_swap, swap_shard)
+        build_fitcache(root, prof, smoke=True, offline=True)
+        fp_after = json.loads(swap_marker.read_text())["fingerprint"]
+        fp_before = json.loads(marker_txt_before)["fingerprint"]
+        assert fp_after["shards"] == fp_before["shards"], "swap must keep shard names"
+        assert fp_after["shard_sha256"] != fp_before["shard_sha256"], (
+            "same-shape recapture did not change the content fingerprint"
+        )
+        key_after = _store_content_key(root, prof, True)
+        assert key_after != key_before, "store content key blind to a same-shape recapture"
+        # Batched-vs-serial rotation-null equivalence (r2 Major 10 / vectorize
+        # rule item 6): the batched chunked-QR path must reproduce the retained
+        # serial oracle draw-for-draw at small d; n_draws=7 crosses the chunk=4
+        # boundary so the chunking seam is exercised. Also ties the DISPATCHED
+        # entrypoint (raw_cosine_with_rotation_null) to the batched helper.
+        rng_eq = np.random.default_rng(11)
+        beta_eq_a = torch.as_tensor(rng_eq.standard_normal((16, 16)))
+        beta_eq_b = torch.as_tensor(rng_eq.standard_normal((16, 16)))
+        eq_batched = oc._rotation_null_draws(beta_eq_a, beta_eq_b, n_draws=7, seed=TASK)
+        eq_serial = oc._rotation_null_draws_serial_reference(
+            beta_eq_a, beta_eq_b, n_draws=7, seed=TASK
+        )
+        assert eq_batched.shape == eq_serial.shape == (7,), (eq_batched.shape, eq_serial.shape)
+        assert np.allclose(eq_batched, eq_serial, atol=1e-10), (
+            "batched rotation-null diverges from the serial oracle: "
+            f"max |d| = {np.max(np.abs(eq_batched - eq_serial)):.3e}"
+        )
+        eq_disp = oc.raw_cosine_with_rotation_null(beta_eq_a, beta_eq_b, n_draws=7, seed=TASK)
+        assert abs(eq_disp["rotation_null"]["null_mean"] - float(eq_serial.mean())) < 1e-10, (
+            "dispatched raw_cosine_with_rotation_null does not route the batched draws"
+        )
         print(
-            "[selftest] PASS: loader, set-check, sweep unit, traj unit, ladder band, "
-            "operator (rotation null), ood transfer, content hits, "
-            "reliability ceiling (frozen-subset index mapping)"
+            "[selftest] PASS: loader, set-check, sweep unit, traj unit (interleaved "
+            "scatter-fill), ladder band, operator (rotation null, batched==serial), "
+            "ood transfer, content hits (MCQ ladder parity), reliability ceiling "
+            "(frozen-subset index mapping), shard-content-swap invalidation"
         )
     return 0
 
@@ -2212,11 +2385,24 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--g0-local-dir", type=Path, default=None)
     ap.add_argument("--shard", default=None, help="worker mode: i/N over the unit registry")
     ap.add_argument(
+        "--claim-dir",
+        type=Path,
+        default=None,
+        help="worker mode: work-conserving atomic unit claims (parent-managed dir); "
+        "with it the shard slice is a START ROTATION only — every worker sees all units",
+    )
+    ap.add_argument(
         "--num-workers", type=int, default=int(os.environ.get("EPM_I2546_FIT_WORKERS", "4"))
     )
     ap.add_argument("--null-draws", type=int, default=None)
     ap.add_argument("--n-boot", type=int, default=None)
     ap.add_argument("--prefill-fallback", action="store_true", help="match P4's parse-mode rung")
+    ap.add_argument(
+        "--decode-fallback",
+        action="store_true",
+        help="provenance: P2-P4 ran the decode-fallback rung (dispatch $FB_ARGS parity; "
+        "parse mode is unaffected — recorded into unit fit_params)",
+    )
     ap.add_argument(
         "--publish", action="store_true", help="P6: HF preds + out-JSON mirror (plan §10)"
     )
@@ -2261,9 +2447,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.shard:
         i_s, n_s = args.shard.split("/")
         i, nsh = int(i_s), int(n_s)
-        units = build_registry(prof)[i::nsh]
-        print(f"[p5] worker shard {i}/{nsh}: {len(units)} registry jobs", flush=True)
-        return run_units(args, prof, units)
+        registry = build_registry(prof)
+        if args.claim_dir is not None:
+            # Work-conserving mode: every worker walks the FULL registry and
+            # atomically claims units; the shard index only rotates the start
+            # point to cut claim contention (r2 Codex Major: fit-fanout).
+            units = registry[i::nsh] + [u for j in range(nsh) if j != i for u in registry[j::nsh]]
+            print(
+                f"[p5] worker slot {i}/{nsh}: work-conserving over {len(units)} registry jobs",
+                flush=True,
+            )
+        else:
+            units = registry[i::nsh]
+            print(f"[p5] worker shard {i}/{nsh}: {len(units)} registry jobs", flush=True)
+        return run_units(args, prof, units, claim_dir=args.claim_dir)
     return run_parent(args, prof)
 
 

@@ -234,6 +234,8 @@ def _assert_nonempty(fig) -> None:
 
     def _finite(a) -> bool:
         for ln in a.lines:
+            if ln.get_gid() == "refline":
+                continue  # reference axhline/axvline — always finite, never a datum
             if np.isfinite(np.asarray(ln.get_ydata(), dtype=float)).any():
                 return True
         for p in a.patches:
@@ -351,7 +353,7 @@ def fig_hero1(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
                                 _identity_tick(ax, x, float(acc) - float(ch))
             ax.set_xticks([xs[c] for c in cells])
             ax.set_xticklabels([CELL_LABEL[c] for c in cells], rotation=30, ha="right", fontsize=7)
-            ax.axhline(0.0, color="0.7", lw=0.8)
+            ax.axhline(0.0, color="0.7", lw=0.8, gid="refline")
             if col_of[a] == 0:
                 ax.set_ylabel(row_label[row], fontsize=8)
             title = ARM_TITLE[a] if row == 0 else ""
@@ -420,7 +422,7 @@ def fig_hero2(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             ref, band = float(d["within_post_reference_r2"]), float(d["band_value"])
             if slug == "pooled":
                 ax1.axhspan(ref - band, ref, color="0.75", alpha=0.25, zorder=0)
-                ax1.axhline(ref, color="0.4", lw=0.9, ls=":")
+                ax1.axhline(ref, color="0.4", lw=0.9, ls=":", gid="refline")
             st = d.get("sufficient_tier")
             if st is not None:
                 ax1.plot([st], [tiers[st]], marker="*", ms=11, color=col, zorder=6)
@@ -576,7 +578,7 @@ def fig_hero3(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             idb = np.array([np.nan if v is None else v for v in ser["idb"]], dtype=float)
             ax_r2.plot(x, idb, ls=":", color=scol[s], alpha=0.7, lw=1.0)
             if ceil.get(s) is not None:
-                ax_r2.axhline(ceil[s], ls="--", color=scol[s], alpha=0.6, lw=1.0)
+                ax_r2.axhline(ceil[s], ls="--", color=scol[s], alpha=0.6, lw=1.0, gid="refline")
             ax_acc.plot(
                 x, ser["acc"], marker="o", ms=3.5, color=scol[s], lw=1.4, label=STRATUM_LABEL[s]
             )
@@ -680,7 +682,7 @@ def fig_exp_layer_sweep(root: Path, out_dir: Path, arms: tuple[int, ...]) -> Non
                     label=f"{CELL_LABEL[c]} ({STRATUM_LABEL[s]})",
                 )
         if hl is not None:
-            ax.axvline(hl, color="0.4", lw=0.8, ls="--")
+            ax.axvline(hl, color="0.4", lw=0.8, ls="--", gid="refline")
         ax.set_title(ARM_TITLE[a], fontsize=8)
         ax.set_xlabel("layer")
         if ci == 0:
@@ -810,7 +812,7 @@ def fig_exp_p8e_baselines(root: Path, out_dir: Path, arms: tuple[int, ...]) -> N
                     ax.bar(i, v, width=0.6, color=col)
         ax.set_xticks(range(4))
         ax.set_xticklabels(names, rotation=25, ha="right", fontsize=7)
-        ax.axhline(0.0, color="0.7", lw=0.8)
+        ax.axhline(0.0, color="0.7", lw=0.8, gid="refline")
         ax.set_title(f"{ARM_TITLE[a]}\n{CELL_LABEL['p8_E']} (pooled)", fontsize=8)
         if ci == 0:
             ax.set_ylabel("held-out R² (headline layer)", fontsize=8)
@@ -840,7 +842,7 @@ def fig_exp_n1m_read(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
     ax0.set_xticklabels([f"layer {k[1:]}" for k in layers])
     ax0.set_ylabel("R² agreement with banked v̂ target\n(frozen #779 n1m ridge)", fontsize=8)
     ax0.legend(fontsize=7)
-    ax0.axhline(0.0, color="0.7", lw=0.8)
+    ax0.axhline(0.0, color="0.7", lw=0.8, gid="refline")
     for layer in layers:
         pkb = reads["post_vc"][layer].get("per_k_bin", {})
         bins = sorted(b for b, v in pkb.items() if "r2_agreement" in v)
@@ -886,7 +888,7 @@ def fig_exp_ood(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
                     _identity_tick(ax, i + 0.19, float(ch), w=0.3)
         ax.set_xticks(range(len(ood_units)))
         ax.set_xticklabels([lb for _, lb in ood_units], rotation=20, ha="right", fontsize=7)
-        ax.axhline(0.0, color="0.7", lw=0.8)
+        ax.axhline(0.0, color="0.7", lw=0.8, gid="refline")
         ax.set_title(ARM_TITLE[a], fontsize=8)
         if ci == 0:
             ax.set_ylabel("transfer R² (left) / identity acc@1\n(right; tick = chance)", fontsize=8)

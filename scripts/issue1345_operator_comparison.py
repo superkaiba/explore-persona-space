@@ -108,18 +108,66 @@ def _t(a: np.ndarray) -> torch.Tensor:
     return torch.as_tensor(np.asarray(a), dtype=torch.float64).to(_dev())
 
 
-# ---------------------------------------------------------------------------
-# Leg A reads
-# ---------------------------------------------------------------------------
-def raw_cosine_with_rotation_null(
-    beta_a: torch.Tensor, beta_b: torch.Tensor, *, n_draws: int, seed: int
-) -> dict:
-    """Raw vec-cosine + random two-sided-rotation chance band (no fitting)."""
-    va = beta_a.reshape(-1)
-    vb = beta_b.reshape(-1)
-    raw = float((va @ vb) / (va.norm() * vb.norm() + 1e-12))
+def _qr_haar_batch(a: torch.Tensor) -> torch.Tensor:
+    """Batched Haar sign-fix QR: (B, d, d) fp64 gaussians -> (B, d, d) Qs.
+
+    Same canonicalization as ma._random_orthogonal (Q * sign(diag(R))) applied
+    per slice, so CPU LAPACK vs cuSOLVER agree up to fp64 rounding.
+    """
+    q, r = torch.linalg.qr(a)
+    sign = torch.sign(torch.diagonal(r, dim1=-2, dim2=-1))
+    return q * sign.unsqueeze(-2)
+
+
+def _haar_pairs_batched(
+    d1: int, d2: int, gen: torch.Generator, n_draws: int, dev: torch.device, chunk: int = 4
+):
+    """Yield (q1, q2) Haar-orthogonal batches of shape (b, d1, d1) / (b, d2, d2).
+
+    Stream-identity contract (#2546 r3, batching the serial per-draw QR loops):
+    the CPU fp64 gaussians are drawn from `gen` in the SAME interleaved order
+    as the superseded serial loops (per draw: d1-gaussian then d2-gaussian —
+    two ma._random_orthogonal calls), so the Haar sample identity per seed is
+    unchanged; only the QR + sign fix are batched and routed to `dev` (the
+    #1417 device-routing convention). Chunked to bound peak memory (~0.8 GB
+    per side per chunk of 4 at d=3584 fp64).
+    """
+    for start in range(0, n_draws, chunk):
+        b = min(chunk, n_draws - start)
+        g1 = torch.empty(b, d1, d1, dtype=torch.float64)
+        g2 = torch.empty(b, d2, d2, dtype=torch.float64)
+        for j in range(b):
+            g1[j] = torch.randn(d1, d1, dtype=torch.float64, generator=gen)
+            g2[j] = torch.randn(d2, d2, dtype=torch.float64, generator=gen)
+        yield _qr_haar_batch(g1.to(dev)), _qr_haar_batch(g2.to(dev))
+
+
+def _rotation_null_draws(
+    beta_a: torch.Tensor, beta_b: torch.Tensor, *, n_draws: int, seed: int, chunk: int = 4
+) -> np.ndarray:
+    """Batched rotation-null cosines: cos(vec(beta_a), vec(Q1^T beta_b Q2))."""
     gen = torch.Generator().manual_seed(seed)
     d_in, d_out = beta_b.shape
+    va = beta_a.reshape(-1)
+    va_n = va / (va.norm() + 1e-12)
+    out: list[float] = []
+    for q1, q2 in _haar_pairs_batched(d_in, d_out, gen, n_draws, beta_b.device, chunk):
+        vm = (q1.mT @ beta_b @ q2).reshape(q1.shape[0], -1)
+        cos = (vm @ va_n) / (vm.norm(dim=1) + 1e-12)
+        out.extend(float(v) for v in cos)
+    return np.asarray(out)
+
+
+def _rotation_null_draws_serial_reference(
+    beta_a: torch.Tensor, beta_b: torch.Tensor, *, n_draws: int, seed: int
+) -> np.ndarray:
+    """Superseded serial per-draw QR loop, retained ONLY as the batched path's
+    equivalence oracle (vectorize-many-cell-fits.md item 6 / supersede-contract
+    containment); exercised by issue2546_fit_cells.py --selftest at small d.
+    """
+    gen = torch.Generator().manual_seed(seed)
+    d_in, d_out = beta_b.shape
+    va = beta_a.reshape(-1)
     va_n = va / (va.norm() + 1e-12)
     draws = []
     for _ in range(n_draws):
@@ -127,7 +175,24 @@ def raw_cosine_with_rotation_null(
         q2 = ma._random_orthogonal(d_out, gen).to(beta_b.device)
         vm = (q1.T @ beta_b @ q2).reshape(-1)
         draws.append(float((vm @ va_n) / (vm.norm() + 1e-12)))
-    arr = np.asarray(draws)
+    return np.asarray(draws)
+
+
+# ---------------------------------------------------------------------------
+# Leg A reads
+# ---------------------------------------------------------------------------
+def raw_cosine_with_rotation_null(
+    beta_a: torch.Tensor, beta_b: torch.Tensor, *, n_draws: int, seed: int
+) -> dict:
+    """Raw vec-cosine + random two-sided-rotation chance band (no fitting).
+
+    Null draws are batched (chunked batched QR via _haar_pairs_batched) with
+    the seeded gaussian stream identical to the pre-#2546 serial loop.
+    """
+    va = beta_a.reshape(-1)
+    vb = beta_b.reshape(-1)
+    raw = float((va @ vb) / (va.norm() * vb.norm() + 1e-12))
+    arr = _rotation_null_draws(beta_a, beta_b, n_draws=n_draws, seed=seed)
     return {
         "raw_cosine": raw,
         "rotation_null": {
@@ -268,10 +333,13 @@ def reparam_null_battery(
     for direction in ("b2i", "i2b"):
         shuf = [_chain(direction, _shuffled_center(_conv_perm())) for _ in range(n_draws)]
         rot = []
-        for _ in range(n_draws):
-            qc = ma._random_orthogonal(d, gen).to(dev)
-            qa = ma._random_orthogonal(d, gen).to(dev)
-            rot.append(_chain(direction, _rotated_center(qc, qa)))
+        # QR draws batched (chunked batched QR, seeded stream identical to the
+        # superseded serial loop — see _haar_pairs_batched); the per-draw ridge
+        # chain reuses cached fold preps (O(n*d) per draw), so the dense d^3
+        # factorization was the batchable cost here.
+        for qcs, qas in _haar_pairs_batched(d, d, gen, n_draws, dev):
+            for j in range(qcs.shape[0]):
+                rot.append(_chain(direction, _rotated_center(qcs[j], qas[j])))
         results[direction] = {
             "shuffle_fit": {
                 "draws": [float(v) for v in shuf],

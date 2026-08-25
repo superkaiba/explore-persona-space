@@ -716,8 +716,11 @@ _BOXED_RE = re.compile(r"\\boxed\s*\{")
 _LETTER_RE = re.compile(r"\b([A-J])\b")
 # Anchored MCQ forms (g5: a FIRST-match bare \b[A-J]\b grabs the article 'A' /
 # a mid-reasoning option mention and mislabels the correctness covariate).
+# (?![A-Za-z]) rejects a word-initial capture (r3 g1 Major: without it,
+# "answer is clearly B" captured 'c' and "either A or C" captured 'e' —
+# IGNORECASE makes [A-J] match the first letter of the NEXT WORD).
 _MCQ_ANCHOR_RE = re.compile(
-    r"(?:answer|option|choice)\s*(?:is|:)?\s*\**\(?([A-J])\)?", re.IGNORECASE
+    r"(?:answer|option|choice)\s*(?:is|:)?\s*\**\(?([A-J])\)?(?![A-Za-z])", re.IGNORECASE
 )
 _MCQ_BARE_LINE_RE = re.compile(r"^\**\(?([A-J])\)?[\s.):*]*$")
 
@@ -807,7 +810,14 @@ def exact_match_correct(corpus: str, ans_text: str, gold: str | None) -> bool | 
         opposite = {"true": "false", "false": "true"}.get(g)
         if opposite is not None and opposite in toks:
             return False
-        return any(i == 0 or toks[i - 1] not in _CH_NEGATORS for i, t in enumerate(toks) if t == g)
+
+        # Negation scope is a WINDOW, not the immediate predecessor (r3 g1
+        # minor: "it cannot be true" must not score correct against gold
+        # "true" — the negator sits 2 tokens back behind the copula).
+        def _negated(i: int, window: int = 3) -> bool:
+            return any(t in _CH_NEGATORS for t in toks[max(0, i - window) : i])
+
+        return any(not _negated(i) for i, t in enumerate(toks) if t == g)
     raise ValueError(f"unknown corpus {corpus!r}")
 
 
@@ -896,16 +906,86 @@ def sampling_params(cap: int, stop_ids: list[int], *, greedy: bool, seed: int | 
     )
 
 
-def generate_chunked(llm, prompts: list[str], sp, tag: str) -> list[tuple[str, str, int]]:
+def _chunk_ckpt_path(out_file: Path, name: str) -> Path:
+    """Per-chunk checkpoint file for one generation stage (append-only JSONL)."""
+    return out_file.with_name(out_file.name + f".stage_{name}.chunks.jsonl")
+
+
+def _chunk_key(i0: int, chunk: list[str]) -> str:
+    """Machine-stable chunk identity: start index + sha256 of the chunk's
+    prompt STRINGS (bit-exact file-read inputs — safe to hash; gotchas.md
+    float-recompute rule N/A)."""
+    h = hashlib.sha256()
+    h.update(str(i0).encode())
+    for p in chunk:
+        h.update(b"\x00")
+        h.update(p.encode())
+    return h.hexdigest()[:24]
+
+
+def _load_chunk_ckpts(cp: Path, fp_sha: str) -> dict[str, list[tuple[str, str, int]]]:
+    """Verified completed chunks from a prior attempt (regime-fingerprint
+    gated: ANY mismatched line means a different regime wrote here — wipe and
+    regenerate everything rather than mixing; r3 item 9)."""
+    if not cp.is_file():
+        return {}
+    cache: dict[str, list[tuple[str, str, int]]] = {}
+    for line in cp.read_text().split("\n"):
+        if not line.strip():
+            continue
+        rec = json.loads(line)
+        if rec.get("fp_sha") != fp_sha:
+            logger.warning("[vllm-chunk] %s: STALE regime fingerprint — wiping chunk ckpts", cp)
+            cp.unlink()
+            return {}
+        cache[rec["key"]] = [(t, fr, int(n)) for t, fr, n in rec["outs"]]
+    return cache
+
+
+def generate_chunked(
+    llm, prompts: list[str], sp, tag: str, *, ckpt: tuple[Path, str, str] | None = None
+) -> list[tuple[str, str, int]]:
     """Chunked order-preserving generate -> [(text, finish_reason, n_gen_tokens)].
 
     Per-chunk INFO logs keep the poller's stall detection fed (gotchas.md #664);
     ``use_tqdm=False`` (#613 ZeroDivision + GCE line-length traps).
+
+    ``llm`` may be the engine OR a zero-arg callable returning it (lazy — a
+    fully chunk-resumed stage never builds the engine). ``ckpt=(out_file,
+    ckpt_name, fp_sha)`` arms per-chunk checkpointing (r3 item 9, checkpoint-
+    per-phase intra-phase grain): each completed chunk is appended atomically
+    (one O_APPEND JSON line keyed on chunk start-index + prompt sha + the
+    stage's regime-fingerprint sha) and verified chunks are resume-skipped, so
+    a crash in chunk k forfeits at most one chunk, never the stage.
+    ``ckpt_name`` MUST be prefixed by the owning stage name so ``_write_stage``
+    reaps the consumed chunk files (glob ``.stage_<stage>*.chunks.jsonl``).
     """
     out: list[tuple[str, str, int]] = []
     n_chunks = (len(prompts) + VLLM_CHUNK_SIZE - 1) // VLLM_CHUNK_SIZE
+    cp: Path | None = None
+    fp_sha = ""
+    cache: dict[str, list[tuple[str, str, int]]] = {}
+    if ckpt is not None:
+        out_file, ckpt_name, fp_sha = ckpt
+        cp = _chunk_ckpt_path(out_file, ckpt_name)
+        cache = _load_chunk_ckpts(cp, fp_sha)
+
+    def _eng():
+        return llm() if not hasattr(llm, "generate") else llm
+
     for i in range(0, len(prompts), VLLM_CHUNK_SIZE):
         chunk = prompts[i : i + VLLM_CHUNK_SIZE]
+        key = _chunk_key(i, chunk) if cp is not None else ""
+        if key and key in cache:
+            logger.info(
+                "[vllm-chunk] %s chunk %d/%d: resume-skip (%d prompts)",
+                tag,
+                i // VLLM_CHUNK_SIZE + 1,
+                n_chunks,
+                len(chunk),
+            )
+            out.extend(cache[key])
+            continue
         logger.info(
             "[vllm-chunk] %s chunk %d/%d (%d prompts)",
             tag,
@@ -913,8 +993,17 @@ def generate_chunked(llm, prompts: list[str], sp, tag: str) -> list[tuple[str, s
             n_chunks,
             len(chunk),
         )
-        for o in llm.generate(chunk, sp, use_tqdm=False):
-            out.append((o.outputs[0].text, o.outputs[0].finish_reason, len(o.outputs[0].token_ids)))
+        chunk_out = [
+            (o.outputs[0].text, o.outputs[0].finish_reason, len(o.outputs[0].token_ids))
+            for o in _eng().generate(chunk, sp, use_tqdm=False)
+        ]
+        if cp is not None:
+            line = json.dumps({"key": key, "i0": i, "fp_sha": fp_sha, "outs": chunk_out})
+            with cp.open("a") as fh:
+                fh.write(line + "\n")
+                fh.flush()
+                os.fsync(fh.fileno())
+        out.extend(chunk_out)
     return out
 
 
@@ -923,14 +1012,32 @@ def _gen_stage_path(out_file: Path, name: str) -> Path:
     return out_file.with_name(out_file.name + f".stage_{name}.jsonl")
 
 
-def _load_stage(out_file: Path, name: str, expected_ids: set[str]) -> list[dict] | None:
-    """Load a completed generation stage iff its row-id set matches THIS work
-    file's (a mismatched stage is stale — a prior regime's residue — and is
-    regenerated with a logged warning, never silently reused)."""
+def _write_stage(out_file: Path, name: str, rows: list[dict], fp_sha: str) -> None:
+    """Persist a completed stage (regime-fingerprint header line + rows) and
+    reap the stage's now-consumed per-chunk checkpoints."""
+    _write_jsonl(_gen_stage_path(out_file, name), [{"__stage_fp__": fp_sha}, *rows])
+    for cp in out_file.parent.glob(out_file.name + f".stage_{name}*.chunks.jsonl"):
+        cp.unlink()
+
+
+def _load_stage(
+    out_file: Path, name: str, expected_ids: set[str], fp_sha: str
+) -> list[dict] | None:
+    """Load a completed generation stage iff its regime-fingerprint header AND
+    row-id set match THIS work file's (a mismatch is stale — a prior regime's
+    residue — and is regenerated with a logged warning, never silently reused;
+    r3 g1 minor: the row-id set alone cannot see a flag/regime change)."""
     sp = _gen_stage_path(out_file, name)
     if not sp.is_file():
         return None
     recs = _read_jsonl(sp)
+    header = recs[0] if recs and "__stage_fp__" in recs[0] else None
+    if header is not None:
+        recs = recs[1:]
+    if header is None or header.get("__stage_fp__") != fp_sha:
+        logger.warning("[gen-worker] stage %s: STALE regime fingerprint — regenerating", name)
+        sp.unlink()
+        return None
     if {r["row_id"] for r in recs} == expected_ids:
         logger.info("[gen-worker] stage %s: resume (%d rows)", name, len(recs))
         return recs
@@ -966,11 +1073,14 @@ def run_gen_worker(args) -> None:
             llm = build_engine(work["model"], work["revision"])
         return llm
 
+    fp_sha = work["fp_sha"]
     row_ids = {r["row_id"] for r in rows}
-    out_rows = _load_stage(out_file, "primary", row_ids)
+    out_rows = _load_stage(out_file, "primary", row_ids, fp_sha)
     if out_rows is None:
         sp = sampling_params(work["cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED)
-        prim = generate_chunked(_llm(), prompts, sp, f"primary-{side.side}")
+        prim = generate_chunked(
+            _llm, prompts, sp, f"primary-{side.side}", ckpt=(out_file, "primary", fp_sha)
+        )
         out_rows = []
         regen_idx = [i for i, (_t, fr, _n) in enumerate(prim) if fr == "length"]
         regen_out: dict[int, tuple[str, str, int]] = {}
@@ -985,7 +1095,13 @@ def run_gen_worker(args) -> None:
             sp2 = sampling_params(
                 work["regen_cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
             )
-            regen_texts = generate_chunked(_llm(), [prompts[i] for i in regen_idx], sp2, "regen")
+            regen_texts = generate_chunked(
+                _llm,
+                [prompts[i] for i in regen_idx],
+                sp2,
+                "regen",
+                ckpt=(out_file, "primary_regen", fp_sha),
+            )
             regen_out = dict(zip(regen_idx, regen_texts, strict=True))
         for i, r in enumerate(rows):
             text, fr, ntok = prim[i]
@@ -1006,16 +1122,24 @@ def run_gen_worker(args) -> None:
                 t2, fr2, n2 = regen_out[i]
                 rec = {**rec, "text": t2, "finish_reason": fr2, "n_gen_tokens": n2, "regen": True}
             out_rows.append(rec)
-        _write_jsonl(_gen_stage_path(out_file, "primary"), out_rows)
+        _write_stage(out_file, "primary", out_rows, fp_sha)
     rel_ids = set(work["rel_row_ids"])
     rel_rows = [(i, r) for i, r in enumerate(rows) if r["row_id"] in rel_ids]
     for draw in range(work["rel_draws"]):
         if not rel_rows:
             break
-        draw_rows = _load_stage(out_file, f"rel_d{draw}", {r["row_id"] for _, r in rel_rows})
+        draw_rows = _load_stage(
+            out_file, f"rel_d{draw}", {r["row_id"] for _, r in rel_rows}, fp_sha
+        )
         if draw_rows is None:
             spd = sampling_params(work["cap"], stop_ids, greedy=False, seed=SEED * 100 + draw)
-            outs = generate_chunked(_llm(), [prompts[i] for i, _ in rel_rows], spd, f"rel-d{draw}")
+            outs = generate_chunked(
+                _llm,
+                [prompts[i] for i, _ in rel_rows],
+                spd,
+                f"rel-d{draw}",
+                ckpt=(out_file, f"rel_d{draw}", fp_sha),
+            )
             draw_rows = []
             for (_, r), (text, fr, ntok) in zip(rel_rows, outs, strict=True):
                 draw_rows.append(
@@ -1032,7 +1156,7 @@ def run_gen_worker(args) -> None:
                         "read_idx": r["read_idx"],
                     }
                 )
-            _write_jsonl(_gen_stage_path(out_file, f"rel_d{draw}"), draw_rows)
+            _write_stage(out_file, f"rel_d{draw}", draw_rows, fp_sha)
         out_rows.extend(draw_rows)
     _write_jsonl(Path(work["out_file"]), out_rows)
     logger.info(
@@ -1547,25 +1671,63 @@ def run_capture_rel_worker(args) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _inherited_cvd_entries() -> list[str]:
-    """Entries of an inherited CUDA_VISIBLE_DEVICES ('' / unset -> [])."""
-    cvd = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+def _inherited_cvd_entries() -> list[str] | None:
+    """Entries of an inherited CUDA_VISIBLE_DEVICES (unset -> None; '' -> []).
+
+    Unset and empty are DIFFERENT allocations (r3 g1 minor 6): CVD='' is an
+    explicit zero-GPU grant and must never fall through to node enumeration.
+    """
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if cvd is None:
+        return None
     return [c.strip() for c in cvd.split(",") if c.strip() != ""]
 
 
-def gpu_count() -> int:
-    # nvidia-smi subprocess, never torch (the CVD-clobber family; gotchas.md).
-    # Allocation-first: nvidia-smi enumerates NODE width and ignores CVD, so an
-    # inherited CVD clamps the count (#1902/#1336 — never fan out past the
-    # allocation on a shared or narrower-than-node host).
+def _slurm_gpu_entries() -> list[str]:
+    """Ordered PHYSICAL device ids from the SLURM allocation env (CVD unset).
+
+    Precedence (#1902/#1336 allocation-first): SLURM_STEP_GPUS >
+    SLURM_JOB_GPUS (ordered id lists) > SLURM_GPUS_ON_NODE (count only; ids
+    assumed 0..N-1). A SLURM job exposing none of the three fails LOUD —
+    node enumeration on a shared node trespasses onto other tenants' GPUs.
+    """
+    for var in ("SLURM_STEP_GPUS", "SLURM_JOB_GPUS"):
+        raw = os.environ.get(var, "").strip()
+        if raw:
+            return [e.strip() for e in raw.split(",") if e.strip() != ""]
+    n = os.environ.get("SLURM_GPUS_ON_NODE", "").strip()
+    if n:
+        if not n.isdigit():
+            raise RuntimeError(f"SLURM_GPUS_ON_NODE={n!r} is not a count")
+        return [str(i) for i in range(int(n))]
+    raise RuntimeError(
+        "SLURM job exposes neither CUDA_VISIBLE_DEVICES nor SLURM_STEP_GPUS/"
+        "SLURM_JOB_GPUS/SLURM_GPUS_ON_NODE — refusing to derive GPU identity "
+        "from node enumeration (shared-node trespass; gotchas.md #1902/#1336)"
+    )
+
+
+def gpu_allocation() -> list[str]:
+    """Ordered device ids this process may use (the launcher-env pin source).
+
+    CVD array (set, possibly empty) > SLURM allocation env (fail-loud ladder)
+    > nvidia-smi enumeration (non-SLURM exclusive hosts: RunPod pods).
+    nvidia-smi subprocess, never torch (the CVD-clobber family; gotchas.md).
+    """
+    entries = _inherited_cvd_entries()
+    if entries is not None:
+        return entries
+    if os.environ.get("SLURM_JOB_ID"):
+        return _slurm_gpu_entries()
     p = subprocess.run(["nvidia-smi", "--list-gpus"], capture_output=True, text=True, check=False)
     if p.returncode != 0:
-        return 0
-    n = len([ln for ln in p.stdout.split("\n") if ln.strip()])
-    entries = _inherited_cvd_entries()
-    if entries:
-        n = min(n, len(entries))
-    return n
+        return []
+    return [str(i) for i in range(len([ln for ln in p.stdout.split("\n") if ln.strip()]))]
+
+
+def gpu_count() -> int:
+    """Allocation width (see gpu_allocation for the precedence ladder)."""
+    return len(gpu_allocation())
 
 
 def spawn_workers(script_args: list[str], work_files: list[Path], out_root: Path, tag: str) -> None:
@@ -1573,12 +1735,18 @@ def spawn_workers(script_args: list[str], work_files: list[Path], out_root: Path
     procs = []
     log_dir = out_root / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
-    cvd_entries = _inherited_cvd_entries()
+    alloc = gpu_allocation()
     for slot, wf in enumerate(work_files):
-        # Launcher-env CVD pin (#543/#545); pin the slot-th INHERITED entry —
-        # a bare ordinal would retarget unallocated GPUs under CVD=4,5
-        # (#1336 precheck gotcha).
-        pin = cvd_entries[slot] if slot < len(cvd_entries) else str(slot)
+        # Launcher-env CVD pin (#543/#545); pin the slot-th ALLOCATION entry
+        # (inherited CVD, else the SLURM allocation env) — a bare ordinal
+        # would retarget unallocated GPUs under CVD=4,5 / a narrow SLURM
+        # grant (#1336 precheck gotcha; r3 Critical 2: never str(slot)).
+        if slot >= len(alloc):
+            raise RuntimeError(
+                f"{tag}: worker slot {slot} exceeds the GPU allocation {alloc} — "
+                "refusing a bare-ordinal pin past the allocation"
+            )
+        pin = alloc[slot]
         env = {**os.environ, "CUDA_VISIBLE_DEVICES": pin}
         log_path = log_dir / f"{tag}.slot{slot}.log"
         cmd = [
@@ -1714,6 +1882,12 @@ def _row_sig(rows: list[dict]) -> str:
     return hashlib.sha1(body.encode()).hexdigest()[:16]
 
 
+def fp_sha(fp: dict) -> str:
+    """Short sha over a regime fingerprint (generating-parameter dict — JSON
+    values only, machine-stable by construction)."""
+    return hashlib.sha256(json.dumps(fp, sort_keys=True).encode()).hexdigest()[:16]
+
+
 def run_generation(
     args,
     arm: ArmSpec,
@@ -1780,6 +1954,10 @@ def run_generation(
                 "regen_cap": side.regen_cap,
                 "stop_ids": stop_ids,
                 "decode_fallback": flags["decode_fallback"],
+                # Regime-fingerprint sha for worker-side stage/chunk resume
+                # gating (r3 item 9 + g1 minor: a fallback relaunch or any
+                # flag flip invalidates prior stages/chunks fail-loud).
+                "fp_sha": fp_sha(fp),
                 "rel_draws": REL_DRAWS if rel_total > 0 else 0,
                 "rel_row_ids": sorted(rid for rid in rel_ids),
                 "rows": slot_rows,
@@ -2806,11 +2984,19 @@ def run_parser_selftest() -> None:
     assert exact_match_correct("mmlu", "Reasoning about B here.\n(C)", "C") is True
     assert exact_match_correct("piqa", "thus \\boxed{A}", "A") is True
     assert extract_mcq_letter("no letters at all") is None
+    # (6) r3 g1 Major fixtures — next-word-initial captures (each fails
+    # pre-fix: IGNORECASE [A-J] grabbed 'c' of "clearly" / 'e' of "either"):
+    assert extract_mcq_letter("The answer is clearly B.") == "B"
+    assert extract_mcq_letter("The answer is either A or C; on reflection, C.") == "C"
+    assert extract_mcq_letter("The answer is Because-shaped nonsense") is None
     # ContextHub polarity guard (g5 fixtures — each fails pre-fix):
     assert exact_match_correct("contexthub", "Conclusion:\nnot true", "true") is False
     assert exact_match_correct("contexthub", "Conclusion:\nnot true", "false") is False
     assert exact_match_correct("contexthub", "So it is true and false", "true") is False
     assert exact_match_correct("contexthub", "the statement is true", "true") is True
+    # r3 g1 minor — negation scope is a window, not the immediate predecessor:
+    assert exact_match_correct("contexthub", "Conclusion:\nit cannot be true", "true") is False
+    assert exact_match_correct("contexthub", "Conclusion:\nnot at all true", "true") is False
     # quota arithmetic: arm-1 base realizes the plan totals at 4 k-bins + 8 cells
     sizes = {f"gsm8k_train:k{i}": 10_000 for i in range(4)}
     sizes.update({f"contexthub:c{i}": 10_000 for i in range(8)})

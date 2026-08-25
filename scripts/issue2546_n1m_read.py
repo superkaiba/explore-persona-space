@@ -52,6 +52,7 @@ import torch  # noqa: E402
 
 # Cross-script helpers hoisted to module top (gotchas.md #606: no deferred imports).
 from issue779_ffc_n1m_fits import apply_map  # noqa: E402
+from issue2546_gen_capture import arm_dirname  # noqa: E402
 
 from explore_persona_space.analysis.mapping_baselines import knn_retrieval  # noqa: E402
 from explore_persona_space.atomic_io import write_json_atomic  # noqa: E402
@@ -125,15 +126,17 @@ def load_n1m_payload(layer: int) -> dict:
 
 
 def load_side_vectors(
-    out_root: Path, side: str, kinds_needed: tuple[str, ...]
+    out_root: Path, side: str, kinds_needed: tuple[str, ...], smoke: bool
 ) -> tuple[dict[str, dict[int, np.ndarray]], list[dict]]:
     """Read the pilot capture shards for one side of arm 1 / gsm8k_test.
 
     Returns ({kind: {layer: (n, H) fp32}}, meta rows aligned to n). Consumes
     the P4-format bf16 shards directly (kind-tensor stems; upload-then-free
     has not yet fired at P2a — the pilot keeps local shards by design).
+    Store dir resolves via the producer's OWN arm_dirname helper (r2 Major 5:
+    a hardcoded "arm1" reads past the smoke_arm1 namespace in smoke mode).
     """
-    stem_dir = out_root / "store" / "arm1" / f"{side}__gsm8k_test"
+    stem_dir = out_root / "store" / arm_dirname(1, smoke) / f"{side}__gsm8k_test"
     shards = sorted(stem_dir.glob("slot*.shard*.pt"))
     if not shards:
         raise FileNotFoundError(
@@ -303,8 +306,8 @@ def main(argv: list[str] | None = None) -> int:
     print("[phase=p2a_n1m_read]", flush=True)
     out_root = Path(args.out_root)
     payloads = {layer: load_n1m_payload(layer) for layer in FROZEN_LAYERS}
-    post, post_meta = load_side_vectors(out_root, "post", ("cx_last", "ans_mean"))
-    pre, pre_meta = load_side_vectors(out_root, "pre", ("cx_last",))
+    post, post_meta = load_side_vectors(out_root, "post", ("cx_last", "ans_mean"), bool(args.smoke))
+    pre, pre_meta = load_side_vectors(out_root, "pre", ("cx_last",), bool(args.smoke))
     post_by_id = {m["row_id"]: i for i, m in enumerate(post_meta)}
     pre_by_id = {m["row_id"]: i for i, m in enumerate(pre_meta)}
     # A duplicated row_id would silently LAST-WIN the dict and misalign the

@@ -453,16 +453,29 @@ def load_mcq_corpora(smoke: bool) -> dict[str, list[dict]]:
 # ---------------------------------------------------------------------------
 
 
-def discover_taur_repos(smoke: bool) -> tuple[list[str], dict]:
-    """Enumerate the TAUR-Lab per-model CoT-analysis repos.
+def _filter_taur_repo_ids(all_matching: list[str]) -> tuple[list[str], list[str]]:
+    """Pure include/exclude filter over marker-matching repo ids (testable seam).
 
     Include: every repo under the ``Taur_CoT_Analysis_Project__`` prefix (covers
     the triple-underscore per-model ids AND the double-underscore Llama variant).
     Exclude: the gated collection parent (exact id, no per-model suffix) and the
     two experiment repos (paraphrase / symbolic-solver — different question sets).
-    Floor >= TAUR_EXPECTED_REPOS_FLOOR (the plan named 16; live count is larger —
-    the discrepancy is recorded, never silently truncated). Smoke slices the
-    FILTERED set, so the 2 smoke repos are always per-model repos.
+    """
+    repos = [
+        rid
+        for rid in all_matching
+        if rid.startswith(TAUR_PARENT_REPO + "__") and not rid.endswith(TAUR_EXCLUDE_SUFFIXES)
+    ]
+    return repos, sorted(set(all_matching) - set(repos))
+
+
+def discover_taur_repos(smoke: bool) -> tuple[list[str], dict]:
+    """Enumerate the TAUR-Lab per-model CoT-analysis repos.
+
+    Filter semantics: _filter_taur_repo_ids. Floor >= TAUR_EXPECTED_REPOS_FLOOR
+    (the plan named 16; live count is larger — the discrepancy is recorded,
+    never silently truncated). Smoke slices the FILTERED set, so the 2 smoke
+    repos are always per-model repos.
     """
     api = HfApi()
     all_matching = sorted(
@@ -473,12 +486,7 @@ def discover_taur_repos(smoke: bool) -> tuple[list[str], dict]:
         )
         if TAUR_REPO_MARKER in d.id
     )
-    repos = [
-        rid
-        for rid in all_matching
-        if rid.startswith(TAUR_PARENT_REPO + "__") and not rid.endswith(TAUR_EXCLUDE_SUFFIXES)
-    ]
-    excluded = sorted(set(all_matching) - set(repos))
+    repos, excluded = _filter_taur_repo_ids(all_matching)
     report = {
         "n_marker_matching": len(all_matching),
         "n_per_model_included": len(repos),
@@ -681,6 +689,42 @@ def _jaccard_hashes(a: np.ndarray, b: np.ndarray) -> float:
     return inter / float(a.size + b.size - inter)
 
 
+class _DedupState:
+    """Keep-first dedup core over (key, bands, shingles) items — testable seam.
+
+    Every band maps to the LIST of ALL retained owners sharing it — never a
+    single first owner (r2 Major 6: `band_owner.setdefault(b, key)` made a
+    kept-but-below-threshold row invisible as a candidate owner, so a later
+    transitive near-dup of IT — A/B < 0.8, B/C >= 0.8, A/C < 0.8 — survived).
+    The candidate set for a row is the exact UNION of retained owners over the
+    row's bands; each candidate is verified by exact shingle Jaccard against
+    JACCARD_VERIFY_THRESHOLD before any drop.
+    """
+
+    def __init__(self) -> None:
+        self.band_owner: dict[tuple[int, bytes], list[tuple[str, int]]] = {}
+        self.owner_shingles: dict[tuple[str, int], np.ndarray] = {}
+
+    def admit(
+        self,
+        key: tuple[str, int],
+        row_bands: list[tuple[int, bytes]],
+        shingles: np.ndarray,
+    ) -> tuple[tuple[str, int] | None, bool]:
+        """Return (drop_owner|None, had_rejected_candidates); register kept keys."""
+        owners = {ok for b in row_bands for ok in self.band_owner.get(b, ())}
+        drop_owner: tuple[str, int] | None = None
+        for ok in sorted(owners):
+            if _jaccard_hashes(shingles, self.owner_shingles[ok]) >= JACCARD_VERIFY_THRESHOLD:
+                drop_owner = ok
+                break
+        if drop_owner is None:
+            self.owner_shingles[key] = shingles
+            for b in row_bands:
+                self.band_owner.setdefault(b, []).append(key)
+        return drop_owner, bool(owners) and drop_owner is None
+
+
 def lsh_keep_first(
     texts_by_corpus: dict[str, list[str]], bands: int = LSH_BANDS
 ) -> tuple[dict[str, np.ndarray], dict]:
@@ -690,11 +734,11 @@ def lsh_keep_first(
     CANDIDATE owners via 16-band LSH (candidates from Jaccard ~>=0.5); each
     candidate pair is then VERIFIED by exact char-5-shingle Jaccard against the
     plan's registered >= 0.8 operating point before the row is dropped. Rows
-    survive when every candidate owner verifies < 0.8 (counted in the report).
+    survive when every candidate owner verifies < 0.8 (counted in the report);
+    surviving rows become owners on ALL their bands (_DedupState, r2 Major 6).
     """
     keep: dict[str, np.ndarray] = {}
-    band_owner: dict[tuple[int, bytes], tuple[str, int]] = {}
-    owner_shingles: dict[tuple[str, int], np.ndarray] = {}
+    state = _DedupState()
     report: dict = {}
     for corpus in CORPUS_ORDER:
         texts = texts_by_corpus[corpus]
@@ -710,14 +754,8 @@ def lsh_keep_first(
                 (bi, sigs[i, bi * rows_per_band : (bi + 1) * rows_per_band].tobytes())
                 for bi in range(bands)
             ]
-            owners = {band_owner[b] for b in row_bands if b in band_owner}
-            sh_i = _shingle_hashes(texts[i])
-            drop_owner: tuple[str, int] | None = None
-            for ok in sorted(owners):
-                if _jaccard_hashes(sh_i, owner_shingles[ok]) >= JACCARD_VERIFY_THRESHOLD:
-                    drop_owner = ok
-                    break
-            if owners and drop_owner is None:
+            drop_owner, rejected = state.admit((corpus, i), row_bands, _shingle_hashes(texts[i]))
+            if rejected:
                 n_rejected += 1  # candidate verified BELOW 0.8 — kept (never band-dropped)
             if drop_owner is not None:
                 mask[i] = False
@@ -725,11 +763,6 @@ def lsh_keep_first(
                     n_within += 1
                 else:
                     n_across += 1
-            else:
-                key = (corpus, i)
-                owner_shingles[key] = sh_i
-                for b in row_bands:
-                    band_owner.setdefault(b, key)
         keep[corpus] = mask
         report[corpus] = {
             "n_before": len(texts),
@@ -1048,8 +1081,96 @@ def _assert_staging_headroom(out_dir: Path, need_gb: float = 3.0) -> None:
         )
 
 
+def run_selftest() -> int:
+    """Deterministic, network-free staging-helper selftest (r2 Critical 3).
+
+    Covers the three helper seams the --smoke slice cannot reach determinately:
+    TAUR discovery filtering (known repo-id fixture), near-dup dedup (the
+    3-signature transitive fixture of r2 Major 6 + a text-level exact-dup
+    fixture with manifest counters), and nested draw redistribution (skewed
+    strata forcing the deficit branch).
+    """
+    # -- TAUR discovery filter (known repo ids) -----------------------------------
+    per_model = [
+        f"{TAUR_PARENT_REPO}___claude_3_sonnet",
+        f"{TAUR_PARENT_REPO}___gpt_4o",
+        f"{TAUR_PARENT_REPO}__Llama_3_70b",  # double-underscore variant — INCLUDED
+    ]
+    excluded_fixture = [
+        TAUR_PARENT_REPO,  # gated collection parent (exact id) — excluded
+        f"{TAUR_PARENT_REPO}___gpt_4o__Paraphrase_Exp",
+        f"{TAUR_PARENT_REPO}___gpt_4o__Symbolic_Solver_Experiment",
+    ]
+    repos, excluded = _filter_taur_repo_ids(sorted(per_model + excluded_fixture))
+    assert repos == sorted(per_model), repos
+    assert excluded == sorted(excluded_fixture), excluded
+
+    # -- dedup: 3-signature transitive fixture (r2 Major 6) ------------------------
+    # A/B < 0.8 (B kept), B/C >= 0.8, A/C < 0.8 — under the superseded
+    # single-owner `band_owner.setdefault`, C's candidate set on the shared band
+    # was {A} only, and J(C, A) < 0.8 kept C (the transitive near-dup survived).
+    sa = np.arange(1, 11, dtype=np.uint64)
+    sb = np.arange(101, 111, dtype=np.uint64)
+    sc = np.unique(np.concatenate([np.arange(102, 111, dtype=np.uint64), [np.uint64(200)]]))
+    assert _jaccard_hashes(sb, sc) >= JACCARD_VERIFY_THRESHOLD  # 9/11 ~ 0.818
+    assert _jaccard_hashes(sa, sc) < JACCARD_VERIFY_THRESHOLD  # the old candidate set
+    b0 = (0, b"\x01")
+    st = _DedupState()
+    assert st.admit(("ca", 0), [b0], sa) == (None, False)
+    drop_b, rej_b = st.admit(("ca", 1), [b0], sb)
+    assert drop_b is None and rej_b, (drop_b, rej_b)  # candidate {A}, verified < 0.8
+    drop_c, _ = st.admit(("cb", 0), [b0], sc)
+    assert drop_c == ("ca", 1), f"transitive candidate missed: drop_owner={drop_c}"
+    # Union completeness across DIFFERENT bands: a row sharing band b1 with one
+    # owner and b2 with another must see BOTH candidates.
+    st2 = _DedupState()
+    st2.admit(("cx", 0), [(1, b"\x02")], sa)
+    st2.admit(("cx", 1), [(2, b"\x03")], sb)
+    drop_u, _ = st2.admit(("cx", 2), [(1, b"\x02"), (2, b"\x03")], sc)
+    assert drop_u == ("cx", 1), drop_u
+
+    # -- dedup: text-level exact-dup fixture (manifest counters) -------------------
+    t1 = "How many apples does Maria have left after giving three to each of her four friends?"
+    t2 = "A train travels at sixty miles per hour for two and a half hours; how far does it go?"
+    t4 = "What is the smallest prime number greater than one hundred and twenty three exactly?"
+    texts = {c: [] for c in CORPUS_ORDER}
+    texts["gsm8k_test"] = [t1, t2, t1]  # third row = exact WITHIN-corpus dup
+    texts["gsm8k_train"] = [t1, t4]  # first row = exact ACROSS-corpus dup
+    keep, report = lsh_keep_first(texts)
+    assert keep["gsm8k_test"].tolist() == [True, True, False], keep["gsm8k_test"]
+    assert keep["gsm8k_train"].tolist() == [False, True], keep["gsm8k_train"]
+    r_test, r_train = report["gsm8k_test"], report["gsm8k_train"]
+    assert (r_test["n_dropped_within"], r_test["n_dropped_across"]) == (1, 0), r_test
+    assert (r_train["n_dropped_within"], r_train["n_dropped_across"]) == (0, 1), r_train
+    assert r_test["n_after"] == 2 and r_train["n_after"] == 1, (r_test, r_train)
+
+    # -- nested draw redistribution (skewed strata force the deficit branch) -------
+    # sizes [4, 47, 49], n3=14 -> [0, 7, 7]; n12=13 raw alloc [1, 6, 6] elementwise-
+    # capped to [0, 6, 6] (sum 12 < 13) -> the deficit loop must move the spare
+    # unit to the largest-headroom stratum (sy). Final arm12 [0, 7, 6].
+    rows = [
+        {"s": s, "in_arm12": False, "in_arm3": False}
+        for s, cnt in (("sx", 4), ("sy", 47), ("sz", 49))
+        for _ in range(cnt)
+    ]
+    stratified_nested_draw(rows, lambda r: r["s"], 13, 14, np.random.default_rng(0), smoke=False)
+    n3_by = {s: sum(r["in_arm3"] for r in rows if r["s"] == s) for s in ("sx", "sy", "sz")}
+    n12_by = {s: sum(r["in_arm12"] for r in rows if r["s"] == s) for s in ("sx", "sy", "sz")}
+    assert sum(n3_by.values()) == 14 and sum(n12_by.values()) == 13, (n3_by, n12_by)
+    assert n3_by == {"sx": 0, "sy": 7, "sz": 7}, n3_by
+    assert n12_by == {"sx": 0, "sy": 7, "sz": 6}, n12_by
+    assert all(r["in_arm3"] for r in rows if r["in_arm12"]), "arm-1/2 row outside arm-3 draw"
+
+    print(
+        "[selftest] PASS: TAUR repo filter (parent + experiment exclusions), dedup "
+        "(transitive band-owner union, exact-dup counters), nested draw redistribution"
+    )
+    return 0
+
+
 def build_argparser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--selftest", action="store_true", help="network-free helper selftest")
     ap.add_argument("--out-dir", default="data/issue_2546/corpora_v1", help="local bundle dir")
     ap.add_argument(
         "--dl-dir", default="data/issue_2546/hf_dl", help="HF staging mirror root (re-downloadable)"
@@ -1082,6 +1203,8 @@ def main(argv: list[str] | None = None) -> int:
     t0 = time.time()
     ap = build_argparser()
     args = ap.parse_args(argv)
+    if args.selftest:
+        return run_selftest()
     if not args.smoke and not args.skip_upload and not args.hf_dest:
         # Fail at parse time, BEFORE hours of pulls/joins (the late check stays as backstop).
         ap.error(

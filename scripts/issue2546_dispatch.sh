@@ -26,6 +26,9 @@
 #                                    [--prefill-fallback] [--decode-fallback] --out-root <dir>
 #   scripts/issue2546_n1m_read.py    --out-root <dir> [--smoke]           (arm-1 pilot leg)
 #   scripts/issue2546_fit_cells.py   --arm K [--g0|--publish] [--smoke] --out-root <dir>
+#                                    [--prefill-fallback] [--decode-fallback]  (regime keys —
+#                                    resume fingerprints; threaded from fallbacks_a$ARM.env)
+#                                    [--claim-dir <dir>] (parent-managed work-conserving fan-out)
 #
 # Contracts honored (pod-side-reporting.md): `[phase=...]` log lines with the single
 # reserved terminal `[phase=done]`; per-phase sentinels /workspace/logs/issue-2546-
@@ -119,10 +122,20 @@ if [ -n "${CUDA_VISIBLE_DEVICES:-}" ]; then
     IFS=',' read -ra _CVD_ALLOC <<<"$CUDA_VISIBLE_DEVICES"
     NGPU=${#_CVD_ALLOC[@]}
 elif [ -n "${SLURM_JOB_ID:-}" ]; then
-    NGPU="${SLURM_GPUS_ON_NODE:-}"
-    if [ -z "$NGPU" ]; then
-        echo "[dispatch2546] FATAL: SLURM allocation exposes neither CUDA_VISIBLE_DEVICES nor SLURM_GPUS_ON_NODE — refusing to derive width from node enumeration" >&2
-        exit 70
+    # Ordered-id lists first (SLURM_STEP_GPUS > SLURM_JOB_GPUS), count var
+    # last — mirrors gen_capture.gpu_allocation()'s ladder (r3 Critical 2).
+    if [ -n "${SLURM_STEP_GPUS:-}" ]; then
+        IFS=',' read -ra _SLURM_ALLOC <<<"$SLURM_STEP_GPUS"
+        NGPU=${#_SLURM_ALLOC[@]}
+    elif [ -n "${SLURM_JOB_GPUS:-}" ]; then
+        IFS=',' read -ra _SLURM_ALLOC <<<"$SLURM_JOB_GPUS"
+        NGPU=${#_SLURM_ALLOC[@]}
+    else
+        NGPU="${SLURM_GPUS_ON_NODE:-}"
+        if [ -z "$NGPU" ]; then
+            echo "[dispatch2546] FATAL: SLURM allocation exposes neither CUDA_VISIBLE_DEVICES nor SLURM_STEP_GPUS/SLURM_JOB_GPUS/SLURM_GPUS_ON_NODE — refusing to derive width from node enumeration" >&2
+            exit 70
+        fi
     fi
 else
     NGPU=$( (nvidia-smi --list-gpus 2>/dev/null || true) | wc -l)
@@ -217,7 +230,9 @@ import time
 
 ts = int(time.time())
 slug = os.environ["SIG_SLUG"]
-path = os.path.join(os.environ["SIG_DIR"], f"issue-2546-{slug}-{ts}.json")
+# pid-uniquified (r3 g1 minor 5): two same-second emissions must never
+# collide on an epoch-only filename (write-once contract).
+path = os.path.join(os.environ["SIG_DIR"], f"issue-2546-{slug}-{ts}-{os.getpid()}.json")
 payload = {
     "sentinel_schema_version": 1,
     "kind": os.environ["SIG_KIND"],
@@ -297,7 +312,16 @@ phase_p1_smoke() {
             echo "[dispatch2546] FATAL: p1_smoke rc=4 with no new fallback rung" >&2
             exit 4
         fi
-        echo "[dispatch2546] p1_smoke fallback band: relaunching smoke ONCE with$FB_ARGS"
+        # Invalidate the FIRST attempt's smoke artifacts BEFORE the fallback
+        # relaunch (r3 Critical 1): the gen fingerprints now differ, so the
+        # relaunch would otherwise die on the refuse-to-mix RuntimeError.
+        # Artifact subdirs ONLY — never the whole root ($DONE_DIR and
+        # $FALLBACK_ENV live under it in --smoke mode). The worker-side
+        # fp_sha stage/chunk gating is the belt; this wipe is the suspenders.
+        for sub in rollouts work store fitcache; do
+            rm -rf "${OUT_ROOT_smoke:?}/$sub"
+        done
+        echo "[dispatch2546] p1_smoke fallback band: wiped smoke artifact subdirs; relaunching smoke ONCE with$FB_ARGS"
         set +e
         # shellcheck disable=SC2086
         uv run python scripts/issue2546_gen_capture.py --arm "$ARM" --smoke \
@@ -399,8 +423,11 @@ phase_ge_gate() {
 phase_p5_fits() {
     echo "[phase=p5_fits]"
     assert_headroom p5_fits "$NEED_GB_FITS"
+    # Engaged fallback rungs thread into P5 (r3 Critical 1: the parse-mode
+    # rung + run-meta record must match what P2-P4 generated/captured).
+    # shellcheck disable=SC2086
     uv run python scripts/issue2546_fit_cells.py --arm "$ARM" \
-        --out-root "$OUT_ROOT" ${SMOKE:+--smoke}
+        --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
 }
 
 publish_results_git() {
@@ -483,8 +510,9 @@ phase_p6_publish() {
     # exact-set verified in-script); (b) production only: pod-side git
     # commit+push of eval_results/issue_2546/ per the result-push contract.
     echo "[phase=p6_publish]"
+    # shellcheck disable=SC2086
     uv run python scripts/issue2546_fit_cells.py --arm "$ARM" --publish \
-        --out-root "$OUT_ROOT" ${SMOKE:+--smoke}
+        --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
     if [ -n "$SMOKE" ]; then
         echo "[dispatch2546] smoke mode: skipping pod-side git publish of eval_results/ (HF mirror only)"
         return 0
@@ -548,7 +576,9 @@ note = {
 kind = "epm:smoke-result" if smoke else "epm:results"
 slug = kind.replace(":", "_")
 ts = int(time.time())
-path = os.path.join(os.environ["RES_LOG_DIR"], f"issue-2546-{slug}-a{arm}-{ts}.json")
+path = os.path.join(
+    os.environ["RES_LOG_DIR"], f"issue-2546-{slug}-a{arm}-{ts}-{os.getpid()}.json"
+)
 payload = {
     "sentinel_schema_version": 1,
     "kind": kind,
