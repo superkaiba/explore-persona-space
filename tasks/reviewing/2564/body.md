@@ -17,6 +17,8 @@ has_clean_result: true
 # The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2564.md](https://github.com/superkaiba/explore-persona-space/blob/5d7aa27b8a647057d52a0a0f65c916545c7e799c/docs/methodology/issue_2564.md) · [gist mirror](https://gist.github.com/superkaiba/de36ebc7054e5e9152ed263dc7873305)
+
 ## Takeaways
 
 - On the 6 of 9 instruction axes that passed the on-policy compliance gate (7 of 9 pass at a 50% comply threshold, 5 of 9 at 90%), plus both query axes, the frozen single-turn map's predicted answer-shift direction beats chance and the identity baseline everywhere. Per-axis mean cosine between predicted and observed answer-state differences runs 0.17 to 0.90 against shuffled-pair nulls whose 97.5th percentiles sit at 0.04 to 0.45; the paired map-minus-identity gap is +0.03 to +0.41, every bootstrap interval excluding zero (12 to 120 fired-value pairs per axis).
