@@ -275,6 +275,7 @@ def fig_expl_all_cells(rroot: Path, fig_dir: Path):
     if percell is None:
         return "skip:reduce outputs absent"
     behaviors = _behaviors(percell)
+    bar_series: list[str] = []  # per-bar construction label, panel-by-panel in bar order
     fig, axes = plt.subplots(len(behaviors), 1, figsize=(11.0, 3.4 * len(behaviors)), squeeze=False)
     for ax, b in zip(axes[:, 0], behaviors, strict=True):
         cells_b = percell["behaviors"][b]
@@ -306,6 +307,7 @@ def fig_expl_all_cells(rroot: Path, fig_dir: Path):
                     lw=0.8,
                 )
         dirs_seq = [r["cell"]["direction"] for _, r in rows]
+        bar_series.extend(LADDER_LABELS[d] for d in dirs_seq)
         for i in range(1, len(rows)):
             if dirs_seq[i] != dirs_seq[i - 1]:
                 ax.axvline(i - 0.5, color="#bbbbbb", lw=0.6)
@@ -330,7 +332,24 @@ def fig_expl_all_cells(rroot: Path, fig_dir: Path):
     )
     axes[0, 0].legend(handles=handles, loc="upper left", fontsize=7, framealpha=0.9)
     fig.tight_layout()
-    return _save_meta_paper(fig, fig_dir, "expl_all_cells", ["reduce/delta_score_percell.json"])
+    out = _save_meta_paper(fig, fig_dir, "expl_all_cells", ["reduce/delta_score_percell.json"])
+    # Re-annotate the sidecar's bar rows with their pullback-construction series:
+    # savefig_paper's extractor keeps bar ORDER but not per-bar series identity
+    # (single-container bar charts), so the construction column is re-attached
+    # from the render's own bar order (panel-by-panel), never inferred later.
+    meta_path = fig_dir / "expl_all_cells.meta.json"
+    meta = json.loads(meta_path.read_text())
+    bar_rows = [p for p in meta.get("points", []) if p.get("_kind") == "bar"]
+    if len(bar_rows) == len(bar_series):
+        for p, lbl in zip(bar_rows, bar_series, strict=True):
+            p["pullback"] = lbl
+        meta_path.write_text(json.dumps(meta, indent=2, sort_keys=True))
+    else:
+        print(
+            f"[expl_all_cells] sidecar bar-row count {len(bar_rows)} != "
+            f"{len(bar_series)} rendered bars; pullback column not attached"
+        )
+    return out
 
 
 def fig_expl_delta_vs_lambda(rroot: Path, fig_dir: Path):

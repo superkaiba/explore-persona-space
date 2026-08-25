@@ -1,6 +1,6 @@
 {
-  "commit": "81ad67e0",
-  "created": "2026-08-25T12:33:39Z",
+  "commit": "44955422+dirty",
+  "created": "2026-08-25T12:40:49Z",
   "figsize": [
     11.0,
     6.8
@@ -10,8 +10,11 @@
     "png",
     "pdf"
   ],
-  "git_commit": "81ad67e0",
-  "git_dirty": false,
+  "git_commit": "44955422",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2254_ladder_figures.py"
+  ],
   "inputs": [
     "reduce/delta_score_percell.json"
   ],
@@ -22,6 +25,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -29,6 +33,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -36,6 +41,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -43,6 +49,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 0.0,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -50,6 +57,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -57,6 +65,7 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -64,6 +73,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -71,6 +81,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -78,6 +89,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -85,6 +97,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 0.0,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -92,6 +105,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -99,6 +113,7 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -106,6 +121,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -113,6 +129,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -120,6 +137,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -127,6 +145,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 0.0,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -134,6 +153,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -141,6 +161,7 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -148,6 +169,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -155,6 +177,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -162,6 +185,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -169,6 +193,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 0.0,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -176,6 +201,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 0.0,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -183,6 +209,7 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 0.5",
       "error": 0.0,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 0.0
     },
     {
@@ -190,6 +217,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 2",
       "error": 2.3794999999999975,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 0.4120000000000008
     },
     {
@@ -197,6 +225,7 @@
       "_kind": "bar",
       "category": "layer 17 \u00b7 dose 4",
       "error": 3.0077593749999973,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 2.4472500000000004
     },
     {
@@ -204,6 +233,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 1.6330750000000025,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": -0.25899999999999856
     },
     {
@@ -211,6 +241,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 1.8557375000000018,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 1.434000000000001
     },
     {
@@ -218,6 +249,7 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 4",
       "error": 0.8535750000000012,
+      "pullback": "near-pseudo-inverse pullback",
       "\u0394 graded score": 1.2669999999999995
     },
     {
@@ -225,6 +257,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 2",
       "error": 1.427362500000002,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 4.543999999999999
     },
     {
@@ -232,6 +265,7 @@
       "_kind": "bar",
       "category": "layer 17 \u00b7 dose 4",
       "error": 2.5025249999999977,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 2.2959999999999994
     },
     {
@@ -239,6 +273,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 2.964224999999999,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 6.4940000000000015
     },
     {
@@ -246,6 +281,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 3.3069749999999996,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 6.652999999999997
     },
     {
@@ -253,6 +289,7 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 4",
       "error": 2.6256999999999993,
+      "pullback": "median-\u03bb pullback",
       "\u0394 graded score": 6.612999999999998
     },
     {
@@ -260,6 +297,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 2",
       "error": 2.470675000000001,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 3.5410000000000004
     },
     {
@@ -267,6 +305,7 @@
       "_kind": "bar",
       "category": "layer 17 \u00b7 dose 4",
       "error": 3.3029874999999995,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 2.112000000000002
     },
     {
@@ -274,6 +313,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 2.815212499999999,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 6.287000000000001
     },
     {
@@ -281,6 +321,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 3.0896624999999975,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 4.395999999999999
     },
     {
@@ -288,6 +329,7 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 4",
       "error": 3.226549999999999,
+      "pullback": "near-transpose pullback",
       "\u0394 graded score": 9.115999999999998
     },
     {
@@ -295,6 +337,7 @@
       "_kind": "bar",
       "category": "layer 14 \u00b7 dose 2",
       "error": 2.4808124999999976,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 4.229999999999999
     },
     {
@@ -302,6 +345,7 @@
       "_kind": "bar",
       "category": "layer 17 \u00b7 dose 4",
       "error": 2.6677125,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 4.15
     },
     {
@@ -309,6 +353,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 2",
       "error": 3.2364499999999987,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 6.098999999999995
     },
     {
@@ -316,6 +361,7 @@
       "_kind": "bar",
       "category": "mid layers \u00b7 dose 4",
       "error": 2.4453249999999995,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 4.237000000000002
     },
     {
@@ -323,10 +369,11 @@
       "_kind": "bar",
       "category": "all layers \u00b7 dose 4",
       "error": 3.030293750000001,
+      "pullback": "transpose pullback",
       "\u0394 graded score": 6.465500000000004
     }
   ],
-  "render_id": "21818f43e3634b0f",
+  "render_id": "acb277d2c06441d5",
   "scope_note": "fresh_nulls: false \u2014 clears are read against the parent's REUSED context null band (measured for other directions at matched injected norm; plan v14 \u00a75 inference-scope caveat)",
   "text": {
     "axes": [
