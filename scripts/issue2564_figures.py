@@ -5,10 +5,12 @@ written by ``scripts/issue2564_analysis.py``) and renders the plan §6 figure
 set under ``figures/issue_2564/`` via the paper-plots conventions
 (``set_paper_style("blog")`` + ``savefig_paper`` -> PNG + PDF + meta.json).
 
-Hero: ``fig_hero_axis_profile`` — one row per axis, four aligned panels
-(direction cosine with ceiling/null/identity whiskers; calibration ratio to
-the global slope; axis-identity cosine; text-vs-representation flip norm,
-paraphrase-normalized). Exploratory figures each land in their own file and
+Hero: ``fig_hero_axis_profile`` — one row per axis, five aligned panels
+(direction cosine with ceiling/null/identity whiskers; the per-pair
+direction-cosine strip behind those means — headline pairs, single-turn map;
+calibration ratio to the global slope; axis-identity cosine;
+text-vs-representation flip norm, paraphrase-normalized). Exploratory
+figures each land in their own file and
 skip gracefully (one logged line) when their input read is n/a — e.g. layer
 twins exist for the identity baseline only, and cross-family reads are null
 on single-family axes.
@@ -158,14 +160,20 @@ def _save(fig: plt.Figure, stem: str, out_dir: Path) -> str:
 
 
 def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
-    """Hero: per-axis profile — direction / calibration / identity / text-vs-repr."""
+    """Hero: per-axis profile — direction / per-pair strip / calibration / identity / text-vs-repr.
+
+    Panel 2 embeds the per-pair data behind panel 1's headline means (crc r2
+    concern headline-aggregate-companion-separated): one jittered point per
+    headline pair (primary pair class, both values fired) for the single-turn
+    frozen map, sharing the axis rows.
+    """
     axes_names = _axes_sorted(doc)
     if not axes_names:
         return None
     n = len(axes_names)
     colors = _arm_colors()
     neutral = paper_palette_role("neutral")
-    fig, panels = plt.subplots(1, 4, figsize=(13.0, max(3.2, 0.75 * n + 1.6)), sharey=True)
+    fig, panels = plt.subplots(1, 5, figsize=(16.0, max(3.2, 0.75 * n + 1.6)), sharey=True)
     ys = np.arange(n)[::-1]  # first axis at top
     off = {"arm_779ce": 0.22, "arm_1738ce": 0.0, "arm_iddelta": -0.22}
 
@@ -225,8 +233,39 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
     ax.set_yticks(np.arange(n)[::-1])
     ax.set_yticklabels([axis_label(a) for a in axes_names])
 
-    # Panel 2: calibration ratio to the global slope.
+    # Panel 2: per-pair strip behind the panel-1 means — one point per
+    # HEADLINE pair (primary pair class, both values fired) for the
+    # single-turn map (crc r2 concern headline-aggregate-companion-separated).
     ax = panels[1]
+    rng = np.random.default_rng(2564)
+    for i, name in enumerate(axes_names):
+        primary = _get(doc, "axes", name, "primary_class")
+        vals = [
+            v
+            for r in rows
+            if r.get("axis") == name
+            and r.get("pair_class") == primary
+            and r.get("in_headline_70")
+            and (v := _finite(_get(r, "cos", "arm_779ce"))) is not None
+        ]
+        if not vals:
+            continue
+        jit = rng.uniform(-0.26, 0.26, size=len(vals))
+        ax.scatter(
+            vals,
+            ys[i] + jit,
+            s=9,
+            color=colors["arm_779ce"],
+            alpha=0.45,
+            linewidths=0,
+            zorder=2,
+        )
+    ax.axvline(0.0, color=neutral, lw=0.8, alpha=0.6)
+    ax.set_xlabel("per-pair direction cosine")
+    ax.set_title("per-pair spread", loc="left")
+
+    # Panel 3: calibration ratio to the global slope.
+    ax = panels[2]
     for i, name in enumerate(axes_names):
         c = _get(doc, "axes", name, "calibration")
         if not isinstance(c, dict):
@@ -253,8 +292,8 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
     ax.xaxis.set_major_locator(plt.MaxNLocator(4))
     ax.ticklabel_format(axis="x", style="plain", useOffset=False)
 
-    # Panel 3: axis-identity cosine (median across value pairs).
-    ax = panels[2]
+    # Panel 4: axis-identity cosine (median across value pairs).
+    ax = panels[3]
     for i, name in enumerate(axes_names):
         idn = _get(doc, "axes", name, "identity")
         if not isinstance(idn, dict):
@@ -279,8 +318,8 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
     ax.set_xlabel("axis-identity cosine")
     ax.set_title("within-axis consistency", loc="left")
 
-    # Panel 4: flip norm / paraphrase norm — text space vs representation space.
-    ax = panels[3]
+    # Panel 5: flip norm / paraphrase norm — text space vs representation space.
+    ax = panels[4]
     text_c = paper_palette_role("accent")
     repr_c = "#444444"
     for i, name in enumerate(axes_names):
