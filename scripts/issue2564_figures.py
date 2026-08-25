@@ -73,9 +73,28 @@ PAIR_CLASS_LABELS = {
 }
 
 
+# Reader-facing axis names, matched to the clean-result body's vocabulary
+# (crc r1 blocker prose-figure-axis-vocabulary-split): one display map, every
+# rendered label routes through axis_label().
+AXIS_DISPLAY = {
+    "register": "tone",
+    "lexical_marker": "marker word",
+    "user_fact": "injected name",
+    "user_profile": "user description",
+    "format": "output format",
+    "content_constraint": "content constraint",
+    "hedging": "hedging",
+    "persona": "persona",
+    "stance": "stance",
+    "query_content": "query content",
+    "query_form": "query form",
+    "query_paraphrase": "query paraphrase",
+}
+
+
 def axis_label(axis: str) -> str:
-    """Plain-English axis name for rendered figure text."""
-    return axis.replace("_", " ")
+    """Plain-English axis name for rendered figure text (body vocabulary)."""
+    return AXIS_DISPLAY.get(axis, axis.replace("_", " "))
 
 
 def _get(d: object, *keys: str) -> object:
@@ -540,17 +559,55 @@ def fig_edit_dose(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
     return _save(fig, "fig_expl_edit_dose", out_dir)
 
 
+def _per_pair_ranks(pred: "np.ndarray", pool: "np.ndarray", metric: str) -> "np.ndarray":
+    """Mid-rank of each pair's true observed delta among all pool candidates.
+
+    Same distance + mid-rank convention as ``mapping_baselines.knn_retrieval``
+    (pool == true, ``true_pool_idx = arange(n)``); the caller validates the
+    recomputed acc@k against the committed aggregates before plotting.
+    """
+    pred = np.asarray(pred, dtype=np.float64)
+    pool = np.asarray(pool, dtype=np.float64)
+    if metric == "cosine":
+        pn = pred / np.maximum(np.linalg.norm(pred, axis=1, keepdims=True), 1e-30)
+        qn = pool / np.maximum(np.linalg.norm(pool, axis=1, keepdims=True), 1e-30)
+        d = 1.0 - pn @ qn.T
+    else:
+        sq_p = (pred**2).sum(axis=1, keepdims=True)
+        sq_q = (pool**2).sum(axis=1, keepdims=True).T
+        d = np.sqrt(np.maximum(sq_p + sq_q - 2.0 * (pred @ pool.T), 0.0))
+    n = pred.shape[0]
+    d_true = d[np.arange(n), np.arange(n)]
+    tol = 1e-9 * np.maximum(np.abs(d_true)[:, None], 1e-12)
+    closer = (d < d_true[:, None] - tol).sum(axis=1)
+    tied = (np.abs(d - d_true[:, None]) <= tol).sum(axis=1) - 1
+    return 1.0 + closer + 0.5 * tied
+
+
 def fig_retrieval_curves(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
-    """Delta-retrieval accuracy-at-k curves per arm (global pool)."""
+    """Delta-retrieval accuracy-at-k curves per arm (top) + the per-pair rank
+    distributions behind them (bottom; crc r1 aggregate-results-lack-per-pair-views).
+    """
     glob = _get(doc, "retrieval", "global")
     if not isinstance(glob, dict):
         return None
+    pred_dir = Path(str(doc.get("_results_dir", ""))) / "predictions"
+    tensors: dict[str, np.ndarray] = {}
+    if pred_dir.is_dir():
+        import torch
+
+        pool = torch.load(pred_dir / "delta_obs_tail_L19.pt", weights_only=True)["tensor"].numpy()
+        for arm in ARMS:
+            tensors[arm] = torch.load(pred_dir / f"delta_pred_{arm}.pt", weights_only=True)[
+                "tensor"
+            ].numpy()
     colors = _arm_colors()
     neutral = paper_palette_role("neutral")
     metrics = ("cosine", "euclidean")
-    fig, axs = plt.subplots(1, 2, figsize=(9.0, 3.8), sharey=True)
+    nrows = 2 if tensors else 1
+    fig, axs = plt.subplots(nrows, 2, figsize=(9.0, 3.8 * nrows), sharey="row", squeeze=False)
     drew = False
-    for ax, metric in zip(axs, metrics, strict=True):
+    for ax, metric in zip(axs[0], metrics, strict=True):
         for arm in ARMS:
             acc = _get(glob, arm, metric, "acc_at_k")
             if not isinstance(acc, dict) or not acc:
@@ -570,16 +627,42 @@ def fig_retrieval_curves(doc: dict, rows: list[dict], out_dir: Path) -> str | No
             ks = sorted(int(k) for k in chance)
             ax.plot(ks, [chance[str(k)] for k in ks], ls="--", color=neutral, label="chance")
         ax.set_xlabel("k nearest neighbors")
-        ax.set_title(f"{metric} distance", loc="left")
+        ax.set_title(f"{metric} distance: accuracy at k", loc="left")
     if not drew:
         plt.close(fig)
         return None
-    axs[0].set_ylabel("retrieval accuracy at k")
-    axs[0].legend(fontsize=7)
+    axs[0][0].set_ylabel("retrieval accuracy at k")
+    axs[0][0].legend(fontsize=7)
+    if tensors:
+        n = tensors[ARMS[0]].shape[0]
+        for ax, metric in zip(axs[1], metrics, strict=True):
+            for arm in ARMS:
+                ranks = _per_pair_ranks(tensors[arm], pool, metric)
+                # Validate the recompute against the committed aggregates
+                # before plotting (fail loud on drift; fp32 store vs fp64 run).
+                committed = _get(glob, arm, metric, "acc_at_k")
+                for k in (1, 5, 10):
+                    got = float((ranks <= k).mean())
+                    want = float(committed[str(k)])
+                    if abs(got - want) > 0.005:
+                        raise SystemExit(
+                            f"per-pair rank recompute drifted from committed acc@{k} "
+                            f"({arm}/{metric}): {got:.4f} vs {want:.4f}"
+                        )
+                xs = np.sort(ranks)
+                ys_ = np.arange(1, xs.size + 1) / xs.size
+                ax.step(xs, ys_, where="post", color=colors[arm], label=ARM_LABELS[arm])
+            ax.plot([1, n], [1.0 / n, 1.0], ls="--", color=neutral, label="chance (uniform)")
+            ax.set_xscale("log")
+            ax.set_xlim(1, n)
+            ax.set_xlabel(f"per-pair rank of the true pair (of {n:,})")
+            ax.set_title(f"{metric} distance: per-pair rank distribution", loc="left")
+        axs[1][0].set_ylabel("fraction of pairs at or below rank")
+        axs[1][0].legend(fontsize=7)
     fig.suptitle(
         "Delta retrieval: does the predicted shift find its observed pair?", x=0.01, ha="left"
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.93))
+    fig.tight_layout(rect=(0, 0, 1, 0.95))
     return _save(fig, "fig_expl_retrieval_acc", out_dir)
 
 
@@ -764,7 +847,28 @@ def fig_query_form_dissociation(doc: dict, rows: list[dict], out_dir: Path) -> s
         "representation (observed)": "#444444",
         "representation (predicted)": _arm_colors()["arm_779ce"],
     }
-    fig, ax = plt.subplots(figsize=(6.2, 3.8))
+    # Per-pair values behind the ratio bars (crc r1
+    # aggregate-results-lack-per-pair-views): each pair's shift norm divided by
+    # the same space's 12-pair query-paraphrase mean norm — the exact
+    # denominator of the plotted ratio, so per-group point means equal the bars.
+    space_field = {
+        "answer text": lambda r: _finite(r.get("norm_text")),
+        "representation (observed)": lambda r: _finite(r.get("norm_obs_tail_L19")),
+        "representation (predicted)": lambda r: _finite(_get(r, "norm_pred", "arm_779ce")),
+    }
+    para_rows = [r for r in rows if r.get("pair_class") == "query_paraphrase"]
+    para_mean = {
+        kind: (
+            float(np.mean(vals))
+            if (vals := [f(r) for r in para_rows if f(r) is not None])
+            else None
+        )
+        for kind, f in space_field.items()
+    }
+    have_points = bool(para_rows) and all(v for v in para_mean.values())
+    ncols = 2 if have_points else 1
+    fig, axs = plt.subplots(1, ncols, figsize=(6.2 * ncols, 3.8), squeeze=False)
+    ax = axs[0][0]
     width = 0.25
     for ki, kind in enumerate(kinds):
         xs, hs = [], []
@@ -779,9 +883,32 @@ def fig_query_form_dissociation(doc: dict, rows: list[dict], out_dir: Path) -> s
     ax.set_xticks(range(len(q_axes)))
     ax.set_xticklabels([axis_label(a) for a in q_axes])
     ax.set_ylabel("flip norm / paraphrase norm")
-    ax.set_title("Query axes: text vs representation dissociation", loc="left")
+    ax.set_title("Ratio of means (summary)", loc="left")
     ax.legend(fontsize=7)
-    fig.tight_layout()
+    if have_points:
+        ax2 = axs[0][1]
+        rng = np.random.default_rng(42)
+        groups = [*q_axes, "query_paraphrase"]
+        for gi, gname in enumerate(groups):
+            grows = [r for r in rows if r.get("pair_class") == gname]
+            for ki, kind in enumerate(kinds):
+                f = space_field[kind]
+                vals = [v / para_mean[kind] for r in grows if (v := f(r)) is not None]
+                if not vals:
+                    continue
+                xs = gi + (ki - 1) * 0.25 + rng.uniform(-0.07, 0.07, size=len(vals))
+                ax2.scatter(xs, vals, s=12, color=kcol[kind], alpha=0.6, linewidths=0)
+        ax2.axhline(1.0, color=paper_palette_role("neutral"), lw=0.8, alpha=0.6)
+        ax2.set_yscale("log")
+        ax2.set_xticks(range(len(groups)))
+        ax2.set_xticklabels(
+            [axis_label(a) for a in q_axes] + ["query paraphrase\n(yardstick, mean = 1)"],
+            fontsize=8,
+        )
+        ax2.set_ylabel("per-pair norm / paraphrase mean (log)")
+        ax2.set_title("Per-pair values behind the bars", loc="left")
+    fig.suptitle("Query axes: text vs representation dissociation", x=0.01, ha="left")
+    fig.tight_layout(rect=(0.01, 0, 1, 0.93))
     return _save(fig, "fig_expl_query_dissociation", out_dir)
 
 

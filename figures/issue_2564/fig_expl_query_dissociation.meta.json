@@ -1,13 +1,61 @@
 {
-  "commit": "09750cbb",
-  "render_id": "27f1dc7d9f244d9d",
-  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "8265bcd7+dirty",
+  "render_id": "9b887e97293643b4",
+  "git_commit": "8265bcd75f781d8e879e924de60063e536e58dcf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/fig_expl_arm_agreement.meta.json",
+    "figures/issue_2564/fig_expl_arm_agreement.pdf",
+    "figures/issue_2564/fig_expl_arm_agreement.png",
+    "figures/issue_2564/fig_expl_carrier_transfer.meta.json",
+    "figures/issue_2564/fig_expl_carrier_transfer.pdf",
+    "figures/issue_2564/fig_expl_carrier_transfer.png",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.meta.json",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.pdf",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.png",
+    "figures/issue_2564/fig_expl_cross_family_scatter.meta.json",
+    "figures/issue_2564/fig_expl_cross_family_scatter.pdf",
+    "figures/issue_2564/fig_expl_cross_family_scatter.png",
+    "figures/issue_2564/fig_expl_edit_dose.meta.json",
+    "figures/issue_2564/fig_expl_edit_dose.pdf",
+    "figures/issue_2564/fig_expl_edit_dose.png",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.meta.json",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.pdf",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.png",
+    "figures/issue_2564/fig_expl_identity_heatmaps.meta.json",
+    "figures/issue_2564/fig_expl_identity_heatmaps.pdf",
+    "figures/issue_2564/fig_expl_identity_heatmaps.png",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.meta.json",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.pdf",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.png",
+    "figures/issue_2564/fig_expl_layer_twins.meta.json",
+    "figures/issue_2564/fig_expl_layer_twins.pdf",
+    "figures/issue_2564/fig_expl_layer_twins.png",
+    "figures/issue_2564/fig_expl_manip_fire_rates.meta.json",
+    "figures/issue_2564/fig_expl_manip_fire_rates.pdf",
+    "figures/issue_2564/fig_expl_manip_fire_rates.png",
+    "figures/issue_2564/fig_expl_norm_scatter.meta.json",
+    "figures/issue_2564/fig_expl_norm_scatter.pdf",
+    "figures/issue_2564/fig_expl_norm_scatter.png",
+    "figures/issue_2564/fig_expl_pooling_twin.meta.json",
+    "figures/issue_2564/fig_expl_pooling_twin.pdf",
+    "figures/issue_2564/fig_expl_pooling_twin.png",
+    "figures/issue_2564/fig_expl_query_dissociation.meta.json",
+    "figures/issue_2564/fig_expl_query_dissociation.pdf",
+    "figures/issue_2564/fig_expl_query_dissociation.png",
+    "figures/issue_2564/fig_expl_retrieval_acc.meta.json",
+    "figures/issue_2564/fig_expl_retrieval_acc.pdf",
+    "figures/issue_2564/fig_expl_retrieval_acc.png",
+    "figures/issue_2564/fig_hero_axis_profile.meta.json",
+    "figures/issue_2564/fig_hero_axis_profile.pdf",
+    "figures/issue_2564/fig_hero_axis_profile.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2564_figures.py",
-  "created": "2026-08-25T14:37:28Z",
+  "created": "2026-08-25T20:01:47Z",
   "figsize": [
-    6.2,
+    12.4,
     3.8
   ],
   "points": [
@@ -46,16 +94,2068 @@
       "flip norm / paraphrase norm": 1.1300735654585403,
       "_kind": "bar",
       "_group": 2
+    },
+    {
+      "x": -0.21164615320216512,
+      "per-pair norm / paraphrase mean (log)": 2.3720981149856804,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2585570184347127,
+      "per-pair norm / paraphrase mean (log)": 3.121610588861244,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.19979629121240644,
+      "per-pair norm / paraphrase mean (log)": 3.047551420522696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.22236847593168907,
+      "per-pair norm / paraphrase mean (log)": 2.6488073606823552,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.30681517129572905,
+      "per-pair norm / paraphrase mean (log)": 3.086710224847243,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.18341287077085416,
+      "per-pair norm / paraphrase mean (log)": 2.6366204252832133,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.21344044172135057,
+      "per-pair norm / paraphrase mean (log)": 2.975675827616126,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20995099726122646,
+      "per-pair norm / paraphrase mean (log)": 2.8629516675816555,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.30206409142542356,
+      "per-pair norm / paraphrase mean (log)": 2.6972568853180965,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2569459686946206,
+      "per-pair norm / paraphrase mean (log)": 2.740768946715576,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2680882766074386,
+      "per-pair norm / paraphrase mean (log)": 2.7552067821208475,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.19025290156119573,
+      "per-pair norm / paraphrase mean (log)": 3.213163866897538,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.22985888318870695,
+      "per-pair norm / paraphrase mean (log)": 3.0940673198803257,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20481337414208378,
+      "per-pair norm / paraphrase mean (log)": 2.5797601248953073,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.25792201216417365,
+      "per-pair norm / paraphrase mean (log)": 3.2625825226849545,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2881865789501312,
+      "per-pair norm / paraphrase mean (log)": 2.7011088751028347,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.24235812981778312,
+      "per-pair norm / paraphrase mean (log)": 2.886760457956082,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.31106558414541546,
+      "per-pair norm / paraphrase mean (log)": 2.9497890893759497,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2041316359210385,
+      "per-pair norm / paraphrase mean (log)": 2.5431669961116667,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.23156698412291093,
+      "per-pair norm / paraphrase mean (log)": 2.621277810889712,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.21386771638804766,
+      "per-pair norm / paraphrase mean (log)": 2.775330034568157,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.27036636446181844,
+      "per-pair norm / paraphrase mean (log)": 3.2777329775340935,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.18410227658471354,
+      "per-pair norm / paraphrase mean (log)": 3.183194191738813,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.1949630430148923,
+      "per-pair norm / paraphrase mean (log)": 2.6159733355479005,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.21102631040967335,
+      "per-pair norm / paraphrase mean (log)": 2.9855603715399353,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.29275058090072453,
+      "per-pair norm / paraphrase mean (log)": 3.010842989591839,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2546590594782152,
+      "per-pair norm / paraphrase mean (log)": 2.9548617124334484,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.313867472789788,
+      "per-pair norm / paraphrase mean (log)": 2.87703577742159,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2983994711105433,
+      "per-pair norm / paraphrase mean (log)": 2.9864028283101005,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.22437314654605633,
+      "per-pair norm / paraphrase mean (log)": 3.048974507046239,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2157332981729056,
+      "per-pair norm / paraphrase mean (log)": 3.111188292707562,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.1845486374592106,
+      "per-pair norm / paraphrase mean (log)": 3.3254076553421714,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.27438444986065874,
+      "per-pair norm / paraphrase mean (log)": 2.954117979941744,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.26813564115511834,
+      "per-pair norm / paraphrase mean (log)": 3.0518862109755975,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.25426218642138687,
+      "per-pair norm / paraphrase mean (log)": 3.2153045390728896,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.29347400972820004,
+      "per-pair norm / paraphrase mean (log)": 2.993922218723906,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.30181098925303396,
+      "per-pair norm / paraphrase mean (log)": 3.030746825709292,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.25340131032836927,
+      "per-pair norm / paraphrase mean (log)": 3.1620781228552457,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.28823269113287625,
+      "per-pair norm / paraphrase mean (log)": 3.308211175325212,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.22622604074444855,
+      "per-pair norm / paraphrase mean (log)": 2.705057905428086,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2587987313578737,
+      "per-pair norm / paraphrase mean (log)": 2.982913285377834,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20342505255190274,
+      "per-pair norm / paraphrase mean (log)": 3.1965138894728273,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.22196288571968512,
+      "per-pair norm / paraphrase mean (log)": 2.827802223880162,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.27626867020651424,
+      "per-pair norm / paraphrase mean (log)": 2.705783668540231,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20348362780467183,
+      "per-pair norm / paraphrase mean (log)": 2.575256686958351,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20733298995044774,
+      "per-pair norm / paraphrase mean (log)": 3.110570285841909,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.26575302693577557,
+      "per-pair norm / paraphrase mean (log)": 3.08363677959065,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2796340654497658,
+      "per-pair norm / paraphrase mean (log)": 2.7389252744594867,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2244506294435034,
+      "per-pair norm / paraphrase mean (log)": 3.1887173089999696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.3004346522946966,
+      "per-pair norm / paraphrase mean (log)": 3.243560656340773,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.29201285165348484,
+      "per-pair norm / paraphrase mean (log)": 3.1675959794743913,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.3189692822348592,
+      "per-pair norm / paraphrase mean (log)": 2.8881565581961888,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20983058714970063,
+      "per-pair norm / paraphrase mean (log)": 3.008814752558532,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2269208800771155,
+      "per-pair norm / paraphrase mean (log)": 2.6469787317190976,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2212768469923131,
+      "per-pair norm / paraphrase mean (log)": 2.682082141394568,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2106979356569245,
+      "per-pair norm / paraphrase mean (log)": 2.669907692540257,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2557517914246324,
+      "per-pair norm / paraphrase mean (log)": 3.140969464205291,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.24037623256659488,
+      "per-pair norm / paraphrase mean (log)": 2.828966823314873,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.30042842026212796,
+      "per-pair norm / paraphrase mean (log)": 2.910528146662941,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.30396578970496374,
+      "per-pair norm / paraphrase mean (log)": 2.9677536806139684,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.22642358534933396,
+      "per-pair norm / paraphrase mean (log)": 3.05201386268569,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.25404653113996145,
+      "per-pair norm / paraphrase mean (log)": 2.6920985179241264,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.24086694509263357,
+      "per-pair norm / paraphrase mean (log)": 3.1728048307492904,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.21290015996175643,
+      "per-pair norm / paraphrase mean (log)": 2.5690371103543788,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.23113943519991728,
+      "per-pair norm / paraphrase mean (log)": 2.7674881837323517,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.2424988839078806,
+      "per-pair norm / paraphrase mean (log)": 2.848674799810126,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.008289002504357892,
+      "per-pair norm / paraphrase mean (log)": 3.9348142144728997,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0274469862712343,
+      "per-pair norm / paraphrase mean (log)": 4.75239180262858,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06568550316048849,
+      "per-pair norm / paraphrase mean (log)": 4.659402380374406,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.008859565507469268,
+      "per-pair norm / paraphrase mean (log)": 3.950484243940181,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03995814580526592,
+      "per-pair norm / paraphrase mean (log)": 4.675752350886115,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.012805989878550937,
+      "per-pair norm / paraphrase mean (log)": 4.1770469364125455,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.049476430257543266,
+      "per-pair norm / paraphrase mean (log)": 3.8009870398893884,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.037248471978852296,
+      "per-pair norm / paraphrase mean (log)": 4.574053125383589,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06183761616353076,
+      "per-pair norm / paraphrase mean (log)": 4.2265174717179494,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.030606255116920486,
+      "per-pair norm / paraphrase mean (log)": 4.043083896308921,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.028896873912664295,
+      "per-pair norm / paraphrase mean (log)": 4.039215799557211,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.02266831206176531,
+      "per-pair norm / paraphrase mean (log)": 5.317619659598626,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.007984501327778962,
+      "per-pair norm / paraphrase mean (log)": 4.592981337013312,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03974574927489789,
+      "per-pair norm / paraphrase mean (log)": 3.787525868471914,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.023003895645834257,
+      "per-pair norm / paraphrase mean (log)": 5.284620468868921,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.013105839398390128,
+      "per-pair norm / paraphrase mean (log)": 4.6139655083364906,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04396285385324486,
+      "per-pair norm / paraphrase mean (log)": 4.025272797383573,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.046623791212921456,
+      "per-pair norm / paraphrase mean (log)": 4.164114594103253,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06682030976125954,
+      "per-pair norm / paraphrase mean (log)": 3.1597589959622256,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05739329949141016,
+      "per-pair norm / paraphrase mean (log)": 3.5247963885841544,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.031130309083503047,
+      "per-pair norm / paraphrase mean (log)": 4.572440658988845,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0053371877648057675,
+      "per-pair norm / paraphrase mean (log)": 5.395494844144895,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.047421950935295755,
+      "per-pair norm / paraphrase mean (log)": 5.042838903091032,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0001462685144709014,
+      "per-pair norm / paraphrase mean (log)": 3.8693848152485026,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04867630562015643,
+      "per-pair norm / paraphrase mean (log)": 4.45415378574456,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.027484852510883048,
+      "per-pair norm / paraphrase mean (log)": 4.339353400283978,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.007538121419635703,
+      "per-pair norm / paraphrase mean (log)": 4.640248356210306,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.016657028346492457,
+      "per-pair norm / paraphrase mean (log)": 4.661289448545608,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02778830751929729,
+      "per-pair norm / paraphrase mean (log)": 4.809299667707049,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.018239563036644382,
+      "per-pair norm / paraphrase mean (log)": 4.817657914402429,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.01934623452252534,
+      "per-pair norm / paraphrase mean (log)": 4.084976798322645,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05772901129574587,
+      "per-pair norm / paraphrase mean (log)": 5.005001777048296,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05347917370312786,
+      "per-pair norm / paraphrase mean (log)": 3.7476350271248755,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06466567303693205,
+      "per-pair norm / paraphrase mean (log)": 4.4332262765899335,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.057201296699064985,
+      "per-pair norm / paraphrase mean (log)": 4.003897889589595,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.027958998733504936,
+      "per-pair norm / paraphrase mean (log)": 4.142629377041953,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03277820539566726,
+      "per-pair norm / paraphrase mean (log)": 3.6697895147779067,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06568469282868136,
+      "per-pair norm / paraphrase mean (log)": 4.978209972920856,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.039025126555211245,
+      "per-pair norm / paraphrase mean (log)": 4.827032640658607,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03036462648225939,
+      "per-pair norm / paraphrase mean (log)": 4.110567466594699,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0070893896998695805,
+      "per-pair norm / paraphrase mean (log)": 3.5566097588786842,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03188618134167774,
+      "per-pair norm / paraphrase mean (log)": 4.313163960151987,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.056505265298510104,
+      "per-pair norm / paraphrase mean (log)": 3.9390647693831746,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05636433551613784,
+      "per-pair norm / paraphrase mean (log)": 3.3286962907705697,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.006191319423294456,
+      "per-pair norm / paraphrase mean (log)": 4.058988839527464,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04166912892866776,
+      "per-pair norm / paraphrase mean (log)": 4.345702106526096,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.027166072618908653,
+      "per-pair norm / paraphrase mean (log)": 4.091229044117706,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.011090739651865439,
+      "per-pair norm / paraphrase mean (log)": 3.8890297990099394,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04525181038850756,
+      "per-pair norm / paraphrase mean (log)": 4.657808800315354,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04992599977293258,
+      "per-pair norm / paraphrase mean (log)": 4.477303968094673,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03619273417692942,
+      "per-pair norm / paraphrase mean (log)": 5.104333949642234,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03072481383313115,
+      "per-pair norm / paraphrase mean (log)": 3.7211187316391987,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.00950697443148548,
+      "per-pair norm / paraphrase mean (log)": 3.9663511876109565,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.017823237698342043,
+      "per-pair norm / paraphrase mean (log)": 3.834547136888427,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.011773715647782984,
+      "per-pair norm / paraphrase mean (log)": 3.4578696733500185,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.020978524217674807,
+      "per-pair norm / paraphrase mean (log)": 4.392234346886697,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.058177795040415536,
+      "per-pair norm / paraphrase mean (log)": 4.035372633003561,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.01178696369611465,
+      "per-pair norm / paraphrase mean (log)": 3.859660573666916,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06417401565933506,
+      "per-pair norm / paraphrase mean (log)": 3.4012025035513003,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.000841285305767353,
+      "per-pair norm / paraphrase mean (log)": 4.205566193344213,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02381943027341006,
+      "per-pair norm / paraphrase mean (log)": 3.787833759484204,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04976661355875344,
+      "per-pair norm / paraphrase mean (log)": 3.051124393288057,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.055523584518842775,
+      "per-pair norm / paraphrase mean (log)": 4.899567074451489,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01227024010487969,
+      "per-pair norm / paraphrase mean (log)": 2.942449614336083,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04611698440483595,
+      "per-pair norm / paraphrase mean (log)": 4.24145567625074,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.059516816572751624,
+      "per-pair norm / paraphrase mean (log)": 4.26800106087499,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.2613485595580553,
+      "per-pair norm / paraphrase mean (log)": 2.41516052289278,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2285617726348772,
+      "per-pair norm / paraphrase mean (log)": 2.570575108269221,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.26272816880739835,
+      "per-pair norm / paraphrase mean (log)": 3.2855305752388144,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.18319254194415763,
+      "per-pair norm / paraphrase mean (log)": 2.5594367634472133,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3141982898538024,
+      "per-pair norm / paraphrase mean (log)": 2.8436536623127484,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.24752248117200604,
+      "per-pair norm / paraphrase mean (log)": 2.1763148961801364,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2895829318150401,
+      "per-pair norm / paraphrase mean (log)": 2.193844445319802,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1915821999891414,
+      "per-pair norm / paraphrase mean (log)": 2.6625195363024643,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.24813216631734245,
+      "per-pair norm / paraphrase mean (log)": 2.5511750455772577,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2486989792096329,
+      "per-pair norm / paraphrase mean (log)": 2.705031105784113,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3112957036964976,
+      "per-pair norm / paraphrase mean (log)": 2.380398979203641,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2600419273326505,
+      "per-pair norm / paraphrase mean (log)": 3.1351389991291168,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.24628851614797354,
+      "per-pair norm / paraphrase mean (log)": 3.2308982193121434,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2173765928328651,
+      "per-pair norm / paraphrase mean (log)": 2.086315972068308,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2264196596279573,
+      "per-pair norm / paraphrase mean (log)": 3.4370450427430743,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2528941363460153,
+      "per-pair norm / paraphrase mean (log)": 2.871269642862478,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.24144760444270652,
+      "per-pair norm / paraphrase mean (log)": 2.4917174997093374,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.18302569118324624,
+      "per-pair norm / paraphrase mean (log)": 2.700860151471882,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2956808693872101,
+      "per-pair norm / paraphrase mean (log)": 1.8641107925598206,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.30546250805756736,
+      "per-pair norm / paraphrase mean (log)": 2.426067658785909,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1996348724598055,
+      "per-pair norm / paraphrase mean (log)": 2.8675988054834174,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2575650600954669,
+      "per-pair norm / paraphrase mean (log)": 3.2116345494352174,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1952006037589621,
+      "per-pair norm / paraphrase mean (log)": 2.9124199923392733,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.27411361302557363,
+      "per-pair norm / paraphrase mean (log)": 2.1188722535207525,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.21937272973746116,
+      "per-pair norm / paraphrase mean (log)": 2.1917227379923867,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.27231916885686624,
+      "per-pair norm / paraphrase mean (log)": 2.061062311944286,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2817792460001636,
+      "per-pair norm / paraphrase mean (log)": 2.4037464854178525,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.287610648868472,
+      "per-pair norm / paraphrase mean (log)": 2.5629729689663057,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1950837324338255,
+      "per-pair norm / paraphrase mean (log)": 2.886488868762426,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3082416583192651,
+      "per-pair norm / paraphrase mean (log)": 2.7526172911803504,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2122299587252833,
+      "per-pair norm / paraphrase mean (log)": 2.538987515453481,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.18523775786466518,
+      "per-pair norm / paraphrase mean (log)": 3.1530194076415725,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.25767934571480766,
+      "per-pair norm / paraphrase mean (log)": 2.6853667290569305,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.23192911974074143,
+      "per-pair norm / paraphrase mean (log)": 2.9154389862130516,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.29617056403853786,
+      "per-pair norm / paraphrase mean (log)": 2.365980254831458,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.29315520608900225,
+      "per-pair norm / paraphrase mean (log)": 2.7436834344498955,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.22439944499518014,
+      "per-pair norm / paraphrase mean (log)": 2.5689014820775515,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3134059153097643,
+      "per-pair norm / paraphrase mean (log)": 3.729670755774861,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2207284973396166,
+      "per-pair norm / paraphrase mean (log)": 3.099645943682516,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.25210799809244006,
+      "per-pair norm / paraphrase mean (log)": 2.5741733874637633,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.21583511267946437,
+      "per-pair norm / paraphrase mean (log)": 2.250015487799813,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3110460998068549,
+      "per-pair norm / paraphrase mean (log)": 2.465210442085401,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.20304509446148253,
+      "per-pair norm / paraphrase mean (log)": 2.148416341460259,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.18628748671492606,
+      "per-pair norm / paraphrase mean (log)": 2.1620134843494236,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.24091358840042532,
+      "per-pair norm / paraphrase mean (log)": 2.774537783568966,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3189325789678172,
+      "per-pair norm / paraphrase mean (log)": 2.4934419151005986,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.30483481727568795,
+      "per-pair norm / paraphrase mean (log)": 2.173933996374962,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2848051227239729,
+      "per-pair norm / paraphrase mean (log)": 2.04655511284715,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3047109487229935,
+      "per-pair norm / paraphrase mean (log)": 2.818284015950733,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3050825295577009,
+      "per-pair norm / paraphrase mean (log)": 2.805493813764098,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.25264017045410286,
+      "per-pair norm / paraphrase mean (log)": 3.2568047672855363,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.224230067256311,
+      "per-pair norm / paraphrase mean (log)": 2.0382218616778056,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2880817404955383,
+      "per-pair norm / paraphrase mean (log)": 2.1853942203361503,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2726325768434866,
+      "per-pair norm / paraphrase mean (log)": 2.2405867315560775,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2323120820423194,
+      "per-pair norm / paraphrase mean (log)": 2.134216531861124,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.19322533352861213,
+      "per-pair norm / paraphrase mean (log)": 2.572255784540536,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2845505455888636,
+      "per-pair norm / paraphrase mean (log)": 2.1255556614663567,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.21674447222920107,
+      "per-pair norm / paraphrase mean (log)": 2.217534172036293,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.3111538410747291,
+      "per-pair norm / paraphrase mean (log)": 2.1538493483704846,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.21373588050079587,
+      "per-pair norm / paraphrase mean (log)": 2.648044116083004,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.19718611053760804,
+      "per-pair norm / paraphrase mean (log)": 2.1120899728746867,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.29635577409748687,
+      "per-pair norm / paraphrase mean (log)": 1.8599107644712596,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.20145980432742916,
+      "per-pair norm / paraphrase mean (log)": 3.1874522214548096,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.20509756314208347,
+      "per-pair norm / paraphrase mean (log)": 1.777898581603731,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.2639135908129181,
+      "per-pair norm / paraphrase mean (log)": 2.595092477456731,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.302438685717245,
+      "per-pair norm / paraphrase mean (log)": 3.141758192486828,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.7075008532000402,
+      "per-pair norm / paraphrase mean (log)": 0.8529735491707814,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7234453142060133,
+      "per-pair norm / paraphrase mean (log)": 0.4967803854376201,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7888366773537648,
+      "per-pair norm / paraphrase mean (log)": 0.5196507995806664,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8160556996485354,
+      "per-pair norm / paraphrase mean (log)": 0.4313369274699827,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.750103766068328,
+      "per-pair norm / paraphrase mean (log)": 0.38509078671332203,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7001456503571751,
+      "per-pair norm / paraphrase mean (log)": 0.39733293082244225,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6819510802791482,
+      "per-pair norm / paraphrase mean (log)": 0.5537355965300315,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7121518441998398,
+      "per-pair norm / paraphrase mean (log)": 0.7338447168761435,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6984551104901129,
+      "per-pair norm / paraphrase mean (log)": 0.5819204430195165,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7748722143058,
+      "per-pair norm / paraphrase mean (log)": 0.48697834553325425,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6970565506479943,
+      "per-pair norm / paraphrase mean (log)": 0.5460950925158329,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7508861904268886,
+      "per-pair norm / paraphrase mean (log)": 0.6497574440930497,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7771967409900041,
+      "per-pair norm / paraphrase mean (log)": 0.539864586395716,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7613563252909263,
+      "per-pair norm / paraphrase mean (log)": 1.0824893567352345,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7079685912324081,
+      "per-pair norm / paraphrase mean (log)": 0.8632364664045816,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7925774336655168,
+      "per-pair norm / paraphrase mean (log)": 0.5602815207528729,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7801569981462122,
+      "per-pair norm / paraphrase mean (log)": 0.5504217255593908,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7834577605481758,
+      "per-pair norm / paraphrase mean (log)": 0.5887127477003802,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6983480852180238,
+      "per-pair norm / paraphrase mean (log)": 0.8478119809735447,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6973255325110482,
+      "per-pair norm / paraphrase mean (log)": 0.660206969102787,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.809858757140911,
+      "per-pair norm / paraphrase mean (log)": 0.6711513412469255,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7356609471354917,
+      "per-pair norm / paraphrase mean (log)": 0.8866433335078454,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7221328168493315,
+      "per-pair norm / paraphrase mean (log)": 0.6228944981539003,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7484017663492146,
+      "per-pair norm / paraphrase mean (log)": 1.1467229120045035,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7728009897869015,
+      "per-pair norm / paraphrase mean (log)": 0.4355190553899289,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8137872559865758,
+      "per-pair norm / paraphrase mean (log)": 0.4894004329244133,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7201024717634877,
+      "per-pair norm / paraphrase mean (log)": 0.6040609257404442,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8094731801036839,
+      "per-pair norm / paraphrase mean (log)": 0.422627640852865,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6834803287940758,
+      "per-pair norm / paraphrase mean (log)": 0.974814803335133,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7577277259257554,
+      "per-pair norm / paraphrase mean (log)": 0.8695033675453291,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.768756515635352,
+      "per-pair norm / paraphrase mean (log)": 1.0055167255087594,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6948256365251054,
+      "per-pair norm / paraphrase mean (log)": 0.6880070187300088,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.6996475435889478,
+      "per-pair norm / paraphrase mean (log)": 0.6583373706069139,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7386760047042825,
+      "per-pair norm / paraphrase mean (log)": 0.34798842421815257,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8152724677000455,
+      "per-pair norm / paraphrase mean (log)": 0.8438638784879332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.7634459574528122,
+      "per-pair norm / paraphrase mean (log)": 0.808878382445841,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0606232510240297,
+      "per-pair norm / paraphrase mean (log)": 0.6727018939976231,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.042610528185816,
+      "per-pair norm / paraphrase mean (log)": 0.5716285298189747,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9954334242177408,
+      "per-pair norm / paraphrase mean (log)": 0.7107529853081317,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0398668828953062,
+      "per-pair norm / paraphrase mean (log)": 0.6238283788230785,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9324971497567782,
+      "per-pair norm / paraphrase mean (log)": 0.6726601130044915,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9452801595472029,
+      "per-pair norm / paraphrase mean (log)": 0.5757402690955278,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0461200060835831,
+      "per-pair norm / paraphrase mean (log)": 0.7910041489764166,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0415543923655226,
+      "per-pair norm / paraphrase mean (log)": 0.7709726356007593,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9625697038753007,
+      "per-pair norm / paraphrase mean (log)": 0.8222642213005206,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0043077426838676,
+      "per-pair norm / paraphrase mean (log)": 0.6026652952379299,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0148422148980014,
+      "per-pair norm / paraphrase mean (log)": 0.6686879102750338,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0514834535286415,
+      "per-pair norm / paraphrase mean (log)": 0.7180438867660285,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0144350020274215,
+      "per-pair norm / paraphrase mean (log)": 0.490717154754895,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9877600196983153,
+      "per-pair norm / paraphrase mean (log)": 1.1936260393654694,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9823857660770056,
+      "per-pair norm / paraphrase mean (log)": 1.061815651889745,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9896234920922914,
+      "per-pair norm / paraphrase mean (log)": 0.7631019680909101,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0212703435811963,
+      "per-pair norm / paraphrase mean (log)": 1.0452145850811547,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0514486884453256,
+      "per-pair norm / paraphrase mean (log)": 1.4869753661949119,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.993545563490682,
+      "per-pair norm / paraphrase mean (log)": 1.1950438421225833,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9646975388131901,
+      "per-pair norm / paraphrase mean (log)": 1.111693628137498,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9631327308196613,
+      "per-pair norm / paraphrase mean (log)": 1.1273218186344747,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0344419992340825,
+      "per-pair norm / paraphrase mean (log)": 1.3364256088111965,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0443196268793475,
+      "per-pair norm / paraphrase mean (log)": 0.804225219639381,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9447389311795775,
+      "per-pair norm / paraphrase mean (log)": 1.4154474301960078,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.939318239973725,
+      "per-pair norm / paraphrase mean (log)": 1.3783512577620778,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0132207129259032,
+      "per-pair norm / paraphrase mean (log)": 0.7643184679969124,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9504642541869778,
+      "per-pair norm / paraphrase mean (log)": 1.6705792633808239,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0454529866638878,
+      "per-pair norm / paraphrase mean (log)": 1.0213909401571728,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9734468543493704,
+      "per-pair norm / paraphrase mean (log)": 1.3128934693176548,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.95014207061596,
+      "per-pair norm / paraphrase mean (log)": 1.3466398996796631,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.058935866148243,
+      "per-pair norm / paraphrase mean (log)": 1.7196333134318869,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9531744411829389,
+      "per-pair norm / paraphrase mean (log)": 1.0732303297176689,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.969860811527311,
+      "per-pair norm / paraphrase mean (log)": 1.0395100618168165,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9515058753268882,
+      "per-pair norm / paraphrase mean (log)": 0.58533495692512,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9461686089131497,
+      "per-pair norm / paraphrase mean (log)": 0.9879833654305218,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.9329607222871016,
+      "per-pair norm / paraphrase mean (log)": 0.82272990698629,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.1877553572829964,
+      "per-pair norm / paraphrase mean (log)": 1.0545403529062816,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2044498059310194,
+      "per-pair norm / paraphrase mean (log)": 1.0898238149984243,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1874734705678045,
+      "per-pair norm / paraphrase mean (log)": 0.7883544585507932,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.262760134255536,
+      "per-pair norm / paraphrase mean (log)": 1.1951644436184279,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.275300033751931,
+      "per-pair norm / paraphrase mean (log)": 1.3491264805321275,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2351082639564839,
+      "per-pair norm / paraphrase mean (log)": 1.0220219936226982,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2245187535732869,
+      "per-pair norm / paraphrase mean (log)": 0.8439211869311711,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2506336731831122,
+      "per-pair norm / paraphrase mean (log)": 0.9849550139518193,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.3025006919128452,
+      "per-pair norm / paraphrase mean (log)": 1.1407114025945415,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.299158427755109,
+      "per-pair norm / paraphrase mean (log)": 0.5347723271387843,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1860865086817909,
+      "per-pair norm / paraphrase mean (log)": 1.0126287781782257,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2054097773435133,
+      "per-pair norm / paraphrase mean (log)": 0.9336506589511144,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2131442819546154,
+      "per-pair norm / paraphrase mean (log)": 0.7972078257028498,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2149142606165098,
+      "per-pair norm / paraphrase mean (log)": 1.6441349236254545,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2599725712439882,
+      "per-pair norm / paraphrase mean (log)": 1.620172761813499,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2382767395984469,
+      "per-pair norm / paraphrase mean (log)": 0.5785241400260304,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1868955767898632,
+      "per-pair norm / paraphrase mean (log)": 0.9217533658402461,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.23230597938434,
+      "per-pair norm / paraphrase mean (log)": 0.8504538659314411,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2533254128204692,
+      "per-pair norm / paraphrase mean (log)": 1.322670430214328,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1942340664065203,
+      "per-pair norm / paraphrase mean (log)": 1.261938988658612,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2966841975303984,
+      "per-pair norm / paraphrase mean (log)": 0.8172831527504262,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1872746613051146,
+      "per-pair norm / paraphrase mean (log)": 1.1117844584968326,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.3094778616625287,
+      "per-pair norm / paraphrase mean (log)": 1.462246911101809,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1938758398211826,
+      "per-pair norm / paraphrase mean (log)": 1.6284651780148165,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2981004932236855,
+      "per-pair norm / paraphrase mean (log)": 0.8909757679888322,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.3063714401498663,
+      "per-pair norm / paraphrase mean (log)": 0.9505840905777226,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.317139895282123,
+      "per-pair norm / paraphrase mean (log)": 1.196010805728378,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.292283623238303,
+      "per-pair norm / paraphrase mean (log)": 0.7408456419208107,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.289126855707986,
+      "per-pair norm / paraphrase mean (log)": 1.556048072151072,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2699476586393768,
+      "per-pair norm / paraphrase mean (log)": 1.6415659087602872,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.289059489640938,
+      "per-pair norm / paraphrase mean (log)": 1.3119768578147213,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.1988373091778406,
+      "per-pair norm / paraphrase mean (log)": 1.580519047641179,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2550495250326692,
+      "per-pair norm / paraphrase mean (log)": 0.9034217851563618,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.251991201826658,
+      "per-pair norm / paraphrase mean (log)": 0.9707271113385556,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.3000601001771581,
+      "per-pair norm / paraphrase mean (log)": 1.5241601766289818,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.2447919111830923,
+      "per-pair norm / paraphrase mean (log)": 1.4495061766497903,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7339125294540494,
+      "per-pair norm / paraphrase mean (log)": 1.0291120436930328,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.7695388579731954,
+      "per-pair norm / paraphrase mean (log)": 0.7184392013334038,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.7173048644501185,
+      "per-pair norm / paraphrase mean (log)": 1.1852810440515291,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.699567577533554,
+      "per-pair norm / paraphrase mean (log)": 0.9919000352639197,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.7469028183633244,
+      "per-pair norm / paraphrase mean (log)": 1.1089388720650757,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.738364511603284,
+      "per-pair norm / paraphrase mean (log)": 0.9707196583163767,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.7125597916740423,
+      "per-pair norm / paraphrase mean (log)": 0.9721436160447964,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.731451653416118,
+      "per-pair norm / paraphrase mean (log)": 1.4154086762299583,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.7312949429756745,
+      "per-pair norm / paraphrase mean (log)": 0.9325358188682202,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.7258493790177563,
+      "per-pair norm / paraphrase mean (log)": 1.0304427960998983,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.73312497116177,
+      "per-pair norm / paraphrase mean (log)": 0.7677135159109812,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.7760040683638323,
+      "per-pair norm / paraphrase mean (log)": 0.8773647221228076,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9715627064399799,
+      "per-pair norm / paraphrase mean (log)": 0.7051453135627327,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0628401097401476,
+      "per-pair norm / paraphrase mean (log)": 0.6359623505296763,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.058288722735345,
+      "per-pair norm / paraphrase mean (log)": 1.0374018014942632,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.997327459962011,
+      "per-pair norm / paraphrase mean (log)": 0.8845899545944478,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9759705687006563,
+      "per-pair norm / paraphrase mean (log)": 0.6831740132904394,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0049608705762005,
+      "per-pair norm / paraphrase mean (log)": 1.225844154290673,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0487984684283074,
+      "per-pair norm / paraphrase mean (log)": 2.169046610150373,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0213622276784142,
+      "per-pair norm / paraphrase mean (log)": 1.2140556767334145,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.042614855912591,
+      "per-pair norm / paraphrase mean (log)": 0.8206644699266679,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0045811186492037,
+      "per-pair norm / paraphrase mean (log)": 1.2296796494430562,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.018608468097467,
+      "per-pair norm / paraphrase mean (log)": 0.6338000019483462,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.9703417859855445,
+      "per-pair norm / paraphrase mean (log)": 0.7606360040359096,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.2828850427234406,
+      "per-pair norm / paraphrase mean (log)": 1.3143615531249522,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2083366430376006,
+      "per-pair norm / paraphrase mean (log)": 1.022876464244685,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2772717380345897,
+      "per-pair norm / paraphrase mean (log)": 0.7366657720727203,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.300500669565625,
+      "per-pair norm / paraphrase mean (log)": 0.8269240021403635,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.198494397222216,
+      "per-pair norm / paraphrase mean (log)": 0.7136523451707238,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.266013163675869,
+      "per-pair norm / paraphrase mean (log)": 0.8657418434849415,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.1933134047521907,
+      "per-pair norm / paraphrase mean (log)": 1.72707030270455,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.281600187958,
+      "per-pair norm / paraphrase mean (log)": 0.9785374395693472,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.1918290506352927,
+      "per-pair norm / paraphrase mean (log)": 0.6459176196698375,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3110315751780877,
+      "per-pair norm / paraphrase mean (log)": 0.9756766382521364,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.199237110205292,
+      "per-pair norm / paraphrase mean (log)": 1.0507748874712521,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.314243234427271,
+      "per-pair norm / paraphrase mean (log)": 1.141801132094491,
+      "_kind": "scatter",
+      "_group": 11
     }
   ],
-  "n_series": 3,
-  "total_points": 6,
+  "n_series": 12,
+  "total_points": 348,
   "text": {
-    "suptitle": null,
+    "suptitle": "Query axes: text vs representation dissociation",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Query axes: text vs representation dissociation",
+        "title_left": "Ratio of means (summary)",
         "ylabel": "flip norm / paraphrase norm",
         "legend_labels": [
           "answer text",
@@ -67,16 +2167,28 @@
           "query form"
         ],
         "yticklabels": [
-          "0.0",
-          "0.5",
-          "1.0",
-          "1.5",
-          "2.0",
-          "2.5",
-          "3.0",
-          "3.5",
-          "4.0",
-          "4.5"
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ]
+      },
+      {
+        "title_left": "Per-pair values behind the bars",
+        "ylabel": "per-pair norm / paraphrase mean (log)",
+        "xticklabels": [
+          "query content",
+          "query form",
+          "query paraphrase\n(yardstick, mean = 1)"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
         ]
       }
     ],

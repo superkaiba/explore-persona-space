@@ -1,11 +1,53 @@
 {
-  "commit": "09750cbb",
-  "render_id": "5855571b9a594881",
-  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "8265bcd7+dirty",
+  "render_id": "826aab1cdfd8480b",
+  "git_commit": "8265bcd75f781d8e879e924de60063e536e58dcf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/fig_expl_arm_agreement.meta.json",
+    "figures/issue_2564/fig_expl_arm_agreement.pdf",
+    "figures/issue_2564/fig_expl_arm_agreement.png",
+    "figures/issue_2564/fig_expl_carrier_transfer.meta.json",
+    "figures/issue_2564/fig_expl_carrier_transfer.pdf",
+    "figures/issue_2564/fig_expl_carrier_transfer.png",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.meta.json",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.pdf",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.png",
+    "figures/issue_2564/fig_expl_cross_family_scatter.meta.json",
+    "figures/issue_2564/fig_expl_cross_family_scatter.pdf",
+    "figures/issue_2564/fig_expl_cross_family_scatter.png",
+    "figures/issue_2564/fig_expl_edit_dose.meta.json",
+    "figures/issue_2564/fig_expl_edit_dose.pdf",
+    "figures/issue_2564/fig_expl_edit_dose.png",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.meta.json",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.pdf",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.png",
+    "figures/issue_2564/fig_expl_identity_heatmaps.meta.json",
+    "figures/issue_2564/fig_expl_identity_heatmaps.pdf",
+    "figures/issue_2564/fig_expl_identity_heatmaps.png",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.meta.json",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.pdf",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.png",
+    "figures/issue_2564/fig_expl_manip_fire_rates.meta.json",
+    "figures/issue_2564/fig_expl_manip_fire_rates.pdf",
+    "figures/issue_2564/fig_expl_manip_fire_rates.png",
+    "figures/issue_2564/fig_expl_norm_scatter.meta.json",
+    "figures/issue_2564/fig_expl_norm_scatter.pdf",
+    "figures/issue_2564/fig_expl_norm_scatter.png",
+    "figures/issue_2564/fig_expl_query_dissociation.meta.json",
+    "figures/issue_2564/fig_expl_query_dissociation.pdf",
+    "figures/issue_2564/fig_expl_query_dissociation.png",
+    "figures/issue_2564/fig_expl_retrieval_acc.meta.json",
+    "figures/issue_2564/fig_expl_retrieval_acc.pdf",
+    "figures/issue_2564/fig_expl_retrieval_acc.png",
+    "figures/issue_2564/fig_hero_axis_profile.meta.json",
+    "figures/issue_2564/fig_hero_axis_profile.pdf",
+    "figures/issue_2564/fig_hero_axis_profile.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2564_figures.py",
-  "created": "2026-08-25T14:37:30Z",
+  "created": "2026-08-25T20:00:42Z",
   "figsize": [
     5.6,
     4.0
@@ -35,105 +77,105 @@
     {
       "layer": 14.0,
       "direction cosine, identity baseline": 0.10170978381175441,
-      "series": "format",
+      "series": "output format",
       "_kind": "line",
       "_group": 1
     },
     {
       "layer": 19.0,
       "direction cosine, identity baseline": 0.229119852771882,
-      "series": "format",
+      "series": "output format",
       "_kind": "line",
       "_group": 1
     },
     {
       "layer": 26.0,
       "direction cosine, identity baseline": 0.1671801780330369,
-      "series": "format",
+      "series": "output format",
       "_kind": "line",
       "_group": 1
     },
     {
       "layer": 14.0,
       "direction cosine, identity baseline": 0.1232966108637008,
-      "series": "lexical marker",
+      "series": "marker word",
       "_kind": "line",
       "_group": 2
     },
     {
       "layer": 19.0,
       "direction cosine, identity baseline": 0.2731171039453366,
-      "series": "lexical marker",
+      "series": "marker word",
       "_kind": "line",
       "_group": 2
     },
     {
       "layer": 26.0,
       "direction cosine, identity baseline": 0.321483056622108,
-      "series": "lexical marker",
+      "series": "marker word",
       "_kind": "line",
       "_group": 2
     },
     {
       "layer": 14.0,
       "direction cosine, identity baseline": 0.2830471337791033,
-      "series": "register",
+      "series": "tone",
       "_kind": "line",
       "_group": 3
     },
     {
       "layer": 19.0,
       "direction cosine, identity baseline": 0.7280655026408017,
-      "series": "register",
+      "series": "tone",
       "_kind": "line",
       "_group": 3
     },
     {
       "layer": 26.0,
       "direction cosine, identity baseline": 0.5468607774544518,
-      "series": "register",
+      "series": "tone",
       "_kind": "line",
       "_group": 3
     },
     {
       "layer": 14.0,
       "direction cosine, identity baseline": 0.06666629747307525,
-      "series": "user fact",
+      "series": "injected name",
       "_kind": "line",
       "_group": 4
     },
     {
       "layer": 19.0,
       "direction cosine, identity baseline": 0.1381780839283877,
-      "series": "user fact",
+      "series": "injected name",
       "_kind": "line",
       "_group": 4
     },
     {
       "layer": 26.0,
       "direction cosine, identity baseline": 0.2490439647314344,
-      "series": "user fact",
+      "series": "injected name",
       "_kind": "line",
       "_group": 4
     },
     {
       "layer": 14.0,
       "direction cosine, identity baseline": 0.2793318411474337,
-      "series": "user profile",
+      "series": "user description",
       "_kind": "line",
       "_group": 5
     },
     {
       "layer": 19.0,
       "direction cosine, identity baseline": 0.42701941592593884,
-      "series": "user profile",
+      "series": "user description",
       "_kind": "line",
       "_group": 5
     },
     {
       "layer": 26.0,
       "direction cosine, identity baseline": 0.3770265835376388,
-      "series": "user profile",
+      "series": "user description",
       "_kind": "line",
       "_group": 5
     },
@@ -192,11 +234,11 @@
         "ylabel": "direction cosine, identity baseline",
         "legend_labels": [
           "content constraint",
-          "format",
-          "lexical marker",
-          "register",
-          "user fact",
-          "user profile",
+          "output format",
+          "marker word",
+          "tone",
+          "injected name",
+          "user description",
           "query content",
           "query form"
         ],
@@ -220,11 +262,11 @@
     ],
     "series": [
       "content constraint",
-      "format",
-      "lexical marker",
-      "register",
-      "user fact",
-      "user profile",
+      "output format",
+      "marker word",
+      "tone",
+      "injected name",
+      "user description",
       "query content",
       "query form"
     ]
