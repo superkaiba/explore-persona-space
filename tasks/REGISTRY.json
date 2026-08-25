@@ -12162,8 +12162,8 @@
     "2578": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2578",
-      "status": "planning",
+      "path": "tasks/approved/2578",
+      "status": "approved",
       "title": "verify_uploads.py hardcodes HF_DATA_REPO \u2014 the upload gate cannot verify overflow-routed runs"
     },
     "2579": {
