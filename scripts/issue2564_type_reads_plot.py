@@ -50,6 +50,15 @@ def _vals(rows: list[dict], metric: str) -> np.ndarray:
             v = r.get("norm_obs_tail_L19")
         elif metric == "pred":
             v = (r.get("norm_pred") or {}).get(MAP_ARM)
+        elif metric == "ctx":
+            # identity-baseline delta = v_C(A) - v_C(B): raw context-vector shift
+            v = (r.get("norm_pred") or {}).get("arm_iddelta")
+        elif metric == "ctxgap":
+            # paired per-pair: context shift minus real answer shift (same L19
+            # units) — how much of the context move does NOT reach the answer
+            ctx = (r.get("norm_pred") or {}).get("arm_iddelta")
+            real = r.get("norm_obs_tail_L19")
+            v = (ctx - real) if (ctx is not None and real is not None) else None
         elif metric == "noise":
             v = r.get("noise_norm")
         else:
@@ -68,17 +77,26 @@ def _boot_ci(vals: np.ndarray, rng: np.random.Generator) -> tuple[float, float, 
 
 
 def _change_types(rows: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Every varied change type. Instruction axes use fired value-swap pairs
+    where any fired; axes with ZERO fired pairs fall back to all their swap
+    pairs, tagged '(not fired)'. Query axes use all pairs (no fire gate)."""
     swap = [r for r in rows if r["pair_class"] == "swap"]
-    fired = [r for r in swap if r.get("pair_fired_70")] or swap
-    change_types: list[tuple[str, list[dict]]] = []
     by_axis: dict[str, list[dict]] = {}
-    for r in fired:
+    for r in swap:
         by_axis.setdefault(r["axis"], []).append(r)
+    change_types: list[tuple[str, list[dict]]] = []
     for axis, rr in by_axis.items():
-        change_types.append((axis.replace("_", " "), rr))
-    qc = [r for r in rows if r["pair_class"] == "query_content"]
-    if qc:
-        change_types.append(("query content", qc))
+        fired = [r for r in rr if r.get("pair_fired_70")]
+        label = axis.replace("_", " ") + ("" if fired else " (not fired)")
+        change_types.append((label, fired if fired else rr))
+    for cls, label in (
+        ("query_content", "query content"),
+        ("query_form", "query form"),
+        ("query_paraphrase", "query paraphrase"),
+    ):
+        rr = [r for r in rows if r["pair_class"] == cls]
+        if rr:
+            change_types.append((label, rr))
     return change_types
 
 
@@ -107,13 +125,29 @@ CONFIG = {
         "xlabel": "mapped answer-vector shift  ‖predicted Δ‖  (layer-19 residual-stream units)",
         "title": "How much answer-vector shift does the MAP predict? (#2564)",
     },
+    "ctx": {
+        "name": "context_shift_by_change_type",
+        "color": "neural_map",
+        "ref": None,
+        "ref_label": "",
+        "xlabel": "context vector shift  ‖v_C(A) − v_C(B)‖  (layer-19 residual-stream units)",
+        "title": "How much does the CONTEXT vector move between the two contexts? (#2564)",
+    },
+    "ctxgap": {
+        "name": "ctx_minus_answer_shift_by_change_type",
+        "color": "neural_map",
+        "ref": 0.0,
+        "ref_label": "answer moves as much as context",
+        "xlabel": "context shift − real answer shift  ‖v_C Δ‖ − ‖obs Δ‖  (L19 units; >0 = context moves more)",
+        "title": "Context vs answer shift: how much of the context move the answer drops (#2564)",
+    },
 }
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--perpair", default=str(DEFAULT_PERPAIR))
-    ap.add_argument("--metric", choices=("cos", "real", "pred"), required=True)
+    ap.add_argument("--metric", choices=("cos", "real", "pred", "ctx", "ctxgap"), required=True)
     args = ap.parse_args()
 
     rows = [json.loads(line) for line in open(args.perpair, encoding="utf-8")]
