@@ -12248,8 +12248,8 @@
     "2589": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2589",
-      "status": "proposed",
+      "path": "tasks/archived/2589",
+      "status": "archived",
       "title": "workflow-fix: Codex review-site dispatches run write-enabled despite declaring read-only"
     },
     "259": {
