@@ -1,0 +1,279 @@
+{
+  "commit": "ac500462+dirty",
+  "render_id": "d3c6d5e3c30a49c8",
+  "git_commit": "ac5004620f929a9355087ba394f230a9b190a73f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T15:07:21Z",
+  "figsize": [
+    6.5,
+    9.0
+  ],
+  "points": [
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.4375,
+      "y": 0.875,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.458333,
+      "y": 0.9166666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.375,
+      "y": 0.75,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.458333,
+      "y": 0.9166666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.416667,
+      "y": 0.8333333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.229167,
+      "y": 0.4583333333333333,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.479167,
+      "y": 0.9583333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.495833,
+      "y": 0.9916666666666667,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.375,
+      "y": 0.75,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.25,
+      "y": 0.5,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.375,
+      "y": 0.75,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.145833,
+      "y": 0.2916666666666667,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.3125,
+      "y": 0.625,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.041667,
+      "y": 0.08333333333333333,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.208333,
+      "y": 0.4166666666666667,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.479167,
+      "y": 0.9583333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.229167,
+      "y": 0.4583333333333333,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.104167,
+      "y": 0.20833333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.4875,
+      "y": 0.975,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.491667,
+      "y": 0.9833333333333333,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.479167,
+      "y": 0.9583333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.495833,
+      "y": 0.9916666666666667,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.270833,
+      "y": 0.5416666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.395833,
+      "y": 0.7916666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.375,
+      "y": 0.75,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.333333,
+      "y": 0.6666666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.416667,
+      "y": 0.8333333333333334,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 39,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Did each instruction actually fire in the rollouts?",
+        "xlabel": "compliance fraction (dashed line: 70% fire threshold)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "content constraint: exactly three reasons",
+          "content constraint: no numbers",
+          "content constraint: no first person",
+          "content constraint: one concrete example",
+          "content constraint: under twenty words",
+          "format: bulleted list",
+          "format: numbered list",
+          "format: lyrical poem",
+          "format: one flowing paragraph",
+          "format: JSON object",
+          "hedging: strong confidence",
+          "hedging: heavy hedging",
+          "lexical marker: word \"moreover\"",
+          "lexical marker: word \"honestly\"",
+          "lexical marker: word \"surely\"",
+          "lexical marker: word \"notably\"",
+          "lexical marker: word \"essentially\"",
+          "persona: pirate captain",
+          "persona: Victorian butler",
+          "persona: zen teacher",
+          "persona: startup founder",
+          "persona: noir detective",
+          "register: very formal",
+          "register: very casual",
+          "stance: back one option",
+          "stance: argue against all",
+          "stance: strictly neutral",
+          "stance: steelman both sides",
+          "stance: devil's advocate",
+          "user fact: name Marcus",
+          "user fact: name Diego",
+          "user fact: name Sarah",
+          "user fact: name Emma",
+          "user fact: name Kevin",
+          "user profile: single parent",
+          "user profile: retired engineer",
+          "user profile: college freshman",
+          "user profile: rural nurse",
+          "user profile: business traveler"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
