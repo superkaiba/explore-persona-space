@@ -236,7 +236,9 @@ def test_good_body_passes_all():
     # Check 59 `check_v4_result_section_per_unit_coverage` is dispatched in
     # verify_text too (its forward-only gate needs the issue number,
     # calibration lever (ii)); PASS-skips here (issue unknown) (#2353).
-    assert len(results) == 76
+    # Check 61 `check_footer_code_artifacts_github_pinned` (WARN, v4-only)
+    # rides CHECKS and PASS-skips here (legacy body) (#2340).
+    assert len(results) == 77
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
@@ -7298,20 +7300,24 @@ def test_checks_list_size():
     round-set disjointness), #2279 — and check 60
     `check_figure_sidecar_text_coverage` — the text-less-sidecar
     coverage WARN (a PRESENT sidecar with no rendered-text block gives
-    check 28's opaque-code scan nothing to read), #2292 — ride CHECKS;
+    check 28's opaque-code scan nothing to read), #2292 — and check 61
+    `check_footer_code_artifacts_github_pinned` — the git-side sibling
+    of check 44 (footer code shas / bare eval_results tokens need an
+    adjacent SHA-pinned github link), #2340 — ride CHECKS;
     check 56 `check_v4_ack_result_count` (#2264) and check 59
     `check_v4_result_section_per_unit_coverage` — the unconditional
     per-section per-unit coverage floor (WARN, forward-only issue >=
     2353; #2353) — are dispatched OUTSIDE CHECKS
     with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 59
+    assert len(verify_task_body.CHECKS) == 60
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
     assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
     assert verify_task_body.check_figure_sidecar_text_coverage in verify_task_body.CHECKS
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
+    assert verify_task_body.check_footer_code_artifacts_github_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
@@ -13677,12 +13683,12 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (59 as of
-    check 60, #2292; check 59 is dispatched OUTSIDE CHECKS, #2353;
+    position 7 and the CHECKS count matches the current registry (60 as of
+    check 61, #2340; check 59 is dispatched OUTSIDE CHECKS, #2353;
     belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 59
+    assert len(verify_task_body.CHECKS) == 60
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -18176,6 +18182,256 @@ def test_footer_hf_path_no_footer_skips():
     res = verify_task_body.check_footer_hf_paths_pinned(body)
     assert res.passed and not res.is_warn, res.render()
     assert "no **Repro:** footer" in res.detail, res.render()
+
+
+# ─── Check 61: footer code shas / eval_results paths carry a github pin ─────
+#
+# (#2340, incident #2330 r1; binding reconciler item
+# `footer-github-artifact-links`): a footer naming code provenance
+# (`@ <hex>` in a git-code-identity unit) or a bare backtick
+# `eval_results/` path whose bullet/paragraph unit carries no SHA-pinned
+# github.com blob/tree link -> WARN. Direct-call style on
+# `_V4_GOOD_BODY`-derived fixtures (the check-44 block's convention);
+# `_V4_GOOD_BODY`'s own Repro unit is satisfied by its
+# `blob/0123456789abcdef` entry-script link and its Context bullets carry
+# no `@ <hex>` / eval_results tokens, so appended units are the only
+# trigger surface.
+
+# Faithful reduction of the verbatim PRE-FIX #2330 r1 footer paragraph
+# (recovered from `git show 9b8606d560:tasks/interpreting/2330/body.md`,
+# line 155). Load-bearing traps it carries: TWO true code shas
+# (`@ `0ca8b47888``, `@ `41149663f6``), a bare hex WITHOUT `@` (the
+# hot-fix sha — a named recall residual, must NOT be extracted), the bare
+# eval_results brace-form token, in-unit HF revisions behind HF-identity
+# backtick tokens (`@ `197f1dd57f`` after an `issue2330_...` token,
+# `@ `815ff6d`` after `issue1491_...` — precision skip (i)), an
+# `@ HF sha `c202236235`` model revision (skip (iii)), and an in-unit
+# PINNED huggingface.co tree link that must NOT rescue (the satisfier is
+# github-side only).
+_I2330_R1_FOOTER_LINE = (
+    "**Repro:** code on branch `issue-2330` @ `0ca8b47888` (generation/capture + fits) "
+    "with hot-fix `81c0f49d64` (HF 409 retry); contrasts + figures @ `41149663f6` — "
+    "scripts `issue2330_split_ids.py`, `issue2330_figures.py`. Committed artifacts "
+    "(same branch): "
+    "`eval_results/issue_2330/matched_fits_{q25_n5k,q25_n10k,q35_n5k,q35_n10k}.json`. "
+    "HF data repo `superkaiba1/explore-persona-space-data`: "
+    "`issue2330_matched/qwen35_9b/{train_10k,val_400}/` @ `197f1dd57f`, each with "
+    "`final_token_capture/` + `raw_completions/` @ `197f1dd57f` "
+    "([pinned tree](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+    "tree/197f1dd57fe07be48deef116cb8ab142ed24ce35/issue2330_matched)). Models: "
+    "`Qwen/Qwen2.5-7B-Instruct` and `Qwen/Qwen3.5-9B` @ HF sha `c202236235`, thinking "
+    "disabled. Reused store from [#1491](https://eps.superkaiba.com/tasks/1491): "
+    "`issue1491_scale_ladder/scale7_refit` @ `815ff6d` — fit: same driver."
+)
+_I2330_EVAL_RESULTS_TOKEN = (
+    "eval_results/issue_2330/matched_fits_{q25_n5k,q25_n10k,q35_n5k,q35_n10k}.json"
+)
+
+
+def test_footer_code_sha_unpinned_warns_2330_r1_shape():
+    """MAIN / durability-pin test (#2340, incident #2330 r1): the
+    r1-derived footer paragraph -> WARN naming BOTH code shas (Class A)
+    + the bare eval_results token (Class B), while the in-unit HF
+    revisions (skip (i): preceding HF-identity token; skip (iii):
+    `@ HF sha`), the @-less hot-fix hex (never extracted), and the
+    PINNED huggingface.co tree link (must not rescue) all stay out."""
+    body = _V4_GOOD_BODY + "\n\n" + _I2330_R1_FOOTER_LINE + "\n"
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0ca8b47888" in res.detail, res.render()
+    assert "41149663f6" in res.detail, res.render()
+    assert _I2330_EVAL_RESULTS_TOKEN in res.detail, res.render()
+    # HF revisions / model sha / @-less hex are NOT among the offenders.
+    assert "197f1dd57f" not in res.detail, res.render()
+    assert "815ff6d" not in res.detail, res.render()
+    assert "c202236235" not in res.detail, res.render()
+    assert "81c0f49d64" not in res.detail, res.render()
+
+
+def test_footer_code_sha_github_pinned_same_unit_passes():
+    """S1g: the same r1 paragraph PLUS an in-unit SHA-pinned github.com
+    /blob/<40-hex> link (the post-fix #2330 shape) -> clean PASS."""
+    line = _I2330_R1_FOOTER_LINE + (
+        " Code: [issue2330_figures.py](https://github.com/superkaiba/explore-persona-space/"
+        "blob/0ca8b478881234567890123456789012345678ab/scripts/issue2330_figures.py)."
+    )
+    body = _V4_GOOD_BODY + "\n\n" + line + "\n"
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "github-pinned" in res.detail, res.render()
+
+
+def test_footer_hf_token_at_rev_does_not_fire():
+    """HF-rev non-confusion shape (a) (#2340 acceptance 3a): a bare
+    HF-identity backtick token immediately followed by an `@ <hex>` rev
+    — no github link, no code vocabulary needed — must NOT fire."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused store: `issue1491_scale_ladder/scale7_refit` @ `815ff6d` — fit: same driver.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_hf_token_at_rev_with_code_vocab_passes():
+    """Skip (i) under Class-A arming: a unit carrying git-code vocabulary
+    ("commit") whose `@ <hex>` follows an HF-identity backtick token is
+    an HF revision (check 44's G2) -> clean PASS."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused mix (commit-pinned parent): "
+        "`issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl` @ `6aab0cce1fac` "
+        "— same recipe.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_hf_linktext_rev_with_code_vocab_passes():
+    """HF-rev non-confusion shape (b) (#2340 acceptance 3b — the
+    discriminator for precision skip (ii)): the link-text idiom
+    `[issue<N>_slug @ <hex>](huggingface.co/...tree/<hex>...)` inside a
+    unit that ALSO carries git-code vocabulary -> clean PASS (the @-hex
+    restates the pinned HF URL's revision; no backtick token precedes it,
+    so skip (i) cannot be what clears it)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Hot-fix commit ported upstream; reused "
+        "[issue1768_mapshift @ c0726728](https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/c07267281234567890abcdef1234567890abcdef/"
+        "issue1768_mapshift) — fit: same map.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_hf_rev_restated_in_other_unit_does_not_fire():
+    """Skip (ii) FOOTER-WIDE pool pin (the #2225 shape — the sole Class-A
+    false positive of the landing-corpus sweep under a unit-local pool):
+    a pinned huggingface.co URL in bullet A, its revision restated as a
+    bare `@ <hex>` in a git-code-identity bullet B -> clean PASS. The
+    S1g github satisfier stays unit-local (the separate-unit test below
+    pins that); only the HF-rev identity pool is footer-wide."""
+    body = _V4_GOOD_BODY + (
+        "\n- Banked map: [issue778_persona_vectors](https://huggingface.co/datasets/"
+        "superkaiba1/explore-persona-space-data/tree/"
+        "032bdeff91ef7de4f94c2f9e5d0ad2c16ced05ed/issue778_persona_vectors).\n"
+        "\n- Reused code path unchanged; the parent persona vectors @ `032bdef` "
+        "(fit: the pre-image requires exactly this banked map).\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_footer_code_sha_v3_body_skipped():
+    """Forward-only: a grandfathered v3 body with the SAME offending
+    footer paragraph -> vacuous PASS (never newly WARN/FAIL a v3/v2
+    body)."""
+    body = _V3_GOOD_BODY + "\n\n" + _I2330_R1_FOOTER_LINE + "\n"
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "not a v4 body" in res.detail, res.render()
+
+
+def test_footer_code_sha_separate_unit_pin_does_not_rescue():
+    """Unit-scoped adjacency (the check-44 §13.2 convention): offenders
+    in bullet A, a SHA-pinned github link in a SEPARATE
+    blank-line-separated bullet -> still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n- Round code on branch `issue-999` @ `deadbee12` plus artifacts "
+        "`eval_results/issue_999/cells.json` for the record.\n"
+        "\n- Pinned elsewhere: [code](https://github.com/superkaiba/explore-persona-space/"
+        "blob/deadbee12deadbee12deadbee12deadbee12dead/scripts/run.py).\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "deadbee12" in res.detail, res.render()
+    assert "eval_results/issue_999/cells.json" in res.detail, res.render()
+
+
+def test_footer_code_sha_moving_ref_link_does_not_satisfy():
+    """A `/blob/main` moving-ref github link is NOT a pin (not hex) ->
+    the unit's `@ <hex>` code sha still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n- Fit code @ `abc1234def` — driver at "
+        "[scripts/run.py](https://github.com/superkaiba/explore-persona-space/blob/main/"
+        "scripts/run.py).\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "abc1234def" in res.detail, res.render()
+
+
+def test_footer_code_sha_blockquote_exempt():
+    """`_footer_units` blockquote stripping (#959 verbatim-prompt
+    exemption): an offending shape inside a `> `-quoted Context line
+    never fires."""
+    body = _V4_GOOD_BODY + (
+        "\n> Verbatim prompt: rerun the code on branch `issue-2330` @ `0ca8b47888` and "
+        "commit `eval_results/issue_2330/matched_fits.json` please.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "github-pinned" in res.detail, res.render()
+
+
+def test_footer_fenced_hf_pin_does_not_rescue_code_sha():
+    """Skip (ii) pool exclusion, fence arm (#2340 r2,
+    `excluded-footer-hf-pin-rescue`): a pinned huggingface.co URL inside
+    a FENCED block (illustrative skeleton — `_footer_units` drops it)
+    must NOT rescue a live unpinned code sha whose hex prefix-matches
+    the fenced revision — the live sha still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n```\nhttps://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+        "tree/0ca8b47888ffffffffffffffffffffffffffffff/issue999_demo\n```\n"
+        "\n- Fit code commit @ `0ca8b47888` — driver rerun for the record.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0ca8b47888" in res.detail, res.render()
+
+
+def test_footer_blockquoted_hf_pin_does_not_rescue_code_sha():
+    """Skip (ii) pool exclusion, blockquote arm (#2340 r2,
+    `excluded-footer-hf-pin-rescue`): a pinned huggingface.co URL on a
+    `> `-quoted line (the #959 verbatim-prompt exemption drops it) must
+    NOT rescue a live unpinned code sha — the live sha still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n> Verbatim prompt: see https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/0ca8b47888ffffffffffffffffffffffffffffff/"
+        "issue999_demo for the bank.\n"
+        "\n- Fit code commit @ `0ca8b47888` — driver rerun for the record.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0ca8b47888" in res.detail, res.render()
+
+
+def test_footer_hf_token_intervening_code_prose_warns():
+    """Skip (i) adjacency pin (#2340 r2, `class-a-hf-skip-overreach` —
+    the reconciler's mixed-unit probe): an HF-identity backtick token
+    EARLIER in the unit must not govern a later `@ <hex>` across
+    intervening code-provenance prose — the code sha still WARNs (and
+    the adjacent true-positive shapes above stay skipped)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused `issue2330_matched/raw_completions/` bucket unchanged; "
+        "analysis code commit @ `deadbeef99` — rerun of the fit driver.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "deadbeef99" in res.detail, res.render()
+
+
+def test_footer_code_sha_casefold_dedup():
+    """Class-A dedup casefold (#2340 r2, `class-a-casefold-dedup`): the
+    same hex spelled in two cases counts ONCE (hex is case-insensitive);
+    the offender list shows the first-seen spelling only."""
+    body = _V4_GOOD_BODY + (
+        "\n- Round code commit @ `DEADBEE12` re-tagged later as commit "
+        "@ `deadbee12` for the record.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert res.detail.startswith("1 footer"), res.render()
+    assert "DEADBEE12" in res.detail, res.render()
+    assert "@ deadbee12" not in res.detail, res.render()
 
 
 # ─── Check 15 clause-scoping (#893, incident #841) ─────────────────────────

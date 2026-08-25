@@ -1451,6 +1451,27 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   retroactive FAIL would block promote-time re-verifies wholesale;
   NO-OP PASS offline / no figures / no sidecar-bearing figures.
 
+- **check 61** (`check_footer_code_artifacts_github_pinned`, WARN,
+  v4-only, #2340): the git-side sibling of check 44 — a footer `@ <7-40
+  hex>` code-sha mention (unit carries git-code identity: a backtick
+  `issue-<N>...` branch token or the word code/commit/hot-fix) or a bare
+  backtick `eval_results/`-rooted artifact path sits in a
+  bullet/paragraph unit carrying a SHA-pinned `github.com`
+  `/blob|/tree/<hex>` (or `raw.githubusercontent.com/<o>/<r>/<hex>/`)
+  link; `/blob/main` never satisfies. Three Class-A precision skips: an
+  ADJACENT preceding HF-identity backtick token (check 44's G2 identity
+  + its S2 <= 4-char whitespace anchoring — intervening code-provenance
+  prose defeats it), an `@ <hex>` restating a pinned huggingface.co URL
+  revision from the fence/blockquote-FILTERED footer units (the
+  link-text idiom), and an explicit `@ HF rev|sha <hex>` qualifier;
+  Class-A dedup is casefolded. eval_results-only for
+  Class B by design. Pure text — zero probes, no env fences; WARN never
+  FAILs (23/101 committed v4 bodies WARN in the landing-corpus
+  simulation). Incident: task #2330 r1's footer named `code on branch
+  `issue-2330` @ `0ca8b47888`` + bare eval_results paths with no github
+  link and the verifier read PASS (reconciler item
+  `footer-github-artifact-links`).
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -15338,6 +15359,41 @@ _FOOTER_HF_PIN_URL_RE = re.compile(
 _FOOTER_AT_REV_ADJ_RE = re.compile(
     r"[ \t]{0,4}@\s*(?:(?:HF\s+)?rev\s+)?`?[0-9a-fA-F]{7,40}\b", re.IGNORECASE
 )
+# ─── Check 61 regexes (git-side sibling of check 44; #2340) ─────────────────
+# Unit-level satisfier S1g: a `github.com` `/blob/<hex>`-or-`/tree/<hex>`
+# link, or a `raw.githubusercontent.com/<owner>/<repo>/<hex>/` raw link,
+# pinned to a 7-40-hex sha. A moving-ref link (`/blob/main`, `/tree/HEAD`)
+# never satisfies (not hex).
+_FOOTER_GH_PIN_URL_RE = re.compile(
+    r"github\.com/[^\s()`<>]+/(?:blob|tree)/[0-9a-fA-F]{7,40}\b"
+    r"|raw\.githubusercontent\.com/[^/\s]+/[^/\s]+/[0-9a-fA-F]{7,40}/",
+    re.IGNORECASE,
+)
+# Class-A (code-sha) trigger: an `@ <7-40 hex>` occurrence, optional
+# backticks around the hex, optional `[HF ]rev|sha` qualifier. The `hf`
+# group is CAPTURED: an explicit `@ HF rev|sha <hex>` self-declares an HF
+# revision (precision skip (iii) — the #2330 `@ HF sha `c202236235``
+# model-revision shape must never read as a code sha).
+_FOOTER_AT_CODE_SHA_RE = re.compile(
+    r"@\s*(?:(?P<hf>HF\s+)?(?:rev|sha)\s+)?`?(?P<hex>[0-9a-fA-F]{7,40})`?(?![0-9a-zA-Z_])",
+    re.IGNORECASE,
+)
+# Class-A unit arming: git-code identity — a backtick `issue-<N>[-slug]`
+# branch token, or the word code/commit(s)/hot-fix anywhere in the unit.
+_FOOTER_CODE_IDENTITY_RE = re.compile(
+    r"`issue-\d+[a-z0-9-]*`|\b(?:code|commits?|hot-?fix(?:es)?)\b", re.IGNORECASE
+)
+# Any backtick span (nearest-preceding-token scan for precision skip (i)).
+_FOOTER_ANY_BACKTICK_TOKEN_RE = re.compile(r"`(?P<tok>[^`\n]+)`")
+# Pinned huggingface.co URL revision — the capture form of
+# _FOOTER_HF_PIN_URL_RE, for the prefix skip (ii): an `@ <hex>` that
+# restates a pinned HF URL's revision (the link-text idiom
+# `[issue<N>_slug @ <hex>](https://huggingface.co/...tree/<hex>.../...)`,
+# #1768/#2054/#2223/#823/#2225) is an HF revision, never a code sha.
+_FOOTER_HF_PIN_REV_RE = re.compile(
+    r"huggingface\.co/[^\s()`]*?/(?:tree|resolve|blob)/(?P<rev>[0-9a-fA-F]{7,40})\b",
+    re.IGNORECASE,
+)
 
 
 def _footer_units(footer: str) -> list[str]:
@@ -15459,6 +15515,170 @@ def check_footer_hf_paths_pinned(body: str) -> CheckResult:
         f"pin: {shown} — add a pinned huggingface.co /tree/<rev> (or /resolve|/blob/"
         "<rev>) link in the same bullet/paragraph, or `@ <rev>` immediately after "
         "the path (SPEC.md § All footer URLs pinned (v4), check 44)"
+    )
+    return CheckResult(name, True, detail, is_warn=True)
+
+
+def _c61_class_a_offenders(unit: str, footer_hf_revs: list[str]) -> list[str]:
+    """Check 61 Class-A enumerator: `@ <7-40 hex>` code-sha offenders in ONE
+    footer unit, gated on git-code identity, after the three precision skips
+    documented on check 61 below — (i) an ADJACENT preceding HF-identity
+    backtick token (check 44's G2 identity, anchored by its S2 adjacency
+    discipline: <= 4 chars of pure whitespace between the token's closing
+    backtick and the `@`; a positionally-nearest token across intervening
+    code-provenance prose never governs — #2340 r2
+    `class-a-hf-skip-overreach`), (ii) FILTERED-footer
+    pinned-huggingface.co-URL revision mutual-prefix match (the caller pools
+    revs from `_footer_units` output — fences/blockquotes excluded), (iii)
+    explicit `@ HF rev|sha <hex>` qualifier.
+    Returns raw hex strings in document order, NOT deduped (the caller owns
+    per-body dedup). Split out of the check body for C901 (<= 15)."""
+    if not _FOOTER_CODE_IDENTITY_RE.search(unit):
+        return []
+    backtick_spans = [
+        (m.start(), m.end(), m.group("tok")) for m in _FOOTER_ANY_BACKTICK_TOKEN_RE.finditer(unit)
+    ]
+    out: list[str] = []
+    for m in _FOOTER_AT_CODE_SHA_RE.finditer(unit):
+        if m.group("hf"):
+            continue  # skip (iii): `@ HF rev|sha <hex>` self-declares HF
+        hexv = m.group("hex")
+        prev_tok: str | None = None
+        prev_end = -1
+        for _start, end, tok in backtick_spans:
+            if end <= m.start():
+                prev_tok, prev_end = tok, end
+            else:
+                break
+        gap = unit[prev_end : m.start()]
+        if (
+            prev_tok is not None
+            and len(gap) <= 4
+            and not gap.strip()
+            and (_HF_ISSUE_PREFIX_RE.match(prev_tok) or _FOOTER_HF_ARTIFACT_SEG_RE.search(prev_tok))
+        ):
+            continue  # skip (i): ADJACENT HF-identity token (check 44 G2 + S2 anchoring)
+        low = hexv.lower()
+        if any(r.lower().startswith(low) or low.startswith(r.lower()) for r in footer_hf_revs):
+            continue  # skip (ii): restates a pinned huggingface.co URL revision
+        out.append(hexv)
+    return out
+
+
+def check_footer_code_artifacts_github_pinned(body: str) -> CheckResult:
+    """Check 61 (WARN, v4-only, #2340): the git-side sibling of check 44 —
+    a footer that NAMES code provenance (an `@ <7-40 hex>` code-sha
+    mention in a unit carrying git-code identity: a backtick
+    `issue-<N>...` branch token or the word code/commit/hot-fix) or a
+    committed `eval_results/`-rooted artifact as a bare backtick path
+    must sit in a bullet/paragraph unit carrying a SHA-pinned
+    `github.com` `/blob/<hex>`-or-`/tree/<hex>` link (or a
+    `raw.githubusercontent.com/<owner>/<repo>/<hex>/` raw link); a
+    moving-ref `/blob/main` link never satisfies. Clean partition with
+    the existing git-side checks: 8b/42 probe URLs that EXIST, 43
+    verifies file claims adjacent to an existing tree link, 50 checks
+    working-tree cleanliness — nothing fired when the mention had NO
+    link at all, exactly the #2330 r1 gap (codex-clean-result-critic
+    finding, upheld by the binding reconciler — item
+    `footer-github-artifact-links`, `epm:clean-result-critique-reconcile
+    v1` on #2330).
+
+    Class-A precision skips, applied in order: (i) an `@ <hex>` whose
+    nearest preceding backtick token is HF-identity per check 44's G2
+    (`_HF_ISSUE_PREFIX_RE` / `_FOOTER_HF_ARTIFACT_SEG_RE`) AND sits
+    ADJACENT to it — <= 4 chars of pure whitespace between the token's
+    closing backtick and the `@`, check 44's S2 anchoring discipline;
+    intervening code-provenance prose (`...raw_completions/` bucket;
+    analysis code commit @ <hex>`) defeats the skip (#2340 r2
+    `class-a-hf-skip-overreach`) — is an HF
+    revision — check 44 territory; (ii) an `@ <hex>` that mutually
+    prefix-matches a revision inside a pinned `huggingface.co` URL in
+    any FILTERED footer unit (the pool spans all `_footer_units` output
+    — fences/blockquotes excluded, so ignored content never rescues a
+    live sha, #2340 r2 `excluded-footer-hf-pin-rescue`; the satisfier
+    stays unit-local) is an HF-rev restatement — the link-text idiom
+    (`[issue<N>_slug @ <hex>](https://huggingface.co/...tree/<hex>...)`,
+    >= 15 would-be false positives across >= 5 committed bodies) and the
+    #2225 cross-bullet restatement (`the parent persona vectors @
+    `032bdef`` two bullets after its pinned URL — the sole Class-A false
+    positive of the landing-corpus sweep under a unit-local pool); (iii)
+    an explicit `@ HF rev|sha <hex>` qualifier self-declares an HF
+    revision (the #2330 `@ HF sha `c202236235`` model-revision shape).
+    Class-A dedup is CASEFOLDED (hex spelling is case-insensitive;
+    Class-B path keys stay case-sensitive via tagged keys — #2340 r2
+    `class-a-casefold-dedup`). Class B is eval_results-only BY DESIGN
+    (the task's named class).
+
+    WARN, never FAIL — there is NO code path returning ``passed=False``
+    (corpus 2026-08-24 critic simulation: 23 of 101 committed v4 bodies
+    WARN, dominated by Class-B advisory true positives on link-less
+    artifact-listing bullets — an order of magnitude larger parked
+    footprint than check 44's landing corpus, so a FAIL would newly
+    block promote-time re-verifies wholesale. FAIL-flip path: a one-line
+    severity change once the parked corpus clears, via a future infra
+    task). Body-text-only: zero git/Hub probes, no env fences (pin
+    absence is a text fact — the check-40/44 convention). Forward-only
+    via `is_v4`.
+
+    Named recall residuals (the LM critic stays the backstop): paths /
+    shas OUTSIDE backticks-with-`@` (a bare hex like the r1 footer's
+    `with hot-fix `81c0f49d64`` carries no `@` and is not extracted);
+    non-eval_results git roots (figures/, scripts/, docs/ — figures
+    already have checks 8b/22/29); unit-granularity coarseness (one
+    pinned github link anywhere in a giant paragraph rescues every
+    mention in it — the same trade check 44 states).
+    """
+    name = "footer code shas / eval_results paths carry an adjacent pinned github link"
+    if not is_v4(body):
+        return CheckResult(name, True, "skipped — not a v4 body (forward-only)")
+    footer = _v4_footer_text(body)
+    if footer is None:
+        return CheckResult(name, True, "skipped — no **Repro:** footer found")
+    offenders: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    # Skip (ii)'s HF-revision pool spans the FILTERED footer units (the
+    # satisfier S1g stays unit-local): a footer routinely pins an HF URL in
+    # one bullet and restates its revision as a bare `@ <hex>` in another
+    # (#2225's `the parent persona vectors @ `032bdef`` — the sole Class-A
+    # false positive of the 27-hit landing-corpus sweep under a UNIT-LOCAL
+    # pool), so per-unit pooling would re-open that false positive; the
+    # units-wide-but-FILTERED pool keeps the #2225 cross-bullet rescue while
+    # excluding fenced/blockquoted content — ignored text must never rescue
+    # a live unpinned code sha (#2340 r2 `excluded-footer-hf-pin-rescue`:
+    # the pool previously scanned RAW footer text before `_footer_units`
+    # dropped fences/blockquotes). A >= 7-hex mutual-prefix coincidence with
+    # a pinned rev is ~16^-7, so the recall cost is negligible.
+    units = _footer_units(footer)
+    footer_hf_revs = [m.group("rev") for u in units for m in _FOOTER_HF_PIN_REV_RE.finditer(u)]
+    for unit in units:
+        if _FOOTER_GH_PIN_URL_RE.search(unit):
+            continue  # S1g: a SHA-pinned github link anywhere in the unit satisfies it
+        # Class A: `@ <hex>` code-sha mentions in a git-code-identity unit
+        # (enumeration + the three precision skips live in _c61_class_a_offenders).
+        for hexv in _c61_class_a_offenders(unit, footer_hf_revs):
+            key = ("sha", hexv.lower())  # casefolded: hex spelling is case-insensitive
+            if key in seen:
+                continue  # per-body dedup
+            seen.add(key)
+            offenders.append(f"@ {hexv}")
+        # Class B: bare backtick eval_results/-rooted artifact paths.
+        for m in _FOOTER_HF_PATH_TOKEN_RE.finditer(unit):
+            tok = m.group("tok")
+            if "/" not in tok or tok.split("/", 1)[0] != "eval_results":
+                continue  # eval_results-only by design (other git roots: recall residuals)
+            key = ("path", tok)  # tagged: path keys stay case-sensitive
+            if key in seen:
+                continue  # per-body dedup
+            seen.add(key)
+            offenders.append(tok)
+    if not offenders:
+        return CheckResult(name, True, "all footer code shas / eval_results paths github-pinned")
+    shown = "; ".join(f"`{t[:120]}`" for t in offenders[:8])
+    detail = (
+        f"{len(offenders)} footer code/artifact mention(s) carry no adjacent SHA-pinned "
+        f"github link: {shown} — add a github.com /blob/<sha> or /tree/<sha> link "
+        "(7-40 hex; never /blob/main) in the same bullet/paragraph "
+        "(SPEC.md § All footer URLs pinned (v4), check 61)"
     )
     return CheckResult(name, True, detail, is_warn=True)
 
@@ -19827,6 +20047,10 @@ CHECKS = [
     # check 44 (WARN, v4-only) — bare backtick HF artifact paths in the footer carry
     # an adjacent pinned huggingface.co link / `@ rev <hex>` (#1509; incident #1335):
     check_footer_hf_paths_pinned,
+    # check 61 (WARN, v4-only) — footer code-sha mentions / bare eval_results paths
+    # carry an adjacent SHA-pinned github.com blob/tree link — check 44's git-side
+    # sibling (#2340; incident #2330 r1):
+    check_footer_code_artifacts_github_pinned,
     # check 45 (WARN, generation-agnostic) — quantified caption COUNT claims
     # ("all N <unit>", "K of N", "none of the N", "no <unit>" + below/above-zero
     # or copula negative/positive) recomputed against the sidecar's per-column
