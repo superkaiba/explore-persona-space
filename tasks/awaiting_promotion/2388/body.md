@@ -3,8 +3,7 @@ title: Answer correctness is predictable from the context vector before generati
   on all four surfaces, with the context-to-answer map helping only at small label
   budgets on math and code (HIGH confidence)
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-08-19T16:45:16Z'
 has_clean_result: true
 parent_id: 1739
