@@ -1,13 +1,15 @@
 {
   "experiment": "issue2254_preimage",
   "base_model": "Qwen/Qwen2.5-7B-Instruct",
-  "ts": "2026-08-24T23:11:45Z",
+  "ts": "2026-08-25T00:26:46Z",
   "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
-  "git_commit": "030c9066",
+  "git_commit": "1fe4ab04",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2254_firstk_ctxext_sensitivity.py",
-    "scripts/issue2254_preimage.py"
+    "scripts/issue2254_ladder_figures.py",
+    "scripts/issue2254_transpose_ladder.py",
+    "tests/test_issue2254_transpose_ladder.py"
   ],
   "followup_label": "transpose_ladder",
   "directions": {

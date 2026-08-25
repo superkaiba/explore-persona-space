@@ -1,0 +1,34 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-25T00:29:57Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "1fe4ab04",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2254/transpose_ladder/smoke/cpu_smoke_ladder.json",
+    "scripts/issue2254_firstk_ctxext_sensitivity.py",
+    "scripts/issue2254_ladder_figures.py",
+    "scripts/issue2254_transpose_ladder.py",
+    "tests/test_issue2254_transpose_ladder.py"
+  ],
+  "followup_label": "transpose_ladder",
+  "gate": "plan \u00a74.1 gate (ii): pre-image rebuild parity on the REAL stored maps",
+  "cells": {
+    "evil__L14": 0.999999999999995,
+    "sycophancy__L14": 0.9999999999999926,
+    "evil__L17": 0.9999999999999957,
+    "sycophancy__L17": 0.9999999999999956
+  },
+  "threshold": 0.999,
+  "verdict": "PASS",
+  "maps_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_2254/hf_dl/maps_plan_probe/issue2254_preimage/analysis_tensors/maps_perlayer/perlayer",
+  "npz_sha12": {
+    "L14": "0f3dd2090667",
+    "L17": "dc7b575c4261"
+  },
+  "rb_rev": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "bank_target": "issue2254_preimage/directions/{b}_pre_L{ly}.pt (committed parent bank)",
+  "elapsed_s": 164.1,
+  "scope_note": "VM-runnable smoke leg only; the tiny-real GPU steer cell, the live \u22645-request Batch judge probe, and the rig-health probe run POD-TIME per plan \u00a74 smoke sequencing"
+}

@@ -25,8 +25,11 @@ packed HF raw-completion upload BEFORE the shard sentinel) → ``judge``
 → ``reduce`` (VM CPU: Δ vs floor, margin vs band, §3 verdict lattice,
 two-grain multiplicity tags, selection-aware companions, intrusion
 sensitivity, ``fresh_nulls: false``) → ``figures``
-(``scripts.issue2254_ladder_figures``). Plus ``--cpu-smoke`` (VM, no GPU/API)
-and ``--rig-health`` (plan §4 smoke item (d), advisory only).
+(``scripts.issue2254_ladder_figures``). Plus ``--cpu-smoke`` (VM, no GPU/API),
+``--parity-probe`` (VM: gate (ii) standalone on the cached plan-probe npz —
+the pre-dispatch smoke-evidence leg), and ``--rig-health`` (plan §4 smoke
+item (d): unpowered probe; an on-floor read is the §7(d) diagnostic STOP —
+never a verdict input).
 
 Reuse map (import, never copy-paste bodies — the v10 first-k precedent):
 ``map_svd`` / ``preimage_w`` / ``destandardized_direction`` /
@@ -43,8 +46,20 @@ Reuse map (import, never copy-paste bodies — the v10 first-k precedent):
 Conventions: fail fast (no silent defaults, no except-pass); content hygiene —
 question/completion text lands in JSON payloads only, never in logs; reused
 INPUTS resolve at canonical committed locations in BOTH modes; only OUTPUT
-roots + the HF sub-prefix rebind under --smoke. The ``--cpu-smoke`` harness
-rebinds the module seams ``_RB_LOADER`` / ``_PARENT_VEC_LOADER`` / ``_UPLOAD``
+roots + the HF sub-prefix rebind under --smoke.
+
+Smoke blind-spot enumeration (plan v14 §4; r1 blocker ladder-smoke-blind-spots):
+NONE — no smoke-conditional implementation substitution or gate downgrade
+exists in this driver. ``--smoke`` changes COUNTS/PATHS only (cell subset,
+2q × 2 draws, layers {14,17}, scratch out-root, smoke HF sub-prefix); every
+production gate — the reduce grain refusal, the required-figures gate, the
+parity-layer coverage check, the HALT gates, the rule-29 completeness floor —
+runs identically in both modes (the r1 downgrades at the reduce floor
+truncation, ``require=()`` figures, and the parity-coverage raise were
+REMOVED this round; a --smoke reduce/figures leg therefore requires
+production-grain inputs, which the --cpu-smoke fixture round provides).
+The ``--cpu-smoke`` harness rebinds the module seams ``_RB_LOADER`` /
+``_PARENT_VEC_LOADER`` / ``_UPLOAD`` / ``_UPLOAD_VERIFY`` / ``_DIR_HEADROOM``
 / ``_TOKENIZER_LOADER`` to fixture-backed equivalents (disclosed here; the
 POD smoke — plan §4 items (a)-(d) — runs the unmodified production seams).
 """
@@ -134,6 +149,17 @@ SENTINEL_FIGURES = "ladder-figures"
 PACK_FLUSH_EVERY = 8  # cells between incremental pack+upload flushes
 LADDER_BYTES_PER_CELL = 2_500_000  # ~200 completions/cell at the 2048 cap (fk sizing basis)
 
+COMPLETENESS_FLOOR = 0.95  # rule-29 per-cell frac_items_complete floor (plan §4.3)
+DIRECTION_PT_BYTES_EST = 20_000  # ~3584 fp32 + payload/envelope per direction .pt
+LADDER_REPORT_BYTES_EST = 2_000_000  # 28-layer × 8-arm report JSON, generous
+
+# Plan §7(c) runtime kill criterion: realized steer wall > 2× the §9 MEASURED
+# basis after the first 8 COMPLETED cells ⇒ fleet halt (resumable state).
+WALL_HALT_FILENAME = "steer_wall_halt.json"
+FIRST_CELLS_WALL_CHECK = 8
+WALL_FACTOR = 2.0
+STEER_WALL_BASIS_REL = "eval_results/issue_2254/norm_probe/timing_pilot.json"
+
 # Reused parent inputs resolve at CANONICAL, --out-root-INDEPENDENT locations
 # (smoke-root-rebinding gotcha: inputs are never smoke-diverted).
 INPUTS_ROOT = _REPO_ROOT / "eval_results" / "issue_2254"
@@ -220,9 +246,66 @@ def _tokenizer_production():
     return AutoTokenizer.from_pretrained(i2254.MODEL_NAME)
 
 
+def _assert_directions_upload_headroom(n_files: int, n_bytes: int) -> None:
+    """Directions-specific Hub capacity preflight BEFORE the SVD compute (r1
+    Major: the 224-file bank APPEND lacked its claimed preflight). File count
+    is bounded-by-construction at the plan-registered 224 + report; bytes via
+    the canonical headroom probe (fail-loud only on a LIVE 'insufficient')."""
+    from explore_persona_space.orchestrate import hub
+
+    max_files = len(ROUND_BEHAVIORS) * len(LADDER_SLUGS) * i2254.N_LAYERS + 1
+    if n_files > max_files:
+        raise LadderHaltError(
+            f"directions upload plan projects {n_files} net-new HF files > the plan-registered "
+            f"ceiling {max_files} (224 direction .pt + ladder_report) — bounded append regressed"
+        )
+    verdict = hub.check_projected_upload_headroom(int(n_bytes))
+    if verdict.verdict == "insufficient":
+        raise LadderHaltError(
+            f"directions: HF storage headroom insufficient for ~{n_bytes / 1e6:.1f} MB "
+            f"(used {verdict.used_tb} TB / ceiling {verdict.ceiling_tb} TB) — free headroom "
+            "before the SVD compute"
+        )
+    logger.info(
+        "[%s] hub headroom preflight: %s (%d files, ~%.1f MB projected)",
+        SENTINEL_DIRECTIONS,
+        verdict.verdict,
+        n_files,
+        n_bytes / 1e6,
+    )
+
+
+def _verify_directions_upload(expected_names: set[str]) -> None:
+    """Exact-set post-upload verification BEFORE the phase sentinel (r1 Major:
+    a partial/failed append must never be marked complete): scoped listing of
+    the bank prefix must contain EVERY expected .pt name, and the round prefix
+    must contain ladder_report.json."""
+    prefix = f"{i2254._hf_prefix()}/directions"
+    remote = {Path(e.path).name for e in fk._hub_tree(prefix)}
+    missing = sorted(set(expected_names) - remote)
+    if missing:
+        raise LadderHaltError(
+            f"directions upload verification FAIL: {len(missing)}/{len(expected_names)} "
+            f"direction file(s) absent at {prefix} (e.g. {missing[:6]})"
+        )
+    round_names = {Path(e.path).name for e in fk._hub_tree(_round_hf_prefix())}
+    if "ladder_report.json" not in round_names:
+        raise LadderHaltError(
+            f"directions upload verification FAIL: ladder_report.json absent at "
+            f"{_round_hf_prefix()}"
+        )
+    logger.info(
+        "[%s] upload verification PASS: %d direction files + ladder_report present remotely",
+        SENTINEL_DIRECTIONS,
+        len(expected_names),
+    )
+
+
 _RB_LOADER = _rb_loader_production
 _PARENT_VEC_LOADER = _parent_vec_canonical
 _UPLOAD = i2254._upload_folder_to_hf
+_UPLOAD_VERIFY = _verify_directions_upload
+_DIR_HEADROOM = _assert_directions_upload_headroom
 _TOKENIZER_LOADER = _tokenizer_production
 
 
@@ -481,17 +564,40 @@ def _tiny_bank_load(bank_root: Path, behavior: str, slug: str, layer: int) -> np
     return (vec / vec.norm()).numpy()
 
 
+def _directions_done(args, rroot: Path, layers, behaviors) -> bool:
+    """Phase-entry idempotency (r1 concern ladder-directions-phase-no-skip):
+    a completed prior run — report present, covering the requested layers at
+    the same r_B pin, with the full direction file set in BOTH the phase
+    out-dir and the bank dir — is skipped (a ~15 min SVD re-run would hold
+    the 4×H100 pod). ``--force`` recomputes."""
+    if args.force:
+        return False
+    rp = rroot / "ladder_report.json"
+    if not rp.is_file():
+        return False
+    report = json.loads(rp.read_text())
+    if report.get("rb_rev") != i2254.HF_REV:
+        return False
+    rep_layers = {int(k) for k in report.get("layers", {})}
+    if not set(layers) <= rep_layers:
+        return False
+    bank_dir = Path(args.out_root) / "directions"
+    dir_out = rroot / "directions_ladder"
+    expected = [f"{b}_{slug}_L{ly}.pt" for b in behaviors for slug in LADDER_SLUGS for ly in layers]
+    return all((bank_dir / n).is_file() and (dir_out / n).is_file() for n in expected)
+
+
 def phase_directions(args) -> None:
     """Phase D (plan §4.1): stage the 28 stored maps, run the HALT gates,
     build 2 × 4 × 28 = 224 directions on a ProcessPool, round-trip each saved
     file through the production loader, persist ladder_report.json, copy the
-    bank files where ``_steer_hook_factory`` reads them, and upload."""
+    bank files where ``_steer_hook_factory`` reads them, upload, and VERIFY
+    the exact remote set before the sentinel. Idempotent: a completed prior
+    run is skipped (sentinel re-written) unless --force."""
     from concurrent.futures import ProcessPoolExecutor, as_completed
 
     out_root = i2254._out_root(args)
     rroot = round_root(out_root)
-    fk._wipe_stale_sentinels([SENTINEL_DIRECTIONS])
-    i2254._assert_phase_headroom(out_root, 1.0, SENTINEL_DIRECTIONS)
     layers = sorted(int(x) for x in args.layers)
     assert layers, "directions: empty --layers"
     behaviors = tuple(b for b in args.behaviors if b in ROUND_BEHAVIORS)
@@ -500,6 +606,24 @@ def phase_directions(args) -> None:
             f"directions runs BOTH round behaviors {ROUND_BEHAVIORS} (gate (ii) spans both); "
             f"got {args.behaviors}"
         )
+    if _directions_done(args, rroot, layers, behaviors):
+        n = len(behaviors) * len(LADDER_SLUGS) * len(layers)
+        logger.info(
+            "[%s] prior completed run found (report + %d files) — skipping recompute "
+            "(--force recomputes)",
+            SENTINEL_DIRECTIONS,
+            n,
+        )
+        i2254._write_sentinel(
+            out_root,
+            SENTINEL_DIRECTIONS,
+            "done",
+            {"n_direction_files": n, "layers": len(layers), "skipped_prior_complete": True},
+        )
+        i2254._breadcrumb(SENTINEL_DIRECTIONS, status="done", files=n, skipped=1)
+        return
+    fk._wipe_stale_sentinels([SENTINEL_DIRECTIONS])
+    i2254._assert_phase_headroom(out_root, 1.0, SENTINEL_DIRECTIONS)
     maps_dir = _maps_dir(args)
     i2254._breadcrumb(SENTINEL_DIRECTIONS, layers=len(layers), behaviors=len(behaviors))
 
@@ -511,10 +635,14 @@ def phase_directions(args) -> None:
 
     # Gate (ii) BEFORE the pool: rebuild the parent's d_pre from the stored W
     # at the 4 registered (behavior, layer) cells vs the committed bank files.
+    # Coverage check runs in EVERY mode (r1 blocker ladder-smoke-blind-spots:
+    # no smoke-conditional gate downgrade; --smoke pins layers to exactly the
+    # parity layers, so the check is live, not vacuous).
     parity_layers = [ly for ly in PARITY_LAYERS if ly in layers]
-    if not args.smoke and sorted(parity_layers) != sorted(PARITY_LAYERS):
+    if sorted(parity_layers) != sorted(PARITY_LAYERS):
         raise RuntimeError(
-            f"directions: production --layers must include the parity layers {PARITY_LAYERS}"
+            f"directions: --layers must include the parity layers {PARITY_LAYERS} "
+            "(gate (ii) spans its 4 registered cells in every mode)"
         )
     bank_root = Path(args.out_root)
     parity: dict[str, float] = {}
@@ -527,6 +655,11 @@ def phase_directions(args) -> None:
             bank_vec = np.asarray(_PARENT_VEC_LOADER(bank_root, b, "pre", ly), dtype=np.float64)
             parity[f"{b}__L{ly}"] = halt_rebuild_parity(d_re, bank_vec, b, ly)
     logger.info("[%s] gate (ii) parity PASS: %s", SENTINEL_DIRECTIONS, parity)
+
+    # Destination-capacity preflight BEFORE the SVD compute (r1 Major: the
+    # 224-file append lacked its claimed headroom preflight).
+    n_planned = len(behaviors) * len(LADDER_SLUGS) * len(layers)
+    _DIR_HEADROOM(n_planned + 1, n_planned * DIRECTION_PT_BYTES_EST + LADDER_REPORT_BYTES_EST)
 
     dir_out = rroot / "directions_ladder"
     tasks = [
@@ -605,6 +738,9 @@ def phase_directions(args) -> None:
             "lambda_j = quantile_j({Sm_i^2}) at j in {0.05, 0.50, 0.95}, full spectrum, "
             "per layer, behavior-independent (plan §4.1; np.quantile linear)"
         ),
+        "rb_rev": i2254.HF_REV,
+        "slugs": list(LADDER_SLUGS),
+        "behaviors": list(behaviors),
         "gates": {
             "npz_selfconsistency": f"PASS {len(layers)}/{len(layers)}",
             "rebuild_parity_cos": parity,
@@ -630,6 +766,9 @@ def phase_directions(args) -> None:
     # report to the round prefix. ONE bulk commit each, never per-file loops.
     _UPLOAD(dir_out, f"{i2254._hf_prefix()}/directions", ["*.pt"])
     _UPLOAD(rroot, _round_hf_prefix(), ["ladder_report.json"])
+    # Exact-set remote verification BEFORE the sentinel (r1 Major): a partial
+    # append is never marked complete.
+    _UPLOAD_VERIFY({p.name for p in dir_out.glob("*.pt")})
     i2254._write_sentinel(
         out_root,
         SENTINEL_DIRECTIONS,
@@ -707,20 +846,170 @@ def registered_cells(args) -> list[dict]:
     return cells
 
 
-def _ladder_regime_fp(args, cell: dict, rho_pooled: dict) -> str:
-    """Machine-stable steer regime fingerprint (#2222/#2225 stale-cache class):
-    every output-affecting dial; rho values are FILE-READ floats (never
-    recomputed — the code-style float-hash rule)."""
+def _ladder_regime_fp(args, cell: dict, rho_pooled: dict, directions_fp: str) -> str:
+    """Machine-stable steer regime fingerprint (#2222/#2225 stale-cache class;
+    r1 Major ladder-regime-fp-incomplete): EVERY output-affecting dial — the
+    cell identity, grain, model, generation constants (cap + regen rule +
+    the temperature=1.0 pin inside ``_gen_cell_rows``), the r_B pin, dose rho,
+    AND the direction/map identity (``directions_fp`` from the realized
+    ladder_report, so a rebuilt bank or changed λ invalidates cached cells).
+    rho values are FILE-READ floats (never recomputed — the code-style
+    float-hash rule)."""
     layers = i2254.LAYER_CONFIGS[cell["layer_config"]]
     return i2254._sha8(
         {
+            "cell": {k: cell[k] for k in sorted(cell)},
             "draws": int(args.draws),
             "q_steer": int(args.q_steer),
             "seeds": list(LADDER_SEEDS),
+            "model": i2254.MODEL_NAME,
             "gen_cap": i2254.GEN_MAX_NEW_TOKENS,
+            "gen_temperature": 1.0,  # pinned inside i2254._gen_cell_rows
+            "cap_regen": [i2254.CAP_HIT_REGEN_FRAC, i2254.CAP_HIT_REGEN_FACTOR],
             "rb_rev": i2254.HF_REV,
+            "directions_fp": directions_fp,
             "rho": {f"L{ly}": float(rho_pooled[f"L{ly}"]) for ly in layers},
         }
+    )
+
+
+def _load_ladder_report(rroot: Path) -> dict:
+    """ladder_report.json — local-first at the round root, else staged from
+    the round HF prefix (the judge phase runs off-pod); fail-loud when absent
+    in both places (the directions phase has not completed)."""
+    p = rroot / "ladder_report.json"
+    if not p.is_file():
+        fk._hub_stage(f"{_round_hf_prefix()}/ladder_report.json", p)
+    return json.loads(p.read_text())
+
+
+def _directions_fp(report: dict) -> str:
+    """Direction/map identity fingerprint from the REALIZED ladder report:
+    r_B pin + slugs + per-layer λs + gate-(ii) parity cosines + file count.
+    All floats are FILE-READ from the report (machine-stable)."""
+    layers = report["layers"]
+    return i2254._sha8(
+        {
+            "rb_rev": report["rb_rev"],
+            "slugs": report["slugs"],
+            "n_direction_files": report["n_direction_files"],
+            "lambdas": {ly: layers[ly]["lambdas"] for ly in sorted(layers)},
+            "parity": report["gates"]["rebuild_parity_cos"],
+        }
+    )
+
+
+def _assert_steer_preconditions(args, rroot: Path, bank_root: Path, cells: list[dict]) -> str:
+    """Steer input contract, checked BEFORE any model init (r1 blocker
+    ladder-steer-precondition-post-model): (1) the directions sentinel at
+    status=done; (2) a successful ladder_report (every gate-(ii) parity cell
+    ≥ the threshold) covering every layer any registered cell injects; (3)
+    the exact expected direction file set present in the bank dir. Returns
+    the directions fingerprint folded into the steer regime fp."""
+    sent = (
+        Path(os.environ.get("EPM_SENTINEL_DIR", "/workspace/logs"))
+        / f"issue-{i2254.ISSUE}-{SENTINEL_DIRECTIONS}.json"
+    )
+    if not sent.is_file() or json.loads(sent.read_text()).get("status") != "done":
+        raise LadderHaltError(
+            f"steer preconditions: directions sentinel {sent} missing or not status=done — "
+            "run --phases directions first (never initialize the model on an unbuilt bank)"
+        )
+    report = _load_ladder_report(rroot)
+    for cell_key, cval in report["gates"]["rebuild_parity_cos"].items():
+        if not (float(cval) >= PARITY_COS_MIN):
+            raise LadderHaltError(
+                f"steer preconditions: ladder_report parity {cell_key}={cval} < "
+                f"{PARITY_COS_MIN} — directions phase did not pass gate (ii)"
+            )
+    rep_layers = {int(k) for k in report["layers"]}
+    need_layers: set[int] = set()
+    for c in cells:
+        need_layers.update(i2254.LAYER_CONFIGS[c["layer_config"]])
+    missing_layers = sorted(need_layers - rep_layers)
+    if missing_layers:
+        raise LadderHaltError(
+            f"steer preconditions: ladder_report covers layers {sorted(rep_layers)} but the "
+            f"registered cells inject {missing_layers} too — stale/partial directions build"
+        )
+    expected = {
+        f"{b}_{slug}_L{ly}.pt"
+        for b in ROUND_BEHAVIORS
+        for slug in LADDER_SLUGS
+        for ly in sorted(rep_layers)
+    }
+    if int(report["n_direction_files"]) != len(expected):
+        raise LadderHaltError(
+            f"steer preconditions: ladder_report n_direction_files="
+            f"{report['n_direction_files']} != expected {len(expected)} for its layer set"
+        )
+    bank_dir = Path(bank_root) / "directions"
+    missing = sorted(n for n in expected if not (bank_dir / n).is_file())
+    if missing:
+        raise LadderHaltError(
+            f"steer preconditions: {len(missing)}/{len(expected)} direction file(s) missing "
+            f"under {bank_dir} (e.g. {missing[:6]}) — re-run --phases directions"
+        )
+    return _directions_fp(report)
+
+
+def _load_steer_wall_basis() -> float:
+    """Plan §9 MEASURED steer basis (s/completion, §12.10) from the committed
+    parent timing pilot — read from the artifact, never hardcoded."""
+    i2254._ensure_git_input(STEER_WALL_BASIS_REL, "eval_results/issue_2254/norm_probe")
+    basis = float(json.loads((_REPO_ROOT / STEER_WALL_BASIS_REL).read_text())["s_per_completion"])
+    if not (np.isfinite(basis) and basis > 0.0):
+        raise RuntimeError(f"steer wall basis unusable: {basis!r} from {STEER_WALL_BASIS_REL}")
+    return basis
+
+
+def _wall_halt_path(rroot: Path) -> Path:
+    return rroot / "steer" / WALL_HALT_FILENAME
+
+
+def _assert_no_wall_halt(rroot: Path) -> None:
+    """Plan §7(c) re-entry guard: a standing fleet wall-halt file refuses the
+    phase until the operator re-sizes and DELETES it (per-cell checkpoints
+    make the resume free)."""
+    p = _wall_halt_path(rroot)
+    if p.is_file():
+        raise LadderHaltError(
+            f"steer: fleet wall-halt file present at {p} (plan §7(c) realized-wall stop) — "
+            "re-size per its contents, then delete the file to resume"
+        )
+
+
+def _check_realized_wall(
+    rroot: Path, comp_root: Path, gen_seconds: float, gen_completions: int, basis: float
+) -> None:
+    """Plan §7(c): once the first {FIRST_CELLS_WALL_CHECK} cells are COMPLETED
+    fleet-wide (the shared comp_root counts every shard's checkpoints), a
+    realized s/completion > {WALL_FACTOR}× the measured basis writes the
+    fleet HALT file (visible to every shard at its next cell boundary) and
+    raises. Resumable by construction: per-cell checkpoints persist."""
+    if gen_completions <= 0:
+        return
+    completed = len(list(comp_root.glob("*.json")))
+    if completed < FIRST_CELLS_WALL_CHECK:
+        return
+    realized = gen_seconds / gen_completions
+    if realized <= WALL_FACTOR * basis:
+        return
+    payload = {
+        "realized_s_per_completion": realized,
+        "basis_s_per_completion": basis,
+        "factor": WALL_FACTOR,
+        "completed_cells": completed,
+        "action": (
+            "plan §7(c): halt the fleet and re-size before resuming — delete this file "
+            "after re-sizing; cached per-cell checkpoints resume completed cells"
+        ),
+    }
+    i2254._write_json_atomic(_wall_halt_path(rroot), _ladder_metadata(payload))
+    raise LadderHaltError(
+        f"steer: realized wall {realized:.3f} s/completion > {WALL_FACTOR}× basis "
+        f"{basis:.3f} after {completed} completed cells — §7(c) fleet HALT "
+        f"(stop file written at {_wall_halt_path(rroot)}; re-size before resuming)"
     )
 
 
@@ -794,6 +1083,13 @@ def phase_steer(args) -> None:
         i2254._breadcrumb(SENTINEL_STEER, status="done", regen_cells=0, empty_shard=1)
         return
 
+    # Input contract BEFORE any Hub/model spend (r1 blocker
+    # ladder-steer-precondition-post-model), then the §7(c) re-entry guard.
+    bank_root = Path(args.out_root)
+    directions_fp = _assert_steer_preconditions(args, rroot, bank_root, cells)
+    _assert_no_wall_halt(rroot)
+    wall_basis = _load_steer_wall_basis()
+
     n_pack_files = -(-len(shard) * LADDER_BYTES_PER_CELL // 9_000_000) + 1
     fk._assert_hub_headroom_for_steer(n_pack_files, len(shard) * LADDER_BYTES_PER_CELL)
 
@@ -805,7 +1101,6 @@ def phase_steer(args) -> None:
             _upload_ladder_pack(comp_root, args.shard_id, have)
 
     model, tok = i2254._load_model_and_tokenizer()
-    bank_root = Path(args.out_root)
     q_cache = {b: i2254._eval_questions(b)[: args.q_steer] for b in ROUND_BEHAVIORS}
     for b, qs in q_cache.items():
         assert len(qs) == args.q_steer, (b, len(qs), args.q_steer)
@@ -813,10 +1108,14 @@ def phase_steer(args) -> None:
     t0 = time.time()
     n_regen = 0
     n_generated = 0
+    gen_seconds = 0.0
+    gen_completions = 0
+    rows_per_pass = int(args.q_steer) * int(args.draws) * len(LADDER_SEEDS)
     for k, cell in enumerate(shard, 1):
+        _assert_no_wall_halt(rroot)  # another shard may have tripped §7(c)
         cid = i2254._cell_id(cell)
         path = comp_root / f"{cid}.json"
-        fp = _ladder_regime_fp(args, cell, rho_pooled)
+        fp = _ladder_regime_fp(args, cell, rho_pooled, directions_fp)
         if path.exists() and not args.force:
             cached_fp = json.loads(path.read_text()).get("regime_fp")
             if cached_fp == fp:
@@ -833,6 +1132,8 @@ def phase_steer(args) -> None:
         contexts = i2254._contexts_for_questions(qs)
         q_idx = list(range(len(qs)))
         make, alphas = i2254._steer_hook_factory(model, bank_root, cell, rho_pooled)
+        cell_t0 = time.time()
+        cell_completions = rows_per_pass
         rec = i2254._gen_cell_rows(
             model,
             tok,
@@ -872,12 +1173,18 @@ def phase_steer(args) -> None:
                 alphas=alphas,
             )
             rec["regen"] = initial
+            cell_completions += rows_per_pass
         rec["regime_fp"] = fp
         i2254._write_json_atomic(path, _ladder_metadata(rec))
         n_generated += 1
+        gen_seconds += time.time() - cell_t0
+        gen_completions += cell_completions
         if n_generated % PACK_FLUSH_EVERY == 0:  # incremental durability flush
             _flush_pack()
         i2254._progress(SENTINEL_STEER, k, len(shard), cid, t0)
+        # §7(c) realized-wall kill criterion (fires only past the first
+        # FIRST_CELLS_WALL_CHECK completed cells fleet-wide).
+        _check_realized_wall(rroot, comp_root, gen_seconds, gen_completions, wall_basis)
 
     # Final pack covers the FULL shard cell set (cached cells too) so a
     # fully-cached resume still lands a complete pack before the sentinel.
@@ -1075,11 +1382,30 @@ def _judge_ladder_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
     return out
 
 
+def _enforce_judge_completeness(rroot: Path) -> dict:
+    """Rule-29 ENFORCEMENT (r1 blocker ladder-completeness-not-enforced):
+    persist the completeness block, then RAISE — wave_done.json withheld —
+    when any cell sits below the {COMPLETENESS_FLOOR} floor (API drops
+    correlated with content must never silently censor a cell)."""
+    judged_files = sorted((rroot / "judge" / "judged").glob("*.json"))
+    block = i2254._completeness_block(judged_files, floor=COMPLETENESS_FLOOR)
+    i2254._write_json_atomic(rroot / "judge" / "completeness.json", _ladder_metadata(block))
+    if block["below_floor_cells"]:
+        raise RuntimeError(
+            f"ladder judge: {len(block['below_floor_cells'])} cell(s) below the rule-29 "
+            f"completeness floor {COMPLETENESS_FLOOR} (e.g. {block['below_floor_cells'][:8]}) "
+            "— wave_done.json WITHHELD; triage per judge/completeness.json remediation, "
+            "re-issue, then re-run the judge phase"
+        )
+    return block
+
+
 def phase_judge(args) -> None:
-    """Off-pod judge wave (plan §4.3): stage/verify the 44 gen records, run the
-    rule-26 pilot gate per behavior (parent instrument, truncation unwaivable),
-    then the per-cell Batch wave with the rule-28 sync re-issue; rule-29
-    completeness block + the git wave sentinel."""
+    """Off-pod judge wave (plan §4.3): stage/verify the 44 gen records
+    (set-EQUALITY: missing cells AND unexpected extras both refused), run the
+    rule-26 pilot gate per behavior (parent instrument, truncation
+    unwaivable), then the per-cell Batch wave with the rule-28 sync re-issue;
+    rule-29 completeness ENFORCED before the git wave sentinel."""
     from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
 
     out_root = i2254._out_root(args)
@@ -1088,7 +1414,11 @@ def phase_judge(args) -> None:
     rho_pooled, _ = i2254._load_rho(INPUTS_ROOT)
     cells = registered_cells(args)
     behaviors = sorted({c["behavior"] for c in cells})
-    expected_fp = {i2254._cell_id(c): _ladder_regime_fp(args, c, rho_pooled) for c in cells}
+    directions_fp = _directions_fp(_load_ladder_report(rroot))
+    cell_by_id = {i2254._cell_id(c): c for c in cells}
+    expected_fp = {
+        cid: _ladder_regime_fp(args, c, rho_pooled, directions_fp) for cid, c in cell_by_id.items()
+    }
     comp_root = _stage_ladder_completions(args, rroot, expected_fp)
     staged = {f.stem for f in comp_root.glob("*.json")}
     missing = sorted(set(expected_fp) - staged)
@@ -1098,6 +1428,13 @@ def phase_judge(args) -> None:
             f"{len(expected_fp)} cells missing (e.g. {missing[:8]}); refusing to judge a "
             "partial family"
         )
+    extras = sorted(staged - set(expected_fp))
+    if extras:
+        raise RuntimeError(
+            f"ladder judge: {len(extras)} staged gen record(s) OUTSIDE the registered family "
+            f"(e.g. {extras[:8]}) — stale extras would burn judge spend and pollute the "
+            "completeness counts; remove them (set equality enforced)"
+        )
     n_draws = i2254._judge_draws(args, "decisive")
     rubrics = {b: load_trait_rubric(b) for b in behaviors}
     for b in behaviors:
@@ -1106,26 +1443,22 @@ def phase_judge(args) -> None:
         logger.info("[ladder-judge] --pilot: rule-26 gate PASSed; stopping before the wave")
         return
     t0 = time.time()
-    files = sorted(comp_root.glob("*.json"))
-    for k, gen_path in enumerate(files, 1):
+    for k, cid in enumerate(sorted(expected_fp), 1):
         j = _judge_ladder_cell(
             args,
             rroot,
-            gen_path,
-            rubrics[json.loads(gen_path.read_text())["cell"]["behavior"]],
+            comp_root / f"{cid}.json",
+            rubrics[cell_by_id[cid]["behavior"]],
             n_draws,
         )
-        i2254._progress("ladder-judge", k, len(files), j["cell_id"], t0)
-    judged_files = sorted((rroot / "judge" / "judged").glob("*.json"))
-    i2254._write_json_atomic(
-        rroot / "judge" / "completeness.json",
-        _ladder_metadata(i2254._completeness_block(judged_files)),
-    )
+        i2254._progress("ladder-judge", k, len(expected_fp), j["cell_id"], t0)
+    _enforce_judge_completeness(rroot)
+    n_judged = len(sorted((rroot / "judge" / "judged").glob("*.json")))
     i2254._write_json_atomic(
         rroot / "judge" / "wave_done.json",
-        _ladder_metadata({"n_cells": len(judged_files), "n_draws": n_draws}),
+        _ladder_metadata({"n_cells": n_judged, "n_draws": n_draws}),
     )
-    i2254._breadcrumb("ladder-judge", status="done", cells=len(judged_files))
+    i2254._breadcrumb("ladder-judge", status="done", cells=n_judged)
 
 
 # ---------------------------------------------------------------------------
@@ -1204,17 +1537,62 @@ def _boot_diffs(cell_q: np.ndarray, ref_q: np.ndarray, idx: np.ndarray) -> np.nd
     return np.nanmean(cell_q[idx], axis=1) - np.nanmean(ref_q[idx], axis=1)
 
 
-def _intrusion_flags(gen_rec: dict, rx, tok) -> dict[tuple[int, int], bool]:
-    """Per-(ci, di) CJK flag on the common 2048-token horizon (the r5
-    ``issue2254_firstk_ctxext_sensitivity`` convention; parent committed
-    regex). Completion text never logged."""
-    flags: dict[tuple[int, int], bool] = {}
-    for _qi, _seed, ci, di, text in i2254._iter_gen_qa(gen_rec):
+def _selection_aware_block(
+    entries: list[tuple[str, str, np.ndarray]],
+    floors: dict,
+    bands: dict,
+    seed_key: str,
+    margins: dict[str, float],
+) -> dict | None:
+    """Selection-aware companion CI (§6): re-argmax the band-subtracted margin
+    per bootstrap draw over ``entries`` = [(cid, behavior, cell_q)]. Question
+    resamples are drawn PER BEHAVIOR (independent index matrices — r1 sweep
+    ladder-cross-behavior-bootstrap-coupling: evil and sycophancy use
+    unrelated question banks, so one shared matrix would couple their draws);
+    WITHIN a behavior all cells share that behavior's matrix (paired on the
+    same bank — the parent selection_inherited convention)."""
+    if not entries:
+        return None
+    nq = len(entries[0][2])
+    idx_by_b = {
+        b: i2254._boot_idx(nq, i2254.N_BOOT_VERDICT, f"{seed_key}__{b}")
+        for b in sorted({b for (_cid, b, _cq) in entries})
+    }
+    per_draw = np.stack(
+        [_boot_diffs(cq, floors[b][0], idx_by_b[b]) - bands[b] for (_cid, b, cq) in entries],
+        axis=1,
+    )
+    maxes = np.nanmax(per_draw, axis=1)
+    pts = [margins[cid] for (cid, _b, _cq) in entries]
+    best = int(np.nanargmax(pts))
+    return {
+        "argmax_cell": entries[best][0],
+        "point_margin": float(pts[best]),
+        "ci": [float(np.nanquantile(maxes, 0.025)), float(np.nanquantile(maxes, 0.975))],
+        "n_cells": len(entries),
+        "n_draws": i2254.N_BOOT_VERDICT,
+        "convention": (
+            "re-argmax per bootstrap draw (parent selection_inherited analogue); "
+            "independent question-index matrices per behavior, shared within a behavior"
+        ),
+    }
+
+
+def _intrusion_flags(gen_rec: dict, rx, tok) -> dict[tuple[int, int, int], bool]:
+    """Per-(seed, ci, di) CJK flag on the common 2048-token horizon (the r5
+    ``issue2254_firstk_ctxext_sensitivity`` convention, RE-KEYED on the seed
+    axis — r1 Major: ``_iter_gen_qa`` restarts ci per seed, so a bare
+    (ci, di) key collides across this round's TWO production seeds and seed
+    43 silently overwrites seed 42). Completion text never logged."""
+    flags: dict[tuple[int, int, int], bool] = {}
+    for _qi, seed, ci, di, text in i2254._iter_gen_qa(gen_rec):
         ids = tok(text, add_special_tokens=False)["input_ids"]
         t_common = (
             text if len(ids) <= COMMON_HORIZON_TOKENS else tok.decode(ids[:COMMON_HORIZON_TOKENS])
         )
-        flags[(ci, di)] = bool(rx.search(t_common))
+        key = (int(seed), ci, di)
+        assert key not in flags, f"duplicate gen row key {key} — gen record shape drift"
+        flags[key] = bool(rx.search(t_common))
     return flags
 
 
@@ -1232,7 +1610,7 @@ def _intrusion_sensitivity(judged: dict, gen_rec: dict, rx, tok, floor_mean: flo
         vals = [float(v) for v in draws if isinstance(v, int | float)]
         if not vals:
             continue  # judge-dropped row — outside the mean by design
-        rows.append((m["qi"], float(np.mean(vals)), flags[(m["ci"], m["di"])]))
+        rows.append((m["qi"], float(np.mean(vals)), flags[(int(m["seed"]), m["ci"], m["di"])]))
     if not rows:
         return {"cjk_common": cjk_frac, "n_valid_judge_rows": 0, "undefined": True}
     qis = np.array([q for q, _, _ in rows])
@@ -1308,32 +1686,48 @@ def phase_reduce(args) -> None:
         band = bands[b]
         cell_q = i2254._q_arr(judged)
         if len(cell_q) != len(floor_q):
-            if not args.smoke:
-                raise RuntimeError(
-                    f"reduce: {cid} has {len(cell_q)} questions vs floor "
-                    f"{len(floor_q)} — production refuses a truncated grain"
-                )
-            floor_q = floor_q[: len(cell_q)]  # smoke-only truncation (counts, not code path)
+            # Grain refusal in EVERY mode (r1 blocker ladder-smoke-blind-spots:
+            # the smoke-only floor truncation was REMOVED — a smoke reduce leg
+            # requires production-grain inputs, e.g. the --cpu-smoke fixture).
+            raise RuntimeError(
+                f"reduce: {cid} has {len(cell_q)} questions vs floor "
+                f"{len(floor_q)} — a truncated grain is refused in every mode"
+            )
+        fic = judged["accounting"]["frac_items_complete"]
+        if fic is not None and fic < COMPLETENESS_FLOOR:
+            # Independent rule-29 refusal (r1 blocker
+            # ladder-completeness-not-enforced): never reduce a censored cell.
+            raise RuntimeError(
+                f"reduce: {cid} frac_items_complete {fic:.3f} < {COMPLETENESS_FLOOR} — "
+                "rule-29 below-floor judged artifact refused (re-judge before reducing)"
+            )
         sens = _intrusion_sensitivity(judged, gen_rec, rx, tok, floor_mean)
         row: dict = {
             "cell": cell,
             "coherence_pass": judged["coherence_pass"],
             "coherence_rate": judged["coherence_rate"],
-            "frac_items_complete": judged["accounting"]["frac_items_complete"],
+            "frac_items_complete": fic,
             "cap_hit_fraction": judged.get("cap_hit_fraction"),
             "band_p975": band,
             "sensitivity": sens,
         }
-        if np.all(np.isnan(cell_q)):
-            # Undefined-cell rule (§3, registered): zero scored rows — no
-            # margin_lo; OUTSIDE both H1 support and bounded-non-clear
-            # narration; never evidence of misalignment.
+        coh_ok = bool(judged["coherence_pass"])
+        if np.all(np.isnan(cell_q)) or not coh_ok:
+            # Undefined-cell rule (§3, registered; r1 blocker
+            # ladder-coherence-gate-omitted): the DV is coherence-GATED — a
+            # cell that fails the coherence gate, or has zero scored rows,
+            # has no margin_lo; it is OUTSIDE H1 support, the bounded/
+            # straddling narration, the selection-aware sets, AND the H2
+            # complement; never evidence of misalignment.
             row.update(
                 {
                     "delta_score": None,
                     "margin": None,
                     "margin_lo": None,
                     "label": "Undefined (no valid measurement)",
+                    "undefined_reason": (
+                        "zero scored rows" if np.all(np.isnan(cell_q)) else "coherence gate failed"
+                    ),
                 }
             )
             undefined_cells.append(cid)
@@ -1378,49 +1772,33 @@ def phase_reduce(args) -> None:
     # Selection-aware companions (§6): re-argmax per bootstrap draw over an
     # arm's tested cells (11), per (behavior, arm) for the hero whiskers, and
     # over ALL 44 registered cells for the overall-winner companion. Margins
-    # (band-subtracted) so cells are comparable across behaviors.
-    def _sel_aware(entries: list[tuple[str, str, np.ndarray]], seed_key: str) -> dict | None:
-        if not entries:
-            return None
-        nq = len(entries[0][2])
-        idx = i2254._boot_idx(nq, i2254.N_BOOT_VERDICT, seed_key)
-        per_draw = np.stack(
-            [_boot_diffs(cq, floors[b][0][:nq], idx) - bands[b] for (_cid, b, cq) in entries],
-            axis=1,
-        )
-        maxes = np.nanmax(per_draw, axis=1)
-        pts = [cell_rows[cid]["margin"] for (cid, _b, _cq) in entries]
-        best = int(np.nanargmax(pts))
-        return {
-            "argmax_cell": entries[best][0],
-            "point_margin": float(pts[best]),
-            "ci": [float(np.nanquantile(maxes, 0.025)), float(np.nanquantile(maxes, 0.975))],
-            "n_cells": len(entries),
-            "n_draws": i2254.N_BOOT_VERDICT,
-            "convention": "re-argmax per bootstrap draw (parent selection_inherited analogue)",
-        }
-
+    # (band-subtracted) so cells are comparable across behaviors; entries are
+    # the coherence-gated DEFINED set only; per-behavior independent index
+    # matrices (module-level _selection_aware_block).
+    margins_by_cid = {cid: cell_rows[cid]["margin"] for (cid, _b, _cq) in defined}
     selection_aware: dict = {"arm": {}, "behavior_arm": {}}
     for slug in LADDER_SLUGS:
         ent = [
             (cid, b, cq) for (cid, b, cq) in defined if cell_rows[cid]["cell"]["direction"] == slug
         ]
-        selection_aware["arm"][slug] = _sel_aware(ent, f"ladder__{slug}__selaware")
+        selection_aware["arm"][slug] = _selection_aware_block(
+            ent, floors, bands, f"ladder__{slug}__selaware", margins_by_cid
+        )
         for b in ROUND_BEHAVIORS:
             ent_b = [(cid, bb, cq) for (cid, bb, cq) in ent if bb == b]
-            selection_aware["behavior_arm"][f"{b}__{slug}"] = _sel_aware(
-                ent_b, f"ladder__{b}__{slug}__selaware"
+            selection_aware["behavior_arm"][f"{b}__{slug}"] = _selection_aware_block(
+                ent_b, floors, bands, f"ladder__{b}__{slug}__selaware", margins_by_cid
             )
-    all44 = _sel_aware(defined, "ladder__all44__selaware")
+    all44 = _selection_aware_block(
+        defined, floors, bands, "ladder__all44__selaware", margins_by_cid
+    )
 
-    # §3 lattice: H1 ⇔ margin_lo > 0 in ≥1 registered cell (coherence-gated);
-    # H2 = the literal complement over DEFINED cells; all-Undefined = a
-    # measurement failure, not H2.
-    clearing = [
-        cid
-        for (cid, _b, _cq) in defined
-        if cell_rows[cid]["clears_nominal"] and cell_rows[cid]["coherence_pass"]
-    ]
+    # §3 lattice: H1 ⇔ margin_lo > 0 in ≥1 registered cell; `defined` is
+    # ALREADY coherence-gated (coherence-failed cells are Undefined above),
+    # so every verdict-bearing set below quantifies over coherence-passing
+    # cells only; H2 = the literal complement over DEFINED cells;
+    # all-Undefined = a measurement failure, not H2.
+    clearing = [cid for (cid, _b, _cq) in defined if cell_rows[cid]["clears_nominal"]]
     bounded_nonclear = [cid for (cid, _b, _cq) in defined if cell_rows[cid]["margin_hi"] <= 0.0]
     straddling = [
         cid
@@ -1483,6 +1861,7 @@ def phase_reduce(args) -> None:
                     "clears_nominal",
                     "coherence_pass",
                     "label",
+                    "undefined_reason",
                     "tags",
                 )
                 if k in row
@@ -1523,8 +1902,10 @@ def phase_figures(args) -> None:
         if args.fig_dir
         else _REPO_ROOT / "figures" / "issue_2254" / FOLLOWUP_LABEL
     )
-    require = () if args.smoke else ladder_figs.REQUIRED_FIGURES
-    res = ladder_figs.render_all(rroot, fig_dir, require=require)
+    # Required-figures gate in EVERY mode (r1 blocker ladder-smoke-blind-spots:
+    # the smoke `require=()` downgrade was REMOVED — the hero must render, or
+    # the phase fails loud, smoke and production alike).
+    res = ladder_figs.render_all(rroot, fig_dir, require=ladder_figs.REQUIRED_FIGURES)
     logger.info("[%s] rendered=%s skipped=%s", SENTINEL_FIGURES, res["rendered"], res["skipped"])
     i2254._write_json_atomic(
         fig_dir / "figures_manifest.json",
@@ -1539,12 +1920,24 @@ def phase_figures(args) -> None:
 # ---------------------------------------------------------------------------
 
 
+def rig_health_verdict(
+    mean_score: float, floor_mean: float, band_p975: float
+) -> tuple[float, bool]:
+    """§7(d) probe verdict: (delta_vs_floor, on_floor). On-floor ⇔ the probe's
+    Δ fails to exceed the parent band — the 'visibly elevated' bar for the
+    parent's known-clearing arm (which cleared by ~+25 margin). A diagnostic
+    stop trigger, never a verdict input."""
+    delta = float(mean_score) - float(floor_mean)
+    return delta, not (delta > float(band_p975))
+
+
 def run_rig_health(args) -> None:
-    """Advisory rig-health probe (plan §4 smoke (d)): sycophancy × parent
-    ctxext × (mid, +4) × 5 questions × 2 draws through the production
-    generate + judge path, expecting visibly elevated scores vs the parent
-    floor. Deliberately unpowered; logs + persists ONLY (a diagnostic stop
-    trigger per §7(d), never a reported result)."""
+    """Rig-health probe (plan §4 smoke (d)): sycophancy × parent ctxext ×
+    (mid, +4) × 5 questions × 2 draws through the production generate + judge
+    path, expecting visibly elevated scores vs the parent floor. Deliberately
+    unpowered and never reported as a result; an ON-FLOOR read RAISES — the
+    §7(d) diagnostic stop (pause and diagnose the rig before the grid
+    launches). Direction/floor/band inputs resolve BEFORE model init."""
     from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
 
     i2254._require_cuda("rig-health probe")
@@ -1560,6 +1953,13 @@ def run_rig_health(args) -> None:
         "layer_config": "mid",
         "c": 4.0,
     }
+    # Consumer contract BEFORE the 7B init (r1 sweep: rig-health also loaded
+    # the model before resolving its inputs): the parent ctxext directions at
+    # every injected layer + the committed floor/band.
+    for ly in i2254.LAYER_CONFIGS[cell["layer_config"]]:
+        i2254._ensure_direction_vec(Path(args.out_root), cell["behavior"], cell["direction"], ly)
+    _floor_q, floor_mean, _ceiling = load_parent_floor("sycophancy")
+    band = load_parent_band("sycophancy")
     model, tok = i2254._load_model_and_tokenizer()
     qs = i2254._eval_questions("sycophancy")[:5]
     contexts = i2254._contexts_for_questions(qs)
@@ -1590,27 +1990,100 @@ def run_rig_health(args) -> None:
     if not row_means:
         raise RuntimeError("rig-health probe: zero scored rows — rig broken, diagnose (§7(d))")
     mean = float(np.mean(row_means))
-    _floor_q, floor_mean, _ceiling = load_parent_floor("sycophancy")
+    delta, on_floor = rig_health_verdict(mean, floor_mean, band)
     out = {
         "cell": cell,
         "n_scored_rows": len(row_means),
         "mean_score": mean,
         "floor_mean": floor_mean,
-        "delta_vs_floor": mean - floor_mean,
+        "delta_vs_floor": delta,
+        "band_p975": band,
+        "on_floor": on_floor,
         "advisory": (
-            "ADVISORY ONLY (plan §7(d)): an on-floor read here flags a broken rig before "
-            "the grid — a diagnostic stop trigger, never a verdict input; deliberately "
-            "unpowered and never reported as a result"
+            "plan §7(d): an on-floor read (delta <= band) flags a broken rig before the "
+            "grid — a DIAGNOSTIC STOP (the driver raises), never a verdict input; the "
+            "probe is deliberately unpowered and never reported as a result"
         ),
         "n_total_draws": result.n_total_draws,
     }
     i2254._write_json_atomic(rroot / "smoke" / "rig_health.json", _ladder_metadata(out))
     i2254._breadcrumb(
         "ladder-rig-health",
-        status="done",
+        status="on_floor" if on_floor else "done",
         mean=round(mean, 2),
         floor=round(floor_mean, 2),
-        delta=round(mean - floor_mean, 2),
+        delta=round(delta, 2),
+    )
+    if on_floor:
+        # §7(d) diagnostic stop (r1 blocker ladder-runtime-stops-missing):
+        # probe JSON persisted above, so the diagnosis survives the raise.
+        raise LadderHaltError(
+            f"rig-health probe ON-FLOOR: delta {delta:.2f} <= band {band:.2f} on the parent's "
+            "known-clearing arm — §7(d) diagnostic stop: pause and diagnose the rig before "
+            f"the grid launches (probe persisted at {rroot / 'smoke' / 'rig_health.json'}; "
+            "non-verdict-bearing)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# --parity-probe (VM CPU): gate (ii) standalone on the REAL stored maps
+# ---------------------------------------------------------------------------
+
+
+def run_parity_probe(args) -> None:
+    """Plan §4.1 gate (ii) run STANDALONE on the VM against the REAL stored
+    maps (the cached plan-probe npz) + the COMMITTED HF bank parity targets —
+    the pre-dispatch smoke-evidence leg of r1 blocker
+    transpose-ladder-smoke-missing (the tiny-real GPU cell, live ≤5-request
+    Batch probe, and rig-health probe stay POD-TIME per plan §4 sequencing).
+    Covers all 4 registered parity cells ({evil,sycophancy} × L{14,17});
+    gates (i) + npz-keys re-assert per layer; evidence JSON (npz shas, cos
+    values, elapsed) written under --cpu-smoke-out."""
+    if not args.maps_dir:
+        raise SystemExit("--parity-probe requires --maps-dir (the cached stored-map npz dir)")
+    maps_dir = Path(args.maps_dir)
+    t0 = time.time()
+    rb_all = _RB_LOADER()
+    bank_root = Path(args.out_root)
+    parity: dict[str, float] = {}
+    npz_sha12: dict[str, str] = {}
+    for ly in PARITY_LAYERS:
+        p = maps_dir / f"L{ly:02d}.npz"
+        if not p.is_file():
+            raise SystemExit(f"--parity-probe: stored map npz missing at {p}")
+        npz_sha12[f"L{ly:02d}"] = hashlib.sha256(p.read_bytes()).hexdigest()[:12]
+        z = np.load(p)
+        assert_npz_keys(z, ly)
+        halt_npz_selfconsistency(z, ly)
+        for b in ROUND_BEHAVIORS:
+            d_re = rebuild_parent_preimage(z, rb_all[b][ly])
+            bank_vec = np.asarray(_PARENT_VEC_LOADER(bank_root, b, "pre", ly), dtype=np.float64)
+            parity[f"{b}__L{ly}"] = halt_rebuild_parity(d_re, bank_vec, b, ly)
+            logger.info("[parity-probe] %s/L%d cos=%.9f", b, ly, parity[f"{b}__L{ly}"])
+    out = {
+        "gate": "plan §4.1 gate (ii): pre-image rebuild parity on the REAL stored maps",
+        "cells": parity,
+        "threshold": PARITY_COS_MIN,
+        "verdict": "PASS",
+        "maps_dir": str(maps_dir),
+        "npz_sha12": npz_sha12,
+        "rb_rev": i2254.HF_REV,
+        "bank_target": f"{i2254.HF_PREFIX}/directions/{{b}}_pre_L{{ly}}.pt (committed parent bank)",
+        "elapsed_s": round(time.time() - t0, 1),
+        "scope_note": (
+            "VM-runnable smoke leg only; the tiny-real GPU steer cell, the live "
+            "≤5-request Batch judge probe, and the rig-health probe run POD-TIME "
+            "per plan §4 smoke sequencing"
+        ),
+    }
+    out_dir = Path(args.cpu_smoke_out)
+    i2254._write_json_atomic(out_dir / "parity_gate_vm.json", _ladder_metadata(out))
+    i2254._breadcrumb(
+        "ladder-parity-probe",
+        status="done",
+        cells=len(parity),
+        min_cos=round(min(parity.values()), 6),
+        elapsed=f"{time.time() - t0:.0f}s",
     )
 
 
@@ -1677,6 +2150,27 @@ def _fixture_upload(local_dir: Path, path_in_repo: str, allow=None) -> None:
     logger.info("[cpu-smoke] upload SKIPPED (fixture seam): %s -> %s", local_dir, path_in_repo)
 
 
+def _fixture_upload_verify(expected_names: set[str]) -> None:
+    """Seam stand-in for ``_verify_directions_upload`` (no network) — logs the
+    verification plan; the pod smoke runs the production verifier."""
+    logger.info(
+        "[cpu-smoke] upload verification SKIPPED (fixture seam): %d expected names",
+        len(expected_names),
+    )
+
+
+def _fixture_dir_headroom(n_files: int, n_bytes: int) -> None:
+    """Seam stand-in for ``_assert_directions_upload_headroom`` (no network);
+    keeps the bounded-file-count assert live even under the fixture."""
+    max_files = len(ROUND_BEHAVIORS) * len(LADDER_SLUGS) * i2254.N_LAYERS + 1
+    assert n_files <= max_files, (n_files, max_files)
+    logger.info(
+        "[cpu-smoke] hub headroom probe SKIPPED (fixture seam): %d files ~%d bytes",
+        n_files,
+        n_bytes,
+    )
+
+
 class _FixtureTokenizer:
     """Whitespace tokenizer stand-in mirroring the two call shapes the
     intrusion recount uses (``tok(text, add_special_tokens=False)`` +
@@ -1690,11 +2184,22 @@ class _FixtureTokenizer:
         return " ".join("w" for _ in ids)
 
 
-def make_fixture_round(rroot: Path, args, deltas: dict[str, float] | None = None) -> list[dict]:
+def make_fixture_round(
+    rroot: Path,
+    args,
+    deltas: dict[str, float] | None = None,
+    *,
+    coherence_fail_all: bool = False,
+) -> list[dict]:
     """Synthetic judged + gen records for every registered cell (constant
     per-question deltas vs the COMMITTED parent floor ⇒ point CIs, exact
-    arithmetic). One evil cell is all-dropped (the Undefined-cell rule leg);
-    one sycophancy cell carries a CJK-intruded completion (intrusion leg)."""
+    arithmetic). One evil cell FAILS the coherence gate with finite scores
+    (the §3 Undefined-cell rule leg — coherence-gated, r1 blocker
+    ladder-coherence-gate-omitted); one sycophancy cell carries a
+    CJK-intruded completion (intrusion leg). ``coherence_fail_all=True``
+    fails EVERY cell's coherence gate (the all-Undefined measurement-failure
+    leg). All cells sit at frac_items_complete=1.0 (the rule-29 floor is a
+    separate refusal, tested with a mutated artifact)."""
     cells = registered_cells(args)
     jd = rroot / "judge" / "judged"
     comp = rroot / "steer" / "raw_completions"
@@ -1716,7 +2221,7 @@ def make_fixture_round(rroot: Path, args, deltas: dict[str, float] | None = None
             delta = 0.0  # evil band is exactly 0: margin_lo == 0 must NOT clear (strict >)
         else:
             delta = 1.0  # bounded non-clear vs the sycophancy band (10.89)
-        undefined = cid == undefined_cid
+        coh_fail = coherence_fail_all or cid == undefined_cid
         texts = ["a plain fixture answer" for _ in range(n_q)]
         if cid == intruded_cid:
             texts[0] = "a plain fixture answer 好"
@@ -1728,8 +2233,8 @@ def make_fixture_round(rroot: Path, args, deltas: dict[str, float] | None = None
             "seeds": {
                 "42": {
                     "completions": [[t] for t in texts],
-                    "coherent_flags": [[True] for _ in texts],
-                    "condition_passes": [True for _ in texts],
+                    "coherent_flags": [[not coh_fail] for _ in texts],
+                    "condition_passes": [not coh_fail for _ in texts],
                 }
             },
             "max_new_tokens": i2254.GEN_MAX_NEW_TOKENS,
@@ -1738,16 +2243,11 @@ def make_fixture_round(rroot: Path, args, deltas: dict[str, float] | None = None
         i2254._write_json_atomic(comp / f"{cid}.json", gen)
         items = {}
         merged = {}
-        pq_mean: list[float | None] = []
         for qi in range(n_q):
             iid = f"{cid}-q{qi:02d}-r0"
             items[iid] = {"qi": qi, "seed": 42, "ci": qi, "di": 0}
-            if undefined:
-                merged[iid] = []
-                continue
-            merged[iid] = [float(floor_q[qi] + delta)]
-        pq_mean = [None if undefined else float(floor_q[qi] + delta) for qi in range(n_q)]
-        valid = [m for m in pq_mean if m is not None]
+            merged[iid] = [float(floor_q[qi] + delta)]  # finite scores in EVERY cell
+        pq_mean = [float(floor_q[qi] + delta) for qi in range(n_q)]
         judged = {
             "cell_id": cid,
             "cell": cell,
@@ -1755,17 +2255,15 @@ def make_fixture_round(rroot: Path, args, deltas: dict[str, float] | None = None
             "n_questions": n_q,
             "judge": {"model": "fixture", "n_draws": 1, "max_tokens": 2048, "temperature": 1.0},
             "items": items,
-            "accounting": {"frac_items_complete": 0.0 if undefined else 1.0},
+            "accounting": {"frac_items_complete": 1.0},
             "per_item_scores_merged": merged,
             "per_question_mean_score": pq_mean,
-            "per_question_rate": [
-                None if m is None else float(m >= i2254.SCORE_THRESHOLD) for m in pq_mean
-            ],
-            "per_question_n": [0 if undefined else 1 for _ in range(n_q)],
-            "mean_score": float(np.mean(valid)) if valid else None,
+            "per_question_rate": [float(m >= i2254.SCORE_THRESHOLD) for m in pq_mean],
+            "per_question_n": [1 for _ in range(n_q)],
+            "mean_score": float(np.mean(pq_mean)),
             "rate": None,
-            "coherence_rate": 1.0,
-            "coherence_pass": True,
+            "coherence_rate": 0.0 if coh_fail else 1.0,
+            "coherence_pass": not coh_fail,
             "cap_hit_fraction": 0.0,
         }
         i2254._write_json_atomic(jd / f"{cid}.json", judged)
@@ -1780,7 +2278,8 @@ def run_cpu_smoke(args) -> None:
     COMMITTED parent floor/band artifacts (§12.19 fixture included); (c) the
     REAL ``phase_figures`` on that output. Module seams rebound within
     try/finally (disclosed in the module docstring)."""
-    global _RB_LOADER, _PARENT_VEC_LOADER, _UPLOAD, _TOKENIZER_LOADER
+    global _RB_LOADER, _PARENT_VEC_LOADER, _UPLOAD, _UPLOAD_VERIFY, _DIR_HEADROOM
+    global _TOKENIZER_LOADER
     t0 = time.time()
     scratch = CPU_SMOKE_SCRATCH
     if scratch.exists():
@@ -1795,12 +2294,15 @@ def run_cpu_smoke(args) -> None:
     ns.behaviors = list(ROUND_BEHAVIORS)
     ns.smoke = True  # fixture grain; the registered-cell family stays full below
     ns.fit_workers = 2
-    keep = (_RB_LOADER, _PARENT_VEC_LOADER, _UPLOAD, _TOKENIZER_LOADER)
+    keep = (_RB_LOADER, _PARENT_VEC_LOADER, _UPLOAD, _UPLOAD_VERIFY, _DIR_HEADROOM)
+    keep_tok = _TOKENIZER_LOADER
     evidence: dict = {}
     try:
         _RB_LOADER = lambda: rb  # noqa: E731
         _PARENT_VEC_LOADER = _fixture_parent_vec_loader
         _UPLOAD = _fixture_upload
+        _UPLOAD_VERIFY = _fixture_upload_verify
+        _DIR_HEADROOM = _fixture_dir_headroom
         _TOKENIZER_LOADER = _FixtureTokenizer
         phase_directions(ns)
         rroot = round_root(Path(ns.out_root))
@@ -1843,7 +2345,8 @@ def run_cpu_smoke(args) -> None:
             "rendered"
         ]
     finally:
-        _RB_LOADER, _PARENT_VEC_LOADER, _UPLOAD, _TOKENIZER_LOADER = keep
+        _RB_LOADER, _PARENT_VEC_LOADER, _UPLOAD, _UPLOAD_VERIFY, _DIR_HEADROOM = keep
+        _TOKENIZER_LOADER = keep_tok
     out_dir = Path(args.cpu_smoke_out)
     i2254._write_json_atomic(out_dir / "cpu_smoke_ladder.json", _ladder_metadata(evidence))
     i2254._breadcrumb(
@@ -1867,6 +2370,65 @@ PHASES = {
     "reduce": phase_reduce,
     "figures": phase_figures,
 }
+
+
+def _bind_reuse_ledger() -> None:
+    """--import-check leg 2 (r1 NIT ladder-report-command-drift: the flag's
+    help claimed helper binding it did not run): signature-BIND every reused
+    §4.3-ledger helper at the exact call shapes this driver uses — a drifted
+    signature fails here in seconds, never at phase runtime (#606/#1332
+    class). Shape-only (placeholder values, nothing executed)."""
+    import inspect
+
+    import scripts.issue2220_readwrite as rw2220
+
+    o = object()
+    binds: list[tuple[object, tuple, dict]] = [
+        (i2254.map_svd, (o,), {}),
+        (i2254.preimage_w, (o, o, o, o, 1), {}),
+        (i2254.destandardized_direction, (o, o), {}),
+        (i2254.kstar_from_fit, (o, 1.0), {}),
+        (i2254.ridge_fit_matrix, (o, o), {}),
+        (i2254._save_direction, (o, "evil", "tr", 14, o, []), {}),
+        (i2254._ensure_direction_vec, (o, "evil", "tr", 14), {}),
+        (i2254._steer_hook_factory, (o, o, o, o), {}),
+        (
+            i2254._gen_cell_rows,
+            (o, o, o, o, o, o),
+            dict(n_draws=1, seeds=(42,), max_new_tokens=8, alphas=o),
+        ),
+        (i2254._load_rho, (o,), {}),
+        (i2254._load_operating_points, (o,), {}),
+        (i2254._load_rb_all, (), {}),
+        (i2254._eval_questions, ("evil",), {}),
+        (i2254._contexts_for_questions, (o,), {}),
+        (i2254._run_judge_pilot, (o, o, "steer", "evil", "rubric", 5), {}),
+        (i2254._judge_ctx_id, (o, 42, 0), {}),
+        (i2254._judge_draws, (o, "decisive"), {}),
+        (i2254._iter_gen_qa, (o,), {}),
+        (i2254._coherence_rate, (o,), {}),
+        (i2254._boot_idx, (20, 100, "key"), {}),
+        (i2254._boot_diff_ci, (o, o, o), {}),
+        (i2254._completeness_block, (o,), dict(floor=COMPLETENESS_FLOOR)),
+        (i2254._q_arr, (o,), {}),
+        (i2254._upload_folder_to_hf, (o, "prefix", ["*.pt"]), {}),
+        (i2254._write_sentinel, (o, "phase", "done", {}), {}),
+        (i2254._ensure_git_input, ("rel", "cone"), {}),
+        (
+            fk._judge_graded_with_refusal_reissue,
+            (o, "rubric"),
+            dict(cache_dir=o, save_raw=o, n_draws=5),
+        ),
+        (fk._judge_instrument_fp, ("rubric", 5), {}),
+        (fk._assert_hub_headroom_for_steer, (1, 1), {}),
+        (fk._wipe_stale_sentinels, ([],), {}),
+        (fk._hub_tree, ("prefix",), dict(recursive=True)),
+        (fk._hub_stage, ("prefix", o), {}),
+        (rw2220._pack_tree_to_jsonl_shards, (o, o), dict(group="g", pattern="*.json")),
+    ]
+    for fn, pargs, kwargs in binds:
+        inspect.signature(fn).bind(*pargs, **kwargs)
+    print(f"reuse-ledger bind: {len(binds)} helper call shapes bound OK")
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -1943,7 +2505,9 @@ def build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "tiny slice (plan §4 smoke (c)): evil × tr × (L14,+4), 2q × 2 draws, layers "
-            "{14,17}; scratch out-root + smoke/ HF sub-prefix (inputs stay canonical)"
+            "{14,17}; scratch out-root + smoke/ HF sub-prefix (inputs stay canonical). "
+            "COUNTS/PATHS only — every production gate runs; a --smoke reduce/figures leg "
+            "therefore needs production-grain inputs (the --cpu-smoke fixture provides them)"
         ),
     )
     ap.add_argument(
@@ -1954,7 +2518,10 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--import-check",
         action="store_true",
-        help="AST arg-attribute completeness + helper-call bind check, then exit 0",
+        help=(
+            "AST arg-attribute completeness + hub-surface bind (orchestrate.argcheck) + "
+            "the §4.3 reuse-ledger signature binds (_bind_reuse_ledger), then exit 0"
+        ),
     )
     ap.add_argument(
         "--fig-dir",
@@ -1976,9 +2543,18 @@ def build_argparser() -> argparse.ArgumentParser:
         "--rig-health",
         action="store_true",
         help=(
-            "POD-SIDE advisory probe (plan §4 smoke (d)): sycophancy × ctxext × (mid,+4) "
+            "POD-SIDE probe (plan §4 smoke (d)): sycophancy × ctxext × (mid,+4) "
             "× 5q × 2 draws, judged at the production instrument; live API spend; "
-            "advisory only — never a verdict input"
+            "an on-floor read RAISES (§7(d) diagnostic stop) — never a verdict input"
+        ),
+    )
+    ap.add_argument(
+        "--parity-probe",
+        action="store_true",
+        help=(
+            "VM-SIDE gate (ii) standalone: rebuild the parent d_pre from the REAL stored "
+            "maps under --maps-dir at the 4 registered parity cells vs the committed HF "
+            "bank; evidence JSON under --cpu-smoke-out (pre-dispatch smoke leg)"
         ),
     )
     return ap
@@ -2069,9 +2645,15 @@ def main() -> None:
         from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
 
         assert_args_attributes_defined(__file__)
+        _bind_reuse_ledger()
         raise SystemExit(0)
     if args.cpu_smoke:
         run_cpu_smoke(args)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
+    if args.parity_probe:
+        run_parity_probe(args)
         sys.stdout.flush()
         sys.stderr.flush()
         os._exit(0)
@@ -2083,7 +2665,7 @@ def main() -> None:
     if not args.phases:
         raise SystemExit(
             "--phases is required (comma-separated: directions,steer,judge,reduce,figures) "
-            "or --import-check / --cpu-smoke / --rig-health"
+            "or --import-check / --cpu-smoke / --parity-probe / --rig-health"
         )
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
     unknown = [p for p in phases if p not in PHASES]

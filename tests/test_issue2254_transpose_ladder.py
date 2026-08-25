@@ -161,8 +161,6 @@ def test_registered_grid_from_committed_ops_matches_plan():
 
 
 def test_gate_i_corrupted_kstar_raises():
-    maps = Path(__file__).resolve()  # placeholder; real fixture below
-    del maps
     _M, _Um, Sm, _Vmt, _xsd, _rb = _toy_map()
     z = {"s": Sm, "lam": float(np.median(Sm) ** 2), "kstar": 999999}
     with pytest.raises(ladder.LadderHaltError, match=r"gate \(i\) FAIL"):
@@ -214,6 +212,7 @@ def test_steer_never_entered_after_halt(tmp_path, monkeypatch):
         behaviors=list(ladder.ROUND_BEHAVIORS),
         smoke=False,
         fit_workers=1,
+        force=False,
     )
     with pytest.raises(ladder.LadderHaltError, match=r"gate \(i\) FAIL"):
         ladder.run_phases(args, ["directions", "steer"])
@@ -278,6 +277,10 @@ def test_phase_directions_end_to_end_tiny(tmp_path, monkeypatch):
         uploads.append((str(local_dir), path_in_repo))
 
     monkeypatch.setattr(ladder, "_UPLOAD", recording_upload)
+    verifies: list[int] = []
+    monkeypatch.setattr(ladder, "_UPLOAD_VERIFY", lambda names: verifies.append(len(names)))
+    headrooms: list[tuple[int, int]] = []
+    monkeypatch.setattr(ladder, "_DIR_HEADROOM", lambda n, b: headrooms.append((n, b)))
     args = argparse.Namespace(
         out_root=str(tmp_path),
         maps_dir=str(maps_dir),
@@ -285,6 +288,7 @@ def test_phase_directions_end_to_end_tiny(tmp_path, monkeypatch):
         behaviors=list(ladder.ROUND_BEHAVIORS),
         smoke=False,
         fit_workers=2,
+        force=False,
     )
     ladder.phase_directions(args)
     rroot = tmp_path / ladder.FOLLOWUP_LABEL
@@ -306,8 +310,20 @@ def test_phase_directions_end_to_end_tiny(tmp_path, monkeypatch):
             assert "cos_vs_parent_pre" in row and "cos_vs_ctxext" in row and "cos_vs_rb" in row
     # the bank copy exists where the steer loader reads (out_root/directions)
     assert (tmp_path / "directions" / "evil_tr_L14.pt").is_file()
-    # uploads: the .pt bank append + the ladder report (recorded, not sent)
+    # uploads: the .pt bank append + the ladder report (recorded, not sent);
+    # headroom preflight ran BEFORE compute; exact-set verify ran post-upload
     assert any(p.endswith("/directions") for _d, p in uploads)
+    exp_bytes = n_expected * ladder.DIRECTION_PT_BYTES_EST + ladder.LADDER_REPORT_BYTES_EST
+    assert headrooms == [(n_expected + 1, exp_bytes)]
+    assert verifies == [n_expected]
+    # report carries the regime identity the steer/judge fingerprint folds in
+    assert report["rb_rev"] == i2254.HF_REV
+    assert report["slugs"] == list(ladder.LADDER_SLUGS)
+    # idempotent skip (r1 concern ladder-directions-phase-no-skip): a second
+    # invocation recomputes nothing (no new uploads/headroom/verify calls)
+    n_up, n_hr, n_vf = len(uploads), len(headrooms), len(verifies)
+    ladder.phase_directions(args)
+    assert (len(uploads), len(headrooms), len(verifies)) == (n_up, n_hr, n_vf)
 
 
 # ---------------------------------------------------------------------------
@@ -406,12 +422,16 @@ def test_phase_reduce_end_to_end_fixture(tmp_path, monkeypatch):
     assert verdicts["fresh_nulls"] is False
     assert verdicts["parent_reference_margin_check"]["verdict"] == "PASS"
 
-    # Undefined-cell rule: the all-dropped cell is OUTSIDE both H1 support and
-    # the bounded-non-clear narration
+    # Undefined-cell rule (coherence-GATED, r1 blocker
+    # ladder-coherence-gate-omitted): the coherence-failed cell has FINITE
+    # judge scores yet is OUTSIDE H1 support, the bounded-non-clear narration,
+    # and the selection-aware sets
     assert verdicts["narration"]["undefined_cells"] == ["evil__tr__ctx__all__c0p5"]
     und = percell["behaviors"]["evil"]["evil__tr__ctx__all__c0p5"]
     assert und["label"] == "Undefined (no valid measurement)"
+    assert und["undefined_reason"] == "coherence gate failed"
     assert und["margin_lo"] is None
+    assert und["sensitivity"]["n_valid_judge_rows"] == 20  # finite scores, still Undefined
     assert "evil__tr__ctx__all__c0p5" not in verdicts["narration"]["bounded_nonclear_cells"]
 
     # exact arithmetic on the constant-delta clearing cell: margin = 30 - band
@@ -449,3 +469,327 @@ def test_phase_reduce_end_to_end_fixture(tmp_path, monkeypatch):
     assert (fig_dir / "hero_ladder.png").is_file()
     meta = json.loads((fig_dir / "hero_ladder.meta.json").read_text())
     assert "fresh_nulls: false" in meta["scope_note"]
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — coherence gate on ALL verdict-bearing sets (r1 blocker
+# ladder-coherence-gate-omitted)
+# ---------------------------------------------------------------------------
+
+
+def test_reduce_all_coherence_failed_is_measurement_failure(tmp_path, monkeypatch):
+    """Finite judge scores + coherence_pass=False on EVERY cell ⇒ all cells
+    Undefined, no H1/H2 label, every verdict-bearing set empty."""
+    args = argparse.Namespace(out_root=str(tmp_path), smoke=False)
+    rroot = tmp_path / ladder.FOLLOWUP_LABEL
+    ladder.make_fixture_round(rroot, args, coherence_fail_all=True)
+    monkeypatch.setattr(ladder, "_TOKENIZER_LOADER", ladder._FixtureTokenizer)
+    ladder.phase_reduce(args)
+    verdicts = json.loads((rroot / "reduce" / "verdicts.json").read_text())
+    assert verdicts["label"].startswith("Undefined (measurement failure")
+    assert verdicts["label"] not in ("H1", "H2")
+    assert verdicts["n_clearing"] == 0 and verdicts["h1_clearing_cells"] == []
+    assert len(verdicts["narration"]["undefined_cells"]) == ladder.FAMILY_SIZE
+    assert verdicts["narration"]["bounded_nonclear_cells"] == []
+    assert verdicts["narration"]["straddling_cells"] == []
+    assert verdicts["all44_companion"] is None
+    assert all(v is None for v in verdicts["selection_aware"]["arm"].values())
+    percell = json.loads((rroot / "reduce" / "delta_score_percell.json").read_text())
+    for cells_b in percell["behaviors"].values():
+        for row in cells_b.values():
+            assert row["label"] == "Undefined (no valid measurement)"
+            assert row["undefined_reason"] == "coherence gate failed"
+            assert row["margin_lo"] is None
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — rule-29 completeness ENFORCED at both entry points (r1
+# blocker ladder-completeness-not-enforced)
+# ---------------------------------------------------------------------------
+
+
+def test_judge_completeness_enforcement_withholds_wave_done(tmp_path):
+    rroot = tmp_path / "round"
+    jd = rroot / "judge" / "judged"
+    jd.mkdir(parents=True)
+    for cid, fic in (("cell_a", 1.0), ("cell_b", 0.94)):
+        (jd / f"{cid}.json").write_text(
+            json.dumps({"cell_id": cid, "accounting": {"frac_items_complete": fic}})
+        )
+    with pytest.raises(RuntimeError, match="completeness floor"):
+        ladder._enforce_judge_completeness(rroot)
+    block = json.loads((rroot / "judge" / "completeness.json").read_text())
+    assert block["below_floor_cells"] == ["cell_b"]
+    assert not (rroot / "judge" / "wave_done.json").exists()
+    # remediated set passes
+    (jd / "cell_b.json").write_text(
+        json.dumps({"cell_id": "cell_b", "accounting": {"frac_items_complete": 0.96}})
+    )
+    assert ladder._enforce_judge_completeness(rroot)["below_floor_cells"] == []
+
+
+def test_reduce_refuses_below_floor_completeness(tmp_path, monkeypatch):
+    args = argparse.Namespace(out_root=str(tmp_path), smoke=False)
+    rroot = tmp_path / ladder.FOLLOWUP_LABEL
+    ladder.make_fixture_round(rroot, args)
+    target = rroot / "judge" / "judged" / "evil__tr__ctx__L14__c4.json"
+    j = json.loads(target.read_text())
+    j["accounting"]["frac_items_complete"] = 0.94
+    target.write_text(json.dumps(j))
+    monkeypatch.setattr(ladder, "_TOKENIZER_LOADER", ladder._FixtureTokenizer)
+    with pytest.raises(RuntimeError, match="rule-29 below-floor"):
+        ladder.phase_reduce(args)
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — steer input contract BEFORE model init (r1 blocker
+# ladder-steer-precondition-post-model)
+# ---------------------------------------------------------------------------
+
+
+def _steer_args(tmp_path):
+    return argparse.Namespace(
+        out_root=str(tmp_path),
+        smoke=False,
+        shard_id=0,
+        num_shards=1,
+        q_steer=20,
+        draws=5,
+        force=False,
+    )
+
+
+def test_steer_preconditions_run_before_model_load(tmp_path, monkeypatch):
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path / "logs"))
+
+    def fake_require_cuda(phase: str) -> None:
+        return None
+
+    def fake_headroom(out_root, need_gb, phase) -> None:
+        return None
+
+    def fake_stage_e1() -> dict:
+        return {}
+
+    monkeypatch.setattr(i2254, "_require_cuda", fake_require_cuda)
+    monkeypatch.setattr(i2254, "_assert_phase_headroom", fake_headroom)
+    monkeypatch.setattr(i2254, "_stage_e1_assets", fake_stage_e1)
+    model_loader = create_autospec(i2254._load_model_and_tokenizer)
+    monkeypatch.setattr(i2254, "_load_model_and_tokenizer", model_loader)
+    hub_headroom = create_autospec(fk._assert_hub_headroom_for_steer)
+    monkeypatch.setattr(fk, "_assert_hub_headroom_for_steer", hub_headroom)
+    monkeypatch.setattr(
+        fk, "_hub_stage", create_autospec(fk._hub_stage, side_effect=RuntimeError("no HF copy"))
+    )
+    args = _steer_args(tmp_path)
+    # (A) no directions sentinel ⇒ refuse BEFORE any hub/model spend
+    with pytest.raises(ladder.LadderHaltError, match="directions sentinel"):
+        ladder.phase_steer(args)
+    assert model_loader.call_count == 0
+    assert hub_headroom.call_count == 0
+    # (B) sentinel done + parseable report, but the exact direction file set
+    # is absent ⇒ refuse, still zero model-loader calls
+    logs = tmp_path / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    (logs / f"issue-{i2254.ISSUE}-{ladder.SENTINEL_DIRECTIONS}.json").write_text(
+        json.dumps({"status": "done"})
+    )
+    rroot = tmp_path / ladder.FOLLOWUP_LABEL
+    rroot.mkdir(parents=True, exist_ok=True)
+    report = {
+        "rb_rev": i2254.HF_REV,
+        "slugs": list(ladder.LADDER_SLUGS),
+        "n_direction_files": 224,
+        "gates": {"rebuild_parity_cos": {"evil__L14": 0.99999}},
+        "layers": {str(ly): {"lambdas": {}} for ly in range(i2254.N_LAYERS)},
+    }
+    (rroot / "ladder_report.json").write_text(json.dumps(report))
+    with pytest.raises(ladder.LadderHaltError, match="direction file"):
+        ladder.phase_steer(args)
+    assert model_loader.call_count == 0
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — regime fingerprint invalidates on EVERY generating parameter
+# (r1 blocker ladder-regime-fp-incomplete)
+# ---------------------------------------------------------------------------
+
+
+def test_regime_fp_invalidates_on_every_generating_parameter():
+    cell = {
+        "behavior": "evil",
+        "kind": "steer",
+        "direction": "tr",
+        "position": "context",
+        "layer_config": "L14",
+        "c": 4.0,
+    }
+    rho = {"L14": 1.25}
+    base_args = argparse.Namespace(draws=5, q_steer=20)
+    fps = [ladder._ladder_regime_fp(base_args, cell, rho, "dfp0")]
+    fps.append(ladder._ladder_regime_fp(argparse.Namespace(draws=6, q_steer=20), cell, rho, "dfp0"))
+    fps.append(ladder._ladder_regime_fp(argparse.Namespace(draws=5, q_steer=10), cell, rho, "dfp0"))
+    fps.append(ladder._ladder_regime_fp(base_args, {**cell, "c": 2.0}, rho, "dfp0"))
+    fps.append(ladder._ladder_regime_fp(base_args, cell, {"L14": 1.5}, "dfp0"))
+    fps.append(ladder._ladder_regime_fp(base_args, cell, rho, "dfp1"))  # direction identity
+    for attr, val in (
+        ("GEN_MAX_NEW_TOKENS", 4096),
+        ("CAP_HIT_REGEN_FRAC", 0.05),
+        ("CAP_HIT_REGEN_FACTOR", 3),
+        ("MODEL_NAME", "other/model"),
+        ("HF_REV", "deadbeefdeadbeef"),
+    ):
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(i2254, attr, val)
+            fps.append(ladder._ladder_regime_fp(base_args, cell, rho, "dfp0"))
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(ladder, "LADDER_SEEDS", (42,))
+        fps.append(ladder._ladder_regime_fp(base_args, cell, rho, "dfp0"))
+    assert len(set(fps)) == len(fps), "every generating parameter must invalidate the fp"
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — §7(c) realized-wall fleet stop + §7(d) rig-health stop (r1
+# concern ladder-runtime-stops-missing)
+# ---------------------------------------------------------------------------
+
+
+def test_wall_halt_check_and_reentry_guard(tmp_path):
+    rroot = tmp_path / "round"
+    comp = rroot / "steer" / "raw_completions"
+    comp.mkdir(parents=True)
+    basis = 1.5
+    for i in range(7):
+        (comp / f"c{i}.json").write_text("{}")
+    # below the first-8-completed-cells arming threshold: never trips
+    ladder._check_realized_wall(rroot, comp, 1000.0, 10, basis)
+    (comp / "c7.json").write_text("{}")
+    # armed, realized 1.0 s/completion <= 2x1.5: no stop
+    ladder._check_realized_wall(rroot, comp, 10.0, 10, basis)
+    # armed, realized 4.0 > 3.0: HALT file + raise
+    with pytest.raises(ladder.LadderHaltError, match="fleet HALT"):
+        ladder._check_realized_wall(rroot, comp, 40.0, 10, basis)
+    assert ladder._wall_halt_path(rroot).is_file()
+    payload = json.loads(ladder._wall_halt_path(rroot).read_text())
+    assert payload["realized_s_per_completion"] == pytest.approx(4.0)
+    # re-entry guard: a standing halt file refuses the phase until deleted
+    with pytest.raises(ladder.LadderHaltError, match="wall-halt file present"):
+        ladder._assert_no_wall_halt(rroot)
+    ladder._wall_halt_path(rroot).unlink()
+    ladder._assert_no_wall_halt(rroot)
+
+
+def test_steer_wall_basis_reads_committed_pilot():
+    assert ladder._load_steer_wall_basis() == pytest.approx(1.538939881324768)
+
+
+def test_rig_health_verdict_on_floor():
+    band = ladder.load_parent_band("sycophancy")
+    delta, on_floor = ladder.rig_health_verdict(60.0, 20.0, band)
+    assert delta == pytest.approx(40.0) and on_floor is False
+    _delta2, on_floor2 = ladder.rig_health_verdict(25.0, 20.0, band)
+    assert on_floor2 is True  # Δ=5 <= band 10.89 ⇒ §7(d) diagnostic stop
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — intrusion flags keyed (seed, ci, di) (r1 Major: seed 43
+# overwrote seed 42 on every 2-seed production cell)
+# ---------------------------------------------------------------------------
+
+
+def _two_seed_gen_record() -> dict:
+    def seed_block(texts):
+        return {
+            "completions": [[t] for t in texts],
+            "coherent_flags": [[True] for _ in texts],
+            "condition_passes": [True for _ in texts],
+        }
+
+    return {
+        "cell_id": "twoseed",
+        "cell": {"behavior": "sycophancy"},
+        "q_of_context": [0, 1],
+        "seeds": {
+            "42": seed_block(["intruded 好 answer", "clean answer"]),
+            "43": seed_block(["clean answer", "clean answer"]),
+        },
+    }
+
+
+def test_intrusion_flags_and_sensitivity_two_seeds():
+    import re
+
+    rx = re.compile(
+        json.loads((ladder.INPUTS_ROOT / "decisive" / "cjk_audit.json").read_text())["regex"]
+    )
+    tok = ladder._FixtureTokenizer()
+    rec = _two_seed_gen_record()
+    flags = ladder._intrusion_flags(rec, rx, tok)
+    assert len(flags) == 4, "2 seeds x 2 ci x 1 draw — no cross-seed key collision"
+    assert flags[(42, 0, 0)] is True
+    assert flags[(43, 0, 0)] is False
+    assert flags[(42, 1, 0)] is False and flags[(43, 1, 0)] is False
+    # sensitivity attributes each seed's flag to ITS OWN judged rows
+    items, merged = {}, {}
+    for rid, seed, qi, sc in (
+        ("r42-0", 42, 0, 40.0),
+        ("r43-0", 43, 0, 60.0),
+        ("r42-1", 42, 1, 70.0),
+        ("r43-1", 43, 1, 70.0),
+    ):
+        items[rid] = {"qi": qi, "seed": seed, "ci": qi, "di": 0}
+        merged[rid] = [sc]
+    judged = {
+        "cell_id": "twoseed",
+        "items": items,
+        "per_item_scores_merged": merged,
+        "mean_score": 60.0,  # ((40+60)/2 + (70+70)/2) / 2
+    }
+    sens = ladder._intrusion_sensitivity(judged, rec, rx, tok, floor_mean=10.0)
+    assert sens["n_valid_judge_rows"] == 4  # BOTH seeds' rows (pre-fix: 2)
+    assert sens["n_intruded_valid"] == 1  # only seed 42's ci=0 row
+    assert sens["cjk_common"] == pytest.approx(0.25)
+    # zeroing ONLY the intruded seed-42 row: q0 -> (0+60)/2=30, q1 -> 70
+    assert sens["mean_zeroed_intrusion"] == pytest.approx(50.0)
+    assert sens["mean_excluded_intrusion"] == pytest.approx((60.0 + 70.0) / 2)
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — per-behavior independent bootstrap matrices in the
+# selection-aware companions (r1 sweep ladder-cross-behavior-bootstrap-coupling)
+# ---------------------------------------------------------------------------
+
+
+def test_selection_aware_per_behavior_independent_matrices():
+    nq = 20
+    rng = np.random.default_rng(7)
+    floors = {
+        "evil": (np.zeros(nq), 0.0, 0.0),
+        "sycophancy": (np.zeros(nq), 0.0, 0.0),
+    }
+    bands = {"evil": 0.0, "sycophancy": 0.0}
+    cq_e = rng.normal(10.0, 2.0, nq)
+    cq_s = rng.normal(-100.0, 1.0, nq)  # never wins a per-draw max
+    entries = [("e1", "evil", cq_e), ("s1", "sycophancy", cq_s)]
+    margins = {"e1": float(np.mean(cq_e)), "s1": float(np.mean(cq_s))}
+    res = ladder._selection_aware_block(entries, floors, bands, "k", margins)
+    assert res["argmax_cell"] == "e1"
+    # the CI must come from the EVIL-KEYED matrix (independent per behavior),
+    # not a shared cross-behavior matrix (the pre-fix coupling)
+    idx_e = i2254._boot_idx(nq, i2254.N_BOOT_VERDICT, "k__evil")
+    exp = ladder._boot_diffs(cq_e, floors["evil"][0], idx_e) - bands["evil"]
+    assert res["ci"] == [
+        float(np.nanquantile(exp, 0.025)),
+        float(np.nanquantile(exp, 0.975)),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# r6 fix round — --import-check binds the §4.3 reuse ledger (r1 NIT
+# ladder-report-command-drift)
+# ---------------------------------------------------------------------------
+
+
+def test_import_check_binds_reuse_ledger(capsys):
+    ladder._bind_reuse_ledger()
+    assert "helper call shapes bound OK" in capsys.readouterr().out

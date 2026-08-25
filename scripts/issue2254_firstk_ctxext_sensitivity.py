@@ -78,6 +78,15 @@ def main() -> None:
         jd = json.loads((ROUND / f"judge/judged/{cell}.json").read_text())
 
         # CJK flag per (ci, di) on the common horizon — driver convention.
+        # (ci, di) keying is SAFE only on single-seed records: _iter_gen_qa
+        # restarts ci per seed, so a multi-seed record would collide keys
+        # (the transpose_ladder r6 fix re-keys on (seed, ci, di); this r5
+        # round's data is single-seed by construction — assert it).
+        assert len(rec["seeds"]) == 1, (
+            cell,
+            sorted(rec["seeds"]),
+            "(ci, di) keying requires single-seed gen records — re-key on (seed, ci, di)",
+        )
         flags: dict[tuple[int, int], bool] = {}
         n_total = 0
         for _qi, _seed, ci, di, text in _iter_gen_qa(rec):

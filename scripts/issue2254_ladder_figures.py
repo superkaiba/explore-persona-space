@@ -288,6 +288,8 @@ def fig_expl_all_cells(rroot: Path, fig_dir: Path):
 
 
 def fig_expl_delta_vs_lambda(rroot: Path, fig_dir: Path):
+    import scripts.issue2254_preimage as i2254  # function-local by convention; hoisted from loop
+
     percell = _load(rroot, "reduce/delta_score_percell.json")
     report = _load(rroot, "ladder_report.json")
     if percell is None or report is None:
@@ -318,7 +320,6 @@ def fig_expl_delta_vs_lambda(rroot: Path, fig_dir: Path):
                 # to layers PRESENT in the report — a partial/smoke report
                 # (subset of the 28 production layers) must skip gracefully
                 # rather than KeyError on an absent band member.
-                import scripts.issue2254_preimage as i2254
 
                 lys = [ly for ly in i2254.LAYER_CONFIGS[lc] if str(ly) in report["layers"]]
                 if not lys:
