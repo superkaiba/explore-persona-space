@@ -1,10 +1,9 @@
 {
-  "commit": "c0cfbbdc+dirty",
-  "render_id": "fcfed9757bf8457d",
-  "git_commit": "c0cfbbdc62b51342a0a1013fc1c71369fcbf043c",
+  "commit": "8cc31bc8+dirty",
+  "render_id": "dcab6f3230bd4e18",
+  "git_commit": "8cc31bc82e38200bd0f1c3274255ae7408af137e",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/_i1901_render_tmp.py",
     "eval_results/issue_2474/n1m_map_arms.json",
     "figures/issue_1901/avgtarget_plots/c1_layer_profile.meta.json",
     "figures/issue_1901/avgtarget_plots/c1_layer_profile.pdf",
@@ -12,21 +11,18 @@
     "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.meta.json",
     "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.pdf",
     "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.png",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
     "figures/paper/c1_layer_profile.meta.json",
     "figures/paper/c1_layer_profile.pdf",
     "figures/paper/c1_layer_profile.png",
     "figures/paper/c1_scaling_train_pool.meta.json",
     "figures/paper/c1_scaling_train_pool.pdf",
     "figures/paper/c1_scaling_train_pool.png",
-    "figures/paper/c3_persona_direction_spectrum.meta.json",
-    "figures/paper/c3_persona_direction_spectrum.pdf",
-    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1739_result2_fourpanel_fig.py",
     "scripts/issue1901_avgtarget_plots.py",
     "scripts/issue2474_n1m_map.py",
-    "scripts/issue779_plot3_redesign.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -38,12 +34,11 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2568/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
-  "git_argv0_path": "scripts/_i1901_render_tmp.py",
-  "created": "2026-08-25T17:14:49Z",
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1901_avgtarget_plots.py",
+  "created": "2026-08-25T18:03:39Z",
   "figsize": [
     5.5,
     2.3
@@ -51,71 +46,71 @@
   "points": [
     {
       "training contexts": 50.0,
-      "held-out $R^2$": 0.3227494492686382,
-      "error": 0.0032564625705630013,
+      "held-out $R^2$,\ndraw-averaged target": 0.34349243027694554,
+      "error": 0.0034468722825630183,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": 0.36282659658466554,
-      "error": 0.01502815185447004,
+      "held-out $R^2$,\ndraw-averaged target": 0.3860850748541358,
+      "error": 0.015957303065812778,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": 0.49122154007399965,
-      "error": 0.0032551362310329623,
+      "held-out $R^2$,\ndraw-averaged target": 0.5225099556338024,
+      "error": 0.005648278468125545,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": 0.5562363432824192,
-      "error": 0.004695976128104018,
+      "held-out $R^2$,\ndraw-averaged target": 0.5922524964105349,
+      "error": 0.004024131156460942,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": 0.6033319349246442,
-      "error": 0.0008057667822749526,
+      "held-out $R^2$,\ndraw-averaged target": 0.6420010997609408,
+      "error": 0.0008903852576314097,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": 0.6557336117296017,
-      "error": 0.0006046672344074411,
+      "held-out $R^2$,\ndraw-averaged target": 0.6976310467688713,
+      "error": 0.0006469891498532832,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.6813526733515054,
-      "error": 0.01262094811399389,
+      "held-out $R^2$,\ndraw-averaged target": 0.7245465948157594,
+      "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.7048843804909557,
-      "error": 0.011992379164221134,
+      "held-out $R^2$,\ndraw-averaged target": 0.7497191687254925,
+      "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": 0.7165079370002496,
+      "held-out $R^2$,\ndraw-averaged target": 0.761774878694999,
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
@@ -123,7 +118,7 @@
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": 0.7209572011247484,
+      "held-out $R^2$,\ndraw-averaged target": 0.7667067944529644,
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
@@ -131,7 +126,7 @@
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7250873308449972,
+      "held-out $R^2$,\ndraw-averaged target": 0.7707719960459561,
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
@@ -139,103 +134,103 @@
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7599992543132661,
-      "error": 0.011111643924370196,
+      "held-out $R^2$,\ndraw-averaged target": 0.8074715788066227,
+      "error": 0.010052333141153558,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": 0.754355957580797,
-      "error": 0.009980189718263088,
+      "held-out $R^2$,\ndraw-averaged target": 0.8052149576692719,
+      "error": 0.03243099878537631,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": 0.7608232696391413,
-      "error": 0.010184280427992576,
+      "held-out $R^2$,\ndraw-averaged target": 0.8101437612042628,
+      "error": 0.032433383847796815,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.7541708417500051,
-      "error": 0.009594298275228064,
+      "held-out $R^2$,\ndraw-averaged target": 0.8028788746541997,
+      "error": 0.007532160063341786,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "training contexts": 50.0,
-      "held-out $R^2$": -0.911190011127716,
-      "error": 0.0032564625705630013,
+      "held-out $R^2$,\ndraw-averaged target": -0.9691708649922269,
+      "error": 0.0034468722825630183,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": -0.9354690293529485,
-      "error": 0.01502815185447004,
+      "held-out $R^2$,\ndraw-averaged target": -0.9954395483631407,
+      "error": 0.015957303065812778,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": -0.8990272378780414,
-      "error": 0.0032551362310329623,
+      "held-out $R^2$,\ndraw-averaged target": -0.9563510868907713,
+      "error": 0.005648278468125545,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": -0.9014148925897119,
-      "error": 0.004695976128104018,
+      "held-out $R^2$,\ndraw-averaged target": -0.958897131856245,
+      "error": 0.004024131156460942,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": -0.8960820760793061,
-      "error": 0.0008057667822749526,
+      "held-out $R^2$,\ndraw-averaged target": -0.9531419840125769,
+      "error": 0.0008903852576314097,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": -0.8936415994812421,
-      "error": 0.0006046672344074411,
+      "held-out $R^2$,\ndraw-averaged target": -0.9505338308294006,
+      "error": 0.0006469891498532832,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": -0.8879686636269069,
-      "error": 0.01262094811399389,
+      "held-out $R^2$,\ndraw-averaged target": -0.9444079219529744,
+      "error": 0.0,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": -0.890284227292506,
-      "error": 0.011992379164221134,
+      "held-out $R^2$,\ndraw-averaged target": -0.9469295255088384,
+      "error": 0.0,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": -0.8918139289762328,
+      "held-out $R^2$,\ndraw-averaged target": -0.9485797170027968,
       "error": 0.0,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
@@ -243,7 +238,7 @@
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": -0.8928851022282787,
+      "held-out $R^2$,\ndraw-averaged target": -0.9497165965518233,
       "error": 0.0,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
@@ -251,7 +246,7 @@
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": -0.8942743340010613,
+      "held-out $R^2$,\ndraw-averaged target": -0.9512212779118177,
       "error": 0.0,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
@@ -259,95 +254,55 @@
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": -0.8795987011227666,
-      "error": 0.011111643924370196,
+      "held-out $R^2$,\ndraw-averaged target": -0.933929548596977,
+      "error": 0.010052333141153558,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": -0.8963282847438272,
-      "error": 0.009980189718263088,
+      "held-out $R^2$,\ndraw-averaged target": -0.9517066921532045,
+      "error": 0.03243099878537631,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": -0.8962630398928697,
-      "error": 0.010184280427992576,
+      "held-out $R^2$,\ndraw-averaged target": -0.9518799299788514,
+      "error": 0.032433383847796815,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": -0.9195990073009372,
-      "error": 0.009594298275228064,
+      "held-out $R^2$,\ndraw-averaged target": -0.9767493239496223,
+      "error": 0.007532160063341786,
       "series": "copy context vector + trained bias",
       "_kind": "errorbar",
       "_group": 1
     },
     {
-      "training contexts": 250.0,
-      "held-out $R^2$": 0.49315699269603835,
-      "error": 0.0032551362310329623,
-      "series": "nonlinear map (MLP)",
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "training contexts": 500.0,
-      "held-out $R^2$": 0.5546150982107939,
-      "error": 0.004695976128104018,
-      "series": "nonlinear map (MLP)",
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "training contexts": 1000.0,
-      "held-out $R^2$": 0.6121011360856724,
-      "error": 0.0008057667822749526,
-      "series": "nonlinear map (MLP)",
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "training contexts": 2000.0,
-      "held-out $R^2$": 0.6565415540868024,
-      "error": 0.001994856886228691,
-      "series": "nonlinear map (MLP)",
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "training contexts": 3600.0,
-      "held-out $R^2$": 0.6884018332198819,
-      "error": 1.1102230246251565e-16,
-      "series": "nonlinear map (MLP)",
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.6661844181705912,
-      "error": 0.01262094811399389,
+      "held-out $R^2$,\ndraw-averaged target": 0.7099448623469942,
+      "error": 0.0,
       "series": "nonlinear map (MLP)",
       "_kind": "errorbar",
       "_group": 2
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.6945270264582182,
-      "error": 0.011992379164221134,
+      "held-out $R^2$,\ndraw-averaged target": 0.7380914040166258,
+      "error": 0.0,
       "series": "nonlinear map (MLP)",
       "_kind": "errorbar",
       "_group": 2
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7249689668494587,
+      "held-out $R^2$,\ndraw-averaged target": 0.7709815728611316,
       "error": 0.0,
       "series": "nonlinear map (MLP)",
       "_kind": "errorbar",
@@ -355,789 +310,647 @@
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7786064878860613,
-      "error": 0.011111643924370196,
-      "series": "nonlinear map (MLP)",
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "training contexts": 150000.0,
-      "held-out $R^2$": 0.7880526998314361,
-      "error": 0.009980189718263088,
-      "series": "nonlinear map (MLP)",
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "training contexts": 500000.0,
-      "held-out $R^2$": 0.8074943555084623,
-      "error": 0.010184280427992576,
+      "held-out $R^2$,\ndraw-averaged target": 0.8223412716495716,
+      "error": 0.010052333141153558,
       "series": "nonlinear map (MLP)",
       "_kind": "errorbar",
       "_group": 2
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.810357605301357,
-      "error": 0.009594298275228064,
+      "held-out $R^2$,\ndraw-averaged target": 0.8589138369115886,
+      "error": 0.007532160063341786,
       "series": "nonlinear map (MLP)",
       "_kind": "errorbar",
       "_group": 2
     },
     {
       "training contexts": 50.0,
-      "held-out $R^2$": 0.3227494492686382,
+      "held-out $R^2$,\ndraw-averaged target": 0.34349243027694554,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": 0.36282659658466554,
+      "held-out $R^2$,\ndraw-averaged target": 0.3860850748541358,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": 0.49122154007399965,
+      "held-out $R^2$,\ndraw-averaged target": 0.5225099556338024,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": 0.5562363432824192,
+      "held-out $R^2$,\ndraw-averaged target": 0.5922524964105349,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": 0.6033319349246442,
+      "held-out $R^2$,\ndraw-averaged target": 0.6420010997609408,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": 0.6557336117296017,
+      "held-out $R^2$,\ndraw-averaged target": 0.6976310467688713,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.6813526733515054,
+      "held-out $R^2$,\ndraw-averaged target": 0.7245465948157594,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.7048843804909557,
+      "held-out $R^2$,\ndraw-averaged target": 0.7497191687254925,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": 0.7165079370002496,
+      "held-out $R^2$,\ndraw-averaged target": 0.761774878694999,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": 0.7209572011247484,
+      "held-out $R^2$,\ndraw-averaged target": 0.7667067944529644,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7250873308449972,
+      "held-out $R^2$,\ndraw-averaged target": 0.7707719960459561,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7599992543132661,
+      "held-out $R^2$,\ndraw-averaged target": 0.8074715788066227,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": 0.754355957580797,
+      "held-out $R^2$,\ndraw-averaged target": 0.8052149576692719,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": 0.7608232696391413,
+      "held-out $R^2$,\ndraw-averaged target": 0.8101437612042628,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.7541708417500051,
+      "held-out $R^2$,\ndraw-averaged target": 0.8028788746541997,
       "_kind": "line",
       "_group": 3
     },
     {
       "training contexts": 50.0,
-      "held-out $R^2$": 0.30425587456157727,
+      "held-out $R^2$,\ndraw-averaged target": 0.3240017547807571,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": 0.3499708558299468,
+      "held-out $R^2$,\ndraw-averaged target": 0.37375374823342833,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": 0.4829874864358897,
+      "held-out $R^2$,\ndraw-averaged target": 0.5136043960334133,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": 0.5503271884275186,
+      "held-out $R^2$,\ndraw-averaged target": 0.5859462226326156,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": 0.5972444493373781,
+      "held-out $R^2$,\ndraw-averaged target": 0.6344988049068088,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": 0.6531863457027249,
+      "held-out $R^2$,\ndraw-averaged target": 0.6946963044097175,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.6813526733515054,
+      "held-out $R^2$,\ndraw-averaged target": 0.7245465948157594,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.7048843804909557,
+      "held-out $R^2$,\ndraw-averaged target": 0.7497191687254925,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": 0.7165079370002496,
+      "held-out $R^2$,\ndraw-averaged target": 0.761774878694999,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": 0.7209572011247484,
+      "held-out $R^2$,\ndraw-averaged target": 0.7667067944529644,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7250873308449972,
+      "held-out $R^2$,\ndraw-averaged target": 0.7707719960459561,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7484796280587251,
+      "held-out $R^2$,\ndraw-averaged target": 0.7966489632113891,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": 0.7438179039042248,
+      "held-out $R^2$,\ndraw-averaged target": 0.7959332297485815,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": 0.7500995497764024,
+      "held-out $R^2$,\ndraw-averaged target": 0.8010611672379163,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.7434797277308776,
+      "held-out $R^2$,\ndraw-averaged target": 0.7936475233192529,
       "_kind": "line",
       "_group": 4
     },
     {
       "training contexts": 50.0,
-      "held-out $R^2$": 0.3412430239756991,
+      "held-out $R^2$,\ndraw-averaged target": 0.362983105773134,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": 0.3756823373393843,
+      "held-out $R^2$,\ndraw-averaged target": 0.39841640147484325,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": 0.4994555937121096,
+      "held-out $R^2$,\ndraw-averaged target": 0.5314155152341915,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": 0.5621454981373198,
+      "held-out $R^2$,\ndraw-averaged target": 0.5985587701884542,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": 0.6094194205119103,
+      "held-out $R^2$,\ndraw-averaged target": 0.6495033946150728,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": 0.6582808777564784,
+      "held-out $R^2$,\ndraw-averaged target": 0.7005657891280251,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.6813526733515054,
+      "held-out $R^2$,\ndraw-averaged target": 0.7245465948157594,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.7048843804909557,
+      "held-out $R^2$,\ndraw-averaged target": 0.7497191687254925,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": 0.7165079370002496,
+      "held-out $R^2$,\ndraw-averaged target": 0.761774878694999,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": 0.7209572011247484,
+      "held-out $R^2$,\ndraw-averaged target": 0.7667067944529644,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7250873308449972,
+      "held-out $R^2$,\ndraw-averaged target": 0.7707719960459561,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7704399931179748,
+      "held-out $R^2$,\ndraw-averaged target": 0.8168334178782608,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": 0.7645812802036637,
+      "held-out $R^2$,\ndraw-averaged target": 0.8132165981951973,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": 0.7707623583946132,
+      "held-out $R^2$,\ndraw-averaged target": 0.8180206472537588,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.7642395490449736,
+      "held-out $R^2$,\ndraw-averaged target": 0.8108202080646589,
       "_kind": "line",
       "_group": 5
     },
     {
       "training contexts": 50.0,
-      "held-out $R^2$": -0.911190011127716,
+      "held-out $R^2$,\ndraw-averaged target": -0.9691708649922269,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": -0.9354690293529485,
+      "held-out $R^2$,\ndraw-averaged target": -0.9954395483631407,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": -0.8990272378780414,
+      "held-out $R^2$,\ndraw-averaged target": -0.9563510868907713,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": -0.9014148925897119,
+      "held-out $R^2$,\ndraw-averaged target": -0.958897131856245,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": -0.8960820760793061,
+      "held-out $R^2$,\ndraw-averaged target": -0.9531419840125769,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": -0.8936415994812421,
+      "held-out $R^2$,\ndraw-averaged target": -0.9505338308294006,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": -0.8879686636269069,
+      "held-out $R^2$,\ndraw-averaged target": -0.9444079219529744,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": -0.890284227292506,
+      "held-out $R^2$,\ndraw-averaged target": -0.9469295255088384,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": -0.8918139289762328,
+      "held-out $R^2$,\ndraw-averaged target": -0.9485797170027968,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": -0.8928851022282787,
+      "held-out $R^2$,\ndraw-averaged target": -0.9497165965518233,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": -0.8942743340010613,
+      "held-out $R^2$,\ndraw-averaged target": -0.9512212779118177,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": -0.8795987011227666,
+      "held-out $R^2$,\ndraw-averaged target": -0.933929548596977,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": -0.8963282847438272,
+      "held-out $R^2$,\ndraw-averaged target": -0.9517066921532045,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": -0.8962630398928697,
+      "held-out $R^2$,\ndraw-averaged target": -0.9518799299788514,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": -0.9195990073009372,
+      "held-out $R^2$,\ndraw-averaged target": -0.9767493239496223,
       "_kind": "line",
       "_group": 6
     },
     {
       "training contexts": 50.0,
-      "held-out $R^2$": -0.914446473698279,
+      "held-out $R^2$,\ndraw-averaged target": -0.97261773727479,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": -0.9504971812074186,
+      "held-out $R^2$,\ndraw-averaged target": -1.0113968514289535,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": -0.904333966318259,
+      "held-out $R^2$,\ndraw-averaged target": -0.9619993653588969,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": -0.9051519749910232,
+      "held-out $R^2$,\ndraw-averaged target": -0.962921263012706,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": -0.8968866485238631,
+      "held-out $R^2$,\ndraw-averaged target": -0.9540323692702083,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": -0.8942462667156496,
+      "held-out $R^2$,\ndraw-averaged target": -0.9511808199792539,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": -0.8879686636269069,
+      "held-out $R^2$,\ndraw-averaged target": -0.9444079219529744,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": -0.890284227292506,
+      "held-out $R^2$,\ndraw-averaged target": -0.9469295255088384,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": -0.8918139289762328,
+      "held-out $R^2$,\ndraw-averaged target": -0.9485797170027968,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": -0.8928851022282787,
+      "held-out $R^2$,\ndraw-averaged target": -0.9497165965518233,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": -0.8942743340010613,
+      "held-out $R^2$,\ndraw-averaged target": -0.9512212779118177,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": -0.9131100607625982,
+      "held-out $R^2$,\ndraw-averaged target": -0.9708882251106795,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": -0.9292629629833412,
+      "held-out $R^2$,\ndraw-averaged target": -0.9870556776037662,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": -0.9292114355264862,
+      "held-out $R^2$,\ndraw-averaged target": -0.9872438178856909,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": -0.9526555287858319,
+      "held-out $R^2$,\ndraw-averaged target": -1.0115982093618603,
       "_kind": "line",
       "_group": 7
     },
     {
       "training contexts": 50.0,
-      "held-out $R^2$": -0.907933548557153,
+      "held-out $R^2$,\ndraw-averaged target": -0.9657239927096639,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 100.0,
-      "held-out $R^2$": -0.9204408774984785,
+      "held-out $R^2$,\ndraw-averaged target": -0.979482245297328,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 250.0,
-      "held-out $R^2$": -0.8937205094378238,
+      "held-out $R^2$,\ndraw-averaged target": -0.9507028084226458,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 500.0,
-      "held-out $R^2$": -0.8976778101884005,
+      "held-out $R^2$,\ndraw-averaged target": -0.9548730006997841,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 1000.0,
-      "held-out $R^2$": -0.8952775036347491,
+      "held-out $R^2$,\ndraw-averaged target": -0.9522515987549455,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 2500.0,
-      "held-out $R^2$": -0.8930369322468347,
+      "held-out $R^2$,\ndraw-averaged target": -0.9498868416795473,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 5000.0,
-      "held-out $R^2$": -0.8879686636269069,
+      "held-out $R^2$,\ndraw-averaged target": -0.9444079219529744,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": -0.890284227292506,
+      "held-out $R^2$,\ndraw-averaged target": -0.9469295255088384,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 15000.0,
-      "held-out $R^2$": -0.8918139289762328,
+      "held-out $R^2$,\ndraw-averaged target": -0.9485797170027968,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 20000.0,
-      "held-out $R^2$": -0.8928851022282787,
+      "held-out $R^2$,\ndraw-averaged target": -0.9497165965518233,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": -0.8942743340010613,
+      "held-out $R^2$,\ndraw-averaged target": -0.9512212779118177,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": -0.8528603035950807,
+      "held-out $R^2$,\ndraw-averaged target": -0.903932870445858,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 150000.0,
-      "held-out $R^2$": -0.8692590606797441,
+      "held-out $R^2$,\ndraw-averaged target": -0.9221936800330136,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 500000.0,
-      "held-out $R^2$": -0.869142682088706,
+      "held-out $R^2$,\ndraw-averaged target": -0.9223770501900973,
       "_kind": "line",
       "_group": 8
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": -0.8894759202193251,
+      "held-out $R^2$,\ndraw-averaged target": -0.9468133229078327,
       "_kind": "line",
       "_group": 8
     },
     {
-      "training contexts": 250.0,
-      "held-out $R^2$": 0.49315699269603835,
-      "_kind": "line",
-      "_group": 9
-    },
-    {
-      "training contexts": 500.0,
-      "held-out $R^2$": 0.5546150982107939,
-      "_kind": "line",
-      "_group": 9
-    },
-    {
-      "training contexts": 1000.0,
-      "held-out $R^2$": 0.6121011360856724,
-      "_kind": "line",
-      "_group": 9
-    },
-    {
-      "training contexts": 2000.0,
-      "held-out $R^2$": 0.6565415540868024,
-      "_kind": "line",
-      "_group": 9
-    },
-    {
-      "training contexts": 3600.0,
-      "held-out $R^2$": 0.6884018332198819,
-      "_kind": "line",
-      "_group": 9
-    },
-    {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.6661844181705912,
+      "held-out $R^2$,\ndraw-averaged target": 0.7099448623469942,
       "_kind": "line",
       "_group": 9
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.6945270264582182,
+      "held-out $R^2$,\ndraw-averaged target": 0.7380914040166258,
       "_kind": "line",
       "_group": 9
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7249689668494587,
+      "held-out $R^2$,\ndraw-averaged target": 0.7709815728611316,
       "_kind": "line",
       "_group": 9
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7786064878860613,
-      "_kind": "line",
-      "_group": 9
-    },
-    {
-      "training contexts": 150000.0,
-      "held-out $R^2$": 0.7880526998314361,
-      "_kind": "line",
-      "_group": 9
-    },
-    {
-      "training contexts": 500000.0,
-      "held-out $R^2$": 0.8074943555084623,
+      "held-out $R^2$,\ndraw-averaged target": 0.8223412716495716,
       "_kind": "line",
       "_group": 9
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.810357605301357,
+      "held-out $R^2$,\ndraw-averaged target": 0.8589138369115886,
       "_kind": "line",
       "_group": 9
     },
     {
-      "training contexts": 250.0,
-      "held-out $R^2$": 0.4899018564650054,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "training contexts": 500.0,
-      "held-out $R^2$": 0.5499191220826899,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "training contexts": 1000.0,
-      "held-out $R^2$": 0.6112953693033975,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "training contexts": 2000.0,
-      "held-out $R^2$": 0.6545466972005737,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "training contexts": 3600.0,
-      "held-out $R^2$": 0.6884018332198818,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.6531953803493912,
+      "held-out $R^2$,\ndraw-averaged target": 0.7099448623469942,
       "_kind": "line",
       "_group": 10
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.6824619135043509,
+      "held-out $R^2$,\ndraw-averaged target": 0.7380914040166258,
       "_kind": "line",
       "_group": 10
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7249689668494587,
+      "held-out $R^2$,\ndraw-averaged target": 0.7709815728611316,
       "_kind": "line",
       "_group": 10
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7672200540396426,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "training contexts": 150000.0,
-      "held-out $R^2$": 0.7781313066658002,
-      "_kind": "line",
-      "_group": 10
-    },
-    {
-      "training contexts": 500000.0,
-      "held-out $R^2$": 0.7971574817352609,
+      "held-out $R^2$,\ndraw-averaged target": 0.8115941835761031,
       "_kind": "line",
       "_group": 10
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.800651782482096,
+      "held-out $R^2$,\ndraw-averaged target": 0.8509902873581747,
       "_kind": "line",
       "_group": 10
     },
     {
-      "training contexts": 250.0,
-      "held-out $R^2$": 0.4964121289270713,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "training contexts": 500.0,
-      "held-out $R^2$": 0.5593110743388979,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "training contexts": 1000.0,
-      "held-out $R^2$": 0.6129069028679474,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "training contexts": 2000.0,
-      "held-out $R^2$": 0.6585364109730311,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "training contexts": 3600.0,
-      "held-out $R^2$": 0.688401833219882,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
       "training contexts": 5000.0,
-      "held-out $R^2$": 0.678437276577379,
+      "held-out $R^2$,\ndraw-averaged target": 0.7099448623469942,
       "_kind": "line",
       "_group": 11
     },
     {
       "training contexts": 10000.0,
-      "held-out $R^2$": 0.7064466718327932,
+      "held-out $R^2$,\ndraw-averaged target": 0.7380914040166258,
       "_kind": "line",
       "_group": 11
     },
     {
       "training contexts": 25000.0,
-      "held-out $R^2$": 0.7249689668494587,
+      "held-out $R^2$,\ndraw-averaged target": 0.7709815728611316,
       "_kind": "line",
       "_group": 11
     },
     {
       "training contexts": 50000.0,
-      "held-out $R^2$": 0.7894433418883829,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "training contexts": 150000.0,
-      "held-out $R^2$": 0.7980916861023264,
-      "_kind": "line",
-      "_group": 11
-    },
-    {
-      "training contexts": 500000.0,
-      "held-out $R^2$": 0.8175260425912461,
+      "held-out $R^2$,\ndraw-averaged target": 0.8316988498584102,
       "_kind": "line",
       "_group": 11
     },
     {
       "training contexts": 963444.0,
-      "held-out $R^2$": 0.8198403790325521,
+      "held-out $R^2$,\ndraw-averaged target": 0.8660546074848583,
       "_kind": "line",
       "_group": 11
     },
@@ -1221,7 +1034,7 @@
     {
       "training contexts": 50000.0,
       "acc@1, draw-averaged\ntarget (pool 1,000)": 0.841,
-      "error": 0.030512499999999998,
+      "error": 0.02200000000000002,
       "_kind": "errorbar",
       "_group": 12
     },
@@ -1326,7 +1139,7 @@
     {
       "training contexts": 50000.0,
       "acc@1, draw-averaged\ntarget (pool 1,000)": 0.538,
-      "error": 0.030512499999999998,
+      "error": 0.02200000000000002,
       "_kind": "errorbar",
       "_group": 13
     },
@@ -1369,6 +1182,13 @@
       "training contexts": 25000.0,
       "acc@1, draw-averaged\ntarget (pool 1,000)": 0.83,
       "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "training contexts": 50000.0,
+      "acc@1, draw-averaged\ntarget (pool 1,000)": 0.86,
+      "error": 0.02200000000000002,
       "_kind": "errorbar",
       "_group": 14
     },
@@ -1938,6 +1758,12 @@
       "_group": 21
     },
     {
+      "training contexts": 50000.0,
+      "acc@1, draw-averaged\ntarget (pool 1,000)": 0.86,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
       "training contexts": 963444.0,
       "acc@1, draw-averaged\ntarget (pool 1,000)": 0.874,
       "_kind": "line",
@@ -1958,6 +1784,12 @@
     {
       "training contexts": 25000.0,
       "acc@1, draw-averaged\ntarget (pool 1,000)": 0.83,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 50000.0,
+      "acc@1, draw-averaged\ntarget (pool 1,000)": 0.838,
       "_kind": "line",
       "_group": 22
     },
@@ -1986,6 +1818,12 @@
       "_group": 23
     },
     {
+      "training contexts": 50000.0,
+      "acc@1, draw-averaged\ntarget (pool 1,000)": 0.882,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
       "training contexts": 963444.0,
       "acc@1, draw-averaged\ntarget (pool 1,000)": 0.894,
       "_kind": "line",
@@ -1993,14 +1831,14 @@
     }
   ],
   "n_series": 24,
-  "total_points": 304,
+  "total_points": 280,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
         "xlabel": "training contexts",
-        "ylabel": "held-out $R^2$",
+        "ylabel": "held-out $R^2$,\ndraw-averaged target",
         "xticklabels": [
           "$\\mathdefault{10^{0}}$",
           "$\\mathdefault{10^{1}}$",
