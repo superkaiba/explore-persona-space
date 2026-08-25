@@ -1,18 +1,11 @@
 {
-  "commit": "9802452d+dirty",
-  "render_id": "a2d4aa044d024a5b",
-  "git_commit": "9802452ddf8427f1faa2917c0c6b979a48b58d1c",
+  "commit": "86e4cf25+dirty",
+  "render_id": "64dacaf444f7432a",
+  "git_commit": "86e4cf25f0155d66b2ade5e3b6db3d95b9749f4c",
   "git_dirty": true,
   "git_dirty_paths": [
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/paper/c5_claim4_margin_forest.meta.json",
-    "figures/paper/c5_claim4_margin_forest.pdf",
-    "figures/paper/c5_claim4_margin_forest.png",
-    "figures/paper/c5_pv_methods_regimes.meta.json",
-    "figures/paper/c5_pv_methods_regimes.pdf",
-    "figures/paper/c5_pv_methods_regimes.png",
     "scripts/issue1739_claim4_relabel_figs.py",
-    "scripts/issue1739_result2_fourpanel_fig.py",
     "scripts/issue2474_n1m_map.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
@@ -30,7 +23,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
-  "created": "2026-08-25T18:41:24Z",
+  "created": "2026-08-25T18:46:41Z",
   "figsize": [
     5.5,
     3.6300000000000003
@@ -417,7 +410,7 @@
         ],
         "yticklabels": [
           "evil: multi-turn human jailbreaks",
-          "evil: PAIR optimizer attacks *",
+          "evil: PAIR optimizer attacks",
           "evil: HH red-team",
           "evil: ToxicChat",
           "hallucination: NQ-Open",
@@ -425,7 +418,7 @@
           "sycophancy: AITA slot (held-out Reddit)",
           "sycophancy: answer",
           "sycophancy: feedback",
-          "sycophancy: model-written evaluations *"
+          "sycophancy: model-written evaluations"
         ]
       }
     ]

@@ -73,20 +73,15 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
         if r.get("complete") and (r["behavior"], r["eval_rung"]) not in paper_excluded
     ]
     order = sorted(rows, key=lambda r: (r["behavior"], r["eval_rung"]))
-    flagships = {tuple(f) for f in table["meta"]["flagships"]}
-    labels = []
-    for r in order:
-        lab = mod.rung_label(r["behavior"], r["eval_rung"])
-        if (r["behavior"], r["eval_rung"]) in flagships:
-            lab += " *"
-        labels.append(lab)
+    # No flagship star / size emphasis (user order 2026-08-25: "remove the
+    # stars") — every set renders identically.
+    labels = [mod.rung_label(r["behavior"], r["eval_rung"]) for r in order]
     ys = list(range(len(order)))[::-1]
     blue = paper_color("instruct")
 
     fig, ax = plt.subplots(figsize=figsize_iclr_full(0.66))
     for y, r in zip(ys, order, strict=True):
         m = r["dtrue"]
-        fl = (r["behavior"], r["eval_rung"]) in flagships
         ax.plot(
             m["per_seed"],
             [y] * len(m["per_seed"]),
@@ -106,7 +101,7 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
             xerr=xerr,
             fmt="o",
             color=blue,
-            ms=4.4 if fl else 3.2,
+            ms=3.2,
             capsize=1.8,
             elinewidth=0.8,
             zorder=3,
