@@ -1404,16 +1404,46 @@ def compose_w1(args, p, g2: dict) -> dict[str, list[tuple[str, str]]]:
         np.asarray(g2["rep_panel_ids"], np.int64),
         mats,
     )
+    panels_by_fam: dict[str, set[int]] = {
+        "rep_ta": set(int(x) for x in g2["rep_panel_ids"]),
+        "mat_k100": set(int(x) for x in mats["mat_k100"]),
+        "mat_k200": set(int(x) for x in mats["mat_k200"]),
+        "pt": set(),
+    }
     arms: dict[str, list[tuple[str, str]]] = {}
+    coverage: dict[str, dict] = {}
     for fam in ALL_FAMILIES:
         mined = _grouped_mining(p, args.hf_prefix, fam)
         missing = sorted(f for f in need[fam] if f not in mined)
-        assert not missing, (
-            f"[w1] family {fam}: {len(missing)} needed features absent from mining "
-            f"(first: {missing[:5]}) — mining must cover the description-need set"
+        # PANEL features are census-alive on the mining pool by construction — an
+        # unmined one signals a mining bug and stays a hard assert. Union-only
+        # features (listed by an eval turn) CAN legitimately fire zero times on the
+        # MF-A eval-DISJOINT mining pool -> drop from descriptions, recorded
+        # (downstream W3/W4/W5/W6 already tolerate + count missing descriptions).
+        panel_missing = sorted(set(missing) & panels_by_fam[fam])
+        assert not panel_missing, (
+            f"[w1] family {fam}: {len(panel_missing)} PANEL features absent from mining "
+            f"(first: {panel_missing[:5]}) — mining must cover the panel"
         )
+        if missing:
+            logger.warning(
+                "[w1] %s: %d union-only need features have no mining rows "
+                "(zero-firing on the eval-disjoint mining pool) — dropped, recorded",
+                fam,
+                len(missing),
+            )
+        coverage[fam] = {
+            "n_need": len(need[fam]),
+            "n_described": len(need[fam]) - len(missing),
+            "n_dropped_zero_mining": len(missing),
+            "dropped_ids": missing,
+        }
         block = _w1_block_pt if fam == "pt" else _w1_block_ta
-        arms[fam] = [(f"w1-{fam}-f{feat}", block(mined[feat])) for feat in sorted(need[fam])]
+        arms[fam] = [
+            (f"w1-{fam}-f{feat}", block(mined[feat])) for feat in sorted(need[fam]) if feat in mined
+        ]
+    if not args.smoke:  # canonical paths are never written under --smoke
+        _t2552().C.write_json_atomic(p.agg / "w1_mining_coverage.json", coverage)
     return arms
 
 
