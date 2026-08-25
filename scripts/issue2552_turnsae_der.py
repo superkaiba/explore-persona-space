@@ -245,10 +245,14 @@ def _production(args) -> bool:
 
 def _regime_json_path(args) -> Path:
     """The committed eval-turn regime (production) / the smoke-diverted copy.
-    Smoke NEVER writes the canonical committed path (smoke-output divert rule)."""
+    Smoke NEVER writes the canonical committed path (smoke-output divert rule).
+    The smoke copy is deliberately NOT named regime.json: the vendored
+    ``_enter_phase_regime`` claims ``<eval_dir>/regime.json`` as its per-dir phase
+    manifest, and the name collision made census_panel refuse the out-root as a
+    different-regime run (unit-3 composed-smoke catch; vendored file is pin-frozen)."""
     if _production(args):
         return PROJECT_ROOT / "eval_results" / "issue_2552" / "regime.json"
-    return _eval_dir(args) / "regime.json"
+    return _eval_dir(args) / "eval_turn_regime_smoke.json"
 
 
 def _hf_fetch(path_in_repo: str, dest_dir: Path, revision: str) -> Path:
@@ -1884,6 +1888,243 @@ def phase_upload(args) -> None:
     T._sentinel("upload", "P1.10 done (all §10 destinations verified)")
 
 
+# ── P4: embedding-coverage metric (separate dispatch — NOT in PHASE_ORDER) ───────
+
+
+def _p4_dirs(args) -> SimpleNamespace:
+    """P4 io roots. Smoke diverts EVERY output under out_root (fixtures + results);
+    production writes the JSON into the repo clone's eval_results + stages HF npz."""
+    stage = args.out_root / "p4" / "stage"
+    stage.mkdir(parents=True, exist_ok=True)
+    if args.smoke:
+        agg = args.out_root / "p4" / "fixtures" / "judge_aggregates"
+        dere = args.out_root / "p4" / "dere_repl"
+    else:
+        agg = PROJECT_ROOT / "eval_results" / "issue_2552" / "judge_aggregates"
+        dere = PROJECT_ROOT / "eval_results" / "issue_2552" / "dere_repl"
+    for d in (agg, dere):
+        d.mkdir(parents=True, exist_ok=True)
+    return SimpleNamespace(
+        stage=stage, agg=agg, dere=dere, fixtures=args.out_root / "p4" / "fixtures"
+    )
+
+
+P4_KS = (1, 2, 3, 5)
+P4_CFG_TO_DESC_FAM = {**{f: f for f in TA_FAMILIES}, "pt_max": "pt", "pt_sum": "pt"}
+
+
+def _p4_synth_fixtures(args, io) -> None:
+    """Tiny smoke fixtures in the unit-2 writers' exact schemas (descriptions /
+    summaries / per-turn lists)."""
+    rng = np.random.default_rng(2552)
+    io.fixtures.mkdir(parents=True, exist_ok=True)
+    fields = ["domain", "tone", "intent"]
+    for fam in ("pt", *TA_FAMILIES):
+        descs = {
+            str(int(f)): f"feature about topic {int(f)} in {fam}" for f in rng.integers(0, 999, 5)
+        }
+        T._write_json(
+            io.agg / f"descriptions_{fam}.json",
+            {"family": fam, "n_valid": len(descs), "n_dropped": 0, "descriptions": descs},
+            phase="p4-smoke",
+        )
+    row_ids = [11, 42]
+    summaries = {str(r): {f: f"summary value {f} row {r}" for f in fields} for r in row_ids}
+    T._write_json(
+        io.agg / "summaries_2.json",
+        {"n_valid": 2, "n_items": 2, "min_fields": 20, "summaries": summaries},
+        phase="p4-smoke",
+    )
+    lists_doc = {}
+    for cfg in ("pt_max", "pt_sum", *TA_FAMILIES):
+        fam = P4_CFG_TO_DESC_FAM[cfg]
+        descs = json.loads((io.agg / f"descriptions_{fam}.json").read_text())["descriptions"]
+        feats = [int(k) for k in descs][:4]
+        lists_doc[cfg] = {
+            "turns": [{"row_id": r, "judged_top100": [[f, 1.0] for f in feats]} for r in row_ids]
+        }
+    (io.fixtures / "feature_lists_2000turns.json").write_text(json.dumps(lists_doc))
+
+
+def _p4_lists(args, io) -> dict:
+    """Per-turn judged top-100 lists: local P1 out-root first, then the HF
+    analysis_tensors/eval_lists copy (pinned revision), fail-loud last."""
+    if args.smoke:
+        return json.loads((io.fixtures / "feature_lists_2000turns.json").read_text())
+    local = _lists_dir(args)
+    if all((local / f"lists_{cfg}.json").exists() for cfg in ("pt_max", "pt_sum", *TA_FAMILIES)):
+        return {
+            cfg: json.loads((local / f"lists_{cfg}.json").read_text())
+            for cfg in ("pt_max", "pt_sum", *TA_FAMILIES)
+        }
+    rev = _pins_revision()
+    got = _hf_fetch(
+        f"{args.hf_prefix}/analysis_tensors/eval_lists/feature_lists_2000turns.json",
+        T._stage_dir(args) / "p4_lists",
+        rev,
+    )
+    return json.loads(got.read_text())
+
+
+def _p4_load_embedder(args):
+    """Qwen3-Embedding-8B (bf16) — or a from_config tiny twin under smoke/--tiny-model
+    (weights random; the REAL transformers code path + tokenizer still execute)."""
+    from transformers import AutoConfig, AutoModel, AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(args.emb_model, padding_side="left")
+    if args.tiny_model or args.smoke:
+        cfg = AutoConfig.from_pretrained(args.emb_model)
+        cfg.num_hidden_layers = 2
+        cfg.hidden_size = 128
+        cfg.intermediate_size = 256
+        cfg.num_attention_heads = 4
+        cfg.num_key_value_heads = 2
+        if hasattr(cfg, "head_dim"):
+            cfg.head_dim = 32
+        model = AutoModel.from_config(cfg).to(torch.float32)
+    else:
+        model = AutoModel.from_pretrained(args.emb_model, torch_dtype=torch.bfloat16)
+    model = model.to(args.device).eval()
+    return model, tok
+
+
+@torch.no_grad()
+def _p4_embed_texts(args, model, tok, texts: list[str]) -> np.ndarray:
+    """Last-token-pooled, L2-normalized embeddings (fp32, on CPU)."""
+    out = np.empty((len(texts), int(model.config.hidden_size)), np.float32)
+    bs = int(args.emb_batch)
+    for s in range(0, len(texts), bs):
+        batch = texts[s : s + bs]
+        enc = tok(
+            batch,
+            padding=True,
+            truncation=True,
+            max_length=int(args.emb_max_tokens),
+            return_tensors="pt",
+        ).to(args.device)
+        h = model(**enc).last_hidden_state
+        mask = enc["attention_mask"]
+        if bool((mask[:, -1] == 1).all()):  # left padding: last position = last token
+            emb = h[:, -1]
+        else:  # right padding: index the last non-pad position
+            idx = mask.sum(dim=1) - 1
+            emb = h[torch.arange(h.size(0), device=h.device), idx]
+        emb = torch.nn.functional.normalize(emb.float(), dim=-1)
+        out[s : s + len(batch)] = emb.cpu().numpy()
+        if (s // bs) % 50 == 0:
+            print(f"[p4-embed] embedded {s + len(batch)}/{len(texts)}", flush=True)
+    return out
+
+
+def phase_p4_embed(args) -> None:
+    """P4 (plan §4): Qwen3-Embedding-8B coverage metric. Embed every description +
+    every (turn, field) summary value; per (turn, config, field) the mean cosine of the
+    top-k most-similar listed descriptions, k in {1,2,3,5}; aggregate per config.
+
+    Raw per-cell npz -> HF {hf_prefix}/analysis_tensors/embcov/ before termination;
+    JSON -> eval_results/issue_2552/dere_repl/embedding_coverage.json (git-committed
+    by the VM harvest step)."""
+    C.phase("p4_embed")
+    io = _p4_dirs(args)
+    if args.smoke:
+        _p4_synth_fixtures(args, io)
+    # inputs: descriptions per family + summaries + per-turn lists
+    descs: dict[str, dict[int, str]] = {}
+    for fam in ("pt", *TA_FAMILIES):
+        path = io.agg / f"descriptions_{fam}.json"
+        assert path.exists(), f"[p4] descriptions missing: {path} — run judge W1 first"
+        d = json.loads(path.read_text())["descriptions"]
+        descs[fam] = {int(k): v for k, v in d.items()}
+    summ_paths = sorted(io.agg.glob("summaries_*.json"))
+    assert summ_paths, f"[p4] summaries_*.json missing under {io.agg} — run judge W2 first"
+    summaries = json.loads(summ_paths[-1].read_text())["summaries"]
+    lists_doc = _p4_lists(args, io)
+    cfgs = ("pt_max", "pt_sum", *TA_FAMILIES)
+    # unique text pool: descriptions + (turn, field) values
+    texts: list[str] = []
+    t_index: dict[str, int] = {}
+
+    def _tid(t: str) -> int:
+        if t not in t_index:
+            t_index[t] = len(texts)
+            texts.append(t)
+        return t_index[t]
+
+    desc_ids = {fam: {f: _tid(t) for f, t in fam_d.items()} for fam, fam_d in descs.items()}
+    fields = sorted({f for row in summaries.values() for f in row})
+    row_ids = sorted(int(r) for r in summaries)
+    field_ids = {
+        (r, f): _tid(str(summaries[str(r)][f]))
+        for r in row_ids
+        for f in fields
+        if f in summaries[str(r)] and str(summaries[str(r)][f]).strip()
+    }
+    print(f"[p4-embed] texts={len(texts)} turns={len(row_ids)} fields={len(fields)}", flush=True)
+    model, tok = _p4_load_embedder(args)
+    emb = _p4_embed_texts(args, model, tok, texts)
+    del model
+    if args.device == "cuda":
+        torch.cuda.empty_cache()
+    # per (turn, config, field): mean cosine of the top-k most-similar descriptions
+    n_k = len(P4_KS)
+    per_cfg_topk: dict[str, np.ndarray] = {}
+    per_cfg_cov: dict[str, float] = {}
+    for cfg in cfgs:
+        fam = P4_CFG_TO_DESC_FAM[cfg]
+        topk = np.full((len(row_ids), len(fields), n_k), np.nan, np.float32)
+        n_listed = n_described = 0
+        for i, rid in enumerate(row_ids):
+            turn = next((t for t in lists_doc[cfg]["turns"] if int(t["row_id"]) == rid), None)
+            if turn is None:
+                continue
+            feats = [int(f) for f, _v in turn["judged_top100"]]
+            n_listed += len(feats)
+            ids = [desc_ids[fam][f] for f in feats if f in desc_ids[fam]]
+            n_described += len(ids)
+            if not ids:
+                continue
+            d_mat = emb[ids]  # (m, h) unit-norm
+            for j, f in enumerate(fields):
+                fid = field_ids.get((rid, f))
+                if fid is None:
+                    continue
+                sims = d_mat @ emb[fid]
+                order = np.sort(sims)[::-1]
+                for ki, k in enumerate(P4_KS):
+                    topk[i, j, ki] = float(order[: min(k, order.size)].mean())
+        per_cfg_topk[cfg] = topk
+        per_cfg_cov[cfg] = (n_described / n_listed) if n_listed else float("nan")
+        print(f"[p4-embed] {cfg} cells={int(np.isfinite(topk[..., 0]).sum())}", flush=True)
+    per_config = {
+        cfg: {
+            f"top_{k}": float(np.nanmean(per_cfg_topk[cfg][..., ki])) for ki, k in enumerate(P4_KS)
+        }
+        for cfg in cfgs
+    }
+    doc = {
+        "per_config": per_config,
+        "list_description_coverage": per_cfg_cov,
+        "n_turns": len(row_ids),
+        "n_fields": len(fields),
+        "ks": list(P4_KS),
+        "model": args.emb_model,
+        "pooling": "last-token pool, L2-normalized, no instruction prefix",
+        "tiny_model_smoke": bool(args.tiny_model or args.smoke),
+        "paper_reference_embedding": {"pt_max": 0.663, "rep_ta": 0.617},
+    }
+    T._write_json(io.dere / "embedding_coverage.json", doc, phase="p4-embed")
+    savez_atomic(
+        io.stage / "embcov_topk.npz",
+        row_ids=np.asarray(row_ids, np.int64),
+        fields=np.asarray(fields),
+        ks=np.asarray(P4_KS, np.int64),
+        **{f"topk_{cfg}": per_cfg_topk[cfg] for cfg in cfgs},
+    )
+    shutil.copy2(io.dere / "embedding_coverage.json", io.stage / "embedding_coverage.json")
+    _upload_leaf(args, io.stage, "analysis_tensors/embcov", resume_skip=False)
+    T._sentinel("p4_embed", f"P4 done ({len(texts)} texts, {len(row_ids)} turns)")
+
+
 # ── smoke ────────────────────────────────────────────────────────────────────────
 
 
@@ -1967,6 +2208,9 @@ PHASES = {
     "pt_mining": phase_pt_mining,
     "covariates": phase_covariates,
     "upload": phase_upload,
+    # P4 is a SEPARATE dispatch (fresh 1x H100 pod, plan §4 P4) — deliberately NOT in
+    # PHASE_ORDER, so `--phase all` (the P1 pipeline) never runs it implicitly.
+    "p4-embed": phase_p4_embed,
 }
 
 
@@ -1996,6 +2240,10 @@ def _parse_args(argv=None):
     # parent-kernel passthrough (delegated phase_assemble + _regime hash inputs;
     # production values pinned — the vendored kernels read these off args)
     ap.add_argument("--tiny-model", action="store_true", help="smoke-only from-config model")
+    # P4 embedding-metric knobs (plan §4 P4)
+    ap.add_argument("--emb-model", default="Qwen/Qwen3-Embedding-8B")
+    ap.add_argument("--emb-batch", type=int, default=64, help="P4 embedding forward batch")
+    ap.add_argument("--emb-max-tokens", type=int, default=512, help="P4 tokenizer truncation")
     ap.add_argument("--sae-dict", type=int, default=0, help="parent passthrough (unused here)")
     ap.add_argument("--sae-k", type=int, default=0, help="parent passthrough (unused here)")
     ap.add_argument("--fit-n", type=int, default=0, help="parent passthrough (regime hash)")
@@ -2023,7 +2271,12 @@ def main() -> None:
         # function-body import of this driver so a missing symbol fails HERE.
         from huggingface_hub import HfApi, hf_hub_download  # noqa: F401
         from safetensors.torch import load_file, save_file  # noqa: F401
-        from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: F401
+        from transformers import (  # noqa: F401
+            AutoConfig,
+            AutoModel,
+            AutoModelForCausalLM,
+            AutoTokenizer,
+        )
 
         from explore_persona_space.analysis.extraction import (
             extract_layer_activations,  # noqa: F401
