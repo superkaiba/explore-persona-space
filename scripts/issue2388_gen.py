@@ -87,6 +87,7 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # BEFORE numpy/torch: thread caps bind at import (#847)
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 
 from scripts.issue2388_spread_pilot import (  # noqa: E402
     K_ROLLOUTS,
@@ -646,9 +647,8 @@ def dedup_lcb_against_leetcode(out_root: Path) -> dict:
     report.update(as_metadata_dict(git_provenance(), phase="gen-dedup"))
     path = out_root / "code" / "dedup_report.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(report, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(report, indent=1))
     print(f"[dedup] {json.dumps({k: report[k] for k in list(report)[:5]})} -> {path}", flush=True)
     return report
 
@@ -889,9 +889,8 @@ def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
     verdict.update(as_metadata_dict(git_provenance(), phase="gen-gate"))
     path = gate_path(out_root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(verdict, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(verdict, indent=1))
     print(
         f"[gate] bcb_gen_allowed={bcb_gen_allowed} bcb_fit_allowed={bcb_fit_allowed} "
         f"apps_required={apps_required} apps_pilot_gen_allowed={apps_pilot_gen_allowed} "
@@ -1373,20 +1372,21 @@ def _regen_prune(roll_path: Path, out_root: Path, benchmark: str) -> int:
     if not hit_ids:
         print(f"[gen] {benchmark}: --regen-cap-hit found 0 cap-hit rows", flush=True)
         return 0
-    tmp = roll_path.with_name(roll_path.name + ".tmp")
-    with roll_path.open(encoding="utf-8") as inp, tmp.open("w", encoding="utf-8") as outp:
-        for line in inp:
-            if line.strip() and json.loads(line)["item_id"] not in hit_ids:
-                outp.write(line)
-    os.replace(tmp, roll_path)
-    verd_path = out_root / surface_of(benchmark) / "rollouts" / f"{benchmark}_verdicts.jsonl"
-    if verd_path.exists():
-        vtmp = verd_path.with_name(verd_path.name + ".tmp")
-        with verd_path.open(encoding="utf-8") as inp, vtmp.open("w", encoding="utf-8") as outp:
+    with atomic_replace(roll_path) as tmp:
+        with roll_path.open(encoding="utf-8") as inp, tmp.open("w", encoding="utf-8") as outp:
             for line in inp:
                 if line.strip() and json.loads(line)["item_id"] not in hit_ids:
                     outp.write(line)
-        os.replace(vtmp, verd_path)
+    verd_path = out_root / surface_of(benchmark) / "rollouts" / f"{benchmark}_verdicts.jsonl"
+    if verd_path.exists():
+        with atomic_replace(verd_path) as vtmp:
+            with (
+                verd_path.open(encoding="utf-8") as inp,
+                vtmp.open("w", encoding="utf-8") as outp,
+            ):
+                for line in inp:
+                    if line.strip() and json.loads(line)["item_id"] not in hit_ids:
+                        outp.write(line)
     print(f"[gen] {benchmark}: pruned {len(hit_ids)} cap-hit items (+ their verdicts)", flush=True)
     return len(hit_ids)
 
@@ -1649,9 +1649,8 @@ def phase_verify(
     out_name = APPS_PILOT_REPORT if payload["pilot"] else f"{benchmark}.json"
     out_path = out_root / surface_of(benchmark) / out_name
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload))
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload))
     print(
         f"[verify] {benchmark}: n={len(out_items)} unparsed={payload['unparsed_fraction']:.1%} "
         f"reliability={None if stats is None else round(stats['reliability'], 3)} "

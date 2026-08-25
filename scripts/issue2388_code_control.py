@@ -28,11 +28,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -289,9 +289,8 @@ def main(argv: list[str] | None = None) -> int:
     payload = {"benchmarks": merged, "invocations": invocations}
     payload.update(meta)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.out.with_name(args.out.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2))
-    os.replace(tmp, args.out)
+    with atomic_replace(args.out) as tmp:
+        tmp.write_text(json.dumps(payload, indent=2))
     print(f"wrote {args.out} (benchmarks now: {', '.join(sorted(merged))})")
     # rc reflects THIS invocation's benchmarks only — a preserved prior FAIL
     # row (e.g. the dropped-BCB verdict) must not fail a passing APPS control.

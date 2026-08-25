@@ -60,6 +60,7 @@ load_dotenv()
 
 import numpy as np  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue_1739 import fits as F  # noqa: E402
 from explore_persona_space.experiments.issue_1739.arms import (  # noqa: E402
     _pearson_rows,  # batched-bootstrap building block (same math as spearman_rows)
@@ -690,9 +691,8 @@ def phase_maps(args) -> None:
             "wall_s": round(time.time() - t0, 1),
         }
         (out_dir / f"{key}_diagnostics.json").write_text(json.dumps(diagnostics, default=float))
-        tmp = manifest_path.with_name(manifest_path.name + ".tmp")
-        tmp.write_text(json.dumps(manifest, indent=2))
-        os.replace(tmp, manifest_path)
+        with atomic_replace(manifest_path) as tmp:
+            tmp.write_text(json.dumps(manifest, indent=2))
         print(f"[maps] {key}: |U|={realized_u} wall={manifest[key]['wall_s']}s", flush=True)
 
 

@@ -38,7 +38,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from collections import defaultdict
@@ -62,6 +61,7 @@ load_dotenv()  # BEFORE numpy: shared-VM thread caps bind at import (#847)
 
 import numpy as np  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
     git_provenance,
@@ -155,9 +155,8 @@ def derive_from_banked(banked_path: Path, out_path: Path) -> dict:
     out_payload.update(as_metadata_dict(git_provenance(), phase="dv-from-banked"))
     out_payload["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(out_payload))
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(out_payload))
 
     # FULL-GRAIN output assert (plan section 10): re-read the file just written
     # and check derived dv == source fractions.correct over the WHOLE file.
@@ -409,9 +408,8 @@ def build_surface_dv(
     payload.update(as_metadata_dict(git_provenance(), phase=f"dv-{surface}"))
     out_path = out_root / surface / "labeling.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload))
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload))
     print(
         f"[dv-build] {surface}: {len(rows)} contexts, "
         f"{payload['n_contexts_with_dv']} with DV, splits={payload['split_counts']}, "

@@ -54,6 +54,7 @@ load_dotenv()
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import issue2388_gen as G  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue_1739.capture import (  # noqa: E402
     _token_ids,
     capture_row_ids_and_positions,
@@ -317,9 +318,8 @@ def _write_surface_tf_aggregate(dv_root: Path, surface: str) -> Path:
     }
     payload.update(as_metadata_dict(git_provenance(), phase=f"tf-margin-agg-{surface}"))
     out = dv_root / surface / "tf_margin.json"
-    tmp = out.with_name(out.name + ".tmp")
-    tmp.write_text(json.dumps(payload))
-    tmp.replace(out)
+    with atomic_replace(out) as tmp:
+        tmp.write_text(json.dumps(payload))
     print(f"[tf-margin] aggregate: {len(rows)} rows ({sorted(included)}) -> {out}", flush=True)
     return out
 
@@ -522,10 +522,9 @@ def phase_upload(args) -> None:
             raise RuntimeError(f"{store_dir} has no _capture_manifest.json — capture incomplete")
         tar_path = store_root / f"{benchmark}.tar"
         if not tar_path.exists() or tar_path.stat().st_mtime < manifest_p.stat().st_mtime:
-            tmp = tar_path.with_name(tar_path.name + ".tmp")
-            with tarfile.open(tmp, "w") as tf:
-                tf.add(store_dir, arcname=benchmark)
-            tmp.replace(tar_path)
+            with atomic_replace(tar_path) as tmp:
+                with tarfile.open(tmp, "w") as tf:
+                    tf.add(store_dir, arcname=benchmark)
         dest = f"{store_prefix}/{surface}/{benchmark}.tar"
         # UPLOAD_LOOP_EXEMPT: bounded — at most 6 multi-GB benchmark tars, never a per-file storm
         out = hub._upload(
