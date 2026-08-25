@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2578,
+  "highest_id": 2579,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12165,6 +12165,13 @@
       "path": "tasks/planning/2578",
       "status": "planning",
       "title": "verify_uploads.py hardcodes HF_DATA_REPO \u2014 the upload gate cannot verify overflow-routed runs"
+    },
+    "2579": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2579",
+      "status": "proposed",
+      "title": "Shared-tmp follow-up capture: with_suffix class + literal residue + atomic-DIRECTORY recipe + lint-arm widening + orphan-sweep hardening + unreadable-file bypass"
     },
     "258": {
       "has_clean_result": false,
