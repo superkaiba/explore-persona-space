@@ -19560,24 +19560,17 @@ def _shared_tmp_waiver_present(lines: list[str], idx: int) -> bool:
     return prev >= 0 and lines[prev].lstrip().startswith("#") and _ok(lines[prev])
 
 
-# Batch-0 seed (#2336, plan v3 §4 step 5): the full landing-day residual of
-# the check's OWN scanner with allowlist=() over scripts/ + src/ (208 hit
-# lines / 118 files at seed time) — NEVER derived from a plain grep. Each
-# migration batch shrinks this tuple by exactly the batch's migrated files
-# IN THE SAME COMMIT; stale entries WARN. Close-out gate (plan §7 / A11):
-# the task terminates only when this tuple is EMPTY.
-_SHARED_TMP_SEED_REASON = "batch-0 seed — unsafe shared-tmp file-writer pending migration"
-_SHARED_TMP_DIR_IDIOM_REASON = (
-    "batch-0 seed — §4(g) temp-DIRECTORY idiom site (also carries migratable file-writer"
-    " lines); waiver-or-defer disposition in batch 2, never recipe-migration"
-)
-SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = (
-    # Batch-5 (#2336) migrated every other seed entry; the #1901 pair stays
-    # deferred while its owning session is LIVE (close-out gate A11 blocks on
-    # emptying these too — deferred entries are never a terminal state).
-    ("scripts/issue1901_boundary_token_control.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1901_paper_densify_fits.py", _SHARED_TMP_SEED_REASON),
-)
+# Batch-0 seed (#2336, plan v3 §4 step 5) held the full landing-day residual
+# of the check's OWN scanner with allowlist=() over scripts/ + src/ (208 hit
+# lines / 118 files at seed time) — NEVER derived from a plain grep. Batches
+# 1-6 migrated every entry onto explore_persona_space.atomic_io.atomic_replace,
+# each batch shrinking this tuple IN THE SAME COMMIT (close-out gate, plan
+# §7 / A11). EMPTY since batch 6 (the deferred #1901 pair was the last): the
+# ratchet is fully armed — any new shared-tmp hit under scripts/ + src/ FAILs
+# unless it carries a SHARED_TMP_EXEMPT waiver comment. Add entries here ONLY
+# for a sanctioned deferral, as (repo-relative path, reason >= 10 chars);
+# stale entries WARN.
+SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = ()
 
 
 def check_shared_tmp_name(
