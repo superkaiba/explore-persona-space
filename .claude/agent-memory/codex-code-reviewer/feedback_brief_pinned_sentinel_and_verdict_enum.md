@@ -34,4 +34,19 @@ fresh OUTPUT FILE stays unambiguous (one block per file); the hazard is only
 a later events.jsonl re-extraction keyed on the sentinel. Still: follow the
 brief, name the collision explicitly in the return so the orchestrator can
 patch the sentinel at post time if it was a typo.
+
+**Key=value CONCERN grammar + pushback-line variant (#2254 r6 fix-round r2,
+2026-08-24):** a fix-verification brief pinned (a) FIRST content line
+`verdict: PASS|FAIL`, (b) `CONCERN:: id=... severity=... file=... line=...
+summary=...` rows (key=value — NOT the standing positional
+severity/id/summary grammar `persist_verdict_concerns.py` parses), and (c) a
+required `pushback: accepted|rejected — <reason>` adjudication line. Same
+rule: compose the brief's grammar exactly, keep the standard marker envelope
+tags around it so tag-block extraction still works (verdict line first
+INSIDE the tags satisfies "lead with"), and FLAG in the return that
+blind-forwarding key=value rows to the ledger needs a translation step. A
+brief-named deliberate push-back gets a severity fence in the prompt: its
+rejection re-raises the open concern row at the concern's own grade, never
+flips the round verdict (the [[concern-discharge round severity fence]]
+logic applied to a not-fixed-by-design item).
 Related: [[revision-round compose recipe]], [[concerns-machine-rows-2326]].
