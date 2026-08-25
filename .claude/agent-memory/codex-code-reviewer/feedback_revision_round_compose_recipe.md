@@ -1553,3 +1553,47 @@ hit live (all label-caught): the diff-acq block carries the parent SHA 3×
 (log + pre-image show + per-file diff); an addressed-rows pair carries the
 hot-fix SHA 2× in the slice JSON; a duties-section header that names its tail
 heading adds a 4th `## Round-N ledger status` mention.
+
+**Fresh-cycle interp-REVISE corrective round (#2378 r15 = impl v15, 2026-08-24):**
+when an interpretation-critique REVISE (post-loop-close, task at `interpreting`)
+spawns a corrective implementation round, the compose is a fresh cycle whose
+ACCEPTANCE CONTRACT is the orchestrator's corrective BRIEF (inline verbatim) +
+the interp-outcome `epm:progress` note (short; inline) — do NOT inline the full
+interp-critique verdicts (~12 KB each; the brief distills them), and
+pre-adjudicate that the OTHER twin's interp blockers (clean-result-body fixes)
+are the analyzer-r2 round's property, never this code round's. Three deltas:
+(a) PLAN-REGISTERED-DEFECT pre-adjudication — the plan itself registered the
+defective behavior (§4.4 "Fold ids aligned by index for the pooled arm"), so
+the fix arm deviates from the PLAN by REVISE mandate: quote the plan line, say
+"do not flag as silent drift", and keep default-OFF byte-identity as a V-duty;
+(b) code-only payload vs run deliverables — brief deliverables naming POD-SIDE
+re-run outputs get an explicit "absence of eval_results/<new-dir>/ is NOT a
+finding; review whether the code would produce them" line; (c) when the marker's
+checked fact CONTRADICTS the brief's stated premise (brief: "row-id spaces are
+per-framing, pair from metadata"; marker: row_id IS a content key minted once
+per source conversation), make it the round's TOP duty with a three-way
+MARKER-RIGHT / BRIEF-RIGHT / UNRESOLVED ruling + the exact reading anchors
+(gen-script function, id-minting site) — the #2332-r2 named-tension rule,
+escalated because the contradiction decides whether the round's whole
+non-story disposition rests on a false premise.
+
+**Fresh-cycle rubric reuse: the adaptations block carries FOUR round-specific
+spans (#2378 r15):** the A→B rubric span extracted from a prior FIX-round
+prompt embeds that round's Codex-runtime adaptations — patch (count-assert ==1
+each): (1) the BLOCKED paragraph's inlined-document LIST (bounce brief /
+prior-verdict entries → this round's envelope names); (2) the item-2
+`## Round-<n-1> ledger status` heading ref; (3) the item-5 pinned ROUND-PARENT
+SHA for Step 0.9 probes; (4) the item-7 substantive-finding EXAMPLES (rewrite
+to this round's failure shapes). Post-patch residue asserts: `r13`/`bounce
+brief`/`Round-<n-1>`/old-parent-SHA all == 0. Round-token count-pins:
+"round 15" appears once RUBRIC-NATIVELY (incident #518 citation).
+
+**f-string placeholder brace-halving is SILENT (#2378 r15, hit live):** writing
+`{{IMPL}}`-style placeholders inside an f-string head renders them SINGLE-braced,
+so the later `.replace("{{IMPL}}", ...)` no-ops silently AND the standard
+`assert '{{' not in prompt` cannot see them (they are already single-braced).
+The miss only surfaced because an unrelated authored doubled-brace literal
+tripped the assert first. Rule: build the head as a PLAIN string with
+placeholder tokens, or use brace-free tokens (`@@IMPL@@`) in f-string heads;
+after substitution assert each envelope's BEGIN/END tag ==1 (which is what
+actually caught the no-op here — the impl head-sentinel count came back wrong).
