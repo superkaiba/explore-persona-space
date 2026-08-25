@@ -212,6 +212,10 @@ def _cap_hit_fractions(rows: list[dict]) -> dict[str, float]:
     tot: Counter = Counter()
     hit: Counter = Counter()
     for r in rows:
+        # generation-side drop rows (e.g. opener_empty) never generated at the
+        # cap; only the story no-close convention is itself a cap-hit marker
+        if r.get("drop_reason") not in (None, "cap_hit_no_close"):
+            continue
         fam = r.get("family") or f"anchors|{r.get('ctx_id', '?').split(':', 1)[0]}"
         tot[fam] += 1
         capped = (
