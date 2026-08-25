@@ -32,6 +32,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--stage-root", default=str(cm.REPO_ROOT / "data" / "issue_2378" / "p6_stage"))
     ap.add_argument("--ledger-root", default=str(cm.LEDGER_ROOT))
+    # read by d.sentinel_dir(args) inside write_sentinel — the import-check
+    # only covers attrs read in THIS file, which is how the first run died
+    # at the terminal sentinel write (AttributeError after a clean harvest)
+    ap.add_argument("--sentinel-dir", default=None)
     ap.add_argument("--no-jitter", action="store_true", default=True)
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
