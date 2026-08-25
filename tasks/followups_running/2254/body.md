@@ -25,7 +25,7 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_2254.md](https://github.com/superkaiba/explore-persona-space/blob/e2bf4ac96dcb8c8735361fac143ca196dd31bd58/docs/methodology/issue_2254.md) · [gist](https://gist.github.com/superkaiba/68b3cd2ff62b09163b876ce9ca207b62)
+**Methodology:** [docs/methodology/issue_2254.md](https://github.com/superkaiba/explore-persona-space/blob/4ba63ebd8504a5aad34b8119edd8f343ce62b16b/docs/methodology/issue_2254.md) · [gist](https://gist.github.com/superkaiba/68b3cd2ff62b09163b876ce9ca207b62)
 
 ## Takeaways
 
