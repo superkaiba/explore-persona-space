@@ -73,12 +73,22 @@ RECIPE_VERSION = C2.RECIPE_VERSION
 BOOKED_PASS_WALL_H = 8.5 + 3.5  # P2+P3a + P3b planned_wall_h
 CAPTURE_LAYER_FULL = "full17"
 SMOKE_SUBSET_SIZES: dict[str, int] = {"pilot": 8, "reliability": 4, "robust": 8, "natgen": 4}
-SMOKE_EXEMPLAR_QUOTAS: dict[str, int] = {"generic": 40, "math": 12, "code": 12}
+# MEASURED (Unit C smoke, 2026-08-24): math pool rows concentrate in FEW
+# embedding clusters (n=12 rows -> only 6 distinct clusters; n=40 -> 10), and
+# select_exemplar_bank needs >=6 distinct math clusters (3 set picks + 3
+# spares, all cluster-disjoint under the conservative spare rule). Smoke
+# math/code quotas therefore match the production quotas (40/40) — the bank
+# constraints are the SAME instrument at smoke and production, so the smoke
+# axis is resized UP to the constraint floor rather than downgrading the
+# bank-selection gate (measured: {40,40,40} -> bank OK; {40,12,12} -> math
+# spares 2/3 infeasible regardless of scan cap).
+SMOKE_EXEMPLAR_QUOTAS: dict[str, int] = {"generic": 40, "math": 40, "code": 40}
 # MEASURED (Unit C smoke, 2026-08-24): the production quotas {120,40,40} fill at
 # 34,834 scanned LMSYS rows under the production eligibility filters (math is
 # the scarce class); 6,000 left the math class at ~3 rows and the bank build
 # raised "spares infeasible". The stream stops EARLY once the smoke quotas
-# {40,12,12} fill, so this bound only pays when classes are rare.
+# fill (math/code=40 fill at the same 34,834 rows), so this bound only pays
+# when classes are rare.
 SMOKE_EXEMPLAR_SCAN_CAP = 40_000
 WILSON_Z = 1.959963984540054  # 95% two-sided
 
