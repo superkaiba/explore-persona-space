@@ -444,7 +444,11 @@ def _corpus_tags_from_manifest_dir(manifest_dir: Path, row_ci: np.ndarray, n_pb:
                 if not line.strip():
                     continue
                 rec = json.loads(line)
-                r = rev.get(int(rec["ci"]))
+                # Manifest rows key the conversation index as "i"; the derived
+                # capture/store artifacts rename the SAME integer to "ci" (see
+                # issue1738_multiturn_generate_capture.py, which reads r["i"] and
+                # writes "ci"). Reading rec["ci"] here is a KeyError on row 1.
+                r = rev.get(int(rec["i"]))
                 if r is not None:
                     out[r] = str(rec["corpus"]).lower()
                     n_hit += 1
@@ -1638,7 +1642,9 @@ def _ans_len_from_manifest_dir(manifest_dir: Path, row_ci: np.ndarray, n_pb: int
                 if not line.strip():
                     continue
                 rec = json.loads(line)
-                r = rev.get(int(rec["ci"]))
+                # Manifest-side key is "i" (the store side is "ci") — see the
+                # corpus-tag join above for the rename boundary.
+                r = rev.get(int(rec["i"]))
                 if r is not None:
                     out[r] = len(rec.get("response") or "")
                     n_hit += 1

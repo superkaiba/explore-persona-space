@@ -562,7 +562,8 @@ def test_leg8_ans_len_manifest_join(tmp_path):
     (the length-unknown stratum)."""
     import json as _json
 
-    rows = [{"ci": 0, "response": "abcd"}, {"ci": 1, "response": ""}, {"ci": 2, "response": "xy"}]
+    # Manifest rows key the conversation index as "i" (the store side is "ci").
+    rows = [{"i": 0, "response": "abcd"}, {"i": 1, "response": ""}, {"i": 2, "response": "xy"}]
     (tmp_path / "part_00000.jsonl").write_text(
         "".join(_json.dumps(r) + "\n" for r in rows), encoding="utf-8"
     )

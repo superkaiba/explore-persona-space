@@ -72,11 +72,17 @@ def _write_manifest(tmp_path: Path, rows: list[dict], parts: int = 2) -> Path:
 
 def test_corpus_tags_pass_b_never_lmsys(tmp_path):
     """pass_b rows are tagged 'pass_b' (NOT the #1482 'lmsys' convention); new
-    rows take the manifest corpus by ci; response text is tolerated, never kept."""
+    rows take the manifest corpus by the manifest's own key ``i``; response text
+    is tolerated, never kept.
+
+    Fixture rows use ``i`` because that is the REAL sampling-manifest schema
+    (``{corpus, depth, i, messages, n_chars, source_hash, split, stream_pos}``);
+    the ``ci`` spelling belongs to the DERIVED capture/store artifacts.
+    """
     rows = [
-        {"ci": 0, "corpus": "lmsys", "response": "long text " * 50},
-        {"ci": 1, "corpus": "WildChat", "response": "x"},
-        {"ci": 2, "corpus": "lmsys"},
+        {"i": 0, "corpus": "lmsys", "response": "long text " * 50},
+        {"i": 1, "corpus": "WildChat", "response": "x"},
+        {"i": 2, "corpus": "lmsys"},
     ]
     mdir = _write_manifest(tmp_path, rows)
     row_ci = np.array([-1, -1, 0, 1, 2])  # 2 pass_b rows lead
@@ -86,10 +92,35 @@ def test_corpus_tags_pass_b_never_lmsys(tmp_path):
 
 def test_corpus_tags_fail_loud_on_unjoined_row(tmp_path):
     """An assembled new row whose ci is absent from the manifest raises."""
-    mdir = _write_manifest(tmp_path, [{"ci": 0, "corpus": "lmsys"}])
+    mdir = _write_manifest(tmp_path, [{"i": 0, "corpus": "lmsys"}])
     row_ci = np.array([-1, 0, 7])  # ci=7 has no manifest row
     with pytest.raises(AssertionError, match="no manifest corpus tag"):
         RB._corpus_tags_from_manifest_dir(mdir, row_ci, n_pb=1)
+
+
+def test_manifest_join_reads_i_not_ci(tmp_path):
+    """The manifest join keys on ``i``, never on a ``ci`` field.
+
+    Each fixture row carries BOTH keys with DIFFERENT values: ``i`` is the true
+    conversation index and ``ci`` is a decoy pointing elsewhere. Reading the
+    decoy would mis-tag every row, so this test fails on the exact defect it
+    guards (a production ``KeyError``/mis-join when the reader keys on ``ci``).
+    """
+    rows = [
+        {"i": 0, "ci": 1, "corpus": "lmsys", "response": "abcd"},
+        {"i": 1, "ci": 0, "corpus": "WildChat", "response": "xy"},
+    ]
+    mdir = _write_manifest(tmp_path, rows, parts=1)
+    row_ci = np.array([-1, 0, 1])
+    tags = RB._corpus_tags_from_manifest_dir(mdir, row_ci, n_pb=1)
+    assert list(tags) == ["pass_b", "lmsys", "wildchat"]
+
+    (tmp_path / "flat").mkdir()
+    (tmp_path / "flat" / "part_00000.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+    )
+    out = RB._ans_len_from_manifest_dir(tmp_path / "flat", np.array([-1, 0, 1], np.int64), n_pb=1)
+    np.testing.assert_array_equal(out, [-1, 4, 2])
 
 
 # ── curve: fit_point extra_eval + curve_core ──────────────────────────────────────
