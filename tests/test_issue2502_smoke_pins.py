@@ -885,7 +885,12 @@ def test_n_registry_corrected_specs_pinned():
     bt = _registry("beavertails")
     assert bt.configs == (None,) and bt.splits == ("30k_train",)
     mwe = _registry("model_written_evals")
-    assert mwe.configs == (None,) and mwe.data_dir == "sycophancy"
+    # Round 10: mwe stages PER FILE (heterogeneous top-level fields across the
+    # sycophancy dir's files — latent `_cast_table` crash), replacing the
+    # round-9 data_dir route; the philpapers2020 upstream-duplicate exclusion
+    # is pinned in tests/test_issue2502_schema_gate.py.
+    assert mwe.configs == (None,) and isinstance(mwe.data_files_template, tuple)
+    assert all("sycophancy/" in t and "{revision}" in t for t in mwe.data_files_template)
     pippa = _registry("pippa")
     assert pippa.data_files_template is not None
     assert "pippa_deduped.jsonl" in pippa.data_files_template

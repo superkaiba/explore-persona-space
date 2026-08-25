@@ -54,6 +54,18 @@ tokenized length exceeds the budget under EITHER model tokenizer (Qwen2.5-7B
 -Instruct AND Qwen3.5-9B), so both model arms consume the IDENTICAL corpus and
 gen_capture never needs a per-model drop.
 
+ROUND-10 SCHEMA GATE (anti-whack-a-mole, schema level): per-source FIELD
+schemas are verified by ``verify_source_schemas`` BEFORE any staging — a
+bounded tiny-real streaming probe of EVERY (source, config, split[, file])
+attempt through the FULL production keep chain, aggregating every cast-crash /
+kept==0 / stream defect into ONE raise (the round-9 ``verify_declared_splits``
+generalized from split METADATA to actual schemas). Multi-file
+schema-inferring sources are probed PER FILE with cross-file signature
+comparison (datasets infers features from the first file and casts later
+files to them — the sycophancy_eval `_cast_table` crash class), and
+data_files sources STAGE per file (independent inference; no cross-file cast
+exists to crash).
+
 CONTENT HYGIENE (binding, `.claude/rules/trigger-dense-review.md`): several
 corpora are harmful-content / real-user / jailbreak banks. This module NEVER
 logs, prints, or persists item TEXT through any counts/report channel — the
@@ -150,18 +162,29 @@ class SourceSpec:
     # loadable form). The ref's resolved sha enters the fingerprint + stream
     # exactly like a main-branch sha.
     revision_ref: str | None = None
-    # Stream raw repo FILES through the packaged `json` builder instead of a
-    # (dead) dataset script: an hf:// data_files template whose '{revision}'
-    # is substituted with the pinned sha (PIPPA-class repos that still carry
-    # raw jsonl beside the unsupported script). Split-fixed by construction:
+    # Stream raw repo FILES through the packaged `json` builder instead of the
+    # dataset id: hf:// data_files template(s) whose '{revision}' is
+    # substituted with the pinned sha. TWO use cases: (a) PIPPA-class repos
+    # with a dead script but raw jsonl (single template); (b) round-10:
+    # multi-file repos whose files carry HETEROGENEOUS schemas — the combined
+    # load infers features from the FIRST file and datasets' `_cast_table`
+    # crashes at the file boundary (sycophancy_eval: feedback.jsonl's
+    # `metadata` struct adds `prompt_template_type` at row 12,157), so EACH
+    # template is staged as its OWN attempt with independently-inferred
+    # features (no cross-file cast ever happens). Split-fixed by construction:
     # a str data_files serves exactly the single 'train' split.
-    data_files_template: str | None = None
+    data_files_template: str | tuple[str, ...] | None = None
     # Ordered candidate SCALAR text fields (first present usable one wins).
     text_fields: tuple[str, ...] = ()
     # Ordered candidate CONVERSATION fields (message lists -> first user turn).
     conv_fields: tuple[str, ...] = ()
     # Use CS.first_human_turn on a raw transcript STRING field (hh-rlhf shape).
     transcript_field: str | None = None
+    # Round 10: conv extraction accepts the FIRST turn REGARDLESS of speaker
+    # (OpenCAI-class roleplay logs: turns carry {'author': <character name>,
+    # 'message': str} — no user/assistant designation exists, and the opener
+    # IS the roleplay context; probe-verified 2026-08-25).
+    conv_any_speaker: bool = False
     # Keep only English rows when this source carries a `language` field (full
     # name, e.g. 'English' — NOT an ISO code; gotchas real-corpus streaming).
     filter_language: bool = False
@@ -179,6 +202,54 @@ class SourceSpec:
     # 150k"): topup sources absorb the residual budget AFTER every non-topup
     # source takes its realized yield (allocate_with_topup).
     topup: bool = False
+
+
+def _data_files_list(spec: SourceSpec) -> tuple[str, ...]:
+    """Normalized per-file data_files templates ((), one, or many)."""
+    if spec.data_files_template is None:
+        return ()
+    if isinstance(spec.data_files_template, str):
+        return (spec.data_files_template,)
+    return tuple(spec.data_files_template)
+
+
+def _file_stem(template: str) -> str:
+    """Basename stem of an hf:// data_files template (attempt key / out-path
+    part; repo METADATA, content-safe)."""
+    return template.rsplit("/", 1)[-1].split(".", 1)[0]
+
+
+def _probe_file_format(url: str) -> str | None:
+    """Packaged-builder name for a data file URL, or None (not stageable
+    per-file / not a schema-INFERRING format — parquet carries an explicit
+    schema and needs no per-file treatment)."""
+    name = url.split("?")[0].rsplit("/", 1)[-1].lower()
+    if name.endswith(".gz"):
+        name = name[: -len(".gz")]
+    ext = name.rsplit(".", 1)[-1] if "." in name else ""
+    return {"json": "json", "jsonl": "json", "csv": "csv", "tsv": "csv"}.get(ext)
+
+
+def _iter_attempts(spec: SourceSpec) -> tuple[tuple[str | None, str, str | None], ...]:
+    """The (config, split, data_file_template) staging attempts of a source.
+
+    data_files sources stage ONE attempt PER FILE (independent feature
+    inference — the round-10 cross-file cast fix); everything else keeps the
+    round-9 configs x splits grid. Raises on unsupported combinations so a
+    registry edit fails at import/selfcheck, never mid-stream.
+    """
+    files = _data_files_list(spec)
+    if not files:
+        return tuple((c, s, None) for c in spec.configs for s in spec.splits)
+    if spec.fallback_dataset_id is not None or spec.cross_query_bank is not None:
+        raise ValueError(
+            f"{spec.source_tag}: data_files sources support neither fallback_dataset_id "
+            "nor cross_query_bank"
+        )
+    bad = [f for f in files if _probe_file_format(f) is None]
+    if bad:
+        raise ValueError(f"{spec.source_tag}: unstageable data_files format(s): {bad}")
+    return tuple((spec.configs[0], "train", f) for f in files)
 
 
 def _regime_tags(spec: SourceSpec) -> dict[str, str]:
@@ -303,12 +374,25 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_NEAR,
         realism_tier=2,
         pre_dedup_cap=4_000,
-        # No 'sycophancy' BuilderConfig exists (only 'default';
-        # probe-verified 2026-08-24) — the sycophancy scoping lives in the
-        # repo DIRECTORY layout, so it routes via data_dir (the hh_redteam
-        # pattern). data_dir='sycophancy' -> splits=['train'], field
-        # 'question' (probe-verified).
-        data_dir="sycophancy",
+        # No 'sycophancy' BuilderConfig exists (only 'default'; probe-verified
+        # 2026-08-24) — the sycophancy scoping is the repo DIRECTORY layout.
+        # Round-10 schema-gate catch: the dir's jsonl files have heterogeneous
+        # top-level fields (political_typology_quiz adds `user_affiliation`) —
+        # a LATENT `_cast_table` crash the round-9 build missed only because
+        # the 4k keep-cap stopped the stream inside file 1 — so each file
+        # stages as its OWN attempt (independent feature inference), replacing
+        # the data_dir route. Field 'question' in all (probe-verified
+        # 2026-08-25). sycophancy_on_philpapers2020.jsonl is EXCLUDED: it is
+        # BYTE-IDENTICAL upstream to sycophancy_on_nlp_survey.jsonl (same file
+        # sha256, 9,984 rows, 100% line overlap — raw-file probe 2026-08-25),
+        # so staging it keeps 0 rows after within-source dedup and would trip
+        # the kept==0 fail-loud at production scale.
+        data_files_template=(
+            "hf://datasets/Anthropic/model-written-evals@{revision}/sycophancy/"
+            "sycophancy_on_nlp_survey.jsonl",
+            "hf://datasets/Anthropic/model-written-evals@{revision}/sycophancy/"
+            "sycophancy_on_political_typology_quiz.jsonl",
+        ),
         text_fields=("question", "statement", "prompt"),
     ),
     SourceSpec(
@@ -317,7 +401,22 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_NEAR,
         realism_tier=2,
         pre_dedup_cap=3_000,
-        text_fields=("prompt", "question", "base"),
+        # Round-10 live-crash fix (probe-verified 2026-08-25, structural probe
+        # of revision 18f18160): the repo is 4 heterogeneous jsonl files whose
+        # `metadata` structs differ (feedback.jsonl adds prompt_template_type
+        # -> datasets `_cast_table` TypeError at row 12,157, the file
+        # boundary), so each file stages as its OWN attempt with independent
+        # feature inference. Context text lives in `prompt` = a list of
+        # {"type": "human"|"ai", "content": str} turns (NOT a scalar field —
+        # the round-9 text_fields kept 0 of 12,000 scanned rows);
+        # first_user_content handles the `type` role key.
+        data_files_template=(
+            "hf://datasets/meg-tong/sycophancy-eval@{revision}/answer.jsonl",
+            "hf://datasets/meg-tong/sycophancy-eval@{revision}/are_you_sure.jsonl",
+            "hf://datasets/meg-tong/sycophancy-eval@{revision}/feedback.jsonl",
+            "hf://datasets/meg-tong/sycophancy-eval@{revision}/mimicry.jsonl",
+        ),
+        conv_fields=("prompt",),
     ),
     SourceSpec(
         source_tag="mask",
@@ -402,8 +501,15 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_IDIO,
         realism_tier=1,
         pre_dedup_cap=3_000,
+        # Round-10 schema-gate catch (kept=0/150): OpenCAI turns are
+        # {'author': <character name>, 'message': str} Discord roleplay logs —
+        # NO user/assistant designation exists (probe-verified 2026-08-25),
+        # so extraction takes the FIRST turn of any speaker (the roleplay
+        # opener IS the context). The old text_fields ('text','input') match
+        # nothing (real top-level fields: conversations/timestamp/type/
+        # token-length stats).
         conv_fields=("conversations", "conversation"),
-        text_fields=("text", "input"),
+        conv_any_speaker=True,
     ),
     # 9. surreal / constrained-form / cipher-ASCII (idiosyncratic).
     SourceSpec(
@@ -605,13 +711,21 @@ def build_source_regime_table(sources: tuple[SourceSpec, ...] = SOURCES) -> dict
 
 
 def first_user_content(conv: object) -> str | None:
-    """First user/human turn content of a message-list conversation."""
+    """First user/human turn content of a message-list conversation.
+
+    Role key: ``role`` (WildChat/LMSYS/tulu) -> ``from`` (OpenCAI/Opus) ->
+    ``type`` (sycophancy-eval's {"type": "human"|"ai", "content"} shape —
+    round 10) -> the PIPPA ``is_human`` bool. The ``type`` addition is
+    strictly additive AFTER role/from (no already-staged source's keep
+    decisions change — their turns carry role/from — so
+    KEEP_FILTERS_VERSION deliberately does NOT bump; resume-compat, round 9).
+    """
     if not isinstance(conv, list):
         return None
     for turn in conv:
         if not isinstance(turn, dict):
             continue
-        role = str(turn.get("role") or turn.get("from") or "").lower()
+        role = str(turn.get("role") or turn.get("from") or turn.get("type") or "").lower()
         is_human = turn.get("is_human") is True
         if role in ("user", "human") or is_human:
             content = turn.get("content") or turn.get("value") or turn.get("message")
@@ -620,11 +734,27 @@ def first_user_content(conv: object) -> str | None:
     return None
 
 
+def first_turn_content(conv: object) -> str | None:
+    """First turn's content of a message-list conversation REGARDLESS of
+    speaker (round 10, ``conv_any_speaker`` sources: OpenCAI-class roleplay
+    logs have no user/assistant designation — the opener is the context)."""
+    if not isinstance(conv, list):
+        return None
+    for turn in conv:
+        if not isinstance(turn, dict):
+            continue
+        content = turn.get("content") or turn.get("value") or turn.get("message")
+        if isinstance(content, str) and content.strip():
+            return content
+    return None
+
+
 def extract_context(raw: dict, spec: SourceSpec) -> str | None:
     """Extract the single context text for a raw row per its SourceSpec.
 
     Priority: transcript (first human turn) -> scalar text_fields ->
-    conversation fields (first user turn). Returns None when nothing usable is
+    conversation fields (first user turn; first turn of ANY speaker for
+    ``conv_any_speaker`` sources). Returns None when nothing usable is
     present (the row is then counted as a per-filter reject, never crashed).
     """
     if spec.transcript_field is not None:
@@ -633,8 +763,9 @@ def extract_context(raw: dict, spec: SourceSpec) -> str | None:
         v = raw.get(f)
         if isinstance(v, str) and v.strip():
             return v
+    conv_extract = first_turn_content if spec.conv_any_speaker else first_user_content
     for cf in spec.conv_fields:
-        content = first_user_content(raw.get(cf))
+        content = conv_extract(raw.get(cf))
         if content is not None:
             return content
     return None
@@ -765,6 +896,7 @@ def _stage_fingerprint(
     token_filter: TokenLengthFilter | None,
     filter_language: bool,
     stream_cap: int | None,
+    data_file: str | None = None,
 ) -> str:
     """ONE fingerprint builder for primary AND fallback staging.
 
@@ -782,9 +914,10 @@ def _stage_fingerprint(
     # same 'train' value), so a reused out-dir RESUMES the crashed run's
     # already-complete pools (wildchat/lmsys/hh/itw, ~45k rows of streaming)
     # and restages exactly the sources whose (config, split, data_files) spec
-    # round 9 changed. A later None->set flip on a source still restages it
-    # (the key set changes for THAT source only — the desired behavior).
-    extra = {} if spec.data_files_template is None else {"data_files": spec.data_files_template}
+    # round 9 changed. Round 10: the PER-ATTEMPT template (unsubstituted —
+    # the pinned revision is already its own key) replaces the spec-level
+    # read; single-template sources (PIPPA) keep a byte-identical value.
+    extra = {} if data_file is None else {"data_files": data_file}
     return CS._fingerprint(
         ds=dataset_id,
         revision=revision,
@@ -906,10 +1039,16 @@ def verify_declared_splits(
     n_verified = 0
     for spec in sources:
         if spec.data_files_template is not None:
+            bad_fmt = [f for f in _data_files_list(spec) if _probe_file_format(f) is None]
             if spec.splits != ("train",):
                 problems.append(
                     f"{spec.source_tag} ({spec.dataset_id}): data_files sources serve "
                     f"exactly the 'train' split; declared splits={list(spec.splits)}"
+                )
+            elif bad_fmt:
+                problems.append(
+                    f"{spec.source_tag} ({spec.dataset_id}): unstageable data_files "
+                    f"format(s): {bad_fmt}"
                 )
             else:
                 n_verified += 1
@@ -955,6 +1094,386 @@ def verify_declared_splits(
         "; ".join(unverifiable) or "none",
     )
     return {"n_verified": n_verified, "unverifiable": unverifiable}
+
+
+# ---------------------------------------------------------------------------
+# Round-10 comprehensive per-source tiny-real STREAMING schema gate.
+#
+# verify_declared_splits() (round 9) checks METADATA (config/split existence);
+# this gate checks the ACTUAL FIELD SCHEMAS by streaming a bounded K real rows
+# per (source, config, split[, file]) attempt through the FULL production
+# extraction + filter + dedup chain (the same _make_keep_fn /
+# _make_prefix_keep_fn the build runs), aggregating ALL failures into ONE
+# raise — the anti-whack-a-mole property, generalized from splits to schemas.
+# Failure classes:
+#   (i)  stream/cast errors (the sycophancy_eval `_cast_table` TypeError) —
+#        caught directly on the probed slice, AND predicted for multi-file
+#        schema-INFERRING sources by probing each file separately and
+#        comparing structural type signatures (datasets infers features from
+#        the FIRST file and casts every later file to them, so a later file's
+#        new struct key / changed type crashes at the file boundary — far
+#        past any bounded row cap);
+#   (ii) kept==0 field-mapping bugs (text_fields that miss the real schema —
+#        the sycophancy_eval kept=0/12,000; the #1092 data-ingestion class);
+#   (iii) any other extraction/streaming error.
+# Gated/inaccessible sources are UNVERIFIABLE-not-fatal (the runtime
+# skip/fallback owns them); a declared fallback dataset is probed when the
+# primary is inaccessible (mirroring stage_source's fallover). TRANSIENT HF
+# errors re-raise (the crash IS the signal; the gate is cheap to re-run).
+# Content hygiene: signatures carry field NAMES + type names only — never
+# row text; exception details are truncated type/cast messages.
+# ---------------------------------------------------------------------------
+
+SCHEMA_GATE_ROWS = 150  # rows probed per attempt (brief: K ~ 100-200)
+SCHEMA_GATE_MAX_FILES = 8  # per-file fan-out cap for multi-file attempts
+_SIG_DEPTH_MAX = 3
+_NUMERIC_CLASSES = frozenset({"int", "float"})
+
+
+def _type_class(v: object) -> str:
+    """Coarse structural type class of a python value (content-safe)."""
+    if v is None:
+        return "null"
+    if isinstance(v, bool):
+        return "bool"
+    if isinstance(v, int):
+        return "int"
+    if isinstance(v, float):
+        return "float"
+    if isinstance(v, str):
+        return "str"
+    if isinstance(v, bytes):
+        return "bytes"
+    if isinstance(v, dict):
+        return "dict"
+    if isinstance(v, (list, tuple)):
+        return "list"
+    return type(v).__name__
+
+
+def _value_signature(v: object, depth: int = 0) -> dict:
+    """Structural type signature of a value: type class + dict KEY names +
+    list element signature, depth-capped. NEVER carries content."""
+    cls = _type_class(v)
+    sig: dict = {"cls": [cls]}
+    if depth >= _SIG_DEPTH_MAX:
+        return sig
+    if cls == "dict":
+        sig["keys"] = {str(k): _value_signature(x, depth + 1) for k, x in v.items()}
+    elif cls == "list":
+        elem = next((x for x in v if x is not None), None)
+        if elem is not None:
+            sig["elem"] = _value_signature(elem, depth + 1)
+    return sig
+
+
+def _merge_signature(a: dict | None, b: dict | None) -> dict | None:
+    """Union-merge two value signatures (across rows of one probe unit)."""
+    if a is None:
+        return b
+    if b is None:
+        return a
+    out: dict = {"cls": sorted(set(a["cls"]) | set(b["cls"]))}
+    if "keys" in a or "keys" in b:
+        ka, kb = a.get("keys", {}), b.get("keys", {})
+        out["keys"] = {k: _merge_signature(ka.get(k), kb.get(k)) for k in set(ka) | set(kb)}
+    if "elem" in a or "elem" in b:
+        merged_elem = _merge_signature(a.get("elem"), b.get("elem"))
+        if merged_elem is not None:
+            out["elem"] = merged_elem
+    return out
+
+
+def _signature_conflicts(anchor: dict | None, later: dict | None, path: str) -> list[str]:
+    """Predicted cast conflicts of a LATER file's signature against the FIRST
+    (feature-inference anchor) file's.
+
+    Rules (calibrated to datasets' `_cast_table` behavior — the live round-10
+    crash): a later file introducing a struct KEY (or top-level field) absent
+    from the anchor crashes the cast; a later file's type CLASS outside the
+    anchor's crashes (int/float promotion tolerated; null is a wildcard).
+    Keys/fields MISSING from a later file are nullable-filled — not flagged.
+    """
+    if anchor is None or later is None:
+        return []
+    out: list[str] = []
+    a_cls = {c for c in anchor["cls"] if c != "null"}
+    l_cls = {c for c in later["cls"] if c != "null"}
+    extra = l_cls - a_cls
+    if extra and not (extra <= _NUMERIC_CLASSES and a_cls & _NUMERIC_CLASSES):
+        out.append(f"{path}: type {sorted(l_cls)} vs first-file {sorted(a_cls)}")
+        return out
+    if "keys" in later:
+        a_keys = anchor.get("keys", {})
+        new_keys = sorted(set(later["keys"]) - set(a_keys))
+        if new_keys:
+            out.append(f"{path}: struct key(s) {new_keys} absent from the first file")
+        for k in sorted(set(later["keys"]) & set(a_keys)):
+            out.extend(_signature_conflicts(a_keys[k], later["keys"][k], f"{path}.{k}"))
+    if "elem" in later and "elem" in anchor:
+        out.extend(_signature_conflicts(anchor["elem"], later["elem"], f"{path}[]"))
+    return out
+
+
+def _signature_mixed(sig: dict | None, path: str) -> list[str]:
+    """Fields carrying >=2 non-null type classes WITHIN one probe unit —
+    feature inference over them is already unstable."""
+    if sig is None:
+        return []
+    out: list[str] = []
+    non_null = [c for c in sig["cls"] if c != "null"]
+    if len(non_null) > 1 and set(non_null) != _NUMERIC_CLASSES:
+        out.append(f"{path}: mixed types {non_null} within one file")
+    for k, ksig in sig.get("keys", {}).items():
+        out.extend(_signature_mixed(ksig, f"{path}.{k}"))
+    if "elem" in sig:
+        out.extend(_signature_mixed(sig["elem"], f"{path}[]"))
+    return out
+
+
+def _top_level_fields(sig: dict | None) -> dict[str, str]:
+    """Content-safe field -> type-class map for kept_zero diagnostics."""
+    if not sig:
+        return {}
+    return {k: "/".join(ksig["cls"]) for k, ksig in sig.get("keys", {}).items()}
+
+
+def _enumerate_split_files(
+    dataset_id: str,
+    config: str | None,
+    split: str,
+    revision: str,
+    data_dir: str | None,
+) -> list[str] | None:
+    """Best-effort resolved data-file URLs of one (config, split) attempt via
+    the dataset builder (metadata only — no row download). None = could not
+    enumerate (script dataset, unusual layout); the caller then probes the
+    production combined stream instead, so enumeration failure only reduces
+    the gate's cross-file PREDICTION, never its keep-chain coverage."""
+    try:
+        from datasets import load_dataset_builder
+
+        kw = {} if data_dir is None else {"data_dir": data_dir}
+        if config is not None:
+            builder = load_dataset_builder(dataset_id, config, revision=revision, **kw)
+        else:
+            builder = load_dataset_builder(dataset_id, revision=revision, **kw)
+        data_files = getattr(builder.config, "data_files", None)
+        if not data_files or split not in data_files:
+            return None
+        return [str(f) for f in data_files[split]]
+    except _access_error_types():
+        raise  # access semantics belong to the caller (gated skip / fallback)
+    except Exception as exc:  # noqa: BLE001 — best-effort metadata enumeration
+        logger.info(
+            "[schema-gate] %s:%s@%s: data-file enumeration unavailable (%s) — "
+            "probing the combined stream",
+            dataset_id,
+            config or "default",
+            split,
+            type(exc).__name__,
+        )
+        return None
+
+
+def _probe_rows(
+    it_factory: Callable[[], object],
+    keep_fn: Callable[[dict], tuple[dict | None, str | None]],
+    *,
+    row_cap: int,
+    counters: dict,
+) -> dict | None:
+    """Stream up to ``row_cap`` rows through the production keep chain,
+    merging a structural signature. Returns the merged signature."""
+    sig: dict | None = None
+    stream = it_factory()
+    it = iter(stream)
+    n_unit = 0  # per-unit row count (counters are shared ACROSS units)
+    try:
+        for raw in it:
+            n_unit += 1
+            counters["scanned"] = counters.get("scanned", 0) + 1
+            sig = _merge_signature(sig, _value_signature(raw))
+            row, reject = keep_fn(raw)
+            if reject is not None:
+                counters[reject] = counters.get(reject, 0) + 1
+            elif row is not None:
+                counters["kept"] = counters.get("kept", 0) + 1
+            if n_unit >= row_cap:
+                break
+    finally:
+        # Release the streaming pipeline deterministically (gotchas: datasets
+        # streaming iterators surviving to interpreter shutdown SIGABRT).
+        close = getattr(it, "close", None)
+        if callable(close):
+            close()
+        del it, stream
+    return sig
+
+
+def verify_source_schemas(
+    sources: tuple[SourceSpec, ...],
+    *,
+    token_filter: TokenLengthFilter | None,
+    filter_language: bool,
+    rows_per_attempt: int = SCHEMA_GATE_ROWS,
+    max_files_per_attempt: int = SCHEMA_GATE_MAX_FILES,
+    revision_fn: Callable[[str, str | None], str] | None = None,
+    enumerate_files_fn: Callable[..., list[str] | None] | None = None,
+    stream_open_fn: Callable[..., object] | None = None,
+) -> dict:
+    """Registry-wide tiny-real streaming schema gate (round 10) — see the
+    section comment above for the contract. Raises ONE aggregated
+    RuntimeError listing every failing (source, attempt) with its failure
+    kind; returns the per-attempt report dict on PASS."""
+    if revision_fn is None:
+        revision_fn = _resolve_dataset_revision
+    if enumerate_files_fn is None:
+        enumerate_files_fn = _enumerate_split_files
+    if stream_open_fn is None:
+        stream_open_fn = _open_source_stream
+
+    failures: list[str] = []
+    unverifiable: list[str] = []
+    attempts_report: dict[str, dict] = {}
+
+    def _gate_source(spec: SourceSpec, dataset_id: str, fallback: bool) -> None:
+        revision = revision_fn(dataset_id, spec.revision_ref)
+        # ONE within-source dedup set SHARED across the source's attempts —
+        # staging parity (stage_source's seen_committed accumulates across
+        # attempts), so an upstream file that fully duplicates an earlier one
+        # reads kept_zero HERE instead of tripping the staging fail-loud at
+        # production scale (live catch: model-written-evals shipped
+        # philpapers2020 byte-identical to nlp_survey).
+        source_seen: set[str] = set()
+        for config, split, data_file in _iter_attempts(spec):
+            key = f"{spec.source_tag}:{_attempt_key(config, split, data_file)}"
+            label = f"{key} ({dataset_id})" + (" [fallback]" if fallback else "")
+            if data_file is not None:
+                units: list[str | None] = [data_file]
+                n_files_total = 1
+            else:
+                files = enumerate_files_fn(dataset_id, config, split, revision, spec.data_dir)
+                inferring = bool(files) and all(_probe_file_format(f) for f in files)
+                n_files_total = len(files) if files else 0
+                if files and len(files) > 1 and inferring:
+                    units = list(files[:max_files_per_attempt])
+                else:
+                    units = [None]  # production combined stream
+            per_unit_cap = max(20, rows_per_attempt // max(1, len(units)))
+            counters: dict = {}
+            unit_sigs: list[tuple[str, dict | None]] = []
+            if spec.cross_query_bank is not None:
+                keep_fn = _make_prefix_keep_fn(spec, source_seen)
+            else:
+                keep_fn = _make_keep_fn(
+                    spec, config, dataset_id, token_filter, filter_language, source_seen
+                )
+            for unit in units:
+                unit_name = _file_stem(unit) if unit is not None else "<combined>"
+                try:
+                    sig = _probe_rows(
+                        lambda u=unit: stream_open_fn(
+                            spec,
+                            config=config,
+                            split=split,
+                            dataset_id=dataset_id,
+                            revision=revision,
+                            data_file=u,
+                        ),
+                        keep_fn,
+                        row_cap=per_unit_cap,
+                        counters=counters,
+                    )
+                    unit_sigs.append((unit_name, sig))
+                except _access_error_types():
+                    raise  # source-level access semantics (gated skip / fallback)
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except Exception as exc:  # noqa: BLE001 — aggregated fail-loud
+                    failures.append(
+                        f"{label} unit={unit_name}: stream_error — "
+                        f"{type(exc).__name__}: {str(exc)[:220]}"
+                    )
+            kept = counters.get("kept", 0)
+            scanned = counters.get("scanned", 0)
+            rejects = {k: v for k, v in counters.items() if k not in ("kept", "scanned")}
+            if unit_sigs:
+                anchor_name, anchor_sig = unit_sigs[0]
+                for mixed in _signature_mixed(anchor_sig, "<row>"):
+                    failures.append(f"{label} unit={anchor_name}: type_conflict — {mixed}")
+                for unit_name, sig in unit_sigs[1:]:
+                    for conflict in _signature_conflicts(anchor_sig, sig, "<row>"):
+                        failures.append(
+                            f"{label}: cross_file_schema_conflict — file "
+                            f"{unit_name!r} vs {anchor_name!r}: {conflict} "
+                            "(datasets infers features from the first file and "
+                            "casts later files to them — this WILL crash the "
+                            "combined stream at the file boundary)"
+                        )
+                if scanned == 0:
+                    failures.append(f"{label}: empty_stream — 0 rows streamed")
+                elif kept == 0:
+                    failures.append(
+                        f"{label}: kept_zero — scanned {scanned}, kept 0 "
+                        f"(rejects={rejects}; observed top-level fields="
+                        f"{_top_level_fields(anchor_sig)}) — text/conv field "
+                        "mapping misses the real schema (#1092 class)"
+                    )
+            attempts_report[key] = {
+                "kept": kept,
+                "scanned": scanned,
+                "rejects": rejects,
+                "units_probed": len(unit_sigs),
+                "files_resolved": n_files_total,
+                "fallback": fallback,
+            }
+            logger.info(
+                "[schema-gate] %s: kept=%d scanned=%d units=%d files=%d",
+                label,
+                kept,
+                scanned,
+                len(unit_sigs),
+                n_files_total,
+            )
+
+    for spec in sources:
+        try:
+            _gate_source(spec, spec.dataset_id, fallback=False)
+        except _access_error_types() as exc:
+            if not _is_permanent_access_error(exc):
+                raise  # transient HF noise: the crash IS the signal
+            if spec.fallback_dataset_id is not None:
+                try:
+                    _gate_source(spec, spec.fallback_dataset_id, fallback=True)
+                    continue
+                except _access_error_types() as fexc:
+                    if not _is_permanent_access_error(fexc):
+                        raise
+                    exc = fexc
+            unverifiable.append(
+                f"{spec.source_tag} ({spec.dataset_id}): gated/inaccessible "
+                f"({type(exc).__name__}) — the runtime gated-skip/fallback owns it"
+            )
+    if failures:
+        raise RuntimeError(
+            "[schema-gate] per-source field-schema verification FAILED — "
+            f"{len(failures)} defect(s), ALL enumerated below (fix the SOURCES "
+            "registry / extraction; never silently skip or under-populate):\n  - "
+            + "\n  - ".join(failures)
+        )
+    logger.info(
+        "[schema-gate] verified %d attempt(s) (kept>0 through the production keep "
+        "chain, no cast conflicts); %d unverifiable (gated/inaccessible): %s",
+        len(attempts_report),
+        len(unverifiable),
+        "; ".join(unverifiable) or "none",
+    )
+    return {
+        "n_verified": len(attempts_report),
+        "attempts": attempts_report,
+        "unverifiable": unverifiable,
+    }
 
 
 def _make_keep_fn(
@@ -1004,6 +1523,33 @@ def _make_keep_fn(
     return keep
 
 
+def _open_source_stream(
+    spec: SourceSpec,
+    *,
+    config: str | None,
+    split: str,
+    dataset_id: str,
+    revision: str,
+    data_file: str | None = None,
+) -> object:
+    """ONE stream-construction seam shared by staging AND the schema gate.
+
+    ``data_file`` set -> that ONE raw repo file via its packaged builder
+    (json/csv), features inferred from THAT file alone (revision pinned
+    inside the hf:// path; packaged builders take no ``revision=`` kwarg).
+    Otherwise the ordinary dataset-id stream. Both route through
+    ``CS._hf_stream`` so smoke/test network fakes stay binding.
+    """
+    if data_file is not None:
+        fmt = _probe_file_format(data_file)
+        if fmt is None:
+            raise ValueError(f"{spec.source_tag}: unstageable data_files format: {data_file}")
+        files = data_file.format(revision=revision) if "{revision}" in data_file else data_file
+        return CS._hf_stream(fmt, None, split, data_files=files)
+    kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
+    return CS._hf_stream(dataset_id, config, split, revision=revision, **kw)
+
+
 def _stage_one_config(
     spec: SourceSpec,
     out_dir: Path,
@@ -1017,8 +1563,9 @@ def _stage_one_config(
     stream_cap: int | None,
     filter_language: bool,
     seen_committed: set[str],
+    data_file: str | None = None,
 ) -> tuple[list[dict], dict]:
-    """Stage ONE (source, config, split, dataset) attempt through
+    """Stage ONE (source, config, split[, data_file], dataset) attempt through
     ``CS._stream_stage``.
 
     Resolves + pins the dataset revision (threaded into BOTH the fingerprint
@@ -1039,35 +1586,37 @@ def _stage_one_config(
         token_filter=token_filter,
         filter_language=filter_language,
         stream_cap=stream_cap,
+        data_file=data_file,
     )
     suffix = "__fb" if fallback else ""
-    split_part = "" if split == "train" else f"__{split}"
-    out_path = (
-        out_dir / "staged" / f"{spec.source_tag}__{config or 'default'}{split_part}{suffix}.jsonl"
-    )
+    if data_file is not None:
+        out_path = out_dir / "staged" / f"{spec.source_tag}__{_file_stem(data_file)}{suffix}.jsonl"
+    else:
+        split_part = "" if split == "train" else f"__{split}"
+        out_path = (
+            out_dir
+            / "staged"
+            / f"{spec.source_tag}__{config or 'default'}{split_part}{suffix}.jsonl"
+        )
     seen = set(seen_committed)
     n_seeded = _seed_seen_from_partial(out_path, fp, seen)
     if n_seeded:
         logger.info(
             "[stage] %s:%s: seeded %d dedup keys from partial checkpoint",
             spec.source_tag,
-            _attempt_key(config, split),
+            _attempt_key(config, split, data_file),
             n_seeded,
         )
     keep = _make_keep_fn(spec, config, dataset_id, token_filter, filter_language, seen)
 
     def row_iter(cfg: str | None = config, dsid: str = dataset_id, rev: str = revision):
-        if spec.data_files_template is not None:
-            # PIPPA-class: raw repo files via the packaged json builder,
-            # revision pinned inside the hf:// path (no `revision=` kwarg —
-            # packaged builders take none). Still routed through
-            # CS._hf_stream so smoke/test network fakes stay binding.
-            files = spec.data_files_template.format(revision=rev)
-            return CS._hf_stream("json", None, split, data_files=files)
-        kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
-        return CS._hf_stream(dsid, cfg, split, revision=rev, **kw)
+        return _open_source_stream(
+            spec, config=cfg, split=split, dataset_id=dsid, revision=rev, data_file=data_file
+        )
 
-    label = f"{spec.source_tag}:{_attempt_key(config, split)}" + (":fallback" if fallback else "")
+    label = f"{spec.source_tag}:{_attempt_key(config, split, data_file)}" + (
+        ":fallback" if fallback else ""
+    )
     try:
         return CS._stream_stage(
             out_path=out_path,
@@ -1097,10 +1646,13 @@ def _stage_one_config(
         raise
 
 
-def _attempt_key(config: str | None, split: str) -> str:
-    """Counter/label key for one (config, split) staging attempt — the bare
-    config label for the common 'train' split (backward-compatible with every
-    pre-round-9 report consumer), config@split otherwise."""
+def _attempt_key(config: str | None, split: str, data_file: str | None = None) -> str:
+    """Counter/label key for one staging attempt — the file stem for a
+    per-file (data_files) attempt (round 10), else the bare config label for
+    the common 'train' split (backward-compatible with every pre-round-9
+    report consumer), config@split otherwise."""
+    if data_file is not None:
+        return _file_stem(data_file)
     base = config or "default"
     return base if split == "train" else f"{base}@{split}"
 
@@ -1143,9 +1695,11 @@ def stage_source(
     use_fallback = False
     # Attempts = configs x splits (round 9: a config's data can live in
     # non-'train' splits — jbb harmful/benign, MASK test, BeaverTails
-    # 30k_train). The keep-cap stays CUMULATIVE across ALL attempts.
-    for config, split in ((c, s) for c in spec.configs for s in spec.splits):
-        attempt_key = _attempt_key(config, split)
+    # 30k_train), OR one attempt per data FILE for data_files sources
+    # (round 10: independent feature inference per file). The keep-cap stays
+    # CUMULATIVE across ALL attempts.
+    for config, split, data_file in _iter_attempts(spec):
+        attempt_key = _attempt_key(config, split, data_file)
         remaining_cap = spec.pre_dedup_cap - len(all_rows)
         if remaining_cap <= 0:
             counters[attempt_key] = {"skipped_keep_cap_exhausted": 1}
@@ -1166,6 +1720,7 @@ def stage_source(
                     stream_cap=stream_cap,
                     filter_language=filter_language,
                     seen_committed=seen_committed,
+                    data_file=data_file,
                 )
             except _access_error_types() as exc:
                 if not _is_permanent_access_error(exc):
@@ -1201,6 +1756,8 @@ def stage_source(
                 )
                 use_fallback = True
         if use_fallback:
+            # data_file is None by construction here (_iter_attempts refuses
+            # data_files + fallback combinations).
             rows, ctr = _stage_one_config(
                 spec,
                 out_dir,
@@ -1822,6 +2379,29 @@ def run_pipeline(args: argparse.Namespace) -> dict:
             budget_tokens,
         )
 
+    # Round-10 comprehensive schema gate: stream K real rows per attempt
+    # through the FULL production keep chain BEFORE any staging spend — one
+    # pass, ALL field-schema defects (cast crashes, kept==0 mappings)
+    # enumerated at once (the split preflight's schema-level sibling).
+    if args.skip_schema_gate:
+        if args.schema_gate_only:
+            raise SystemExit("--schema-gate-only contradicts --skip-schema-gate")
+        logger.warning("[schema-gate] --skip-schema-gate: per-source field schemas NOT verified")
+    else:
+        gate_report = verify_source_schemas(
+            sources,
+            token_filter=token_filter,
+            filter_language=not args.no_language_filter,
+            rows_per_attempt=args.schema_gate_rows,
+        )
+        if args.schema_gate_only:
+            gate_report["mode"] = "schema-gate-only"
+            _write_json(out_dir / "schema_gate_report.json", gate_report)
+            logger.info(
+                "[schema-gate] GATE-ONLY complete -> %s", out_dir / "schema_gate_report.json"
+            )
+            return gate_report
+
     # 1. Stage every source (streaming, checkpointed, fail-loud on kept==0 for
     # ACCESSIBLE sources; a gated fallback-less source is SKIPPED loud and
     # recorded — see stage_source + the aggregate guards below).
@@ -2143,6 +2723,7 @@ def run_selfcheck() -> None:
         {"fallback": True},
         {"token_filter": TokenLengthFilter(("only/one",), budget_tokens=100)},
         {"stream_cap": 5},
+        {"data_file": "hf://datasets/d@{revision}/a.jsonl"},  # round 10: per-file attempts
     ):
         assert _stage_fingerprint(base_spec, **{**kw, **delta}) != fp0, delta
 
@@ -2219,10 +2800,105 @@ def run_selfcheck() -> None:
     res2 = verify_declared_splits((fixed,), split_names_fn=_fake_split_names, revision_fn=_fake_rev)
     assert res2["n_verified"] == 1, res2
 
+    # 10. round-10 comprehensive schema gate: cross-file struct-key conflict +
+    # kept_zero + stream_error aggregate into ONE raise (anti-whack-a-mole,
+    # schema level); gated sources unverifiable-not-fatal; the corrected
+    # sycophancy-eval turn shape ({"type": "human", "content"}) passes through
+    # the REAL production keep chain; per-file attempts for data_files specs.
+    from huggingface_hub.utils import GatedRepoError
+
+    syco = next(s for s in SOURCES if s.source_tag == "sycophancy_eval")
+    syco_attempts = _iter_attempts(syco)
+    assert len(syco_attempts) == 4 and all(a[2] is not None for a in syco_attempts), syco_attempts
+    assert _attempt_key(*syco_attempts[0]) == "answer", syco_attempts[0]
+    assert first_user_content([{"type": "human", "content": "hello there friend"}]) == (
+        "hello there friend"
+    )
+    assert first_user_content([{"type": "ai", "content": "assistant turn only"}]) is None
+
+    def _sg_rev(dataset_id: str, revision_ref: str | None = None) -> str:
+        if dataset_id == "sg/gated":
+            raise GatedRepoError("gated fixture")
+        return "1" * 40
+
+    def _sg_files(dataset_id, config, split, revision, data_dir):
+        return {"sg/multi": ["hf://x/a.jsonl", "hf://x/b.jsonl"]}.get(dataset_id)
+
+    _sg_text = "sufficiently long synthetic schema-gate context text %d"
+    sg_rows: dict[tuple[str, str | None], list[dict]] = {
+        # the live crash shape: file b's metadata struct adds a key file a lacks
+        ("sg/multi", "a"): [
+            {"q": _sg_text % i, "metadata": {"prompt_template": "t"}} for i in range(3)
+        ],
+        ("sg/multi", "b"): [
+            {
+                "q": _sg_text % (10 + i),
+                "metadata": {"prompt_template": "t", "prompt_template_type": "x"},
+            }
+            for i in range(3)
+        ],
+        # the live kept=0 shape: scalar text_fields against a LIST-valued field
+        ("sg/keptzero", None): [
+            {"prompt": [{"type": "human", "content": _sg_text % i}]} for i in range(4)
+        ],
+        ("sg/conv", None): [
+            {"prompt": [{"type": "human", "content": _sg_text % i}]} for i in range(4)
+        ],
+        ("sg/ok", None): [{"text": _sg_text % i} for i in range(4)],
+    }
+
+    def _sg_stream(spec, *, config, split, dataset_id, revision, data_file=None):
+        if dataset_id == "sg/crash":
+            raise TypeError("Couldn't cast array of type struct<a: string> to Value('string')")
+        return iter(sg_rows[(dataset_id, _file_stem(data_file) if data_file else None)])
+
+    def _sg_spec(tag, ds, **kws):
+        return SourceSpec(
+            source_tag=tag,
+            dataset_id=ds,
+            regime_class=REGIME_NEAR,
+            realism_tier=2,
+            pre_dedup_cap=10,
+            **kws,
+        )
+
+    sg_kwargs = dict(
+        token_filter=None,
+        filter_language=False,
+        revision_fn=_sg_rev,
+        enumerate_files_fn=_sg_files,
+        stream_open_fn=_sg_stream,
+    )
+    try:
+        verify_source_schemas(
+            (
+                _sg_spec("sg_multi", "sg/multi", text_fields=("q",)),
+                _sg_spec("sg_keptzero", "sg/keptzero", text_fields=("prompt",)),
+                _sg_spec("sg_crash", "sg/crash", text_fields=("text",)),
+            ),
+            **sg_kwargs,
+        )
+        raise AssertionError("expected aggregated schema-gate raise")
+    except RuntimeError as exc:
+        msg = str(exc)
+        assert "cross_file_schema_conflict" in msg and "prompt_template_type" in msg, msg
+        assert "sg_keptzero" in msg and "kept_zero" in msg, msg
+        assert "sg_crash" in msg and "stream_error" in msg and "cast" in msg, msg
+    res_sg = verify_source_schemas(
+        (
+            _sg_spec("sg_conv", "sg/conv", conv_fields=("prompt",)),
+            _sg_spec("sg_ok", "sg/ok", text_fields=("text",)),
+            _sg_spec("sg_gated", "sg/gated", text_fields=("text",)),
+        ),
+        **sg_kwargs,
+    )
+    assert res_sg["n_verified"] == 2 and len(res_sg["unverifiable"]) == 1, res_sg
+    assert res_sg["attempts"]["sg_conv:default"]["kept"] == 4, res_sg["attempts"]
+
     print(
         "issue2502_corpus: selfcheck OK (allocation, topup, dual-tokenizer, "
         "moderation-flag, crossing, fingerprint-keys, split, dedup, "
-        "split-preflight)"
+        "split-preflight, schema-gate)"
     )
 
 
@@ -2296,6 +2972,27 @@ def build_argparser() -> argparse.ArgumentParser:
         help="Skip the registry-wide declared-(config,split) existence preflight "
         "(offline fixture runs only; a falsely-failing preflight can be bypassed "
         "after manual verification — gotchas.md preflight-gate escape hatch).",
+    )
+    p.add_argument(
+        "--skip-schema-gate",
+        action="store_true",
+        help="Skip the round-10 per-source tiny-real streaming schema gate "
+        "(offline fixture runs only; same escape-hatch contract as "
+        "--skip-split-preflight).",
+    )
+    p.add_argument(
+        "--schema-gate-rows",
+        type=int,
+        default=SCHEMA_GATE_ROWS,
+        help="Rows streamed per (source, config, split[, file]) attempt by the "
+        "schema gate (bounded tiny-real probe).",
+    )
+    p.add_argument(
+        "--schema-gate-only",
+        action="store_true",
+        help="Run the split preflight + schema gate against the real registry, "
+        "write schema_gate_report.json, and exit (no staging) — the pre-launch "
+        "coverage run.",
     )
     p.add_argument(
         "--import-check",
