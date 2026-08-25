@@ -24,6 +24,7 @@ the fail-loud empty-selection filter.
 from __future__ import annotations
 
 import inspect
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -301,3 +302,136 @@ def test_phase_embed_missing_sentinel_raises(monkeypatch, tmp_path):
     monkeypatch.setattr(D.subprocess, "run", lambda cmd, env: SimpleNamespace(returncode=0))
     with pytest.raises(RuntimeError, match="sentinel is missing"):
         D.phase_embed(cfg, bank)
+
+
+# ── PA .partial resume: regime-fp header + per-chunk context-id set (r2 blocker 2) ──
+
+
+def _gen_cfg(tmp_path):
+    """Tiny CPU cfg: gen_batch=2 over 3 contexts -> 2 chunks; draws=2 (SMOKE_DRAWS)."""
+    args = D.parse_args(
+        [
+            "--phase",
+            "A",
+            "--out-root",
+            str(tmp_path / "r"),
+            "--tiny",
+            "--upload",
+            "none",
+            "--gen-batch",
+            "2",
+        ]
+    )
+    return D.build_config(args)
+
+
+def _fake_ctxs(n: int = 3) -> list[dict]:
+    return [
+        {
+            "id": f"register::v1::c{i:02d}",
+            "cell": "register",
+            "kind": "value",
+            "value_id": "v1",
+            "carrier": f"c{i:02d}",
+            "form": "stmt",
+        }
+        for i in range(1, n + 1)
+    ]
+
+
+def _fake_generate_batch(calls: list):
+    """Signature mirror of ``steering.generate_batch`` (the GPU boundary)."""
+
+    def fake(
+        model, tok, chunk, *, n, hook, max_new_tokens, temperature, seed_base, render_fn, ids_fn
+    ):
+        calls.append([c["id"] for c in chunk])
+        return [[f"text {c['id']} draw {i}" for i in range(n)] for c in chunk]
+
+    return fake
+
+
+def test_generate_cell_regime_fp_resume_adopts_complete_partial(tmp_path, monkeypatch):
+    """A .partial with a MATCHING regime-fp header + complete per-chunk
+    context-id sets is fully adopted: the resumed call reaches NO engine
+    call and returns identical rows (r2 blocker 2 — resume keying)."""
+    cfg = _gen_cfg(tmp_path)
+    monkeypatch.setattr(D.BK, "context_token_ids", lambda tok, ctx: [1, 2, 3])
+    calls: list = []
+    monkeypatch.setattr(D, "generate_batch", _fake_generate_batch(calls))
+    tok = FakeTokenizer()
+    ctxs = _fake_ctxs(3)
+    pilot = {"evaluated": True}
+    rows1 = D._generate_cell(cfg, object(), tok, [7], "register", ctxs, pilot, 128)
+    assert len(rows1) == 3 * cfg.draws
+    assert len(calls) == 2  # ceil(3 / gen_batch=2) chunks generated fresh
+    part = cfg.anchors_dir / "anchors_register.max128.partial"
+    assert part.is_file()  # final jsonl + partial unlink happen in _anchor_cell, not here
+    header = json.loads(part.read_text().split("\n")[0])
+    assert header == {
+        "partial_header": 1,
+        "regime_fp": D._regime_fp(cfg, {"phase": "A", "cell": "register", "max_new_call": 128}),
+    }
+
+    def boom(*a, **k):  # resumed call must never reach the engine
+        raise AssertionError("generate_batch called on a fully-complete resume")
+
+    monkeypatch.setattr(D, "generate_batch", boom)
+    rows2 = D._generate_cell(cfg, object(), tok, [7], "register", ctxs, pilot, 128)
+    assert rows2 == rows1
+
+
+def test_generate_cell_quarantines_mismatched_regime_fp_partial(tmp_path, monkeypatch):
+    """A .partial whose header carries a FOREIGN regime fp is quarantined
+    (never adopted) and the whole cell regenerates (r2 blocker 2)."""
+    cfg = _gen_cfg(tmp_path)
+    monkeypatch.setattr(D.BK, "context_token_ids", lambda tok, ctx: [1, 2, 3])
+    calls: list = []
+    monkeypatch.setattr(D, "generate_batch", _fake_generate_batch(calls))
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    part = cfg.anchors_dir / "anchors_register.max128.partial"
+    part.write_text(
+        json.dumps({"partial_header": 1, "regime_fp": "deadbeefdeadbeef"})
+        + "\n"
+        + json.dumps({"chunk": 0, "context_id": "register::v1::c01", "draw": 0})
+        + "\n"
+    )
+    rows = D._generate_cell(
+        cfg, object(), FakeTokenizer(), [7], "register", _fake_ctxs(3), {"evaluated": True}, 128
+    )
+    assert len(calls) == 2  # stale rows never adopted — both chunks regenerated
+    assert len(rows) == 3 * cfg.draws
+    quarantined = list(cfg.quarantine_dir.iterdir())
+    assert len(quarantined) == 1
+    assert quarantined[0].name.endswith("anchors_register.max128.partial")
+
+
+def test_generate_cell_rejects_chunk_with_wrong_context_id_set(tmp_path, monkeypatch):
+    """A chunk whose prior rows match in COUNT but not in context-id SET is
+    not adopted — a re-scoped run can never adopt wrong-context rows
+    (r2 blocker 2 — per-chunk context-id composition)."""
+    cfg = _gen_cfg(tmp_path)
+    monkeypatch.setattr(D.BK, "context_token_ids", lambda tok, ctx: [1, 2, 3])
+    calls: list = []
+    monkeypatch.setattr(D, "generate_batch", _fake_generate_batch(calls))
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    part = cfg.anchors_dir / "anchors_register.max128.partial"
+    fp = D._regime_fp(cfg, {"phase": "A", "cell": "register", "max_new_call": 128})
+    wrong_rows = [
+        {"chunk": 0, "context_id": cid, "draw": d}
+        for cid in ("register::v1::c98", "register::v1::c99")
+        for d in range(cfg.draws)
+    ]
+    part.write_text(
+        "\n".join(
+            [json.dumps({"partial_header": 1, "regime_fp": fp})]
+            + [json.dumps(r) for r in wrong_rows]
+        )
+        + "\n"
+    )
+    rows = D._generate_cell(
+        cfg, object(), FakeTokenizer(), [7], "register", _fake_ctxs(3), {"evaluated": True}, 128
+    )
+    assert len(calls) == 2  # count matched (2 rows x draws) but id-set did not -> regenerate
+    assert len(rows) == 3 * cfg.draws
+    assert {r["context_id"] for r in rows} == {c["id"] for c in _fake_ctxs(3)}
