@@ -1,19 +1,44 @@
-"""Issue #2569 P-A weights battery, parts 1+2 (leg 1 core + leg 8 steps 1/3/4).
+"""Issue #2569 P-A weights battery, parts 1-3 (legs 1 + 3 + 8, P-A side).
 
 Phase driver over the banked layer-19 (primary; L14/L26 replicates) n1m ridge
-map's ROW operator ``x |-> x @ A`` (plan v4 SS4 leg 1 steps 1-3/5/6 + leg 8
+map's ROW operator ``x |-> x @ A`` (plan v4 SS4 leg 1 steps 1-6 + leg 3 + leg 8
 steps 1/3/4). Weights-only by default: no rows are staged (P-B refinements —
 data-weighted mass fractions ``u_i^T Sigma_c u_i``, split-half spectrum error
 bars, fixed-point nearest banked answers — are the rowbattery driver's job and
-are NOT computed here from assumed inputs); the ONE rows-consuming exception is
-the leg-8 step-4 certificates phase's probe/held-out legs, which run ONLY when
-``--rows-dir`` points at the P-B P1 assemble dir (layer 19 only) and otherwise
-record an EXPLICIT deferral (see the certificates phase docstring). One later
-unit extends THIS file with leg 3 (wiring/receipts/attribution) plus the
-two-sided SAE dashboards — including the SAE NAMING of the leg-8 step-3
-monitor gradients (``sae_naming`` keys read ``deferred``) and the fixed
-point's #2476-encoder decode (they need the shared SAE dictionary machinery) —
-this file marks those keys ``deferred``, never stubs them.
+are NOT computed here from assumed inputs); the rows-consuming exceptions are
+the leg-8 certificates probe/held-out legs, the leg-3 wiring ctx-alive mask
+(the 20k-row v_C andyrdt encoder pass), and the leg-3 attribution demo — each
+runs ONLY when ``--rows-dir`` points at the P-B P1 assemble dir (layer 19
+only) and otherwise records an EXPLICIT deferral. Part 3 (this build's final
+P-A unit) adds the leg-3 phases (receipts/wiring/attribution), the two-sided
+SAE dashboards (leg 1 step 4), the SAE NAMING of the leg-8 step-3 monitor
+gradients/pre-images (``leg8/monitor_sae_naming_L<L>.json``; the
+``sae_naming`` key in ``monitor_geometry_L<L>.json`` points there), and the
+fixed point's #2476-encoder decode (the ``sae_decode`` key in
+``fixed_point_L<L>.json`` is FILLED in place by the sae-dashboards phase;
+``nearest_banked_answers`` stays deferred-to-P-B — its documented consumer is
+a rows-side nearest-neighbor read that no landed rowbattery phase implements
+yet, tracked by the ``leg1-fixedpoint-neighbors-no-pb-producer`` concern).
+
+Dictionaries (both LAYER-19 artifacts — dictionary-consuming phases run at
+L19 only and log a LOUD skip for L14/L26): context/read side = the andyrdt
+per-token L19 SAE (``andyrdt/saes-qwen2.5-7b-instruct`` @ ``c37e53c4``,
+subfolder ``resid_post_layer_19/trainer_1`` = k=64, width 131,072; loaded via
+``issue1482_sae.BatchTopKSAE.load`` — config live-probed 2026-08-25:
+dict_class BatchTopKSAE, activation_dim 3584, dict_size 131072, k 64, layer
+19); answer/write side = the #2476 turn-averaged matryoshka BatchTopK SAE
+(HF ``issue2476_turnavg/analysis_tensors/sae_c`` — cfg live-probed
+2026-08-25: act_dim 3584, dict_size 65536, k 100, tiers [2048, 16384, 65536],
+seed 2476; loaded via the rowbattery staging helpers +
+``issue2476_turnavg_sae.MatryoshkaBatchTopKSAE.load_local``). The answer
+feature set = the #2476 banked alive UNION (2,150 features at the 0.2% floor,
+``RB._answer_union_from_counts``) + the 3 r_B-nearest #2476 decoder features
+(one per trait). Feature naming reuses the committed judged autointerp
+descriptions (``eval_results/issue_1482/context_side_labels/`` context-side
+1,653 features — the plan-named tree — overwriting the answer-side-evidence
+``eval_results/issue_1773/feature_table_v1.jsonl`` on id collision); features
+without a description carry their index only (the top-activating-row digest
+alternative needs rows and is deferred to the rows-attached re-run).
 
 Orientation (plan SS4 orientation dictionary — B1; verbatim, load-bearing):
 all reads are on A under the ROW action ``x @ A``. INPUT/read singular
@@ -83,7 +108,8 @@ on the generating-parameter regime dict — never a recomputed-float hash):
   alpha-lowrank alpha = tr(A)/d; spectrum of A - alpha*I vs A; residual
                 top-k variance (k in 1/8/32/128) -> leg1/alpha_lowrank_L<L>.json.
   fixed-point   x*, ||x*||, residual check, rho branch ->
-                leg1/fixed_point_L<L>.pt + .json (sae_decode deferred).
+                leg1/fixed_point_L<L>.pt + .json (sae_decode written as a
+                pointer string; the sae-dashboards phase fills it in place).
   kernel        effective-kernel basis + stats -> leg8/effective_kernel_L<L>.pt
                 + .json.
   monitor-geometry  leg 8 step 3: per-trait monitor decision geometry over the
@@ -93,7 +119,8 @@ on the generating-parameter regime dict — never a recomputed-float hash):
                 y @ A^+ (effective-rank truncated at tau_kernel + full-pinv
                 companion) WITH the coset ambiguity + gain-ratio context
                 stated in every artifact -> leg8/monitor_geometry_L<L>.pt
-                + .json. SAE naming of the gradient: deferred (next unit).
+                + .json. SAE naming of the gradient lands with the
+                sae-dashboards phase (leg8/monitor_sae_naming_L<L>.json).
   certificates  leg 8 step 4: sensitivity certificates for the monitor family
                 — (i) direct r^T v_C, (ii) mapped r.(v_C @ A + b), (iii) a
                 fitted 1-D context probe w^T v_C -> r^T v_A. Weights-only
@@ -105,8 +132,52 @@ on the generating-parameter regime dict — never a recomputed-float hash):
                 (else an explicit deferral is recorded)
                 -> leg8/certificates_L<L>.json (+ certificates_probe_L19.pt
                 on rows-attached runs).
-  upload        production-only HF upload of leg1/ + leg8/ (fail-loud
-                exact-set verify; smoke/skip is LOUD).
+  receipts      leg 3 step 3: behavior-contraction receipts — per trait, the
+                context-feature scores d_c . (A r_hat) over all 131,072
+                andyrdt decoder columns (ONE GEMV per trait, never dense T);
+                top-64 positive + top-64 negative features, named where a
+                judged description exists -> leg3/receipts_L<L>.json.
+                L19-only (dictionary-gated).
+  wiring        leg 3 steps 1-2: in-edges E_f A^T D for the 2,153-feature
+                answer set (union + r_B-nearest), BLOCKED GEMM (256-feature
+                blocks; the dense 65,536 x 131,072 T is NEVER materialized);
+                per-feature top-32 signed in-edges + |edge|-mass concentration
+                curves (H3: top-32 share, PASS >= 0.50 / kill < 0.10 on
+                behavior-relevant features over ALIVE context columns);
+                out-edges encode_ans(d_c^T A) for the receipts' behavior
+                context features. The ctx-alive mask (1% floor on a 20k-row
+                v_C andyrdt encode) is rows-gated: computed with --rows-dir
+                at L19, else full-column shares ship as INFORMATIONAL with an
+                explicit deferral -> leg3/wiring_L<L>.json +
+                leg3/wiring_edges_L<L>.npz (+ leg3/ctx_alive_L<L>.npz).
+  attribution   leg 3 step 4: predictive prompt-attribution demo on 8 worked
+                examples from the pinned #2476 20k holdout — per example,
+                per answer feature, contributions a_j * (E_f A^T d_j) over
+                the example's ACTIVE andyrdt features + exact bias/residual
+                closure (an orientation flip breaks closure and raises).
+                Rows-gated (--rows-dir at L19; else explicit deferral)
+                -> leg3/attribution_L<L>.json.
+  sae-dashboards  leg 1 step 4: two-sided SAE dashboards for the top-K eigen
+                (by |lambda|) + top-K singular directions — SVD read side u_i
+                vs andyrdt, SVD write side v_i vs #2476 (+ encoder-pass third
+                column), eigen read along RIGHT eigenvectors vs andyrdt,
+                eigen write along LEFT eigenvectors vs #2476 (+ encoder
+                pass); complex eigenvectors dashboarded via the normalized
+                REAL part with im_frac reported per direction (conjugate
+                pairs appear as near-duplicate rows — documented, not
+                deduped). Raw cosines only at P-A (side-matched whitened
+                cosines need Sigma_c/Sigma_a moments — key reads
+                deferred-to-P-B); every cosine quoted against the analytic
+                sqrt(2 ln N / d) floor AND an empirical n_draws
+                random-unit-direction max-|cos| null (one GEMM per
+                dictionary, seed NULL_SEED). ALSO fills
+                fixed_point_L<L>.json's sae_decode in place (x* through the
+                #2476 encoder) and writes the leg-8 monitor naming
+                (gradient / pre-image directions vs andyrdt; r_hat vs #2476)
+                -> leg1/sae_dashboards_L<L>.json +
+                leg8/monitor_sae_naming_L<L>.json. L19-only.
+  upload        production-only HF upload of leg1/ + leg3/ + leg8/
+                (fail-loud exact-set verify; smoke/skip is LOUD).
 
 Output schema (all under --out-root; <L> = layer; every .pt is a torch.save
 dict loaded with ``weights_only=False`` — a self-produced, pinned project
@@ -146,8 +217,10 @@ artifact, #1900 convention; every .json carries ``regime`` + ``metadata``
   leg1/fixed_point_L<L>.pt: {x_star: float64 [d], regime, metadata}
   leg1/fixed_point_L<L>.json:
     rho, iterated_map_reading: bool, x_star_norm, b_norm, residual_rel,
-    sae_decode: "deferred-to-sae-dashboards-unit",
-    nearest_banked_answers: "deferred-to-P-B (needs rows)"
+    sae_decode: pointer str until `--phase sae-dashboards` replaces it in
+      place with the decode dict (see sae_dashboards fixed_point_decode),
+    nearest_banked_answers: deferral str (no P-B producer yet — concern
+      leg1-fixedpoint-neighbors-no-pb-producer)
   leg8/effective_kernel_L<L>.pt:
     kernel_basis_fp32: float32 [d, m] (columns = kernel INPUT dirs, sigma<tau)
     sigma_kernel: float64 [m]; regime, metadata
@@ -177,7 +250,8 @@ artifact, #1900 convention; every .json carries ``regime`` + ``metadata``
       preimage_orientation_residual, n_retained, kernel_dim}}
     coset_ambiguity (per-layer string: every pre-image = particular solution +
       arbitrary effective-kernel component, kernel_dim free directions + the
-      gain ratio attached), affine_note, sae_naming ("deferred-..."),
+      gain ratio attached), affine_note, sae_naming (pointer str ->
+      leg8/monitor_sae_naming_L<L>.json, written by sae-dashboards),
     caveats: [activation-space caveat (a), map-level caveat (b)] — verbatim
   leg8/certificates_L<L>.json:
     monitors: {<trait>: {direct_projection: {gradient_is, grad_norm,
@@ -198,6 +272,65 @@ artifact, #1900 convention; every .json carries ``regime`` + ``metadata``
   leg8/certificates_probe_L19.pt (rows-attached runs only):
     w: float64 [d, n_traits] (probe weights, train-centered raw-feature ridge)
     x_mean: float64 [d], t_mean: float64 [n_traits], traits: [str], regime
+  leg3/receipts_L<L>.json:
+    traits: {<trait>: {grad_norm, top_positive: [{rank, feat_id, score, cos,
+      decoder_norm, label|null}], top_negative: [same]}} (score = d_c . (A r);
+      cos = score / (|A r| |d_c|); label = {description, confidence,
+      evidence_side, source} from the committed judged-description files)
+    label_sources, naming_note (top-activating-row digest deferred to rows),
+    caveats: [wiring map-level caveat — verbatim], regime, metadata
+  leg3/wiring_edges_L<L>.npz:
+    feat_ids [F] int64 (answer features: union + r_B-nearest, sorted),
+    is_rb_nearest [F] bool, top_edge_ids [F, 32] int64 (context ids,
+    |edge| desc), top_edge_vals [F, 32] fp32 (SIGNED edges),
+    edge_absmass_total [F] fp64, top32_absmass_share [F] fp32,
+    conc_curve [F, K] fp32 (cumulative |edge|-mass share at conc_k_grid),
+    conc_k_grid [K] int64 (+ *_alive variants — top ids remapped to GLOBAL
+    context ids — on rows-attached runs)
+  leg3/ctx_alive_L19.npz (rows-attached runs only):
+    counts [131072] int64 (firing counts over the 20k v_C subsample),
+    alive_ids int64, floor int64, n_rows_used int64, seed int64
+    (the human-readable source/floor_frac doc rides wiring_L<L>.json ctx_alive)
+  leg3/wiring_L<L>.json:
+    h3: {statistic, grain (full-column = INFORMATIONAL; alive-masked =
+      verdict-grade), behavior_relevant: {<trait>: {feat_id, cos,
+      top32_share_full, top32_share_alive|null}}, union share quantiles
+      (full + alive|deferral)}, out_edges: {<ctx_feat_id>: {label|null,
+      fired: [{feat_id, act}], n_fired, linear_top: [{feat_id, value}],
+      mapped_norm}}, ctx_alive: {...}|deferral str, n_answer_features,
+    rb_nearest: {<trait>: {feat_id, cos}}, out_edges_note, label_sources,
+    caveats, regime, metadata
+  leg3/attribution_L<L>.json (rows-attached; else examples = deferral str):
+    examples: [{row_id, position, n_ctx_active, features: {<ans_feat_id>:
+      {pred_act, true_act, pre_act, contributions: [{ctx_feat_id, a_j, edge,
+      contribution, label|null}], bias_terms: {ctx_decoder_bias_via_map,
+      sae_recon_residual_via_map, map_intercept, ans_encoder_offset},
+      closure_residual, why_in_table}}}], holdout provenance, caveats,
+      regime, metadata
+  leg1/sae_dashboards_L<L>.json:
+    sections: {singular_read | singular_write | eigen_read | eigen_write:
+      {dictionary, directions: [{rank, (sigma + self_alignment_c |
+      abs_lambda + is_complex + im_frac), max_abs_cos,
+      exceeds_analytic_floor, exceeds_empirical_p95,
+      top_features: [{feat_id, cos, (read sides:) label|null}],
+      (write sides only:) encoder_pass: {fired: [{feat_id, act}], n_fired},
+      linear_top: [{feat_id, value}]}]}}
+    null_floors: {ctx | ans: {n_features, analytic_sqrt_2lnN_over_d,
+      empirical: {n_draws, seed, mean, p50, p90, p95, p99, max}}}
+    whitened_cosine: "deferred-to-P-B (needs Sigma_c/Sigma_a moments)"
+    fixed_point_decode: {filled_by, n_fired, top_fired: [{feat_id, act}],
+      linear_top: [{feat_id, value}], x_star_norm},
+    complex_note, label_sources, regime, metadata
+    (the same decode dict REPLACES fixed_point_L<L>.json's sae_decode key,
+    with filled_by: "sae-dashboards phase")
+  leg8/monitor_sae_naming_L<L>.json:
+    traits: {<trait>: {gradient | preimage_unit_level |
+      preimage_unit_level_fullpinv: {max_abs_cos, exceeds_analytic_floor,
+      exceeds_empirical_p95, top_features: [{feat_id, cos, label|null}]},
+      r_hat_vs_answer_dict: {nearest_feat_id, cos, top_features:
+      [{feat_id, cos}]}}}
+    null_floors (as above), whitened_cosine, label_sources, caveats,
+    regime, metadata
 
 Smoke seam (plan SS4 Smoke run, P-A line): ``--smoke`` = L19-only layer list,
 top-8 per-direction reporting width, and the 100-draw budget recorded in
@@ -215,9 +348,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -290,6 +425,49 @@ CERT_FORMULAS = {
     "signal_to_sensitivity": "corr_heldout(s, t) * std_heldout(s) / |gradient| "
     "(target-signal movement per unit context-space perturbation budget)",
 }
+
+# ── leg 1 step 4 + leg 3 constants (dictionaries, wiring, attribution) ─────────────
+# Both banked dictionaries are LAYER-19 artifacts (plan SS10 rows; configs
+# live-probed 2026-08-25 — see module docstring). Dictionary-consuming phases
+# run at L19 only and log a LOUD skip for the L14/L26 replicate layers.
+DICT_LAYER = 19
+ANDY_SAE_K = 64  # andyrdt trainer_1 == k=64 (issue1482_sae.TRAINER_INDEX_BY_K)
+DASH_FEATURES_PER_DIRECTION = 8  # dictionary features quoted per dashboard direction
+NULL_SEED = 2_569_140  # empirical random-unit-direction null draws (regime member)
+RECEIPTS_TOP_K = 64  # plan SS4 leg 3 step 3: top-64 context features per trait
+RECEIPTS_TOP_K_SMOKE = 16
+WIRING_EDGE_TOP_K = 32  # plan SS4 leg 3 step 2: top-32 in/out edges
+WIRING_BLOCK_ROWS = 256  # answer-feature block for the in-edge GEMM (~134 MB fp32/blk)
+WIRING_SMOKE_UNION_CAP = 64  # --smoke: first-64 union subset (+ r_B-nearest always)
+CONC_K_GRID = (1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)  # |edge|-mass curve knots
+H3_PASS_SHARE = 0.50  # plan SS7.5 leg 3: top-32 |edge|-mass share >= 0.50 (alive cols)
+H3_KILL_SHARE = 0.10  # plan SS7.5 leg 3 kill: share < 0.10 == unstructured wiring
+CTX_ALIVE_ROWS = 20_000  # plan SS4 leg 3 step 1: alive andyrdt mask on a 20k v_C sample
+CTX_ALIVE_FLOOR_FRAC = 0.01  # inherited 1% primary firing floor (#2476 convention)
+CTX_ALIVE_SEED = 2_569_310  # subsample seed when the pinned 20k holdout is unusable
+ATTR_N_EXAMPLES = 8  # plan SS4 leg 3 step 4 worked examples
+ATTR_N_EXAMPLES_SMOKE = 2
+ATTR_SEED = 2_569_420  # deterministic example draw from the pinned #2476 holdout
+ATTR_TOP_CONTRIB = 12  # contributions listed per (example, answer feature) table
+ATTR_TOP_PRED_FEATURES = 5  # + the 3 r_B-nearest => <= 8 table features per example
+# Verbatim leg-3 caveat (plan SS4 leg 3 step 5) — carried by every wiring-family
+# artifact (receipts / wiring / attribution / monitor naming).
+CAVEAT_WIRING = (
+    "the map is a correlate, not the mechanism (#1776: Jacobian R^2 -0.001 vs 0.681); "
+    "all wiring claims are map-level."
+)
+# Committed judged-description sources for andyrdt L19 features (feat_id-keyed
+# JSONL/JSON-lines; order matters — the plan-named #1482 CONTEXT-side tree loads
+# LAST so it overwrites the answer-side-evidence #1773 rows on id collision).
+LABEL_SOURCES = (
+    ("eval_results/issue_1773/feature_table_v1.jsonl", "answer", "issue1773_feature_table_v1"),
+    (
+        "eval_results/issue_1482/context_side_labels/descriptions_context_side.jsonl",
+        "context",
+        "issue1482_context_side_labels",
+    ),
+)
+WHITENED_DEFERRAL = "deferred-to-P-B (side-matched whitening needs Sigma_c/Sigma_a moments)"
 
 
 # ── small writers (atomic; provenance-stamped) ────────────────────────────────────
@@ -840,6 +1018,268 @@ def certificate_rows_core(
     }
 
 
+# ── pure computation core, legs 1.4 + 3 (unit-tested on tiny dictionaries) ────────
+
+
+def normalize_dictionary_columns(D: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Column-normalize a ``(d, N)`` dictionary (fp32 copy) for cosine reads.
+
+    Returns ``(D_normed fp32, col_norms fp64)``; zero columns keep norm-1
+    divisors so their cosines read exactly 0 (never NaN).
+    """
+    D32 = np.asarray(D, dtype=np.float32)
+    norms = np.linalg.norm(D32.astype(np.float64), axis=0)
+    safe = np.where(norms > 0, norms, 1.0)
+    return (D32 / safe.astype(np.float32)[None, :]), norms
+
+
+def top_dictionary_cosines(
+    dirs: np.ndarray, D_normed: np.ndarray, top_m: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Top-``top_m`` dictionary features per UNIT direction row, by |cosine|.
+
+    ``dirs``: ``(K, d)`` unit-norm rows; ``D_normed``: ``(d, N)`` column-normed
+    dictionary. ONE fp32 GEMM (the fp32 cast keeps the 131,072-wide dictionary
+    out of fp64 — a 3.8 GB copy otherwise). Returns ``(ids (K, m) int64,
+    cos (K, m) fp64)`` sorted by |cos| descending per row.
+    """
+    dirs2 = np.atleast_2d(np.asarray(dirs, dtype=np.float32))
+    C = dirs2 @ D_normed  # (K, N) fp32
+    m = int(min(top_m, C.shape[1]))
+    a = np.abs(C)
+    part = np.argpartition(a, C.shape[1] - m, axis=1)[:, C.shape[1] - m :]
+    vals = np.take_along_axis(a, part, axis=1)
+    order = np.argsort(-vals, axis=1)
+    ids = np.take_along_axis(part, order, axis=1).astype(np.int64)
+    cos = np.take_along_axis(C, ids, axis=1).astype(np.float64)
+    return ids, cos
+
+
+def analytic_max_cos_floor(n_features: int, d: int) -> float:
+    """The analytic max-over-dictionary cosine null floor ``sqrt(2 ln N / d)``.
+
+    Recomputed from the REALIZED dictionary width (plan SS12 assumption 9:
+    formula, never a constant).
+    """
+    return math.sqrt(2.0 * math.log(float(n_features)) / float(d))
+
+
+def empirical_max_cos_null(D_normed: np.ndarray, n_draws: int, seed: int, chunk: int = 256) -> dict:
+    """Empirical max-|cos| null: random unit directions vs the whole dictionary.
+
+    ``n_draws`` random unit d-vectors (seeded), chunked GEMMs against the
+    column-normed dictionary; per draw keep ``max_c |cos|``. Returns the null
+    summary dict (mean + quantiles) the dashboards quote cosines against.
+    """
+    d = int(D_normed.shape[0])
+    rng = np.random.default_rng(seed)
+    maxima = np.empty(int(n_draws), dtype=np.float64)
+    done = 0
+    while done < n_draws:
+        b = int(min(chunk, n_draws - done))
+        draws = rng.standard_normal((b, d)).astype(np.float32)
+        draws /= np.linalg.norm(draws, axis=1, keepdims=True)
+        maxima[done : done + b] = np.abs(draws @ D_normed).max(axis=1)
+        done += b
+    qs = np.quantile(maxima, [0.5, 0.9, 0.95, 0.99])
+    return {
+        "n_draws": int(n_draws),
+        "seed": int(seed),
+        "mean": float(maxima.mean()),
+        "p50": float(qs[0]),
+        "p90": float(qs[1]),
+        "p95": float(qs[2]),
+        "p99": float(qs[3]),
+        "max": float(maxima.max()),
+    }
+
+
+def encoder_pass(sae, x: np.ndarray) -> np.ndarray:
+    """Rows through an SAE's OWN inference encode (threshold-gated), fp32 numpy.
+
+    ``sae`` duck-types the shared encode contract (andyrdt ``BatchTopKSAE`` /
+    #2476 ``MatryoshkaBatchTopKSAE``): ``encode((T, act_dim) tensor) ->
+    (T, dict_size)``.
+    """
+    t = torch.as_tensor(np.ascontiguousarray(np.asarray(x, dtype=np.float32)))
+    return sae.encode(t).cpu().numpy()
+
+
+def receipts_trait_scores(
+    D: np.ndarray, col_norms: np.ndarray, A: np.ndarray, r_hat: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Leg-3 step-3 receipts: per-context-feature scores ``d_c . (A r_hat)``.
+
+    ONE GEMV over the dictionary (B1 row form ``D^T (A r)`` — the score of
+    context feature c is the row-mapped decoder direction dotted with the
+    readout; never a dense T read). Returns ``(scores fp64 (N,), cos fp64
+    (N,))`` with ``cos = score / (|A r| |d_c|)``.
+    """
+    g = OP.monitor_gradient(A, r_hat)  # (d,) fp64
+    gn = float(np.linalg.norm(g))
+    assert gn > 0.0, "degenerate monitor gradient A @ r_hat == 0"
+    scores = (g.astype(np.float32) @ np.asarray(D, dtype=np.float32)).astype(np.float64)
+    safe = np.where(col_norms > 0, col_norms, 1.0)
+    return scores, scores / (gn * safe)
+
+
+def wiring_edge_stats(edges: np.ndarray, top_k: int, k_grid: tuple[int, ...] = CONC_K_GRID) -> dict:
+    """Per-row |edge|-mass statistics for a BLOCK of in-edge rows (H3 metrics).
+
+    ``edges``: ``(B, N)`` signed in-edges for B answer features over N context
+    features. Vectorized argpartition per row (no Python loop over features).
+    Returns ``top_ids (B, top_k)``, SIGNED ``top_vals``, ``absmass_total (B,)``,
+    ``conc_curve (B, len(k_grid))`` (cumulative |edge|-mass share at each k,
+    saturating when k > N), and ``top32_absmass_share (B,)`` (the H3 statistic;
+    top-min(32, N)).
+    """
+    e32 = np.asarray(edges, dtype=np.float32)
+    a = np.abs(e32)
+    B, N = a.shape
+    total = a.sum(axis=1, dtype=np.float64)
+    total_safe = np.maximum(total, 1e-30)
+    kmax = int(min(max(k_grid), N))
+    part = np.argpartition(a, N - kmax, axis=1)[:, N - kmax :]
+    vals = np.take_along_axis(a, part, axis=1)
+    order = np.argsort(-vals, axis=1)
+    ids_sorted = np.take_along_axis(part, order, axis=1).astype(np.int64)
+    cum = np.cumsum(np.take_along_axis(a, ids_sorted, axis=1).astype(np.float64), axis=1)
+    conc = np.stack([cum[:, int(min(k, kmax)) - 1] / total_safe for k in k_grid], axis=1).astype(
+        np.float32
+    )
+    tk = int(min(top_k, kmax))
+    top_ids = ids_sorted[:, :tk]
+    top_vals = np.take_along_axis(e32, top_ids, axis=1)
+    top32 = (cum[:, int(min(32, kmax)) - 1] / total_safe).astype(np.float64)
+    return {
+        "top_ids": top_ids,
+        "top_vals": top_vals,
+        "absmass_total": total,
+        "conc_curve": conc,
+        "top32_absmass_share": top32,
+    }
+
+
+def attribution_decompose(
+    v_c: np.ndarray,
+    a_ctx: np.ndarray,
+    D_ctx: np.ndarray,
+    b_dec_ctx: np.ndarray,
+    A: np.ndarray,
+    b_map: np.ndarray,
+    e_f: np.ndarray,
+    b_enc_f: float,
+    b_dec_ans: np.ndarray,
+    top_m: int = ATTR_TOP_CONTRIB,
+) -> dict:
+    """Leg-3 step-4 attribution: decompose one answer feature's PRE-activation.
+
+    Exact fp64 identity (all terms from the same fp32 params upcast once):
+    ``pre_act = sum_j a_j (E_f A^T d_j) + (b_dec_ctx @ A).E_f
+    + ((v_c - recon) @ A).E_f + b_map.E_f + (b_enc_f - b_dec_ans.E_f)``
+    where ``recon = D a + b_dec_ctx`` is the context-SAE reconstruction and the
+    per-feature contribution is ``a_j * edge(f, j)`` with the SAME row-form edge
+    the wiring phase persists (B1). The closure assert certifies TERM
+    ACCOUNTING (a dropped/miscomputed bias or residual term raises
+    RuntimeError); it is internally consistent for ANY square operator, so the
+    ORIENTATION guard lives in the caller — phase_attribution cross-checks
+    ``pre_act`` against the real #2476 encoder's fired activation, which a
+    transposed A breaks. Returns the per-feature table dict (top-``top_m``
+    contributions by |value|).
+    """
+    v64 = np.asarray(v_c, dtype=np.float64)
+    a64 = np.asarray(a_ctx, dtype=np.float64)
+    A64 = np.asarray(A, dtype=np.float64)
+    D64 = np.asarray(D_ctx, dtype=np.float64)
+    ef = np.asarray(e_f, dtype=np.float64)
+    bdc = np.asarray(b_dec_ctx, dtype=np.float64)
+    bda = np.asarray(b_dec_ans, dtype=np.float64)
+    bm = np.asarray(b_map, dtype=np.float64)
+    active = np.flatnonzero(a64 > 0)
+    edges = (D64[:, active].T @ A64) @ ef if active.size else np.zeros(0)
+    contribs = a64[active] * edges
+    recon = (D64[:, active] @ a64[active] if active.size else np.zeros_like(v64)) + bdc
+    resid_term = float(((v64 - recon) @ A64) @ ef)
+    bias_ctx_term = float((bdc @ A64) @ ef)
+    bias_map_term = float(bm @ ef)
+    enc_offset = float(b_enc_f) - float(bda @ ef)
+    pre_act = float((v64 @ A64 + bm - bda) @ ef) + float(b_enc_f)
+    closure = float(contribs.sum()) + bias_ctx_term + resid_term + bias_map_term + enc_offset
+    closure_residual = abs(closure - pre_act)
+    tol = 1e-6 * max(1.0, abs(pre_act))
+    if closure_residual > tol:
+        raise RuntimeError(
+            f"attribution closure breached: |{closure:.9g} - {pre_act:.9g}| = "
+            f"{closure_residual:.3e} > {tol:.3e} — orientation flip suspected (B1)"
+        )
+    order = np.argsort(-np.abs(contribs))[: int(top_m)]
+    return {
+        "pre_act": pre_act,
+        "n_active_ctx": int(active.size),
+        "contributions": [
+            {
+                "ctx_feat_id": int(active[j]),
+                "a_j": float(a64[active[j]]),
+                "edge": float(edges[j]),
+                "contribution": float(contribs[j]),
+            }
+            for j in order
+        ],
+        "bias_terms": {
+            "ctx_decoder_bias_via_map": bias_ctx_term,
+            "sae_recon_residual_via_map": resid_term,
+            "map_intercept": bias_map_term,
+            "ans_encoder_offset": enc_offset,
+        },
+        "closure_residual": closure_residual,
+    }
+
+
+def load_ctx_feature_labels(root: Path) -> tuple[dict[int, dict], dict]:
+    """Committed judged autointerp descriptions for andyrdt L19 features.
+
+    Loads every present ``LABEL_SOURCES`` file in order (the plan-named #1482
+    context-side tree loads LAST and overwrites on id collision); negative
+    ``feat_id`` rows (non-feature axes in some #1773 files) are skipped. An
+    absent file is recorded LOUDLY in the returned doc — labels are naming
+    sugar the plan scopes as "where available", never a crash. Returns
+    ``(labels {feat_id: {description, confidence, evidence_side, source}},
+    doc)``.
+    """
+    labels: dict[int, dict] = {}
+    doc: list[dict] = []
+    for rel, side, tag in LABEL_SOURCES:
+        p = Path(root) / rel
+        if not p.exists():
+            doc.append({"source": tag, "path": rel, "status": "absent"})
+            logger.warning("[labels] %s absent — features from this source stay unnamed", rel)
+            continue
+        n = 0
+        with open(p) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                row = json.loads(line)
+                fid = int(row["feat_id"])
+                if fid < 0:
+                    continue
+                labels[fid] = {
+                    "description": str(row.get("description", ""))[:240],
+                    "confidence": row.get("confidence", row.get("describe_confidence")),
+                    "evidence_side": side,
+                    "source": tag,
+                }
+                n += 1
+        doc.append({"source": tag, "path": rel, "status": "loaded", "n": n, "side": side})
+    return labels, {
+        "sources": doc,
+        "note": "descriptions are judged autointerp text over activating windows; "
+        "evidence_side names which span produced the windows (#1482 caveat) — "
+        "features without a row carry their index only",
+    }
+
+
 # ── driver plumbing (layers, regime keys, resume) ─────────────────────────────────
 
 
@@ -1073,6 +1513,211 @@ def _load_rows_store(args) -> tuple:
     return x_mm, y_mm, train_pos, val_pos, test_pos
 
 
+# ── legs 1.4 + 3 plumbing (dictionary staging, labels, regime keys) ───────────────
+
+
+def _leg3(args) -> Path:
+    """leg3/ output dir under the out-root (created on demand)."""
+    p = args.out_root / "leg3"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _dict_layers(args, phase: str) -> tuple[int, ...]:
+    """Layer list for DICTIONARY-consuming phases: the L19 subset, loud skips.
+
+    Both banked dictionaries (andyrdt trainer_1; #2476 sae_c) are layer-19
+    artifacts — no layer-matched dictionary exists for the L14/L26 replicate
+    maps, so those layers are SKIPPED with a loud per-layer log line (an
+    explicit not-applicable, never a silent omission).
+    """
+    layers = _layers(args)
+    for lyr in layers:
+        if lyr != DICT_LAYER:
+            logger.warning(
+                "[%s] L%d SKIPPED — both banked dictionaries are layer-%d artifacts "
+                "(andyrdt trainer_1 + #2476 sae_c); no layer-matched dictionary is banked",
+                phase,
+                lyr,
+                DICT_LAYER,
+            )
+    return tuple(lyr for lyr in layers if lyr == DICT_LAYER)
+
+
+def _load_ctx_sae(args):
+    """The andyrdt per-token L19 SAE (context/read side), revision-pinned.
+
+    ``issue1482_sae.BatchTopKSAE.load`` asserts config (dict_class, act 3584,
+    width 131,072, k, layer, lm_name) + the ae.pt key set at the pinned
+    revision; fetches ride ``hub.retry_transient``. Staged idempotently under
+    the out-root stage dir.
+    """
+    import issue1482_sae as S1482
+
+    cache = args.out_root / "stage" / "sae_ctx_andyrdt"
+    cache.mkdir(parents=True, exist_ok=True)
+    return S1482.BatchTopKSAE.load(
+        k=ANDY_SAE_K, device=str(args.device), cache_dir=cache, layer=DICT_LAYER
+    )
+
+
+def _load_ans_sae(args):
+    """The #2476 turn-averaged answer SAE (write side) via the RB staging helper.
+
+    ``RB._stage_answer_sae`` stages cfg.json + sae_weights.safetensors from the
+    pinned HF leaf (or serves ``--answer-sae-dir`` verbatim — the test seam,
+    same consume path); ``load_local`` asserts the weight key set.
+    """
+    import issue2476_turnavg_sae as T24
+    import issue2569_rowbattery as RB
+
+    shim = SimpleNamespace(out_root=args.out_root)
+    d = RB._stage_answer_sae(shim, args.answer_sae_dir)
+    return T24.MatryoshkaBatchTopKSAE.load_local(d, device=str(args.device))
+
+
+def _answer_union(args) -> np.ndarray:
+    """The #2476 banked alive answer UNION (2,150 features at the 0.2% floor).
+
+    Reuses the rowbattery helpers verbatim (staging + the nested-floor union
+    computation + the production count pin); a local ``--alive-counts-npz``
+    override (test seam) drops the 2,150 pin, mirroring RB's convention.
+    """
+    import issue2569_rowbattery as RB
+
+    shim = SimpleNamespace(out_root=args.out_root)
+    p = RB._stage_alive_counts(shim, args.alive_counts_npz)
+    return RB._answer_union_from_counts(p, production=args.alive_counts_npz is None)
+
+
+def _rb_nearest_answer_features(ans_sae, rb_vectors: dict[str, np.ndarray]) -> dict[str, dict]:
+    """The r_B-nearest #2476 decoder feature per trait (plan SS4 leg 3 step 1).
+
+    Nearest = argmax SIGNED cosine between the unit readout and the answer
+    decoder rows (``w_dec (N_ans, d)``); returns ``{trait: {feat_id, cos}}``.
+    """
+    Wd = ans_sae.w_dec.detach().cpu().numpy().astype(np.float64)
+    norms = np.linalg.norm(Wd, axis=1)
+    norms = np.where(norms > 0, norms, 1.0)
+    out = {}
+    for trait, r in rb_vectors.items():
+        cos = (Wd @ np.asarray(r, dtype=np.float64)) / norms
+        j = int(np.argmax(cos))
+        out[trait] = {"feat_id": j, "cos": float(cos[j])}
+    return out
+
+
+def _attr_holdout_ids(args) -> np.ndarray:
+    """The pinned #2476 20k holdout row ids (sha-asserted via T24 scratch meta).
+
+    ``T24._load_scratch_meta`` stages the parent's split indices into the
+    out-root stage dir and sha-asserts every pinned pool; ``pools['holdout']``
+    is the 20,000-row holdout the attribution examples draw from.
+    """
+    import issue2476_turnavg_sae as T24
+
+    shim = SimpleNamespace(out_root=args.out_root)
+    _row_ci, _prov, pools = T24._load_scratch_meta(shim)
+    return np.asarray(pools["holdout"], np.int64)
+
+
+def _dict_pins() -> dict:
+    """Generating-parameter pins for both banked dictionaries (regime members)."""
+    import issue1482_sae as S1482
+    import issue2569_rowbattery as RB
+
+    return {
+        "ctx_dict": {
+            "repo": S1482.SAE_REPO,
+            "revision": S1482.SAE_REVISION,
+            "layer": DICT_LAYER,
+            "k": ANDY_SAE_K,
+        },
+        "ans_dict": {
+            "hf_leaf": RB.ANSWER_SAE_HF_LEAF,
+            "alive_counts": RB.ALIVE_C_HF_PATH,
+            "union_frac": RB.LEG4_UNION_FRAC,
+        },
+    }
+
+
+def _receipts_top_k(args) -> int:
+    """Receipts per-trait feature count (smoke narrows the reporting axis)."""
+    return RECEIPTS_TOP_K_SMOKE if args.smoke else RECEIPTS_TOP_K
+
+
+def _receipts_regime(args, layer: int) -> dict:
+    """receipts resume key: base regime + this phase's generating params."""
+    return {
+        **_regime(args, layer),
+        "receipts": {
+            "rb_source": _rb_source(args),
+            "traits": list(RB_TRAITS),
+            "top_k": _receipts_top_k(args),
+            **_dict_pins(),
+        },
+    }
+
+
+def _wiring_rows_attached(args, layer: int) -> bool:
+    """True when the P-B row store arms this layer's rows-gated leg-3 legs."""
+    return bool(args.rows_dir) and int(layer) == CERT_ROWS_LAYER
+
+
+def _wiring_regime(args, layer: int) -> dict:
+    """wiring resume key: base + edge/concentration/alive generating params.
+
+    ``rows_attached`` is a member so a post-P-B rows-attached re-run RECOMPUTES
+    the unit (alive-masked H3 shares) instead of resuming a full-column-only
+    unit as done.
+    """
+    return {
+        **_regime(args, layer),
+        "wiring": {
+            "rb_source": _rb_source(args),
+            "edge_top_k": WIRING_EDGE_TOP_K,
+            "conc_k_grid": list(CONC_K_GRID),
+            "smoke_union_cap": WIRING_SMOKE_UNION_CAP if args.smoke else 0,
+            "rows_attached": _wiring_rows_attached(args, layer),
+            "ctx_alive": {
+                "rows": CTX_ALIVE_ROWS,
+                "floor_frac": CTX_ALIVE_FLOOR_FRAC,
+                "seed": CTX_ALIVE_SEED,
+            },
+            **_dict_pins(),
+        },
+    }
+
+
+def _attr_regime(args, layer: int) -> dict:
+    """attribution resume key: base + example-draw generating params."""
+    return {
+        **_regime(args, layer),
+        "attribution": {
+            "rb_source": _rb_source(args),
+            "rows_attached": _wiring_rows_attached(args, layer),
+            "n_examples": ATTR_N_EXAMPLES_SMOKE if args.smoke else ATTR_N_EXAMPLES,
+            "seed": ATTR_SEED,
+            "top_contrib": ATTR_TOP_CONTRIB,
+            "top_pred_features": ATTR_TOP_PRED_FEATURES,
+            **_dict_pins(),
+        },
+    }
+
+
+def _dash_regime(args, layer: int) -> dict:
+    """sae-dashboards resume key: base (top_k + n_draws) + null/naming params."""
+    return {
+        **_regime(args, layer),
+        "dashboards": {
+            "rb_source": _rb_source(args),
+            "null_seed": NULL_SEED,
+            "features_per_direction": DASH_FEATURES_PER_DIRECTION,
+            **_dict_pins(),
+        },
+    }
+
+
 # ── phases ────────────────────────────────────────────────────────────────────────
 
 
@@ -1291,8 +1936,10 @@ def phase_fixed_point(args) -> None:
             {
                 "regime": regime,
                 **st,
-                "sae_decode": "deferred-to-sae-dashboards-unit (needs the #2476 encoder)",
-                "nearest_banked_answers": "deferred-to-P-B (needs rows)",
+                "sae_decode": "filled-in-place-by `--phase sae-dashboards` (run it after "
+                "fixed-point; the dashboards phase rewrites this key atomically)",
+                "nearest_banked_answers": "deferred — needs banked ANSWER rows and no P-B "
+                "producer phase exists yet (concern leg1-fixedpoint-neighbors-no-pb-producer)",
             },
             phase="pa-fixed-point",
         )
@@ -1465,8 +2112,8 @@ def phase_monitor_geometry(args) -> None:
                 "affine_note": "read_at_zero_context = r_hat . b is the affine offset — the "
                 "flip DISTANCE along the gradient depends on the current context's read, "
                 "not only on the geometry",
-                "sae_naming": "deferred-to-SAE-dashboard-unit (leg 1 step 4 machinery; the "
-                "next unit in this file names the gradient + pre-image directions)",
+                "sae_naming": "leg8/monitor_sae_naming_L<L>.json (written by "
+                "`--phase sae-dashboards` — run it after monitor-geometry)",
                 "caveats": caveats,
             },
             phase="pa-monitor-geometry",
@@ -1609,6 +2256,773 @@ def phase_certificates(args) -> None:
     _sentinel("pa-certificates", f"certificates done layers={list(layers)}")
 
 
+def _atomic_npz_save(path: Path, **arrays) -> None:
+    """np.savez through atomic_replace (open handle so np never appends .npy)."""
+    with atomic_replace(path) as tmp, open(tmp, "wb") as fh:
+        np.savez(fh, **arrays)
+
+
+def _label_of(labels: dict[int, dict], fid: int) -> dict | None:
+    """Judged-description row for one feature id (None when unnamed)."""
+    return labels.get(int(fid))
+
+
+def phase_receipts(args) -> None:
+    """Leg-3 step 3 behavior-contraction receipts -> leg3/receipts_L<L>.json.
+
+    Per trait readout r (unit-normalized #779 r_B row): context-feature scores
+    ``d_c . (A r)`` over all 131,072 andyrdt decoder columns — ONE GEMV per
+    trait through the B1 row form (dense T never materialized). Top-64
+    positive (driving the trait up through the map) + top-64 negative
+    features, each named where a committed judged description exists.
+    Dictionary-gated: L19 only.
+    """
+    layers = _dict_layers(args, "receipts")
+    if not layers:
+        _sentinel("pa-receipts", "receipts skipped — no dictionary-matched layer in list")
+        return
+    rb_paths = _stage_rb(args)
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _receipts_regime(args, layer)
+        jpath = _leg3(args) / f"receipts_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[receipts] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        payload = _load_payload(args, layer)
+        a_mat, b_vec = OP.row_operator(payload)
+        d = int(payload.d)
+        ctx_sae = _load_ctx_sae(args)
+        assert int(ctx_sae.act_dim) == d, (ctx_sae.act_dim, d)
+        D_ctx = ctx_sae.w_dec.detach().cpu().numpy()
+        col_norms = np.linalg.norm(D_ctx.astype(np.float64), axis=0)
+        labels, label_doc = load_ctx_feature_labels(PROJECT_ROOT)
+        k = _receipts_top_k(args)
+        traits: dict = {}
+        for trait in RB_TRAITS:
+            r_hat = _rb_layer_vector(rb_paths[trait], trait, layer, d)
+            scores, cos = receipts_trait_scores(D_ctx, col_norms, a_mat, r_hat)
+            order = np.argsort(-scores)
+
+            def _rows(idx: np.ndarray) -> list[dict]:
+                return [
+                    {
+                        "rank": j + 1,
+                        "feat_id": int(c),
+                        "score": float(scores[c]),
+                        "cos": float(cos[c]),
+                        "decoder_norm": float(col_norms[c]),
+                        "label": _label_of(labels, int(c)),
+                    }
+                    for j, c in enumerate(idx)
+                ]
+
+            traits[trait] = {
+                "grad_norm": float(np.linalg.norm(OP.monitor_gradient(a_mat, r_hat))),
+                "read_at_zero_context": float(np.asarray(b_vec, np.float64) @ r_hat),
+                "top_positive": _rows(order[:k]),
+                "top_negative": _rows(order[::-1][:k]),
+            }
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "traits": traits,
+                "label_sources": label_doc,
+                "naming_note": (
+                    "features without a judged description carry their index only; the "
+                    "top-activating-row digest alternative needs rows and is deferred to "
+                    "the rows-attached re-run (P-B store)"
+                ),
+                "caveats": [CAVEAT_WIRING, CAVEAT_ACTIVATION],
+            },
+            phase="pa-receipts",
+        )
+        logger.info(
+            "[receipts] unit %d/%d L%d elapsed=%.1fs top_k=%d n_labeled_sources=%d",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            k,
+            sum(1 for s in label_doc["sources"] if s.get("status") == "loaded"),
+        )
+    _sentinel("pa-receipts", f"receipts done layers={list(layers)}")
+
+
+def _ctx_alive_counts(args, ctx_sae, x_mm, rows_present: np.ndarray) -> tuple[np.ndarray, dict]:
+    """Firing counts of every andyrdt feature over a seeded 20k v_C subsample.
+
+    Chunked encoder passes (1,024 rows/chunk — a (1,024 x 131,072) fp32 code
+    block is ~0.5 GB; the full code matrix is NEVER materialized), counts
+    accumulated per chunk with a per-chunk progress line. Returns
+    ``(counts (dict_size,) int64, doc)``.
+    """
+    n_present = int(rows_present.size)
+    n_rows = int(min(CTX_ALIVE_ROWS, n_present))
+    rng = np.random.default_rng(CTX_ALIVE_SEED)
+    sel = np.sort(rng.choice(n_present, size=n_rows, replace=False))
+    counts = np.zeros(int(ctx_sae.dict_size), dtype=np.int64)
+    chunk = 1_024
+    t0 = time.time()
+    for k0 in range(0, n_rows, chunk):
+        pos = sel[k0 : k0 + chunk]
+        codes = encoder_pass(ctx_sae, np.asarray(x_mm[pos], dtype=np.float32))
+        counts += (codes > 0).sum(axis=0).astype(np.int64)
+        logger.info(
+            "[wiring] ctx-alive rows %d..%d/%d elapsed=%.1fs",
+            k0,
+            min(k0 + chunk, n_rows),
+            n_rows,
+            time.time() - t0,
+        )
+    doc = {
+        "n_rows_used": n_rows,
+        "seed": CTX_ALIVE_SEED,
+        "source": "seeded-subsample-of-present-rows (rows_present order)",
+        "floor_frac": CTX_ALIVE_FLOOR_FRAC,
+    }
+    return counts, doc
+
+
+def phase_wiring(args) -> None:
+    """Leg-3 steps 1-2 wiring -> leg3/wiring_L<L>.json + wiring_edges_L<L>.npz.
+
+    In-edges ``E_f A^T D`` for the bounded answer set (the #2476 alive union +
+    the 3 r_B-nearest features) computed as ONE fp64 (F, d) @ (d, d) GEMM then
+    fp32 block-GEMMs against the full 131,072-column andyrdt decoder — the
+    34 GB dense T is NEVER materialized (plan SS4 leg 3 step 1). Per feature:
+    top-32 signed in-edges + the |edge|-mass concentration curve (H3). The
+    ctx-alive mask (verdict-grade H3 denominator) is rows-gated: with
+    ``--rows-dir`` at L19 the 20k-row andyrdt encode runs and alive-masked
+    shares are persisted; otherwise full-column shares ship INFORMATIONAL with
+    an explicit deferral. Out-edges ``encode_ans(d_c^T A)`` run for the
+    receipts' behavior-relevant context features (consumes
+    leg3/receipts_L<L>.json — run ``--phase receipts`` first).
+    """
+    layers = _dict_layers(args, "wiring")
+    if not layers:
+        _sentinel("pa-wiring", "wiring skipped — no dictionary-matched layer in list")
+        return
+    rb_paths = _stage_rb(args)
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _wiring_regime(args, layer)
+        jpath = _leg3(args) / f"wiring_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[wiring] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        rpath = _leg3(args) / f"receipts_L{layer}.json"
+        if not rpath.exists():
+            raise FileNotFoundError(f"{rpath} absent — run `--phase receipts` first")
+        receipts = json.loads(rpath.read_text())
+        if receipts.get("regime") != _receipts_regime(args, layer):
+            raise RuntimeError(f"{rpath}: stale receipts artifact — re-run `--phase receipts`")
+        payload = _load_payload(args, layer)
+        a_mat, _b_vec = OP.row_operator(payload)
+        d = int(payload.d)
+        ctx_sae = _load_ctx_sae(args)
+        ans_sae = _load_ans_sae(args)
+        assert int(ctx_sae.act_dim) == d and int(ans_sae.act_dim) == d
+        union = _answer_union(args)
+        rb_vecs = {t: _rb_layer_vector(rb_paths[t], t, layer, d) for t in RB_TRAITS}
+        nearest = _rb_nearest_answer_features(ans_sae, rb_vecs)
+        near_ids = np.asarray(sorted({v["feat_id"] for v in nearest.values()}), np.int64)
+        if args.smoke:
+            union = union[:WIRING_SMOKE_UNION_CAP]
+        feat_ids = np.unique(np.concatenate([union, near_ids]))
+        is_near = np.isin(feat_ids, near_ids)
+        F = int(feat_ids.size)
+        # ONE fp64 GEMM for E_sel @ A^T, then fp32 blocks against the dictionary.
+        w_enc_ans = ans_sae.w_enc.detach().cpu().numpy()  # (d, N_ans) fp32
+        E_sel = w_enc_ans[:, feat_ids].T.astype(np.float64)  # (F, d)
+        G1 = E_sel @ a_mat.T  # (F, d) fp64 — the row-form edge prefix (B1)
+        D_ctx = ctx_sae.w_dec.detach().cpu().numpy()  # (d, N_ctx) fp32
+        # rows-gated ctx-alive mask (verdict-grade H3 denominator)
+        rows_attached = _wiring_rows_attached(args, layer)
+        alive_ids = None
+        alive_doc: dict | str
+        if rows_attached:
+            x_mm, _y, _tr, _va, _te = _load_rows_store(args)
+            rows_present = np.load(Path(args.rows_dir) / "rows_present.npy")
+            counts, cdoc = _ctx_alive_counts(args, ctx_sae, x_mm, rows_present)
+            floor = max(1, math.ceil(CTX_ALIVE_FLOOR_FRAC * cdoc["n_rows_used"]))
+            alive_ids = np.flatnonzero(counts >= floor).astype(np.int64)
+            _atomic_npz_save(
+                _leg3(args) / f"ctx_alive_L{layer}.npz",
+                counts=counts,
+                alive_ids=alive_ids,
+                floor=np.int64(floor),
+                n_rows_used=np.int64(cdoc["n_rows_used"]),
+                seed=np.int64(CTX_ALIVE_SEED),
+            )
+            alive_doc = {**cdoc, "floor": int(floor), "n_alive": int(alive_ids.size)}
+            assert alive_ids.size > 0, "no alive andyrdt features at the 1% floor"
+        else:
+            alive_doc = (
+                "deferred — the P-B P1 assemble dir was not attached via --rows-dir "
+                "(the 20k-row v_C andyrdt encode needs it); full-column shares below are "
+                "INFORMATIONAL; re-run `--phase wiring --rows-dir <assemble-dir>` at "
+                "layer 19 post-P-B (concern leg3-rows-legs-need-pb-store)"
+            )
+        # blocked in-edge GEMMs + per-feature |edge|-mass stats
+        parts: list[dict] = []
+        parts_alive: list[dict] = []
+        n_blocks = (F + WIRING_BLOCK_ROWS - 1) // WIRING_BLOCK_ROWS
+        for bi, b0 in enumerate(range(0, F, WIRING_BLOCK_ROWS), 1):
+            blk = G1[b0 : b0 + WIRING_BLOCK_ROWS].astype(np.float32) @ D_ctx
+            parts.append(wiring_edge_stats(blk, WIRING_EDGE_TOP_K))
+            if alive_ids is not None:
+                st = wiring_edge_stats(blk[:, alive_ids], WIRING_EDGE_TOP_K)
+                st["top_ids"] = alive_ids[st["top_ids"]]  # remap to GLOBAL context ids
+                parts_alive.append(st)
+            logger.info(
+                "[wiring] unit %d/%d L%d block %d/%d elapsed=%.1fs",
+                i,
+                len(layers),
+                layer,
+                bi,
+                n_blocks,
+                time.time() - t0,
+            )
+        stats = {k: np.concatenate([p[k] for p in parts]) for k in parts[0]}
+        npz_arrays = {
+            "feat_ids": feat_ids,
+            "is_rb_nearest": is_near,
+            "top_edge_ids": stats["top_ids"],
+            "top_edge_vals": stats["top_vals"],
+            "edge_absmass_total": stats["absmass_total"],
+            "top32_absmass_share": stats["top32_absmass_share"].astype(np.float32),
+            "conc_curve": stats["conc_curve"],
+            "conc_k_grid": np.asarray(CONC_K_GRID, np.int64),
+        }
+        if parts_alive:
+            sa = {k: np.concatenate([p[k] for p in parts_alive]) for k in parts_alive[0]}
+            npz_arrays.update(
+                top_edge_ids_alive=sa["top_ids"],
+                top_edge_vals_alive=sa["top_vals"],
+                edge_absmass_total_alive=sa["absmass_total"],
+                top32_absmass_share_alive=sa["top32_absmass_share"].astype(np.float32),
+                conc_curve_alive=sa["conc_curve"],
+            )
+        _atomic_npz_save(_leg3(args) / f"wiring_edges_L{layer}.npz", **npz_arrays)
+        # H3 accounting (plan SS7.5 leg 3: verdict-grade only on ALIVE columns)
+        share_full = stats["top32_absmass_share"]
+        share_alive = parts_alive and np.concatenate(
+            [p["top32_absmass_share"] for p in parts_alive]
+        )
+
+        def _q(x) -> dict:
+            return {
+                "median": float(np.median(x)),
+                "mean": float(np.mean(x)),
+                "q25": float(np.quantile(x, 0.25)),
+                "q75": float(np.quantile(x, 0.75)),
+            }
+
+        behavior = {}
+        for trait, row in nearest.items():
+            fi = int(np.searchsorted(feat_ids, row["feat_id"]))
+            behavior[trait] = {
+                "feat_id": int(row["feat_id"]),
+                "cos": float(row["cos"]),
+                "top32_share_full": float(share_full[fi]),
+                "top32_share_alive": (
+                    float(share_alive[fi]) if parts_alive else None  # type: ignore[index]
+                ),
+            }
+        h3 = {
+            "statistic": (
+                "top-32 in-edge |edge|-mass share; PASS >= "
+                f"{H3_PASS_SHARE} on behavior-relevant answer features over ALIVE context "
+                f"columns; kill < {H3_KILL_SHARE} (plan SS7.5 leg 3)"
+            ),
+            "grain": (
+                "full-131k-column shares are INFORMATIONAL at P-A; the verdict-grade read "
+                "is the alive-masked share (rows-attached re-run)"
+            ),
+            "behavior_relevant": behavior,
+            "union_top32_share_full": _q(share_full),
+            "union_top32_share_alive": (
+                _q(share_alive) if parts_alive else "deferred — see ctx_alive"
+            ),
+        }
+        # out-edges for the receipts' behavior-relevant context features
+        ctx_ids = sorted(
+            {
+                int(row["feat_id"])
+                for tr in receipts["traits"].values()
+                for row in (tr["top_positive"] + tr["top_negative"])
+            }
+        )
+        mapped = D_ctx[:, ctx_ids].T.astype(np.float64) @ a_mat  # (M, d) row-mapped dirs
+        enc = encoder_pass(ans_sae, mapped)  # (M, N_ans) — the SAE's own inference encode
+        linear = mapped.astype(np.float32) @ w_enc_ans  # bias-free directional companion
+        labels, label_doc = load_ctx_feature_labels(PROJECT_ROOT)
+        out_edges: dict = {}
+        for mi, cid in enumerate(ctx_ids):
+            fired = np.flatnonzero(enc[mi] > 0)
+            fired = fired[np.argsort(-enc[mi][fired])][:WIRING_EDGE_TOP_K]
+            lin_top = np.argsort(-np.abs(linear[mi]))[:WIRING_EDGE_TOP_K]
+            out_edges[str(cid)] = {
+                "label": _label_of(labels, cid),
+                "n_fired": int((enc[mi] > 0).sum()),
+                "fired": [{"feat_id": int(f), "act": float(enc[mi][f])} for f in fired],
+                "linear_top": [{"feat_id": int(f), "value": float(linear[mi][f])} for f in lin_top],
+                "mapped_norm": float(np.linalg.norm(mapped[mi])),
+            }
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "n_answer_features": F,
+                "rb_nearest": nearest,
+                "h3": h3,
+                "ctx_alive": alive_doc,
+                "out_edges": out_edges,
+                "out_edges_note": (
+                    "out-edge = encode_ans(d_c^T A), the row-mapped decoder direction "
+                    "through the #2476 encoder (plan SS4 leg 3 step 2); the SAE's affine "
+                    "inference encode of a raw DIRECTION is scale-sensitive, so the "
+                    "bias-free linear_top companion is reported alongside"
+                ),
+                "label_sources": label_doc,
+                "caveats": [CAVEAT_WIRING, CAVEAT_ACTIVATION],
+            },
+            phase="pa-wiring",
+        )
+        logger.info(
+            "[wiring] unit %d/%d L%d elapsed=%.1fs F=%d median_top32_share_full=%.4f",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            F,
+            float(np.median(share_full)),
+        )
+    _sentinel("pa-wiring", f"wiring done layers={list(layers)}")
+
+
+def phase_attribution(args) -> None:
+    """Leg-3 step 4 attribution demo -> leg3/attribution_L<L>.json (rows-gated).
+
+    Eight worked examples drawn deterministically (seed ATTR_SEED) from the
+    pinned #2476 20k holdout: per example, per table answer feature (the 3
+    r_B-nearest + top-5 by predicted activation), the predicted activation is
+    decomposed into per-context-feature contributions ``a_j (E_f A^T d_j)``
+    over the example's ACTIVE andyrdt features + exact bias/residual closure
+    (``attribution_decompose`` raises on an orientation flip). Without
+    ``--rows-dir`` at L19 an explicit deferral is recorded.
+    """
+    layers = _dict_layers(args, "attribution")
+    if not layers:
+        _sentinel("pa-attribution", "attribution skipped — no dictionary-matched layer")
+        return
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _attr_regime(args, layer)
+        jpath = _leg3(args) / f"attribution_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[attribution] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        rows_attached = _wiring_rows_attached(args, layer)
+        if not rows_attached:
+            _write_json(
+                jpath,
+                {
+                    "regime": regime,
+                    "examples": (
+                        "deferred — the P-B P1 assemble dir was not attached via "
+                        "--rows-dir (the worked examples need the pinned #2476 holdout's "
+                        "v_C rows); re-run `--phase attribution --rows-dir <assemble-dir>` "
+                        "at layer 19 post-P-B (concern leg3-rows-legs-need-pb-store)"
+                    ),
+                    "caveats": [CAVEAT_WIRING, CAVEAT_ACTIVATION],
+                },
+                phase="pa-attribution",
+            )
+            logger.info(
+                "[attribution] unit %d/%d L%d DEFERRED (no --rows-dir)", i, len(layers), layer
+            )
+            continue
+        import issue2569_rowbattery as RB
+
+        rb_paths = _stage_rb(args)
+        x_mm, y_mm, _tr, _va, _te = _load_rows_store(args)
+        rows_present = np.load(Path(args.rows_dir) / "rows_present.npy")
+        holdout = _attr_holdout_ids(args)
+        pos = RB._positions_in_present(rows_present, holdout, "attribution")
+        n_ex = int(min(regime["attribution"]["n_examples"], pos.size))
+        rng = np.random.default_rng(ATTR_SEED)
+        sel = np.sort(rng.choice(pos.size, size=n_ex, replace=False))
+        positions = pos[sel]
+        payload = _load_payload(args, layer)
+        a_mat, b_vec = OP.row_operator(payload)
+        d = int(payload.d)
+        ctx_sae = _load_ctx_sae(args)
+        ans_sae = _load_ans_sae(args)
+        rb_vecs = {t: _rb_layer_vector(rb_paths[t], t, layer, d) for t in RB_TRAITS}
+        nearest = _rb_nearest_answer_features(ans_sae, rb_vecs)
+        labels, label_doc = load_ctx_feature_labels(PROJECT_ROOT)
+        D_ctx = ctx_sae.w_dec.detach().cpu().numpy()
+        b_dec_ctx = ctx_sae.b_dec.detach().cpu().numpy().astype(np.float64)
+        w_enc_ans = ans_sae.w_enc.detach().cpu().numpy()
+        b_enc_ans = ans_sae.b_enc.detach().cpu().numpy().astype(np.float64)
+        b_dec_ans = ans_sae.b_dec.detach().cpu().numpy().astype(np.float64)
+        examples = []
+        for ei, p in enumerate(positions, 1):
+            v_c = np.asarray(x_mm[int(p)], dtype=np.float64)
+            v_a = np.asarray(y_mm[int(p)], dtype=np.float64)
+            a_ctx = encoder_pass(ctx_sae, v_c[None])[0]
+            vhat = OP.predict(payload, v_c)
+            pred_codes = encoder_pass(ans_sae, vhat[None])[0]
+            true_codes = encoder_pass(ans_sae, v_a[None])[0]
+            table: dict[int, str] = {}
+            for trait, row in nearest.items():
+                table.setdefault(int(row["feat_id"]), f"r_B-nearest ({trait})")
+            for f in np.argsort(-pred_codes)[:ATTR_TOP_PRED_FEATURES]:
+                table.setdefault(int(f), "top predicted activation")
+            feats: dict = {}
+            for f, why in table.items():
+                dec = attribution_decompose(
+                    v_c,
+                    a_ctx,
+                    D_ctx,
+                    b_dec_ctx,
+                    a_mat,
+                    b_vec,
+                    w_enc_ans[:, f].astype(np.float64),
+                    float(b_enc_ans[f]),
+                    b_dec_ans,
+                )
+                pred = float(pred_codes[f])
+                # ORIENTATION guard (B1): a fired feature's encoder activation
+                # equals its pre-activation (threshold gating is act*(act>thr)),
+                # so the fp64 decompose must reproduce the REAL encoder's value
+                # — a transposed A closes the internal identity but breaks this.
+                if pred > 0 and abs(dec["pre_act"] - pred) > 1e-3 * max(1.0, abs(pred)):
+                    raise RuntimeError(
+                        f"[attribution] row {int(rows_present[int(p)])} feature {f}: "
+                        f"decomposed pre_act {dec['pre_act']:.6g} != encoder activation "
+                        f"{pred:.6g} — orientation flip suspected (B1)"
+                    )
+                for c in dec["contributions"]:
+                    c["label"] = _label_of(labels, c["ctx_feat_id"])
+                feats[str(f)] = {
+                    "why_in_table": why,
+                    "pred_act": pred,
+                    "true_act": float(true_codes[f]),
+                    **dec,
+                }
+            examples.append(
+                {
+                    "row_id": int(rows_present[int(p)]),
+                    "position": int(p),
+                    "n_ctx_active": int((a_ctx > 0).sum()),
+                    "features": feats,
+                }
+            )
+            logger.info(
+                "[attribution] example %d/%d row_id=%d elapsed=%.1fs",
+                ei,
+                n_ex,
+                examples[-1]["row_id"],
+                time.time() - t0,
+            )
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "examples": examples,
+                "holdout": {
+                    "source": "pinned #2476 20k holdout (T24 scratch-meta sha-asserted pools)",
+                    "n_holdout_present": int(pos.size),
+                    "seed": ATTR_SEED,
+                },
+                "decomposition": (
+                    "pred pre-activation = sum_j a_j (E_f A^T d_j) + bias/residual terms "
+                    "(exact closure asserted; see attribution_decompose)"
+                ),
+                "label_sources": label_doc,
+                "caveats": [CAVEAT_WIRING, CAVEAT_ACTIVATION],
+            },
+            phase="pa-attribution",
+        )
+        logger.info(
+            "[attribution] unit %d/%d L%d elapsed=%.1fs n_examples=%d",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            n_ex,
+        )
+    _sentinel("pa-attribution", f"attribution done layers={list(layers)}")
+
+
+def _real_unit_rows(Z: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Normalized REAL parts of complex direction rows + per-row imaginary mass.
+
+    ``Z (K, d)`` complex; returns ``(unit fp64 (K, d), im_frac (K,))`` with
+    ``im_frac = |Im Z| / |Z|`` per row. A vanishing real part (a near-purely
+    imaginary eigenvector — its conjugate partner carries the same 2-plane)
+    keeps a zero row (cosines read 0) rather than dividing by ~0.
+    """
+    Z = np.asarray(Z)
+    re = Z.real.astype(np.float64)
+    full = np.linalg.norm(Z, axis=1)
+    imn = np.linalg.norm(Z.imag.astype(np.float64), axis=1)
+    rn = np.linalg.norm(re, axis=1)
+    safe = np.where(rn > 1e-12 * np.maximum(full, 1e-30), rn, np.inf)
+    return re / safe[:, None], imn / np.maximum(full, 1e-30)
+
+
+def phase_sae_dashboards(args) -> None:
+    """Leg-1 step 4 two-sided SAE dashboards -> leg1/sae_dashboards_L<L>.json
+    (+ leg8/monitor_sae_naming_L<L>.json; fills fixed_point sae_decode in place).
+
+    Direction families per the B1 orientation dictionary: SVD read = u_i (vs
+    andyrdt), SVD write = v_i (vs #2476 + encoder pass); eigen read = RIGHT
+    eigenvectors (vs andyrdt), eigen write = LEFT eigenvectors (vs #2476 +
+    encoder pass) — consumed from the factor phase's persisted fields, never
+    recomputed (B1). Raw cosines only (whitened = deferred-to-P-B); every
+    cosine quoted against the analytic sqrt(2 ln N / d) floor and the
+    empirical n_draws random-unit max-|cos| null. Consumes factor,
+    fixed-point, and monitor-geometry artifacts (fail-loud when absent).
+    """
+    layers = _dict_layers(args, "sae-dashboards")
+    if not layers:
+        _sentinel("pa-sae-dashboards", "dashboards skipped — no dictionary-matched layer")
+        return
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _dash_regime(args, layer)
+        jpath = _leg1(args) / f"sae_dashboards_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[sae-dashboards] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        fac = _load_factor(args, layer)
+        mg_path = _leg8(args) / f"monitor_geometry_L{layer}.pt"
+        if not mg_path.exists():
+            raise FileNotFoundError(f"{mg_path} absent — run `--phase monitor-geometry` first")
+        mg_pt = torch.load(mg_path, map_location="cpu", weights_only=False)
+        if mg_pt.get("regime") != _mg_regime(args, layer):
+            raise RuntimeError(f"{mg_path}: stale artifact — re-run `--phase monitor-geometry`")
+        fp_pt_path = _leg1(args) / f"fixed_point_L{layer}.pt"
+        if not fp_pt_path.exists():
+            raise FileNotFoundError(f"{fp_pt_path} absent — run `--phase fixed-point` first")
+        fp_pt = torch.load(fp_pt_path, map_location="cpu", weights_only=False)
+        if fp_pt.get("regime") != _regime(args, layer):
+            raise RuntimeError(f"{fp_pt_path}: stale artifact — re-run `--phase fixed-point`")
+        ctx_sae = _load_ctx_sae(args)
+        ans_sae = _load_ans_sae(args)
+        labels, label_doc = load_ctx_feature_labels(PROJECT_ROOT)
+        D_ctx_n, _ctx_norms = normalize_dictionary_columns(ctx_sae.w_dec.detach().cpu().numpy())
+        D_ans_n, _ans_norms = normalize_dictionary_columns(ans_sae.w_dec.detach().cpu().numpy().T)
+        w_enc_ans = ans_sae.w_enc.detach().cpu().numpy()  # (d, N_ans) fp32
+        n_draws = _n_draws(args)
+        nulls = {
+            "ctx": {
+                "n_features": int(D_ctx_n.shape[1]),
+                "analytic_sqrt_2lnN_over_d": analytic_max_cos_floor(
+                    D_ctx_n.shape[1], D_ctx_n.shape[0]
+                ),
+                "empirical": empirical_max_cos_null(D_ctx_n, n_draws, NULL_SEED),
+            },
+            "ans": {
+                "n_features": int(D_ans_n.shape[1]),
+                "analytic_sqrt_2lnN_over_d": analytic_max_cos_floor(
+                    D_ans_n.shape[1], D_ans_n.shape[0]
+                ),
+                "empirical": empirical_max_cos_null(D_ans_n, n_draws, NULL_SEED + 1),
+            },
+        }
+        k = _top_k(args)
+        m = DASH_FEATURES_PER_DIRECTION
+        sig = fac["sigma"].numpy()
+        c_align = fac["self_alignment_c"].numpy()
+        lam = fac["eig_lambda"].numpy()[:k]
+        abs_lam = np.abs(lam)
+        su = fac["read_input_u_fp32"].numpy()[:, :k].T.astype(np.float64)
+        sv = fac["write_output_v_fp32"].numpy()[:, :k].T.astype(np.float64)
+        er, er_imfrac = _real_unit_rows(fac["eig_read_right_v_top"].numpy().T[:k])
+        ew, ew_imfrac = _real_unit_rows(fac["eig_write_left_rows_top"].numpy()[:k])
+
+        def _dash_rows(
+            dirs: np.ndarray,
+            Dn: np.ndarray,
+            side: str,
+            meta_rows: list[dict],
+            with_labels: bool,
+            encoder_dirs: np.ndarray | None,
+        ) -> list[dict]:
+            """Per-direction dashboard rows: top-m dictionary matches + null flags
+            (+ the encoder-pass / linear companion columns on write sides)."""
+            u = dirs / np.maximum(np.linalg.norm(dirs, axis=1, keepdims=True), 1e-30)
+            ids, cos = top_dictionary_cosines(u, Dn, m)
+            enc = encoder_pass(ans_sae, u) if encoder_dirs is not None else None
+            lin = u.astype(np.float32) @ w_enc_ans if encoder_dirs is not None else None
+            floor = nulls[side]["analytic_sqrt_2lnN_over_d"]
+            p95 = nulls[side]["empirical"]["p95"]
+            rows = []
+            for j in range(u.shape[0]):
+                mac = float(np.abs(cos[j]).max()) if cos.shape[1] else 0.0
+                row = {
+                    **meta_rows[j],
+                    "max_abs_cos": mac,
+                    "exceeds_analytic_floor": bool(mac > floor),
+                    "exceeds_empirical_p95": bool(mac > p95),
+                    "top_features": [
+                        {
+                            "feat_id": int(ids[j, t]),
+                            "cos": float(cos[j, t]),
+                            **({"label": _label_of(labels, int(ids[j, t]))} if with_labels else {}),
+                        }
+                        for t in range(ids.shape[1])
+                    ],
+                }
+                if enc is not None:
+                    fired = np.flatnonzero(enc[j] > 0)
+                    fired = fired[np.argsort(-enc[j][fired])][:m]
+                    lin_top = np.argsort(-np.abs(lin[j]))[:m]
+                    row["encoder_pass"] = {
+                        "n_fired": int((enc[j] > 0).sum()),
+                        "fired": [{"feat_id": int(f), "act": float(enc[j][f])} for f in fired],
+                    }
+                    row["linear_top"] = [
+                        {"feat_id": int(f), "value": float(lin[j][f])} for f in lin_top
+                    ]
+                rows.append(row)
+            return rows
+
+        sing_meta = [
+            {"rank": j + 1, "sigma": float(sig[j]), "self_alignment_c": float(c_align[j])}
+            for j in range(k)
+        ]
+        tol = 1e-12 * max(float(abs_lam[0]) if abs_lam.size else 1.0, 1.0)
+        eig_meta_read = [
+            {
+                "rank": j + 1,
+                "abs_lambda": float(abs_lam[j]),
+                "is_complex": bool(abs(lam[j].imag) > tol),
+                "im_frac": float(er_imfrac[j]),
+            }
+            for j in range(k)
+        ]
+        eig_meta_write = [{**eig_meta_read[j], "im_frac": float(ew_imfrac[j])} for j in range(k)]
+        sections = {
+            "singular_read": {
+                "dictionary": "andyrdt per-token L19 (context/read side)",
+                "directions": _dash_rows(su, D_ctx_n, "ctx", sing_meta, True, None),
+            },
+            "singular_write": {
+                "dictionary": "#2476 turn-averaged sae_c (answer/write side)",
+                "directions": _dash_rows(sv, D_ans_n, "ans", sing_meta, False, sv),
+            },
+            "eigen_read": {
+                "dictionary": "andyrdt per-token L19 (context/read side)",
+                "directions": _dash_rows(er, D_ctx_n, "ctx", eig_meta_read, True, None),
+            },
+            "eigen_write": {
+                "dictionary": "#2476 turn-averaged sae_c (answer/write side)",
+                "directions": _dash_rows(ew, D_ans_n, "ans", eig_meta_write, False, ew),
+            },
+        }
+        # fixed-point decode (leg 1 step 6's deferred sae_decode key)
+        x_star = fp_pt["x_star"].numpy().astype(np.float64)
+        enc_x = encoder_pass(ans_sae, x_star[None])[0]
+        fired = np.flatnonzero(enc_x > 0)
+        fired = fired[np.argsort(-enc_x[fired])][:32]
+        lin_x = x_star.astype(np.float32) @ w_enc_ans
+        lin_top = np.argsort(-np.abs(lin_x))[:32]
+        decode = {
+            "filled_by": "sae-dashboards phase",
+            "n_fired": int((enc_x > 0).sum()),
+            "top_fired": [{"feat_id": int(f), "act": float(enc_x[f])} for f in fired],
+            "linear_top": [{"feat_id": int(f), "value": float(lin_x[f])} for f in lin_top],
+            "x_star_norm": float(np.linalg.norm(x_star)),
+        }
+        fp_jpath = _leg1(args) / f"fixed_point_L{layer}.json"
+        fpj = json.loads(fp_jpath.read_text())
+        fpj["sae_decode"] = decode
+        C.write_json_atomic(fp_jpath, fpj)
+        # leg-8 monitor naming (the monitor-geometry sae_naming pointer target)
+        naming_traits: dict = {}
+        floor_ctx = nulls["ctx"]["analytic_sqrt_2lnN_over_d"]
+        p95_ctx = nulls["ctx"]["empirical"]["p95"]
+        for trait, blob in mg_pt["traits"].items():
+            entry: dict = {}
+            for key in ("gradient", "preimage_unit_level", "preimage_unit_level_fullpinv"):
+                v = blob[key].numpy().astype(np.float64)
+                u = (v / max(float(np.linalg.norm(v)), 1e-30))[None, :]
+                ids, cos = top_dictionary_cosines(u, D_ctx_n, m)
+                mac = float(np.abs(cos[0]).max())
+                entry[key] = {
+                    "max_abs_cos": mac,
+                    "exceeds_analytic_floor": bool(mac > floor_ctx),
+                    "exceeds_empirical_p95": bool(mac > p95_ctx),
+                    "top_features": [
+                        {
+                            "feat_id": int(ids[0, t]),
+                            "cos": float(cos[0, t]),
+                            "label": _label_of(labels, int(ids[0, t])),
+                        }
+                        for t in range(ids.shape[1])
+                    ],
+                }
+            r_hat = blob["r_hat"].numpy().astype(np.float64)[None, :]
+            ids, cos = top_dictionary_cosines(r_hat, D_ans_n, m)
+            entry["r_hat_vs_answer_dict"] = {
+                "nearest_feat_id": int(ids[0, 0]),
+                "cos": float(cos[0, 0]),
+                "top_features": [
+                    {"feat_id": int(ids[0, t]), "cos": float(cos[0, t])}
+                    for t in range(ids.shape[1])
+                ],
+            }
+            naming_traits[trait] = entry
+        _write_json(
+            _leg8(args) / f"monitor_sae_naming_L{layer}.json",
+            {
+                "regime": regime,
+                "traits": naming_traits,
+                "null_floors": nulls,
+                "whitened_cosine": WHITENED_DEFERRAL,
+                "label_sources": label_doc,
+                "caveats": [CAVEAT_WIRING, CAVEAT_ACTIVATION],
+            },
+            phase="pa-sae-dashboards",
+        )
+        # the dashboards JSON is the unit's resume key — written LAST
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "sections": sections,
+                "null_floors": nulls,
+                "whitened_cosine": WHITENED_DEFERRAL,
+                "fixed_point_decode": decode,
+                "complex_note": (
+                    "complex eigenvectors are dashboarded via the normalized REAL part "
+                    "(im_frac reported per direction); conjugate-pair members share a "
+                    "2-plane and appear as near-duplicate rows — documented, not deduped"
+                ),
+                "label_sources": label_doc,
+            },
+            phase="pa-sae-dashboards",
+        )
+        logger.info(
+            "[sae-dashboards] unit %d/%d L%d elapsed=%.1fs K=%d n_draws=%d ctx_p95=%.4f",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            k,
+            n_draws,
+            p95_ctx,
+        )
+    _sentinel("pa-sae-dashboards", f"dashboards done layers={list(layers)}")
+
+
 def phase_upload(args) -> None:
     """Production-only HF upload of leg1/ + leg8/ with fail-loud exact-set verify.
 
@@ -1625,7 +3039,11 @@ def phase_upload(args) -> None:
     from explore_persona_space.orchestrate import hub
     from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
-    for leaf, local in (("weights/leg1", _leg1(args)), ("weights/leg8", _leg8(args))):
+    for leaf, local in (
+        ("weights/leg1", _leg1(args)),
+        ("weights/leg3", _leg3(args)),
+        ("weights/leg8", _leg8(args)),
+    ):
         files = sorted(p for p in local.iterdir() if p.is_file())
         assert files, f"[upload] nothing to upload under {local} — run the phases first"
         prefix = f"{args.hf_prefix}/{leaf}"
@@ -1657,6 +3075,10 @@ PHASE_ORDER = (
     "kernel",
     "monitor-geometry",
     "certificates",
+    "receipts",
+    "wiring",
+    "attribution",
+    "sae-dashboards",
     "upload",
 )
 PHASES = {
@@ -1667,6 +3089,10 @@ PHASES = {
     "kernel": phase_kernel,
     "monitor-geometry": phase_monitor_geometry,
     "certificates": phase_certificates,
+    "receipts": phase_receipts,
+    "wiring": phase_wiring,
+    "attribution": phase_attribution,
+    "sae-dashboards": phase_sae_dashboards,
     "upload": phase_upload,
 }
 
@@ -1677,7 +3103,7 @@ PHASES = {
 def _parse_args(argv=None):
     """Argparse CLI for the P-A weights-battery driver (phase-dispatch shape)."""
     ap = argparse.ArgumentParser(
-        description="Issue #2569 P-A weights battery, part 1 (see module docstring)"
+        description="Issue #2569 P-A weights battery, parts 1-3 (see module docstring)"
     )
     ap.add_argument("--phase", default="all", choices=["all", *PHASE_ORDER])
     ap.add_argument("--out-root", type=Path, default=Path("/workspace/eps2569"))
@@ -1742,6 +3168,21 @@ def _parse_args(argv=None):
         default=CERT_CHUNK_DEFAULT,
         help="row chunk for probe moment accumulation (rowbattery parity; regime member)",
     )
+    ap.add_argument(
+        "--answer-sae-dir",
+        type=Path,
+        default=None,
+        help="local #2476 answer-SAE bundle dir override (cfg.json + "
+        "sae_weights.safetensors; else staged from the pinned HF leaf — the "
+        "rowbattery seam, served verbatim through the SAME consume path)",
+    )
+    ap.add_argument(
+        "--alive-counts-npz",
+        type=Path,
+        default=None,
+        help="local alive_c.npz override for the #2476 answer union (test seam; "
+        "drops the production 2,150-feature count pin, mirroring rowbattery)",
+    )
     ap.add_argument("--fresh", action="store_true", help="ignore the per-unit resume predicate")
     ap.add_argument("--skip-upload", action="store_true", help="local-only run (loud)")
     ap.add_argument(
@@ -1761,9 +3202,11 @@ def main() -> None:
         assert_args_attributes_defined(__file__)
         # Deferred-import resolution (smoke-architecture Axis 1): execute every
         # function-body import of this driver so a missing symbol fails HERE.
+        import issue1482_sae as S1482  # noqa: F401
         import issue2476_turnavg_sae as T24  # noqa: F401
         import issue2569_rowbattery as RB  # noqa: F401
         from huggingface_hub import HfApi  # noqa: F401
+        from safetensors.torch import load_file  # noqa: F401
 
         from explore_persona_space.orchestrate import hub  # noqa: F401
         from explore_persona_space.orchestrate.preflight import (
@@ -1783,6 +3226,12 @@ def main() -> None:
         # leg 8 steps 3+4 deferred symbols: the rows-store contract helpers
         assert callable(T24._committed_split) and callable(T24._assert_pinned_valtest)
         assert callable(RB._positions_in_present)
+        # legs 1.4 + 3 deferred symbols: dictionary staging/loading + union + holdout
+        assert callable(S1482.BatchTopKSAE.load)
+        assert callable(T24.MatryoshkaBatchTopKSAE.load_local)
+        assert callable(T24._load_scratch_meta)
+        assert callable(RB._stage_answer_sae) and callable(RB._stage_alive_counts)
+        assert callable(RB._answer_union_from_counts)
         print("[import-check] OK", flush=True)
         raise SystemExit(0)
     args.out_root.mkdir(parents=True, exist_ok=True)

@@ -348,6 +348,63 @@ def _synth_rb_dir(tmp_path: Path, d: int, seed: int = 31) -> Path:
     return rb_dir
 
 
+def _tiny_ctx_sae(d: int, n_feat: int = 64, seed: int = 51):
+    """A REAL issue1482_sae.BatchTopKSAE at tiny width (production ctor + asserts).
+
+    Signature-conformant BY CONSTRUCTION: the production class itself, built
+    through its own state-dict ctor (EXPECTED_KEYS + shape/threshold asserts all
+    execute) — only the HF fetch (`.load`) is bypassed.
+    """
+    import issue1482_sae as S1482
+
+    rng = np.random.default_rng(seed)
+    sd = {
+        "encoder.weight": torch.tensor(rng.standard_normal((n_feat, d)), dtype=torch.float32),
+        "encoder.bias": torch.tensor(rng.standard_normal(n_feat) * 0.1, dtype=torch.float32),
+        "decoder.weight": torch.tensor(rng.standard_normal((d, n_feat)), dtype=torch.float32),
+        "b_dec": torch.tensor(rng.standard_normal(d) * 0.1, dtype=torch.float32),
+        "threshold": torch.tensor(0.05),
+        "k": torch.tensor(8),
+    }
+    return S1482.BatchTopKSAE(sd, k=8, act_dim=d, dict_size=n_feat)
+
+
+def _tiny_ans_bundle(tmp_path: Path, d: int, n_feat: int = 64, seed: int = 52) -> Path:
+    """A REAL #2476 MatryoshkaBatchTopKSAE bundle dir (cfg.json + safetensors).
+
+    Built + saved through the production class's own ctor/save_dir, then served
+    to the driver via the ``--answer-sae-dir`` seam — the SAME consume path
+    (RB._stage_answer_sae -> T24.load_local) production takes.
+    """
+    import issue2476_turnavg_sae as T24
+
+    sae = T24.MatryoshkaBatchTopKSAE(
+        act_dim=d, dict_size=n_feat, k=4, tier_bounds=(8, 32, n_feat), seed=seed
+    )
+    with torch.no_grad():
+        sae.threshold.fill_(0.01)  # live inference gating (never the untrained 0.0)
+    bundle = tmp_path / "ans_sae"
+    bundle.mkdir(parents=True, exist_ok=True)
+    sae.save_dir(bundle)
+    return bundle
+
+
+def _tiny_alive_npz(tmp_path: Path, n_feat: int = 64, seed: int = 53) -> Path:
+    """A tiny alive_c.npz with the PROBED banked keys (counts/n_fit_rows/alive_ids)."""
+    rng = np.random.default_rng(seed)
+    counts = rng.integers(0, 5, size=n_feat).astype(np.int64)
+    counts[:4] = 0  # some dead features so the union is a proper subset
+    p = tmp_path / "alive_c.npz"
+    with open(p, "wb") as fh:
+        np.savez(
+            fh,
+            counts=counts,
+            n_fit_rows=np.int64(100),
+            alive_ids=np.flatnonzero(counts >= 3).astype(np.int64),
+        )
+    return p
+
+
 def _run_driver(monkeypatch, tmp_path: Path, argv: list[str]) -> None:
     """Invoke WB.main() with a patched argv + external boundaries; expect exit 0."""
 
@@ -373,6 +430,10 @@ def test_driver_e2e_smoke_and_resume(tmp_path, monkeypatch):
     torch.save(_synth_raw_payload(d), path)
     out = tmp_path / "out"
     rb_dir = _synth_rb_dir(tmp_path, d)
+    # part-3 dictionary seams: real tiny answer bundle + alive npz through the
+    # CLI seams; the ctx SAE (HF-fetch-only loader) is patched at the network
+    # boundary with a REAL production-class instance.
+    monkeypatch.setattr(WB, "_load_ctx_sae", lambda args: _tiny_ctx_sae(d))
     argv = [
         "--phase",
         "all",
@@ -384,10 +445,14 @@ def test_driver_e2e_smoke_and_resume(tmp_path, monkeypatch):
         str(map_root),
         "--rb-dir",
         str(rb_dir),
+        "--answer-sae-dir",
+        str(_tiny_ans_bundle(tmp_path, d)),
+        "--alive-counts-npz",
+        str(_tiny_alive_npz(tmp_path)),
     ]
     _run_driver(monkeypatch, tmp_path, argv)
 
-    leg1, leg8 = out / "leg1", out / "leg8"
+    leg1, leg3, leg8 = out / "leg1", out / "leg3", out / "leg8"
     for name in (
         "entry_asserts_L19.json",
         "factor_L19.pt",
@@ -396,14 +461,18 @@ def test_driver_e2e_smoke_and_resume(tmp_path, monkeypatch):
         "alpha_lowrank_L19.json",
         "fixed_point_L19.pt",
         "fixed_point_L19.json",
+        "sae_dashboards_L19.json",
     ):
         assert (leg1 / name).exists(), name
+    for name in ("receipts_L19.json", "wiring_L19.json", "wiring_edges_L19.npz"):
+        assert (leg3 / name).exists(), name
     for name in (
         "effective_kernel_L19.pt",
         "effective_kernel_L19.json",
         "monitor_geometry_L19.pt",
         "monitor_geometry_L19.json",
         "certificates_L19.json",
+        "monitor_sae_naming_L19.json",
     ):
         assert (leg8 / name).exists(), name
     # probe .pt is rows-attached only: this run carries NO --rows-dir
@@ -426,6 +495,13 @@ def test_driver_e2e_smoke_and_resume(tmp_path, monkeypatch):
     fp = json.loads((leg1 / "fixed_point_L19.json").read_text())
     assert fp["iterated_map_reading"] == (fp["rho"] < 1.0)
     assert fp["residual_rel"] < 1e-8
+    # leg 1 step 4/6: the dashboards phase FILLED sae_decode in place (a dict now)
+    assert isinstance(fp["sae_decode"], dict)
+    assert fp["sae_decode"]["filled_by"] == "sae-dashboards phase"
+    assert fp["sae_decode"]["n_fired"] == len(fp["sae_decode"]["top_fired"]) or (
+        fp["sae_decode"]["n_fired"] > 32 and len(fp["sae_decode"]["top_fired"]) == 32
+    )
+    assert fp["nearest_banked_answers"].startswith("deferred")
 
     ker = json.loads((leg8 / "effective_kernel_L19.json").read_text())
     assert "reads at" in ker["claims_phrasing"]
@@ -456,7 +532,7 @@ def test_driver_e2e_smoke_and_resume(tmp_path, monkeypatch):
         assert row["n_retained"] + row["kernel_dim"] == d
     assert WB.CAVEAT_ACTIVATION in mg["caveats"] and WB.CAVEAT_MAP_LEVEL in mg["caveats"]
     assert "least-norm pre-image is never 'the' context" in mg["coset_ambiguity"]
-    assert mg["sae_naming"].startswith("deferred-to-SAE-dashboard-unit")
+    assert mg["sae_naming"].startswith("leg8/monitor_sae_naming_")
     mg_pt = torch.load(leg8 / "monitor_geometry_L19.pt", map_location="cpu", weights_only=False)
     assert mg_pt["traits"]["evil"]["preimage_unit_level"].shape == (d,)
     assert mg_pt["caveats"] == [WB.CAVEAT_ACTIVATION, WB.CAVEAT_MAP_LEVEL]
@@ -476,12 +552,91 @@ def test_driver_e2e_smoke_and_resume(tmp_path, monkeypatch):
     assert cert["regime"]["certificates"]["rows_attached"] is False
     assert cert["regime"]["certificates"]["rb_source"] == "local-dir"
 
+    # leg 3 step 3: receipts — per-trait top features, schema + caveat
+    rec = json.loads((leg3 / "receipts_L19.json").read_text())
+    assert set(rec["traits"]) == {"evil", "sycophancy", "hallucination"}
+    for t, row in rec["traits"].items():
+        assert len(row["top_positive"]) == 16 and len(row["top_negative"]) == 16, t  # smoke k
+        assert row["top_positive"][0]["score"] >= row["top_positive"][-1]["score"]
+        assert row["top_negative"][0]["score"] <= row["top_positive"][0]["score"]
+        assert all(abs(r0["cos"]) <= 1.0 + 1e-9 for r0 in row["top_positive"])
+        assert row["grad_norm"] > 0.0
+    assert WB.CAVEAT_WIRING in rec["caveats"] and WB.CAVEAT_ACTIVATION in rec["caveats"]
+    assert "sources" in rec["label_sources"]
+
+    # leg 3 steps 1-2: wiring — union + rb-nearest edges, H3 fields, out-edges
+    wir = json.loads((leg3 / "wiring_L19.json").read_text())
+    edges_npz = np.load(leg3 / "wiring_edges_L19.npz")
+    F = int(wir["n_answer_features"])
+    assert edges_npz["feat_ids"].shape == (F,) and edges_npz["is_rb_nearest"].sum() >= 1
+    assert edges_npz["top_edge_ids"].shape == edges_npz["top_edge_vals"].shape
+    assert edges_npz["conc_curve"].shape == (F, len(WB.CONC_K_GRID))
+    share = edges_npz["top32_absmass_share"]
+    assert share.shape == (F,) and (share >= 0).all() and (share <= 1.0 + 1e-6).all()
+    for t, row in wir["h3"]["behavior_relevant"].items():
+        assert 0.0 <= row["top32_share_full"] <= 1.0 + 1e-6, t
+        assert row["top32_share_alive"] is None  # no --rows-dir on this run
+        assert int(row["feat_id"]) in edges_npz["feat_ids"]
+    assert isinstance(wir["ctx_alive"], str) and wir["ctx_alive"].startswith("deferred")
+    assert "INFORMATIONAL" in wir["h3"]["grain"]
+    assert wir["h3"]["union_top32_share_alive"].startswith("deferred")
+    assert len(wir["out_edges"]) > 0
+    first_oe = next(iter(wir["out_edges"].values()))
+    assert {"n_fired", "fired", "linear_top", "mapped_norm"} <= set(first_oe)
+    assert wir["regime"]["wiring"]["rows_attached"] is False
+    assert wir["regime"]["wiring"]["ans_dict"]["union_frac"] == 0.002
+
+    # leg 3 step 4: attribution — rows-gated, explicit deferral on this run
+    attr = json.loads((leg3 / "attribution_L19.json").read_text())
+    assert isinstance(attr["examples"], str) and attr["examples"].startswith("deferred")
+
+    # leg 1 step 4: two-sided dashboards — 4 sections, nulls, encoder companions
+    dash = json.loads((leg1 / "sae_dashboards_L19.json").read_text())
+    assert set(dash["sections"]) == {
+        "singular_read",
+        "singular_write",
+        "eigen_read",
+        "eigen_write",
+    }
+    for side, sec in dash["sections"].items():
+        assert len(sec["directions"]) == 8, side  # smoke top_k
+        for row in sec["directions"]:
+            assert abs(row["max_abs_cos"]) <= 1.0 + 1e-6
+            assert len(row["top_features"]) == WB.DASH_FEATURES_PER_DIRECTION
+        if side.endswith("_write"):
+            assert "encoder_pass" in sec["directions"][0]
+            assert "linear_top" in sec["directions"][0]
+        else:
+            assert "encoder_pass" not in sec["directions"][0]
+    for j, row in enumerate(dash["sections"]["eigen_read"]["directions"]):
+        assert 0.0 <= row["im_frac"] <= 1.0 + 1e-6, j
+    nulls = dash["null_floors"]
+    for side in ("ctx", "ans"):
+        emp = nulls[side]["empirical"]
+        assert emp["n_draws"] == 100  # smoke draws
+        assert 0.0 < emp["p50"] <= emp["p95"] <= emp["max"] <= 1.0 + 1e-6
+        assert nulls[side]["analytic_sqrt_2lnN_over_d"] > 0.0
+    assert dash["whitened_cosine"].startswith("deferred-to-P-B")
+    assert dash["fixed_point_decode"] == fp["sae_decode"]
+
+    # leg 8 naming: gradient/pre-image vs ctx dict + r_hat vs answer dict
+    naming = json.loads((leg8 / "monitor_sae_naming_L19.json").read_text())
+    for t, entry in naming["traits"].items():
+        for key in ("gradient", "preimage_unit_level", "preimage_unit_level_fullpinv"):
+            assert 0.0 <= entry[key]["max_abs_cos"] <= 1.0 + 1e-6, (t, key)
+            assert isinstance(entry[key]["exceeds_empirical_p95"], bool)
+        assert abs(entry["r_hat_vs_answer_dict"]["cos"]) <= 1.0 + 1e-6
+
     # Resume: identical regime -> every phase unit SKIPs (factor .pt untouched).
     before = os.stat(leg1 / "factor_L19.pt").st_mtime_ns
     before_mg = os.stat(leg8 / "monitor_geometry_L19.pt").st_mtime_ns
+    before_dash = os.stat(leg1 / "sae_dashboards_L19.json").st_mtime_ns
+    before_wire = os.stat(leg3 / "wiring_edges_L19.npz").st_mtime_ns
     _run_driver(monkeypatch, tmp_path, argv)
     assert os.stat(leg1 / "factor_L19.pt").st_mtime_ns == before
     assert os.stat(leg8 / "monitor_geometry_L19.pt").st_mtime_ns == before_mg
+    assert os.stat(leg1 / "sae_dashboards_L19.json").st_mtime_ns == before_dash
+    assert os.stat(leg3 / "wiring_edges_L19.npz").st_mtime_ns == before_wire
 
     # --fresh busts the resume predicate (factor .pt rewritten).
     _run_driver(monkeypatch, tmp_path, [*argv, "--fresh"])
@@ -544,3 +699,295 @@ def test_import_check_exits_zero(monkeypatch, capsys):
         WB.main()
     assert exc.value.code == 0
     assert "[import-check] OK" in capsys.readouterr().out
+
+
+# ── part-3 pure-core tests (leg 3 + dashboards; no disk, no network) ──────────────
+
+
+def test_receipts_scores_match_serial_oracle():
+    """receipts_trait_scores == the serial per-column d_c . (A r) oracle."""
+    rng = np.random.default_rng(61)
+    d, n = 16, 40
+    D = rng.standard_normal((d, n))
+    A = rng.standard_normal((d, d))
+    r = rng.standard_normal(d)
+    r /= np.linalg.norm(r)
+    col_norms = np.linalg.norm(D, axis=0)
+    scores, cos = WB.receipts_trait_scores(D, col_norms, A, r)
+    assert scores.shape == (n,) and cos.shape == (n,)
+    g = A @ r
+    for c in (0, 7, n - 1):  # serial oracle, a few columns
+        assert np.isclose(scores[c], D[:, c] @ g, rtol=1e-4, atol=1e-6), c
+    assert (np.abs(cos) <= 1.0 + 1e-6).all()
+    assert np.allclose(cos * (np.linalg.norm(g) * col_norms), scores, rtol=1e-6)
+
+
+def test_wiring_edge_stats_planted_column_and_oracle_equivalence():
+    """Blocked GEMM chain == OP.wiring_in_edges oracle; planted top edge found."""
+    rng = np.random.default_rng(62)
+    d, n_ctx, m = 16, 50, 6
+    E = rng.standard_normal((m, d))
+    A = rng.standard_normal((d, d))
+    D = rng.standard_normal((d, n_ctx))
+    D[:, 3] = 100.0 * (A @ E[0])  # planted dominant in-edge for feature 0
+    oracle = OP.wiring_in_edges(E, A, D)  # fp64 (m, n_ctx) — the serial reference
+    blocked = (E @ A.T).astype(np.float32) @ D.astype(np.float32)  # the phase's chain
+    assert np.allclose(blocked, oracle, rtol=1e-4, atol=1e-4)
+    st = WB.wiring_edge_stats(oracle, top_k=5)
+    assert st["top_ids"].shape == (m, 5) and st["top_vals"].shape == (m, 5)
+    assert st["top_ids"][0, 0] == 3  # the planted column dominates feature 0
+    assert np.isclose(st["top_vals"][0, 0], oracle[0, 3], rtol=1e-5)
+    # concentration curve: monotone nondecreasing, saturating at 1 past N
+    assert (np.diff(st["conc_curve"], axis=1) >= -1e-6).all()
+    assert np.allclose(st["conc_curve"][:, -1], 1.0, atol=1e-6)  # k_grid max > n_ctx
+    k32 = WB.CONC_K_GRID.index(32)
+    assert np.allclose(st["conc_curve"][:, k32], st["top32_absmass_share"], atol=1e-6)
+    assert (st["top32_absmass_share"] >= 0).all()
+    assert (st["top32_absmass_share"] <= 1.0 + 1e-6).all()
+    assert st["top32_absmass_share"][0] > 0.9  # planted column carries the mass
+
+
+def test_attribution_decompose_closure_terms_and_encoder_guard():
+    """Closure identity exact; contributions match the manual edge; the phase's
+    encoder cross-check condition catches a transposed A (the B1 flip guard)."""
+    rng = np.random.default_rng(63)
+    d, n = 16, 32
+    D = rng.standard_normal((d, n))
+    b_dec_ctx = rng.standard_normal(d) * 0.1
+    A = rng.standard_normal((d, d))
+    b_map = rng.standard_normal(d) * 0.1
+    e_f = rng.standard_normal(d)
+    b_enc_f = 0.3
+    b_dec_ans = rng.standard_normal(d) * 0.1
+    a_ctx = np.zeros(n)
+    a_ctx[[2, 9, 17]] = [1.5, 0.7, 2.1]  # sparse nonneg codes (SAE-shaped)
+    v_c = D @ a_ctx + b_dec_ctx + 0.01 * rng.standard_normal(d)  # recon + residual
+    dec = WB.attribution_decompose(
+        v_c, a_ctx, D, b_dec_ctx, A, b_map, e_f, b_enc_f, b_dec_ans, top_m=5
+    )
+    manual_pre = float((v_c @ A + b_map - b_dec_ans) @ e_f) + b_enc_f
+    assert np.isclose(dec["pre_act"], manual_pre, rtol=1e-12)
+    assert dec["n_active_ctx"] == 3 and len(dec["contributions"]) == 3
+    top = dec["contributions"][0]
+    j = top["ctx_feat_id"]
+    assert np.isclose(top["edge"], D[:, j] @ A @ e_f, rtol=1e-10)
+    assert np.isclose(top["contribution"], a_ctx[j] * top["edge"], rtol=1e-10)
+    assert dec["closure_residual"] <= 1e-6 * max(1.0, abs(manual_pre))
+    # B1 flip: a transposed A closes the INTERNAL identity (self-consistent) but
+    # moves pre_act away from the real encoder's value — the phase-level guard.
+    dec_flip = WB.attribution_decompose(
+        v_c, a_ctx, D, b_dec_ctx, A.T, b_map, e_f, b_enc_f, b_dec_ans, top_m=5
+    )
+    assert abs(dec_flip["pre_act"] - manual_pre) > 1e-3 * max(1.0, abs(manual_pre))
+
+
+def test_top_dictionary_cosines_planted_and_null_floors():
+    """Planted exact-match column found at cos ~ 1; null floors sane + seeded."""
+    rng = np.random.default_rng(64)
+    d, n = 24, 60
+    D = rng.standard_normal((d, n))
+    v = rng.standard_normal(d)
+    D[:, 5] = 3.0 * v  # planted collinear column (norm handled by normalization)
+    Dn, _norms = WB.normalize_dictionary_columns(D)
+    assert np.allclose(np.linalg.norm(Dn, axis=0), 1.0, atol=1e-6)
+    u = (v / np.linalg.norm(v))[None, :]
+    ids, cos = WB.top_dictionary_cosines(u, Dn, 4)
+    assert ids.shape == (1, 4) and ids[0, 0] == 5
+    assert cos[0, 0] > 0.999
+    assert (np.abs(cos[0, 1:]) <= abs(cos[0, 0])).all()  # sorted by |cos| desc
+    floor = WB.analytic_max_cos_floor(n, d)
+    assert np.isclose(floor, np.sqrt(2.0 * np.log(n) / d))
+    null = WB.empirical_max_cos_null(Dn, n_draws=64, seed=7)
+    assert 0.0 < null["p50"] <= null["p95"] <= null["max"] <= 1.0 + 1e-6
+    assert null == WB.empirical_max_cos_null(Dn, n_draws=64, seed=7)  # seeded determinism
+
+
+def test_load_ctx_feature_labels_ordering_negids_and_absent(tmp_path):
+    """Later source overwrites on collision; negative ids skipped; absence LOUD."""
+    root = tmp_path / "root"
+    for rel, rows in (
+        (
+            WB.LABEL_SOURCES[0][0],  # issue1773 answer-side (loads FIRST)
+            [
+                {"feat_id": 7, "description": "answer-side seven", "describe_confidence": 0.9},
+                {"feat_id": -200, "description": "aggregate axis row (skip)"},
+                {"feat_id": 11, "description": "answer-side eleven"},
+            ],
+        ),
+        (
+            WB.LABEL_SOURCES[1][0],  # issue1482 context-side (loads LAST, overwrites)
+            [{"feat_id": 7, "description": "context-side seven", "confidence": "high"}],
+        ),
+    ):
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    labels, doc = WB.load_ctx_feature_labels(root)
+    assert set(labels) == {7, 11}  # negative id skipped
+    assert labels[7]["description"] == "context-side seven"
+    assert labels[7]["evidence_side"] == "context"  # the plan-named tree wins
+    assert labels[11]["evidence_side"] == "answer"
+    assert [s["status"] for s in doc["sources"]] == ["loaded", "loaded"]
+    # absent root: no labels, LOUD absent statuses, never a crash
+    labels2, doc2 = WB.load_ctx_feature_labels(tmp_path / "empty")
+    assert labels2 == {}
+    assert [s["status"] for s in doc2["sources"]] == ["absent", "absent"]
+
+
+# ── part-3 loader real-body tests (seam-stub rule: one per stubbed loader) ────────
+
+
+def test_answer_union_real_body(tmp_path):
+    """WB._answer_union executes the REAL RB staging + union bodies via the seam."""
+    from types import SimpleNamespace
+
+    npz = _tiny_alive_npz(tmp_path)
+    args = SimpleNamespace(out_root=tmp_path / "out", alive_counts_npz=npz)
+    union = WB._answer_union(args)
+    z = np.load(npz)
+    expected = np.flatnonzero(np.asarray(z["counts"]) >= 1)  # ceil(0.002 * 100) = 1
+    assert np.array_equal(union, expected)
+    assert np.isin(np.asarray(z["alive_ids"]), union).all()
+
+
+def test_load_ans_sae_real_body(tmp_path):
+    """WB._load_ans_sae executes RB._stage_answer_sae + T24.load_local for real."""
+    from types import SimpleNamespace
+
+    import issue2476_turnavg_sae as T24
+
+    d = 32
+    bundle = _tiny_ans_bundle(tmp_path, d)
+    args = SimpleNamespace(out_root=tmp_path / "out", answer_sae_dir=bundle, device="cpu")
+    sae = WB._load_ans_sae(args)
+    assert isinstance(sae, T24.MatryoshkaBatchTopKSAE)
+    assert sae.act_dim == d and sae.dict_size == 64
+    codes = WB.encoder_pass(sae, np.random.default_rng(0).standard_normal((5, d)))
+    assert codes.shape == (5, 64) and (codes >= 0).all()
+
+
+def test_load_ctx_sae_real_body(tmp_path, monkeypatch):
+    """WB._load_ctx_sae executes its real body; ONLY the HF fetch classmethod is
+    faked, signature-conformantly (same params as issue1482_sae.BatchTopKSAE.load)."""
+    from types import SimpleNamespace
+
+    import issue1482_sae as S1482
+
+    d = 32
+    seen = {}
+
+    def fake_load(cls, k=64, device="cpu", cache_dir=None, *, layer=19):
+        seen.update(k=k, device=device, cache_dir=cache_dir, layer=layer)
+        return _tiny_ctx_sae(d)
+
+    monkeypatch.setattr(S1482.BatchTopKSAE, "load", classmethod(fake_load))
+    args = SimpleNamespace(out_root=tmp_path / "out", device="cpu")
+    sae = WB._load_ctx_sae(args)
+    assert isinstance(sae, S1482.BatchTopKSAE) and sae.act_dim == d
+    assert seen["k"] == WB.ANDY_SAE_K and seen["layer"] == WB.DICT_LAYER
+    assert Path(seen["cache_dir"]).is_dir()  # the body created the stage dir
+
+
+def test_attr_holdout_ids_real_body(tmp_path, monkeypatch):
+    """WB._attr_holdout_ids executes its real body; T24._load_scratch_meta is
+    faked signature-conformantly at the HF/scratch boundary."""
+    from types import SimpleNamespace
+
+    import issue2476_turnavg_sae as T24
+
+    holdout = np.arange(500, 530, dtype=np.int64)
+
+    def fake_meta(args):
+        return np.zeros(10), np.zeros(10, np.uint8), {"holdout": holdout}
+
+    monkeypatch.setattr(T24, "_load_scratch_meta", fake_meta)
+    ids = WB._attr_holdout_ids(SimpleNamespace(out_root=tmp_path / "out"))
+    assert np.array_equal(ids, holdout) and ids.dtype == np.int64
+
+
+# ── part-3 rows-attached driver branch (wiring alive mask + attribution demo) ─────
+
+
+def test_driver_leg3_rows_attached_branch(tmp_path, monkeypatch):
+    """--rows-dir at L19 arms ctx-alive counts + alive-masked H3 + attribution.
+
+    The P-B DATA boundary only is faked (planted fp16 store + a holdout id set;
+    the pinned production split cannot exist at d=32); the phase bodies,
+    ``_ctx_alive_counts``, the blocked GEMMs, and ``attribution_decompose`` all
+    execute for real, including the encoder orientation cross-check.
+    """
+    d = 32
+    map_root = tmp_path / "maproot"
+    path = OP.banked_map_path(19, root=map_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(_synth_raw_payload(d), path)
+    out = tmp_path / "out"
+    rb_dir = _synth_rb_dir(tmp_path, d)
+    monkeypatch.setattr(WB, "_load_ctx_sae", lambda args: _tiny_ctx_sae(d))
+    rng = np.random.default_rng(71)
+    n_rows = 120
+    rows_present = np.arange(1000, 1000 + n_rows, dtype=np.int64)
+    x = rng.standard_normal((n_rows, d)).astype(np.float16)
+    y = (x.astype(np.float64) @ (rng.standard_normal((d, d)) / np.sqrt(d))).astype(np.float16)
+    fake_store = (x, y, np.arange(0, 80), np.arange(80, 100), np.arange(100, 120))
+    monkeypatch.setattr(WB, "_load_rows_store", lambda args: fake_store)
+    holdout = rows_present[rng.choice(n_rows, size=30, replace=False)]
+    monkeypatch.setattr(WB, "_attr_holdout_ids", lambda args: np.sort(holdout))
+    rows_dir = tmp_path / "rows"
+    rows_dir.mkdir()
+    np.save(rows_dir / "rows_present.npy", rows_present)
+    base = [
+        "--smoke",
+        "--skip-upload",
+        "--out-root",
+        str(out),
+        "--map-root",
+        str(map_root),
+        "--rb-dir",
+        str(rb_dir),
+        "--rows-dir",
+        str(rows_dir),
+        "--answer-sae-dir",
+        str(_tiny_ans_bundle(tmp_path, d)),
+        "--alive-counts-npz",
+        str(_tiny_alive_npz(tmp_path)),
+    ]
+    for phase in ("factor", "receipts", "wiring", "attribution"):
+        _run_driver(monkeypatch, tmp_path, ["--phase", phase, *base])
+    leg3 = out / "leg3"
+
+    alive = np.load(leg3 / "ctx_alive_L19.npz")
+    assert alive["counts"].shape == (64,)  # tiny ctx dict width
+    assert int(alive["n_rows_used"]) == n_rows  # min(20k, 120)
+    assert int(alive["floor"]) == 2  # ceil(0.01 * 120)
+    assert alive["alive_ids"].size > 0
+    assert (alive["counts"][alive["alive_ids"]] >= 2).all()
+
+    wir = json.loads((leg3 / "wiring_L19.json").read_text())
+    assert wir["regime"]["wiring"]["rows_attached"] is True
+    assert isinstance(wir["ctx_alive"], dict) and wir["ctx_alive"]["n_alive"] > 0
+    assert isinstance(wir["h3"]["union_top32_share_alive"], dict)
+    for row in wir["h3"]["behavior_relevant"].values():
+        assert row["top32_share_alive"] is not None
+        assert 0.0 <= row["top32_share_alive"] <= 1.0 + 1e-6
+    edges_npz = np.load(leg3 / "wiring_edges_L19.npz")
+    assert "top_edge_ids_alive" in edges_npz.files
+    # alive top ids are GLOBAL context ids drawn from the alive set
+    assert np.isin(edges_npz["top_edge_ids_alive"].ravel(), alive["alive_ids"]).all()
+
+    attr = json.loads((leg3 / "attribution_L19.json").read_text())
+    assert isinstance(attr["examples"], list) and len(attr["examples"]) == 2  # smoke n
+    assert attr["holdout"]["n_holdout_present"] == 30
+    for ex in attr["examples"]:
+        assert int(ex["row_id"]) in rows_present
+        assert len(ex["features"]) >= 3  # 3 rb-nearest (+ top-pred dedup)
+        for row in ex["features"].values():
+            assert row["closure_residual"] <= 1e-6 * max(1.0, abs(row["pre_act"]))
+            assert row["why_in_table"] in {
+                "top predicted activation",
+                "r_B-nearest (evil)",
+                "r_B-nearest (sycophancy)",
+                "r_B-nearest (hallucination)",
+            }
+            for c in row["contributions"]:
+                assert {"ctx_feat_id", "a_j", "edge", "contribution", "label"} <= set(c)
