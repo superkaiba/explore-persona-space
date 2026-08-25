@@ -77,6 +77,7 @@
 - [Span-pair swap-control](feedback_span_pair_swap_control_audit.md) — proximity linkage, own-speech (#931)
 - #621 rank-1 pair: [read/write bystanders + bridge swap = Concerns](feedback_rank1_readwrite_design_621.md) · [folded |firing| inverts suppression](feedback_rank1_firing_test_alternatives.md)
 - [Snowball opening-mediation](feedback_snowball_opening_mediation_designs.md) — prefill-only recoverable (#2333)
+- [Cross-model profile battery](feedback_crossmodel_profile_battery_alternatives.md) — boring drivers weighable iff diagnostics persist BOTH sides (#2587)
 
 ## Panel composition / axis conflation
 - [Repaired-grid re-mine](feedback_repaired_grid_remine_review.md) — cap mismatch from own-suite fix (#2221)
