@@ -84,6 +84,8 @@ COLORS: dict[str, str] = {
     "delta": "#DC267F",  # Δ(T) pooled
     "delta_ww": "#785EF0",  # Δ_ww within-window companion
     "delta_fa": "#994F00",  # Δ_FA full-attention companion
+    "delta_nt": "#009E73",  # natural-termination reads (Δ_nt, D_nt, natural strata)
+    "delta_tt": "0.35",  # truncated-status reads (Δ_tt, truncated strata)
 }
 FLOOR_COLOR = "#444444"
 
@@ -558,9 +560,10 @@ def fig3b_retention_perpair(inp: Inputs, out_dir: Path) -> str | None:
 
 
 def fig4_kshot(inp: Inputs, out_dir: Path) -> str | None:
-    """HERO: Δ(T) with Δ_ww/Δ_FA companions + robustness band; dose panel;
-    over-window fraction strip (§6 item 4). The pooled Δ panel title carries
-    the sliding-window scope label (§6 adjudication)."""
+    """HERO: Δ(T) with Δ_ww/Δ_FA companions + the common-status Δ_nt/Δ_tt
+    overlays (where defined; plan §6 figure item 4) + robustness band; dose
+    panel; over-window fraction strip. The pooled Δ panel title carries the
+    sliding-window scope label (§6 adjudication)."""
     per = inp.kshot.get("per_rung") or {}
     if not per:
         print("[figures] skip fig4: no k-shot rungs", flush=True)
@@ -622,6 +625,26 @@ def fig4_kshot(inp: Inputs, out_dir: Path) -> str | None:
             label="Δ_FA (full-attention layer)",
             capsize=2,
         )
+    # v8 plan §6 figure 4: common-status Δ_nt/Δ_tt overlays (where defined) —
+    # thin lines/points; CIs live in kshot_curve.json + fig5k panel (c).
+    for key, lbl, fmt in (
+        ("delta_nt", "Δ_nt (both arms natural)", "s:"),
+        ("delta_tt", "Δ_tt (both arms truncated)", "x:"),
+    ):
+        pts = [
+            (inp.pos[r], per[r][key]["delta"]) for r in rungs if "delta" in (per[r].get(key) or {})
+        ]
+        if pts:
+            ax_a.plot(
+                [x for x, _ in pts],
+                [y for _, y in pts],
+                fmt,
+                color=COLORS[key],
+                linewidth=0.9,
+                markersize=3.5,
+                alpha=0.9,
+                label=lbl,
+            )
     band_lo, band_hi, band_x = [], [], []
     for r in rungs:
         rob = per[r].get("robustness_matched_n") or {}
@@ -1057,12 +1080,13 @@ def fig5j_ceilings(inp: Inputs, out_dir: Path) -> str | None:
 def fig5k_censoring(inp: Inputs, out_dir: Path) -> str | None:
     """Exploratory (v8 §6 censoring family): D_nt(T) natural-termination
     overlay vs the headline D(T); the within-rung truncated-vs-natural split;
-    Δ_nt/Δ_tt common-status reads vs the pooled Δ."""
+    Δ_nt/Δ_tt common-status reads vs the pooled Δ; the truncation-stratified
+    repeat-generation ceilings (plan §6 dump item 5)."""
     cen = inp.censor
     if not cen or "d_nt" not in cen:
         print("[figures] skip fig5k: no censoring_sensitivity block", flush=True)
         return None
-    fig, (ax_a, ax_b, ax_c) = plt.subplots(1, 3, figsize=(13.5, 4.2), layout="constrained")
+    fig, (ax_a, ax_b, ax_c, ax_d) = plt.subplots(1, 4, figsize=(17.5, 4.2), layout="constrained")
     rungs = inp.rungs
     xs = [inp.pos[r] for r in rungs]
 
@@ -1082,7 +1106,7 @@ def fig5k_censoring(inp: Inputs, out_dir: Path) -> str | None:
             dny,
             yerr=_err(dny, [v.get("ci") for _, v in dn]),
             fmt="s--",
-            color=COLORS["delta_ww"],
+            color=COLORS["delta_nt"],
             label="D_nt(T) natural-termination rows",
             capsize=2,
         )
@@ -1095,8 +1119,8 @@ def fig5k_censoring(inp: Inputs, out_dir: Path) -> str | None:
     split = cen.get("stratified_split") or {}
     plotted_b = False
     for label, key, color, fmt in (
-        ("natural rows", "natural", COLORS["delta_ww"], "s--"),
-        ("truncated rows", "truncated", "0.35", "o-"),
+        ("natural rows", "natural", COLORS["delta_nt"], "s--"),
+        ("truncated rows", "truncated", COLORS["delta_tt"], "o-"),
     ):
         pts = [
             (inp.pos[r], split[r][key]["r2"])
@@ -1123,8 +1147,8 @@ def fig5k_censoring(inp: Inputs, out_dir: Path) -> str | None:
             kx, [per[r]["delta"] for r in krungs], "o-", color=COLORS["delta"], label="Δ pooled"
         )
         for label, color, fmt in (
-            ("delta_nt", COLORS["delta_ww"], "s--"),
-            ("delta_tt", "0.35", "v:"),
+            ("delta_nt", COLORS["delta_nt"], "s--"),
+            ("delta_tt", COLORS["delta_tt"], "v:"),
         ):
             pts = [
                 (inp.pos[r], per[r][label]["delta"])
@@ -1149,6 +1173,37 @@ def fig5k_censoring(inp: Inputs, out_dir: Path) -> str | None:
         ax_c.set_ylabel("Δ R² at layer*")
         ax_c.set_title("Δ vs common-status Δ_nt/Δ_tt")
         ax_c.legend(fontsize=7)
+
+    # (d) truncation-stratified repeat-generation ceilings (plan §6 dump
+    # item 5; absent on pre-v4 eval trees -> panel states the skip).
+    strat = cen.get("stratified_ceiling") or {}
+    plotted_d = False
+    for key, arm_lbl, fmt in (
+        ("ceiling_0shot", "0-shot", "o-"),
+        ("ceiling_4shot", "4-shot", "s--"),
+    ):
+        for stratum, color in (("natural", COLORS["delta_nt"]), ("truncated", COLORS["delta_tt"])):
+            pts = [
+                (
+                    inp.pos[r],
+                    (((strat.get(r) or {}).get(key) or {}).get(stratum) or {}).get(
+                        "spearman_brown"
+                    ),
+                )
+                for r in rungs
+            ]
+            px = [x for x, y in pts if y is not None and np.isfinite(y)]
+            py = [y for _, y in pts if y is not None and np.isfinite(y)]
+            if px:
+                plotted_d = True
+                ax_d.plot(px, py, fmt, color=color, label=f"{arm_lbl} {stratum}")
+    if plotted_d:
+        _apply_rung_axis(ax_d, rungs, inp.pos, inp.ticklabels)
+        ax_d.set_ylabel("Spearman–Brown split-half reliability")
+        ax_d.set_title("truncation-stratified ceilings\n(strata by seed-42 arm flag)")
+        ax_d.legend(fontsize=6.5)
+    else:
+        ax_d.set_title("stratified ceilings: no supported strata")
     savefig_paper(fig, "fig5k_censoring", dir=out_dir)
     plt.close(fig)
     return "fig5k_censoring"

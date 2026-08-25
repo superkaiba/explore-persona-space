@@ -1883,22 +1883,29 @@ def _trained_only_reads(ctx: FitsCtx) -> dict[str, Any]:
     return out
 
 
-def _trunc_masks(ctx: FitsCtx) -> dict[tuple[str, str], np.ndarray] | None:
+def _trunc_masks(ctx: FitsCtx) -> dict[tuple[str, str], np.ndarray]:
     """Per-(rung, arm) TRUNCATED boolean masks over the spine rows, from the
     persisted pass-1 rollouts (plan v8 §6 censoring-sensitivity family —
-    `truncated` is a DIAGNOSTIC axis here, never a row filter). Degrades
-    LOUDLY to None (the dependent reads then carry an unavailable status)."""
-    try:
-        masks: dict[tuple[str, str], np.ndarray] = {}
-        for rung in ctx.rungs:
-            for arm in ("gen0", "gen4"):
-                recs = R2.fetch_rollout(ctx.out_root, rung, arm)
-                t = {rec["id"] for rec in recs if rec["truncated"]}
-                masks[(rung, arm)] = np.asarray([i in t for i in ctx.spine.ids], dtype=bool)
-        return masks
-    except Exception as e:  # noqa: BLE001 — censoring diagnostics degrade loudly, never silently
-        logger.warning("[fits] truncation masks unavailable: %s", e)
-        return None
+    `truncated` is a DIAGNOSTIC axis here, never a row filter). FAIL-FAST:
+    a rollout fetch or schema error HALTS P4b — the masks feed §6.5
+    PRIMARY-deliverable fields (kshot ``delta_nt``/``delta_tt`` + per-rung
+    row counts, plan :293-294) and the checklist-(vi) adjudication
+    instrument, so silent degradation is banned (r3 reconcile blocker
+    ``censoring-family-failsoft``; the fail-fast rule)."""
+    masks: dict[tuple[str, str], np.ndarray] = {}
+    for rung in ctx.rungs:
+        for arm in ("gen0", "gen4"):
+            recs = R2.fetch_rollout(ctx.out_root, rung, arm)
+            bad = [k for k, rec in enumerate(recs) if "id" not in rec or "truncated" not in rec]
+            if bad:
+                raise RuntimeError(
+                    f"rollout ({rung},{arm}) rows missing 'id'/'truncated' at indices "
+                    f"{bad[:5]} ({len(bad)} total) — the §6 censoring family is "
+                    f"fail-fast, never degraded (plan §6.5)"
+                )
+            t = {rec["id"] for rec in recs if rec["truncated"]}
+            masks[(rung, arm)] = np.asarray([i in t for i in ctx.spine.ids], dtype=bool)
+    return masks
 
 
 def _censoring_reads(
@@ -1906,17 +1913,17 @@ def _censoring_reads(
     sweep: dict[str, dict[str, np.ndarray]],
     counts: np.ndarray,
     li: int,
-    trunc: dict[tuple[str, str], np.ndarray] | None,
+    trunc: dict[tuple[str, str], np.ndarray],
 ) -> dict[str, Any]:
     """v8 §6 truncation-censoring family over the SAME percell sweep SS (free
     re-aggregations): per-rung truncation rates on the spine, D_nt(T) on each
     rung's natural-termination (gen0-unTruncated) subset — r0 typically has
-    NONE (stated, never interpolated) — and the within-rung truncated-vs-
+    NONE (stated, never interpolated) — the within-rung truncated-vs-
     natural split (values where both strata clear STRAT_SPLIT_FLOOR; counts
     always; smoke reports informationally below the floor — gate-calibration
-    parity). D(main)-on-natural-termination is d_nt['main']."""
-    if trunc is None:
-        return {"status": "unavailable — rollout truncation masks not fetchable"}
+    parity), and the truncation-stratified repeat-generation ceilings (plan
+    §6 dump item 5). D(main)-on-natural-termination is d_nt['main'].
+    ``trunc`` is non-optional — `_trunc_masks` is fail-fast (r3 reconcile)."""
     floor = STRAT_SPLIT_FLOOR
     assert 100 <= floor <= 500, f"stratified-split floor {floor} outside [100, 500]"
     out: dict[str, Any] = {
@@ -1966,6 +1973,71 @@ def _censoring_reads(
         else:
             split["note"] = f"not reported — a stratum below the n>={floor} floor"
         out["stratified_split"][rung] = split
+    # Truncation-stratified repeat-generation ceilings (plan §6 dump item 5 +
+    # §9: free re-aggregation of the SAME repeat-capture residuals).
+    out["stratified_ceiling"] = {
+        rung: {
+            "ceiling_0shot": _stratified_sb(ctx, trunc[(rung, "gen0")], f"star_{rung}_f*.npz"),
+            "ceiling_4shot": _stratified_sb(
+                ctx, trunc[(rung, "gen4")], f"cell_diag4_{rung}_f*.npz"
+            ),
+            "strata_by": "seed-42 arm truncated flag (repeat-draw flags never partition)",
+        }
+        for rung in ctx.rungs
+    }
+    return out
+
+
+def _stratified_sb(ctx: FitsCtx, mask: np.ndarray, pattern: str) -> dict[str, Any]:
+    """Truncation-stratified repeat-generation ceiling (plan §6 exploratory
+    dump item 5): the SB ceiling recomputed per stratum of the seed-42 arm's
+    ``truncated`` flag over the aligned reliability rows — a free
+    re-aggregation of the SAME repeat-capture residuals. COUNTS ALWAYS
+    (``_sb_ceiling`` reports n_contexts on every stratum, values only where
+    supported); repeat-draw (seed 43/44) flags NEVER partition or filter."""
+    rel = _rel_pairs(ctx, pattern)
+    out: dict[str, Any] = {}
+    for label, want in (("natural", False), ("truncated", True)):
+        keep = [k for k, row in enumerate(rel["rows"]) if bool(mask[row]) == want]
+        out[label] = _sb_ceiling([rel["seed43"][k] for k in keep], [rel["seed44"][k] for k in keep])
+    return out
+
+
+def _common_status_reads(
+    ctx: FitsCtx,
+    counts: np.ndarray,
+    trunc: dict[tuple[str, str], np.ndarray],
+    rung: str,
+    res0: np.ndarray,
+    tot0: np.ndarray,
+    res4: np.ndarray,
+    tot4: np.ndarray,
+) -> dict[str, dict[str, Any]]:
+    """kshot ``delta_nt``/``delta_tt`` common-status paired reads (v8 §6;
+    §6.5 PRIMARY-deliverable fields, plan :293-294): joint-status row masks
+    (both arms naturally terminated / both truncated) over the SAME
+    per-context SS — the Delta_ww machinery re-used. SCHEMA CONTRACT: both
+    labels are emitted for EVERY rung with ``n_rows`` ALWAYS present;
+    ``delta``/``ci`` only at n >= 3 (else the below-floor note). Fail-fast
+    upstream: ``trunc`` is non-optional (`_trunc_masks`)."""
+    t0m, t4m = trunc[(rung, "gen0")], trunc[(rung, "gen4")]
+    scored_pair = np.isfinite(res0) & np.isfinite(res4)
+    out: dict[str, dict[str, Any]] = {}
+    for label, m_cs in (("delta_nt", ~t0m & ~t4m), ("delta_tt", t0m & t4m)):
+        n_cs = int((m_cs & scored_pair).sum())
+        rec_cs: dict[str, Any] = {"n_rows": n_cs}
+        if n_cs >= 3:
+            cres0, ctot0 = np.where(m_cs, res0, np.nan), np.where(m_cs, tot0, np.nan)
+            cres4, ctot4 = np.where(m_cs, res4, np.nan), np.where(m_cs, tot4, np.nan)
+            rec_cs["delta"] = F1._pooled_r2(
+                float(np.nansum(cres4)), float(np.nansum(ctot4))
+            ) - F1._pooled_r2(float(np.nansum(cres0)), float(np.nansum(ctot0)))
+            rec_cs["ci"] = F1._ci(
+                _r2_draws(ctx, counts, cres4, ctot4) - _r2_draws(ctx, counts, cres0, ctot0)
+            )
+        else:
+            rec_cs["note"] = "below the n>=3 minimum for a paired read"
+        out[label] = rec_cs
     return out
 
 
@@ -2319,27 +2391,10 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
                 "n_ww_rows": int(m.sum()),
                 "n_over_window_rows": int((~m).sum()),
             }
-        # delta_nt / delta_tt: the v8 §6 common-status paired reads — joint-
-        # status row masks (both arms naturally terminated / both truncated)
-        # over the SAME per-context SS, the Delta_ww machinery re-used.
-        if trunc is not None:
-            t0m, t4m = trunc[(rung, "gen0")], trunc[(rung, "gen4")]
-            scored_pair = np.isfinite(res0) & np.isfinite(res4)
-            for label, m_cs in (("delta_nt", ~t0m & ~t4m), ("delta_tt", t0m & t4m)):
-                n_cs = int((m_cs & scored_pair).sum())
-                rec_cs: dict[str, Any] = {"n_rows": n_cs}
-                if n_cs >= 3:
-                    cres0, ctot0 = np.where(m_cs, res0, np.nan), np.where(m_cs, tot0, np.nan)
-                    cres4, ctot4 = np.where(m_cs, res4, np.nan), np.where(m_cs, tot4, np.nan)
-                    rec_cs["delta"] = F1._pooled_r2(
-                        float(np.nansum(cres4)), float(np.nansum(ctot4))
-                    ) - F1._pooled_r2(float(np.nansum(cres0)), float(np.nansum(ctot0)))
-                    rec_cs["ci"] = F1._ci(
-                        _r2_draws(ctx, counts, cres4, ctot4) - _r2_draws(ctx, counts, cres0, ctot0)
-                    )
-                else:
-                    rec_cs["note"] = "below the n>=3 minimum for a paired read"
-                entry[label] = rec_cs
+        # delta_nt / delta_tt: the v8 §6 common-status paired reads (§6.5
+        # PRIMARY fields) — UNCONDITIONAL: _trunc_masks is fail-fast, so the
+        # masks always exist and every rung carries n_rows (counts always).
+        entry.update(_common_status_reads(ctx, counts, trunc, rung, res0, tot0, res4, tot4))
         # Delta_FA: the paired read at the full-attention companion layer
         arr_l0 = _cellarr(f"lfa0_{rung}")
         if arr_l0 is not None:
@@ -2467,17 +2522,13 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
         "metadata": R2._metadata(),
         "smoke": ctx.smoke,
         "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
-        "per_rung_truncation": (
-            {
-                rung: {
-                    "gen0": float(trunc[(rung, "gen0")].mean()),
-                    "gen4": float(trunc[(rung, "gen4")].mean()),
-                }
-                for rung in ctx.rungs
+        "per_rung_truncation": {
+            rung: {
+                "gen0": float(trunc[(rung, "gen0")].mean()),
+                "gen4": float(trunc[(rung, "gen4")].mean()),
             }
-            if trunc is not None
-            else None
-        ),
+            for rung in ctx.rungs
+        },
         "delta_peak_minus_main": delta_peak_minus_main,
         "layer_star": ctx.layer_star,
         "layer_fa": ctx.layer_fa,

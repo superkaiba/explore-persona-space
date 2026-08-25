@@ -1578,35 +1578,40 @@ def _load_halt_gate_a(
     out_root: Path, *, allow_hf: bool
 ) -> tuple[dict[str, Any] | None, Path | None]:
     """The v5 halt-time gate_a report (n_rows source). Local gate_reports/
-    first; HF pilot_halt1 listing fallback (production only); None when
-    absent (the SMOKE refinalize — smoke gates are informational and write
-    no halt report; n_corpus then falls back to the local corpus)."""
+    first; HF pilot_halt1 listing fallback (production only). The None
+    tolerance is SMOKE-ONLY (``allow_hf=False`` — smoke gates are
+    informational and write no halt report; n_corpus then falls back to the
+    local corpus). On the PRODUCTION path a missing/unreadable persisted
+    gate report RAISES — the refinalize's n_corpus provenance is the
+    halt-time report, never a silent local-corpus recount (r3 reconcile
+    ``refinalize-ncorpus-fallback``)."""
     local = sorted((out_root / "gate_reports").glob("gate_a_*.json"))
     if local:
         return R._read_json(local[-1]), local[-1]
     if not allow_hf:
         return None, None
-    try:
-        from huggingface_hub import HfApi
+    from huggingface_hub import HfApi
 
-        from explore_persona_space.orchestrate import hub
+    from explore_persona_space.orchestrate import hub
 
-        entries = hub.retry_transient(
-            lambda: list(
-                HfApi().list_repo_tree(
-                    C.HF_DATA_REPO,
-                    path_in_repo=f"{PILOT_HALT1_PREFIX}/gate_reports",
-                    repo_type="dataset",
-                )
-            ),
-            what="list pilot_halt1 gate_reports",
-        )
-        names = sorted(e.path for e in entries if Path(e.path).name.startswith("gate_a_"))
-    except Exception as e:  # noqa: BLE001 — absence is legal (smoke); log + degrade
-        logger.warning("[refinalize] no HF gate_a halt report reachable: %s", e)
-        return None, None
+    entries = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: materialized inside this hub.retry_transient thunk
+            HfApi().list_repo_tree(
+                C.HF_DATA_REPO,
+                path_in_repo=f"{PILOT_HALT1_PREFIX}/gate_reports",
+                repo_type="dataset",
+            )
+        ),
+        what="list pilot_halt1 gate_reports",
+    )
+    names = sorted(e.path for e in entries if Path(e.path).name.startswith("gate_a_"))
     if not names:
-        return None, None
+        raise RuntimeError(
+            f"no gate_a halt report under {PILOT_HALT1_PREFIX}/gate_reports on HF — "
+            "the production refinalize REQUIRES the persisted v5 halt-time gate "
+            "report as its n_corpus source (fail-fast; smoke-only None tolerance)"
+        )
     path = _fetch_halt_artifact(
         out_root, f"gate_reports/{Path(names[-1]).name}", names[-1], allow_hf=True
     )
@@ -1863,7 +1868,19 @@ def pilot_stage_report(args: argparse.Namespace, out_root: Path) -> None:
             f"staged pilot report eligibility_semantics={sem!r} != "
             f"{C2.ELIGIBILITY_SEMANTICS!r} — refusing (plan v8 §4 item 3)"
         )
-    R.load_pins(out_root)  # validates every checkpoint is pinned
+    pins = R.load_pins(out_root)  # validates every checkpoint is pinned
+    # The report's EMBEDDED pins must equal the staged revision_pins.json —
+    # a mismatch means the two pilot_halt2 uploads came from different
+    # refinalize runs (r3 reconcile `pilot-report-pins-mismatch`); refuse
+    # BEFORE the sentinel so no GPU work runs on incoherent pins.
+    report_pins = C.revision_pins_from_report(report)
+    if report_pins != pins:
+        diff = {c for c in set(report_pins) | set(pins) if report_pins.get(c) != pins.get(c)}
+        raise RuntimeError(
+            f"staged pilot report's embedded {C.REVISION_PINS_KEY!r} != staged "
+            f"revision_pins.json on checkpoints {sorted(diff)} — mismatched "
+            f"pilot_halt2 uploads (refusing before the pilot sentinel)"
+        )
     write_sentinel(
         out_root,
         "pilot",
