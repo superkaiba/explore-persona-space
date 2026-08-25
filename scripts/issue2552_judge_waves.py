@@ -2284,10 +2284,14 @@ def phase_smoke_probes(args) -> None:
     science). Outputs divert under <out_root>/smoke; canonical paths never written."""
     assert args.smoke, "phase smoke-probes requires --smoke"
     p = _paths(args)
-    g2 = _require_g2(args, p)
+    # INPUTS (g2 decision, staged prep fetches, eval texts) live in the CANONICAL
+    # production prep tree — prep runs without --smoke; only probe OUTPUTS divert
+    # under <out_root>/smoke (run_wave/_reload_per_item keep the diverted `p`).
+    p_in = _paths(SimpleNamespace(out_root=args.out_root, smoke=False))
+    g2 = _require_g2(args, p_in)
     # smoke view: composition runs over the same eval-id subset prep fetched texts for
     g2 = {**g2, "eval_ids": list(g2["eval_ids"])[:SMOKE_N_EVAL_TEXTS]}
-    ta, pt = _compose_w1_split(args, p, g2)
+    ta, pt = _compose_w1_split(args, p_in, g2)
     results: dict[str, dict] = {}
 
     def probe(wave: str, base: str, arms: dict, system: str) -> dict[str, dict]:
@@ -2302,7 +2306,7 @@ def phase_smoke_probes(args) -> None:
 
     per_w1 = probe("w1", "w1", {f: v[:2] for f, v in ta.items() if v}, W1_SYSTEM_TA)
     per_w1pt = probe("w1pt", "w1", {k: v[:5] for k, v in pt.items()}, W1_SYSTEM_PT)
-    per_w2 = probe("w2", "w2", {a: v[:5] for a, v in compose_w2(args, p, g2).items()}, W2_SYSTEM)
+    per_w2 = probe("w2", "w2", {a: v[:5] for a, v in compose_w2(args, p_in, g2).items()}, W2_SYSTEM)
     if args.dry_run:
         logger.info("[smoke] dry-run: w3..w6 probes need live w1/w2 outputs; skipped")
         return
@@ -2314,7 +2318,7 @@ def phase_smoke_probes(args) -> None:
     ]
     summ = next(rec["value"] for _i, rec in sorted(per_w2.items()) if rec["class"] == "valid")
     eval_ids = [int(x) for x in g2["eval_ids"]][:12]
-    texts = _load_texts(p, np.asarray(eval_ids, np.int64))
+    texts = _load_texts(p_in, np.asarray(eval_ids, np.int64))
     lines = [f"- {d}" for d in descs]
     assert len(lines) >= 2, "[smoke] need >=2 valid descriptions for w3..w6 probes"
     w3_items = [
