@@ -2685,3 +2685,33 @@ Related: [[plan-path-missing-read-from-main]],
   unsigned both-sides-guard atoms + comma-grouping first + pair-split +
   isfinite literal-keep + collect-all + registry leg from repo root;
   version-suffixed workspace keyed to PLAN version).
+
+- **Lint-fix plan, standard methodology lens + brief six-target translation +
+  Codex-side plan-freshness readlink (#2351 round one, tokenize-mask
+  string-awareness fix): three new patterns.** (1) When the orchestrator
+  orders the composed prompt to `readlink` the plan symlink and FAIL LOUD on
+  a version mismatch, compose it as the FIRST ACTION header block with an
+  exact BLOCKER line + stop-with-no-verdict semantics — the plan-version pin
+  moves Codex-side (composer still verifies the symlink at compose time; keep
+  the measured byte count OUT of the prompt — composer-authored numeric).
+  (2) When the brief says "verdict text only; no marker posting", the
+  envelope is a bare literal `VERDICT: PASS|REVISE` FINAL line + numbered
+  findings tagged [Must-Fix]/[Consider] (no epm marker tags at all); the
+  return summary tells the orchestrator to extract the WHOLE output file and
+  key the verdict on the final VERDICT line, and defines REVISE as at least
+  one [Must-Fix] standing. (3) Under write=false on a plan that INLINES its
+  proposed helper code, the execution-probe gap closes by mandating a
+  code-TEXT walkthrough ("walk concrete adversarial source shapes through
+  the proposed code line by line — tokenize start/end semantics") with the
+  UNVERIFIED escape filing as [Consider] naming the fixture shape +
+  assertion a regression test should pin. Also: orchestrator-named
+  version-less prompt path honored (workspace stays version-suffixed; no
+  stale files so no mv needed); per-target dispositions
+  HOLDS|FAILS|PARTIAL|UNVERIFIED with FAILS requiring a matching [Must-Fix];
+  settled block distinguishes relitigating clarify-measured FACTS (banned)
+  from judging the design DECISIONS built on them (a review target's job —
+  say so explicitly when a settled fence is itself a review target).
+  Numcheck PASS first try at ~109 KB (spans = inputs + plan + body +
+  clarify + lensitems + targets + empty prior; scaffold digit-free —
+  decimal/teens section refs confined to span files; "v1.md"/"A2"/"A7"
+  atom-free under both-sides guards).
