@@ -165,6 +165,9 @@ PRODUCTION_DENSE_NS = (5_000, 10_000, 25_000, 50_000, 100_000, 150_000, 250_000,
 PRODUCTION_SEED_SET = frozenset({42, 43, 44})  # OPT-1 endpoint replication (plan §3)
 PRODUCTION_CAPTURE_FILES = 1_920  # n1m capture chunk universe (plan §9, Hub-measured)
 PRODUCTION_POOL_FULL = 963_444  # train pool = 3,600 pass_b-train + 959,844 captured (plan §9)
+# Plan §10 registered realized capture grain (manifest declares 960,000; the 156-row
+# capture attrition is a recorded property of the banked store — bigN split chain).
+PRODUCTION_CAPTURED_ROWS = 959_844
 SMOKE_RUNG_SPECS = ((1_000, "n1m"), (2_000, "n1m"))  # plan §4 (v15) registered smoke rungs
 DENSE_GAP_MARGIN = 0.01  # plan §3: D_gap = (S_mlp − S_ridge) − 0.01
 MIXED1M_APPLY_TOL = 1e-3  # deterministic banked-weights apply parity (plan §7 kill criterion 3)
@@ -944,8 +947,11 @@ def _validate_run_shape(
 
     Shape-parametric by invocation mode — each mode asserts its OWN registered
     expectations, never skip-under-smoke. Production: exact rung set, exact
-    seed set {42,43,44}, 1,920 staged capture chunks, captured == manifest
-    rows, 963,444-row train pool. Smoke: the registered smoke rungs, staged
+    seed set {42,43,44}, 1,920 staged capture chunks, captured == the plan-§10
+    registered realized grain (959,844; the manifest DECLARES 960,000 — the
+    156-row capture attrition is a recorded property of the banked store, and
+    the declared-vs-realized delta stays recorded via n_new_manifest in the
+    audit), 963,444-row train pool. Smoke: the registered smoke rungs, staged
     chunk count == --smoke-chunks, a nonempty partial pool bounded by the
     manifest, and rung∩anchor disjointness (the C3 dead-branch guarantee:
     no DENSE_PARITY_ANCHORS key is reachable at smoke n). Runs BEFORE the
@@ -994,9 +1000,11 @@ def _validate_run_shape(
                 f"staged capture chunk count {n_capture_files} != {PRODUCTION_CAPTURE_FILES} "
                 "(plan §9 Hub-measured chunk universe) — partial/over-staged capture"
             )
-        if n_cap != n_man:
+        if n_cap != PRODUCTION_CAPTURED_ROWS:
             raise RuntimeError(
-                f"captured rows {n_cap} != manifest rows {n_man} — partial/torn capture stage"
+                f"captured rows {n_cap} != registered realized grain "
+                f"{PRODUCTION_CAPTURED_ROWS} (manifest declares {n_man}) — "
+                "partial/torn capture stage"
             )
         if int(n_pool_full) != PRODUCTION_POOL_FULL:
             raise RuntimeError(
