@@ -38,6 +38,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # BEFORE torch import (shared-VM thread caps + API keys)
@@ -844,9 +845,8 @@ class _ChunkStore:
 
     def save(self, key: str, payload) -> None:
         path = self._path(key)
-        tmp = path.parent / f"{path.name}.tmp.pt"
-        torch.save({"regime_fp": self.regime_fp, "payload": payload}, tmp)
-        os.replace(tmp, path)
+        with atomic_replace(path) as tmp:
+            torch.save({"regime_fp": self.regime_fp, "payload": payload}, tmp)
 
     def clear(self) -> None:
         for p in self.root.glob("chunk_*.pt"):
@@ -1205,10 +1205,8 @@ def phase_bank(cfg: RunConfig, regime_fp: str) -> int:
         **_repro(cfg),
     }
     R._write_json_atomic(cfg.bank_dir / "bank.json", manifest)
-    cfg.bank_dir.mkdir(parents=True, exist_ok=True)
-    tmp = cfg.bank_dir / "vc_bank.pt.tmp.pt"
-    torch.save(bank, tmp)
-    os.replace(tmp, cfg.bank_dir / "vc_bank.pt")
+    with atomic_replace(cfg.bank_dir / "vc_bank.pt") as tmp:
+        torch.save(bank, tmp)
     _ChunkStore(cfg.bank_dir / "bank_chunks", regime_fp).clear()  # merged into vc_bank.pt
     _write_phase_done(
         cfg, "bank", regime_fp, {"n_contexts": len(contexts), "n_minpair_viol": len(violations)}
@@ -1564,9 +1562,8 @@ def phase_donors(cfg: RunConfig, regime_fp: str) -> int:
 
     cfg.donors_dir.mkdir(parents=True, exist_ok=True)
     for scheme in C.ARM_SCHEMES:
-        tmp = cfg.donors_dir / f"donors_{scheme}.tmp.pt"
-        torch.save(recs[scheme], tmp)
-        os.replace(tmp, cfg.donors_dir / f"donors_{scheme}.pt")
+        with atomic_replace(cfg.donors_dir / f"donors_{scheme}.pt") as tmp:
+            torch.save(recs[scheme], tmp)
     R._write_jsonl_atomic(cfg.donors_dir / "donor_rollouts.jsonl", donors_out["text_rows"])
     edge = {
         pid: {s: recs[s][pid]["donor_len"] for s in C.ARM_SCHEMES}
@@ -1891,10 +1888,8 @@ def run_block_2333(
         )
 
     R._write_jsonl_atomic(cfg.grid_blocks_dir / f"{block.slug}.jsonl", rows_out)
-    cfg.va_dir.mkdir(parents=True, exist_ok=True)
-    tmp = cfg.va_dir / f"{block.slug}.tmp.pt"
-    torch.save(va_store, tmp)
-    os.replace(tmp, cfg.va_dir / f"{block.slug}.pt")
+    with atomic_replace(cfg.va_dir / f"{block.slug}.pt") as tmp:
+        torch.save(va_store, tmp)
     n_cap = sum(1 for r in rows_out if r["cap_hit"])
     # Done-file namespace MUST match phase_grid's claim-queue namespace
     # ("smoke_blocks" under --smoke) — a "blocks"-default write makes the
@@ -2047,9 +2042,8 @@ def _regen_block_capped_rows(
                 )
                 va_store.update(dict(zip(keys, vas)))
     R._write_jsonl_atomic(shard_path, rows)
-    tmp = cfg.va_dir / f"{block.slug}.regen.tmp.pt"
-    torch.save(va_store, tmp)
-    os.replace(tmp, va_path)
+    with atomic_replace(va_path) as tmp:
+        torch.save(va_store, tmp)
     done_path = R.block_done_path(cfg.out_root, block, cfg.grid_namespace)
     done = json.loads(done_path.read_text(encoding="utf-8"))
     done["n_cap_hit"] = sum(1 for r in rows if r["cap_hit"])
@@ -2336,9 +2330,8 @@ def phase_anchors(cfg: RunConfig, regime_fp: str) -> int:
         logger.info("[anchors] cap regen fired: frac=%.3f, %d rows at 2x cap", frac0, n_regen)
 
     R._write_jsonl_atomic(cfg.anchors_dir / f"anchors_{shard_key}.jsonl", rows_out)
-    tmp = cfg.anchors_dir / f"va_anchors_{shard_key}.tmp.pt"
-    torch.save(va_store, tmp)
-    os.replace(tmp, cfg.anchors_dir / f"va_anchors_{shard_key}.pt")
+    with atomic_replace(cfg.anchors_dir / f"va_anchors_{shard_key}.pt") as tmp:
+        torch.save(va_store, tmp)
     _write_phase_done(
         cfg,
         phase_key,
@@ -2436,9 +2429,8 @@ def _ce_regen_block_capped_rows(
                 vas = _capture_va(cfg, model, tok, full_rows, spans, h_pos, h_pay)
                 va_store.update(dict(zip(keys, vas)))
     R._write_jsonl_atomic(shard_path, rows)
-    tmp = cfg.va_dir / f"ce_{block.slug}.regen.tmp.pt"
-    torch.save(va_store, tmp)
-    os.replace(tmp, va_path)
+    with atomic_replace(va_path) as tmp:
+        torch.save(va_store, tmp)
     done_path = R.block_done_path(cfg.out_root, block, cfg.ce_namespace)
     done = json.loads(done_path.read_text(encoding="utf-8"))
     done["n_cap_hit"] = sum(1 for r in rows if r["cap_hit"])
@@ -2612,10 +2604,8 @@ def phase_ce_control(cfg: RunConfig, regime_fp: str) -> int:
                         }
                     )
         R._write_jsonl_atomic(cfg.ce_blocks_dir / f"{block.slug}.jsonl", rows_out)
-        cfg.va_dir.mkdir(parents=True, exist_ok=True)
-        tmp = cfg.va_dir / f"ce_{block.slug}.tmp.pt"
-        torch.save(va_store, tmp)
-        os.replace(tmp, cfg.va_dir / f"ce_{block.slug}.pt")
+        with atomic_replace(cfg.va_dir / f"ce_{block.slug}.pt") as tmp:
+            torch.save(va_store, tmp)
         R._write_json_atomic(
             R.block_done_path(cfg.out_root, block, cfg.ce_namespace),
             {

@@ -90,6 +90,7 @@ import time
 from pathlib import Path
 
 import issue2224_common as common  # noqa: F401  (sys.path shim: src/ + scripts/)
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # BEFORE numpy/torch imports: shared-VM thread caps + HF token (#847)
@@ -458,18 +459,17 @@ def write_probe_npz(
         x_mu.shape,
         x_sd.shape,
     )
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".tmp_{path.stem}.npz")  # np.savez suffix trap (#1092)
-    np.savez(
-        tmp,
-        w=np.asarray(w, dtype=np.float64),
-        b=np.float64(b),
-        x_mu=np.asarray(x_mu, dtype=np.float64),
-        x_sd=np.asarray(x_sd, dtype=np.float64),
-        layer=np.int64(layer),
-        meta=np.array(json.dumps(meta)),
-    )
-    os.replace(tmp, path)
+    # Handle-form np.savez (appends .npz to path-typed names — #1092).
+    with atomic_replace(path) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            w=np.asarray(w, dtype=np.float64),
+            b=np.float64(b),
+            x_mu=np.asarray(x_mu, dtype=np.float64),
+            x_sd=np.asarray(x_sd, dtype=np.float64),
+            layer=np.int64(layer),
+            meta=np.array(json.dumps(meta)),
+        )
     return path
 
 

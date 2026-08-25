@@ -788,6 +788,92 @@ def fig_paper_c1_stage_retention(eval_dir: Path) -> None:
     plt.close(fig)
 
 
+_STAGE_CODES = ("B", "S", "D", "R")
+_STAGE_LABELS = {"B": "base", "S": "SFT", "D": "DPO", "R": "RLVR"}
+# One color = one meaning: identity+bias keeps its paper-wide registry color.
+_ARM_COLORS = {
+    "self": "#0072B2",  # blue - the stage's own map (its ceiling)
+    "transferred": "#D55E00",  # vermilion - previous stage's map applied here
+    "crossfit": "#CC79A7",  # purple - map refit across the transition
+    "identity": "#009E73",  # green - PAPER_COLORS["identity_bias"]
+}
+_ARM_ORDER = (
+    ("self", "own map at this stage"),
+    ("transferred", "previous stage's map, applied as-is"),
+    ("crossfit", "map refit: previous contexts $\\to$ this stage's answers"),
+    ("identity", "identity + learned bias"),
+)
+
+
+def _stage_ladder_arms(eval_dir: Path) -> dict[str, dict[str, tuple[float, float]]]:
+    """Collect (R2, acc@1) per arm per stage for the post-training ladder figure.
+
+    Both reads come from the whitened-cos+CSLS round
+    (``retrieval_whitencsls/retrieval.json``), which refits the layer-31
+    single-turn context-arm maps with the same batched ridge helper that
+    produced the committed cells and GATES every pooled R2 against them, so
+    the retrieval panel follows the paper's standing convention (whitened
+    cosine + CSLS k=10) instead of the raw-cosine kNN the original fits
+    recorded. Returns ``{arm: {stage_code: (r2, acc1)}}``.
+    """
+    ret = _load(eval_dir, "retrieval_whitencsls/retrieval.json")
+    if ret.get("r2_gate", {}).get("status") != "PASS":
+        raise RuntimeError("retrieval_whitencsls R2 reproduction gate did not PASS")
+    out: dict[str, dict[str, tuple[float, float]]] = {}
+    for arm, per_stage in ret["arms"].items():
+        out[arm] = {
+            st: (float(v["r2_pooled"]), float(v["acc1_whitencsls_mean"]))
+            for st, v in per_stage.items()
+        }
+    return out
+
+
+def fig_paper_c1_stage_ladder_arms(eval_dir: Path) -> None:
+    """ICLR paper figure (plan.tex plot 6): how the map evolves through post-training.
+
+    Four arms per stage of the OLMo-2 chain, single-turn context arm, ridge, at
+    the shared selected layer: the stage's own map, the previous stage's map
+    applied unchanged to this stage's pairs, a map refit from the previous
+    stage's context states onto this stage's on-policy answers, and the
+    identity + learned-bias baseline against the same target. Left panel
+    held-out R^2, right panel retrieval acc@1 under whitened cosine + CSLS
+    k=10 (the paper's standing retrieval convention).
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full, set_paper_style
+
+    set_paper_style("iclr")
+    arms = _stage_ladder_arms(eval_dir)
+    ret = _load(eval_dir, "retrieval_whitencsls/retrieval.json")
+    n_pool = int(round(ret["arms"]["self"]["B"]["n_pool_mean"]))
+    xs = np.arange(len(_STAGE_CODES))
+    width = 0.20
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_full(height_frac=0.38))
+    for ax, idx, ylabel in ((axes[0], 0, "held-out $R^2$"), (axes[1], 1, "retrieval acc@1")):
+        for k, (arm, label) in enumerate(_ARM_ORDER):
+            offs = (k - (len(_ARM_ORDER) - 1) / 2.0) * width
+            present = [(i, s) for i, s in enumerate(_STAGE_CODES) if s in arms.get(arm, {})]
+            ax.bar(
+                [xs[i] + offs for i, _ in present],
+                [arms[arm][s][idx] for _, s in present],
+                width=width,
+                color=_ARM_COLORS[arm],
+                label=label if idx == 0 else None,
+            )
+        ax.axhline(0.0, color="black", lw=0.7, ls=":")
+        ax.set_xticks(xs, [_STAGE_LABELS[s] for s in _STAGE_CODES])
+        ax.set_ylabel(ylabel)
+    axes[1].axhline(
+        1.0 / n_pool, color="#999999", lw=0.8, ls="--", label=f"chance (pool $n$={n_pool})"
+    )
+    handles = [*axes[0].get_legend_handles_labels()[0], *axes[1].get_legend_handles_labels()[0]]
+    labels = [*axes[0].get_legend_handles_labels()[1], *axes[1].get_legend_handles_labels()[1]]
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=2)
+    paper_out = PROJECT_ROOT / "figures" / "paper"
+    paper_out.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_stage_ladder_arms", dir=paper_out)
+    plt.close(fig)
+
+
 FIG_GROUPS = {
     "hero1": fig_hero_diag,
     "hero1b": fig_hero_diag_folds,
@@ -816,7 +902,8 @@ def main() -> None:
     if args.style == "iclr":
         # Paper pathway (#2094 precedent): one ICLR-styled figure under figures/paper/.
         fig_paper_c1_stage_retention(args.eval_dir)
-        print("paper c1_stage_retention regenerated.")
+        fig_paper_c1_stage_ladder_arms(args.eval_dir)
+        print("paper c1_stage_retention + c1_stage_ladder_arms regenerated.")
         sys.exit(0)
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
