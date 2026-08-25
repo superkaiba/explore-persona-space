@@ -1,0 +1,245 @@
+{
+  "commit": "09750cbb",
+  "render_id": "6caee2559a6e496f",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:18Z",
+  "figsize": [
+    9.0,
+    3.8
+  ],
+  "points": [
+    {
+      "k nearest neighbors": 1.0,
+      "retrieval accuracy at k": 0.23686105111591071,
+      "series": "single-turn frozen map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "retrieval accuracy at k": 0.4906407487401008,
+      "series": "single-turn frozen map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "retrieval accuracy at k": 0.6076313894888409,
+      "series": "single-turn frozen map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "retrieval accuracy at k": 0.22534197264218864,
+      "series": "multi-turn frozen map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "retrieval accuracy at k": 0.4640028797696184,
+      "series": "multi-turn frozen map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "retrieval accuracy at k": 0.593952483801296,
+      "series": "multi-turn frozen map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "retrieval accuracy at k": 0.2177825773938085,
+      "series": "identity baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "retrieval accuracy at k": 0.4762419006479482,
+      "series": "identity baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "retrieval accuracy at k": 0.6335493160547156,
+      "series": "identity baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "retrieval accuracy at k": 0.0003599712023038157,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "retrieval accuracy at k": 0.0017998560115190785,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "retrieval accuracy at k": 0.003599712023038157,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.15298776097912167,
+      "series": "single-turn frozen map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "y": 0.32901367890568756,
+      "series": "single-turn frozen map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "y": 0.42548596112311016,
+      "series": "single-turn frozen map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.1216702663786897,
+      "series": "multi-turn frozen map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "y": 0.2861771058315335,
+      "series": "multi-turn frozen map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "y": 0.38192944564434844,
+      "series": "multi-turn frozen map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.17062634989200864,
+      "series": "identity baseline",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "y": 0.41612670986321093,
+      "series": "identity baseline",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "y": 0.578113750899928,
+      "series": "identity baseline",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.0003599712023038157,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k nearest neighbors": 5.0,
+      "y": 0.0017998560115190785,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k nearest neighbors": 10.0,
+      "y": 0.003599712023038157,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 24,
+  "text": {
+    "suptitle": "Delta retrieval: does the predicted shift find its observed pair?",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cosine distance",
+        "xlabel": "k nearest neighbors",
+        "ylabel": "retrieval accuracy at k",
+        "legend_labels": [
+          "single-turn frozen map",
+          "multi-turn frozen map",
+          "identity baseline",
+          "chance"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "euclidean distance",
+        "xlabel": "k nearest neighbors",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      }
+    ],
+    "series": [
+      "single-turn frozen map",
+      "multi-turn frozen map",
+      "identity baseline",
+      "chance"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

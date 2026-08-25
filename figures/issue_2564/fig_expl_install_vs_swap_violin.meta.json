@@ -1,0 +1,76 @@
+{
+  "commit": "09750cbb",
+  "render_id": "cd61bc0efa084078",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:03Z",
+  "figsize": [
+    32.3,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Direction cosine by axis and pair class (single-turn frozen map)",
+        "ylabel": "per-pair direction cosine",
+        "xticklabels": [
+          "content constraint\nfamily swap",
+          "content constraint\ninstall",
+          "content constraint\ninstruction paraphrase",
+          "content constraint\nvalue swap",
+          "format\nfamily swap",
+          "format\ninstall",
+          "format\ninstruction paraphrase",
+          "format\nvalue swap",
+          "hedging\nfamily swap",
+          "hedging\ninstall",
+          "hedging\ninstruction paraphrase",
+          "hedging\nvalue swap",
+          "lexical marker\nfamily swap",
+          "lexical marker\ninstall",
+          "lexical marker\ninstruction paraphrase",
+          "lexical marker\nvalue swap",
+          "persona\nfamily swap",
+          "persona\ninstall",
+          "persona\ninstruction paraphrase",
+          "persona\nvalue swap",
+          "register\nfamily swap",
+          "register\ninstall",
+          "register\ninstruction paraphrase",
+          "register\nvalue swap",
+          "stance\nfamily swap",
+          "stance\ninstall",
+          "stance\ninstruction paraphrase",
+          "stance\nvalue swap",
+          "user fact\nfamily swap",
+          "user fact\ninstall",
+          "user fact\ninstruction paraphrase",
+          "user fact\nvalue swap",
+          "user profile\nfamily swap",
+          "user profile\ninstall",
+          "user profile\ninstruction paraphrase",
+          "user profile\nvalue swap",
+          "query content\nquery content",
+          "query form\nquery form"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

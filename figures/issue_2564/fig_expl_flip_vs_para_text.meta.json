@@ -1,0 +1,153 @@
+{
+  "commit": "09750cbb",
+  "render_id": "533e40d27e2745a6",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:20Z",
+  "figsize": [
+    17.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 6.0,
+      "answer-text shift norm (embedding space)": 0.5157229070391982,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "answer-text shift norm (embedding space)": 0.5089607023079991,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "answer-text shift norm (embedding space)": 0.4911916838792803,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "answer-text shift norm (embedding space)": 0.34046209650682047,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "answer-text shift norm (embedding space)": 0.35747277546305856,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "answer-text shift norm (embedding space)": 0.38385497203809377,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.28738940249825623,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.31322557341205853,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.28302723647872063,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.27873659291816616,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.35685489098443357,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.3746291131949106,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.3921757719768538,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.3550765645395674,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.41490564344217945,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Text-space shift: value flips vs paraphrases",
+        "ylabel": "answer-text shift norm (embedding space)",
+        "xticklabels": [
+          "content constraint\nvalue flip",
+          "content constraint\nparaphrase",
+          "format\nvalue flip",
+          "format\nparaphrase",
+          "hedging\nvalue flip",
+          "hedging\nparaphrase",
+          "lexical marker\nvalue flip",
+          "lexical marker\nparaphrase",
+          "persona\nvalue flip",
+          "persona\nparaphrase",
+          "register\nvalue flip",
+          "register\nparaphrase",
+          "stance\nvalue flip",
+          "stance\nparaphrase",
+          "user fact\nvalue flip",
+          "user fact\nparaphrase",
+          "user profile\nvalue flip",
+          "user profile\nparaphrase",
+          "query content\nvalue flip",
+          "query form\nvalue flip"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

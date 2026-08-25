@@ -1,0 +1,584 @@
+{
+  "commit": "09750cbb",
+  "render_id": "9ea62e56b2e443a8",
+  "git_commit": "09750cbbab8918d6767bdd8f8d65028355811b93",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T14:37:14Z",
+  "figsize": [
+    5.2,
+    4.6
+  ],
+  "points": [
+    {
+      "observed cross-family consistency (cosine)": 0.7125424245858396,
+      "predicted cross-family consistency (cosine)": 0.6404657192443715,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.4380196415930228,
+      "predicted cross-family consistency (cosine)": 0.4678451626755981,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.5496628955629298,
+      "predicted cross-family consistency (cosine)": 0.5351265681165711,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9353297829424704,
+      "predicted cross-family consistency (cosine)": 0.91163098087288,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.299306505531201,
+      "predicted cross-family consistency (cosine)": 0.11340694231790416,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.7461962530073794,
+      "predicted cross-family consistency (cosine)": 0.6697122921754163,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9447348526463027,
+      "predicted cross-family consistency (cosine)": 0.9023722417016723,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.7884373987528281,
+      "predicted cross-family consistency (cosine)": 0.45815680926167035,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9324264021788221,
+      "predicted cross-family consistency (cosine)": 0.8440683155493426,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9224889238122229,
+      "predicted cross-family consistency (cosine)": 0.9104736215333872,
+      "series": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9133447960177412,
+      "predicted cross-family consistency (cosine)": 0.8245291312026763,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9941005085467257,
+      "predicted cross-family consistency (cosine)": 0.9692044152183342,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9735440937981322,
+      "predicted cross-family consistency (cosine)": 0.9061147126838075,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9669116110123726,
+      "predicted cross-family consistency (cosine)": 0.8698977729799788,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9950694099435594,
+      "predicted cross-family consistency (cosine)": 0.9598134406761413,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9766827787930018,
+      "predicted cross-family consistency (cosine)": 0.8851542282233338,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9662901575030151,
+      "predicted cross-family consistency (cosine)": 0.8462103112198149,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.995119390931606,
+      "predicted cross-family consistency (cosine)": 0.9798735712405826,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9944686483454862,
+      "predicted cross-family consistency (cosine)": 0.9826352228201777,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9769336357114132,
+      "predicted cross-family consistency (cosine)": 0.9551284660028081,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.41566832550626825,
+      "predicted cross-family consistency (cosine)": 0.11792072850666059,
+      "series": "hedging",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9465489790269868,
+      "predicted cross-family consistency (cosine)": 0.9114747615879183,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.8973741761378253,
+      "predicted cross-family consistency (cosine)": 0.8835978835501219,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.8755680278233463,
+      "predicted cross-family consistency (cosine)": 0.8282224930301534,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9052076612609559,
+      "predicted cross-family consistency (cosine)": 0.8449651801329076,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.8314705959988078,
+      "predicted cross-family consistency (cosine)": 0.8619858962096791,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9451379042478508,
+      "predicted cross-family consistency (cosine)": 0.9194938842113599,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9107671219728972,
+      "predicted cross-family consistency (cosine)": 0.8921724136897512,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.8957482356009066,
+      "predicted cross-family consistency (cosine)": 0.876014616407168,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.8363846377144561,
+      "predicted cross-family consistency (cosine)": 0.8367084270484385,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.8703389975908099,
+      "predicted cross-family consistency (cosine)": 0.8670489775827828,
+      "series": "lexical marker",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9879642902173285,
+      "predicted cross-family consistency (cosine)": 0.9712392199993481,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9803382559115283,
+      "predicted cross-family consistency (cosine)": 0.9745714154287196,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9705644855219853,
+      "predicted cross-family consistency (cosine)": 0.9608270789763741,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9489764806981186,
+      "predicted cross-family consistency (cosine)": 0.9479686416822437,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.970987097518619,
+      "predicted cross-family consistency (cosine)": 0.9663397361727882,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9874599374640144,
+      "predicted cross-family consistency (cosine)": 0.9683866110373843,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.983329658478546,
+      "predicted cross-family consistency (cosine)": 0.9692095842739981,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9793613062681242,
+      "predicted cross-family consistency (cosine)": 0.9776248477087882,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9612740574697451,
+      "predicted cross-family consistency (cosine)": 0.9687533489179638,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9697219525523701,
+      "predicted cross-family consistency (cosine)": 0.9576934714655571,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9790244175207687,
+      "predicted cross-family consistency (cosine)": 0.9689386212213622,
+      "series": "register",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "observed cross-family consistency (cosine)": -0.029686091579470584,
+      "predicted cross-family consistency (cosine)": 0.18736857537512006,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.14121889379567276,
+      "predicted cross-family consistency (cosine)": 0.21072713847353325,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.3446880269176886,
+      "predicted cross-family consistency (cosine)": 0.17553897020943193,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.07825628134137957,
+      "predicted cross-family consistency (cosine)": 0.3490111475449847,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.3682055279741348,
+      "predicted cross-family consistency (cosine)": 0.4602392363447563,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.5478303168946969,
+      "predicted cross-family consistency (cosine)": 0.40774518446838875,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.4466267109043749,
+      "predicted cross-family consistency (cosine)": 0.3641167546320479,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.4273368009080383,
+      "predicted cross-family consistency (cosine)": 0.22119982195898585,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.47661503553957707,
+      "predicted cross-family consistency (cosine)": 0.5287473184080725,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.6047697545411813,
+      "predicted cross-family consistency (cosine)": 0.35818283212763957,
+      "series": "stance",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.30279729505322256,
+      "predicted cross-family consistency (cosine)": 0.5875924300904363,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.7293565778488527,
+      "predicted cross-family consistency (cosine)": 0.7718620796672443,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.7732709478866127,
+      "predicted cross-family consistency (cosine)": 0.7592853240457198,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.09375373058953805,
+      "predicted cross-family consistency (cosine)": 0.15278929828881016,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.7018323191992799,
+      "predicted cross-family consistency (cosine)": 0.7591046705647418,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.7389446559280206,
+      "predicted cross-family consistency (cosine)": 0.7504567231476372,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.14776186924634535,
+      "predicted cross-family consistency (cosine)": 0.3541562432313787,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.013116770017336667,
+      "predicted cross-family consistency (cosine)": 0.4845909411205645,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.5352416489352037,
+      "predicted cross-family consistency (cosine)": 0.73676870454637,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.5681485558637059,
+      "predicted cross-family consistency (cosine)": 0.7054525641184359,
+      "series": "user fact",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9862450443431336,
+      "predicted cross-family consistency (cosine)": 0.9652192874773671,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.965339580340609,
+      "predicted cross-family consistency (cosine)": 0.9365488729094906,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9753941057067815,
+      "predicted cross-family consistency (cosine)": 0.9463340871871025,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9657490452319651,
+      "predicted cross-family consistency (cosine)": 0.9500414486858157,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9831967673674467,
+      "predicted cross-family consistency (cosine)": 0.9560674148496752,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9689592560538192,
+      "predicted cross-family consistency (cosine)": 0.9424262837185957,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.971729776665371,
+      "predicted cross-family consistency (cosine)": 0.9235759125559486,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9702275425813199,
+      "predicted cross-family consistency (cosine)": 0.9507177346050177,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9724904396370697,
+      "predicted cross-family consistency (cosine)": 0.9377692183636623,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.9564386884542511,
+      "predicted cross-family consistency (cosine)": 0.952753916349396,
+      "series": "user profile",
+      "_kind": "scatter",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-family consistency: observed vs predicted",
+        "xlabel": "observed cross-family consistency (cosine)",
+        "ylabel": "predicted cross-family consistency (cosine)",
+        "legend_labels": [
+          "content constraint",
+          "format",
+          "hedging",
+          "lexical marker",
+          "persona",
+          "register",
+          "stance",
+          "user fact",
+          "user profile"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "content constraint",
+      "format",
+      "hedging",
+      "lexical marker",
+      "persona",
+      "register",
+      "stance",
+      "user fact",
+      "user profile"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
