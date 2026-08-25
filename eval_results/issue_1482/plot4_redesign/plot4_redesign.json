@@ -1,0 +1,207 @@
+{
+  "left_panel": {
+    "source": "figures/issue_1482/concordance/writeup_stepwise.meta.json",
+    "statistic": "winner concordance c - 1/2 per forward-selection round; each round conditions (coarsened exact matching) on all previously selected properties",
+    "dv": "dense-context->SAE-feature ridge per-feature held-out R^2 (regular full-width layer-19 SAE; banked in the stepwise sidecar)",
+    "rows": [
+      {
+        "round": 0,
+        "banked_name": "Fires on BOTH context and answer side",
+        "label": "fires on both context and answer",
+        "value": 0.2683011355307653,
+        "winner_c": 0.7683011355307653,
+        "pair_frac": 1.0,
+        "n": 120716
+      },
+      {
+        "round": 1,
+        "banked_name": "Mean activation (over all answers)",
+        "label": "mean activation (all answers)",
+        "value": 0.2661972479370571,
+        "winner_c": 0.7661972479370571,
+        "pair_frac": 0.9871277936851175,
+        "n": 120716
+      },
+      {
+        "round": 2,
+        "banked_name": "Speaker: identity / disposition",
+        "label": "speaker identity / disposition",
+        "value": 0.17107186594193302,
+        "winner_c": 0.671071865941933,
+        "pair_frac": 0.09876585068958214,
+        "n": 120716
+      },
+      {
+        "round": 3,
+        "banked_name": "Logit footprint: suppressing",
+        "label": "suppresses specific output tokens",
+        "value": -0.1493617828275734,
+        "winner_c": 0.3506382171724266,
+        "pair_frac": 0.09648586172585996,
+        "n": 120716
+      },
+      {
+        "round": 4,
+        "banked_name": "Logit footprint: promoting",
+        "label": "promotes specific output tokens",
+        "value": -0.14207498893788661,
+        "winner_c": 0.3579250110621134,
+        "pair_frac": 0.08880219607594306,
+        "n": 120716
+      },
+      {
+        "round": 5,
+        "banked_name": "Content type: topic",
+        "label": "topic content",
+        "value": -0.12589066930638482,
+        "winner_c": 0.3741093306936152,
+        "pair_frac": 0.07836012730936535,
+        "n": 120716
+      },
+      {
+        "round": 6,
+        "banked_name": "Interpretable (autointerp)",
+        "label": "interpretable (auto-label)",
+        "value": 0.07079167107925577,
+        "winner_c": 0.5707916710792558,
+        "pair_frac": 0.05748644912112207,
+        "n": 120716
+      },
+      {
+        "round": 7,
+        "banked_name": "Judged role: output-promoting  [k=0.31]",
+        "label": "output-promoting role (noisy label)",
+        "value": 0.06596626667160321,
+        "winner_c": 0.5659662666716032,
+        "pair_frac": 0.06888327581752723,
+        "n": 120716
+      },
+      {
+        "round": 8,
+        "banked_name": "Side ratio (answer-side firing fraction)",
+        "label": "answer-side firing share",
+        "value": 0.06854848172528816,
+        "winner_c": 0.5685484817252882,
+        "pair_frac": 0.1262395581935817,
+        "n": 120716
+      },
+      {
+        "round": 9,
+        "banked_name": "Content type: task format",
+        "label": "task-format content",
+        "value": 0.05415916663009135,
+        "winner_c": 0.5541591666300913,
+        "pair_frac": 0.09701120005642733,
+        "n": 120716
+      },
+      {
+        "round": 10,
+        "banked_name": "Variance explained in answer space",
+        "label": "variance explained in answer space",
+        "value": 0.046723410659521236,
+        "winner_c": 0.5467234106595212,
+        "pair_frac": 0.09374010622562189,
+        "n": 120716
+      },
+      {
+        "round": 11,
+        "banked_name": "Content type: syntax",
+        "label": "syntax content",
+        "value": 0.0360557033544342,
+        "winner_c": 0.5360557033544342,
+        "pair_frac": 0.050554198219823286,
+        "n": 120716
+      },
+      {
+        "round": 12,
+        "banked_name": "SAE encoder norm (read strength)",
+        "label": "encoder norm (read strength)",
+        "value": -0.03390378997269561,
+        "winner_c": 0.4660962100273044,
+        "pair_frac": 0.03444973042338221,
+        "n": 120716
+      },
+      {
+        "round": 13,
+        "banked_name": "Mean activation (when active)",
+        "label": "mean activation (when active)",
+        "value": 0.045703229216558894,
+        "winner_c": 0.5457032292165589,
+        "pair_frac": 0.01862127497814175,
+        "n": 120716
+      }
+    ]
+  },
+  "right_panel": {
+    "source": "eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz",
+    "banked_reference": {
+      "h1_partial_spearman_tier_r2_given_logact": -0.19378820706402136,
+      "h1_perm_band_2p5_97p5": [
+        -0.24988001871086463,
+        -0.2275081509022165
+      ],
+      "h1_observed_pooled_spearman": -0.3949239076497982
+    },
+    "n_features_finite": 16384,
+    "n_strata": 5,
+    "strata": "activity quintiles (quantile edges over the finite-R^2 panel)",
+    "centering": "per-feature R^2 minus the median R^2 of its activity quintile",
+    "spearman_tier_r2_raw": -0.394923907649798,
+    "spearman_tier_r2_activity_centered": -0.19583848304828771,
+    "per_tier": {
+      "0": {
+        "n": 1640,
+        "median_raw": 0.4345762931443276,
+        "median_adjusted": 0.17906373076983012,
+        "q25_adjusted": 0.021958926884441565,
+        "q75_adjusted": 0.32677025125472187
+      },
+      "1": {
+        "n": 6144,
+        "median_raw": 0.17386872874476017,
+        "median_adjusted": 0.007088361443248925,
+        "q25_adjusted": -0.12227805324412447,
+        "q75_adjusted": 0.15909002294675598
+      },
+      "2": {
+        "n": 8600,
+        "median_raw": 0.0429846164108893,
+        "median_adjusted": -0.028429851717612975,
+        "q25_adjusted": -0.15076274741214615,
+        "q75_adjusted": 0.10526968159756908
+      }
+    }
+  },
+  "dropped": "answer-side activity quintile panel (user directive 2026-08-24)",
+  "metadata": {
+    "git_commit": "3f7b155da853af3069fc2ca5c73124e88b5063a3",
+    "git_dirty": true,
+    "phase": "plot4-redesign",
+    "git_dirty_paths": [
+      "scripts/issue1482_plot4_redesign.py",
+      "eval_results/issue_2474/n1m_map_arms.json",
+      "figures/paper/c1_layer_profile.meta.json",
+      "figures/paper/c1_layer_profile.pdf",
+      "figures/paper/c1_layer_profile.png",
+      "figures/paper/c1_scaling_train_pool.meta.json",
+      "scripts/issue1901_plot1_remake.py",
+      "scripts/issue1901_plot1remake_launch.sh",
+      "scripts/issue2474_n1m_map.py",
+      "tasks/completed/2214/body.md",
+      "tasks/completed/2214/comments.jsonl",
+      "tasks/completed/2214/concerns.jsonl",
+      "tasks/completed/2214/events.jsonl",
+      "tasks/completed/2214/plans/plan.md",
+      "tasks/completed/2214/plans/v1.md",
+      "tasks/completed/2214/plans/v2.md",
+      "tasks/completed/2214/plans/v3.md",
+      "tasks/proposed/2416/body.md",
+      "tasks/proposed/2416/comments.jsonl",
+      "tasks/proposed/2416/events.jsonl",
+      "tasks/running/2378/events.jsonl",
+      "tests/test_issue2094_rev_butler.py"
+    ],
+    "git_argv0_state": "untracked",
+    "git_argv0_path": "scripts/issue1482_plot4_redesign.py"
+  }
+}

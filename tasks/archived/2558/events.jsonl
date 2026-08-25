@@ -1,0 +1,2 @@
+{"ts": "2026-08-24T21:33:33Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-24T21:34:34Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Duplicate of open #2395 (same target codex-composer-common.md, same aux-temp-file-collision class; #2395's lens-unique-slugs fix covers the mem-commit message file). Evidence folded into #2395 as a second observed instance. Never dispatched (infra cap was full at filing)."}

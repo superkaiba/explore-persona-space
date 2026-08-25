@@ -1,0 +1,2 @@
+{"ts": "2026-08-24T23:42:37Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-24T23:43:02Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Exact duplicate of open #2549 (same file scripts/issue823_ladder_ext_gen.py:1330, same --check-shared-tmp-name red). Never dispatched (cap full at filing)."}
