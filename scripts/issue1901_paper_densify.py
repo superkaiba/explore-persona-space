@@ -157,6 +157,25 @@ def _list_prefix(prefix: str, *, revision: str | None = None) -> list[tuple[str,
     return sorted(out)
 
 
+def filter_listing_only_files(
+    files: list[tuple[str, int]], only_files: tuple[str, ...], prefix: str
+) -> list[tuple[str, int]]:
+    """Narrow a prefix (path, size) listing to the named basenames, fail-loud
+    when any requested name is absent (wrong prefix/revision or a renamed
+    payload must never silently stage nothing — #1901 mlp-scaling-densify r4:
+    the weights stage narrows to the two consumed payloads)."""
+    wanted = set(only_files)
+    keep = [(p, sz) for p, sz in files if p.rsplit("/", 1)[-1] in wanted]
+    got = {p.rsplit("/", 1)[-1] for p, _ in keep}
+    missing = sorted(wanted - got)
+    if missing:
+        raise RuntimeError(
+            f"only_files narrowing: {missing} not in the {prefix} listing "
+            f"({len(files)} files) — wrong prefix/revision or renamed payloads"
+        )
+    return keep
+
+
 def stage_prefix(
     prefix: str,
     stage_root: Path,
@@ -164,16 +183,20 @@ def stage_prefix(
     max_files: int | None = None,
     workers: int = 8,
     revision: str | None = None,
+    only_files: tuple[str, ...] | None = None,
 ) -> Path:
     """Parallel-download one HF prefix to ``stage_root/<prefix>`` (files land at
     their repo-relative paths). Already-present files with matching size skip
     (resume). Returns the staged prefix dir after a per-file size verification.
     ``revision`` pins the listing AND every file download to one Hub commit
     (#1901 C1: the shared data repo advances constantly — an unpinned resume
-    can mix file generations across pods)."""
+    can mix file generations across pods). ``only_files`` narrows the stage to
+    the named basenames (fail-loud on a miss — filter_listing_only_files)."""
     from huggingface_hub import hf_hub_download
 
     files = _list_prefix(prefix, revision=revision)
+    if only_files is not None:
+        files = filter_listing_only_files(files, only_files, prefix)
     if max_files is not None:
         files = files[:max_files]
     dest = stage_root / prefix
