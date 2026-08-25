@@ -37,6 +37,19 @@ ID_ARM = "arm_iddelta"
 B = 10_000
 SEED = 2564
 
+# One concrete A-vs-B example per change type (real bank_manifest.json values;
+# each tick medians over many such value pairs — the shown pair is one example).
+EXAMPLES = {
+    "persona": "pirate captain vs zen teacher",
+    "format": "bulleted list vs JSON object",
+    "lexical marker": "say 'moreover' vs 'honestly'",
+    "content constraint": "exactly 3 reasons vs no numbers",
+    "register": "formal vs casual tone",
+    "user fact": "name is Marcus vs Diego",
+    "user profile": "single parent vs retired engineer",
+    "question topic": "'dog or cat?' vs 'rent or buy?'",
+}
+
 
 def _ratios(rows: list[dict], arm: str) -> np.ndarray:
     out = []
@@ -72,7 +85,7 @@ def main() -> None:
         by_axis.setdefault(r["axis"], []).append(r)
     for axis, rr in by_axis.items():
         change_types.append((axis.replace("_", " "), rr))
-    for cls, label in (("query_content", "query content"),):
+    for cls, label in (("query_content", "question topic"),):
         rr = [r for r in rows if r["pair_class"] == cls]
         if rr:
             change_types.append((label, rr))
@@ -95,7 +108,7 @@ def main() -> None:
 
     set_paper_style()
     n = len(recs)
-    fig, ax = plt.subplots(figsize=(7.4, 0.42 * n + 1.6))
+    fig, ax = plt.subplots(figsize=(8.8, 0.62 * n + 1.8))
     c_inf = paper_color("neural_map")
     c_sup = paper_color("oracle_answer")
     for i, d in enumerate(recs):
@@ -106,8 +119,12 @@ def main() -> None:
     lo_lim = min(0.9, min(d["lo"] for d in recs) - 0.05)
     hi_lim = max(1.1, max(d["hi"] for d in recs) + 0.05)
     ax.set_xlim(lo_lim, hi_lim)
+    labels = []
+    for d in recs:
+        ex = EXAMPLES.get(d["label"])
+        labels.append(f"{d['label']}\n(e.g. {ex})" if ex else d["label"])
     ax.set_yticks(range(n))
-    ax.set_yticklabels([d["label"] for d in recs], fontsize=8)
+    ax.set_yticklabels(labels, fontsize=8)
     ax.set_xlabel(
         "separation ratio  ‖predicted Δ‖ / ‖observed Δ‖   (1 = matches real answer separation)"
     )
