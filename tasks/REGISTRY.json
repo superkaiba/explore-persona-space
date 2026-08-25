@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2572,
+  "highest_id": 2573,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12123,6 +12123,13 @@
       "path": "tasks/proposed/2572",
       "status": "proposed",
       "title": "Fix fleet-wide red test_no_new_torch_before_dotenv_vm_entrypoints on scripts/issue2254_firstk_ctxext_sensitivity.py"
+    },
+    "2573": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2573",
+      "status": "proposed",
+      "title": "Step 5a/10d FAMILY_OF lint family: couple tests/test_step9c_*.py with the synced selector \u2014 family sync itself creates the WORKFLOW_INVARIANT hybrid-tree skew (issue-2342 gate round burned)"
     },
     "258": {
       "has_clean_result": false,
