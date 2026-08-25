@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2592,
+  "highest_id": 2593,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12279,6 +12279,13 @@
       "path": "tasks/proposed/2592",
       "status": "proposed",
       "title": "workflow-fix: step9c compare's systemic-breakage refusal advises 'refresh first' when the cause is a dirty root, where refresh cannot work"
+    },
+    "2593": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2593",
+      "status": "proposed",
+      "title": "cron_uv_cache_prune can prune the uvx env under long-running MCP servers (arXiv MCP wedged fleet-wide with [Errno 2])"
     },
     "26": {
       "has_clean_result": false,
