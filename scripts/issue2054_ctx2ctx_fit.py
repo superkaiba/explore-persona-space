@@ -49,6 +49,7 @@ Outputs: one JSON per (source cell, arm) unit under
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # thread caps + HF/creds BEFORE torch import (code-style.md)
@@ -751,10 +752,8 @@ def run_unit(
         "config_fingerprint": fingerprint,
         "pairs": sorted(pair_records.values(), key=lambda r: r["target_cell"]),
     }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _log(
         f"[ctx2ctx] unit {unit_tag} CHECKPOINTED -> {out_path} "
         f"({len(pair_records)} pairs, wall={time.time() - t_unit:.0f}s)"

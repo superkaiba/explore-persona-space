@@ -59,6 +59,7 @@ Usage:
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -554,9 +555,8 @@ def main() -> int:
             },
             "units": units,
         }
-        tmp = out_path.with_name(out_path.name + ".tmp")
-        tmp.write_text(json.dumps(merged, indent=1), encoding="utf-8")
-        os.replace(tmp, out_path)
+        with atomic_replace(out_path) as tmp:
+            tmp.write_text(json.dumps(merged, indent=1), encoding="utf-8")
         _log(f"[merge] wrote {out_path} ({len(units)} pairs, all banked gates PASS)")
         return 0
 
@@ -672,9 +672,8 @@ def main() -> int:
         "units": records,
     }
     out_path = args.out_root / args.out_name
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _log(f"[nulls] wrote {out_path} ({len(records)} pairs, {time.time() - t_start:.0f}s)")
     _log("[phase=done]")
     return 0
