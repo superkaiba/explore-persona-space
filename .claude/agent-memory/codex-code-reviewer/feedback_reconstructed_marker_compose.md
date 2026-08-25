@@ -72,3 +72,25 @@ implementer report unrecoverable" provenance disclosure. Related:
   reconstruction (pre-review) — frame it explicitly as "the closure CLAIM
   this review adjudicates, not settled truth", with NOT-ADDRESSED ⇒ the row
   is PREMATURE + the one sanctioned same-id `CONCERN:: ` re-emission.
+
+**#2568 r2 sharpenings (2026-08-25, third hit — reconstruction ON a
+reconciler-FAIL closure round, both shapes at once):**
+
+- The two shapes stack cleanly: reconciler "Upheld blocker list" = the
+  acceptance contracts (inline the BINDING reconcile verdict IN FULL);
+  the twin's own r1 FAIL inlines with tags stripped + `CONCERN::` rows
+  blockquoted (#2329-rclose form) + the author-neutrality line ("your r1
+  read was the accurate one — neither soften nor merely repeat"); the
+  reconstruction facts (neutral shape absences, GATE-SCOPE THRESHOLD off
+  real ts, composer-run ruff-policy pin) ride as compose-time facts.
+- **Verify a reconstruction's PER-COMMIT claims by `--name-status`, not
+  only totals:** #2568's marker claimed the deliverable commit "also
+  sweeps 12 agent-memory files" — numstat showed 4 files, all M (the
+  agent-memory files rode the spec-freshness sync commit). Pre-triage as
+  "at most Minor report-accuracy note" (#2336 r2 (e) pattern) so the twin
+  doesn't build a blocker on the reconstruction's bookkeeping slip.
+- **A brief-supplied "gate still in flight" status is re-verified at
+  compose time** (ls the named out file, check for a verdict line, pgrep):
+  #2568's detached no-flags lint re-run out file existed but was 0 bytes —
+  attested "NOT ESTABLISHED, do not treat lint-passes as settled" with the
+  rc-124 first-attempt figures, per the established-gates re-verify duty.
