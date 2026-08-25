@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2579,
+  "highest_id": 2580,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12179,6 +12179,13 @@
       "path": "tasks/on_hold/258",
       "status": "on_hold",
       "title": "Look at effect of length of system prompt/persona prompt"
+    },
+    "2580": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2580",
+      "status": "proposed",
+      "title": "gotchas.md: MooseFS errno-116 partial install passes uv audit while import fails (probe-by-import + UV_LINK_MODE=copy recipe)"
     },
     "259": {
       "has_clean_result": false,
