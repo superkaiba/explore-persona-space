@@ -2,7 +2,7 @@
 
 <!-- This file is the MEMORY.md index for the codex-code-reviewer agent. -->
 
-- [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block (thru r15 fresh-cycle interp-REVISE corrective shape)
+- [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block (thru r18 mixed-verdict union-fix shape)
 - [stale-base MB pin + fixture re-measure](feedback_stale_base_mb_pin_and_fixture_remeasure.md) — pin the resolved merge-base SHA when the brief flags phantom two-dot deletions; sibling-task verify_plan fixtures: probe worktree presence + identity, give live-run→static-trace ladder (#2204 r1)
 - [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block
 - [worktree status-folder both directions](feedback_worktree_status_folder_both_directions.md) — brief plan path may cite wrong status dir in EITHER direction; `ls <wt>/tasks/*/<N>` before inlining fallback

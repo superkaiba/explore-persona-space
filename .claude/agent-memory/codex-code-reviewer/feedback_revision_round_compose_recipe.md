@@ -2920,3 +2920,34 @@ into your facts. Assert traps: the round-parent SHA rides the impl body's
 pin-sweep prose (+1 over authored counts); a backticked mid-line
 `CONCERN:: none` is forwarder-safe so line-start rows == 1 (template row
 only).
+
+**Mixed-verdict union-fix round (Claude CONCERNS + Codex FAIL; #2378 r18 =
+sentinel v18, 2026-08-25):** a CONCERNS+FAIL prior round whose orchestrator
+dispatched the UNION composes exactly like the #2332 FAIL+FAIL recipe — BOTH
+verdicts inlined as acceptance contracts, tag lines stripped, and the Claude
+CONCERNS does not soften closure duties on the Codex blockers. New deltas:
+(a) the parallel Claude reviewer's off-by-one head sentinel (posted top-level
+v17, head sentinel `<!-- epm:code-review v18 -->`) — strip it like any prior
+tag and NAME the mapping in the envelope title, or Codex mis-keys rounds;
+(b) when the impl fix table maps items to BOTH sources ("Claude M1 = codex
+patch-model-all-reloads"), key the closure ledger on the TABLE numbering with
+both ids cited per item; severity routing: the union MUST-FIX set (Codex
+BLOCKERs + Claude Majors) NOT-ADDRESSED = substantive FAIL, fix-if-cheap items
+re-raise at ORIGINAL severity, and a FALSE closure claim is #653-FAIL
+regardless of original severity; (c) ledger rows already at `addressed`
+(implementer posts address-concern BEFORE the review) are CLAIMS — per-item
+closure lines verify them, and a NOT-ADDRESSED re-raise re-emits the ORIGINAL
+id as a `CONCERN:: ` row (the sanctioned ledger re-raise; never mint a new id
+for an old defect); (d) short-SHA prefix trap: RSS = RS[:10] means
+c(prompt, RSS) INCLUDES every full-SHA hit — compute authored-short = total −
+body-fulls − authored-fulls and window-assert it, never a flat total; (e) the
+blockquoted-rows assert must count your OWN backticked `> CONCERN:: ` mention
+in the hard-constraints paragraph (10 envelope rows + 1 authored = 11);
+(f) marker-disclosed design nuances the implementer explicitly hands to the
+reviewer ((d) "reviewer judgment call") get NAMED adjudication lines with a
+verdict form (`SOUND | MATERIAL-CONCERN` + CONCERN:: row if material) beside
+the #2147-cr5 ACCEPTED-NON-CHANGE/OVERTURNED lines for accepted items; (g) if
+you commit this memory to the branch under review, the prompt's out-of-scope
+fact needs the generic "and any later `.claude/agent-memory/**` bookkeeping
+commit" clause (the r17 form) — a named-SHAs-only list goes stale the moment
+your own commit lands.
