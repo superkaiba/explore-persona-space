@@ -5,3 +5,4 @@
 - [arm-registry marker grammar](feedback_smoke_arch_arm_registry_grammar.md) — bare source=/file=/n=/members= form only; commands to prose; verify via task.py check-smoke-arch-registry, bare rc (#2224 r5)
 - [Inline-round root-commit cert](feedback_inline_round_root_commit_cert.md) — inline_lint_gate.py certifies (manual workflow_lint doesn't); retry_transient-wrap bare hf_hub_download; bg-Bash lint under load (#2054)
 - [output_hidden_states records pre-hook values](feedback_output_hidden_states_pre_hook_recording.md) — hook-armed forward: hs[L] shows PRE-edit; verify via reader hook after editor + downstream-moved; hs[n] post-norm never patched (#2378)
+- [HF stop_strings pad-fill + hit_eos alias](feedback_hf_stop_strings_pad_fill_and_hit_eos_alias.md) — strip trailing pad from gen_ids; pad∈eos makes stop-halted rows read hit_eos=True; cap-hit = no terminal at all (#2378 r18)
