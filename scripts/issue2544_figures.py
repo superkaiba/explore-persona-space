@@ -206,6 +206,9 @@ class Inputs:
         self.li_star = self.layers17.index(self.layer_star)
         self.band6 = [int(x) for x in self.kshot["band_b6"]]
         self.pos, self.ticklabels, self.log_left = _rung_positions(self.rungs)
+        # v8 censoring family (absent on pre-v8 eval trees -> strips/panels skip)
+        self.censor: dict[str, Any] = self.diag.get("censoring_sensitivity") or {}
+        self.trunc_table: dict[str, Any] = self.censor.get("per_rung_truncation") or {}
 
     def fold_star_r2(self, rung: str, cell: str = "diag0") -> dict[int, float]:
         """Per-fold pooled R² at layer* from percell shards (one npz at a time)."""
@@ -237,7 +240,18 @@ def fig1_formation(inp: Inputs, out_dir: Path) -> str | None:
     dt = [pr[r]["dtilde"] for r in rungs]
     xs = [inp.pos[r] for r in rungs]
 
-    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(11.5, 4.2), layout="constrained")
+    # v8: truncation-censoring strip under the hero panels (reported axis —
+    # truncation never filters rows under rep-only-v2 eligibility).
+    strip_rungs = [r for r in rungs if r in inp.trunc_table]
+    ax_s = None
+    if strip_rungs:
+        fig = plt.figure(figsize=(11.5, 5.6), layout="constrained")
+        gs = fig.add_gridspec(2, 2, height_ratios=[3.2, 1.0])
+        ax_a = fig.add_subplot(gs[0, 0])
+        ax_b = fig.add_subplot(gs[0, 1])
+        ax_s = fig.add_subplot(gs[1, :])
+    else:
+        fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(11.5, 4.2), layout="constrained")
     ax_a.errorbar(
         xs,
         r2,
@@ -314,6 +328,20 @@ def fig1_formation(inp: Inputs, out_dir: Path) -> str | None:
     ax_b.set_ylabel("D̃ = D − identity+bias R²")
     ax_b.set_title("baseline-subtracted formation curve")
     ax_b.legend(fontsize=7)
+    if ax_s is not None:
+        sx = [inp.pos[r] for r in strip_rungs]
+        ax_s.plot(
+            sx,
+            [inp.trunc_table[r]["gen0"] for r in strip_rungs],
+            "o-",
+            color="0.35",
+            label="gen0 (0-shot arm)",
+        )
+        ax_s.set_ylim(0, 1.02)
+        ax_s.set_ylabel("truncation rate")
+        ax_s.set_title("per-rung truncation-censoring rate (reported, never filtered)")
+        _apply_rung_axis(ax_s, rungs, inp.pos, inp.ticklabels)
+        ax_s.legend(fontsize=7)
     savefig_paper(fig, "fig1_formation_curve", dir=out_dir)
     plt.close(fig)
     return "fig1_formation_curve"
@@ -539,9 +567,24 @@ def fig4_kshot(inp: Inputs, out_dir: Path) -> str | None:
         return None
     rungs = [r for r in inp.rungs if r in per]
     xs = [inp.pos[r] for r in rungs]
-    fig, axes = plt.subplots(
-        1, 3, figsize=(13.5, 4.2), layout="constrained", gridspec_kw={"width_ratios": [3, 2, 2]}
-    )
+    # v8: per-ARM truncation strip under the Δ panels (kshot_curve carries its
+    # own dual-arm table; falls back to the diag table on older eval trees).
+    trunc = inp.kshot.get("per_rung_truncation") or inp.trunc_table
+    strip_rungs = [r for r in rungs if r in trunc]
+    ax_s = None
+    if strip_rungs:
+        fig = plt.figure(figsize=(13.5, 5.6), layout="constrained")
+        gs = fig.add_gridspec(2, 3, height_ratios=[3.2, 1.0], width_ratios=[3, 2, 2])
+        axes = [fig.add_subplot(gs[0, k]) for k in range(3)]
+        ax_s = fig.add_subplot(gs[1, :])
+    else:
+        fig, axes = plt.subplots(
+            1,
+            3,
+            figsize=(13.5, 4.2),
+            layout="constrained",
+            gridspec_kw={"width_ratios": [3, 2, 2]},
+        )
     ax_a, ax_b, ax_c = axes
     dl = [per[r]["delta"] for r in rungs]
     ax_a.errorbar(
@@ -638,6 +681,21 @@ def fig4_kshot(inp: Inputs, out_dir: Path) -> str | None:
         ax_c.set_xticklabels(ow_rungs, fontsize=7)
         ax_c.set_ylabel("fraction of rows over window")
         ax_c.set_title("over-window fraction (k=4)")
+    if ax_s is not None:
+        sx = [inp.pos[r] for r in strip_rungs]
+        ax_s.plot(sx, [trunc[r]["gen0"] for r in strip_rungs], "o-", color="0.35", label="gen0 arm")
+        ax_s.plot(
+            sx,
+            [trunc[r]["gen4"] for r in strip_rungs],
+            "s--",
+            color=COLORS["delta"],
+            label="gen4 arm",
+        )
+        ax_s.set_ylim(0, 1.02)
+        ax_s.set_ylabel("truncation rate")
+        ax_s.set_title("per-rung per-arm truncation-censoring rate (reported, never filtered)")
+        _apply_rung_axis(ax_s, rungs, inp.pos, [inp.ticklabels[inp.rungs.index(r)] for r in rungs])
+        ax_s.legend(fontsize=7)
     savefig_paper(fig, "fig4_kshot_curve", dir=out_dir)
     plt.close(fig)
     return "fig4_kshot_curve"
@@ -996,6 +1054,106 @@ def fig5j_ceilings(inp: Inputs, out_dir: Path) -> str | None:
     return "fig5j_ceilings"
 
 
+def fig5k_censoring(inp: Inputs, out_dir: Path) -> str | None:
+    """Exploratory (v8 §6 censoring family): D_nt(T) natural-termination
+    overlay vs the headline D(T); the within-rung truncated-vs-natural split;
+    Δ_nt/Δ_tt common-status reads vs the pooled Δ."""
+    cen = inp.censor
+    if not cen or "d_nt" not in cen:
+        print("[figures] skip fig5k: no censoring_sensitivity block", flush=True)
+        return None
+    fig, (ax_a, ax_b, ax_c) = plt.subplots(1, 3, figsize=(13.5, 4.2), layout="constrained")
+    rungs = inp.rungs
+    xs = [inp.pos[r] for r in rungs]
+
+    # (a) D(T) headline vs D_nt(T) on the natural-termination subset
+    ax_a.plot(
+        xs,
+        [inp.per_rung[r]["r2_star"] for r in rungs],
+        "o-",
+        color=COLORS["diag"],
+        label="D(T) headline",
+    )
+    dn = [(inp.pos[r], cen["d_nt"][r]) for r in rungs if "r2" in (cen["d_nt"].get(r) or {})]
+    if dn:
+        dny = [v["r2"] for _, v in dn]
+        ax_a.errorbar(
+            [x for x, _ in dn],
+            dny,
+            yerr=_err(dny, [v.get("ci") for _, v in dn]),
+            fmt="s--",
+            color=COLORS["delta_ww"],
+            label="D_nt(T) natural-termination rows",
+            capsize=2,
+        )
+    _apply_rung_axis(ax_a, rungs, inp.pos, inp.ticklabels)
+    ax_a.set_ylabel("pooled OOF R² at layer*")
+    ax_a.set_title("D(T) vs D_nt(T)\n(no-natural-row rungs omitted)")
+    ax_a.legend(fontsize=7)
+
+    # (b) within-rung truncated-vs-natural split (where reported)
+    split = cen.get("stratified_split") or {}
+    plotted_b = False
+    for label, key, color, fmt in (
+        ("natural rows", "natural", COLORS["delta_ww"], "s--"),
+        ("truncated rows", "truncated", "0.35", "o-"),
+    ):
+        pts = [
+            (inp.pos[r], split[r][key]["r2"])
+            for r in rungs
+            if "r2" in (split.get(r, {}).get(key) or {})
+        ]
+        if pts:
+            plotted_b = True
+            ax_b.plot([x for x, _ in pts], [y for _, y in pts], fmt, color=color, label=label)
+    if plotted_b:
+        _apply_rung_axis(ax_b, rungs, inp.pos, inp.ticklabels)
+        ax_b.set_ylabel("pooled OOF R² at layer*")
+        ax_b.set_title(f"truncated vs natural strata (floor n≥{cen.get('split_floor')})")
+        ax_b.legend(fontsize=7)
+    else:
+        ax_b.set_title("stratified split: no rung clears the floor")
+
+    # (c) Δ(T) pooled vs the Δ_nt/Δ_tt common-status reads
+    per = inp.kshot.get("per_rung") or {}
+    krungs = [r for r in rungs if r in per]
+    if krungs:
+        kx = [inp.pos[r] for r in krungs]
+        ax_c.plot(
+            kx, [per[r]["delta"] for r in krungs], "o-", color=COLORS["delta"], label="Δ pooled"
+        )
+        for label, color, fmt in (
+            ("delta_nt", COLORS["delta_ww"], "s--"),
+            ("delta_tt", "0.35", "v:"),
+        ):
+            pts = [
+                (inp.pos[r], per[r][label]["delta"])
+                for r in krungs
+                if "delta" in (per[r].get(label) or {})
+            ]
+            if pts:
+                ax_c.plot(
+                    [x for x, _ in pts],
+                    [y for _, y in pts],
+                    fmt,
+                    color=color,
+                    label={
+                        "delta_nt": "Δ_nt (both arms natural)",
+                        "delta_tt": "Δ_tt (both arms truncated)",
+                    }[label],
+                )
+        ax_c.axhline(0.0, color="0.6", linewidth=0.7)
+        _apply_rung_axis(
+            ax_c, krungs, inp.pos, [inp.ticklabels[inp.rungs.index(r)] for r in krungs]
+        )
+        ax_c.set_ylabel("Δ R² at layer*")
+        ax_c.set_title("Δ vs common-status Δ_nt/Δ_tt")
+        ax_c.legend(fontsize=7)
+    savefig_paper(fig, "fig5k_censoring", dir=out_dir)
+    plt.close(fig)
+    return "fig5k_censoring"
+
+
 FIGURES = (
     fig1_formation,
     fig1b_formation_perfold,
@@ -1015,6 +1173,7 @@ FIGURES = (
     fig5h_natgen,
     fig5i_robust_arms,
     fig5j_ceilings,
+    fig5k_censoring,
 )
 
 

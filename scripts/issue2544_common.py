@@ -130,6 +130,22 @@ ISECT_TARGET = 8192  # Gate A/A' target (2d)
 WIDEN_BUILD_CAP = 48_000  # Gate A branch (b) reachability cap
 GATE_WALL_FACTOR = 2.0  # P1 cost re-projection abort factor
 
+# v6/v8 eligibility semantics (plan v8 §4 "Eligibility semantics"): a row is
+# ELIGIBLE for map fitting iff its repetition_flag is False. `truncated` is a
+# reported per-(rung, arm) DIAGNOSTIC (survival/truncation dual tables, the
+# hero-figure strip, the §6 censoring-sensitivity family) — NEVER a row filter.
+ELIGIBILITY_SEMANTICS = "rep-only-v2"
+
+
+def is_row_ineligible(rec: dict) -> bool:
+    """The SINGLE map-fitting eligibility predicate (plan v8 §4): a rollout
+    record is ineligible iff ``repetition_flag`` is set. Every eligibility
+    consumer imports THIS — never re-derive flags inline (the bf16 clean-row
+    NUMERICS probe, ``issue2544_run.py`` pilot exec, is the one deliberate
+    non-eligibility exception and keeps its old conjunction)."""
+    return bool(rec["repetition_flag"])
+
+
 # Sliding-window package (plan A1/A2; probed 2026-08-24 at main + stage1-step0).
 OLMO3_SLIDING_WINDOW = 4096
 OLMO3_FULL_ATTENTION_LAYERS: tuple[int, ...] = (3, 7, 11, 15, 19, 23, 27, 31)

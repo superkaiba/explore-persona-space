@@ -7,7 +7,10 @@ Phases (subprocess-per-phase; the #1902 dispatcher contracts):
 - ``--phase stage``     pod-side staging: corpus + config down, stage
   manifest (corpus/config hashes recorded ONCE — M2 hash-at-write inputs).
 - ``--phase pilot``     P1 (``--init`` pins + tokenizer/config battery;
-  ``--worker`` pilot units; ``--finalize`` Gate A + report).
+  ``--worker`` pilot units; ``--finalize`` Gate A + report; ``--refinalize``
+  = P1' Gate-A re-finalize from the persisted pilot_halt1 artifacts under
+  the rep-only-v2 eligibility semantics, plan v8; ``--pilot-from-hf <prefix>``
+  = stage + validate the refinalized report/pins instead of GPU pilot units).
 - ``--phase pass1``     P2+P3a (``--init`` queue; ``--worker`` gen+capture
   units under the K=4 rung-residency admission (M1); ``--finalize`` = P2.5
   diagnostics + shared intersection + Gate A').
@@ -1210,6 +1213,10 @@ def _pilot_exec(args: argparse.Namespace, out_root: Path):
             info["q_window_distinct_asserted"] = True
         if u["rung"] == "main" and u["cell"] == "pilotcap_gen0":
             # bf16 two-bar equivalence gate on Olmo-3 (finalize enforces).
+            # DELIBERATE old conjunction (plan v8 §4): this picks numerically
+            # clean rows for a kernel-equivalence probe — a NUMERICS surface,
+            # not an eligibility surface — so it does NOT route through
+            # C2.is_row_ineligible (rep-only-v2).
             recs = fetch_rollout(out_root, u["rung"], u["answer_cell"])
             ok = [r for r in recs if not (r["truncated"] or r["repetition_flag"])]
             by_id = {r["id"]: r for r in ok}
@@ -1312,6 +1319,123 @@ def math_ceil_needed(f_hat: float) -> int | None:
     return int(math.ceil(C2.ISECT_FLOOR / f_hat) * 1.15)
 
 
+def _eligibility_flag_sets(
+    recs_by_cell: dict[tuple[str, str], list[dict]],
+) -> tuple[dict[tuple[str, str], set[str]], dict[tuple[str, str], set[str]]]:
+    """Per-(rung, arm) ELIGIBILITY flag sets (rep-only-v2, plan v8 §4) plus
+    the per-(rung, arm) TRUNCATED id sets (reported diagnostic family)."""
+    flags = {
+        cell: {r["id"] for r in recs if C2.is_row_ineligible(r)}
+        for cell, recs in recs_by_cell.items()
+    }
+    trunc = {cell: {r["id"] for r in recs if r["truncated"]} for cell, recs in recs_by_cell.items()}
+    return flags, trunc
+
+
+def _dual_survival_tables(
+    flags: dict[tuple[str, str], set[str]],
+    trunc: dict[tuple[str, str], set[str]],
+    rungs: tuple[str, ...],
+    n_rows: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """The dual reporting families (plan v8 §4): eligibility SURVIVAL (1 −
+    repetition-flag rate) and per-arm TRUNCATION rate, per (rung, arm)."""
+    surv = {
+        rung: {arm: 1 - len(flags[(rung, arm)]) / max(n_rows, 1) for arm in ("gen0", "gen4")}
+        for rung in rungs
+    }
+    trate = {
+        rung: {arm: len(trunc[(rung, arm)]) / max(n_rows, 1) for arm in ("gen0", "gen4")}
+        for rung in rungs
+    }
+    return surv, trate
+
+
+def _tier_scan_factory(
+    flags: dict[tuple[str, str], set[str]],
+    ids: list[str],
+    rungs: tuple[str, ...],
+    n_corpus: int,
+):
+    """Branch-(c) suffix scan, v8-REVISED: FULL suffix ladder (the v5
+    ``r_min <= r2`` break is DROPPED — the measured table falsified it);
+    a realized ``r_min > r2`` is recorded as ``h1_boundary_censored`` (the
+    H1 Early label degrades to left-censored, plan §3/§4 branch (c))."""
+
+    def _tier_scan() -> dict[str, Any] | None:
+        for i, r_min in enumerate(rungs[1:], start=1):
+            tier_rungs = rungs[i:]
+            tier_isect = _joint_intersection(flags, ids, tier_rungs)
+            tf = len(tier_isect) / max(len(ids), 1)
+            if tf > 0 and (C2.ISECT_FLOOR / tf) <= 2 * n_corpus:
+                return {
+                    "r_min": r_min,
+                    "tier_rungs": list(tier_rungs),
+                    "floor_control_rungs": list(rungs[:i]),
+                    "tier_f_hat": round(tf, 4),
+                    "h1_boundary_censored": C2.RUNGS.index(r_min) > C2.RUNGS.index("r2"),
+                }
+        return None
+
+    return _tier_scan
+
+
+def _cost_projection(
+    units: dict[str, dict[str, Any]],
+    sizes: dict[str, int],
+    n_corpus: int,
+    rungs: tuple[str, ...],
+    n_isect: int,
+) -> dict[str, Any]:
+    """P1/P1' cost re-projection from measured per-unit rates (pilot-measured
+    live at ``pilot_finalize``; persisted ``queue_pilot.json`` unit_infos at
+    ``pilot_refinalize`` — plan v8 §4 P1', same arithmetic)."""
+    infos = {n: u.get("info", {}) for n, u in units.items()}
+    gen_rate = {
+        u["rung"]: infos[n]["rows_per_s"]
+        for n, u in units.items()
+        if u["kind"] == "gen" and "rows_per_s" in infos[n]
+    }
+    cap_walls = [
+        infos[n]["capture"]["per_row_wall_s"]
+        for n, u in units.items()
+        if u["kind"] == "capture" and "capture" in infos[n]
+    ]
+    if not gen_rate or not cap_walls:
+        raise RuntimeError(
+            f"cost projection inputs missing: {len(gen_rate)} gen rates, "
+            f"{len(cap_walls)} capture walls (persisted unit_infos incomplete?)"
+        )
+    scope_n = {"full": n_corpus, **sizes}
+    gen_cells = C2.gen_cell_roster(rungs)
+    gen_rows_total = sum(scope_n[c["rows_scope"]] for c in gen_cells)
+    gen_wall_s = sum(
+        scope_n[c["rows_scope"]] / max(gen_rate.get(c["rung"], min(gen_rate.values())), 1e-6)
+        for c in gen_cells
+    )
+    cap1_rows = sum(scope_n[c["rows_scope"]] for c in C2.pass1_capture_cells(rungs))
+    cap2_rows = sum(
+        scope_n.get(c["rows_scope"], n_isect)
+        for c in C2.pass2_capture_cells(rungs, include_lfa0=True)
+    )
+    cap_wall_s = (cap1_rows + cap2_rows) * (sum(cap_walls) / max(len(cap_walls), 1))
+    n_workers = 8
+    projected_wall_h = (gen_wall_s + cap_wall_s) / 3600 / n_workers
+    return {
+        "gen_rows_total": gen_rows_total,
+        "capture_rows_total": cap1_rows + cap2_rows,
+        "gen_rate_rows_per_s": gen_rate,
+        "capture_s_per_row_mean": sum(cap_walls) / max(len(cap_walls), 1),
+        "projected_pass_wall_h_at_8w": round(projected_wall_h, 2),
+        "booked_pass_wall_h": BOOKED_PASS_WALL_H,
+    }
+
+
+def _bf16_from_units(units: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    infos = {n: u.get("info", {}) for n, u in units.items()}
+    return next((infos[n]["bf16_gate"] for n in infos if "bf16_gate" in infos[n]), None)
+
+
 def pilot_finalize(args: argparse.Namespace, out_root: Path) -> None:
     """P1 --finalize: Gate A on the pilot ROW-LEVEL joint intersection,
     cost re-projection, bf16 verdict, timed shard-upload leg, pilot report."""
@@ -1328,39 +1452,22 @@ def pilot_finalize(args: argparse.Namespace, out_root: Path) -> None:
     rungs = tuple(dict.fromkeys(u["rung"] for u in snap["units"].values()))
     pilot_ids = [r["id"] for r in rows_for_scope(rows, "pilot", cfg)]
 
-    flags: dict[tuple[str, str], set[str]] = {}
-    for rung in rungs:
-        for arm in ("gen0", "gen4"):
-            recs = fetch_rollout(out_root, rung, f"pilot_{arm}")
-            flags[(rung, arm)] = {r["id"] for r in recs if r["truncated"] or r["repetition_flag"]}
+    recs_by_cell = {
+        (rung, arm): fetch_rollout(out_root, rung, f"pilot_{arm}")
+        for rung in rungs
+        for arm in ("gen0", "gen4")
+    }
+    flags, trunc = _eligibility_flag_sets(recs_by_cell)
     isect = _joint_intersection(flags, pilot_ids, rungs)
     f_hat = len(isect) / max(len(pilot_ids), 1)
     n_corpus = len(rows)
-
-    def _tier_scan() -> dict[str, Any] | None:
-        # Concentration evidence (branch c): a suffix ladder r_min..R whose
-        # joint intersection clears the floor at <= 2x widening, r_min <= r2.
-        for i, r_min in enumerate(rungs[1:], start=1):
-            if C2.RUNGS.index(r_min) > C2.RUNGS.index("r2"):
-                break
-            tier_rungs = rungs[i:]
-            tier_isect = _joint_intersection(flags, pilot_ids, tier_rungs)
-            tf = len(tier_isect) / max(len(pilot_ids), 1)
-            if tf > 0 and (C2.ISECT_FLOOR / tf) <= 2 * n_corpus:
-                return {
-                    "r_min": r_min,
-                    "tier_rungs": list(tier_rungs),
-                    "floor_control_rungs": list(rungs[:i]),
-                    "tier_f_hat": round(tf, 4),
-                }
-        return None
 
     gate_a = _gate_ladder(
         len(isect),
         n_corpus,
         f_hat,
         n_corpus * _wilson_lower(f_hat, len(pilot_ids)),
-        _tier_scan,
+        _tier_scan_factory(flags, pilot_ids, rungs, n_corpus),
         gate="gate_a",
         out_root=out_root,
         smoke=args.smoke,
@@ -1368,56 +1475,25 @@ def pilot_finalize(args: argparse.Namespace, out_root: Path) -> None:
 
     # Cost re-projection: pilot-measured rates -> projected P2+P3 wall.
     infos = {n: u.get("info", {}) for n, u in snap["units"].items()}
-    gen_rate = {
-        u["rung"]: infos[n]["rows_per_s"]
-        for n, u in snap["units"].items()
-        if u["kind"] == "gen" and "rows_per_s" in infos[n]
-    }
-    cap_walls = [
-        infos[n]["capture"]["per_row_wall_s"]
-        for n, u in snap["units"].items()
-        if u["kind"] == "capture" and "capture" in infos[n]
-    ]
-    sizes = cfg["subsets"]["sizes"]
-    scope_n = {"full": n_corpus, **sizes}
-    gen_cells = C2.gen_cell_roster(rungs)
-    gen_rows_total = sum(scope_n[c["rows_scope"]] for c in gen_cells)
-    gen_wall_s = sum(
-        scope_n[c["rows_scope"]] / max(gen_rate.get(c["rung"], min(gen_rate.values())), 1e-6)
-        for c in gen_cells
-    )
-    cap1_rows = sum(scope_n[c["rows_scope"]] for c in C2.pass1_capture_cells(rungs))
-    cap2_rows = sum(
-        scope_n.get(c["rows_scope"], len(isect))
-        for c in C2.pass2_capture_cells(rungs, include_lfa0=True)
-    )
-    cap_wall_s = (cap1_rows + cap2_rows) * (sum(cap_walls) / max(len(cap_walls), 1))
-    n_workers = 8
-    projected_wall_h = (gen_wall_s + cap_wall_s) / 3600 / n_workers
-    cost = {
-        "gen_rows_total": gen_rows_total,
-        "capture_rows_total": cap1_rows + cap2_rows,
-        "gen_rate_rows_per_s": gen_rate,
-        "capture_s_per_row_mean": sum(cap_walls) / max(len(cap_walls), 1),
-        "projected_pass_wall_h_at_8w": round(projected_wall_h, 2),
-        "booked_pass_wall_h": BOOKED_PASS_WALL_H,
-    }
-    if not args.smoke and projected_wall_h > C2.GATE_WALL_FACTOR * BOOKED_PASS_WALL_H:
+    cost = _cost_projection(snap["units"], cfg["subsets"]["sizes"], n_corpus, rungs, len(isect))
+    if (
+        not args.smoke
+        and cost["projected_pass_wall_h_at_8w"] > C2.GATE_WALL_FACTOR * BOOKED_PASS_WALL_H
+    ):
         R.designed_halt(out_root, "capture_cost", cost)
 
-    bf16 = next(
-        (infos[n]["bf16_gate"] for n in infos if "bf16_gate" in infos[n]),
-        None,
-    )
+    bf16 = _bf16_from_units(snap["units"])
     if bf16 is not None and not bf16["pass"] and not args.smoke:
         R.designed_halt(out_root, "bf16_equivalence", bf16)
 
     dims = C.model_dims(C.MODEL_IDS[rungs[-1]], C.resolve_revision(rungs[-1], pins))
     timing = R._timed_shard_upload(out_root, dims.hidden_size, args.smoke)
 
+    surv, trate = _dual_survival_tables(flags, trunc, rungs, len(pilot_ids))
     init = R._read_json(out_root / "pilot_init.json")
     report = {
         "metadata": _metadata(),
+        "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
         C.REVISION_PINS_KEY: pins,
         "gate_a": gate_a,
         "cost_projection": cost,
@@ -1425,13 +1501,8 @@ def pilot_finalize(args: argparse.Namespace, out_root: Path) -> None:
         "timing_shard": timing,
         "tokenizer_battery": init["tokenizer_battery"],
         "config_table": init["config_table"],
-        "per_rung_survival": {
-            rung: {
-                arm: 1 - len(flags[(rung, arm)]) / max(len(pilot_ids), 1)
-                for arm in ("gen0", "gen4")
-            }
-            for rung in rungs
-        },
+        "per_rung_survival": surv,
+        "per_rung_truncation": trate,
         "unit_infos": infos,
     }
     path = out_root / C.PILOT_REPORT_NAME
@@ -1440,13 +1511,375 @@ def pilot_finalize(args: argparse.Namespace, out_root: Path) -> None:
     write_sentinel(
         out_root,
         "pilot",
-        {"gate_a": gate_a["branch"], "projected": gate_a["projected"]},
+        {
+            "gate_a": gate_a["branch"],
+            "projected": gate_a["projected"],
+            "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
+            "per_rung_survival": surv,
+            "per_rung_truncation": trate,
+        },
         smoke=args.smoke,
     )
     print(f"[phase=pilot] done: gate A branch {gate_a['branch']}", flush=True)
 
 
+# ── P1': Gate-A re-finalize from the persisted pilot_halt1 artifacts ─────────
+
+# Canonical persisted-halt locations (plan v8 §2/§4 P1'; layout probed on HF
+# 2026-08-25: trio at pilot_halt1/{pilot_init.json, queue_pilot.json,
+# gate_reports/gate_a_*.json}; rollouts at
+# raw_completions/pilot_halt1/gen/<rung>/pilot_<arm>.jsonl).
+PILOT_HALT1_PREFIX = "issue2544_stage_map/pilot_halt1"
+PILOT_HALT1_GEN_PREFIX = "issue2544_stage_map/raw_completions/pilot_halt1/gen"
+PILOT_HALT2_SUBDIR = "pilot_halt2"
+
+
+def _fetch_halt_artifact(out_root: Path, rel_local: str, hf_path: str, *, allow_hf: bool) -> Path:
+    """Local-first pilot_halt1 artifact fetch. ``allow_hf=False`` (the smoke
+    refinalize) NEVER falls through to HF — a smoke must read only the smoke's
+    OWN local artifacts, never mix in production pilot_halt1 copies."""
+    path = out_root / rel_local
+    if path.exists():
+        return path
+    if not allow_hf:
+        raise FileNotFoundError(
+            f"smoke refinalize input missing locally: {path} (HF fallback is "
+            f"production-only — a smoke never reads production pilot_halt1)"
+        )
+    got = _hf_download(hf_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(got.read_bytes())
+    logger.info("[refinalize] fetched %s from HF (%d bytes)", hf_path, path.stat().st_size)
+    return path
+
+
+def _fetch_pilot_rollout(out_root: Path, rung: str, arm: str, *, allow_hf: bool) -> list[dict]:
+    """Pilot rollout records, local gen tree first, else the persisted
+    pilot_halt1 HF prefix (NOT fetch_rollout's live RAW_GEN prefix — the
+    halt-persisted copy is the plan-named refinalize input; production-only)."""
+    path = _rollout_path(out_root, rung, f"pilot_{arm}")
+    if path.exists():
+        return R._read_jsonl(path)
+    if not allow_hf:
+        raise FileNotFoundError(
+            f"smoke refinalize rollout missing locally: {path} (HF fallback is production-only)"
+        )
+    got = _hf_download(f"{PILOT_HALT1_GEN_PREFIX}/{rung}/pilot_{arm}.jsonl")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(got.read_bytes())
+    C2.write_sha_sidecar(path)
+    logger.info(
+        "[refinalize] fetched rollout %s/pilot_%s (%d bytes)", rung, arm, path.stat().st_size
+    )
+    return R._read_jsonl(path)
+
+
+def _load_halt_gate_a(
+    out_root: Path, *, allow_hf: bool
+) -> tuple[dict[str, Any] | None, Path | None]:
+    """The v5 halt-time gate_a report (n_rows source). Local gate_reports/
+    first; HF pilot_halt1 listing fallback (production only); None when
+    absent (the SMOKE refinalize — smoke gates are informational and write
+    no halt report; n_corpus then falls back to the local corpus)."""
+    local = sorted((out_root / "gate_reports").glob("gate_a_*.json"))
+    if local:
+        return R._read_json(local[-1]), local[-1]
+    if not allow_hf:
+        return None, None
+    try:
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate import hub
+
+        entries = hub.retry_transient(
+            lambda: list(
+                HfApi().list_repo_tree(
+                    C.HF_DATA_REPO,
+                    path_in_repo=f"{PILOT_HALT1_PREFIX}/gate_reports",
+                    repo_type="dataset",
+                )
+            ),
+            what="list pilot_halt1 gate_reports",
+        )
+        names = sorted(e.path for e in entries if Path(e.path).name.startswith("gate_a_"))
+    except Exception as e:  # noqa: BLE001 — absence is legal (smoke); log + degrade
+        logger.warning("[refinalize] no HF gate_a halt report reachable: %s", e)
+        return None, None
+    if not names:
+        return None, None
+    path = _fetch_halt_artifact(
+        out_root, f"gate_reports/{Path(names[-1]).name}", names[-1], allow_hf=True
+    )
+    return R._read_json(path), path
+
+
+def pilot_refinalize(args: argparse.Namespace, out_root: Path) -> None:
+    """P1' Gate-A re-finalize from the persisted pilot_halt1 artifacts (plan
+    v8 §4 P1'; 0 GPU-h, VM CPU). Registered order: completeness assert ->
+    repetition-only joint intersection -> Gate A (revised ladder) -> cost
+    re-projection -> re-pin + drift tripwire -> k16 re-assert -> report +
+    pins written and uploaded to pilot_halt2/. Exits 0 on proceed branches
+    (a / a_prime / c), rc=7 designed halts on (b)/(d)/cost/bf16. No
+    UnitQueue dependency (queue_pilot.json is read as a plain JSON file)."""
+    allow_hf = not args.smoke  # smoke reads ONLY its own local artifacts
+    init_path = _fetch_halt_artifact(
+        out_root, "pilot_init.json", f"{PILOT_HALT1_PREFIX}/pilot_init.json", allow_hf=allow_hf
+    )
+    init = R._read_json(init_path)
+    queue_path = out_root / "queue" / "pilot.json"  # the smoke's own local queue
+    if not queue_path.exists():
+        queue_path = _fetch_halt_artifact(
+            out_root,
+            "queue_pilot.json",
+            f"{PILOT_HALT1_PREFIX}/queue_pilot.json",
+            allow_hf=allow_hf,
+        )
+    units = R._read_json(queue_path)["units"]
+    rungs = tuple(init["rungs"])
+    req = _requested_rungs(args)
+    if tuple(req) != rungs:
+        raise RuntimeError(
+            f"requested rungs {req} != persisted pilot rungs {rungs} — the "
+            f"refinalize is defined over the persisted pilot's own ladder"
+        )
+
+    # 1) Completeness assert (A21 — the FIRST computation): every (rung, arm)
+    # cell present with the SAME pinned id set; every row carries the flag
+    # fields; production shape is exactly 500 rows x 30 cells.
+    recs_by_cell = {
+        (rung, arm): _fetch_pilot_rollout(out_root, rung, arm, allow_hf=allow_hf)
+        for rung in rungs
+        for arm in ("gen0", "gen4")
+    }
+    ref_ids = [r["id"] for r in recs_by_cell[(rungs[0], "gen0")]]
+    n_pilot = len(ref_ids)
+    ref_id_set = set(ref_ids)
+    if len(ref_id_set) != n_pilot:
+        raise RuntimeError("duplicate ids in the pilot rollout reference cell (A21)")
+    for (rung, arm), recs in recs_by_cell.items():
+        for rec in recs:
+            for key in ("id", "truncated", "repetition_flag"):
+                if key not in rec:
+                    raise RuntimeError(f"pilot rollout ({rung},{arm}) row missing {key!r} (A21)")
+        if len(recs) != n_pilot or {r["id"] for r in recs} != ref_id_set:
+            raise RuntimeError(
+                f"pilot rollout completeness FAILED at ({rung},{arm}): "
+                f"{len(recs)} rows vs {n_pilot} reference / id-set mismatch (A21)"
+            )
+    n_cells = len(recs_by_cell)
+    if not args.smoke and (n_pilot != C2.PILOT_N or n_cells != 30):
+        raise RuntimeError(
+            f"expected {C2.PILOT_N} rows x 30 cells; got {n_pilot} x {n_cells} (A21)"
+        )
+    print(
+        f"[phase=pilot] refinalize completeness OK: {n_pilot} rows x {n_cells} cells",
+        flush=True,
+    )
+
+    # n_corpus: the halt-time gate report (production trio); local corpus
+    # fallback (smoke — no halt report exists under informational gates).
+    gate_halt, gate_halt_path = _load_halt_gate_a(out_root, allow_hf=allow_hf)
+    if gate_halt is not None:
+        n_corpus = int(gate_halt["n_rows"])
+    else:
+        n_corpus = len(load_rows(args, out_root))
+
+    # 2) Repetition-only joint intersection -> 3) Gate A (revised ladder;
+    # halts exit rc=7 inside _gate_ladder / designed_halt).
+    flags, trunc = _eligibility_flag_sets(recs_by_cell)
+    isect = _joint_intersection(flags, ref_ids, rungs)
+    f_hat = len(isect) / max(n_pilot, 1)
+    gate_a = _gate_ladder(
+        len(isect),
+        n_corpus,
+        f_hat,
+        n_corpus * _wilson_lower(f_hat, n_pilot),
+        _tier_scan_factory(flags, ref_ids, rungs, n_corpus),
+        gate="gate_a",
+        out_root=out_root,
+        smoke=args.smoke,
+    )
+
+    # 4) Cost re-projection from the persisted unit_infos (rates + capture
+    # walls carry over — none depends on eligibility semantics).
+    subsets_path = _fetch_halt_artifact(
+        out_root, "config/subsets.json", f"{C2.CONFIG_HF_PATH}/subsets.json", allow_hf=allow_hf
+    )
+    subsets = R._read_json(subsets_path)
+    cost = _cost_projection(units, subsets["sizes"], n_corpus, rungs, len(isect))
+    if (
+        not args.smoke
+        and cost["projected_pass_wall_h_at_8w"] > C2.GATE_WALL_FACTOR * BOOKED_PASS_WALL_H
+    ):
+        R.designed_halt(out_root, "capture_cost", cost)
+
+    # Carried bf16 verdict: re-assert presence + pass (plan v8 §4 P1').
+    bf16 = _bf16_from_units(units)
+    if bf16 is None:
+        if not args.smoke:
+            raise RuntimeError("persisted bf16 gate verdict MISSING from queue_pilot unit_infos")
+        print("[smoke-downgrade] bf16 verdict absent from smoke queue — informational", flush=True)
+    elif not bf16["pass"] and not args.smoke:
+        R.designed_halt(out_root, "bf16_equivalence", bf16)
+
+    # 5) Re-pin + the 0-cost DRIFT TRIPWIRE: the re-resolved pins' config +
+    # tokenizer.json probes must match the persisted config_table +
+    # tokenizer_battery — mismatch means the pilot's rate/f-hat bases have
+    # detached from production weights (fail-loud; plan v8 §4 P1').
+    pins = C.pin_revisions_now()
+    battery = init["tokenizer_battery"]
+    table = init["config_table"]
+    from transformers import AutoConfig
+
+    drift: list[str] = []
+    for rung in rungs:
+        c = AutoConfig.from_pretrained(C.MODEL_IDS[rung], revision=C.resolve_revision(rung, pins))
+        lt = getattr(c, "layer_types", None)
+        full_idx = sorted(i for i, t in enumerate(lt) if t == "full_attention") if lt else None
+        probe = {
+            "num_layers": int(c.num_hidden_layers),
+            "hidden": int(c.hidden_size),
+            "max_pos": int(c.max_position_embeddings),
+            "sliding_window": getattr(c, "sliding_window", None),
+            "full_attention_layers": full_idx,
+        }
+        if probe != table[rung]:
+            drift.append(f"{rung}: config {probe} != persisted {table[rung]}")
+        tok_sha = _tokenizer_json_sha(rung, pins)
+        if tok_sha != battery[rung]["tokenizer_json_sha"]:
+            drift.append(
+                f"{rung}: tokenizer.json sha {tok_sha[:12]} != persisted "
+                f"{battery[rung]['tokenizer_json_sha'][:12]}"
+            )
+    if drift:
+        raise RuntimeError("P1' pin-drift TRIPWIRE fired (plan v8 §4 P1'): " + "; ".join(drift))
+    R._write_json_atomic(R.pins_path(out_root), pins)
+
+    # 6) k16 render-fit re-assert from the persisted subsets.json (A16).
+    k16 = int(subsets["k16_render_max_tokens"])
+    if k16 + C.GEN_MAX_TOKENS > C2.MAX_MODEL_LEN:
+        raise RuntimeError(
+            f"k16 render-fit VIOLATED at refinalize: {k16} + {C.GEN_MAX_TOKENS} "
+            f"> {C2.MAX_MODEL_LEN}"
+        )
+
+    # 7) The refinalized pilot report (the FIRST pilot_report.json for this
+    # issue) + revision_pins.json, uploaded to pilot_halt2/.
+    surv, trate = _dual_survival_tables(flags, trunc, rungs, n_pilot)
+    src_shas = {
+        "pilot_init.json": C2.sha256_file(init_path),
+        "queue_pilot.json": C2.sha256_file(queue_path),
+        **(
+            {gate_halt_path.name: C2.sha256_file(gate_halt_path)}
+            if gate_halt_path is not None
+            else {}
+        ),
+        "rollouts": {
+            f"{rung}/pilot_{arm}": C2.sha256_file(_rollout_path(out_root, rung, f"pilot_{arm}"))
+            for rung in rungs
+            for arm in ("gen0", "gen4")
+        },
+    }
+    report = {
+        "metadata": _metadata(),
+        "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
+        "refinalized_from": PILOT_HALT1_PREFIX,
+        C.REVISION_PINS_KEY: pins,
+        "gate_a": gate_a,
+        "cost_projection": cost,
+        "bf16_gate": bf16,
+        "timing_shard": {
+            "status": "not-run — the v5 timed-upload leg never ran; timing lands "
+            "at pass-1's first shard upload (plan v8 §4 P1')"
+        },
+        "tokenizer_battery": battery,
+        "config_table": table,
+        "pin_drift_tripwire": "PASS — re-resolved pins match the persisted "
+        "config_table + tokenizer.json shas",
+        "k16_render_fit": {
+            "k16_render_max_tokens": k16,
+            "gen_max_tokens": C.GEN_MAX_TOKENS,
+            "cap": C2.MAX_MODEL_LEN,
+        },
+        "per_rung_survival": surv,
+        "per_rung_truncation": trate,
+        "n_pilot_rows": n_pilot,
+        "n_corpus": n_corpus,
+        "source_artifacts_sha256": src_shas,
+    }
+    path = out_root / C.PILOT_REPORT_NAME
+    R._write_json_atomic(path, report)
+    R.upload_json_small(path, f"{C2.HF_WRITE_PREFIX}/{PILOT_HALT2_SUBDIR}/{path.name}")
+    R.upload_json_small(
+        R.pins_path(out_root),
+        f"{C2.HF_WRITE_PREFIX}/{PILOT_HALT2_SUBDIR}/revision_pins.json",
+    )
+    write_sentinel(
+        out_root,
+        "pilot",
+        {
+            "gate_a": gate_a["branch"],
+            "projected": gate_a["projected"],
+            "refinalize": True,
+            "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
+            "per_rung_survival": surv,
+            "per_rung_truncation": trate,
+        },
+        smoke=args.smoke,
+    )
+    print(
+        f"[phase=pilot] refinalize done: gate A branch {gate_a['branch']} "
+        f"(f_hat={gate_a['f_hat']}, n_isect={gate_a['n_isect']}, "
+        f"eligibility={C2.ELIGIBILITY_SEMANTICS})",
+        flush=True,
+    )
+
+
+def pilot_stage_report(args: argparse.Namespace, out_root: Path) -> None:
+    """``--pilot-from-hf <prefix>``: stage the refinalized pilot_report.json
+    AND revision_pins.json from the prefix into out_root (BOTH required —
+    ``R.load_pins`` reads ``out_root/revision_pins.json`` and raises if
+    absent), validate the gate branch + eligibility semantics FAIL-LOUD
+    BEFORE any GPU work, and write the pilot sentinel (chain -> pass1)."""
+    prefix = args.pilot_from_hf.rstrip("/")
+    for name, dest in (
+        (C.PILOT_REPORT_NAME, out_root / C.PILOT_REPORT_NAME),
+        ("revision_pins.json", R.pins_path(out_root)),
+    ):
+        got = _hf_download(f"{prefix}/{name}")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(got.read_bytes())
+        logger.info("[pilot-stage] staged %s/%s -> %s", prefix, name, dest)
+    report = R._read_json(out_root / C.PILOT_REPORT_NAME)
+    branch = (report.get("gate_a") or {}).get("branch")
+    if branch not in ("a", "a_prime", "c"):
+        raise RuntimeError(
+            f"staged pilot report gate_a.branch={branch!r} is not a proceed "
+            f"branch (a/a_prime/c) — refusing any GPU work"
+        )
+    sem = report.get("eligibility_semantics")
+    if sem != C2.ELIGIBILITY_SEMANTICS:
+        raise RuntimeError(
+            f"staged pilot report eligibility_semantics={sem!r} != "
+            f"{C2.ELIGIBILITY_SEMANTICS!r} — refusing (plan v8 §4 item 3)"
+        )
+    R.load_pins(out_root)  # validates every checkpoint is pinned
+    write_sentinel(
+        out_root,
+        "pilot",
+        {"gate_a": branch, "staged_from": prefix, "eligibility_semantics": sem},
+        smoke=args.smoke,
+    )
+    print(f"[phase=pilot] staged report from {prefix}: gate A branch {branch}", flush=True)
+
+
 def phase_pilot(args: argparse.Namespace, out_root: Path) -> None:
+    if args.pilot_from_hf:
+        pilot_stage_report(args, out_root)
+        return
+    if args.refinalize:
+        pilot_refinalize(args, out_root)
+        return
     if args.init:
         pilot_init(args, out_root)
         return
@@ -1518,11 +1951,13 @@ def pass1_finalize(args: argparse.Namespace, out_root: Path) -> None:
 
     diagnostics: dict[str, Any] = {}
     flags: dict[tuple[str, str], set[str]] = {}
+    trunc: dict[tuple[str, str], set[str]] = {}
     for rung in rungs:
         diagnostics[rung] = {}
         for arm in ("gen0", "gen4"):
             recs = fetch_rollout(out_root, rung, arm)
-            flags[(rung, arm)] = {r["id"] for r in recs if r["truncated"] or r["repetition_flag"]}
+            flags[(rung, arm)] = {r["id"] for r in recs if C2.is_row_ineligible(r)}
+            trunc[(rung, arm)] = {r["id"] for r in recs if r["truncated"]}
             diagnostics[rung][arm] = gen_diagnostics(recs)
         d0, d4 = diagnostics[rung]["gen0"], diagnostics[rung]["gen4"]
         diagnostics[rung]["channel_activity_shift_4v0"] = {
@@ -1536,9 +1971,9 @@ def pass1_finalize(args: argparse.Namespace, out_root: Path) -> None:
     f_hat = len(isect) / max(len(all_ids), 1)
 
     def _tier_scan() -> dict[str, Any] | None:
+        # v8-REVISED branch (c): FULL suffix scan (no r_min <= r2 break); a
+        # realized r_min > r2 rides out as h1_boundary_censored (plan §3/§4).
         for i, r_min in enumerate(rungs[1:], start=1):
-            if C2.RUNGS.index(r_min) > C2.RUNGS.index("r2"):
-                break
             tier = _joint_intersection(flags, all_ids, rungs[i:])
             if len(tier) >= C2.ISECT_FLOOR:
                 return {
@@ -1546,6 +1981,7 @@ def pass1_finalize(args: argparse.Namespace, out_root: Path) -> None:
                     "tier_rungs": list(rungs[i:]),
                     "floor_control_rungs": list(rungs[:i]),
                     "n_tier": len(tier),
+                    "h1_boundary_censored": C2.RUNGS.index(r_min) > C2.RUNGS.index("r2"),
                     "tier_ids": tier,
                 }
         return None
@@ -1608,8 +2044,10 @@ def pass1_finalize(args: argparse.Namespace, out_root: Path) -> None:
         for n, u in snap["units"].items()
         if u["kind"] == "gen" and "info" in u and "over_window_frac" in u.get("info", {})
     }
+    surv, trate = _dual_survival_tables(flags, trunc, rungs, len(all_ids))
     manifest = {
         "metadata": _metadata(),
+        "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
         "gate_a_prime": {k: v for k, v in gate.items() if k != "two_tier"},
         "two_tier": gate.get("two_tier", None)
         and {k: v for k, v in gate["two_tier"].items() if k != "tier_ids"},
@@ -1617,12 +2055,8 @@ def pass1_finalize(args: argparse.Namespace, out_root: Path) -> None:
         "headline_ids": headline_ids,
         "fold_table": {k: best[k] for k in ("seed", "fold_sizes", "min_ntr")},
         "fold_assign": best["assign"],
-        "per_rung_survival": {
-            rung: {
-                arm: 1 - len(flags[(rung, arm)]) / max(len(all_ids), 1) for arm in ("gen0", "gen4")
-            }
-            for rung in rungs
-        },
+        "per_rung_survival": surv,
+        "per_rung_truncation": trate,
         "input_fingerprints": input_fps,
         "over_window_diagnostics": over_window,
     }
@@ -1869,6 +2303,17 @@ def main() -> None:
     ap.add_argument("--init", action="store_true", help="phase init leg (queue/pins)")
     ap.add_argument("--worker", action="store_true", help="phase worker leg (unit queue)")
     ap.add_argument("--finalize", action="store_true", help="phase finalize leg")
+    ap.add_argument(
+        "--refinalize",
+        action="store_true",
+        help="P1' Gate-A re-finalize from the persisted pilot_halt1 artifacts (plan v8)",
+    )
+    ap.add_argument(
+        "--pilot-from-hf",
+        default=None,
+        help="stage the refinalized pilot report + pins from this HF prefix "
+        "(the pilot leg skips its GPU units; validates branch + semantics)",
+    )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--out-root", default=str(_default_out_root()))
     ap.add_argument("--corpus-dir", default=None, help="default: <out-root>/corpus")

@@ -128,6 +128,10 @@ P4B_XFER_BASIS_S = 43.0
 PILOT_ABORT_RATIO = 2.0
 
 FORMATION_FLOORS = (0.05, 0.10, 0.15)  # §3 floor-sensitivity read
+# v8 §6 truncated-vs-natural within-rung split: values reported only where
+# BOTH strata clear this floor (plan-adjustable within [100, 500]; realized
+# choice reported in the censoring_sensitivity block).
+STRAT_SPLIT_FLOOR = int(os.environ.get("EPM_ISSUE2544_STRAT_FLOOR", "200"))
 EARLY_MAX_RUNG = "r2"  # §3 lattice bins (rung-indexed)
 INTERMEDIATE_MAX_RUNG = "r6"
 POST_RUNGS = ("S", "D", "R")
@@ -910,6 +914,7 @@ def run_star_unit(ctx: FitsCtx, device: str, *, rung: str, fold: int) -> dict:
     # reliability: preds scored against the seed-43/44 repeat 0-shot captures
     rel: dict[str, Any] = {}
     ev_idx = np.flatnonzero(ev)
+    rel_scope = set(ctx.spine.scope_ids("reliability"))
     for seed in C.RELIABILITY_SEEDS:
         rel_rel = f"{rung}/rel0_seed{seed}/L{layer}.pt"
         try:
@@ -919,6 +924,18 @@ def run_star_unit(ctx: FitsCtx, device: str, *, rung: str, fold: int) -> dict:
             continue
         pos = {str(rid): k for k, rid in enumerate(d["__row_ids__"])}
         keep = [(k, pos[ids[gi]]) for k, gi in enumerate(ev_idx) if ids[gi] in pos]
+        # v8 §4 ceiling row-set assert: ceiling rows == fit rows ∩ reliability
+        # (headline ∩ reliability ∩ this fold's ev). Repeat-draw flags are
+        # DIAGNOSTIC-ONLY — a scope row absent from the repeat capture means
+        # something filtered it, which the reconciliation forbids.
+        expected = {ids[gi] for gi in ev_idx if ids[gi] in rel_scope}
+        got = {ids[ev_idx[k]] for k, _ in keep}
+        if got != expected:
+            raise RuntimeError(
+                f"ceiling row-set mismatch ({unit} seed{seed}): kept {len(got)} rows "
+                f"!= headline∩reliability∩ev {len(expected)} — repeat-draw flags are "
+                f"diagnostic-only, never filters (plan v8 §4 reconciliation)"
+            )
         if len(keep) < 2:
             rel[f"seed{seed}"] = "too_few"
             continue
@@ -1384,6 +1401,7 @@ def run_cell_unit(ctx: FitsCtx, device: str, *, spec: dict[str, Any], fold: int)
         li_star = layers.index(ctx.layer_star)
         ev_global = gpos[ev]
         rel: dict[str, Any] = {}
+        rel_scope = set(ctx.spine.scope_ids("reliability"))
         for seed in C.RELIABILITY_SEEDS:
             rel_rel = f"{spec['rung']}/rel4_seed{seed}/L{ctx.layer_star}.pt"
             try:
@@ -1397,6 +1415,16 @@ def run_cell_unit(ctx: FitsCtx, device: str, *, spec: dict[str, Any], fold: int)
                 for k, g in enumerate(ev_global)
                 if ctx.spine.ids[g] in pos
             ]
+            # v8 §4 ceiling row-set assert (Delta-ceiling input): ceiling rows
+            # == fit rows ∩ reliability; repeat-draw flags diagnostic-only.
+            expected = {ctx.spine.ids[g] for g in ev_global if ctx.spine.ids[g] in rel_scope}
+            got = {ctx.spine.ids[ev_global[k]] for k, _ in keep}
+            if got != expected:
+                raise RuntimeError(
+                    f"ceiling row-set mismatch ({unit} seed{seed}): kept {len(got)} "
+                    f"rows != headline∩reliability∩ev {len(expected)} — repeat-draw "
+                    f"flags are diagnostic-only, never filters (plan v8 §4)"
+                )
             if len(keep) < 2:
                 rel[f"seed{seed}"] = "too_few"
                 continue
@@ -1787,7 +1815,8 @@ def _trained_only_reads(ctx: FitsCtx) -> dict[str, Any]:
     re-read + D(main) on its own full unflagged row set. Fit-free: headline
     rows read from the sweep SS; non-headline rows from the sweep_extra
     shards (scored OOF-by-group during the sweep). Flags recomputed from the
-    persisted rollouts (the pass-1 filter definition, R2._joint_intersection)."""
+    persisted rollouts under the SAME semantics as the headline (rep-only-v2,
+    C2.is_row_ineligible; R2._joint_intersection)."""
     li = ctx.layers17.index(ctx.layer_star)
     r3_idx = C2.RUNGS.index(TRAINED_ONLY_MIN_RUNG)
     suffix = [r for r in ctx.rungs if C2.RUNGS.index(r) >= r3_idx]
@@ -1798,9 +1827,7 @@ def _trained_only_reads(ctx: FitsCtx) -> dict[str, Any]:
         for rung in suffix:
             for arm in ("gen0", "gen4"):
                 recs = R2.fetch_rollout(ctx.out_root, rung, arm)
-                flags[(rung, arm)] = {
-                    rec["id"] for rec in recs if rec["truncated"] or rec["repetition_flag"]
-                }
+                flags[(rung, arm)] = {rec["id"] for rec in recs if C2.is_row_ineligible(rec)}
         all_ids = [r["id"] for r in ctx.spine.rows]
         tos_ids = set(R2._joint_intersection(flags, all_ids, tuple(suffix)))
         main_ok = set(all_ids) - flags[("main", "gen0")] if ("main", "gen0") in flags else None
@@ -1853,6 +1880,92 @@ def _trained_only_reads(ctx: FitsCtx) -> dict[str, Any]:
     }
     if main_ok is not None:
         out["d_main_full_unflagged"] = {"n_ids": len(main_ok), **_pooled_over(main_ok, "main")}
+    return out
+
+
+def _trunc_masks(ctx: FitsCtx) -> dict[tuple[str, str], np.ndarray] | None:
+    """Per-(rung, arm) TRUNCATED boolean masks over the spine rows, from the
+    persisted pass-1 rollouts (plan v8 §6 censoring-sensitivity family —
+    `truncated` is a DIAGNOSTIC axis here, never a row filter). Degrades
+    LOUDLY to None (the dependent reads then carry an unavailable status)."""
+    try:
+        masks: dict[tuple[str, str], np.ndarray] = {}
+        for rung in ctx.rungs:
+            for arm in ("gen0", "gen4"):
+                recs = R2.fetch_rollout(ctx.out_root, rung, arm)
+                t = {rec["id"] for rec in recs if rec["truncated"]}
+                masks[(rung, arm)] = np.asarray([i in t for i in ctx.spine.ids], dtype=bool)
+        return masks
+    except Exception as e:  # noqa: BLE001 — censoring diagnostics degrade loudly, never silently
+        logger.warning("[fits] truncation masks unavailable: %s", e)
+        return None
+
+
+def _censoring_reads(
+    ctx: FitsCtx,
+    sweep: dict[str, dict[str, np.ndarray]],
+    counts: np.ndarray,
+    li: int,
+    trunc: dict[tuple[str, str], np.ndarray] | None,
+) -> dict[str, Any]:
+    """v8 §6 truncation-censoring family over the SAME percell sweep SS (free
+    re-aggregations): per-rung truncation rates on the spine, D_nt(T) on each
+    rung's natural-termination (gen0-unTruncated) subset — r0 typically has
+    NONE (stated, never interpolated) — and the within-rung truncated-vs-
+    natural split (values where both strata clear STRAT_SPLIT_FLOOR; counts
+    always; smoke reports informationally below the floor — gate-calibration
+    parity). D(main)-on-natural-termination is d_nt['main']."""
+    if trunc is None:
+        return {"status": "unavailable — rollout truncation masks not fetchable"}
+    floor = STRAT_SPLIT_FLOOR
+    assert 100 <= floor <= 500, f"stratified-split floor {floor} outside [100, 500]"
+    out: dict[str, Any] = {
+        "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
+        "split_floor": floor,
+        "per_rung_truncation": {},
+        "d_nt": {},
+        "stratified_split": {},
+    }
+    for rung in ctx.rungs:
+        t0, t4 = trunc[(rung, "gen0")], trunc[(rung, "gen4")]
+        out["per_rung_truncation"][rung] = {
+            "gen0": float(t0.mean()),
+            "gen4": float(t4.mean()),
+            "n_rows": int(t0.size),
+        }
+        res, tot = sweep[rung]["ss_res"][li], sweep[rung]["ss_tot"][li]
+        res_id = sweep[rung]["ss_res_id"][li]
+        scored = np.isfinite(res)
+
+        def _masked_read(mask: np.ndarray) -> dict[str, Any]:
+            n = int((mask & scored).sum())
+            if n == 0:
+                return {"n_rows": 0}
+            mres, mtot = np.where(mask, res, np.nan), np.where(mask, tot, np.nan)
+            mres_id = np.where(mask, res_id, np.nan)
+            return {
+                "r2": F1._pooled_r2(float(np.nansum(mres)), float(np.nansum(mtot))),
+                "identity_r2": F1._pooled_r2(float(np.nansum(mres_id)), float(np.nansum(mtot))),
+                "ci": F1._ci(_r2_draws(ctx, counts, mres, mtot)),
+                "n_rows": n,
+            }
+
+        nt = ~t0
+        d_nt = _masked_read(nt)
+        if d_nt["n_rows"] == 0:
+            d_nt["note"] = "no naturally-terminating rows at this rung — stated, never interpolated"
+        out["d_nt"][rung] = d_nt
+        n_t, n_n = int((t0 & scored).sum()), int((nt & scored).sum())
+        split: dict[str, Any] = {"n_truncated": n_t, "n_natural": n_n}
+        clears = n_t >= floor and n_n >= floor
+        if clears or ctx.smoke:
+            split["truncated"] = _masked_read(t0)
+            split["natural"] = d_nt
+            if ctx.smoke and not clears:
+                split["note"] = f"smoke-informational — strata below the n>={floor} floor"
+        else:
+            split["note"] = f"not reported — a stratum below the n>={floor} floor"
+        out["stratified_split"][rung] = split
     return out
 
 
@@ -1909,6 +2022,10 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
         rung: _assemble(ctx, f"diag0_{rung}_f*.npz", ("ss_res", "ss_tot", "ss_res_id"))
         for rung in ctx.rungs
     }
+    # v8 censoring family: per-(rung, arm) TRUNCATED masks over the spine
+    # (diagnostic axis — feeds the truncation strip, D_nt, the stratified
+    # split, and the kshot delta_nt/delta_tt common-status reads).
+    trunc = _trunc_masks(ctx)
 
     def _cellarr(name: str) -> dict[str, np.ndarray] | None:
         try:
@@ -2081,11 +2198,14 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
             str(floor): _lattice_label(dtilde_draws, dtilde_point, pretrain, floor)
             for floor in FORMATION_FLOORS
         },
+        "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
         "scope_caveat": (
-            "formation on the shared-intersection (random-init-surviving) context "
-            "population — see trained_only_sensitivity for the denominator shift"
+            "formation on the shared repetition-loop-free intersection context "
+            "population (rep-only-v2; truncation reported, never filtered) — see "
+            "trained_only_sensitivity for the denominator shift"
         ),
         "trained_only_sensitivity": _trained_only_reads(ctx),
+        "censoring_sensitivity": _censoring_reads(ctx, sweep, counts, li_star, trunc),
     }
     R._write_json_atomic(eval_fits / "diag_curve.json", diag_out)
 
@@ -2199,6 +2319,27 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
                 "n_ww_rows": int(m.sum()),
                 "n_over_window_rows": int((~m).sum()),
             }
+        # delta_nt / delta_tt: the v8 §6 common-status paired reads — joint-
+        # status row masks (both arms naturally terminated / both truncated)
+        # over the SAME per-context SS, the Delta_ww machinery re-used.
+        if trunc is not None:
+            t0m, t4m = trunc[(rung, "gen0")], trunc[(rung, "gen4")]
+            scored_pair = np.isfinite(res0) & np.isfinite(res4)
+            for label, m_cs in (("delta_nt", ~t0m & ~t4m), ("delta_tt", t0m & t4m)):
+                n_cs = int((m_cs & scored_pair).sum())
+                rec_cs: dict[str, Any] = {"n_rows": n_cs}
+                if n_cs >= 3:
+                    cres0, ctot0 = np.where(m_cs, res0, np.nan), np.where(m_cs, tot0, np.nan)
+                    cres4, ctot4 = np.where(m_cs, res4, np.nan), np.where(m_cs, tot4, np.nan)
+                    rec_cs["delta"] = F1._pooled_r2(
+                        float(np.nansum(cres4)), float(np.nansum(ctot4))
+                    ) - F1._pooled_r2(float(np.nansum(cres0)), float(np.nansum(ctot0)))
+                    rec_cs["ci"] = F1._ci(
+                        _r2_draws(ctx, counts, cres4, ctot4) - _r2_draws(ctx, counts, cres0, ctot0)
+                    )
+                else:
+                    rec_cs["note"] = "below the n>=3 minimum for a paired read"
+                entry[label] = rec_cs
         # Delta_FA: the paired read at the full-attention companion layer
         arr_l0 = _cellarr(f"lfa0_{rung}")
         if arr_l0 is not None:
@@ -2325,6 +2466,18 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
     kshot_out = {
         "metadata": R2._metadata(),
         "smoke": ctx.smoke,
+        "eligibility_semantics": C2.ELIGIBILITY_SEMANTICS,
+        "per_rung_truncation": (
+            {
+                rung: {
+                    "gen0": float(trunc[(rung, "gen0")].mean()),
+                    "gen4": float(trunc[(rung, "gen4")].mean()),
+                }
+                for rung in ctx.rungs
+            }
+            if trunc is not None
+            else None
+        ),
         "delta_peak_minus_main": delta_peak_minus_main,
         "layer_star": ctx.layer_star,
         "layer_fa": ctx.layer_fa,

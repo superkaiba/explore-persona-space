@@ -4,6 +4,10 @@
 #   bash scripts/issue2544_dispatch.sh --full                 # stage -> P1 -> pass1 -> P4a -> pass2 -> P4b
 #   bash scripts/issue2544_dispatch.sh --smoke                # SAME chain (incl. config), tiny slice, 3 rungs
 #   bash scripts/issue2544_dispatch.sh --full --from-phase pass2   # resume from a phase
+#   bash scripts/issue2544_dispatch.sh --full \
+#     --pilot-from-hf issue2544_stage_map/pilot_halt2         # v8: pilot leg stages the
+#                                                             # VM-refinalized report+pins
+#                                                             # (no GPU pilot units)
 #
 # Contracts (inherited from issue1902_dispatch.sh): set -euo pipefail; each
 # leg is a single `uv run python scripts/issue2544_run.py --phase X ...`
@@ -36,11 +40,13 @@ if [ -f ./.env ]; then set -a; . ./.env; set +a; fi
 # ── args ─────────────────────────────────────────────────────────────────────
 MODE=""
 FROM_PHASE=""
+PILOT_FROM_HF=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --full) MODE="full" ;;
     --smoke) MODE="smoke" ;;
     --from-phase) shift; FROM_PHASE="${1:?--from-phase needs a phase name}" ;;
+    --pilot-from-hf) shift; PILOT_FROM_HF="${1:?--pilot-from-hf needs an HF prefix}" ;;
     *) echo "[dispatch] unknown arg: $1" >&2; exit 2 ;;
   esac
   shift
@@ -237,9 +243,23 @@ fi
 
 if phase_wanted pilot; then
   echo "[phase=pilot]"
-  run_single pilot-init --phase pilot --init
-  run_workers pilot
-  run_single pilot-finalize --phase pilot --finalize   # Gate A / bf16 / cost halts exit rc=7
+  if [ -n "$PILOT_FROM_HF" ]; then
+    # v8 P1' staged path: the pilot ran as the VM-side --refinalize; stage +
+    # validate its report AND pins (BOTH required — R.load_pins raises on a
+    # missing revision_pins.json) FAIL-LOUD before any GPU work, write the
+    # pilot sentinel, then the chain proceeds to pass1.
+    run_single pilot-stage --phase pilot --pilot-from-hf "$PILOT_FROM_HF"
+  else
+    run_single pilot-init --phase pilot --init
+    run_workers pilot
+    run_single pilot-finalize --phase pilot --finalize   # Gate A / bf16 / cost halts exit rc=7
+    if [ -n "$SMOKE" ]; then
+      # v8 smoke leg: refinalize against the smoke's OWN local pilot rollouts
+      # (executes the P1' branch under smoke; the HF-download transport + the
+      # branch->SHA drift tripwire are production-only — blind-spot enumerated).
+      run_single pilot-refinalize --phase pilot --refinalize
+    fi
+  fi
 fi
 
 if phase_wanted pass1; then
