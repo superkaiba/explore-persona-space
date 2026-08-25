@@ -1,6 +1,6 @@
 ---
-title: Context→answer structure is shared across framings in Qwen3.6-27B, but the
-  chat-trained map transfers to none of them unchanged (MODERATE confidence)
+title: Context→answer structure transfers across story characters but not across framings
+  in Qwen3.6-27B (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-19T02:35:51Z'

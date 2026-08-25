@@ -10645,7 +10645,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2378",
       "status": "interpreting",
-      "title": "Context\u2192answer structure is shared across framings in Qwen3.6-27B, but the chat-trained map transfers to none of them unchanged (MODERATE confidence)"
+      "title": "Context\u2192answer structure transfers across story characters but not across framings in Qwen3.6-27B (MODERATE confidence)"
     },
     "2379": {
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
