@@ -995,7 +995,6 @@ def _fig_plot1(args) -> dict:
         set_paper_style,
     )
 
-    chat_banked = json.loads(BANKED_CHAT_JSON.read_text())["per_layer"]
     boundary = json.loads(BANKED_BOUNDARY_JSON.read_text())["per_layer"]
     avg = json.loads((args.out_eval / "plot1_avg.json").read_text())["per_layer"]
 
@@ -1014,8 +1013,10 @@ def _fig_plot1(args) -> dict:
             r2 = [boundary[str(li)]["arms"][arm]["whole_map_r2"] for li in layers]
             ret = [boundary[str(li)]["arms"][arm]["retrieval"]["whiten_csls"] for li in layers]
         else:
+            # R^2 draw-averaged too (user order 2026-08-25); boundary arm stays banked
+            # (deterministic WikiText target -- the averaged convention degenerates there).
             layers = sorted(int(li) for li in avg)
-            r2 = [chat_banked[str(li)]["arms"][arm]["whole_map_r2"] for li in layers]
+            r2 = [avg[str(li)]["arms"][arm]["avg"]["whole_map_r2"] for li in layers]
             ret = [avg[str(li)]["arms"][arm]["avg"]["retrieval"]["whiten_csls"] for li in layers]
         acc = [r["acc_at_k"]["1"] if "1" in r["acc_at_k"] else r["acc_at_k"][1] for r in ret]
         lo = [r["acc1_ci"]["lo"] for r in ret]
@@ -1027,7 +1028,7 @@ def _fig_plot1(args) -> dict:
         ax2.plot(layers, acc, marker="o", ms=3, color=colors[arm], label=label)
         ax2.fill_between(layers, lo, hi, color=colors[arm], alpha=0.15, lw=0)
     ax1.set_xlabel("Layer")
-    ax1.set_ylabel("Held-out $R^2$ (test, n=1,000)")
+    ax1.set_ylabel("Held-out $R^2$, draw-averaged\ntarget (test, n=1,000)")
     ax2.set_xlabel("Layer")
     ax2.set_ylabel("acc@1, draw-averaged target\n(whitened cosine + CSLS)")
     ax2.axhline(0.001, ls="--", lw=0.8, color="gray", label="Chance (1/1000)")
@@ -1047,7 +1048,6 @@ def _fig_plot2(args) -> dict:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    import issue1901_body_figures as BF
     from explore_persona_space.analysis.paper_plots import (
         figsize_iclr_panels,
         paper_color,
@@ -1056,33 +1056,17 @@ def _fig_plot2(args) -> dict:
     )
 
     set_paper_style("iclr")
-    l19 = json.loads(BANKED_BATTERY.read_text())["per_layer"]["19"]
-    arms = l19["arms"]
-    ladder_banked = json.loads(BANKED_LADDER_JSON.read_text())
-    n50k = json.loads((BF.EV779 / "fitter-fair-comparison-n50k" / "n50k_fits.json").read_text())
-    n1m = json.loads((BF.EV779 / "fitter-fair-comparison-n1m" / "n1m_fits.json").read_text())
-    d2 = json.loads((BF.EV779 / "fitter-fair-comparison" / "scaling_curves.json").read_text())
-    f7 = json.loads(BANKED_F7.read_text())
-    mlp_sc = json.loads(BANKED_MLP_SCALING.read_text())["per_n"]
 
     ladder_avg = json.loads((args.out_eval / "ladder_avg.json").read_text())["cells"]
     plot1_avg = json.loads((args.out_eval / "plot1_avg.json").read_text())["per_layer"]
     mlp_avg = json.loads((args.out_eval / "mlp_scaling_avg.json").read_text())["per_n"]
     bign_avg = json.loads((args.out_eval / "bign_avg.json").read_text())["points"]
 
-    def _r2ci(pred: dict) -> tuple[float, float, float]:
-        ci = pred["bootstrap_ci"]["r2"]
-        return ci["point"], ci["lo"], ci["hi"]
-
-    def ci_pt(pred: dict) -> tuple[float, float, float]:
-        ci = pred["bootstrap_ci"]["r2"]
-        return pred["whole_map_r2"], ci["lo"], ci["hi"]
-
-    # ---- R^2 panel: byte-faithful to the banked single-draw assembly ----
-    def dense_banked(est_field) -> tuple[list[int], list[float], list[float]]:
+    # ---- R^2 panel: draw-averaged targets throughout (user order 2026-08-25) ----
+    def dense_avg_r2(arm: str) -> tuple[list[int], list[float], list[float]]:
         by_n: dict[int, list[float]] = {}
-        for c in ladder_banked["cells"]:
-            by_n.setdefault(int(c["n_train"]), []).append(est_field(c))
+        for c in ladder_avg:
+            by_n.setdefault(int(c["n_train"]), []).append(float(c["avg"][arm]["test_r2"]))
         ns = sorted(by_n)
         return (
             ns,
@@ -1090,45 +1074,42 @@ def _fig_plot2(args) -> dict:
             [float(np.std(by_n[n])) for n in ns],
         )
 
-    n50k_l19 = json.loads(BANKED_N50K_L19.read_text())["per_layer"]["19"]
-    bign_banked = {
-        name: json.loads((BANKED_BIGN_DIR / f"{name}.json").read_text())
-        for name in ("lmsys_150k", "lmsys_500k")
-    }
-    densify_big = [
-        (50_000, n50k_l19),
-        (150_000, bign_banked["lmsys_150k"]),
-        (500_000, bign_banked["lmsys_500k"]),
-    ]
+    def p1_avg_r2(arm: str) -> tuple[float, float, float]:
+        a = plot1_avg["19"]["arms"][arm]["avg"]
+        ci = a["bootstrap_ci"]["r2"]
+        return float(a["whole_map_r2"]), float(ci["lo"]), float(ci["hi"])
+
+    def avg_r2ci(cell: dict) -> tuple[float, float, float]:
+        a = cell["avg"]
+        ci = a["bootstrap_ci"]["r2"]
+        return float(a["whole_map_r2"]), float(ci["lo"]), float(ci["hi"])
+
     big_ridge = [
-        (50_000, *ci_pt(n50k["per_predictor"]["ridge"])),
-        (150_000, *ci_pt(n1m["per_point"]["lmsys_150k"]["predictors"]["ridge"])),
-        (500_000, *ci_pt(n1m["per_point"]["lmsys_500k"]["predictors"]["ridge"])),
-        (963_444, *ci_pt(n1m["per_point"]["mixed_1m"]["predictors"]["ridge"])),
+        (50_000, *p1_avg_r2("ridge")),
+        (150_000, *avg_r2ci(bign_avg["lmsys_150k"]["ridge"])),
+        (500_000, *avg_r2ci(bign_avg["lmsys_500k"]["ridge"])),
+        (963_444, *avg_r2ci(bign_avg["ridge_963k"])),
     ]
+    big_ib = [
+        (50_000, *p1_avg_r2("identity_bias")),
+        (150_000, *avg_r2ci(bign_avg["lmsys_150k"]["identity_bias"])),
+        (500_000, *avg_r2ci(bign_avg["lmsys_500k"]["identity_bias"])),
+        (963_444, *avg_r2ci(bign_avg["identity_bias_963k"])),
+    ]
+    # ladder_avg / mlp_scaling_avg cells carry no bootstrap CI -> point-only entries.
     neural_r2: list[tuple[int, float, float, float]] = []
-    d2_mlp: dict[int, list[float]] = {}
-    for row in d2["curves"]["last_L19"]:
-        if row["fitter"] == "mlp":
-            d2_mlp.setdefault(int(row["n"]), []).append(float(row["r2"]))
-    for n in sorted(d2_mlp):
-        m, s = float(np.mean(d2_mlp[n])), float(np.std(d2_mlp[n]))
-        neural_r2.append((n, m, m - s, m + s))
-    for n in (5_000, 10_000):
-        ci = mlp_sc[str(n)]["test_ci"]["r2"]
-        neural_r2.append((n, ci["point"], ci["lo"], ci["hi"]))
-    r25 = f7["predictors"]["mlp_w8192"]["test_r2"]
-    neural_r2.append((25_000, r25, r25, r25))
-    neural_r2.append((50_000, *ci_pt(n50k["per_predictor"]["mlp"])))
-    for key, n in (("lmsys_150k", 150_000), ("lmsys_500k", 500_000), ("mixed_1m", 963_444)):
-        neural_r2.append((n, *ci_pt(n1m["per_point"][key]["predictors"]["mlp_w8192"])))
+    for n in (5_000, 10_000, 25_000):
+        r = float(mlp_avg[str(n)]["avg"]["test_r2"])
+        neural_r2.append((n, r, r, r))
+    neural_r2.append((50_000, *p1_avg_r2("mlp_w8192")))
+    neural_r2.append((963_444, *avg_r2ci(bign_avg["mlp_w8192_963k"])))
 
     fig, (ax_r2, ax_acc) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.3))
     col_r = paper_color("instruct")
     col_i = paper_color("identity_bias")
     col_n = paper_color("neural_map")
 
-    ns, mean, sd = dense_banked(lambda c: c["ridge"]["test_r2"])
+    ns, mean, sd = dense_avg_r2("ridge")
     ax_r2.errorbar(
         ns + [p[0] for p in big_ridge],
         mean + [p[1] for p in big_ridge],
@@ -1144,15 +1125,13 @@ def _fig_plot2(args) -> dict:
         capsize=1.5,
         label="linear map (ridge)",
     )
-    ns_i, mean_i, sd_i = dense_banked(lambda c: c["identity_bias"]["test_r2"])
-    big_ib = [(n, *_r2ci(cell["identity_bias"])) for n, cell in densify_big]
-    r_ib = arms["identity_bias"]["r2"]
+    ns_i, mean_i, sd_i = dense_avg_r2("identity_bias")
     ax_r2.errorbar(
-        ns_i + [p[0] for p in big_ib] + [963_444],
-        mean_i + [p[1] for p in big_ib] + [r_ib["point"]],
+        ns_i + [p[0] for p in big_ib],
+        mean_i + [p[1] for p in big_ib],
         yerr=[
-            np.maximum(0, sd_i + [p[1] - p[2] for p in big_ib] + [r_ib["point"] - r_ib["lo"]]),
-            np.maximum(0, sd_i + [p[3] - p[1] for p in big_ib] + [r_ib["hi"] - r_ib["point"]]),
+            np.maximum(0, sd_i + [p[1] - p[2] for p in big_ib]),
+            np.maximum(0, sd_i + [p[3] - p[1] for p in big_ib]),
         ],
         marker="s",
         ls="--",
@@ -1178,7 +1157,7 @@ def _fig_plot2(args) -> dict:
         label="nonlinear map (MLP)",
     )
     ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
-    ax_r2.set_ylabel("held-out $R^2$")
+    ax_r2.set_ylabel("held-out $R^2$,\ndraw-averaged target")
     ax_r2.set_ylim(-1.05, 1.0)
 
     # ---- retrieval panel: draw-averaged targets ----
@@ -1238,13 +1217,14 @@ def _fig_plot2(args) -> dict:
     m5 = _a1k(mlp_avg["5000"]["avg"]["knn"]["euclidean"])
     m10 = _a1k(mlp_avg["10000"]["avg"]["knn"]["euclidean"])
     m25 = _a1k(mlp_avg["25000"]["avg"]["knn"]["euclidean"])
+    m50 = p1_avg_pt("mlp_w8192")
     b963 = avg_pt(bign_avg["mlp_w8192_963k"])
     ax_acc.errorbar(
-        [5_000, 10_000, 25_000, 963_444],
-        [m5, m10, m25, b963[0]],
+        [5_000, 10_000, 25_000, 50_000, 963_444],
+        [m5, m10, m25, m50[0], b963[0]],
         yerr=[
-            [0.0, 0.0, 0.0, max(0, b963[0] - b963[1])],
-            [0.0, 0.0, 0.0, max(0, b963[2] - b963[0])],
+            [0.0, 0.0, 0.0, max(0, m50[0] - m50[1]), max(0, b963[0] - b963[1])],
+            [0.0, 0.0, 0.0, max(0, m50[2] - m50[0]), max(0, b963[2] - b963[0])],
         ],
         marker="D",
         ls=":",
