@@ -12084,8 +12084,8 @@
     "2568": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2568",
-      "status": "running",
+      "path": "tasks/completed/2568",
+      "status": "completed",
       "title": "workflow-fix: consumer-supersession audit \u2014 enumerate committed consumers of refuted evidence artifacts and require supersession labels"
     },
     "2569": {
