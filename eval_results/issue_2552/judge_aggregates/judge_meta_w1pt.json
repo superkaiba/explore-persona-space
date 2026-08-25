@@ -1,0 +1,50 @@
+{
+  "wave": "w1pt",
+  "regime_key": {
+    "wave": "w1pt",
+    "eval_ids_sha256": "2f0650ed3338dc005a1f9e88640e70e6d3409d0453e639e8512001c4c82282b6",
+    "rep_panel_sha256": "66d7049febf4b776b20822dcf42ef19d5c2da113263abef118e90ebf105c64bd",
+    "judge_model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "system_sha256": "08f7723619bb5fe4313068424c95e4bc4170089a7d51c81600d8bd3884a3d520",
+    "seed": 2552,
+    "threshold_base": 0,
+    "turn_text_cap": 4000,
+    "w4_candidate_cap": 1500
+  },
+  "judge_model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "temperature": "API default (not threaded; judge_dispatch contract)",
+  "transport": "batch (threshold_base=0)",
+  "n_items": 28805,
+  "n_draws": 1,
+  "arms": {
+    "pt": {
+      "n_items": 28805,
+      "n_missing_results": 0,
+      "n_valid": 28738,
+      "n_parse_fail": 43,
+      "n_truncation": 24,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "frac_items_complete": 0.9976740149279639,
+      "floor": 0.95,
+      "below_floor": false
+    }
+  },
+  "below_floor_arms": [],
+  "below_floor_waiver": false,
+  "below_floor_waiver_kind": null,
+  "batch_sync_split": {
+    "n_valid_from_sync_reissue": 11,
+    "n_censored_reissued": 12
+  },
+  "n_eval_realized": 2000,
+  "descoped": false,
+  "wall_s": 625.6,
+  "git_commit": "b38f7a0276c1c1cf5a730eb58966a42204d40101",
+  "git_dirty": false,
+  "phase": "judge-w1pt",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_judge_waves.py"
+}

@@ -1,0 +1,35 @@
+{
+  "per_config": {
+    "rep_ta": {
+      "n_valid": 1996,
+      "n_correct": 1319,
+      "accuracy": 0.6608216432865731
+    },
+    "mat_k100": {
+      "n_valid": 1994,
+      "n_correct": 1390,
+      "accuracy": 0.6970912738214644
+    },
+    "mat_k200": {
+      "n_valid": 1994,
+      "n_correct": 1221,
+      "accuracy": 0.6123370110330993
+    },
+    "pt_max": {
+      "n_valid": 1991,
+      "n_correct": 1915,
+      "accuracy": 0.9618282270215972
+    },
+    "pt_sum": {
+      "n_valid": 1995,
+      "n_correct": 1363,
+      "accuracy": 0.6832080200501253
+    }
+  },
+  "complete_pairs_rep_ta_pt_max": {
+    "n": 1988,
+    "note": "H2 \u0394_disc denominator: EXACT intersection of valid rep_ta and pt_max matching-verdict turn ids (plan \u00a73 complete-pair rule)"
+  },
+  "n_eval_realized": 2000,
+  "chance": 0.1
+}

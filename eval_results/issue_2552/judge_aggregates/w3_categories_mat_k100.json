@@ -1,0 +1,8604 @@
+{
+  "dictionary": "mat_k100",
+  "n_assigned": 2149,
+  "n_none": 0,
+  "n_dropped": 0,
+  "assignments": {
+    "54": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "916": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1007": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "437": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "219": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "696": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "637": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1512": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "186": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1258": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1790": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1760": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "777": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1503": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1441": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "52": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "406": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1656": {
+      "field": "language",
+      "category": "Form"
+    },
+    "86": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1521": {
+      "field": "language",
+      "category": "Form"
+    },
+    "183": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1682": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1418": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "796": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "776": {
+      "field": "contextuality",
+      "category": "Meta"
+    },
+    "892": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "228": {
+      "field": "language",
+      "category": "Form"
+    },
+    "842": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1539": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1743": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "189": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "105": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "277": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1715": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "71": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "894": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1384": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1128": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1288": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1281": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1434": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "79": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "243": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1449": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1695": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1182": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "552": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "953": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1707": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "74": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "366": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1402": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "962": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1122": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1285": {
+      "field": "contextuality",
+      "category": "Meta"
+    },
+    "471": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1241": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1388": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "274": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1333": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "620": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "447": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1506": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "388": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "836": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "216": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "508": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1655": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "585": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "594": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "100": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "917": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1104": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1334": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1675": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1765": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1179": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1681": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "188": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "808": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "644": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "448": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "1648": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "795": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1694": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1792": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "112": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1722": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "755": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1246": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "811": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1239": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "44": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1204": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "155": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1482": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1751": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "608": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1637": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1221": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "597": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "741": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1571": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "669": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1628": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1079": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "984": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "649": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1744": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "332": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "554": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "484": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1795": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "675": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1703": {
+      "field": "language",
+      "category": "Form"
+    },
+    "939": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "873": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1044": {
+      "field": "language",
+      "category": "Form"
+    },
+    "116": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1034": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "68": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1290": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "935": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1381": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "109": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1439": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1019": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "38": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "316": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1509": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "517": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "346": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1741": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "907": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "896": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "0": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1311": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "239": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1559": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "900": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1636": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1478": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1549": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "535": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "210": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1263": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1390": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1224": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1273": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "549": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "545": {
+      "field": "language",
+      "category": "Form"
+    },
+    "182": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "2": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1749": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "251": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "538": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1307": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "390": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "459": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1349": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "553": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "331": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1370": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1554": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1520": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "806": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "84": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "578": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "1278": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "12": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1002": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "1739": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "299": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1435": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1698": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "613": {
+      "field": "language",
+      "category": "Form"
+    },
+    "938": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "429": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "474": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "742": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1250": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "170": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1035": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1371": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "305": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "691": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1533": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1491": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "70": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "108": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "1440": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "826": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1574": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "658": {
+      "field": "language",
+      "category": "Form"
+    },
+    "965": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "454": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "643": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "1098": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "923": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1303": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "1687": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1216": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "146": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "442": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "710": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "157": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1088": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1372": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "961": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "192": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "449": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1725": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "686": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "929": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1377": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1544": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1457": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "36": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1452": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "193": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "833": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "209": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "780": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1300": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "22": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1399": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "623": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "500": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1068": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "491": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "313": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1651": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1740": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "319": {
+      "field": "language",
+      "category": "Form"
+    },
+    "768": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "737": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "419": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "206": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "168": {
+      "field": "language",
+      "category": "Form"
+    },
+    "763": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "225": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1095": {
+      "field": "language",
+      "category": "Form"
+    },
+    "59": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1117": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "1497": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1159": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "764": {
+      "field": "language",
+      "category": "Form"
+    },
+    "122": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "218": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "533": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1420": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "581": {
+      "field": "language",
+      "category": "Form"
+    },
+    "587": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1190": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1350": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1072": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "142": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1511": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1066": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "801": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "878": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1615": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "722": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "214": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "1573": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1653": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1738": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "1091": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "165": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1016": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1798": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "1229": {
+      "field": "language",
+      "category": "Form"
+    },
+    "254": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1617": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1352": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "561": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "988": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1610": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1603": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "119": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "407": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "160": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "249": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1558": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "25": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1608": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1076": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "408": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1601": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "201": {
+      "field": "language",
+      "category": "Form"
+    },
+    "809": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1584": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1181": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "697": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1024": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "443": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "647": {
+      "field": "language",
+      "category": "Form"
+    },
+    "521": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1259": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "75": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "414": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "304": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "881": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1678": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "657": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "223": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "302": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "413": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "856": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "784": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1400": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "888": {
+      "field": "language",
+      "category": "Form"
+    },
+    "133": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "993": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "968": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "486": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1092": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "1607": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "583": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1764": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "884": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "772": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1686": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "333": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "294": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "256": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1461": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "298": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "844": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1009": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1268": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1214": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "866": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1565": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "738": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1327": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1456": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "540": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "639": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "1754": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "126": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "34": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "211": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "180": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "1475": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "868": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "978": {
+      "field": "language",
+      "category": "Form"
+    },
+    "427": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1215": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "226": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1374": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1631": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "604": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "785": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "853": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "215": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "761": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "683": {
+      "field": "language",
+      "category": "Form"
+    },
+    "489": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1780": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "477": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1071": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "307": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1661": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1630": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "798": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "32": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "57": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "488": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1446": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1328": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1366": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1171": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1747": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "371": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "908": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1568": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1490": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "883": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "850": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "619": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1357": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "588": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1147": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1338": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "861": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1693": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "1049": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1535": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1404": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "230": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1412": {
+      "field": "language",
+      "category": "Form"
+    },
+    "945": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "570": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1616": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "101": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1685": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1477": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "655": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1235": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "283": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "469": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "1152": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1324": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "832": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1551": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "926": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "423": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "531": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1460": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "282": {
+      "field": "language",
+      "category": "Form"
+    },
+    "106": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1126": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "747": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1415": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "720": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "247": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1644": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "719": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "49": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "252": {
+      "field": "language",
+      "category": "Form"
+    },
+    "171": {
+      "field": "contextuality",
+      "category": "Meta"
+    },
+    "1344": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1408": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "412": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1389": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "994": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "450": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "992": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1106": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "825": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "418": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1612": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1078": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "799": {
+      "field": "language",
+      "category": "Form"
+    },
+    "692": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1340": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1014": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1168": {
+      "field": "language",
+      "category": "Form"
+    },
+    "582": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "291": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "879": {
+      "field": "language",
+      "category": "Form"
+    },
+    "607": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1109": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1669": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1660": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "397": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1627": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1177": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "445": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "330": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "1006": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "405": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "701": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1459": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1560": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "830": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "386": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "264": {
+      "field": "contextuality",
+      "category": "Meta"
+    },
+    "1530": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "98": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "237": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "952": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "541": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1426": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1770": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1141": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "558": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "679": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "714": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1597": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "1236": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "481": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1010": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1380": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1673": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "40": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "630": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "293": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1186": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1260": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "973": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1577": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1004": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "392": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1056": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "289": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "724": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1000": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1606": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "137": {
+      "field": "language",
+      "category": "Form"
+    },
+    "339": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "564": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "656": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1089": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "605": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "156": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1022": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "547": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1586": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1069": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "178": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "344": {
+      "field": "language",
+      "category": "Form"
+    },
+    "77": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "592": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1097": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "365": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1513": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "314": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "505": {
+      "field": "language",
+      "category": "Form"
+    },
+    "56": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "1649": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "666": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1552": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "512": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "671": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1474": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1505": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1495": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "875": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1228": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "893": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "267": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1657": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1322": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1082": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1580": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "374": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "432": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1308": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "548": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1062": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1481": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "69": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "138": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "949": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "698": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1711": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1032": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1529": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "94": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "82": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "556": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "609": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "53": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1198": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "845": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1232": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "204": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "367": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1409": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1286": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1125": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1363": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1712": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "876": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1209": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1060": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1012": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "110": {
+      "field": "language",
+      "category": "Form"
+    },
+    "217": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "97": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1127": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "48": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "1641": {
+      "field": "language",
+      "category": "Form"
+    },
+    "516": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1524": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "654": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "523": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "703": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1378": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1197": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "144": {
+      "field": "language",
+      "category": "Form"
+    },
+    "246": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "276": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "1294": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "81": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1550": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1226": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "323": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1279": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "1292": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "728": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "480": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "792": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1561": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1205": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1265": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "194": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "159": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "677": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "315": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1605": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1143": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "399": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1111": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "1238": {
+      "field": "language",
+      "category": "Form"
+    },
+    "151": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "384": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1575": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "417": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1546": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1150": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1766": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "15": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "154": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "723": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "947": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1499": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "600": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "685": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1622": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "337": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "141": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1191": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "748": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "39": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "709": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1470": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "353": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "416": {
+      "field": "language",
+      "category": "Form"
+    },
+    "279": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1799": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1172": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1266": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "1419": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1038": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "569": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1175": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "743": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1658": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "173": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "27": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "250": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "645": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "61": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1563": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1468": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "843": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "699": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1508": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "919": {
+      "field": "language",
+      "category": "Form"
+    },
+    "749": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1185": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "311": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "115": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "746": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "288": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1398": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "790": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "363": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "421": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1664": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1786": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "927": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "28": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "664": {
+      "field": "language",
+      "category": "Form"
+    },
+    "595": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1496": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1028": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "64": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1031": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1200": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "360": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1548": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "684": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "376": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1733": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "465": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "125": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "880": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "507": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "977": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "985": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1448": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "646": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1758": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1070": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "431": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "1467": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1620": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "972": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1782": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "347": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1291": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "672": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1167": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "195": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1026": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "700": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1043": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "385": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "662": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "502": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "734": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "55": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1140": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1146": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1170": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "633": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "860": {
+      "field": "language",
+      "category": "Form"
+    },
+    "948": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1225": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1314": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "590": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1591": {
+      "field": "language",
+      "category": "Form"
+    },
+    "503": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1133": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "269": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "504": {
+      "field": "language",
+      "category": "Form"
+    },
+    "338": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1522": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "1611": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "444": {
+      "field": "language",
+      "category": "Form"
+    },
+    "650": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "1422": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1187": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "711": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "717": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "357": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "687": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1515": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1570": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "306": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1158": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "328": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1719": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1717": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1583": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "779": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1642": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "589": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1269": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1397": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1473": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "983": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "638": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1537": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1367": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "117": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1302": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "740": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "381": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "329": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "934": {
+      "field": "language",
+      "category": "Form"
+    },
+    "758": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "232": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1218": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1353": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "1585": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1354": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1775": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1680": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1582": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1753": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1690": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1282": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "715": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1264": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1692": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1057": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1253": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "941": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1445": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "789": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "336": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1219": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "257": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "1746": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "963": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1345": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "341": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "981": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "527": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "824": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "635": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "1724": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "551": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1684": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1542": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1458": {
+      "field": "language",
+      "category": "Form"
+    },
+    "370": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "770": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "380": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "244": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "793": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "99": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1067": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1708": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1061": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1599": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1074": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1233": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "599": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1040": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "682": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1541": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "441": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1437": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "377": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "524": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1048": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "618": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1598": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1015": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "224": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1410": {
+      "field": "language",
+      "category": "Form"
+    },
+    "778": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "395": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1483": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "411": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1484": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1526": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "542": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "522": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "804": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "387": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "6": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1742": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1107": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "11": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "492": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1672": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "130": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "439": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "172": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1679": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "528": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "869": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "857": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1392": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "300": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1752": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1136": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1463": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "716": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1553": {
+      "field": "language",
+      "category": "Form"
+    },
+    "797": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1732": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1699": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1059": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "663": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "472": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1112": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1779": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "870": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1447": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "966": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "43": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1531": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "652": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1487": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1471": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1525": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "718": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1659": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1451": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1280": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1189": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "153": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1129": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "205": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1523": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "1791": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "72": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1417": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1110": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "50": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "202": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1195": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "986": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "482": {
+      "field": "language",
+      "category": "Form"
+    },
+    "303": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1244": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "1018": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "1589": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1047": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "167": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "394": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1368": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1385": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1700": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1731": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "751": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1425": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1176": {
+      "field": "language",
+      "category": "Form"
+    },
+    "573": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1639": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "670": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "266": {
+      "field": "language",
+      "category": "Form"
+    },
+    "426": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "1424": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1393": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "834": {
+      "field": "language",
+      "category": "Form"
+    },
+    "163": {
+      "field": "language",
+      "category": "Form"
+    },
+    "278": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "88": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "24": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "166": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1087": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1203": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "127": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "995": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1500": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "114": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "30": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1395": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1729": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "863": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1569": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "625": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "389": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "690": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1414": {
+      "field": "language",
+      "category": "Form"
+    },
+    "16": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1428": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1489": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "96": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "775": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "996": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1547": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "990": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1771": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "495": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1033": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "76": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "835": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1120": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "317": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "606": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "759": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "771": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1609": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1443": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "846": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1465": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "83": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1562": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "85": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "1115": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "651": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "937": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "396": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "773": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "520": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "63": {
+      "field": "language",
+      "category": "Form"
+    },
+    "976": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1429": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "537": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1545": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "150": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "946": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1051": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1277": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "739": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1793": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1396": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "1557": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "245": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1030": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1287": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "462": {
+      "field": "language",
+      "category": "Form"
+    },
+    "161": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1413": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1665": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1083": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "909": {
+      "field": "language",
+      "category": "Form"
+    },
+    "660": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "975": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "765": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1262": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "190": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1556": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "959": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "221": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1052": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1103": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "131": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "681": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "624": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1267": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "593": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "1646": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "235": {
+      "field": "language",
+      "category": "Form"
+    },
+    "951": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "602": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "634": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1735": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "877": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "31": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1688": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "813": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "113": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "882": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1161": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "803": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "818": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1723": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "238": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "220": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "887": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1778": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "862": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "822": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "428": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1588": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1192": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "104": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "855": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1157": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "260": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1745": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "364": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1718": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1596": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "152": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1534": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1654": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "1769": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "906": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "902": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "35": {
+      "field": "language",
+      "category": "Form"
+    },
+    "318": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "39423": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6213": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "12959": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "7527": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5249": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "41481": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "14267": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "16030": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "6686": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "12664": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "16218": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "37173": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4654": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "10453": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "2036": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "2566": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "14936": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4844": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9754": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "16242": {
+      "field": "language",
+      "category": "Form"
+    },
+    "2019": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "9703": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "11501": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5186": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "1971": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1938": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4716": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "7855": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2007": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "3082": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "3357": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "23863": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "12886": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "8321": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "52884": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2049": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7025": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7679": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1876": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1982": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "21271": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9472": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7249": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "3099": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2038": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1935": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11345": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4060": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13022": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "14804": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5360": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11289": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1933": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "11983": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "5540": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1998": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13248": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "26772": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5780": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "9811": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "13897": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1884": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "49608": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11409": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "56641": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "16204": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14417": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "10209": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2022": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10394": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14235": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1909": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13493": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3340": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5077": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11353": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4650": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10711": {
+      "field": "language",
+      "category": "Form"
+    },
+    "18334": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "15698": {
+      "field": "language",
+      "category": "Form"
+    },
+    "14540": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "5767": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "8969": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1988": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "3453": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "12802": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1819": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "50045": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "38870": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "11060": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8982": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8210": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "16202": {
+      "field": "language",
+      "category": "Form"
+    },
+    "2002": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7438": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "7293": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "2008": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5149": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "51853": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "33059": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7773": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10746": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13437": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13935": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "5468": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6082": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6525": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "3888": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "8100": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9953": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12229": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2745": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10316": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4212": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6137": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9664": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11013": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "40147": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "11620": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3866": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11682": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "14700": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6989": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11339": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "32307": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "13521": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "15307": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "3671": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2185": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11550": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "13365": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "55814": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "9926": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10803": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2010": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11004": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "49702": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1959": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6817": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "14170": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "2176": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "5219": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "15585": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "9673": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5564": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "14633": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2725": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8677": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2308": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "4701": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13006": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15252": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10617": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13057": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1937": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10298": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14160": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "11672": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12597": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15723": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "3607": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15564": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "8509": {
+      "field": "language",
+      "category": "Form"
+    },
+    "8671": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "17673": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10285": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14800": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9051": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2258": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "10822": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "29459": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13776": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9080": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "5602": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "6887": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9187": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1934": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "11790": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "2470": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15750": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "29670": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "14786": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "4022": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "6015": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15918": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "15230": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "13595": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "47211": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4869": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "15403": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "2165": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "30375": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6294": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14341": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "2030": {
+      "field": "language",
+      "category": "Form"
+    },
+    "11741": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12291": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "13724": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6956": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15282": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "10697": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1851": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "5051": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2433": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "10354": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1802": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "2042": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "15942": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "8514": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "4312": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "8241": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6816": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14461": {
+      "field": "language",
+      "category": "Form"
+    },
+    "13647": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2813": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "58532": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11395": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5379": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6383": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4283": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "4931": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4035": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "10633": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "56973": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "51235": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13645": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1899": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "14131": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "6619": {
+      "field": "language",
+      "category": "Form"
+    },
+    "64278": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11036": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "7760": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "3744": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3981": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8156": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1997": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "16089": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "2028": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1822": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9115": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "58354": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "26577": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "13131": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "7690": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "40183": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15725": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "39532": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1924": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "5178": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15295": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "34550": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11425": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13255": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4436": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "57558": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "6498": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10144": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8602": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "5924": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "6881": {
+      "field": "language",
+      "category": "Form"
+    },
+    "5456": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "6329": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "12413": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "15181": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "62342": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2608": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15005": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15019": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13491": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12256": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13708": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6104": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3406": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1978": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4852": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5927": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15576": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "8152": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11224": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4893": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "2011": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "15391": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15002": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1879": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8899": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "13564": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4131": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5630": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "29793": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13782": {
+      "field": "language",
+      "category": "Form"
+    },
+    "6926": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3959": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1980": {
+      "field": "language",
+      "category": "Form"
+    },
+    "9278": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15318": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2056": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8766": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2003": {
+      "field": "language",
+      "category": "Form"
+    },
+    "10195": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "45178": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "11684": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "12855": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14910": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2882": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "53332": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1954": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "17811": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "11785": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2066": {
+      "field": "language",
+      "category": "Form"
+    },
+    "11802": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2946": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3640": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "5719": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "10917": {
+      "field": "language",
+      "category": "Form"
+    },
+    "3370": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "12956": {
+      "field": "language",
+      "category": "Form"
+    },
+    "5013": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13844": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1845": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5934": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "9667": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6027": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9321": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2730": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "15159": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2457": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1893": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "7343": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "7840": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9723": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1993": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1979": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5857": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12364": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "42214": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "45598": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1805": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2015": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12117": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "25220": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2091": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "9578": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "38396": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9648": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "22916": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4938": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "15245": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12876": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3154": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "8693": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "3892": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "1889": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "19951": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "8696": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1812": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15865": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5127": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1830": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "12633": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7397": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "14632": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1832": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1983": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1842": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1849": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "9332": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13149": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7105": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "6869": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11037": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12407": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "16015": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "7850": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "11338": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "6128": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "35507": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9791": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "5504": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "46803": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15556": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10135": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1827": {
+      "field": "language",
+      "category": "Form"
+    },
+    "9022": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "16336": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9731": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "12313": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "15351": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "10630": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "63965": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8954": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1931": {
+      "field": "language",
+      "category": "Form"
+    },
+    "7469": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "12343": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8872": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10336": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "12074": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "12358": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1803": {
+      "field": "language",
+      "category": "Form"
+    },
+    "2012": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "1801": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "6466": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15737": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "16167": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11222": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "12630": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "13251": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8109": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1857": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "2890": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1917": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8768": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "43887": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12791": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14252": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2847": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "16107": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13841": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4903": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2702": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "7508": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "16368": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2016": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10968": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "7032": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14194": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8414": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "41782": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "14627": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "1825": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "7142": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "11538": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "6129": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "10812": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "6791": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1991": {
+      "field": "language",
+      "category": "Form"
+    },
+    "14058": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "28702": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2046": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5176": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2275": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1880": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11917": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "15967": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "12025": {
+      "field": "language",
+      "category": "Form"
+    },
+    "12148": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5996": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11827": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "12742": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "3916": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "10152": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "11776": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "6122": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1869": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12203": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "25836": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "11685": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11933": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "13650": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4174": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4921": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12933": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2932": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "5895": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9845": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8663": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "13172": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "8670": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "45389": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "58551": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1891": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "10595": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "12754": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14326": {
+      "field": "language",
+      "category": "Form"
+    },
+    "2954": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9229": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "13295": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "53905": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "12323": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "10884": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "10609": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8996": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "51331": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7255": {
+      "field": "language",
+      "category": "Form"
+    },
+    "4506": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6806": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13726": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6801": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "60927": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "7297": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8525": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "3399": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "11115": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10759": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "10972": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "32162": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11268": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1981": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "14545": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1922": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "5596": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "4422": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1927": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7973": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "11545": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "7296": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "45624": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "9113": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "57395": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1903": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "13539": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8795": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "2021": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12997": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "9387": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15254": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "11693": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13996": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "38224": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "7829": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "10380": {
+      "field": "language",
+      "category": "Form"
+    },
+    "12772": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "55907": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "3460": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "49234": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "1897": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "16073": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1907": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2024": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "4388": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1852": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14495": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12922": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "10726": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "44963": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "16328": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3096": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15335": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8275": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2722": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11871": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6714": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "12941": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8653": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10480": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12248": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "53652": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13221": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "9908": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8839": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14032": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "16327": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2018": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "15146": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "18554": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "14584": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "6395": {
+      "field": "language",
+      "category": "Form"
+    },
+    "6565": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5190": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "18999": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4429": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2043": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1990": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9756": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9552": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1811": {
+      "field": "language",
+      "category": "Form"
+    },
+    "9228": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11944": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "13932": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4666": {
+      "field": "language",
+      "category": "Form"
+    },
+    "2039": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "14155": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2047": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12820": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1836": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "55494": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13372": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "15017": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4161": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14523": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10866": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13959": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13156": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1808": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8578": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6411": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "12459": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "15154": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2294": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "3661": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "53370": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1828": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10861": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "54607": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13597": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "9319": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6155": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1974": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "23749": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11178": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "3152": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "26897": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "9678": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "49815": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "6406": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8386": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2041": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "32182": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2686": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1994": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13283": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "53008": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4543": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "30259": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "5487": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "9716": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "11352": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "12239": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6841": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1926": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "6662": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "7377": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4799": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "34347": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "6685": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "10076": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4512": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9094": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "1918": {
+      "field": "language",
+      "category": "Form"
+    },
+    "14587": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11325": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "13784": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "5033": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "8804": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "5413": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "15056": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "7399": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "8074": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7011": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "12792": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "7694": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "11864": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10966": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "33379": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12449": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "39310": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "60642": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "34684": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "11544": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4926": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "32206": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2840": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3186": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15783": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "3987": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13263": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "1816": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "38145": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "4720": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "62522": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9090": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6376": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "8777": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "23650": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6501": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "12327": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10603": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6195": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "52202": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7431": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1856": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2332": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "38698": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "9823": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13192": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "7872": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5898": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "13310": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "2988": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15162": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6211": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "42525": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "14601": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15609": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3591": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6132": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "4048": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "15784": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "12044": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "11034": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8973": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "12892": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1915": {
+      "field": "language",
+      "category": "Form"
+    },
+    "7814": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "14118": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14134": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7566": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13264": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11006": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "11236": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11805": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1865": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1921": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8008": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "16278": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "1878": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "15950": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3103": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14385": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "11448": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2057": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6153": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12656": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10807": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5294": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "15294": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1967": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "5887": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8868": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "13565": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3709": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1888": {
+      "field": "language",
+      "category": "Form"
+    },
+    "9902": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "2004": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3750": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "23264": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6319": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11946": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "15853": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "5040": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3743": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "53548": {
+      "field": "language",
+      "category": "Form"
+    },
+    "5434": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10997": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14111": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5772": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4438": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "6780": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10584": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12699": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "4505": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "8836": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4662": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "5522": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10245": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2027": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14075": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8998": {
+      "field": "language",
+      "category": "Form"
+    },
+    "8944": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10733": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "14801": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13093": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "9043": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "3823": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1813": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "15926": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "15412": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13241": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1910": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "7619": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6797": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "14239": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "11718": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2866": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1950": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12503": {
+      "field": "language",
+      "category": "Form"
+    },
+    "6640": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1804": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "17355": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "63079": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2362": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "7194": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4936": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15657": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11424": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9334": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12858": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13615": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15913": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3684": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "51300": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1914": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4718": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "12528": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2031": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "6514": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1859": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9136": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "3946": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14145": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "14297": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12127": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "10668": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "3614": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "9204": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5447": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1809": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2000": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4399": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7744": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "63242": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "2169": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "25248": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "1814": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "3282": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1953": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2095": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2153": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7584": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9870": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15334": {
+      "field": "language",
+      "category": "Form"
+    },
+    "9395": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "14943": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "16245": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "9940": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "65391": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13374": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14518": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "7480": {
+      "field": "language",
+      "category": "Form"
+    },
+    "13193": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13399": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "34269": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "13883": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "6925": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7540": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9134": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10631": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1843": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "15160": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "14071": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "10925": {
+      "field": "language",
+      "category": "Form"
+    },
+    "5623": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "5117": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "10679": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "64794": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5003": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14761": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "13859": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "15952": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "14816": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "4152": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "2032": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1839": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1984": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "9010": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "10596": {
+      "field": "language",
+      "category": "Form"
+    },
+    "11071": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "44499": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4010": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15588": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "9593": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1928": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "7103": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "16162": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "16301": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14416": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12330": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "8251": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15228": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "16372": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2292": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3773": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "6178": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "1961": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "56033": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "55850": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "11575": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "4238": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4854": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "3602": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "14715": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "13651": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2125": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2691": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "22864": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8242": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "16057": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "8560": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "20090": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1831": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "2005": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8488": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "12543": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "12056": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7268": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "2818": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "14100": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10372": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "5205": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1868": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1838": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8864": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14802": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4648": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2348": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13614": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "8267": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "58113": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "6854": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "11585": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2665": {
+      "field": "language",
+      "category": "Form"
+    },
+    "14030": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12505": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "1890": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "35804": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "1913": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10168": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "4897": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "55663": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13249": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1823": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "13331": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "11781": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2605": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "5256": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "14767": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "8816": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9104": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14467": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4743": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "9633": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "31970": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3489": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7595": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12123": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "9840": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2519": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8606": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12863": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "2044": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14149": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1943": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "12296": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1985": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "7902": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4758": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "8610": {
+      "field": "language",
+      "category": "Form"
+    },
+    "1896": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "25460": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12821": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15566": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8374": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1848": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "1957": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "10500": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "51031": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6741": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "11563": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1882": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "13194": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "49105": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4989": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1939": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "7598": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1968": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1883": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "4985": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "7124": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3339": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "6720": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9907": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6098": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4785": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "1970": {
+      "field": "linguistic sophistication",
+      "category": "Form"
+    },
+    "13721": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "15785": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11619": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "12801": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4242": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "7931": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11300": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "29805": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "12609": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8886": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4809": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4982": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3195": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11910": {
+      "field": "factuality",
+      "category": "Content"
+    },
+    "6903": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1894": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "1902": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "14748": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12491": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "11859": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1901": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "3831": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "12369": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "8702": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "1846": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "14336": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "5286": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "19551": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "5883": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "15213": {
+      "field": "tone",
+      "category": "Voice"
+    },
+    "64833": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "12101": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "4691": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "14567": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "2411": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "31937": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1835": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "4479": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1951": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "3188": {
+      "field": "language",
+      "category": "Form"
+    },
+    "36735": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15586": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "8333": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "9630": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "64438": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11105": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "8004": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "4082": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7497": {
+      "field": "language",
+      "category": "Form"
+    },
+    "14318": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "3534": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "4133": {
+      "field": "creativity",
+      "category": "Meta"
+    },
+    "12222": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "60585": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "41464": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14905": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1817": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "10788": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "16367": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "2939": {
+      "field": "language",
+      "category": "Form"
+    },
+    "6599": {
+      "field": "concreteness",
+      "category": "Content"
+    },
+    "13303": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "5192": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "6019": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "16091": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8627": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "16213": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1940": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "8773": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13693": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12806": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "16212": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "39677": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6928": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "12439": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6159": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "1912": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "11909": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12606": {
+      "field": "temporality",
+      "category": "Content"
+    },
+    "12147": {
+      "field": "persona",
+      "category": "Voice"
+    },
+    "31482": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "2300": {
+      "field": "language",
+      "category": "Form"
+    },
+    "2013": {
+      "field": "intent",
+      "category": "Function"
+    },
+    "5903": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "10361": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "3216": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3388": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4215": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "13957": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "2045": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "43752": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "6531": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1923": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1847": {
+      "field": "emotional engagement",
+      "category": "Voice"
+    },
+    "16718": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "1858": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "25386": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "47110": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "21790": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "14008": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1955": {
+      "field": "language",
+      "category": "Form"
+    },
+    "24516": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "5262": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "8748": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "11616": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "9449": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8727": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "16226": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "10769": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13571": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "14609": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13731": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "4949": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "13338": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1956": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "3017": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "37203": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1872": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "4614": {
+      "field": "language",
+      "category": "Form"
+    },
+    "7003": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "6889": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "36536": {
+      "field": "scope and depth",
+      "category": "Function"
+    },
+    "15373": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "58956": {
+      "field": "language",
+      "category": "Form"
+    },
+    "5661": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "9906": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4696": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "54134": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "4658": {
+      "field": "rhetorical strategy",
+      "category": "Function"
+    },
+    "4360": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "13448": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9742": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "9012": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "5912": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "10425": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "12437": {
+      "field": "language",
+      "category": "Form"
+    },
+    "4816": {
+      "field": "language",
+      "category": "Form"
+    },
+    "16143": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "13618": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "5446": {
+      "field": "language",
+      "category": "Form"
+    },
+    "64913": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "1875": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "6495": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "7920": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "1995": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "11529": {
+      "field": "topic",
+      "category": "Content"
+    },
+    "9871": {
+      "field": "valence",
+      "category": "Voice"
+    },
+    "10897": {
+      "field": "text type",
+      "category": "Form"
+    },
+    "6332": {
+      "field": "epistemic signals",
+      "category": "Meta"
+    },
+    "1855": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "3894": {
+      "field": "certainty",
+      "category": "Voice"
+    },
+    "10063": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "15699": {
+      "field": "language",
+      "category": "Form"
+    },
+    "15166": {
+      "field": "audience level",
+      "category": "Function"
+    },
+    "2134": {
+      "field": "quantitative content",
+      "category": "Content"
+    },
+    "9130": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "2094": {
+      "field": "structure",
+      "category": "Form"
+    },
+    "4577": {
+      "field": "domain",
+      "category": "Content"
+    },
+    "8010": {
+      "field": "interactivity",
+      "category": "Function"
+    },
+    "8181": {
+      "field": "domain",
+      "category": "Content"
+    }
+  }
+}

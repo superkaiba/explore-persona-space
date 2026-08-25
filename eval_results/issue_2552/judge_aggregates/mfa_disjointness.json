@@ -1,0 +1,43 @@
+{
+  "families": {
+    "mat_k100": {
+      "manifest_assert": "PASS",
+      "n_mining_rows": 120000,
+      "direct_check_n_overlap": 0,
+      "n_mining_row_ids": 63457,
+      "n_manifest_pool_ids": 120000,
+      "realized_subset_of_declared": true
+    },
+    "mat_k200": {
+      "manifest_assert": "PASS",
+      "n_mining_rows": 120000,
+      "direct_check_n_overlap": 0,
+      "n_mining_row_ids": 59840,
+      "n_manifest_pool_ids": 120000,
+      "realized_subset_of_declared": true
+    },
+    "rep_ta": {
+      "manifest_assert": "PASS",
+      "n_mining_rows": 120000,
+      "direct_check_n_overlap": 0,
+      "n_mining_row_ids": 64134,
+      "n_manifest_pool_ids": 120000,
+      "realized_subset_of_declared": true
+    },
+    "pt": {
+      "manifest_assert": "PASS",
+      "n_mining_rows": 18000,
+      "direct_check_n_overlap": 0,
+      "n_mining_row_ids": 17940,
+      "n_manifest_pool_ids": 18000,
+      "realized_subset_of_declared": true
+    }
+  },
+  "eval_ids_sha256": "2f0650ed3338dc005a1f9e88640e70e6d3409d0453e639e8512001c4c82282b6",
+  "n_eval_realized": 2000,
+  "git_commit": "714f8111011d80b2a3a6a73260fd7ae980f87b67",
+  "git_dirty": false,
+  "phase": "judge-mfa",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_judge_waves.py"
+}

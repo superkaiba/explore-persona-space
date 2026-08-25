@@ -1,0 +1,87 @@
+{
+  "wave": "w4",
+  "label": "w4",
+  "verdict": "PASS",
+  "failures": [],
+  "arms": {
+    "mat_k100": {
+      "n_valid": 51,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "n_items": 51,
+      "parse_fail_rate": 0.0,
+      "api_refusal_rate": 0.0,
+      "routing_path": "batch",
+      "n_cached": 0
+    },
+    "mat_k200": {
+      "n_valid": 51,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "n_items": 51,
+      "parse_fail_rate": 0.0,
+      "api_refusal_rate": 0.0,
+      "routing_path": "batch",
+      "n_cached": 0
+    },
+    "pt_max": {
+      "n_valid": 51,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "n_items": 51,
+      "parse_fail_rate": 0.0,
+      "api_refusal_rate": 0.0,
+      "routing_path": "batch",
+      "n_cached": 0
+    },
+    "pt_sum": {
+      "n_valid": 51,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "n_items": 51,
+      "parse_fail_rate": 0.0,
+      "api_refusal_rate": 0.0,
+      "routing_path": "batch",
+      "n_cached": 0
+    },
+    "rep_ta": {
+      "n_valid": 51,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "n_items": 51,
+      "parse_fail_rate": 0.0,
+      "api_refusal_rate": 0.0,
+      "routing_path": "batch",
+      "n_cached": 0
+    }
+  },
+  "judge_model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "n_draws": 1,
+  "target_draws_per_arm": 51,
+  "parse_fail_threshold": 0.02,
+  "api_refusal_threshold": 0.1,
+  "wave_declaration": {
+    "wave_n_calls": 10000,
+    "wave_threshold_base": 0,
+    "wave_force_sync": false
+  },
+  "pilot_transport_note": "pilot forced onto the wave's batch route via the SAME threshold_base=0 pin as production; fresh per-attempt cache (n_cached==0 asserted)",
+  "reference": "clauses mirror eval.judge_pilot.judge_pilot_gate (rule 26(a)-(d), #2124 sizing); re-implemented at the exact production instrument \u2014 reference judge_pilot_gate's graded 0-100 reduce (_score_from_parsed) is instrument-mismatched for these non-graded waves; the REAL per-arm parse-fail (< 2%) is computed by this driver's own wave parser over the same pilot draws and gates below (module docstring PILOT NOTE)",
+  "attempt_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2552/data/issue_2552/judge/pilot/w4/attempt_0",
+  "git_commit": "b38f7a0276c1c1cf5a730eb58966a42204d40101",
+  "git_dirty": false,
+  "phase": "judge-pilot-w4",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_judge_waves.py"
+}
