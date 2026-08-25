@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2584,
+  "highest_id": 2585,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12214,6 +12214,13 @@
       "path": "tasks/planning/2584",
       "status": "planning",
       "title": "Clear 3 live-hf-retry-routing errors making no-flags workflow_lint FAIL on clean main (Step 9c gate red fleet-wide)"
+    },
+    "2585": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2585",
+      "status": "proposed",
+      "title": "smoke-blind-spots.md: add row-index/data-reach as a fourth coverage-narrowing mechanism"
     },
     "259": {
       "has_clean_result": false,
