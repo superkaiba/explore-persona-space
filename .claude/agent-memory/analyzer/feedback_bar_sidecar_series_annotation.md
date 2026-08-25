@@ -19,7 +19,14 @@ not `_`-prefixed).
 generator script deterministically re-annotate its OWN sidecar right after
 `savefig_paper` (map `_group` index → container label in draw order — see
 `scripts/issue2479_r2_figfix.py::_annotate_bar_sidecar`). Verify with
-`jq '[.points[].series] | unique'` before committing. Also: the Lens-14
+`jq '[.points[].series] | unique'` before committing. A single-container bar
+chart whose bars belong to VISUAL groups (constructions, arms) has the same
+gap one level down: rows carry only tick `category`, so duplicate categories
+across groups trip the verifier's "categorical-slot completeness" WARN
+(K tick slots vs M joined groups); attaching a per-row group column in the
+generator right after the save (zip rows with the render's own bar-order
+label list, `strict=True`) CLEARED that WARN outright on #2254 r7
+(`scripts/issue2254_ladder_figures.py::fig_expl_all_cells`). Also: the Lens-14
 verifier check (`verify_task_body.py` concerns audit) clears via
 `task.py address-concern` ledger entries alone when every concern is
 addressed — in-body concern-id acks are needed only for open/deferred ones.
