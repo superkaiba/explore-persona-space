@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2576,
+  "highest_id": 2577,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12151,6 +12151,13 @@
       "path": "tasks/proposed/2576",
       "status": "proposed",
       "title": "verify_task_body figure opaque-code scan fires on sidecar provenance keys (scope to rendered surfaces)"
+    },
+    "2577": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2577",
+      "status": "proposed",
+      "title": "Deflake test_issue1947_worker_dispatch quarantine race (load-dependent; false-blocked #2349 gate)"
     },
     "258": {
       "has_clean_result": false,
