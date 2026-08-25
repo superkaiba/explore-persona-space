@@ -144,7 +144,7 @@ Plotted: per-base-value compliance fraction from the manipulation check (judge-s
 
 > **Figure.** *Where the behavioral gate passed and failed.* Green bars fired (at least 70% of checks complied), red did not, orange are undetermined (incomplete judge checks count as not fired). Stance, persona, and hedging miss their axis floors; the six other axes pass.
 
-The gate is conservative and did real work: the model complied near-ceiling with tone, marker-word, name, format, and content-constraint instructions, but would not argue one-sided stances (back one option 2/24, devil's advocate 5/24), played 2 of 5 personas, and kept hedging (strong confidence 11/24). The denominator is threshold-sensitive: 7 of 9 instruction axes pass at a 50% comply threshold (assumed persona joins), 5 of 9 at 90% (user description drops). Zeroing CJK-intruded draws flips only the user-description axis (the college-freshman value falls 18/24 to 16/24, floor 2 of 5); excluding them restores 3 of 5, so that pass is convention-dependent; every other verdict, including the programmatic axes at worst-case zeroing (minimum 0.950), is intrusion-robust.
+The gate did real work: the model complied near-ceiling with tone, marker-word, name, format, and content-constraint instructions, but would not argue one-sided stances (back one option 2/24, devil's advocate 5/24), played 2 of 5 personas, and kept hedging (strong confidence 11/24). The denominator is threshold-sensitive: 7 of 9 instruction axes pass at a 50% comply threshold (assumed persona joins), 5 of 9 at 90% (user description drops). Zeroing CJK-intruded draws flips only the user-description axis (college freshman falls 18/24 to 16/24, floor 2 of 5); excluding them restores that value at 16/21 and the floor at 3 of 5 (rural nurse: 16/24 as scored, not fired), so that pass is convention-dependent; every other verdict, including the programmatic axes at worst-case zeroing (minimum 0.950), is intrusion-robust.
 
 ### Direction recovery tracks the reliability of the observed shift; the injected-name read is reliability-limited
 
@@ -156,7 +156,7 @@ Plotted: each tested axis's direction cosine (single-turn map) against the split
 
 Recovery orders with reliability: axes whose observed shifts replicate across rollout halves are the axes the map predicts well. A noisy target caps the cosine a perfect predictor can reach near the square root of the target's reliability, so the injected-name bound is about 0.36; the observed 0.17 recovers about 48% of it, essentially the same fraction as content constraint (51%), marker word (48%), and format (38%).
 
-The low raw cosine is reliability-limited: the shift barely rises above sampling noise even though the name is expressed in 589 of 600 base-value rollouts. A reliability this low also means further map-direction loss on this axis can be neither demonstrated nor ruled out. Query form (reliability 0.60, cosine 0.30) keeps the clearest headroom.
+The low raw cosine is reliability-limited: the shift barely rises above sampling noise even though the name is expressed in 589 of 600 base-value rollouts. A reliability this low also means further map-direction loss on this axis can be neither demonstrated nor ruled out. Query form (reliability 0.60, cosine 0.30) retains substantial headroom; the clearest headroom is on output format, whose 0.36 cosine leaves a 0.59 gap to its 0.95 bound (query form: 0.47).
 
 ### Magnitude calibration is heterogeneous and largely inherited: two content axes compressed, query form and the fired format subset over-scaled
 
@@ -166,9 +166,9 @@ Plotted: per-pair predicted vs observed shift norms for the single-turn map, one
 
 > **Figure.** *One global gain does not fit all axes.* Tone and marker-word clouds ride the global line; content constraint and query content fall below it (compressed); query form sits above it (over-scaled). The hedging cloud also sits above the line, an informational all-values view only: that axis failed its compliance floor. Filled points are fired-value pairs.
 
-Two axes are compressed with intervals excluding 1: content constraint at 0.84 and query content at 0.80. User description (0.93) and injected name (0.87) sit below 1 with intervals spanning it; tone and marker word (both 1.03) ride the global gain; query form is over-scaled at 1.43 and the fired format subset at 1.19 (all format values: 1.02).
+Two axes are compressed with intervals excluding 1: content constraint at 0.84 and query content at 0.80. User description (0.93) and injected name (0.87) sit below 1, intervals spanning it; tone and marker word (both 1.03) ride the global gain; query form over-scales at 1.43, the fired format subset at 1.19 (all format values: 1.02).
 
-The distortion is not map-specific: identity pass-through is as compressed on the two content axes (0.85, 0.74) and more over-scaled on query form (2.12) and fired format (1.72), so the map partly corrects an inherited pattern. Within content constraint the compression is value-specific: the four pairs involving the under-twenty-words value, the largest and most length-coupled shifts, sit at 0.77 to 0.83, and excluding them the fired-pair slope is 0.99.
+The distortion is not map-specific: identity pass-through is as compressed on the content axes (0.85, 0.74) and more over-scaled on query form (2.12) and fired format (1.72), so the map partly corrects it. Within content constraint per-value-pair slopes span 0.77 to 1.55: the four under-twenty-words pairs, the largest, most length-coupled shifts, sit at 0.77 to 0.83; excluding them the fired-pair slope is 0.99 (span-mean pooling twin: 0.98); the no-numbers vs no-first-person pair over-scales at 1.55.
 
 ### The pair is identifiable among 2,778 candidates, but the map's margin over identity is metric-dependent
 
@@ -199,3 +199,4 @@ The map therefore carries some purely formal query information that barely surfa
 - Reused map from [#1738](https://eps.superkaiba.com/tasks/1738): `issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt` @ 62b1e8889e1a262501937b0ec6f6022e28b4a7e6 (sha256 `1916bed192f36dfe9dc57a3c712d3ea56d3767199504693c0c0f33bcde27bda4`) — fit: the multi-turn twin at the same layer, used as the map-agreement control; listing verified live at write time.
 
 **Context:** created 2026-08-24 from an interactive design session with the user as a child of [#2215](https://eps.superkaiba.com/tasks/2215); the session's decision record rides the pre-promotion body (snapshotted to `original-body.md`), whose recorded verbatim originating prompt (the user's answer approving agent-generated queries) is `it's fine for you to generate them`. Plan v6 approved 2026-08-24; run, judging, and analysis 2026-08-25; interpretation round 1 folded 2026-08-25; round-2 ensemble revision applied 2026-08-25.
+
