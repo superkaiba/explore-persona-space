@@ -788,6 +788,97 @@ def fig_paper_c1_stage_retention(eval_dir: Path) -> None:
     plt.close(fig)
 
 
+_STAGE_CODES = ("B", "S", "D", "R")
+_STAGE_LABELS = {"B": "base", "S": "SFT", "D": "DPO", "R": "RLVR"}
+_ARM_COLORS = {
+    "self": "#0072B2",  # blue - the stage's own map (its ceiling)
+    "transferred": "#D55E00",  # vermilion - previous stage's map applied here
+    "crossfit": "#009E73",  # green - map refit across the transition
+}
+
+
+def _mean_acc1(knn_folds: list[dict], metric: str = "cosine") -> float:
+    """Mean retrieval acc@1 over the per-fold kNN blocks of one fitted cell."""
+    return float(np.mean([f[metric]["acc_at_k"]["1"] for f in knn_folds]))
+
+
+def _stage_ladder_arms(eval_dir: Path) -> dict[str, dict[str, tuple[float, float]]]:
+    """Collect (R2, acc@1) per arm per stage for the post-training ladder figure.
+
+    Returns ``{arm: {stage_code: (r2, acc1)}}`` for the three arms of plot 6
+    (self map / previous stage's map transferred in / map refit from the
+    previous stage's contexts onto this stage's on-policy answers), single-turn
+    context arm, ridge, at the shared selected layer.
+    """
+    grid = _load(eval_dir, "fits/grid_cells.json")
+    xf = _load(eval_dir, "transfer/transfer_matrix.json")
+    cells = grid["cells"]
+    layer = str(grid["layer_star"])
+    out: dict[str, dict[str, tuple[float, float]]] = {"self": {}, "transferred": {}, "crossfit": {}}
+    for s in _STAGE_CODES:
+        d = cells[f"diag_{s}_single_ctx"]
+        out["self"][s] = (d["r2_at_star"], _mean_acc1(d["baselines_at_star"]["knn"]))
+    for i in range(1, len(_STAGE_CODES)):
+        prev, cur = _STAGE_CODES[i - 1], _STAGE_CODES[i]
+        pair = xf["pairs"][f"{prev}->{cur}"]
+        out["transferred"][cur] = (
+            pair["r2"]["direct"],
+            _mean_acc1([b["knn"] for b in pair["baselines"]]),
+        )
+        g = cells[f"grid_{prev}{cur}_single_ctx"]["per_layer"][layer]
+        out["crossfit"][cur] = (g["r2"], _mean_acc1(g["knn"]))
+    return out
+
+
+def fig_paper_c1_stage_ladder_arms(eval_dir: Path) -> None:
+    """ICLR paper figure (plan.tex plot 6): how the map evolves through post-training.
+
+    Three arms per stage of the OLMo-2 chain, single-turn context arm, ridge,
+    at the shared selected layer: (1) the stage's own map, (2) the previous
+    stage's map applied unchanged to this stage's pairs, (3) a map refit from
+    the previous stage's context states onto this stage's on-policy answers.
+    Left panel held-out R^2, right panel retrieval acc@1 (cosine).
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full, set_paper_style
+
+    set_paper_style("iclr")
+    arms = _stage_ladder_arms(eval_dir)
+    grid = _load(eval_dir, "fits/grid_cells.json")
+    n_pool = grid["cells"]["diag_B_single_ctx"]["baselines_at_star"]["knn"][0]["cosine"]["n_pool"]
+    series = [
+        ("self", "own map at this stage"),
+        ("transferred", "previous stage's map, applied as-is"),
+        ("crossfit", "map refit: previous contexts $\\to$ this stage's answers"),
+    ]
+    xs = np.arange(len(_STAGE_CODES))
+    width = 0.26
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_full(height_frac=0.36))
+    for ax, idx, ylabel in ((axes[0], 0, "held-out $R^2$"), (axes[1], 1, "retrieval acc@1")):
+        for k, (arm, label) in enumerate(series):
+            offs = (k - 1) * width
+            present = [(i, s) for i, s in enumerate(_STAGE_CODES) if s in arms[arm]]
+            ax.bar(
+                [xs[i] + offs for i, _ in present],
+                [arms[arm][s][idx] for _, s in present],
+                width=width,
+                color=_ARM_COLORS[arm],
+                label=label if idx == 0 else None,
+            )
+        ax.axhline(0.0, color="black", lw=0.7, ls=":")
+        ax.set_xticks(xs, [_STAGE_LABELS[s] for s in _STAGE_CODES])
+        ax.set_ylabel(ylabel)
+    axes[1].axhline(
+        1.0 / n_pool, color="#999999", lw=0.8, ls="--", label=f"chance (pool $n$={n_pool})"
+    )
+    handles = [*axes[0].get_legend_handles_labels()[0], *axes[1].get_legend_handles_labels()[0]]
+    labels = [*axes[0].get_legend_handles_labels()[1], *axes[1].get_legend_handles_labels()[1]]
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.02), ncol=2)
+    paper_out = PROJECT_ROOT / "figures" / "paper"
+    paper_out.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_stage_ladder_arms", dir=paper_out)
+    plt.close(fig)
+
+
 FIG_GROUPS = {
     "hero1": fig_hero_diag,
     "hero1b": fig_hero_diag_folds,
@@ -816,7 +907,8 @@ def main() -> None:
     if args.style == "iclr":
         # Paper pathway (#2094 precedent): one ICLR-styled figure under figures/paper/.
         fig_paper_c1_stage_retention(args.eval_dir)
-        print("paper c1_stage_retention regenerated.")
+        fig_paper_c1_stage_ladder_arms(args.eval_dir)
+        print("paper c1_stage_retention + c1_stage_ladder_arms regenerated.")
         sys.exit(0)
     set_paper_style()
     args.fig_dir.mkdir(parents=True, exist_ok=True)
