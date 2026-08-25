@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "script": "scripts/issue2564_pair_slopes.py",
+    "convention": "through-origin slope of predicted on observed shift norms, single-turn map (arm_779ce), ratio to the map's global slope over all 2,778 pairs (minpair_delta.json calibration convention)",
+    "global_slope_all2778": 1.0136696325596286,
+    "v5_instruction": "Use fewer than twenty words in your answer."
+  },
+  "per_value_pair": {
+    "v1->v2": {
+      "n_pairs": 12,
+      "slope": 1.0413157119970156,
+      "ratio_to_global": 1.027273263940617,
+      "mean_obs_norm": 18.229192856978674,
+      "mean_abs_ans_len_delta_tokens": 98.50833333333333
+    },
+    "v1->v3": {
+      "n_pairs": 12,
+      "slope": 1.1043241918820075,
+      "ratio_to_global": 1.089432055978106,
+      "mean_obs_norm": 17.702637537561177,
+      "mean_abs_ans_len_delta_tokens": 93.325
+    },
+    "v1->v4": {
+      "n_pairs": 12,
+      "slope": 0.8975492773168713,
+      "ratio_to_global": 0.8854455618350324,
+      "mean_obs_norm": 17.751733024095053,
+      "mean_abs_ans_len_delta_tokens": 51.78333333333334
+    },
+    "v1->v5": {
+      "n_pairs": 12,
+      "slope": 0.8177917204692025,
+      "ratio_to_global": 0.8067635590544302,
+      "mean_obs_norm": 46.09994491516941,
+      "mean_abs_ans_len_delta_tokens": 216.95000000000002
+    },
+    "v2->v3": {
+      "n_pairs": 12,
+      "slope": 1.5758377328650366,
+      "ratio_to_global": 1.5545870984473225,
+      "mean_obs_norm": 9.462767601762156,
+      "mean_abs_ans_len_delta_tokens": 24.350000000000005
+    },
+    "v2->v4": {
+      "n_pairs": 12,
+      "slope": 0.8817930366057896,
+      "ratio_to_global": 0.8699017986552128,
+      "mean_obs_norm": 19.650258936619736,
+      "mean_abs_ans_len_delta_tokens": 55.175000000000004
+    },
+    "v2->v5": {
+      "n_pairs": 12,
+      "slope": 0.7974512669778935,
+      "ratio_to_global": 0.7866974025494285,
+      "mean_obs_norm": 41.478497918654604,
+      "mean_abs_ans_len_delta_tokens": 118.44166666666666
+    },
+    "v3->v4": {
+      "n_pairs": 12,
+      "slope": 0.9465155306214194,
+      "ratio_to_global": 0.9337514908396362,
+      "mean_obs_norm": 19.984079502630216,
+      "mean_abs_ans_len_delta_tokens": 58.275000000000006
+    },
+    "v3->v5": {
+      "n_pairs": 12,
+      "slope": 0.8459007180272992,
+      "ratio_to_global": 0.8344934985290087,
+      "mean_obs_norm": 42.27560882982943,
+      "mean_abs_ans_len_delta_tokens": 123.625
+    },
+    "v4->v5": {
+      "n_pairs": 12,
+      "slope": 0.7764005235258948,
+      "ratio_to_global": 0.7659305345523642,
+      "mean_obs_norm": 43.42227045523352,
+      "mean_abs_ans_len_delta_tokens": 165.16666666666666
+    }
+  },
+  "fired_all": {
+    "n_pairs": 120,
+    "ratio_to_global": 0.835792202220848
+  },
+  "fired_excluding_v5": {
+    "n_pairs": 72,
+    "ratio_to_global_tail": 0.9865191510713811,
+    "ratio_to_global_span_mean": 0.9757731925903795
+  }
+}
