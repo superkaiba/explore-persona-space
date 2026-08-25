@@ -1,25 +1,33 @@
 {
-  "commit": "5fb05b71+dirty",
-  "render_id": "5ad3ea7c469a475f",
-  "git_commit": "5fb05b7190e4490f5ee1f277925bfa8e130d5e05",
+  "commit": "ade0098a+dirty",
+  "render_id": "81025d8fd4e04cbd",
+  "git_commit": "ade0098a38d1da398e0dacaa0c989ab8ea464c52",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2564_sep_ratio_plot.py",
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/issue_2564/sep_ratio_by_change_type.meta.json",
-    "figures/issue_2564/sep_ratio_by_change_type.pdf",
-    "figures/issue_2564/sep_ratio_by_change_type.png",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
     "figures/paper/c3_persona_direction_spectrum.meta.json",
     "figures/paper/c3_persona_direction_spectrum.pdf",
     "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c4_speaker_ladder.meta.json",
+    "figures/paper/c4_speaker_ladder.pdf",
+    "figures/paper/c4_speaker_ladder.png",
     "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2054_paper_speaker_ladder_fig.py",
     "scripts/issue2474_n1m_map.py",
+    "scripts/issue2564_sep_ratio_plot.py",
+    "scripts/issue2564_type_reads_plot.py",
     "scripts/issue779_plot3_redesign.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
@@ -32,14 +40,15 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2568/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2564_sep_ratio_plot.py",
-  "created": "2026-08-25T16:12:08Z",
+  "created": "2026-08-25T16:44:07Z",
   "figsize": [
-    7.4,
-    4.96
+    8.8,
+    6.76
   ],
   "points": [
     {
@@ -116,14 +125,14 @@
           "1.5"
         ],
         "yticklabels": [
-          "query content",
-          "content constraint",
-          "user fact",
-          "user profile",
-          "register",
-          "lexical marker",
-          "persona",
-          "format"
+          "question topic\n('dog or cat?' vs 'rent or buy?')",
+          "content constraint\n(exactly 3 reasons vs no numbers)",
+          "user fact\n(name is Marcus vs Diego)",
+          "user profile\n(single parent vs retired engineer)",
+          "register\n(formal vs casual tone)",
+          "lexical marker\n(say 'moreover' vs 'honestly')",
+          "persona\n(pirate captain vs zen teacher)",
+          "format\n(bulleted list vs JSON object)"
         ]
       }
     ],
