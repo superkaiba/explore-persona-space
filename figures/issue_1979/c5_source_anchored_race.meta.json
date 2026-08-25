@@ -1,0 +1,1556 @@
+{
+  "commit": "2f4bd08e+dirty",
+  "render_id": "e0d84089d505444a",
+  "git_commit": "2f4bd08ed24b1abd6606aa2afadaecf6a358d8f6",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1979_source_anchored_fig.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "figures/issue_2356/flippair_behavior_contrast.meta.json",
+    "figures/issue_2356/flippair_behavior_contrast.pdf",
+    "figures/issue_2356/flippair_behavior_contrast.png",
+    "scripts/issue2054_caphit_pooled_refit.py",
+    "scripts/issue2054_paper_r2_figs.py",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue2564_shift_bars.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/interpreting/2564/concerns.jsonl",
+    "tasks/interpreting/2564/events.jsonl",
+    "tasks/planning/2588/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1979_source_anchored_fig.py",
+  "created": "2026-08-25T21:38:43Z",
+  "figsize": [
+    8.4,
+    4.2
+  ],
+  "points": [
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.03548619447779112,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.07111644657863145,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.07486194477791117,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.0902280912364946,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1421539210629935,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.20381798682140012,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.09460919746422203,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1321198738204981,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.36585834333733486,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.06650660264105641,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.19327731092436973,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.3468427370948379,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1805738997286674,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.19166766856838074,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.04740064867877519,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.03246488197249446,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.0996998446374238,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.04370272573220408,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.29381678684574125,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.07924310861643834,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.12207948221017888,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1484932175428297,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.05220314601198443,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.08802977611772538,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.11616125240448812,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.16931979164044034,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3352301376749614,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.11035078876623138,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.07049388942942894,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.00014406108194024985,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.4789070567300373,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.2066845946984249,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3825301929120101,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.0005762443277609994,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.12893466833652362,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.06790078995450442,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.20307322929171667,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.01310924369747899,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.06333733493397359,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.28220888355342133,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.21651860744297718,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.09925570228091235,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.05930372148859543,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.13296837863085062,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.35971188475390153,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.17723889555822328,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.09291716686674668,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.09416566626650659,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3485714285714286,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.43827130852340934,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.02857142857142857,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.058727490996398554,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.18924369747899158,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.16254501800720286,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5727250900360145,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.25537227791941625,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1545738295318127,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.21094837935174068,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.019639855942376952,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.19884753901560623,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.29412470896134346,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.35074071416386166,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.06986962474102118,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.12264400109179936,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.17191289111536484,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.12346034722279411,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5241422364592757,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.22656550134460238,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.10737352640613289,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.23088189398957376,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.028572114584816222,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.21849264094271226,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2211337607782835,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3192393575795937,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2844245961106999,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.14578981492353285,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.14214026751437983,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2263199597281325,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.26118274155767296,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.21215904725316942,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.038032125632225966,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.21522725641873328,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.026363177995065726,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.07971379867360491,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.38977068356326194,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4126785958426699,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.04720854878544682,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.0814503547712287,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2636571035931873,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.24329451490038012,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.6464161410499636,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.31361060561535903,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.14369072020962045,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.181918598981966,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.019354064252833234,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.24555168864698843,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3562630556382379,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.37234987645489914,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.13892290335104762,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.044466853958890454,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.23376311562837876,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.27933443788214446,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.41753703582349083,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.30882635420668464,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.0877812192622589,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.1850704699325743,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.0435544671066022,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2680496531301582,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.37345434474977435,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2921558741748267,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.0497971139906797,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.28428053502875966,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3275949003321281,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.23169824012056853,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3361905448878964,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3329811755666539,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.30195202774676366,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3175106245963107,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.10108285916140863,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.12821436292682237,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3831432372434332,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.33094009123144874,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.1409532967296912,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.07549525807804924,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3173490237784665,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4070596739628151,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4801536833742598,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4741619462849065,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.26528995268647837,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1687597562889727,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.08351542862450867,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2305678969673756,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5899159663865546,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.7079471788715486,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.05488595438175269,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2704921968787515,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4016806722689075,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.33166866746698676,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.7423289315726291,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5077192731180873,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.3274429771908764,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2395678271308523,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.006002400960384154,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.06948379351740695,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5667707082833132,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.6418727490996399,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.16187274909963983,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.21402160864345737,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4474909963985594,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4354861944777911,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.6912364945978391,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5097361282652507,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.32533013205282113,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.19202881152460982,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.050372148859543824,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.16456182472989198,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.6577348797785342,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.7775456795921751,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.21383466595997755,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.42200292936363853,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.41528007887309354,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.40514778277662933,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.7267881583885605,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.6043987706492508,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.31703042098984313,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.34593867809918666,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.0445148743195372,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.014214026751437986,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.5360384153661464,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.22333733493397356,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.16465786314525807,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.09627851140456183,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.4678511404561824,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.46775510204081633,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.41892962628224656,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.06189824487366069,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.06185022451301394,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.08019400228007241,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.3243775361687959,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.33595044308466265,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.3357583616420757,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.36721169786569685,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.3772479532408676,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.03371029317401846,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.29604552338721346,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.19678743793038134,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.04677183126993445,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.12807030184488213,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.41220677579170156,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.10862205578294838,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.013205599177856235,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.10324377539051241,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1008427573581749,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2853850033236349,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.30387284217263366,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.2074479579939598,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.07851328965743616,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.17709909006521382,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.058727490996398554,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.5248019207683073,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.11788715486194477,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.40014405762304917,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.131140456182473,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.16264105642256904,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.22214218835186528,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.09032629837653666,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4414031550649255,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.15712262003616584,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.053254579957245696,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.23040169038310623,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2888355342136854,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2802881152460984,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.14737094837935172,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.2167106842737095,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5348859543817527,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4297238895558223,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4495078031212485,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.15591836734693876,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.2940216086434574,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.1786794717887155,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5760864345738295,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.502328931572629,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5518069435857417,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.0001920998933283696,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.36796734567049194,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.12328010654348119,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.5349021529728452,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4882699038673834,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.516218876952562,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.06209032631624768,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4742490817473025,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.23136209759604126,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.4945616943008777,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.47549761112411804,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.616998799519808,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.03558223289315726,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.34357743097238896,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": -0.35884753901560623,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.6386074429771909,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "within-arm Spearman $\\rho$ against leakage": 0.6256422569027611,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 240,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "content (12 arms, K=14)",
+        "xlabel": "within-arm Spearman $\\rho$ against leakage",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "base propensity",
+          "write forecast size",
+          "gate pred",
+          "read-out proj (answer)",
+          "REAL source vs target answers",
+          "MAPPED source vs target answers",
+          "through-map ctx sim",
+          "nearest train rows (ctx)",
+          "context sim",
+          "read-out proj (mapped)",
+          "write forecast align",
+          "answer sim",
+          "nearest train rows (ans)",
+          "through-map answer sim"
+        ]
+      },
+      {
+        "title": "marker (6 arms, K=12)",
+        "xlabel": "within-arm Spearman $\\rho$ against leakage",
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "read-out proj (answer)",
+          "read-out proj (mapped)",
+          "gate pred",
+          "through-map ctx sim",
+          "through-map answer sim",
+          "base propensity",
+          "context sim",
+          "nearest train rows (ans)",
+          "answer sim",
+          "nearest train rows (ctx)",
+          "MAPPED source vs target answers",
+          "REAL source vs target answers"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
