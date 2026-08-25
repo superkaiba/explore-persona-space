@@ -31,7 +31,15 @@ instruct, with the identity-plus-bias baseline and the shuffled-answer null.
 
 Plot 2 (``c4_universal_vs_specialized``): the same x-axis, instruct only,
 comparing a map trained on everything against a map trained on this speaker
-alone, with the same identity-plus-bias baseline. Its y-axis is broken: the
+alone, with the same identity-plus-bias baseline. Two correction rungs of
+the pooled map are drawn beside it (user request, 2026-08-25): a per-cell
+constant SHIFT and a scalar global RESCALING, both read from the banked
+specialization ladder. They separate a pooled map that genuinely misses this
+speaker from one that merely sits mis-calibrated against it -- across the five
+clean speakers a single constant closes 45-80% of the pooled-to-specialized
+gap (median 62%). The two rungs extend the pooled map INDEPENDENTLY, not
+cumulatively, so "+ global rescaling" is a gain alone rather than a gain on
+top of the shift. Its y-axis is broken: the
 baseline runs down to -1.51 while every bar sits between 0.09 and 0.58, so one
 linear axis would spend three quarters of its height on the empty space between
 them.
@@ -143,7 +151,14 @@ def build_series(cells: dict[tuple[str, str, str], dict], loco: dict) -> dict:
     """Pull the six positions x two models out of the indexed cells, fail loud on a miss."""
     series: dict = {"labels": [label for _, _, label in POSITIONS], "n": [], "null": []}
     for model in MODELS:
-        series[model] = {"ceiling": [], "pooled": [], "loco": [], "identity": []}
+        series[model] = {
+            "ceiling": [],
+            "pooled": [],
+            "bias": [],
+            "gain": [],
+            "loco": [],
+            "identity": [],
+        }
     for character, framing, _ in POSITIONS:
         for model in MODELS:
             key = (character, framing, model)
@@ -152,6 +167,13 @@ def build_series(cells: dict[tuple[str, str, str], dict], loco: dict) -> dict:
             unit = cells[key]
             series[model]["ceiling"].append(unit["ceiling_r2"])
             series[model]["pooled"].append(unit["r2"]["pooled"])
+            # The two minimal per-cell corrections of the specialization
+            # ladder. Each extends the POOLED map INDEPENDENTLY (see
+            # issue2054_specialization_ladder's docstring): "+gain" is a
+            # scalar gain ALONE, not a gain on top of the bias refit, so the
+            # two are siblings rather than a cumulative ladder.
+            series[model]["bias"].append(unit["r2"]["bias"])
+            series[model]["gain"].append(unit["r2"]["gain"])
             series[model]["identity"].append(unit["aux_r2"]["identity_cell"])
             if key not in loco:
                 raise KeyError(f"no LOCO row for {key}; have {sorted(loco)}")
@@ -199,6 +221,23 @@ def _apply_cap_excluded(
     for idx in indices:
         character, framing, _ = POSITIONS[idx]
         out[idx] = table[(character, framing, "instruct")]
+    return out
+
+
+def _blank_at(values: list[float], indices: list[int]) -> list[float]:
+    """NaN out the cap-substituted positions so no bar is drawn there.
+
+    The correction rungs are banked ONLY on the raw (cap-contaminated) rows
+    for the one truncation-affected cell, while that cell's pooled and own-map
+    bars are plotted at their cap-excluded refits. Drawing a raw correction
+    beside a cap-excluded pooled bar would put two different row sets in one
+    speaker group -- the very thing the substitution exists to prevent -- and
+    would read as a correction that LOWERS the map. Blank is the honest render
+    until a matching cap-excluded correction refit is computed.
+    """
+    out = list(values)
+    for idx in indices:
+        out[idx] = float("nan")
     return out
 
 
@@ -287,14 +326,20 @@ def figure_universal(series: dict, out_dir: Path) -> None:
     the baseline at its true value in a short strip below.
     """
     x = np.arange(len(series["labels"]), dtype=float)
-    width = 0.38
+    width = 0.20
     model = "instruct"
     substituted = _substituted_indices()
     cap_pooled = load_cap_pooled()
 
+    # The pooled arm and its two minimal corrections share one hue (one colour
+    # = one meaning: the map trained on everything), lightening as a correction
+    # is added. A `None` table marks an arm with no cap-excluded refit: it is
+    # left blank at the substituted position rather than drawn on other rows.
     arms = [
         ("ceiling", "trained on this speaker alone", CAP_EXCLUDED, paper_color("instruct")),
         ("pooled", "trained on everything", cap_pooled, paper_color("oracle_answer")),
+        ("bias", "trained on everything + constant shift", None, "#DDA0C0"),
+        ("gain", "trained on everything + global rescaling", None, "#EDC9DC"),
     ]
 
     fig, (ax_bar, ax_id) = plt.subplots(
@@ -307,15 +352,22 @@ def figure_universal(series: dict, out_dir: Path) -> None:
     )
     fig.get_layout_engine().set(hspace=0.0, h_pad=0.01)
 
-    # BOTH arms carry the cap-excluded substitution. Substituting one while the
-    # other stayed raw would put two different row sets in the same speaker
-    # group, which is not a comparison.
-    for (key, label, table, color), offset in zip(arms, (-width / 2, width / 2), strict=True):
-        values = _apply_cap_excluded(series[model][key], substituted, table)
+    # Every arm DRAWN at a substituted position carries the cap-excluded
+    # substitution. Substituting one while another stayed raw would put two
+    # different row sets in the same speaker group, which is not a comparison;
+    # an arm with no cap-excluded refit is blanked there, never drawn raw.
+    offsets = (np.arange(len(arms)) - (len(arms) - 1) / 2.0) * width
+    for (key, label, table, color), offset in zip(arms, offsets, strict=True):
+        raw = series[model][key]
+        values = (
+            _apply_cap_excluded(raw, substituted, table)
+            if table is not None
+            else _blank_at(raw, substituted)
+        )
         ax_bar.bar(x + offset, values, width, color=color, label=label)
     ax_bar.axhline(0.0, color=paper_color("reference"), linewidth=0.6)
 
-    _identity_ticks(ax_id, x, series[model]["identity"], width * 2, None)
+    _identity_ticks(ax_id, x, series[model]["identity"], width * len(arms), None)
     # The ticks are drawn on the lower panel but the legend sits on the upper
     # one, so give the upper panel an empty handle carrying the label.
     ax_bar.plot(
@@ -323,7 +375,7 @@ def figure_universal(series: dict, out_dir: Path) -> None:
         [],
         linestyle="none",
         marker="_",
-        markersize=width * 52,
+        markersize=width * len(arms) * 26,
         markeredgewidth=1.6,
         color=paper_color("identity_bias"),
         label=IDENTITY_LABEL,
