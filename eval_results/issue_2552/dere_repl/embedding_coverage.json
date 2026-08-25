@@ -1,0 +1,67 @@
+{
+  "per_config": {
+    "pt_max": {
+      "top_1": 0.5842719078063965,
+      "top_2": 0.5684813857078552,
+      "top_3": 0.5571650266647339,
+      "top_5": 0.5410201549530029
+    },
+    "pt_sum": {
+      "top_1": 0.6175694465637207,
+      "top_2": 0.6047404408454895,
+      "top_3": 0.5953700542449951,
+      "top_5": 0.581593930721283
+    },
+    "rep_ta": {
+      "top_1": 0.6312373876571655,
+      "top_2": 0.6194928288459778,
+      "top_3": 0.6108170747756958,
+      "top_5": 0.5978502631187439
+    },
+    "mat_k100": {
+      "top_1": 0.6273448467254639,
+      "top_2": 0.6152501702308655,
+      "top_3": 0.606460452079773,
+      "top_5": 0.5934290289878845
+    },
+    "mat_k200": {
+      "top_1": 0.6306162476539612,
+      "top_2": 0.6186908483505249,
+      "top_3": 0.6098172664642334,
+      "top_5": 0.5965887904167175
+    }
+  },
+  "list_description_coverage": {
+    "pt_max": 0.9995024471477021,
+    "pt_sum": 0.9968522166487277,
+    "rep_ta": 0.9999116906054388,
+    "mat_k100": 0.9996743677767598,
+    "mat_k200": 0.9998984699420264
+  },
+  "n_turns": 1970,
+  "n_fields": 24,
+  "ks": [
+    1,
+    2,
+    3,
+    5
+  ],
+  "model": "Qwen/Qwen3-Embedding-8B",
+  "pooling": "last-token pool, L2-normalized, no instruction prefix",
+  "tiny_model_smoke": false,
+  "paper_reference_embedding": {
+    "pt_max": 0.617,
+    "rep_ta": 0.663
+  },
+  "metadata": {
+    "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+    "timestamp_utc": "2026-08-25T22:44:04.996058Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "p4-embed",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2552_turnsae_der.py"
+  }
+}

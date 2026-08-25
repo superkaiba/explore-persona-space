@@ -1,0 +1,53 @@
+{
+  "commit": "df309e7c",
+  "render_id": "6356b96e71bd4bc0",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:18Z",
+  "figsize": [
+    4.4,
+    3.0
+  ],
+  "points": [
+    {
+      "category": "trainer_2\n(andyrdt, eval+pool passes)",
+      "var-FVE": 0.8311526807003474,
+      "_kind": "bar"
+    },
+    {
+      "category": "replication TA SAE\n(holdout val)",
+      "var-FVE": 0.92215,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Reconstruction FVE (global fp64 per-dim variance)",
+        "ylabel": "var-FVE",
+        "xticklabels": [
+          "trainer_2\n(andyrdt, eval+pool passes)",
+          "replication TA SAE\n(holdout val)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

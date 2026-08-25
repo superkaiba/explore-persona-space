@@ -1,0 +1,108 @@
+{
+  "commit": "df309e7c",
+  "render_id": "67dc3b50f0574e1c",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:06Z",
+  "figsize": [
+    12.0,
+    3.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "rep_ta",
+        "xticklabels": [
+          "Q1",
+          "Q2",
+          "Q3",
+          "Q4",
+          "Q5"
+        ],
+        "yticklabels": [
+          "Content",
+          "Form",
+          "Voice",
+          "Function",
+          "Meta"
+        ]
+      },
+      {
+        "title_left": "mat_k100",
+        "xticklabels": [
+          "Q1",
+          "Q2",
+          "Q3",
+          "Q4",
+          "Q5"
+        ],
+        "yticklabels": [
+          "Content",
+          "Form",
+          "Voice",
+          "Function",
+          "Meta"
+        ]
+      },
+      {
+        "title_left": "mat_k200",
+        "xticklabels": [
+          "Q1",
+          "Q2",
+          "Q3",
+          "Q4",
+          "Q5"
+        ],
+        "yticklabels": [
+          "Content",
+          "Form",
+          "Voice",
+          "Function",
+          "Meta"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

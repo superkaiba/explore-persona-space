@@ -1,0 +1,88 @@
+{
+  "commit": "df309e7c",
+  "render_id": "81fe867f462142c6",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:54:53Z",
+  "figsize": [
+    6.0,
+    3.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "partial R\u00b2": 0.090656029174013,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "partial R\u00b2": 0.07503038469077612,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "partial R\u00b2": 0.05919715191551606,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "partial R\u00b2": 0.04458131780096878,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "partial R\u00b2": 0.04203464396098717,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "partial R\u00b2": 0.03513621621945593,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Category increment: as-selected vs forced-last",
+        "ylabel": "partial R\u00b2",
+        "legend_labels": [
+          "category at selection",
+          "category forced last"
+        ],
+        "xticklabels": [
+          "rep_ta",
+          "mat_k100",
+          "mat_k200"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10"
+        ]
+      }
+    ],
+    "series": [
+      "category at selection",
+      "category forced last"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

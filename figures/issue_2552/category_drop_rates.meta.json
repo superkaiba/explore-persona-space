@@ -1,0 +1,146 @@
+{
+  "commit": "df309e7c",
+  "render_id": "c263c1d2b4634427",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:07Z",
+  "figsize": [
+    6.4,
+    3.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.266667,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.266667,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.266667,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.266667,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.266667,
+      "fraction of panel": 0.00046511627906976747,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.533333,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.533333,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.533333,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.533333,
+      "fraction of panel": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.533333,
+      "fraction of panel": 0.000376081233546446,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "W3 category-assignment drop rates by status class",
+        "ylabel": "fraction of panel",
+        "legend_labels": [
+          "rep_ta",
+          "mat_k100",
+          "mat_k200"
+        ],
+        "xticklabels": [
+          "none",
+          "malformed",
+          "api_refusal",
+          "transport",
+          "unjudged"
+        ],
+        "yticklabels": [
+          "0.0000",
+          "0.0001",
+          "0.0002",
+          "0.0003",
+          "0.0004",
+          "0.0005"
+        ]
+      }
+    ],
+    "series": [
+      "rep_ta",
+      "mat_k100",
+      "mat_k200"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

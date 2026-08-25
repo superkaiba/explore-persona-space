@@ -1,0 +1,468 @@
+{
+  "commit": "df309e7c",
+  "render_id": "509a9b58e73b411c",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:54:55Z",
+  "figsize": [
+    12.600000000000001,
+    3.0
+  ],
+  "points": [
+    {
+      "step": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step": 1.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step": 2.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step": 3.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step": 5.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step": 6.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step": 1.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step": 2.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step": 3.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step": 4.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step": 5.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step": 6.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step": 1.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step": 2.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step": 3.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step": 5.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step": 6.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step": 1.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step": 2.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step": 3.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step": 4.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step": 5.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step": 6.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "step": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "step": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "step": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "step": 5.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "step": 6.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "step": 1.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "step": 2.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "step": 3.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "step": 4.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "step": 5.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "step": 6.0,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "step": 1.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "step": 2.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "step": 3.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "step": 4.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "step": 5.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "step": 6.0,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 54,
+  "text": {
+    "suptitle": "Split-half selection stability",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "rep_ta",
+        "xlabel": "step",
+        "annotations": [
+          "act_mean_when_active",
+          "category",
+          "act_var",
+          "match_cos",
+          "pca_best_rank",
+          "rb_cos_max",
+          "act_mean_when_active",
+          "act_var",
+          "category",
+          "pca_best_rank",
+          "match_cos",
+          "rb_cos_max",
+          "act_mean_when_active",
+          "category",
+          "act_var",
+          "match_cos",
+          "pca_best_rank",
+          "consistency_twin"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "yticklabels": [
+          "primary",
+          "half 1",
+          "half 2"
+        ]
+      },
+      {
+        "title_left": "mat_k100",
+        "xlabel": "step",
+        "annotations": [
+          "act_mean_when_active",
+          "tier",
+          "category",
+          "pca_best_rank",
+          "act_var",
+          "match_cos",
+          "act_mean_when_active",
+          "tier",
+          "category",
+          "pca_best_rank",
+          "act_var",
+          "match_cos",
+          "act_mean_when_active",
+          "tier",
+          "category",
+          "pca_best_rank",
+          "act_var",
+          "match_cos"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "yticklabels": [
+          "primary",
+          "half 1",
+          "half 2"
+        ]
+      },
+      {
+        "title_left": "mat_k200",
+        "xlabel": "step",
+        "annotations": [
+          "act_mean_when_active",
+          "tier",
+          "act_var",
+          "category",
+          "pca_best_rank",
+          "match_cos",
+          "act_mean_when_active",
+          "tier",
+          "act_var",
+          "pca_best_rank",
+          "category",
+          "consistency_twin",
+          "act_mean_when_active",
+          "tier",
+          "category",
+          "act_var",
+          "pca_best_rank",
+          "footprint_top20"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ],
+        "yticklabels": [
+          "primary",
+          "half 1",
+          "half 2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

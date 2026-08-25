@@ -1,0 +1,50 @@
+{
+  "commit": "df309e7c",
+  "render_id": "7ab3e623fef14f9b",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:11Z",
+  "figsize": [
+    4.6,
+    3.8
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pairwise coverage win rate, top-100 judged lists (row beats column)",
+        "xticklabels": [
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)",
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)"
+        ],
+        "yticklabels": [
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)",
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

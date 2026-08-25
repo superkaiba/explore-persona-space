@@ -1,0 +1,180 @@
+{
+  "commit": "df309e7c",
+  "render_id": "1db6289d75a44206",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:16Z",
+  "figsize": [
+    6.0,
+    3.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "mean top-k cosine": 0.5842719078063965,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "mean top-k cosine": 0.6175694465637207,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "mean top-k cosine": 0.6312373876571655,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "mean top-k cosine": 0.6273448467254639,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "mean top-k cosine": 0.6306162476539612,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "mean top-k cosine": 0.5684813857078552,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "mean top-k cosine": 0.6047404408454895,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "mean top-k cosine": 0.6194928288459778,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "mean top-k cosine": 0.6152501702308655,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "mean top-k cosine": 0.6186908483505249,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "pt_max\n(andyrdt trainer_2, 131k)",
+      "mean top-k cosine": 0.5571650266647339,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "pt_sum\n(andyrdt trainer_2, 131k)",
+      "mean top-k cosine": 0.5953700542449951,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "rep_ta\n(replication TA, 32k)",
+      "mean top-k cosine": 0.6108170747756958,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mat_k100\n(#2476 matryoshka, 65k)",
+      "mean top-k cosine": 0.606460452079773,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mat_k200\n(#2476 matryoshka, 65k)",
+      "mean top-k cosine": 0.6098172664642334,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.6,
+      "mean top-k cosine": 0.5410201549530029,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.6,
+      "mean top-k cosine": 0.581593930721283,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.6,
+      "mean top-k cosine": 0.5978502631187439,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.6,
+      "mean top-k cosine": 0.5934290289878845,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.6,
+      "mean top-k cosine": 0.5965887904167175,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Embedding coverage (Qwen3-Embedding-8B), top-100 judged lists",
+        "ylabel": "mean top-k cosine",
+        "legend_labels": [
+          "top-1",
+          "top-2",
+          "top-3",
+          "top-5"
+        ],
+        "xticklabels": [
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)",
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "top-1",
+      "top-2",
+      "top-3",
+      "top-5"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

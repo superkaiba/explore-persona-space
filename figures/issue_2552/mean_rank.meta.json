@@ -1,0 +1,70 @@
+{
+  "commit": "df309e7c",
+  "render_id": "8dc55fa7cd1e4d59",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:13Z",
+  "figsize": [
+    5.6,
+    3.0
+  ],
+  "points": [
+    {
+      "category": "rep_ta\n(replication TA, 32k)",
+      "mean rank (1 = best)": 2.370066632496156,
+      "_kind": "bar"
+    },
+    {
+      "category": "mat_k100\n(#2476 matryoshka, 65k)",
+      "mean rank (1 = best)": 2.742696053305997,
+      "_kind": "bar"
+    },
+    {
+      "category": "mat_k200\n(#2476 matryoshka, 65k)",
+      "mean rank (1 = best)": 3.000512557662737,
+      "_kind": "bar"
+    },
+    {
+      "category": "pt_max\n(andyrdt trainer_2, 131k)",
+      "mean rank (1 = best)": 3.4474628395694515,
+      "_kind": "bar"
+    },
+    {
+      "category": "pt_sum\n(andyrdt trainer_2, 131k)",
+      "mean rank (1 = best)": 3.4392619169656586,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "5-way ranking (W6), top-100 judged lists",
+        "ylabel": "mean rank (1 = best)",
+        "xticklabels": [
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)",
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

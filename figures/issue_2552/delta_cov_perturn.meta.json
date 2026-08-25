@@ -1,0 +1,58 @@
+{
+  "commit": "df309e7c",
+  "render_id": "ac5860996a31432b",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:15Z",
+  "figsize": [
+    4.4,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "rep_ta\n(replication TA, 32k) wins",
+      "turns": 1342.0,
+      "error": 40.5053081555435,
+      "_kind": "bar"
+    },
+    {
+      "category": "pt_max\n(andyrdt trainer_2, 131k) wins",
+      "turns": 628.0,
+      "error": 40.50530815554356,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-turn coverage head-to-head, top-100 judged lists (pooled, n=1970)",
+        "ylabel": "turns",
+        "xticklabels": [
+          "rep_ta\n(replication TA, 32k) wins",
+          "pt_max\n(andyrdt trainer_2, 131k) wins"
+        ],
+        "yticklabels": [
+          "0",
+          "200",
+          "400",
+          "600",
+          "800",
+          "1000",
+          "1200",
+          "1400",
+          "1600"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

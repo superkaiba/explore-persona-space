@@ -1,0 +1,178 @@
+{
+  "commit": "df309e7c",
+  "render_id": "d52e4595504f4837",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:02Z",
+  "figsize": [
+    13.200000000000001,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "Voice",
+      "y": 0.07055309270908733,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Meta",
+      "y": 0.06605168024680241,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Form",
+      "y": 0.061797493697465,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Function",
+      "y": 0.03529381685555455,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Content",
+      "y": -0.10301044910800994,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Voice",
+      "y": 0.08588656995811268,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Form",
+      "y": 0.05386134132526717,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Function",
+      "y": 0.052243411696128096,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Meta",
+      "y": 0.04992092835651278,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Content",
+      "y": -0.07467116362208111,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Voice",
+      "y": 0.10333644911767785,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Form",
+      "y": 0.04749555964059691,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Meta",
+      "y": 0.03553312959222912,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Function",
+      "y": 0.03276221989730917,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Content",
+      "y": -0.08786159009448757,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "rep_ta shadow ranking (status groups grey-family)",
+        "xticklabels": [
+          "Voice",
+          "Meta",
+          "Form",
+          "Function",
+          "Content"
+        ],
+        "yticklabels": [
+          "\u22120.125",
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100"
+        ]
+      },
+      {
+        "title_left": "mat_k100 shadow ranking (status groups grey-family)",
+        "xticklabels": [
+          "Voice",
+          "Form",
+          "Function",
+          "Meta",
+          "Content"
+        ],
+        "yticklabels": [
+          "\u22120.100",
+          "\u22120.075",
+          "\u22120.050",
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100"
+        ]
+      },
+      {
+        "title_left": "mat_k200 shadow ranking (status groups grey-family)",
+        "xticklabels": [
+          "Voice",
+          "Form",
+          "Meta",
+          "Function",
+          "Content"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

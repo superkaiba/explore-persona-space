@@ -1,0 +1,132 @@
+{
+  "commit": "df309e7c",
+  "render_id": "3ac9b19ab3db496e",
+  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-25T22:55:22Z",
+  "figsize": [
+    8.6,
+    6.510000000000001
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "y": 0.46875,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "y": 0.627906976744186,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "y": 0.2857142857142857,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "y": 0.5,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "y": 0.4,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Judge agreement vs pinned judge (W7), per registered cell (\u2020 n<20)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "W3 per-category (thin cells: descriptive)",
+        "legend_labels": [
+          "agreement",
+          "cal drop rate"
+        ],
+        "xticklabels": [
+          "Content\n(n=64)",
+          "Form\n(n=86)",
+          "Function\n(n=21)",
+          "Meta\n(n=14)",
+          "Voice\n(n=15)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "agreement",
+      "cal drop rate"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
