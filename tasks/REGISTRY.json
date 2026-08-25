@@ -11856,8 +11856,8 @@
     "2537": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2537",
-      "status": "running",
+      "path": "tasks/completed/2537",
+      "status": "completed",
       "title": "select_step9c_tests.py: feature-named consumer tests escape module mapping; over-wide sweep_scope label hides the gap"
     },
     "2538": {
