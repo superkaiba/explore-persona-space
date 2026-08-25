@@ -11906,8 +11906,8 @@
       "goal": "Date the formation of the context\u2192answer activation map along a 15-rung Olmo-3-7B pretraining ladder (stage1-step0 through 5.93T tokens, plus midtrain, final base, and SFT/DPO/RLVR): (1) the formation curve D(T) of diagonal held-out R2 on each checkpoint's own completions, against the identity+learned-bias baseline, kNN retrieval, and a per-rung repeat-generation ceiling; (2) a reduced cross grid separating representation change (fixed answer text) from answer-distribution change (fixed weights); (3) cross-checkpoint transfer/retention, direct and general-linear/Procrustes-aligned against matched nulls, to find the token count past which the final map is already present up to a change of coordinates; (4) the in-context-substitution curve, 4-shot minus 0-shot diagonal at every rung, with query-block-only context pooling.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/2544",
-      "status": "approved",
+      "path": "tasks/running/2544",
+      "status": "running",
       "title": "How the context\u2192answer map forms across pretraining (Olmo 3 7B checkpoint ladder)"
     },
     "2545": {
