@@ -488,7 +488,8 @@ def _unit_done(json_path: Path, regime: dict, fresh: bool) -> bool:
         return False
     try:
         prior = json.loads(json_path.read_text()).get("regime")
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        # encoding-corrupt / truncated / unreadable prior JSON => recompute the unit
         return False
     return prior == json.loads(json.dumps(regime))
 
