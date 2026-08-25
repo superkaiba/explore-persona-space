@@ -20339,23 +20339,46 @@ _PATH_TOKEN_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW
 
 def _finding_names_path(finding: str, path: str) -> bool:
     """True when *finding* names repo-relative *path* as a COMPLETE path
-    token: a substring occurrence not extended by path characters on either
-    side. Payload ``papers/foo.py`` therefore does NOT match a finding about
-    ``archive/papers/foo.py.old`` — the raw substring rule retained such
-    superstring-path findings and blocked unrelated payloads (#2568 round
-    3). A trailing ``.`` counts as a boundary only when not followed by
-    another path character (sentence punctuation, not an extension); a
-    ``:`` right after the path (the ``path:lineno`` shape) is a boundary.
+    token. Two accepted shapes: (1) an occurrence not extended by path
+    characters on either side (bare repo-relative naming, incl. the
+    ``path:lineno`` shape and a sentence-final ``.``); (2) a
+    component-aligned SUFFIX of an ABSOLUTE path token — several checks
+    name payload files absolutely (``check_judge_model_pins`` emits
+    ``/abs/tree/scripts/foo.py:1: ...``), so the token's ``/``-initial
+    form marks it as the same file spelled from the filesystem root.
 
-    Disclosed residual: a finding that names the path ONLY inside a longer
-    path token (an absolute path, a ``./``-prefixed form, a derived
-    filename) is not matched — files-mode enumerations and check findings
-    emit bare repo-relative paths, and the bare no-flags run remains the
-    whole-repo instrument."""
+    Payload ``papers/foo.py`` therefore does NOT match a finding about
+    ``archive/papers/foo.py.old`` (#2568 round 3,
+    `repo-wide-substring-attribution-false-fail`: the raw substring rule
+    retained such superstring-path findings and blocked unrelated
+    payloads): a REPO-RELATIVE superstring token starts with a path char
+    other than ``/``, and a right-side extension (``.old``, ``c`` of
+    ``.pyc``) rejects regardless of the left side. A trailing ``.`` counts
+    as a boundary only when not followed by another path character.
+
+    Disclosed residuals: a ``./``-prefixed naming is not matched (nothing
+    emits it; the bare no-flags run remains the whole-repo instrument),
+    and an ABSOLUTE token naming a DIFFERENT repo file whose trailing
+    components coincide (``/repo/archive/papers/foo.py`` vs payload
+    ``papers/foo.py``) is accepted — parity with the pre-#2568-round-3
+    substring rule for absolute naming, never a new false-PASS."""
     start = finding.find(path)
     while start != -1:
         end = start + len(path)
-        before_ok = start == 0 or finding[start - 1] not in _PATH_TOKEN_CHARS
+        if start == 0 or finding[start - 1] not in _PATH_TOKEN_CHARS:
+            before_ok = True
+        elif finding[start - 1] == "/":
+            # Component-aligned suffix of a longer path token: legitimate
+            # ONLY when that token is ABSOLUTE (walk left to the token
+            # start; it must be the leading "/"). A repo-relative
+            # superstring (archive/papers/foo.py...) starts with a
+            # non-"/" path char and stays rejected.
+            tok_start = start - 1
+            while tok_start > 0 and finding[tok_start - 1] in _PATH_TOKEN_CHARS:
+                tok_start -= 1
+            before_ok = finding[tok_start] == "/"
+        else:
+            before_ok = False
         if end >= len(finding):
             after_ok = True
         else:

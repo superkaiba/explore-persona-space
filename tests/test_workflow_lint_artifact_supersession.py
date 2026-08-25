@@ -349,7 +349,17 @@ def test_finding_names_path_token_boundaries() -> None:
     assert f("papers/foo.py leads the line", "papers/foo.py")
     # Second occurrence rescues a first superstring embedding.
     assert f("archive/papers/foo.py.old then papers/foo.py:2", "papers/foo.py")
-    # The load-bearing collision shapes (codex round-2 bug-class sweep):
+    # ABSOLUTE naming (several checks emit absolute paths, e.g.
+    # check_judge_model_pins): a component-aligned suffix of a /-initial
+    # token is the same file spelled from the filesystem root.
+    assert f("/tmp/tree/scripts/issue9990_red.py:1: hardcoded pin", "scripts/issue9990_red.py")
+    assert not f("/tmp/tree/xscripts/issue9990_red.py:1: pin", "scripts/issue9990_red.py")
+    # Documented parity residual: an absolute token whose trailing
+    # components coincide with the payload matches (same behavior as the
+    # pre-round-3 substring rule for absolute naming).
+    assert f("/repo/archive/papers/foo.py:1: x", "papers/foo.py")
+    # The load-bearing collision shapes (codex round-2 bug-class sweep) —
+    # REPO-RELATIVE superstrings stay rejected:
     assert not f("consumer archive/papers/foo.py.old:1 mentions x", "papers/foo.py")
     assert not f("consumer archive/README.md:1 mentions x", "README.md")
     assert not f("papers/foo.pyc is a different file", "papers/foo.py")
