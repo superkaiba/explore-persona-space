@@ -171,3 +171,31 @@ round after the PASS+PASS fix chain (26-script migration + allowlist shrink
     greps the anchored block's occurrence count in the live file (must be 1)
     + reads context to confirm the site IS the migrated write — attest it,
     leaving verbatim-reproduction + tautology checks to the twin.
+
+**Fourth-generation addendum (#2336 r9, 2026-08-25)** — the batch round under
+a BY-PATH lean brief (25 files / 51 sites / allowlist 59→34 / first-instance
+npy-via-open_memmap oracle):
+
+16. **By-path batch compose works:** keep the r8 duty/facts/span structure
+    but replace the three inlined envelopes with path references — canonical
+    MAIN-root `events.jsonl` (jq + python3 stdlib extraction commands,
+    frozen-worktree warning, stash-race `git show HEAD:` re-read) + /tmp
+    convenience copies with the non-blocking fallback wording + the plan's
+    canonical path with the composer-verified-identical worktree copy as
+    plan-only fallback. `data-access-blocked` becomes GENUINE (state it in
+    the blocked-read rule AND the tags bracket); the Step-3 envelope greps
+    are replaced by path-reference validations in the compose script.
+17. **Census regex traps (both hit live):** (a) the parenthesized
+    multi-context form `with (\n atomic_replace(...)` makes a
+    `with atomic_replace(` grep UNDERCOUNT (50 vs the true 51) — count
+    added non-import `atomic_replace(` CALL lines instead, then attest the
+    reconciliation so the twin doesn't chase a false discrepancy; (b) a
+    shell loop building grep patterns via `sed 's/[.(]/\\\\&/g'` inside
+    $(...) mangles dotted tokens (torch.save → 0 hits while open_memmap
+    counted fine) — run the shape census in Python, never sed-escaped shell.
+18. **Sanction-shape flip is a fresh duty:** batch 3 claimed 0 frozen-
+    snapshot members, batch 4 claims 3/25 all inside the plan §12 8-member
+    sanction list — composer verifies BOTH sides (live-import intersection +
+    the plan's named list) and the duty becomes "no fourth member +
+    recipe-only edits on the three", not the r8-shaped empty-intersection
+    check.
