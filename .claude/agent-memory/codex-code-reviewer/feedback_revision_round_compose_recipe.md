@@ -2893,3 +2893,30 @@ header. Also: smoke-arch checker attestation runs BOTH modes; when
 sorted(ARMS)`, the driver-recompute arm is structurally unavailable — attest
 grammar as settled and hand SET-EQUALITY to Codex as the fallback arm with
 the members list verbatim.
+
+**Fresh-rig follow-up round + protocol-only rubric span (#2378 r17 = impl v17,
+2026-08-25):** a same-issue follow-up that BUILDS a new rig (N round-NEW files,
+no plan version) composes as: round contract = the `epm:followup-scope` note in
+its own envelope (the #1090-fu1 shape); parent plan BY PATH at the WORKTREE's
+frozen status folder — which can differ from the canonical status
+(`tasks/awaiting_promotion/2378/...` in-worktree vs `followups_running` on
+main; both fine after the identity diff — name the WORKTREE path in the
+prompt); marker-DECLARED recipe deviations from the inherited parent/sibling
+recipes become a numbered adjudication list (justified/unjustified line each).
+Four new deltas: (a) a rubric span that starts at `## Review Protocol` and ends
+at `## Rules`/`---` (the 2568-r2 extraction shape) is the CLEANEST reuse — it
+excludes header/BLOCKED/verdict-template so NO sibling adaptations or base
+SHAs need patching; only the #2074 split paragraph strip applies. Prefer this
+shape when scouting /tmp for fresh extractions. (b) An all-NIT ledger whose
+rows all live on NON-round surfaces gets ONE collective status line (never
+per-id closure duties) + named targeted-glance ids ONLY where the round
+REUSES adjacent machinery (env_extra pin class, BPE-seam class). (c) The
+"be specific" closer must use the spec's generic `foo.py:42` example — a
+hypothetical worded as a plausible defect at a REAL round-file line primes a
+phantom finding. (d) Impl-marker prose can mis-place a constants file
+("gates in patch_common" while injection values live in patch_run) — attest
+the located anchors neutrally as a prose nit, never let the wrong path pass
+into your facts. Assert traps: the round-parent SHA rides the impl body's
+pin-sweep prose (+1 over authored counts); a backticked mid-line
+`CONCERN:: none` is forwarder-safe so line-start rows == 1 (template row
+only).
