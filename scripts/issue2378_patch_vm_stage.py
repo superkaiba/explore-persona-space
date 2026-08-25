@@ -43,6 +43,11 @@ def main() -> int:
     n = 0
     for path in sorted(files):
         rel = path[len(PREFIX) + 1 :]
+        # the pod uploaded each stage's rollouts/ CONTENT directly under the
+        # stage name; the judge/analysis globs expect <stage>/rollouts/*.jsonl
+        stage, _, name = rel.partition("/")
+        if stage in ("anchors", "grid", "confirm") and name.endswith(".jsonl") and "/" not in name:
+            rel = f"{stage}/rollouts/{name}"
         target = dest / rel
         if target.exists():
             continue
